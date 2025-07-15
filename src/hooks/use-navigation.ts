@@ -125,9 +125,16 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi Flotilla
   {
+    label: 'Registrar Pago',
+    path: '/rentas?action=registrar',
+    icon: DollarSign,
+    groupTag: 'Mi Flotilla',
+    permissions: ['fleet:manage']
+  },
+  {
     label: 'Ingresos',
     path: '/rentas',
-    icon: DollarSign,
+    icon: Landmark,
     groupTag: 'Mi Flotilla',
     permissions: ['fleet:manage']
   },
@@ -143,7 +150,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   {
     label: 'Finanzas',
     path: '/finanzas',
-    icon: Landmark,
+    icon: LineChart,
     groupTag: 'Análisis',
     permissions: ['finances:view_report']
   },
@@ -232,13 +239,13 @@ const useNavigation = (): NavigationEntry[] => {
   }, [currentUser, userPermissions]);
 
   const entriesWithActiveState = filteredNavStructure.map(entry => {
-    let isActive = pathname === entry.path;
+    let isActive = pathname === entry.path.split('?')[0];
     
     // Handle parent route matching for nested pages
-    const isParentRoute = pathname.startsWith(`${entry.path}/`);
+    const isParentRoute = pathname.startsWith(`${entry.path.split('?')[0]}/`);
     if (isParentRoute) {
         const isMoreSpecificActive = filteredNavStructure.some(otherEntry => 
-            pathname.startsWith(`${otherEntry.path}/`) && otherEntry.path.length > entry.path.length
+            pathname.startsWith(`${otherEntry.path.split('?')[0]}/`) && otherEntry.path.length > entry.path.length
         );
         if (!isMoreSpecificActive) {
             isActive = true;
@@ -254,7 +261,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/admin/configuracion-ticket') || pathname.startsWith('/mensajeria'))) isActive = true;
     if (entry.path === '/finanzas' && pathname.startsWith('/finanzas')) isActive = true;
     if (entry.path === '/administracion' && (pathname.startsWith('/administracion') || pathname.startsWith('/admin'))) isActive = true;
-    if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) isActive = true;
+    if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores'))) isActive = true;
     if (entry.path === '/rentas' && pathname.startsWith('/rentas')) isActive = true;
     
     // Deactivations for clarity
@@ -263,7 +270,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
     if (entry.path === '/opciones' && pathname.startsWith('/mensajeria')) isActive = false;
-
+    if (entry.path === '/rentas' && pathname.startsWith('/rentas?action=registrar')) isActive = false; // Don't highlight 'Ingresos' for 'Registrar Pago'
 
     return { ...entry, isActive };
   });

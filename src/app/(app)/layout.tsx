@@ -15,13 +15,17 @@ import { auth, db } from "@/lib/firebaseClient";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
-import type { ServiceRecord, User } from "@/types";
-import { useRouter } from 'next/navigation';
+import type { ServiceRecord, User, Vehicle, Technician, InventoryItem, Driver } from "@/types";
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { cn } from "@/lib/utils";
+import { RegisterPaymentDialog } from './rentas/components/register-payment-dialog';
+import { useToast } from "@/hooks/use-toast";
+import { operationsService, personnelService, inventoryService } from '@/lib/services';
+
 
 export default function AppLayout({
   children,
@@ -30,7 +34,14 @@ export default function AppLayout({
 }) {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!auth || !db) {
@@ -60,16 +71,40 @@ export default function AppLayout({
         }
         setIsLoading(false);
     });
+
+    const unsubDrivers = personnelService.onDriversUpdate(setDrivers);
+    const unsubVehicles = inventoryService.onVehiclesUpdate(setVehicles);
     
     return () => {
         unsubscribeAuth();
+        unsubDrivers();
+        unsubVehicles();
     };
   }, [router]);
   
+   useEffect(() => {
+    if (searchParams.get('action') === 'registrar' && pathname === '/rentas') {
+      setIsPaymentDialogOpen(true);
+      // Clean up URL params after opening dialog
+      const newUrl = window.location.pathname;
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [searchParams, pathname, router]);
+
   const handleLogout = async () => {
       if (!auth) return;
       await signOut(auth);
   };
+  
+  const handleSavePayment = useCallback(async (driverId: string, amount: number, note: string | undefined, mileage?: number) => {
+    try {
+        await operationsService.addRentalPayment(driverId, amount, note, mileage);
+        toast({ title: 'Pago Registrado' });
+        setIsPaymentDialogOpen(false);
+    } catch (e: any) {
+        toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+  }, [toast]);
 
   if (isLoading || !currentUser) {
     return (
@@ -110,6 +145,14 @@ export default function AppLayout({
           {children}
         </main>
       </SidebarInset>
+      
+      <RegisterPaymentDialog
+        open={isPaymentDialogOpen}
+        onOpenChange={setIsPaymentDialogOpen}
+        drivers={drivers}
+        vehicles={vehicles}
+        onSave={handleSavePayment}
+      />
     </SidebarProvider>
   );
 }

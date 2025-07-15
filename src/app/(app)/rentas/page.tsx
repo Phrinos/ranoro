@@ -117,7 +117,7 @@ function RentasPageComponent() {
         <p className="text-primary-foreground/80 mt-1">Registra y consulta los pagos de renta, gastos y retiros.</p>
       </div>
       
-      <div className="flex flex-col sm:flex-row gap-2 mb-6">
+      <div className="flex justify-end gap-2 mb-6">
           <Button onClick={() => setIsWithdrawalDialogOpen(true)} variant="outline" className="bg-white hover:bg-gray-100 text-black border-gray-300 w-full sm:w-auto">
             <ArrowDownCircle className="mr-2 h-4 w-4 text-red-500"/>
             Retiro
@@ -219,4 +219,5 @@ function RentasPageComponent() {
 export default function RentasPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><RentasPageComponent /></Suspense>)
 }
+
 
