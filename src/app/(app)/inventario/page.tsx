@@ -226,7 +226,6 @@ function InventarioPageComponent() {
               <Printer className="mr-2 h-4 w-4" /> Imprimir Reporte
             </Button>
           }
-          contentRef={printRef}
       >
         <InventoryReportContent ref={printRef} items={itemsToPrint} workshopInfo={workshopInfo}/>
       </PrintTicketDialog>

@@ -92,7 +92,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
                 </TableRow>
               )}
             </TableBody>
-            <tfoot>
+            <TableFooter>
                 <TableRow className="font-bold border-t-2 border-black">
                     <TableCell colSpan={6} className="text-right">Valor Total del Inventario (Costo):</TableCell>
                     <TableCell className="text-right">{formatCurrency(totalInventoryCost)}</TableCell>
@@ -101,7 +101,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
                     <TableCell colSpan={6} className="text-right">Valor Total del Inventario (Venta):</TableCell>
                     <TableCell className="text-right">{formatCurrency(totalInventoryValue)}</TableCell>
                 </TableRow>
-            </tfoot>
+            </TableFooter>
           </Table>
         </main>
       </div>

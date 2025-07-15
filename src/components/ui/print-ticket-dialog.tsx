@@ -22,7 +22,6 @@ interface PrintTicketDialogProps {
   onDialogClose?: () => void; 
   dialogContentClassName?: string;
   footerActions?: React.ReactNode;
-  contentRef: React.RefObject<HTMLDivElement>;
 }
 
 export function PrintTicketDialog({
@@ -33,7 +32,6 @@ export function PrintTicketDialog({
   children,
   onDialogClose,
   dialogContentClassName = "",
-  contentRef, // The ref is passed but not used directly on the div here
   footerActions,
 }: PrintTicketDialogProps) {
 
@@ -54,20 +52,19 @@ export function PrintTicketDialog({
         "flex flex-col max-h-[90vh]", // Ensure dialog doesn't overflow viewport
         dialogContentClassName 
       )}>
-        <DialogHeader className="print-hidden flex-shrink-0">
+        <DialogHeader className="print:hidden flex-shrink-0">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md">
-            {/* The child component (report content) should have the ref and the printable-area id */}
             <div className="printable-area" id="printable-area-dialog">
                  {children}
             </div>
         </div>
 
         {footerActions && (
-          <DialogFooter className="print-hidden flex-shrink-0">
+          <DialogFooter className="print:hidden flex-shrink-0">
             {footerActions}
           </DialogFooter>
         )}
