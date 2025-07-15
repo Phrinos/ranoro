@@ -128,19 +128,19 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
           <Table className="w-full table-fixed border-collapse">
             <TableHeader>
               <TableRow className="bg-gray-100">
-                <TableHead className="font-bold text-gray-700">Categoría</TableHead>
-                <TableHead className="font-bold text-gray-700">Marca</TableHead>
-                <TableHead className="font-bold text-gray-700 w-[30%]">Nombre</TableHead>
-                <TableHead className="font-bold text-gray-700">SKU</TableHead>
-                <TableHead className="text-right font-bold text-gray-700">Stock</TableHead>
-                <TableHead className="text-right font-bold text-gray-700">Costo</TableHead>
-                <TableHead className="text-right font-bold text-gray-700">Precio Venta</TableHead>
+                <TableHead className="w-[15%] font-bold text-gray-700">Categoría</TableHead>
+                <TableHead className="w-[15%] font-bold text-gray-700">Marca</TableHead>
+                <TableHead className="w-[30%] font-bold text-gray-700">Nombre</TableHead>
+                <TableHead className="w-[10%] font-bold text-gray-700">SKU</TableHead>
+                <TableHead className="w-[10%] text-right font-bold text-gray-700">Stock</TableHead>
+                <TableHead className="w-[10%] text-right font-bold text-gray-700">Costo</TableHead>
+                <TableHead className="w-[10%] text-right font-bold text-gray-700">P. Venta</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.length > 0 ? (
                 items.map(item => (
-                  <TableRow key={item.id} className="border-b">
+                  <TableRow key={item.id} className="border-b break-all">
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.brand || 'N/A'}</TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
