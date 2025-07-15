@@ -150,7 +150,7 @@ function HistorialServiciosPageComponent() {
     setOtherFilters,
     ...tableManager
   } = useTableManager<ServiceRecord>({
-    initialData: allServices ? allServices.filter((s) => s.status !== "Cotizacion") : [],
+    initialData: allServices.filter((s) => s.status !== "Cotizacion"),
     searchKeys: ["id", "vehicleIdentifier", "description"],
     dateFilterKey: "deliveryDateTime",
     initialSortOption: "deliveryDateTime_desc",
