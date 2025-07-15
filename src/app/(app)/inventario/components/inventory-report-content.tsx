@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/components/inventory-report-content.tsx
 "use client";
 
@@ -16,6 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from "@/components/ui/table";
 import { Package, DollarSign, TrendingUp } from 'lucide-react';
 
@@ -31,22 +33,21 @@ const initialWorkshopInfo: WorkshopInfo = {
 
 interface InventoryReportContentProps {
   items: InventoryItem[];
-  workshopInfo: WorkshopInfo | null;
 }
 
 export const InventoryReportContent = React.forwardRef<HTMLDivElement, InventoryReportContentProps>(
-  ({ items, workshopInfo: passedWorkshopInfo }, ref) => {
+  ({ items }, ref) => {
     const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo>(initialWorkshopInfo);
 
     useEffect(() => {
-        const infoFromProps = passedWorkshopInfo;
         const storedInfoStr = localStorage.getItem(LOCALSTORAGE_KEY);
-        let infoFromStorage: WorkshopInfo | null = null;
         if(storedInfoStr) {
-            try { infoFromStorage = JSON.parse(storedInfoStr); } catch {}
+            try { 
+                const storedInfo = JSON.parse(storedInfoStr);
+                setWorkshopInfo({ ...initialWorkshopInfo, ...storedInfo });
+            } catch {}
         }
-        setWorkshopInfo({ ...initialWorkshopInfo, ...infoFromStorage, ...infoFromProps });
-    }, [passedWorkshopInfo]);
+    }, []);
 
     const now = new Date();
     const formattedDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
