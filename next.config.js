@@ -32,9 +32,6 @@ const nextConfig = {
     ];
   },
 
-  // 5. Excluir paquetes nativos
-  serverExternalPackages: ['handlebars'],
-
   // ✅ 6. allowedDevOrigins → en raíz
   allowedDevOrigins: [
     "https://3000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
