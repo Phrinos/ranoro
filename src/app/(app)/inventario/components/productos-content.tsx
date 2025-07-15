@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { InventoryItem } from '@/types';
-import { Search, ListFilter, PlusCircle, Printer } from 'lucide-react';
+import { Search, ListFilter, PlusCircle } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
 
 type InventorySortOption = 
@@ -101,9 +102,6 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button onClick={onPrint} variant="outline" className="w-full sm:w-auto">
-            <Printer className="mr-2 h-4 w-4" /> Imprimir
-          </Button>
           <Button onClick={onNewItem} className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Producto / Servicio
           </Button>

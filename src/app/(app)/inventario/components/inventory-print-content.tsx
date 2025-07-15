@@ -1,126 +1,115 @@
-
-
 "use client";
 
 import React from 'react';
-import type { InventoryItem, WorkshopInfo } from '@/types';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { formatCurrency } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, DollarSign, TrendingUp } from 'lucide-react';
-import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import type { InventoryItem } from '@/types';
+import { Search, ListFilter, PlusCircle } from 'lucide-react';
+import { InventoryTable } from './inventory-table';
 
-interface InventoryPrintContentProps {
+type InventorySortOption = 
+  | "stock_status_name_asc" 
+  | "name_asc" | "name_desc"
+  | "sku_asc" | "sku_desc"
+  | "quantity_asc" | "quantity_desc"
+  | "price_asc" | "price_desc"
+  | "type_asc";
+
+interface ProductosContentProps {
   inventoryItems: InventoryItem[];
-  workshopInfo?: Partial<WorkshopInfo>;
+  onNewItem: () => void;
+  onPrint: () => void;
 }
 
-export const InventoryPrintContent = React.forwardRef<HTMLDivElement, InventoryPrintContentProps>(
-  ({ inventoryItems, workshopInfo }, ref) => {
+export function ProductosContent({ inventoryItems, onNewItem, onPrint }: ProductosContentProps) {
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [sortOption, setSortOption] = React.useState<InventorySortOption>("stock_status_name_asc");
+
+  const filteredAndSortedItems = React.useMemo(() => {
+    let itemsToDisplay = [...inventoryItems];
+    if (searchTerm) {
+      itemsToDisplay = itemsToDisplay.filter(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        item.sku.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
     
-    const summary = React.useMemo(() => {
-        let cost = 0, sellingPriceValue = 0, products = 0, services = 0;
-        inventoryItems.forEach(item => {
-            if (item.isService) services++;
-            else {
-                products++;
-                cost += item.quantity * item.unitPrice;
-                sellingPriceValue += item.quantity * item.sellingPrice;
-            }
-        });
-        return { 
-            totalInventoryCost: cost, 
-            totalInventorySellingPrice: sellingPriceValue, 
-            productsCount: products, 
-            servicesCount: services, 
-        };
-    }, [inventoryItems]);
+    itemsToDisplay.sort((a, b) => {
+      const isALowStock = !a.isService && a.quantity <= a.lowStockThreshold; 
+      const isBLowStock = !b.isService && b.quantity <= b.lowStockThreshold;
+      if (sortOption === "stock_status_name_asc") { 
+        if (isALowStock && !isBLowStock) return -1; 
+        if (!isALowStock && isBLowStock) return 1; 
+        return a.name.localeCompare(b.name); 
+      }
+      if (sortOption === "type_asc") { 
+        if (a.isService && !b.isService) return 1; 
+        if (!a.isService && b.isService) return -1; 
+        return a.name.localeCompare(b.name); 
+      }
+      switch (sortOption) {
+        case 'name_asc': return a.name.localeCompare(b.name); 
+        case 'name_desc': return b.name.localeCompare(a.name); 
+        case 'sku_asc': return a.sku.localeCompare(b.sku); 
+        case 'sku_desc': return b.sku.localeCompare(a.sku);
+        case 'quantity_asc': 
+          if(a.isService) return 1; if(b.isService) return -1; 
+          return a.quantity - b.quantity;
+        case 'quantity_desc': 
+          if(a.isService) return 1; if(b.isService) return -1; 
+          return b.quantity - a.quantity;
+        case 'price_asc': return a.sellingPrice - b.sellingPrice; 
+        case 'price_desc': return b.sellingPrice - a.sellingPrice;
+        default: return a.name.localeCompare(b.name); 
+      }
+    });
+    return itemsToDisplay;
+  }, [inventoryItems, searchTerm, sortOption]);
 
-    return (
-      <div 
-        ref={ref}
-        data-format="letter"
-        className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-sm"
-      >
-        <header className="mb-8 border-b-2 border-black pb-4">
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              {workshopInfo?.logoUrl && (
-                <Image 
-                  src={workshopInfo.logoUrl} 
-                  alt={`${workshopInfo.name || 'Taller'} Logo`} 
-                  width={150} 
-                  height={50} 
-                  style={{ objectFit: 'contain', height: 'auto' }}
-                  data-ai-hint="workshop logo"
-                />
-              )}
-               <div className="mt-2 text-xs">
-                <p className="font-bold text-base">{workshopInfo?.name || 'Taller'}</p>
-                <p>{workshopInfo?.addressLine1}</p>
-                {workshopInfo?.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
-                <p>{workshopInfo?.cityState}</p>
-                <p>Tel: {workshopInfo?.phone}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <h1 className="text-2xl font-bold">Reporte de Inventario General</h1>
-              <p className="text-sm text-gray-500">
-                Generado el: {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: es })}
-              </p>
-            </div>
-          </div>
-        </header>
-
-        <main>
-          <div className="grid grid-cols-3 gap-6 mb-8 text-center">
-             <Card className="shadow-none border-gray-200"><CardHeader><CardTitle className="text-sm font-medium flex items-center justify-center gap-2"><Package className="h-4 w-4"/>Total de Productos</CardTitle><CardDescription className="text-2xl font-bold">{summary.productsCount}</CardDescription></CardHeader></Card>
-             <Card className="shadow-none border-gray-200"><CardHeader><CardTitle className="text-sm font-medium flex items-center justify-center gap-2"><DollarSign className="h-4 w-4"/>Costo Total del Inventario</CardTitle><CardDescription className="text-2xl font-bold">{formatCurrency(summary.totalInventoryCost)}</CardDescription></CardHeader></Card>
-             <Card className="shadow-none border-gray-200"><CardHeader><CardTitle className="text-sm font-medium flex items-center justify-center gap-2"><TrendingUp className="h-4 w-4"/>Valor de Venta Total</CardTitle><CardDescription className="text-2xl font-bold">{formatCurrency(summary.totalInventorySellingPrice)}</CardDescription></CardHeader></Card>
-          </div>
-          
-          <h2 className="text-xl font-semibold mb-4 border-b pb-2">Lista de Productos y Servicios</h2>
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="font-bold text-gray-600">Nombre</TableHead>
-                  <TableHead className="font-bold text-gray-600">Categoría</TableHead>
-                  <TableHead className="text-right font-bold text-gray-600">Cantidad</TableHead>
-                  <TableHead className="text-right font-bold text-gray-600">Costo</TableHead>
-                  <TableHead className="text-right font-bold text-gray-600">Precio Venta</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {inventoryItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.category}</TableCell>
-                    <TableCell className="text-right">
-                       {item.isService ? (
-                         <Badge variant="outline" className="text-xs">Servicio</Badge>
-                       ) : (
-                         `${item.quantity} ${item.unitType === 'ml' ? 'ml' : item.unitType === 'liters' ? 'L' : 'uds.'}`
-                       )}
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.sellingPrice)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </main>
-        
-        <footer className="mt-8 pt-4 border-t border-gray-300 text-center text-xs text-gray-500">
-          <p>Este es un reporte generado automáticamente por el sistema Ranoro.</p>
-        </footer>
+  return (
+    <div className="mt-6 space-y-4">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
+        <p className="text-muted-foreground">Administra productos, servicios y niveles de stock.</p>
       </div>
-    );
-  }
-);
-
-InventoryPrintContent.displayName = "InventoryPrintContent";
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
+                <ListFilter className="mr-2 h-4 w-4" />Ordenar por
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as InventorySortOption)}>
+                <DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={onNewItem} className="w-full sm:w-auto">
+              <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Producto / Servicio
+          </Button>
+        </div>
+      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <InventoryTable items={filteredAndSortedItems} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
