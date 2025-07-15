@@ -235,6 +235,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
     const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
     
+    const shouldShowNextService = service.nextServiceInfo && service.status === 'Entregado';
+
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-full relative">
         {service.status === 'Cancelado' && (
@@ -268,15 +270,15 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
         <main className="flex-grow">
            <section className="grid grid-cols-3 gap-2 mb-2 text-xs">
-                <div className="border-2 border-black rounded-md overflow-hidden flex-1">
+              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
                 <div className="space-y-0.5 p-2 text-sm">
-                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
+                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{capitalizeWords(vehicle?.ownerName || '')}</span></p>
                   <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
                   {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
                 </div>
               </div>
-              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
+              <div className={cn("border-2 border-black rounded-md overflow-hidden flex-1", shouldShowNextService ? "col-span-1" : "col-span-2")}>
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
                   <div className="space-y-0.5 p-2 text-sm">
                       <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
@@ -285,16 +287,16 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                       {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
                   </div>
               </div>
-              {service.nextServiceInfo && service.status === 'Entregado' && (
+              {shouldShowNextService && (
                   <div className="border-2 border-red-700 rounded-md overflow-hidden flex-1">
                     <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
                     <div className="p-2 space-y-1 text-center text-sm">
                         <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
-                        {service.nextServiceInfo.date && isValid(parseDate(service.nextServiceInfo.date)) && (
-                            <p className="font-bold">Fecha: {format(parseDate(service.nextServiceInfo.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
+                        {service.nextServiceInfo!.date && isValid(parseDate(service.nextServiceInfo!.date)) && (
+                            <p className="font-bold">Fecha: {format(parseDate(service.nextServiceInfo!.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
                         )}
-                        {service.nextServiceInfo.mileage && (
-                            <p className="font-bold">Kilometraje: {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
+                        {service.nextServiceInfo!.mileage && (
+                            <p className="font-bold">Kilometraje: {service.nextServiceInfo!.mileage.toLocaleString('es-MX')} km</p>
                         )}
                     </div>
                   </div>
