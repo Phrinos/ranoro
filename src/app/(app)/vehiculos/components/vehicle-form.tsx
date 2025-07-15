@@ -110,100 +110,16 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="make"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Marca</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ej: Toyota" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="model"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Modelo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ej: Corolla" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormField control={form.control} name="make" render={({ field }) => ( <FormItem><FormLabel>Marca</FormLabel><FormControl><Input placeholder="Ej: Toyota" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+              <FormField control={form.control} name="model" render={({ field }) => ( <FormItem><FormLabel>Modelo</FormLabel><FormControl><Input placeholder="Ej: Corolla" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="year"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Año</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="Ej: 2020" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="licensePlate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Placa</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ej: PQR-123" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="color"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Color (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ej: Rojo" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormField control={form.control} name="year" render={({ field }) => ( <FormItem><FormLabel>Año</FormLabel><FormControl><Input type="number" placeholder="Ej: 2020" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )}/>
+              <FormField control={form.control} name="licensePlate" render={({ field }) => ( <FormItem><FormLabel>Placa</FormLabel><FormControl><Input placeholder="Ej: PQR-123" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl><FormMessage /></FormItem> )}/>
+              <FormField control={form.control} name="color" render={({ field }) => ( <FormItem><FormLabel>Color (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Rojo" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
             </div>
-            <FormField
-                control={form.control}
-                name="vin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>VIN (Número de Chasis) (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="17 caracteres" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notas (Opcional)</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Notas adicionales sobre el vehículo..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField control={form.control} name="vin" render={({ field }) => ( <FormItem><FormLabel>VIN (Número de Chasis) (Opcional)</FormLabel><FormControl><Input placeholder="17 caracteres" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notas (Opcional)</FormLabel><FormControl><Textarea placeholder="Notas adicionales sobre el vehículo..." {...field} /></FormControl><FormMessage /></FormItem> )}/>
           </CardContent>
         </Card>
 
@@ -213,46 +129,10 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
               <CardDescription>Información de contacto del cliente asociado al vehículo.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="ownerName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre del Propietario</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ej: Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel>Nombre del Propietario</FormLabel><FormControl><Input placeholder="Ej: Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="ownerPhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Teléfono del Propietario</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej: 555-123456" {...field} onChange={(e) => field.onChange(e.target.value.replace(/[^0-9]/g, ''))}/>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="ownerEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email del Propietario (Opcional)</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="Ej: juan.perez@email.com" {...field} onChange={(e) => field.onChange(e.target.value.toLowerCase())} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel>Teléfono del Propietario</FormLabel><FormControl><Input placeholder="Ej: 555-123456" {...field} onChange={(e) => field.onChange(e.target.value.replace(/[^0-9]/g, ''))}/></FormControl><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="ownerEmail" render={({ field }) => ( <FormItem><FormLabel>Email del Propietario (Opcional)</FormLabel><FormControl><Input type="email" placeholder="Ej: juan.perez@email.com" {...field} onChange={(e) => field.onChange(e.target.value.toLowerCase())} /></FormControl><FormMessage /></FormItem> )}/>
               </div>
             </CardContent>
         </Card>
