@@ -295,7 +295,10 @@ function PosPageComponent() {
     
     // We need a short delay to allow React to render the ticket content in the hidden dialog
     setTimeout(async () => {
-        if (!ticketContentRef.current) return;
+        if (!ticketContentRef.current) {
+          setSelectedSaleForReprint(null); // Clean up if ref is not available
+          return;
+        }
         
         toast({ title: 'Generando imagen del ticket...' });
         const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: '#ffffff' });
