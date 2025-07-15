@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -326,7 +325,7 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
             <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
                 {signatureDataUrl ? (
                     <div className="relative w-full h-full max-w-[200px] aspect-video">
-                        <Image src={signatureDataUrl} alt="Firma del técnico" fill className="object-contain" />
+                        <Image src={signatureDataUrl} alt="Firma del técnico" fill className="object-contain" crossOrigin="anonymous"/>
                     </div>
                 ) : (
                     <span className="text-sm text-muted-foreground">Firma pendiente</span>

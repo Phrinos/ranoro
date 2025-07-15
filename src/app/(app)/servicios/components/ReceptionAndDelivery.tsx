@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState } from "react";
@@ -182,7 +181,7 @@ export const ReceptionAndDelivery = ({
                         width={250}
                         height={100}
                         style={{ objectFit: 'contain' }}
-                        unoptimized
+                        crossOrigin="anonymous"
                     />
                 ) : (
                     <div className="text-center text-muted-foreground">
@@ -249,7 +248,7 @@ export const ReceptionAndDelivery = ({
                         width={250}
                         height={100}
                         style={{ objectFit: 'contain' }}
-                        unoptimized
+                        crossOrigin="anonymous"
                     />
                 ) : (
                   <div className="text-center text-muted-foreground">

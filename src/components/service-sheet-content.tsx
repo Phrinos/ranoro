@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -184,7 +183,7 @@ const SafetyChecklistDisplay = ({
             {inspection.technicianSignature && (
                  <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
                     <div className="h-24 w-full max-w-[200px] relative">
-                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" unoptimized width={200} height={96} style={{ objectFit: 'contain' }} crossOrigin="anonymous"/>
+                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" width={200} height={96} style={{ objectFit: 'contain' }} crossOrigin="anonymous"/>
                     </div>
                     <div className="mt-2 pt-1 w-64 text-center">
                         <p className="text-xs font-bold">FIRMA DEL TÉCNICO ({format(new Date(), "dd/MM/yyyy")})</p>
@@ -369,7 +368,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full">
-                                <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" layout="fill" objectFit="contain" unoptimized crossOrigin="anonymous" />
+                                <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" layout="fill" objectFit="contain" crossOrigin="anonymous" />
                             </div>
                         )}
                     </div>
@@ -382,7 +381,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.customerSignatureReception ? (
                             <div className="relative w-full h-full">
-                                <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" layout="fill" objectFit="contain" unoptimized crossOrigin="anonymous" />
+                                <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" layout="fill" objectFit="contain" crossOrigin="anonymous" />
                             </div>
                         ) : (
                             isPublicView && showSignReception && onSignClick && (
@@ -403,7 +402,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.customerSignatureDelivery ? (
                             <div className="relative w-full h-full">
-                            <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" layout="fill" objectFit="contain" unoptimized crossOrigin="anonymous"/>
+                            <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" layout="fill" objectFit="contain" crossOrigin="anonymous"/>
                             </div>
                         ) : (
                             isPublicView && showSignDelivery && onSignClick && (

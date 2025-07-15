@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { RentalPayment, WorkshopInfo, Driver } from '@/types';
@@ -46,11 +45,13 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
       >
         <div className="text-center mb-2">
            {workshopInfo.logoUrl && (
-            <img 
+            <Image 
               src={workshopInfo.logoUrl} 
               alt="Logo" 
               className="mx-auto mb-1" 
-              style={{ width: `${workshopInfo.logoWidth || 120}px` }}
+              width={workshopInfo.logoWidth || 120}
+              height={40} // Approximate height
+              style={{ objectFit: 'contain' }}
               crossOrigin="anonymous"
               data-ai-hint="workshop logo"
             />
