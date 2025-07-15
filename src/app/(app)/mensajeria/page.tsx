@@ -18,7 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { messagingService } from '@/lib/services/messaging.service';
 
 const messagingConfigSchema = z.object({
-  apiKey: z.string().optional(),
+  apiKey: z.string().min(1, 'El Token de Acceso es obligatorio.'),
+  fromPhoneNumberId: z.string().min(1, 'El ID del Número de Teléfono es obligatorio.'),
   endpointUrl: z.string().url("Debe ser una URL válida.").optional().or(z.literal('')),
   
   appointmentConfirmationEnabled: z.boolean().default(false),
@@ -41,12 +42,13 @@ const LOCALSTORAGE_KEY = 'messagingConfig';
 export default function MensajeriaPage() {
   const { toast } = useToast();
   const [isSendingTest, setIsSendingTest] = useState(false);
-  const [apiKey, setApiKey] = useState(''); // Add state for API Key
+  const [config, setConfig] = useState<MessagingConfigValues | null>(null);
 
   const form = useForm<MessagingConfigValues>({
     resolver: zodResolver(messagingConfigSchema),
     defaultValues: {
       apiKey: '',
+      fromPhoneNumberId: '',
       appointmentConfirmationEnabled: true,
       appointmentConfirmationTemplate: "Hola {cliente}, te confirmamos tu cita para el vehículo {vehiculo} el día {fecha}. ¡Te esperamos en {taller}!",
       appointmentReminderEnabled: true,
@@ -64,9 +66,7 @@ export default function MensajeriaPage() {
       try {
         const parsedConfig = JSON.parse(storedConfig);
         form.reset(parsedConfig);
-        if (parsedConfig.apiKey) {
-          setApiKey(parsedConfig.apiKey); // Set API key from localStorage
-        }
+        setConfig(parsedConfig);
       } catch (e) {
         console.error("Failed to parse messaging config from localStorage", e);
       }
@@ -76,9 +76,7 @@ export default function MensajeriaPage() {
   const onSubmit = (data: MessagingConfigValues) => {
     try {
       localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
-      if (data.apiKey) {
-        setApiKey(data.apiKey); // Update state on save
-      }
+      setConfig(data);
       toast({
         title: "Configuración Guardada",
         description: "Tus preferencias de mensajería han sido actualizadas.",
@@ -94,12 +92,12 @@ export default function MensajeriaPage() {
 
   const handleSendTestMessage = async () => {
     setIsSendingTest(true);
-    if (!apiKey) {
-        toast({ title: 'Falta API Key', description: 'Por favor, guarda tu API Key antes de enviar un mensaje de prueba.', variant: 'destructive'});
+    if (!config?.apiKey || !config.fromPhoneNumberId) {
+        toast({ title: 'Faltan Datos', description: 'Por favor, guarda tu API Key y el ID del Número de Teléfono antes de enviar un mensaje de prueba.', variant: 'destructive'});
         setIsSendingTest(false);
         return;
     }
-    const result = await messagingService.sendTestMessage(apiKey, '+524493930914');
+    const result = await messagingService.sendTestMessage(config.apiKey, config.fromPhoneNumberId, '+524493930914');
     
     toast({
         title: result.success ? 'Resultado del Envío' : 'Error en el Envío',
@@ -180,7 +178,7 @@ export default function MensajeriaPage() {
             <CardHeader>
               <CardTitle>Configuración de API (Meta WhatsApp)</CardTitle>
               <CardDescription>
-                Ingresa el token de acceso temporal o permanente de tu App de Meta.
+                Ingresa tus credenciales de la App de Meta para activar el servicio.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -191,8 +189,22 @@ export default function MensajeriaPage() {
                   <FormItem>
                     <FormLabel>Token de Acceso</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Pega tu token aquí" {...field} value={field.value || ''} />
+                      <Input type="password" placeholder="Pega tu token de acceso permanente o temporal aquí" {...field} value={field.value || ''} />
                     </FormControl>
+                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="fromPhoneNumberId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ID del Número de Teléfono de Origen</FormLabel>
+                    <FormControl>
+                      <Input type="text" placeholder="Pega el ID del número de teléfono aquí" {...field} value={field.value || ''} />
+                    </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
