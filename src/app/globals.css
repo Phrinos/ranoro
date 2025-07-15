@@ -125,9 +125,9 @@
     background-color: white !important;
   }
 
-  /* Hide everything in the body by default */
-  body * {
-    visibility: hidden;
+  /* Hide the main app layout elements */
+  .app-sidebar, .app-main-content {
+      display: none;
   }
   
   /* Make the printable container and everything inside it visible */
