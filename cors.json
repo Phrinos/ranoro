@@ -1,8 +1,8 @@
+
 [
   {
     "origin": ["http://localhost:3000", "https://ranoro-jm8l0.web.app", "https://ranoro-jm8l0.firebaseapp.com"],
-    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
-    "responseHeader": ["Content-Type", "Authorization", "X-Requested-With"],
+    "method": ["GET"],
     "maxAgeSeconds": 3600
   }
 ]

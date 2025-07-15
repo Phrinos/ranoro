@@ -1,5 +1,6 @@
 
 
+
 import { db } from './firebasePublic';
 import { doc, setDoc } from 'firebase/firestore';
 import type { ServiceRecord, QuoteRecord, Vehicle, WorkshopInfo, PublicOwnerReport } from '@/types';
@@ -19,8 +20,8 @@ type Result = {
 };
 
 /**
- * Saves a document to a public collection in Firestore.
- * This function is designed to be called from a server environment.
+ * Saves or updates a document in a public collection in Firestore.
+ * This function can be called from both server and client environments where firebasePublic is initialized.
  * It sanitizes the data before saving.
  */
 export const savePublicDocument = async (
@@ -34,7 +35,11 @@ export const savePublicDocument = async (
   }
 
   try {
-    const docId = data.publicId || data.id; // Use publicId if available, fallback to main id
+    const docId = data.publicId || data.id; 
+    if (!docId) {
+      return { success: false, error: 'Document ID (id or publicId) is missing.' };
+    }
+
     let collectionName = '';
     let publicData: any = {};
 
@@ -42,10 +47,13 @@ export const savePublicDocument = async (
       case 'service':
       case 'quote':
         collectionName = 'publicServices';
+        // When updating a signature from the client, data might only contain the signature field.
+        // We merge with existing service data if it's an update.
         publicData = {
           ...data,
-          vehicle, // Embed vehicle data for public access
-          workshopInfo, // Embed workshop info
+          // Only embed vehicle and workshop info if provided (typically on first save)
+          ...(vehicle && { vehicle }),
+          ...(workshopInfo && { workshopInfo }),
         };
         break;
       case 'ownerReport':
@@ -56,6 +64,7 @@ export const savePublicDocument = async (
         return { success: false, error: 'Invalid document type specified.' };
     }
 
+    // Clean the object just before saving to remove any undefined values etc.
     const cleanedPublicData = cleanObjectForFirestore(publicData);
     
     const publicDocRef = doc(db, collectionName, docId);
@@ -63,7 +72,7 @@ export const savePublicDocument = async (
     
     return { success: true };
   } catch (error) {
-    console.error(`Error saving public document (type: ${type}, id: ${data.id}):`, error);
+    console.error(`Error saving public document (type: ${type}, id: ${data.id || data.publicId}):`, error);
     return { success: false, error: error instanceof Error ? error.message : 'An unknown error occurred.' };
   }
 };

@@ -17,6 +17,7 @@ import Image from 'next/image';
 import { Download } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { savePublicDocument } from '@/lib/public-document';
 
 export default function PublicServicePage() {
   const params = useParams();
@@ -69,20 +70,25 @@ export default function PublicServicePage() {
       const fieldToUpdate = signatureType === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery';
       const toastTitle = signatureType === 'reception' ? 'Firma de Recepción Guardada' : 'Firma de Conformidad Guardada';
 
-      try {
-          const publicDocRef = doc(db, 'publicServices', publicId);
-          await setDoc(publicDocRef, { [fieldToUpdate]: signatureDataUrl }, { merge: true });
-          
-          toast({ title: toastTitle });
+      const dataToSave = {
+        publicId: service.publicId || service.id,
+        [fieldToUpdate]: signatureDataUrl,
+      };
 
-      } catch (err) {
-          console.error("Error saving signature:", err);
-          toast({ title: 'Error al Guardar Firma', variant: 'destructive' });
-      } finally {
-          setIsSigning(false);
-          setSignatureType(null);
+      // Use the new centralized function to save the signature
+      const result = await savePublicDocument('service', dataToSave);
+
+      if (result.success) {
+          toast({ title: toastTitle });
+      } else {
+          console.error("Error saving signature:", result.error);
+          toast({ title: 'Error al Guardar Firma', description: result.error, variant: 'destructive' });
       }
+
+      setIsSigning(false);
+      setSignatureType(null);
   };
+
 
   const showOrder = service && service.status !== 'Cotizacion' && service.status !== 'Agendado';
   const showQuote = service && (service.status === 'Cotizacion' || service.status === 'Agendado');
@@ -184,7 +190,7 @@ export default function PublicServicePage() {
             <DialogContent className="max-w-4xl p-2">
                 <DialogHeader><DialogTitle>Vista Previa de Imagen</DialogTitle></DialogHeader>
                 <div className="relative aspect-video w-full">
-                    {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada" fill className="object-contain" />)}
+                    {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada" fill className="object-contain" crossOrigin="anonymous"/>)}
                 </div>
                 <DialogFooter>
                     <Button onClick={() => window.open(viewingImageUrl || '', '_blank')?.focus()}><Download className="mr-2 h-4 w-4"/>Descargar</Button>
