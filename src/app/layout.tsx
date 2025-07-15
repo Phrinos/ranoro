@@ -10,6 +10,11 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Ranoro - Gestión de Taller',
   description: 'Aplicación para la gestión eficiente de talleres mecánicos by Arturo Valdelamar',
+  icons: {
+    icon: '/ranoro-logo.png', // Main favicon
+    shortcut: '/ranoro-logo.png',
+    apple: '/ranoro-logo.png',
+  },
 };
 
 export default function RootLayout({
