@@ -13,8 +13,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Save, Bot } from 'lucide-react';
+import { Save, Bot, Send, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { messagingService } from '@/lib/services/messaging.service';
 
 const messagingConfigSchema = z.object({
   apiKey: z.string().optional(),
@@ -39,6 +40,7 @@ const LOCALSTORAGE_KEY = 'messagingConfig';
 
 export default function MensajeriaPage() {
   const { toast } = useToast();
+  const [isSendingTest, setIsSendingTest] = useState(false);
 
   const form = useForm<MessagingConfigValues>({
     resolver: zodResolver(messagingConfigSchema),
@@ -79,6 +81,24 @@ export default function MensajeriaPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleSendTestMessage = async () => {
+    setIsSendingTest(true);
+    const apiKey = form.getValues('apiKey');
+    if (!apiKey) {
+        toast({ title: 'Falta API Key', description: 'Por favor, guarda tu API Key antes de enviar un mensaje de prueba.', variant: 'destructive'});
+        setIsSendingTest(false);
+        return;
+    }
+    const result = await messagingService.sendTestMessage(apiKey, '+524493930914');
+    
+    toast({
+        title: result.success ? 'Resultado del Envío' : 'Error en el Envío',
+        description: result.message,
+        variant: result.success ? 'default' : 'destructive'
+    });
+    setIsSendingTest(false);
   };
 
   const renderTemplateCard = (
@@ -150,9 +170,9 @@ export default function MensajeriaPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Configuración de API</CardTitle>
+              <CardTitle>Configuración de API (Meta WhatsApp)</CardTitle>
               <CardDescription>
-                Ingresa las credenciales de tu proveedor de API de WhatsApp Business.
+                Ingresa el token de acceso temporal o permanente de tu App de Meta.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -161,26 +181,23 @@ export default function MensajeriaPage() {
                 name="apiKey"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>API Key / Token</FormLabel>
+                    <FormLabel>Token de Acceso</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Pega tu API Key aquí" {...field} value={field.value || ''} />
+                      <Input type="password" placeholder="Pega tu token aquí" {...field} value={field.value || ''} />
                     </FormControl>
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="endpointUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endpoint URL</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://api.tuproveedor.com/send" {...field} value={field.value || ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="flex gap-2">
+                 <Button type="submit">
+                    <Save className="mr-2 h-4 w-4" />
+                    Guardar Configuración
+                 </Button>
+                 <Button type="button" variant="outline" onClick={handleSendTestMessage} disabled={isSendingTest}>
+                    {isSendingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    {isSendingTest ? 'Enviando...' : 'Enviar Mensaje de Prueba'}
+                 </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -219,16 +236,8 @@ export default function MensajeriaPage() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-          
-          <div className="flex justify-end">
-            <Button type="submit">
-              <Save className="mr-2 h-4 w-4" />
-              Guardar Configuración
-            </Button>
-          </div>
         </form>
       </FormProvider>
     </>
   );
 }
-
