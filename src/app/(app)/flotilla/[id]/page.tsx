@@ -18,6 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
