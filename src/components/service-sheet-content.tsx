@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -341,11 +342,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           <section className="grid grid-cols-5 gap-2 mb-2 text-xs">
               <div className="border-2 border-black rounded-md overflow-hidden col-span-3 flex flex-col">
                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">CONDICIONES DEL VEHÍCULO</h3>
-                 <p className="whitespace-pre-wrap p-2 min-h-[10px] text-base flex-grow">{service.vehicleConditions || 'No especificado.'}</p>
+                 <p className="whitespace-pre-wrap p-2 text-base flex-grow">{service.vehicleConditions || 'No especificado.'}</p>
               </div>
               <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col">
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">PERTENENCIAS</h3>
-                  <p className="whitespace-pre-wrap p-2 min-h-[10px] text-base flex-grow">{service.customerItems || 'No especificado.'}</p>
+                  <p className="whitespace-pre-wrap p-2 text-base flex-grow">{service.customerItems || 'No especificado.'}</p>
               </div>
               <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col justify-center min-h-[60px]">
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-center text-xs">COMBUSTIBLE</h3>
@@ -353,7 +354,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300">
                         <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
                     </div>
-                    <div className="w-full flex justify-between text-xs mt-0.5 px-0.5">
+                    <div className="w-full flex justify-between text-base mt-0.5 px-0.5">
                         <span>E</span>
                         <span>F</span>
                     </div>
@@ -367,12 +368,18 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full">
-                                <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" layout="fill" objectFit="contain" unoptimized crossOrigin="anonymous" />
+                                <Image
+                                  src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)}
+                                  alt="Firma del asesor"
+                                  fill
+                                  style={{ objectFit: 'contain' }}
+                                  crossOrigin="anonymous"
+                                />
                             </div>
                         )}
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
-                        <p className="font-bold text-xs">{service.serviceAdvisorName?.toUpperCase() || ''}</p>
+                        <p className="font-bold text-lg leading-tight">{service.serviceAdvisorName?.toUpperCase() || ''}</p>
                     </div>
                 </div>
                 <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px]">
@@ -392,7 +399,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         )}
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
-                        <p className="font-bold text-xs">{vehicle?.ownerName?.toUpperCase() || ''}</p>
+                        <p className="font-bold text-lg leading-tight">{vehicle?.ownerName?.toUpperCase() || ''}</p>
                         <p className="text-[7px] text-gray-600">Autorizo que se realicen estos servicios</p>
                     </div>
                 </div>
@@ -413,7 +420,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         )}
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
-                        <p className="font-bold text-xs">{vehicle?.ownerName?.toUpperCase() || ''}</p>
+                        <p className="font-bold text-lg leading-tight">{vehicle?.ownerName?.toUpperCase() || ''}</p>
                         <p className="text-[7px] text-gray-600">Recibo de conformidad</p>
                     </div>
                 </div>
