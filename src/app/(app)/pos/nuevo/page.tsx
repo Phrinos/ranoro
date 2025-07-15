@@ -43,12 +43,22 @@ const posFormSchema = z.object({
   paymentMethod: z.enum(paymentMethods).default('Efectivo'),
   cardFolio: z.string().optional(),
   transferFolio: z.string().optional(),
-}).refine(data => {
-  if ((data.paymentMethod === 'Tarjeta' || data.paymentMethod === 'Tarjeta+Transferencia') && !data.cardFolio) return false;
-}, { message: 'El folio de la tarjeta es obligatorio.', path: ['cardFolio'] })
-.refine(data => {
-  if ((data.paymentMethod === 'Transferencia' || data.paymentMethod === 'Efectivo+Transferencia' || data.paymentMethod === 'Tarjeta+Transferencia') && !data.transferFolio) return false;
-}, { message: 'El folio de la transferencia es obligatorio.', path: ['transferFolio'] });
+}).superRefine((data, ctx) => {
+    if (data.paymentMethod?.includes('Tarjeta') && !data.cardFolio) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'El folio de la tarjeta es obligatorio.',
+            path: ['cardFolio'],
+        });
+    }
+    if (data.paymentMethod?.includes('Transferencia') && !data.transferFolio) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'El folio de la transferencia es obligatorio.',
+            path: ['transferFolio'],
+        });
+    }
+});
 
 type POSFormValues = z.infer<typeof posFormSchema>;
 
