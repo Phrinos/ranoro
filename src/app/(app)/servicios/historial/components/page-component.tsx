@@ -89,20 +89,40 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   }, []);
 
   const { activeServices, historicalServices } = useMemo(() => {
-    const active = allServices.filter(s => {
-      const status = s.status;
+    const todayServices = allServices.filter(s => {
       const serviceDate = parseDate(s.serviceDate);
-      if (status === "En Taller") return true;
-      if (status === "Agendado" && serviceDate && isToday(serviceDate)) return true;
-      const actionDate = parseDate(s.deliveryDateTime) || serviceDate;
-      if ((status === "Entregado" || status === "Cancelado") && actionDate && isToday(actionDate)) return true;
+      const deliveryDate = parseDate(s.deliveryDateTime);
+      if (s.status === 'En Taller') return true;
+      if (s.status === 'Agendado' && serviceDate && isToday(serviceDate)) return true;
+      if ((s.status === 'Entregado' || s.status === 'Cancelado') && deliveryDate && isToday(deliveryDate)) return true;
       return false;
-    }).sort((a, b) => {
-      const statusOrder = { 'En Taller': 1, 'Agendado': 2, 'Entregado': 3, 'Cancelado': 4 };
-      return (statusOrder[a.status as keyof typeof statusOrder] || 99) - (statusOrder[b.status as keyof typeof statusOrder] || 99) || (parseDate(a.serviceDate)?.getTime() ?? 0) - (parseDate(b.serviceDate)?.getTime() ?? 0);
     });
-    
-    return { activeServices: active, historicalServices: allServices };
+
+    const getStatusPriority = (service: ServiceRecord): number => {
+      if (service.status === 'Agendado' && service.appointmentStatus === 'Confirmada') return 1;
+      if (service.status === 'En Taller' && service.subStatus === 'En Espera de Refacciones') return 2;
+      if (service.status === 'En Taller' && service.subStatus === 'Reparando') return 3;
+      if (service.status === 'En Taller' && !service.subStatus) return 3; // Default for 'En Taller'
+      if (service.status === 'En Taller' && service.subStatus === 'Completado') return 4;
+      if (service.status === 'Entregado') return 5;
+      if (service.status === 'Agendado' && service.appointmentStatus !== 'Confirmada') return 6;
+      if (service.status === 'Cancelado') return 7;
+      return 99; // Default case
+    };
+
+    const sortedActiveServices = todayServices.sort((a, b) => {
+        const priorityA = getStatusPriority(a);
+        const priorityB = getStatusPriority(b);
+        if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+        }
+        // If priorities are the same, sort by time
+        const dateA = parseDate(a.serviceDate)?.getTime() ?? 0;
+        const dateB = parseDate(b.serviceDate)?.getTime() ?? 0;
+        return dateA - dateB;
+    });
+
+    return { activeServices: sortedActiveServices, historicalServices: allServices };
   }, [allServices]);
 
   const { filteredData: filteredHistorical, ...historicalTableManager } = useTableManager<ServiceRecord>({
