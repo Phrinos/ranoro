@@ -203,12 +203,12 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
 
   return (
     <>
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Registrar Nueva Venta</h1>
+        <p className="text-primary-foreground/80 mt-1">Complete los artículos y detalles para la nueva venta.</p>
+      </div>
+
       <FormProvider {...methods}>
-        <PageHeader
-          title="Registrar Nueva Venta"
-          description="Complete los artículos y detalles para la nueva venta."
-        />
-        
         <PosForm
           inventoryItems={currentInventoryItems} 
           onSaleComplete={handleSaleCompletion}
