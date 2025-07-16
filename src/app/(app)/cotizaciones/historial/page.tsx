@@ -2,18 +2,14 @@
 
 "use client";
 
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
+import { CotizacionesPageComponent } from './components/page-component';
 
-function Redirector() {
-    redirect('/servicios/historial?tab=cotizaciones');
-    return null;
-}
-
-export default function CotizacionesRedirectPage() {
-    return (
-        <Suspense fallback={<div>Redireccionando...</div>}>
-            <Redirector />
-        </Suspense>
-    );
+export default function CotizacionesPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <CotizacionesPageComponent />
+    </Suspense>
+  );
 }

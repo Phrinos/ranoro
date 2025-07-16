@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -43,7 +44,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState(status || "activos");
 
-  const [allServicesAndQuotes, setAllServicesAndQuotes] = useState<ServiceRecord[]>([]);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
@@ -52,7 +53,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
 
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ServiceRecord | null>(null);
-  const [formMode, setFormMode] = useState<'service' | 'quote'>('service');
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
@@ -67,7 +67,10 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
 
   useEffect(() => {
     const unsubs = [
-      operationsService.onServicesUpdate(setAllServicesAndQuotes),
+      operationsService.onServicesUpdate((services) => {
+        // Exclude quotes from this page
+        setAllServices(services.filter(s => s.status !== 'Cotizacion'));
+      }),
       inventoryService.onVehiclesUpdate(setVehicles),
       personnelService.onTechniciansUpdate(setTechnicians),
       inventoryService.onItemsUpdate(setInventoryItems),
@@ -84,9 +87,8 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
 
-  const { activeServices, historicalServices, quotes } = useMemo(() => {
-    const allRecords = allServicesAndQuotes || [];
-    const active = allRecords.filter(s => {
+  const { activeServices, historicalServices } = useMemo(() => {
+    const active = allServices.filter(s => {
       const status = s.status;
       const serviceDate = parseDate(s.serviceDate);
       if (status === "En Taller") return true;
@@ -99,11 +101,8 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       return (statusOrder[a.status as keyof typeof statusOrder] || 99) - (statusOrder[b.status as keyof typeof statusOrder] || 99) || (parseDate(a.serviceDate)?.getTime() ?? 0) - (parseDate(b.serviceDate)?.getTime() ?? 0);
     });
     
-    const historical = allRecords.filter(s => s.status !== 'Cotizacion');
-    const quotesList = allRecords.filter(s => s.status === 'Cotizacion');
-    
-    return { activeServices: active, historicalServices: historical, quotes: quotesList };
-  }, [allServicesAndQuotes]);
+    return { activeServices: active, historicalServices: allServices };
+  }, [allServices]);
 
   const { filteredData: filteredHistorical, ...historicalTableManager } = useTableManager<ServiceRecord>({
     initialData: historicalServices,
@@ -111,33 +110,26 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     dateFilterKey: "deliveryDateTime",
     initialSortOption: "deliveryDateTime_desc",
   });
-
-  const { filteredData: filteredQuotes, ...quotesTableManager } = useTableManager<ServiceRecord>({
-    initialData: quotes,
-    searchKeys: ['id', 'vehicleIdentifier', 'description'],
-    dateFilterKey: 'quoteDate',
-    initialSortOption: 'date_desc',
-  });
-
+  
   const handleSaveRecord = useCallback(async (data: QuoteRecord | ServiceRecord) => {
     try {
       await operationsService.saveService(data);
       setIsFormDialogOpen(false);
-      toast({ title: `${formMode === 'quote' ? 'Cotización' : 'Servicio'} actualizado.` });
+      toast({ title: 'Servicio actualizado.' });
     } catch (e) {
       toast({ title: "Error", description: `No se pudo guardar el registro.`, variant: "destructive"});
     }
-  }, [toast, formMode]);
+  }, [toast]);
 
   const handleCancelRecord = useCallback(async (serviceId: string, reason: string) => {
     try {
       await operationsService.cancelService(serviceId, reason);
-      toast({ title: `${formMode === 'quote' ? 'Cotización' : 'Servicio'} cancelado/a.` });
+      toast({ title: 'Servicio cancelado.' });
       setIsFormDialogOpen(false);
     } catch (e) {
       toast({ title: "Error", description: "No se pudo cancelar el registro.", variant: "destructive"});
     }
-  }, [toast, formMode]);
+  }, [toast]);
 
   const handleShowPreview = useCallback((service: ServiceRecord) => {
     setRecordForPreview(service);
@@ -145,7 +137,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   }, []);
 
   const handleOpenFormDialog = useCallback((record: ServiceRecord) => {
-    setFormMode(record.status === 'Cotizacion' ? 'quote' : 'service');
     setEditingRecord(record);
     setIsFormDialogOpen(true);
   }, []);
@@ -210,15 +201,14 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   return (
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Gestión de Taller</h1>
-        <p className="text-primary-foreground/80 mt-1">Consulta servicios activos, historial y cotizaciones.</p>
+        <h1 className="text-3xl font-bold tracking-tight">Gestión de Servicios</h1>
+        <p className="text-primary-foreground/80 mt-1">Consulta servicios activos y el historial completo.</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="activos">Servicios Activos</TabsTrigger>
-          <TabsTrigger value="historial">Historial</TabsTrigger>
-          <TabsTrigger value="cotizaciones">Cotizaciones</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="activos">Servicios Activos (Hoy)</TabsTrigger>
+          <TabsTrigger value="historial">Historial Completo</TabsTrigger>
         </TabsList>
 
         <TabsContent value="activos" className="mt-0 space-y-4">
@@ -228,11 +218,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         <TabsContent value="historial" className="mt-0 space-y-4">
           <TableToolbar {...historicalTableManager} filterOptions={[{ value: 'status', label: 'Estado', options: serviceStatusOptions }, { value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions }]} searchPlaceholder="Buscar por folio, placa..." />
           {filteredHistorical.length > 0 ? filteredHistorical.map(renderServiceCard) : <p className="text-center text-muted-foreground py-10">No hay servicios que coincidan.</p>}
-        </TabsContent>
-        
-        <TabsContent value="cotizaciones" className="mt-0 space-y-4">
-          <TableToolbar {...quotesTableManager} searchPlaceholder="Buscar por folio, vehículo..." />
-          {filteredQuotes.length > 0 ? filteredQuotes.map(renderServiceCard) : <p className="text-center text-muted-foreground py-10">No hay cotizaciones que coincidan.</p>}
         </TabsContent>
       </Tabs>
 
@@ -246,7 +231,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
           inventoryItems={inventoryItems}
           serviceTypes={serviceTypes}
           onCancelService={handleCancelRecord}
-          mode={formMode}
+          mode='service'
           onSave={handleSaveRecord}
           onComplete={handleConfirmCompletion}
         />
