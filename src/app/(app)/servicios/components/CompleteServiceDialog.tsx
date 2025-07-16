@@ -132,14 +132,14 @@ export function CompleteServiceDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md p-0">
+        <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle>Completar y Cobrar Servicio</DialogTitle>
           <DialogDescription>
             Confirme el método de pago para el vehículo {service.vehicleIdentifier}.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-4">
+        <div className="p-6 space-y-4">
             <div className="text-center p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">Total a Pagar</p>
                 <p className="text-4xl font-bold text-primary">{formatCurrency(service.totalCost)}</p>
@@ -184,7 +184,7 @@ export function CompleteServiceDialog({
                 </form>
             </Form>
         </div>
-        <DialogFooter>
+        <DialogFooter className="p-6 pt-4 border-t bg-background">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button type="submit" form="complete-service-form">
             Cobrar y Completar
