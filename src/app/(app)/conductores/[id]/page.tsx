@@ -141,16 +141,34 @@ export default function DriverDetailPage() {
     }
   };
   
-  const handleAssignVehicle = async (vehicleId: string) => {
-    try {
-        await inventoryService.saveVehicle({ assignedVehicleId: vehicleId } as any, driver?.assignedVehicleId);
-        await personnelService.saveDriver({ assignedVehicleId: vehicleId } as any, driverId);
-        await fetchDriverData();
-        toast({ title: "Vehículo Asignado", description: "Se ha asignado el nuevo vehículo al conductor." });
-    } catch(e) {
-         toast({ title: "Error al Asignar", variant: "destructive"});
+const handleAssignVehicle = async (newVehicleId: string) => {
+  if (!driver) return toast({ title: "Error", description: "No se encontró el conductor.", variant: "destructive" });
+
+  const oldVehicleId = driver.assignedVehicleId;
+
+  try {
+    const updates = [];
+
+    // 1. Unassign the old vehicle if it exists
+    if (oldVehicleId) {
+      updates.push(inventoryService.saveVehicle({ assignedVehicleId: null } as any, oldVehicleId));
     }
+
+    // 2. Assign the new vehicle
+    updates.push(inventoryService.saveVehicle({ assignedVehicleId: driver.id } as any, newVehicleId));
+
+    // 3. Update the driver's assigned vehicle ID
+    updates.push(personnelService.saveDriver({ assignedVehicleId: newVehicleId }, driverId));
+
+    await Promise.all(updates);
+    
+    await fetchDriverData();
+    toast({ title: "Vehículo Asignado", description: "Se ha asignado el nuevo vehículo al conductor." });
+  } catch(e) {
+    console.error("Error al asignar vehículo:", e);
+    toast({ title: "Error al Asignar", description: `Ocurrió un error: ${e instanceof Error ? e.message : 'Error desconocido'}`, variant: "destructive"});
   }
+}
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -569,3 +587,5 @@ export default function DriverDetailPage() {
     </>
   );
 }
+
+    
