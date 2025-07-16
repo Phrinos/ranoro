@@ -82,9 +82,9 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
   
   const financialLineData = [
       { key: 'ingresos', name: 'Ingresos', color: '#3b82f6' }, // blue
-      { key: 'ganancia', name: 'Ganancia', color: '#A0A0A0' }, // gray
-      { key: 'gastos', name: 'Gastos', color: 'hsl(var(--primary))' }, // red
-      { key: 'costos', name: 'Costos', color: '#f97316' }, // orange
+      { key: 'ganancia', name: 'Ganancia', color: '#22c55e' }, // green-500
+      { key: 'gastos', name: 'Gastos', color: '#ef4444' }, // red-500
+      { key: 'costos', name: 'Costos', color: '#f97316' }, // orange-500
   ];
   
   const operationalLineColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -148,7 +148,7 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
                     <YAxis dataKey="name" type="category" fontSize={12} tickLine={false} axisLine={false} width={80} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
                     <Legend />
-                    <Bar dataKey="Mes Anterior" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="Mes Anterior" fill="hsl(var(--secondary-foreground))" radius={[0, 4, 4, 0]} />
                     <Bar dataKey="Mes Actual" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
                     {monthlyComparisonData.map((entry, index) => {
                         const netProfit = entry['Utilidad Neta'];
