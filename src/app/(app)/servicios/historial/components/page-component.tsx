@@ -1,8 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
-import { useSearchParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { ServiceDialog } from "../../components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { CompleteServiceDialog } from "../../components/CompleteServiceDialog";
@@ -41,12 +40,9 @@ const paymentMethodOptions: { value: PaymentMethod | 'all'; label: string }[] = 
 ];
 
 
-export function HistorialServiciosPageComponent() {
+export function HistorialServiciosPageComponent({ status }: { status?: string }) {
   const { toast } = useToast();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  
-  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "activos");
+  const [activeTab, setActiveTab] = useState(status || "activos");
 
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -90,23 +86,6 @@ export function HistorialServiciosPageComponent() {
 
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
-
-  // Effect to handle opening a service for editing via URL param
-  useEffect(() => {
-    const serviceId = searchParams.get('id');
-    const editMode = searchParams.get('edit');
-
-    if (editMode === 'true' && serviceId && allServices.length > 0) {
-      const serviceToEdit = allServices.find(s => s.id === serviceId);
-      if (serviceToEdit) {
-        handleEditService(serviceToEdit);
-        // Clean up URL params after opening dialog
-        const newUrl = window.location.pathname;
-        router.replace(newUrl, { scroll: false });
-      }
-    }
-  }, [searchParams, allServices, router]);
-
 
   const activeServices = useMemo(() => {
     if (!allServices) return [];

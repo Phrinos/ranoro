@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -83,12 +82,9 @@ function CashTransactionForm({ type, onSubmit }: { type: 'Entrada' | 'Salida', o
   )
 }
 
-export function PosPageComponent() {
+export function PosPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
-  const searchParams = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'informe';
-
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeTab, setActiveTab] = useState(tab || 'informe');
   const [isLoading, setIsLoading] = useState(true);
 
   // States for data from Firestore
