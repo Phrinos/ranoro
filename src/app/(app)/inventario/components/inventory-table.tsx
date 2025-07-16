@@ -44,6 +44,7 @@ export const InventoryTable = React.memo(({ items }: InventoryTableProps) => {
             <TableHead className="font-bold text-white">Categoría</TableHead>
             <TableHead className="font-bold text-white">Marca</TableHead>
             <TableHead className="font-bold text-white">Nombre</TableHead>
+            <TableHead className="font-bold text-white">SKU</TableHead>
             <TableHead className="text-right font-bold text-white">Cantidad</TableHead>
             <TableHead className="text-right font-bold text-white">Costo</TableHead>
             <TableHead className="text-right font-bold text-white">Precio</TableHead>
@@ -60,6 +61,7 @@ export const InventoryTable = React.memo(({ items }: InventoryTableProps) => {
               <TableCell>{item.category}</TableCell>
               <TableCell>{item.brand || 'N/A'}</TableCell>
               <TableCell>{item.name}</TableCell>
+              <TableCell>{item.sku || 'N/A'}</TableCell>
               <TableCell className="text-right">
                 {item.isService ? (
                   <Badge variant="outline">Servicio</Badge>
