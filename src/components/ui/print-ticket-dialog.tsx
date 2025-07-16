@@ -48,7 +48,7 @@ export function PrintTicketDialog({
         else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-2xl max-h-[90vh] flex flex-row p-0",
+        "sm:max-w-2xl max-h-[90vh] flex flex-col sm:flex-row p-0",
         dialogContentClassName
       )}>
         <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 print:p-0 print:bg-white">
@@ -61,7 +61,7 @@ export function PrintTicketDialog({
           <div
             className={cn(
               "print:hidden flex-shrink-0 border-l bg-background p-4",
-              "flex flex-col justify-between w-56"
+              "flex flex-col justify-between w-full sm:w-56"
             )}
           >
             {/* header fijo en la parte superior */}

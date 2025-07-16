@@ -61,8 +61,9 @@ const addItem = async (data: InventoryItemFormValues): Promise<InventoryItem> =>
       unitPrice: Number(data.unitPrice) || 0,
       sellingPrice: Number(data.sellingPrice) || 0,
     };
-    const docRef = await addDoc(collection(db, 'inventory'), cleanObjectForFirestore(newItemData));
-    return { id: docRef.id, ...newItemData };
+    const cleanedData = cleanObjectForFirestore(newItemData);
+    const docRef = await addDoc(collection(db, 'inventory'), cleanedData);
+    return { id: docRef.id, ...newItemData } as InventoryItem;
 };
 
 

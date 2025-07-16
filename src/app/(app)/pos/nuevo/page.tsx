@@ -12,7 +12,7 @@ import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supp
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService } from '@/lib/services';
-import { Loader2, Copy, Printer, MessageSquare } from 'lucide-react';
+import { Loader2, Copy, Printer, MessageSquare, Save, X } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
@@ -203,11 +203,11 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
 
   return (
     <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Registrar Nueva Venta</h1>
-        <p className="text-primary-foreground/80 mt-1">Complete los artículos y detalles para la nueva venta.</p>
-      </div>
-
+      <PageHeader
+        title="Registrar Nueva Venta"
+        description="Complete los artículos y detalles para la nueva venta."
+      />
+      
       <FormProvider {...methods}>
         <PosForm
           inventoryItems={currentInventoryItems} 
@@ -216,6 +216,24 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           categories={allCategories}
           suppliers={allSuppliers}
         />
+        <div className="mt-6 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => router.push('/pos')}>
+                <X className="mr-2 h-4 w-4" />
+                Cancelar
+            </Button>
+            <Button
+                type="submit"
+                form="pos-form"
+                disabled={methods.formState.isSubmitting}
+            >
+                {methods.formState.isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                )}
+                Completar Venta
+            </Button>
+        </div>
       </FormProvider>
 
       {saleForTicket && (

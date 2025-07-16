@@ -1,3 +1,4 @@
+
 // src/hooks/use-service-form-hooks.ts
 
 import { useMemo } from 'react';
@@ -29,10 +30,4 @@ export function useServiceTotals(form: UseFormReturn<ServiceFormValues>) {
       serviceProfit: total - cost,
     };
   }, [watchedItems]);
-}
-
-// This hook is now obsolete since the logic has been moved to useMemo in the form component.
-// It is kept here as an empty placeholder to avoid breaking imports, but it does nothing.
-export function useInitServiceForm() {
-  // Deprecated: Logic moved to useMemo in ServiceForm.
 }

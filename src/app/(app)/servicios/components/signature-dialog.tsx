@@ -35,6 +35,7 @@ export function SignatureDialog({ open, onOpenChange, onSave }: SignatureDialogP
     const signatureData = sigCanvas.current?.getTrimmedCanvas().toDataURL("image/png");
     if (signatureData) {
         onSave(signatureData);
+        // onOpenChange(false) will be handled by the parent component after saving
     }
   };
 

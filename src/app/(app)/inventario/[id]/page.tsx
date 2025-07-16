@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Archive, Edit, ShieldAlert, Package, Server, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -61,7 +61,7 @@ export default function InventoryItemDetailPage() {
     }
     try {
       const fetchedItem = await inventoryService.getDocById('inventory', itemId);
-      setItem(fetchedItem || null);
+      setItem(fetchedItem);
 
       if (fetchedItem) {
         const [servicesData, salesData, categoriesData, suppliersData] = await Promise.all([
@@ -114,7 +114,6 @@ export default function InventoryItemDetailPage() {
         }))
     );
     
-    // NOTE: Purchase history (Entrada) would need to be sourced from a 'purchases' collection if it existed.
     const allMovements = [...serviceExits, ...saleExits]
         .filter(move => move.date && isValid(parseDate(move.date)!))
         .sort((a,b) => parseDate(b.date)!.getTime() - parseDate(a.date)!.getTime());

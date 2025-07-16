@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Receipt } from 'lucide-react';
+import { Receipt, Save, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 const IVA_RATE = 0.16;
@@ -40,10 +40,7 @@ export function SaleSummary() {
           <div className="text-sm text-muted-foreground w-full flex justify-between"><span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span> <span className="font-semibold">{formatCurrency(tax)}</span></div>
           <div className="text-2xl font-bold w-full flex justify-between"><span>Total:</span> <span className="text-primary">{formatCurrency(total)}</span></div>
         </div>
-        <Button type="submit" size="lg" className="w-full" disabled={formState.isSubmitting || watchedItems.length === 0}>
-          <Receipt className="mr-2 h-5 w-5" />
-          {formState.isSubmitting ? "Procesando..." : "Completar Venta"}
-        </Button>
+        {/* The submit button is now in the page component, not here */}
       </CardContent>
     </Card>
   );
