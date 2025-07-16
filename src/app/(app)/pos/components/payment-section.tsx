@@ -35,7 +35,7 @@ export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnl
   const selectedPaymentMethod = watch("paymentMethod");
 
   return (
-    <Card className="h-full">
+    <Card>
       <CardHeader>
         <CardTitle>Detalles de Pago</CardTitle>
       </CardHeader>

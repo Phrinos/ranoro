@@ -57,10 +57,10 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
   };
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader><CardTitle>Artículos vendidos</CardTitle></CardHeader>
-      <CardContent>
-        <ScrollArea className="max-h-[300px] pr-4 flex-grow">
+      <CardContent className="flex flex-col flex-grow">
+        <ScrollArea className="flex-grow pr-4">
           {fields.length > 0 ? (
             <div className="space-y-4">
               {fields.map((field, index) => (
@@ -98,7 +98,9 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
             </div>
           )}
         </ScrollArea>
-        <Button type="button" variant="outline" size="sm" onClick={onAddItem} className="mt-4"><PlusCircle className="mr-2 h-4 w-4" />Añadir Artículo/Servicio</Button>
+        <div className="mt-4 flex justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={onAddItem}><PlusCircle className="mr-2 h-4 w-4" />Añadir Artículo/Servicio</Button>
+        </div>
       </CardContent>
     </Card>
   );
