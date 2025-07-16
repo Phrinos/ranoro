@@ -8,11 +8,9 @@ export default function InventarioPageWrapper({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const tab = searchParams?.tab as string | undefined;
-
   return (
     <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <InventarioPageComponent tab={tab} />
+      <InventarioPageComponent searchParams={searchParams} />
     </Suspense>
   );
 }

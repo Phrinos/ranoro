@@ -39,6 +39,7 @@ export default function LegalLayout({
                     fill
                     className="object-cover object-center"
                     sizes="(max-width: 768px) 100vw, 896px"
+                    priority
                 />
             </div>
           <article className="prose dark:prose-invert max-w-none rounded-b-xl border-x border-b bg-card p-4 sm:p-6 md:p-8 lg:p-10 shadow-sm">

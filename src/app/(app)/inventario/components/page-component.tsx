@@ -29,7 +29,12 @@ import { PrintLetterDialog } from '@/components/ui/print-letter-dialog';
 import { InventoryReportContent } from './inventory-report-content';
 
 
-export function InventarioPageComponent({ tab }: { tab?: string }) {
+export function InventarioPageComponent({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const tab = searchParams?.tab as string | undefined;
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState(tab || 'informe');
   
@@ -45,6 +50,8 @@ export function InventarioPageComponent({ tab }: { tab?: string }) {
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+  const printContentRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -216,7 +223,7 @@ export function InventarioPageComponent({ tab }: { tab?: string }) {
           onOpenChange={setIsPrintDialogOpen}
           title="Reporte de Inventario"
       >
-        <InventoryReportContent items={itemsToPrint} />
+        <InventoryReportContent ref={printContentRef} items={itemsToPrint} />
       </PrintLetterDialog>
     </>
   );

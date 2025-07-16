@@ -106,6 +106,7 @@ export default function LandingPage() {
               className="dark:invert"
               sizes="140px"
               data-ai-hint="ranoro logo"
+              priority
             />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
@@ -134,6 +135,7 @@ export default function LandingPage() {
               className="object-cover object-center"
               sizes="100vw"
               data-ai-hint="mechanic workshop"
+              priority
             />
             <div className="absolute inset-0 bg-black/60 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
           </div>
