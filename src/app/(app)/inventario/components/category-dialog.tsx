@@ -20,6 +20,7 @@ interface CategoryDialogProps {
 
 export function CategoryDialog({ open, onOpenChange, category, onSave, existingCategories }: CategoryDialogProps) {
   const [name, setName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,42 +31,55 @@ export function CategoryDialog({ open, onOpenChange, category, onSave, existingC
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const trimmedName = name.trim();
     if (!trimmedName) {
-      return toast({ title: "El nombre no puede estar vacío.", variant: "destructive" });
+      toast({ title: "El nombre no puede estar vacío.", variant: "destructive" });
+      setIsSubmitting(false);
+      return;
     }
     if (existingCategories.some(c => c.name.toLowerCase() === trimmedName.toLowerCase() && c.name !== category?.name)) {
-      return toast({ title: "Esa categoría ya existe.", variant: "destructive" });
+      toast({ title: "Esa categoría ya existe.", variant: "destructive" });
+      setIsSubmitting(false);
+      return;
     }
     
-    await onSave(trimmedName, category?.id);
-    onOpenChange(false);
+    try {
+      await onSave(trimmedName, category?.id);
+      onOpenChange(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md p-0 flex flex-col max-h-[90vh]">
+        <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle>{category ? "Editar Categoría" : "Nueva Categoría"}</DialogTitle>
           <DialogDescription>
             {category ? "Modifica el nombre de la categoría." : "Añade una nueva categoría para organizar tus productos."}
           </DialogDescription>
         </DialogHeader>
-        <form id="category-form" onSubmit={handleSubmit} className="py-4">
-          <Label htmlFor="category-name">Nombre de la Categoría</Label>
-          <Input
-            id="category-name"
-            value={name}
-            onChange={(e) => setName(capitalizeWords(e.target.value))}
-            className="mt-2"
-            placeholder="Ej: Filtros, Aceites"
-          />
-        </form>
-        <DialogFooter>
+        <div className="flex-grow overflow-y-auto px-6">
+            <form id="category-form" onSubmit={handleSubmit} className="py-4">
+            <Label htmlFor="category-name">Nombre de la Categoría</Label>
+            <Input
+                id="category-name"
+                value={name}
+                onChange={(e) => setName(capitalizeWords(e.target.value))}
+                className="mt-2"
+                placeholder="Ej: Filtros, Aceites"
+            />
+            </form>
+        </div>
+        <DialogFooter className="p-6 pt-4 border-t bg-background sticky bottom-0">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button type="submit" form="category-form">Guardar</Button>
+          <Button type="submit" form="category-form" disabled={isSubmitting}>
+            {isSubmitting ? "Guardando..." : "Guardar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
