@@ -48,7 +48,7 @@ export function PrintTicketDialog({
     }}>
       <DialogContent className={cn(
         "sm:max-w-md",
-        "flex flex-col max-h-[90vh]",
+        "max-h-[90vh] flex flex-col p-0", // Use flex layout
         dialogContentClassName
       )}>
         <DialogHeader className="print:hidden flex-shrink-0 no-print p-6 pb-2">
