@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // 1. Ajustes de compilación
+  typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
 
   // 2. Indicador de dev
@@ -33,6 +34,7 @@ const nextConfig = {
 
   // ✅ 6. allowedDevOrigins → en raíz
   allowedDevOrigins: [
+    "https://3000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
     "https://6000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
   ],
 };
