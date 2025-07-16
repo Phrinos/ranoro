@@ -222,25 +222,24 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
     // Deduct inventory
     if (service.serviceItems && service.serviceItems.length > 0) {
         const allSupplies = service.serviceItems.flatMap(item => item.suppliesUsed || []);
-        const inventoryUpdates = new Map<string, number>();
+        if (allSupplies.length > 0) {
+            const inventoryUpdates = new Map<string, number>();
+            allSupplies.forEach(supply => {
+                if (supply.supplyId && !supply.isService) {
+                    inventoryUpdates.set(supply.supplyId, (inventoryUpdates.get(supply.supplyId) || 0) + supply.quantity);
+                }
+            });
+            
+            const inventoryItems = await inventoryService.onItemsUpdatePromise();
+            const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
 
-        allSupplies.forEach(supply => {
-            if (supply.supplyId && !supply.isService) {
-                inventoryUpdates.set(supply.supplyId, (inventoryUpdates.get(supply.supplyId) || 0) + supply.quantity);
-            }
-        });
-        
-        // Fetch all inventory items once to avoid multiple reads inside the loop
-        const inventoryItems = await inventoryService.onItemsUpdatePromise();
-        const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
-
-        for (const [itemId, quantityToDeduct] of inventoryUpdates.entries()) {
-            const item = inventoryMap.get(itemId);
-            // Only proceed if the item exists in our inventory map
-            if(item) {
-                const itemRef = doc(db, "inventory", itemId);
-                const newQuantity = Math.max(0, item.quantity - quantityToDeduct);
-                batch.update(itemRef, { quantity: newQuantity });
+            for (const [itemId, quantityToDeduct] of inventoryUpdates.entries()) {
+                const item = inventoryMap.get(itemId);
+                if (item) {
+                    const itemRef = doc(db, "inventory", itemId);
+                    const newQuantity = Math.max(0, item.quantity - quantityToDeduct);
+                    batch.update(itemRef, { quantity: newQuantity });
+                }
             }
         }
     }
@@ -537,3 +536,4 @@ export const operationsService = {
     addVehicleExpense,
     addOwnerWithdrawal,
 };
+
