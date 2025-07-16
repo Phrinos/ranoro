@@ -215,7 +215,7 @@ function RentasPageComponent({
         open={!!paymentForReceipt}
         onOpenChange={(isOpen) => !isOpen && setPaymentForReceipt(null)}
         title="Recibo de Pago de Renta"
-        dialogContentClassName="printable-content"
+        dialogContentClassName="printable-content sm:max-w-md"
         footerActions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4" /> Copiar Imagen</Button>

@@ -192,41 +192,6 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     }
   }, [toast]);
   
-  const handlePrint = () => {
-    const content = ticketContentRef.current;
-    if (!content) return;
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write('<div class="printable-content">');
-      printWindow.document.write(content.innerHTML);
-      printWindow.document.write('</div>');
-      
-      const stylesheets = Array.from(document.getElementsByTagName('link'));
-      stylesheets.forEach(sheet => {
-          if (sheet.rel === 'stylesheet' && sheet.href) {
-            const link = printWindow.document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = sheet.href;
-            printWindow.document.head.appendChild(link);
-          }
-      });
-
-      const style = printWindow.document.createElement('style');
-      style.innerHTML = `
-        @media print {
-          body * { visibility: hidden; }
-          .printable-content, .printable-content * { visibility: visible; }
-          .printable-content { position: absolute; left: 0; top: 0; }
-        }
-      `;
-      printWindow.document.head.appendChild(style);
-
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-    }
-  };
 
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
@@ -255,7 +220,7 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           onOpenChange={handleDialogClose}
           title="Venta Completada"
           description={`Ticket para la venta #${saleForTicket.id}`}
-          dialogContentClassName="sm:max-w-md"
+          dialogContentClassName="sm:max-w-md printable-content"
           footerActions={
             <div className="flex flex-col-reverse sm:flex-row gap-2 w-full justify-end">
               <Button onClick={handleCopySaleForWhatsapp} variant="outline" className="w-full sm:w-auto">
@@ -264,19 +229,17 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
               <Button variant="outline" onClick={handleCopyAsImage} className="w-full sm:w-auto">
                   <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
               </Button>
-              <Button onClick={handlePrint} className="w-full sm:w-auto">
+              <Button onClick={() => window.print()} className="w-full sm:w-auto">
                   <Printer className="mr-2 h-4 w-4"/>Imprimir
               </Button>
             </div>
           }
         >
-          <div className="printable-content">
-            <TicketContent
-              ref={ticketContentRef}
-              sale={saleForTicket}
-              previewWorkshopInfo={workshopInfo || undefined}
-            />
-          </div>
+          <TicketContent
+            ref={ticketContentRef}
+            sale={saleForTicket}
+            previewWorkshopInfo={workshopInfo || undefined}
+          />
         </PrintTicketDialog>
       )}
     </>
