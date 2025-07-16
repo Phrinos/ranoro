@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, PackagePlus, Plus, Minus, ArrowLeft } from 'lucide-react';
 import type { InventoryItem, ServiceSupply } from '@/types';
@@ -24,85 +23,57 @@ interface AddSupplyDialogProps {
 
 export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSupply, onNewItemRequest }: AddSupplyDialogProps) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('inventory');
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null);
-  const [inventoryQuantity, setInventoryQuantity] = useState(1);
-  
-  const [manualName, setManualName] = useState('');
-  const [manualQuantity, setManualQuantity] = useState(1);
-  const [manualCost, setManualCost] = useState<number | undefined>(undefined);
-  const [manualSellingPrice, setManualSellingPrice] = useState<number | undefined>(undefined);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [quantity, setQuantity] = useState(1);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) {
-      return inventoryItems.filter(item => !item.isService);
+      return inventoryItems.slice(0, 10); // Show both services and products initially
     }
     const lowerSearchTerm = searchTerm.toLowerCase();
-    return inventoryItems.filter(
-      (item) =>
-        !item.isService &&
-        (item.name.toLowerCase().includes(lowerSearchTerm) ||
-         (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm)))
-    );
+    return inventoryItems.filter(item =>
+        item.name.toLowerCase().includes(lowerSearchTerm) ||
+        (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm))
+    ).slice(0, 10);
   }, [searchTerm, inventoryItems]);
 
-  const resetForms = () => {
+  const resetState = () => {
     setSearchTerm('');
-    setSelectedInventoryItem(null);
-    setInventoryQuantity(1);
-    setManualName('');
-    setManualQuantity(1);
-    setManualCost(undefined);
-    setManualSellingPrice(undefined);
+    setSelectedItem(null);
+    setQuantity(1);
   };
   
   useEffect(() => {
     if (open) {
-      resetForms();
-      setActiveTab('inventory');
+      resetState();
     }
   }, [open]);
 
-  const handleSelectFromInventory = (item: InventoryItem) => {
-    setSelectedInventoryItem(item);
-    setInventoryQuantity(1);
+  const handleSelectItem = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setQuantity(1);
   };
 
-  const handleConfirmInventoryAdd = () => {
-    if (!selectedInventoryItem) return;
-    if (inventoryQuantity <= 0) {
+  const handleConfirmAdd = () => {
+    if (!selectedItem) return;
+    if (quantity <= 0) {
       toast({ title: 'Cantidad inválida', variant: 'destructive' });
       return;
     }
-    if (selectedInventoryItem.quantity < inventoryQuantity) {
-      toast({ title: 'Sin Stock', description: `No hay suficiente stock para ${selectedInventoryItem.name}.`, variant: 'destructive' });
+    if (!selectedItem.isService && selectedItem.quantity < quantity) {
+      toast({ title: 'Sin Stock', description: `Solo hay ${selectedItem.quantity} de ${selectedItem.name}.`, variant: 'destructive' });
       return;
     }
     onAddSupply({
-      supplyId: selectedInventoryItem.id,
-      supplyName: selectedInventoryItem.name,
-      quantity: inventoryQuantity,
-      unitPrice: selectedInventoryItem.unitPrice,
-      sellingPrice: selectedInventoryItem.sellingPrice,
-      unitType: selectedInventoryItem.unitType,
-    });
-    onOpenChange(false);
-  };
-
-  const handleAddManualSupply = () => {
-    if (!manualName.trim() || manualQuantity <= 0 || manualCost === undefined || manualCost < 0 || manualSellingPrice === undefined || manualSellingPrice < 0) {
-      toast({ title: 'Datos incompletos', description: 'Por favor, complete todos los campos del insumo manual.', variant: 'destructive' });
-      return;
-    }
-    onAddSupply({
-      supplyId: `manual_${Date.now()}`,
-      supplyName: manualName.trim(),
-      quantity: manualQuantity,
-      unitPrice: manualCost,
-      sellingPrice: manualSellingPrice,
-      unitType: 'units',
+      supplyId: selectedItem.id,
+      supplyName: selectedItem.name,
+      quantity: quantity,
+      unitPrice: selectedItem.unitPrice,
+      sellingPrice: selectedItem.sellingPrice,
+      isService: selectedItem.isService,
+      unitType: selectedItem.unitType,
     });
     onOpenChange(false);
   };
@@ -113,131 +84,107 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
         <DialogHeader>
           <DialogTitle>Añadir Insumo al Servicio</DialogTitle>
           <DialogDescription>
-            Busque en su inventario o agregue un insumo manualmente.
+            Busque en su inventario o cree un nuevo artículo para añadirlo.
           </DialogDescription>
         </DialogHeader>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="inventory">Buscar en Inventario</TabsTrigger>
-            <TabsTrigger value="manual">Insumo Manual</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="inventory" className="space-y-4">
-            {!selectedInventoryItem ? (
-              <>
-                <div className="relative mt-2">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por nombre o SKU..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-                <ScrollArea className="h-60 border rounded-md">
-                  <div className="p-2 space-y-1">
-                    {filteredItems.length > 0 ? (
-                      filteredItems.map((item) => (
-                        <Button
-                          key={item.id}
-                          variant="ghost"
-                          className="w-full justify-start text-left h-auto py-1.5 px-2"
-                          onClick={() => handleSelectFromInventory(item)}
-                        >
-                          <div>
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Stock: {item.quantity} | Costo: {formatCurrency(item.unitPrice)} | Venta: {formatCurrency(item.sellingPrice)}
-                            </p>
-                          </div>
-                        </Button>
-                      ))
-                    ) : (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        {searchTerm ? (
-                            <div className="flex flex-col items-center gap-2">
-                                <span>No se encontraron productos.</span>
-                                <Button variant="link" size="sm" onClick={() => onNewItemRequest(searchTerm)}>
-                                    <PackagePlus className="mr-2 h-4 w-4"/>
-                                    Crear Nuevo Artículo "{searchTerm}"
-                                </Button>
-                            </div>
-                        ) : 'No hay productos para mostrar.'}
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </>
-            ) : (
-              <div className="pt-2 space-y-4">
-                <div className="p-2 border rounded-md bg-muted">
-                  <p className="font-medium text-sm">Artículo: {selectedInventoryItem.name}</p>
-                  <p className="text-xs text-muted-foreground">Stock Disponible: {selectedInventoryItem.quantity}</p>
-                </div>
-                <div className="flex justify-between items-end pt-2">
-                  <Button variant="ghost" onClick={() => setSelectedInventoryItem(null)}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Cambiar Artículo
-                  </Button>
-                  <div className="text-right">
-                    <Label htmlFor="inventory-quantity" className="text-xs">Cantidad a Añadir</Label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setInventoryQuantity(q => Math.max(1, q - 1))}>
-                        <Minus className="h-4 w-4" />
+
+        <div className="space-y-4 py-4 min-h-[300px]">
+          {!selectedItem ? (
+            <>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nombre o SKU..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <ScrollArea className="h-60 border rounded-md">
+                <div className="p-2 space-y-1">
+                  {filteredItems.length > 0 ? (
+                    filteredItems.map((item) => (
+                      <Button
+                        key={item.id}
+                        variant="ghost"
+                        className="w-full justify-start text-left h-auto py-1.5 px-2"
+                        onClick={() => handleSelectItem(item)}
+                      >
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.isService ? "Servicio" : `Stock: ${item.quantity}`} | Costo: {formatCurrency(item.unitPrice)}
+                          </p>
+                        </div>
                       </Button>
-                      <Input
-                        id="inventory-quantity"
-                        type="number"
-                        value={inventoryQuantity}
-                        onChange={(e) => setInventoryQuantity(Number(e.target.value))}
-                        className="w-20 text-center h-8"
-                      />
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setInventoryQuantity(q => q + 1)}>
-                        <Plus className="h-4 w-4" />
-                      </Button>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      {searchTerm ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <span>No se encontraron resultados.</span>
+                          <Button variant="link" size="sm" onClick={() => onNewItemRequest(searchTerm)}>
+                            <PackagePlus className="mr-2 h-4 w-4" />
+                            Crear Nuevo Artículo "{searchTerm}"
+                          </Button>
+                        </div>
+                      ) : 'No hay artículos para mostrar.'}
                     </div>
-                  </div>
+                  )}
                 </div>
-                <div className="flex justify-end pt-4 border-t">
-                    <Button onClick={handleConfirmInventoryAdd}>Añadir al Servicio</Button>
+              </ScrollArea>
+            </>
+          ) : (
+            <div className="pt-2 space-y-4">
+              <div className="p-3 border rounded-md bg-muted">
+                <p className="font-semibold text-sm">Artículo: {selectedItem.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedItem.isService ? "Servicio" : `Stock Disponible: ${selectedItem.quantity}`}
+                </p>
+              </div>
+              <div className="flex justify-between items-end pt-2">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedItem(null)}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Cambiar Insumo
+                </Button>
+                <div className="text-right">
+                  <Label htmlFor="inventory-quantity" className="text-xs">
+                    Cantidad a Añadir ({selectedItem.unitType === 'ml' ? 'ml' : selectedItem.unitType === 'liters' ? 'L' : 'uds.'})
+                  </Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))}>
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <Input
+                      id="inventory-quantity"
+                      type="number"
+                      step="any"
+                      min="0.001"
+                      value={quantity}
+                      onChange={(e) => setQuantity(parseFloat(e.target.value.replace(',', '.')) || 0)}
+                      className="w-20 text-center h-8"
+                    />
+                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
-            )}
-          </TabsContent>
+            </div>
+          )}
+        </div>
 
-          <TabsContent value="manual" className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label htmlFor="manual-name">Nombre del Insumo</Label>
-              <Input id="manual-name" value={manualName} onChange={e => setManualName(capitalizeWords(e.target.value))} placeholder="Ej: Tornillo especial"/>
-            </div>
-             <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="manual-cost">Costo Unitario (Taller)</Label>
-                  <Input id="manual-cost" type="number" step="0.01" min="0" value={manualCost ?? ''} onChange={e => setManualCost(Number(e.target.value))} placeholder="Ej: 15.50"/>
-                </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="manual-selling-price">Precio Venta (IVA Inc.)</Label>
-                  <Input id="manual-selling-price" type="number" step="0.01" min="0" value={manualSellingPrice ?? ''} onChange={e => setManualSellingPrice(Number(e.target.value))} placeholder="Ej: 25.00"/>
-                </div>
-             </div>
-             <div className="space-y-2">
-                  <Label htmlFor="manual-quantity">Cantidad</Label>
-                  <div className="flex items-center gap-2">
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setManualQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
-                      <Input id="manual-quantity" type="number" min="1" value={manualQuantity} onChange={e => setManualQuantity(Number(e.target.value))} className="w-20 text-center"/>
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setManualQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
-                  </div>
-            </div>
-             <Button onClick={handleAddManualSupply} className="w-full">
-                <PackagePlus className="mr-2 h-4 w-4" />
-                Añadir Insumo Manual
-             </Button>
-          </TabsContent>
-        </Tabs>
-         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          {selectedItem && (
+            <Button onClick={handleConfirmAdd}>
+              <Plus className="mr-2 h-4 w-4" />
+              Añadir al Servicio
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
