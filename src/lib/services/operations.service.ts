@@ -220,23 +220,25 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
     }
 
     // Deduct inventory
-    const allSupplies = service.serviceItems.flatMap(item => item.suppliesUsed || []);
-    const inventoryUpdates = new Map<string, number>();
+    if (service.serviceItems && service.serviceItems.length > 0) {
+        const allSupplies = service.serviceItems.flatMap(item => item.suppliesUsed || []);
+        const inventoryUpdates = new Map<string, number>();
 
-    allSupplies.forEach(supply => {
-        if (!supply.isService) {
-            inventoryUpdates.set(supply.supplyId, (inventoryUpdates.get(supply.supplyId) || 0) + supply.quantity);
-        }
-    });
+        allSupplies.forEach(supply => {
+            if (!supply.isService) {
+                inventoryUpdates.set(supply.supplyId, (inventoryUpdates.get(supply.supplyId) || 0) + supply.quantity);
+            }
+        });
 
-    const inventoryItems = await inventoryService.onItemsUpdatePromise();
+        const inventoryItems = await inventoryService.onItemsUpdatePromise();
 
-    for (const [itemId, quantityToDeduct] of inventoryUpdates.entries()) {
-        const item = inventoryItems.find(inv => inv.id === itemId);
-        if(item) {
-            const itemRef = doc(db, "inventory", itemId);
-            const newQuantity = Math.max(0, item.quantity - quantityToDeduct);
-            batch.update(itemRef, { quantity: newQuantity });
+        for (const [itemId, quantityToDeduct] of inventoryUpdates.entries()) {
+            const item = inventoryItems.find(inv => inv.id === itemId);
+            if(item) {
+                const itemRef = doc(db, "inventory", itemId);
+                const newQuantity = Math.max(0, item.quantity - quantityToDeduct);
+                batch.update(itemRef, { quantity: newQuantity });
+            }
         }
     }
 };
