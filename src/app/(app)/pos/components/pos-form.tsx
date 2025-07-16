@@ -63,13 +63,15 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
   return (
     <>
       <form onSubmit={methods.handleSubmit(onSaleComplete)} className="space-y-6">
-        <SaleItemsList onAddItem={handleOpenAddItemDialog} inventoryItems={inventoryItems} />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+          {/* Columna Izquierda: Lista de Artículos */}
           <div className="lg:col-span-3">
-            <PaymentSection />
+            <SaleItemsList onAddItem={handleOpenAddItemDialog} inventoryItems={inventoryItems} />
           </div>
-          <div className="lg:col-span-2">
+
+          {/* Columna Derecha: Pago y Resumen */}
+          <div className="lg:col-span-2 space-y-6">
+            <PaymentSection />
             <SaleSummary />
           </div>
         </div>
