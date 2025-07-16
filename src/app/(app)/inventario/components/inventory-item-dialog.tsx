@@ -112,7 +112,7 @@ export function InventoryItemDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
          {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b">
             <DialogTitle>{isEditing ? "Editar Producto de Inventario" : "Nuevo Producto de Inventario"}</DialogTitle>
             <DialogDescription>
