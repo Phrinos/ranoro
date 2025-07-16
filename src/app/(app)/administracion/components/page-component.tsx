@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";
@@ -13,6 +14,7 @@ import { MigracionPageContent } from "./migracion-content";
 import { RegistroIndividualContent } from './registro-individual-content';
 import { Loader2 } from "lucide-react";
 import { Shield, Users, BookOpen, DatabaseZap } from 'lucide-react';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 
 export function AdministracionPageComponent({
@@ -57,20 +59,24 @@ export function AdministracionPageComponent({
             </div>
             
             <Tabs value={activeTab} onValueChange={setAdminTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 mb-6">
-                    <TabsTrigger value="usuarios" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
-                        <Users className="h-5 w-5"/>Usuarios
-                    </TabsTrigger>
-                    <TabsTrigger value="roles" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
-                        <Shield className="h-5 w-5"/>Roles y Permisos
-                    </TabsTrigger>
-                    <TabsTrigger value="auditoria" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
-                         <BookOpen className="h-5 w-5"/>Auditoría
-                    </TabsTrigger>
-                    <TabsTrigger value="migracion" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
-                        <DatabaseZap className="h-5 w-5"/>Migración de Datos
-                    </TabsTrigger>
-                </TabsList>
+                <div className="relative mb-6">
+                    <ScrollArea className="w-full whitespace-nowrap">
+                        <TabsList className="inline-flex h-auto">
+                            <TabsTrigger value="usuarios" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                                <Users className="h-5 w-5"/>Usuarios
+                            </TabsTrigger>
+                            <TabsTrigger value="roles" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                                <Shield className="h-5 w-5"/>Roles y Permisos
+                            </TabsTrigger>
+                            <TabsTrigger value="auditoria" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                                 <BookOpen className="h-5 w-5"/>Auditoría
+                            </TabsTrigger>
+                            <TabsTrigger value="migracion" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                                <DatabaseZap className="h-5 w-5"/>Migración de Datos
+                            </TabsTrigger>
+                        </TabsList>
+                    </ScrollArea>
+                </div>
                 <TabsContent value="usuarios" className="mt-0">
                     <UsuariosPageContent currentUser={currentUser} initialUsers={users} initialRoles={roles} />
                 </TabsContent>

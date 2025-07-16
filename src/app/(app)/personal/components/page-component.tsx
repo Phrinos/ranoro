@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -24,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent } from 'lucide-react';
 import { personnelService, operationsService, inventoryService } from '@/lib/services';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 interface AggregatedTechnicianPerformance {
@@ -190,11 +192,15 @@ export function PersonalPageComponent({
       </div>
 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
-          <TabsTrigger value="tecnicos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Personal Técnico</TabsTrigger>
-          <TabsTrigger value="administrativos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Personal Administrativo</TabsTrigger>
-        </TabsList>
+        <div className="relative mb-6">
+          <ScrollArea className="w-full whitespace-nowrap">
+            <TabsList className="inline-flex h-auto">
+              <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
+              <TabsTrigger value="tecnicos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Personal Técnico</TabsTrigger>
+              <TabsTrigger value="administrativos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Personal Administrativo</TabsTrigger>
+            </TabsList>
+          </ScrollArea>
+        </div>
 
         <TabsContent value="informe" className="space-y-6">
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">

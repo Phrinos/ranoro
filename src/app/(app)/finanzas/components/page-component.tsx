@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, Suspense, useRef } from 'react';
@@ -28,6 +29,7 @@ import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { ReporteOperacionesContent } from './reporte-operaciones-content';
 import { ReporteInventarioContent } from './reporte-inventario-content';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 export function FinanzasPageComponent({
@@ -262,11 +264,15 @@ export function FinanzasPageComponent({
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6">
-                    <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
-                    <TabsTrigger value="operaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Operaciones</TabsTrigger>
-                    <TabsTrigger value="inventario" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inventario</TabsTrigger>
-                </TabsList>
+                <div className="relative mb-6">
+                    <ScrollArea className="w-full whitespace-nowrap">
+                        <TabsList className="inline-flex h-auto">
+                            <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
+                            <TabsTrigger value="operaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Operaciones</TabsTrigger>
+                            <TabsTrigger value="inventario" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inventario</TabsTrigger>
+                        </TabsList>
+                    </ScrollArea>
+                </div>
                 
                  <TabsContent value="resumen" className="mt-0">
                     <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">{dateFilterComponent}</div>
