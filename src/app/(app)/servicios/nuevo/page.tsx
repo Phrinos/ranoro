@@ -2,44 +2,72 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { PageHeader } from "@/components/page-header";
 import { ServiceForm } from "../components/service-form";
-import { operationsService, inventoryService, personnelService } from '@/lib/services';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceTypeRecord, QuoteRecord, WorkshopInfo } from "@/types";
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord } from '@/types'; 
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from 'next/navigation';
+import { inventoryService, operationsService, personnelService } from '@/lib/services';
+import { Loader2, Copy, Printer, MessageSquare, Save, X } from 'lucide-react';
+import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
+import { db } from '@/lib/firebaseClient';
+import { writeBatch, doc } from 'firebase/firestore';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
+import { formatCurrency } from '@/lib/utils';
+import { nanoid } from 'nanoid';
+import html2canvas from 'html2canvas';
+import { serviceFormSchema } from '@/schemas/service-form';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 
 
-// This page now renders the form for creating a new service record locally.
-export default function NuevoServicioPage() {
-  const router = useRouter();
-  const { toast } = useToast();
+type POSFormValues = z.infer<typeof serviceFormSchema>;
 
+export default function NuevoServicioPage() {
+  const { toast } = useToast(); 
+  const router = useRouter();
+  
+  const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>([]);
+  const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
 
+
+  const methods = useForm<POSFormValues>({
+    resolver: zodResolver(serviceFormSchema),
+  });
 
   useEffect(() => {
     const unsubs = [
+      inventoryService.onItemsUpdate(setCurrentInventoryItems),
+      inventoryService.onCategoriesUpdate(setAllCategories),
+      inventoryService.onSuppliersUpdate(setAllSuppliers),
       inventoryService.onVehiclesUpdate(setVehicles),
       personnelService.onTechniciansUpdate(setTechnicians),
-      inventoryService.onItemsUpdate(setInventoryItems),
       inventoryService.onServiceTypesUpdate((data) => {
         setServiceTypes(data);
         setIsLoading(false);
       }),
     ];
+    
+    const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
+    if (storedWorkshopInfo) {
+      try { setWorkshopInfo(JSON.parse(storedWorkshopInfo)); } catch (e) { console.error(e); }
+    }
+
     return () => unsubs.forEach(unsub => unsub());
   }, []);
 
@@ -48,7 +76,6 @@ export default function NuevoServicioPage() {
       const savedRecord = await operationsService.saveService(data);
       toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
       
-      // Open the preview dialog immediately after saving a new record
       setServiceForPreview(savedRecord);
       setIsPreviewOpen(true);
       
@@ -78,23 +105,42 @@ export default function NuevoServicioPage() {
         title="Nuevo Servicio / Cotización"
         description="Complete la información. El registro se guardará en la base de datos al finalizar."
       />
-      <ServiceForm
-        vehicles={vehicles}
-        technicians={technicians}
-        inventoryItems={inventoryItems}
-        serviceTypes={serviceTypes}
-        onSubmit={handleSaveNewService}
-        onClose={() => router.push('/servicios/historial')}
-        mode="quote" // Start as a quote by default
-        onVehicleCreated={handleVehicleCreated}
-      />
+      <FormProvider {...methods}>
+        <ServiceForm
+          vehicles={vehicles}
+          technicians={technicians}
+          inventoryItems={currentInventoryItems}
+          serviceTypes={serviceTypes}
+          onSubmit={handleSaveNewService}
+          onClose={() => router.push('/servicios/historial')}
+          mode="quote" // Start as a quote by default
+          onVehicleCreated={handleVehicleCreated}
+        />
+        <div className="mt-6 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => router.push('/servicios/historial')}>
+                <X className="mr-2 h-4 w-4" />
+                Cancelar
+            </Button>
+            <Button
+                type="submit"
+                form="service-form"
+                disabled={methods.formState.isSubmitting}
+            >
+                {methods.formState.isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                )}
+                Crear Registro
+            </Button>
+        </div>
+      </FormProvider>
       
       {serviceForPreview && (
         <UnifiedPreviewDialog
           open={isPreviewOpen}
           onOpenChange={(isOpen) => {
               setIsPreviewOpen(isOpen);
-              // If dialog is closed, redirect to the appropriate history page
               if (!isOpen) {
                   const targetPath = serviceForPreview.status === 'Cotizacion' 
                       ? '/cotizaciones/historial' 
