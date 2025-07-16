@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -69,6 +70,12 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
     return itemsToDisplay;
   }, [inventoryItems, searchTerm, sortOption]);
 
+  const handlePrint = () => {
+    requestAnimationFrame(() =>
+      setTimeout(() => onPrint(filteredAndSortedItems), 100)
+    );
+  };
+
   return (
     <div className="mt-6 space-y-4">
       <div className="space-y-2">
@@ -101,7 +108,7 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button onClick={() => onPrint(filteredAndSortedItems)} variant="default" className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>
+          <Button onClick={handlePrint} variant="default" className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>
           <Button onClick={onNewItem} className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Producto / Servicio
           </Button>

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -29,6 +30,13 @@ export function PrintLetterDialog({
   description = "Vista previa del documento.",
   children,
 }: PrintLetterDialogProps) {
+
+  const handlePrint = () => {
+    requestAnimationFrame(() =>
+      setTimeout(() => window.print(), 100)
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn("max-w-4xl max-h-[90vh] flex flex-col p-0")}>
@@ -37,14 +45,14 @@ export function PrintLetterDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         
-        <div className="flex-grow overflow-y-auto px-6 bg-muted/30 print:bg-white print:p-0">
-            <div className="printable-content print-format-letter bg-white mx-auto my-4 shadow-lg">
+        <div className="flex-grow overflow-y-auto px-6 bg-muted/30 print:p-0 print:m-0 print:bg-white">
+            <div className="printable-content bg-white mx-auto my-4 shadow-lg print:shadow-none print:m-0 print:p-0">
                  {children}
             </div>
         </div>
 
         <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
-            <Button onClick={() => window.print()}>
+            <Button onClick={handlePrint}>
                 <Printer className="mr-2 h-4 w-4" /> Imprimir
             </Button>
         </DialogFooter>

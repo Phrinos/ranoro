@@ -51,7 +51,6 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
 
     const now = new Date();
     const formattedDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
-    const formattedShortDate = format(now, "dd 'de' MMMM 'de' yyyy", { locale: es });
     
     const productsOnly = items.filter(item => !item.isService);
     const totalInventoryCost = productsOnly.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
@@ -59,14 +58,9 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
     const totalProductsCount = productsOnly.length;
 
     return (
-      <div
-        ref={ref}
-        data-format="letter"
-        className="font-sans bg-white text-black text-sm p-4 print:p-0"
-      >
-        {/* --- Encabezado que se oculta al imprimir --- */}
-        <div className="report-header-no-print">
-            <header className="mb-8 border-b-2 border-black pb-4">
+      <section ref={ref} id="print-area">
+        <header className="report-header print-header-once">
+            <div className="mb-8 border-b-2 border-black pb-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 {workshopInfo?.logoUrl ? (
                   <div className="relative w-[150px] h-[50px]">
@@ -92,7 +86,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
                 <p>{workshopInfo.cityState}</p>
                 <p>Tel: {workshopInfo.phone}</p>
               </div>
-            </header>
+            </div>
             <div className="grid grid-cols-3 gap-4 mb-8">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -126,20 +120,10 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
                 </Card>
             </div>
             <h3 className="text-xl font-semibold mb-2">Detalle del Inventario</h3>
-        </div>
-
-        {/* --- Encabezado y Pie de página para impresión --- */}
-        <div className="print-header-footer">
-          <div className="print-header">
-              Reporte de Inventario - {formattedShortDate}
-          </div>
-          <div className="print-footer">
-              Página <span className="page-number"></span>
-          </div>
-        </div>
+        </header>
 
         <main>
-          <Table className="table-fixed w-full">
+          <Table className="inventory-table">
             <TableHeader>
               <TableRow className="bg-gray-100 print:bg-gray-100">
                 <TableHead className="w-[15%]">Categoría</TableHead>
@@ -176,11 +160,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
             </TableBody>
           </Table>
         </main>
-        
-         <footer className="text-center mt-16 pt-4 border-t border-gray-200 report-header-no-print">
-            <p className="text-[10px] text-muted-foreground whitespace-pre-wrap">{workshopInfo.fixedFooterText}</p>
-         </footer>
-      </div>
+      </section>
     );
   }
 );
