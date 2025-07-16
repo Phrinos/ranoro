@@ -56,14 +56,14 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale, onSendW
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg p-6 space-y-4">
         <DialogHeader>
           <DialogTitle>Detalle de Venta: {sale.id}</DialogTitle>
           <DialogDescription>
             Información detallada de la venta realizada el {formattedDate}.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-4">
+        <div className="space-y-4">
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Cliente:</span>
             <span className="font-medium">{sale.customerName}</span>

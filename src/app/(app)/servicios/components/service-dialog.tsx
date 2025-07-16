@@ -210,11 +210,11 @@ export function ServiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-0 flex-shrink-0">
+        <DialogHeader className="p-6 pb-2 flex-shrink-0">
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto px-6 pb-16"> {/* Add padding bottom */}
+        <div className="flex-grow overflow-y-auto px-6">
             <ServiceForm
               initialDataService={service}
               vehicles={vehicles} 
@@ -230,7 +230,7 @@ export function ServiceDialog({
               onVehicleCreated={onVehicleCreated}
             />
         </div>
-        <DialogFooter className="p-6 pt-4 border-t sticky bottom-0 bg-background flex justify-between items-center w-full">
+        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex justify-between items-center w-full">
             <div>
                 {showCancelButton && onCancelService && (
                     <AlertDialog>

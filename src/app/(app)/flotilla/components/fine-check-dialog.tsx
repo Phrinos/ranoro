@@ -59,7 +59,7 @@ export function FineCheckDialog({
       if (!isOpen) setCheckedVehicles({}); // Reset on close
       onOpenChange(isOpen);
     }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md p-6 space-y-4">
         <DialogHeader>
           <DialogTitle>Revisión Quincenal de Multas</DialogTitle>
           <DialogDescription>

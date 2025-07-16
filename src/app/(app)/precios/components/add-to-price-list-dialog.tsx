@@ -121,7 +121,7 @@ export function AddToPriceListDialog({ open, onOpenChange, serviceToSave, curren
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-6">
+      <DialogContent className="sm:max-w-lg p-6 space-y-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Tags className="h-5 w-5"/> Guardar Servicio en Precotizaciones

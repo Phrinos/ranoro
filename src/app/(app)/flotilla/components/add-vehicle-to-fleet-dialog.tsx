@@ -92,14 +92,14 @@ export function AddVehicleToFleetDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg p-6 space-y-4">
         <DialogHeader>
           <DialogTitle>Añadir Vehículo a la Flotilla</DialogTitle>
           <DialogDescription>
             Seleccione un vehículo y establezca sus costos de renta y deducciones mensuales.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-4">
+        <div className="space-y-4">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input

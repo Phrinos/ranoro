@@ -27,7 +27,7 @@ export function DebtDialog({ open, onOpenChange, onSave, initialData }: DebtDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md p-6">
         <DialogHeader>
           <DialogTitle>{initialData ? 'Editar Adeudo Manual' : 'Añadir Adeudo Manual'}</DialogTitle>
           <DialogDescription>

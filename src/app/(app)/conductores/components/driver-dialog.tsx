@@ -31,14 +31,14 @@ export function DriverDialog({ open, onOpenChange, driver, onSave }: DriverDialo
             {driver ? "Actualiza los detalles del conductor." : "Completa la información para registrar un nuevo conductor."}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto px-6">
+        <div className="flex-grow overflow-y-auto px-6 py-4">
             <DriverForm
               id="driver-form"
               initialData={driver}
               onSubmit={onSave}
             />
         </div>
-        <DialogFooter className="p-6 pt-4 border-t bg-background sticky bottom-0">
+        <DialogFooter className="p-6 pt-4 border-t bg-background flex-shrink-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
             </Button>

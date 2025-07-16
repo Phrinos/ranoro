@@ -98,23 +98,25 @@ export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProp
                 </div>
             </CardContent>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
+                <DialogContent className="sm:max-w-md p-0 flex flex-col">
+                    <DialogHeader className="p-6 pb-4 border-b">
                         <DialogTitle>{editingType ? 'Editar' : 'Nuevo'} Tipo de Servicio</DialogTitle>
                          <DialogDescription>
                             Define un nombre claro para la categoría del servicio.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSaveType}>
-                        <div className="py-4">
-                            <Label htmlFor="type-name" className="text-left">Nombre del Tipo de Servicio</Label>
-                            <Input id="type-name" value={currentTypeName} onChange={(e) => setCurrentTypeName(capitalizeWords(e.target.value))} className="mt-2" />
-                        </div>
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                            <Button type="submit">Guardar</Button>
-                        </DialogFooter>
-                    </form>
+                    <div className="flex-grow overflow-y-auto px-6 py-4">
+                        <form id="service-type-form" onSubmit={handleSaveType}>
+                            <div className="space-y-2">
+                                <Label htmlFor="type-name" className="text-left">Nombre del Tipo de Servicio</Label>
+                                <Input id="type-name" value={currentTypeName} onChange={(e) => setCurrentTypeName(capitalizeWords(e.target.value))} className="mt-2" />
+                            </div>
+                        </form>
+                    </div>
+                    <DialogFooter className="p-6 pt-4 border-t flex-shrink-0">
+                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                        <Button type="submit" form="service-type-form">Guardar</Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </Card>

@@ -40,14 +40,14 @@ export function SignatureDialog({ open, onOpenChange, onSave }: SignatureDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md p-6 space-y-4">
         <DialogHeader>
           <DialogTitle>Panel de Firma del Cliente</DialogTitle>
           <DialogDescription>
             Pídale al cliente que firme en el recuadro a continuación.
           </DialogDescription>
         </DialogHeader>
-        <div className="w-full h-48 border bg-gray-50 rounded-md my-4">
+        <div className="w-full h-48 border bg-gray-50 rounded-md">
           <SignatureCanvas
             ref={sigCanvas}
             penColor='black'

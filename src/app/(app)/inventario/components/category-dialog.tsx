@@ -55,25 +55,27 @@ export function CategoryDialog({ open, onOpenChange, category, onSave, existingC
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0 flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-6 pb-4 border-b">
+        <DialogHeader className="p-6 pb-4 border-b flex-shrink-0">
           <DialogTitle>{category ? "Editar Categoría" : "Nueva Categoría"}</DialogTitle>
           <DialogDescription>
             {category ? "Modifica el nombre de la categoría." : "Añade una nueva categoría para organizar tus productos."}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto px-6">
-            <form id="category-form" onSubmit={handleSubmit} className="py-4">
-            <Label htmlFor="category-name">Nombre de la Categoría</Label>
-            <Input
-                id="category-name"
-                value={name}
-                onChange={(e) => setName(capitalizeWords(e.target.value))}
-                className="mt-2"
-                placeholder="Ej: Filtros, Aceites"
-            />
+            <form id="category-form" onSubmit={handleSubmit} className="py-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="category-name">Nombre de la Categoría</Label>
+                <Input
+                    id="category-name"
+                    value={name}
+                    onChange={(e) => setName(capitalizeWords(e.target.value))}
+                    className="mt-2"
+                    placeholder="Ej: Filtros, Aceites"
+                />
+              </div>
             </form>
         </div>
-        <DialogFooter className="p-6 pt-4 border-t bg-background sticky bottom-0">
+        <DialogFooter className="p-6 pt-4 border-t bg-background flex-shrink-0">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

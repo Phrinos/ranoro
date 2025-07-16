@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { SupplierForm, type SupplierFormValues } from "./supplier-form";
 import type { Supplier } from "@/types";
