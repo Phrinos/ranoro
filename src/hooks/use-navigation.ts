@@ -20,7 +20,8 @@ import {
   Landmark,
   LayoutGrid,
   CalendarDays,
-  MessageSquare
+  MessageSquare,
+  Car, // Ícono añadido
 } from 'lucide-react';
 import type { User, AppRole, NavigationEntry } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
