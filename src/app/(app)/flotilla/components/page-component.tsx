@@ -24,6 +24,7 @@ import { inventoryService, personnelService, operationsService } from '@/lib/ser
 import { Loader2 } from 'lucide-react';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
+const FINE_CHECK_STORAGE_KEY = 'lastFineCheckDate';
 
 type FlotillaSortOption = "plate_asc" | "plate_desc" | "owner_asc" | "owner_desc" | "rent_asc" | "rent_desc";
 type DriverSortOption = 'name_asc' | 'name_desc';
