@@ -192,7 +192,7 @@ export function PersonalPageComponent({
       </div>
 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="relative mb-6">
+        <div className="relative border-b">
           <ScrollArea className="w-full whitespace-nowrap">
             <TabsList className="inline-flex h-auto">
               <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
@@ -202,7 +202,7 @@ export function PersonalPageComponent({
           </ScrollArea>
         </div>
 
-        <TabsContent value="informe" className="space-y-6">
+        <TabsContent value="informe" className="mt-6 space-y-6">
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Staff Técnico Activo</CardTitle><UserCheck className="h-5 w-5 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{totalTechnicians}</div></CardContent></Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Nómina Técnica (Base Mensual)</CardTitle><DollarSignIcon className="h-5 w-5 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{formatCurrency(totalMonthlyTechnicianSalaries)}</div></CardContent></Card>
@@ -270,7 +270,7 @@ export function PersonalPageComponent({
             </Card>
         </TabsContent>
 
-        <TabsContent value="tecnicos" className="space-y-6">
+        <TabsContent value="tecnicos" className="mt-6 space-y-6">
             <Card>
               <CardHeader>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -296,7 +296,7 @@ export function PersonalPageComponent({
               <CardContent><div className="overflow-x-auto"><TechniciansTable technicians={filteredTechnicians} /></div></CardContent>
             </Card>
         </TabsContent>
-        <TabsContent value="administrativos" className="space-y-6">
+        <TabsContent value="administrativos" className="mt-6 space-y-6">
            <Card>
               <CardHeader>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

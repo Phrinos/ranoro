@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -20,6 +21,7 @@ import { Loader2 } from 'lucide-react';
 import { useTableManager } from '@/hooks/useTableManager';
 import { inventoryService } from '@/lib/services';
 import { differenceInMonths, parseISO, isValid } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const vehicleSortOptions = [
     { value: 'lastServiceDate_desc', label: 'Último Servicio (Más Reciente)' },
@@ -32,9 +34,9 @@ const vehicleSortOptions = [
     { value: 'ownerName_desc', label: 'Propietario (Z-A)' },
 ];
 
-export function VehiculosPageComponent() {
+export function VehiculosPageComponent({ isFleet }: { isFleet?: boolean }) {
     const searchParams = useSearchParams();
-    const defaultTab = searchParams.get('tab') || 'resumen';
+    const defaultTab = searchParams.get('tab') || 'vehiculos';
     const { toast } = useToast();
     
     const [activeTab, setActiveTab] = useState(defaultTab);
@@ -163,13 +165,17 @@ export function VehiculosPageComponent() {
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6">
-                    <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
-                    <TabsTrigger value="vehiculos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Lista de Vehículos</TabsTrigger>
-                    <TabsTrigger value="precotizaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Precotizaciones</TabsTrigger>
-                </TabsList>
+                <div className="relative border-b">
+                    <ScrollArea className="w-full whitespace-nowrap">
+                        <TabsList className="inline-flex h-auto">
+                            <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
+                            <TabsTrigger value="vehiculos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Lista de Vehículos</TabsTrigger>
+                            <TabsTrigger value="precotizaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Precotizaciones</TabsTrigger>
+                        </TabsList>
+                    </ScrollArea>
+                </div>
 
-                <TabsContent value="resumen" className="mt-0">
+                <TabsContent value="resumen" className="mt-6">
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total de Vehículos</CardTitle><Car className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{vehicleSummary.total}</div><p className="text-xs text-muted-foreground">Vehículos en la base de datos.</p></CardContent></Card>
                         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Actividad Reciente</CardTitle><Activity className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{vehicleSummary.recent}</div><p className="text-xs text-muted-foreground">Visitaron el taller en los últimos 30 días.</p></CardContent></Card>
@@ -178,7 +184,7 @@ export function VehiculosPageComponent() {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="vehiculos" className="mt-0">
+                <TabsContent value="vehiculos" className="mt-6">
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
                             <TableToolbar 

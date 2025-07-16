@@ -264,7 +264,7 @@ export function FinanzasPageComponent({
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="relative mb-6">
+                <div className="relative border-b">
                     <ScrollArea className="w-full whitespace-nowrap">
                         <TabsList className="inline-flex h-auto">
                             <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
@@ -274,7 +274,7 @@ export function FinanzasPageComponent({
                     </ScrollArea>
                 </div>
                 
-                 <TabsContent value="resumen" className="mt-0">
+                 <TabsContent value="resumen" className="mt-6">
                     <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">{dateFilterComponent}</div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <Card className="lg:col-span-2">
@@ -331,7 +331,7 @@ export function FinanzasPageComponent({
                     </div>
                 </TabsContent>
                 
-                <TabsContent value="operaciones" className="mt-0">
+                <TabsContent value="operaciones" className="mt-6">
                     <ReporteOperacionesContent
                         allSales={allSales}
                         allServices={allServices}
@@ -340,7 +340,7 @@ export function FinanzasPageComponent({
                     />
                 </TabsContent>
 
-                <TabsContent value="inventario" className="mt-0">
+                <TabsContent value="inventario" className="mt-6">
                     <ReporteInventarioContent movements={inventoryMovements} />
                 </TabsContent>
 

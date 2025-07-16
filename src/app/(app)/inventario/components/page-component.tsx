@@ -167,7 +167,7 @@ export function InventarioPageComponent({
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="relative mb-6">
+        <div className="relative border-b">
             <ScrollArea className="w-full whitespace-nowrap">
               <TabsList className="inline-flex h-auto">
                   <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
@@ -179,27 +179,27 @@ export function InventarioPageComponent({
             </ScrollArea>
         </div>
         
-        <TabsContent value="informe">
+        <TabsContent value="informe" className="mt-6">
             <InformeContent 
                 inventoryItems={inventoryItems} 
                 suppliers={suppliers}
                 onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
             />
         </TabsContent>
-        <TabsContent value="productos">
+        <TabsContent value="productos" className="mt-6">
             <ProductosContent 
                 inventoryItems={inventoryItems} 
                 onNewItem={handleOpenItemDialog}
                 onPrint={handlePrint}
             />
         </TabsContent>
-        <TabsContent value="categorias">
+        <TabsContent value="categorias" className="mt-6">
             <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
         </TabsContent>
-        <TabsContent value="proveedores">
+        <TabsContent value="proveedores" className="mt-6">
             <ProveedoresContent suppliers={suppliers} />
         </TabsContent>
-        <TabsContent value="analisis">
+        <TabsContent value="analisis" className="mt-6">
             <AnalisisIaContent inventoryItems={inventoryItems} />
         </TabsContent>
       </Tabs>

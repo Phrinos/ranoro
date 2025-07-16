@@ -59,7 +59,7 @@ export function AdministracionPageComponent({
             </div>
             
             <Tabs value={activeTab} onValueChange={setAdminTab} className="w-full">
-                <div className="relative mb-6">
+                <div className="relative border-b">
                     <ScrollArea className="w-full whitespace-nowrap">
                         <TabsList className="inline-flex h-auto">
                             <TabsTrigger value="usuarios" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
@@ -77,16 +77,16 @@ export function AdministracionPageComponent({
                         </TabsList>
                     </ScrollArea>
                 </div>
-                <TabsContent value="usuarios" className="mt-0">
+                <TabsContent value="usuarios" className="mt-6">
                     <UsuariosPageContent currentUser={currentUser} initialUsers={users} initialRoles={roles} />
                 </TabsContent>
-                <TabsContent value="roles" className="mt-0">
+                <TabsContent value="roles" className="mt-6">
                     <RolesPageContent currentUser={currentUser} initialRoles={roles} />
                 </TabsContent>
-                 <TabsContent value="auditoria" className="mt-0">
+                 <TabsContent value="auditoria" className="mt-6">
                     <AuditoriaPageContent initialLogs={auditLogs} />
                 </TabsContent>
-                <TabsContent value="migracion" className="mt-0">
+                <TabsContent value="migracion" className="mt-6">
                     <Tabs defaultValue="masiva" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="masiva">Migración Masiva (IA)</TabsTrigger>

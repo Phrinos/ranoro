@@ -83,7 +83,7 @@ export function OpcionesPageComponent({ tab }: { tab?: string }) {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="relative mb-6">
+            <div className="relative border-b">
                 <ScrollArea className="w-full whitespace-nowrap">
                     <TabsList className="inline-flex h-auto">
                         {availableTabs.map(tab => (
@@ -96,7 +96,7 @@ export function OpcionesPageComponent({ tab }: { tab?: string }) {
             </div>
             
             {availableTabs.map(tab => (
-                <TabsContent key={tab.value} value={tab.value} className="mt-0">
+                <TabsContent key={tab.value} value={tab.value} className="mt-6">
                     {tab.component}
                 </TabsContent>
             ))}

@@ -308,7 +308,7 @@ Total: ${formatCurrency(sale.totalAmount)}
         <p className="text-primary-foreground/80 mt-1">Registra ventas, gestiona tu caja y analiza el rendimiento de tus operaciones.</p>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="relative mb-6">
+        <div className="relative border-b">
           <ScrollArea className="w-full whitespace-nowrap">
             <TabsList className="inline-flex h-auto">
               <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
@@ -317,7 +317,7 @@ Total: ${formatCurrency(sale.totalAmount)}
             </TabsList>
           </ScrollArea>
         </div>
-        <TabsContent value="informe" className="space-y-6">
+        <TabsContent value="informe" className="mt-6 space-y-6">
             <div className="space-y-2"><h2 className="text-2xl font-semibold tracking-tight">Resumen de Ventas y Ganancias</h2><p className="text-muted-foreground">Datos para el período seleccionado.</p></div>
             {dateFilterComponent}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -326,7 +326,7 @@ Total: ${formatCurrency(sale.totalAmount)}
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Artículo Más Vendido</CardTitle><ShoppingCart className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold truncate">{ventasSummaryData.mostSoldItem?.name || 'N/A'}</div><p className="text-xs text-muted-foreground">{ventasSummaryData.mostSoldItem ? `${ventasSummaryData.mostSoldItem.quantity} unidades` : ''}</p></CardContent></Card>
             </div>
         </TabsContent>
-        <TabsContent value="ventas" className="space-y-6">
+        <TabsContent value="ventas" className="mt-6 space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div><h2 className="text-2xl font-semibold tracking-tight">Historial de Ventas</h2><p className="text-muted-foreground">Consulta, filtra y reimprime tickets.</p></div>
                 <Button asChild><Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link></Button>
@@ -337,7 +337,7 @@ Total: ${formatCurrency(sale.totalAmount)}
                 <CardContent><SalesTable sales={filteredAndSortedSales} onReprintTicket={handleReprintSale} inventoryItems={allInventory} onEditSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }}/></CardContent>
             </Card>
         </TabsContent>
-        <TabsContent value="caja" className="space-y-6">
+        <TabsContent value="caja" className="mt-6 space-y-6">
              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"><div><h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2><p className="text-muted-foreground">Controla el flujo de efectivo.</p></div>{dateFilterComponent}</div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"><Card className="lg:col-span-2"><CardHeader><CardTitle className="flex items-center gap-2"><Wallet/>Cajón de Dinero</CardTitle></CardHeader><CardContent className="space-y-2 text-lg"><div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.initialBalance)}</span></div><div className="flex justify-between text-green-600"><span>(+) Ventas en Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashSales)}</span></div><div className="flex justify-between text-green-600"><span>(+) Entradas de Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashIn)}</span></div><div className="flex justify-between text-red-600"><span>(-) Salidas de Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashOut)}</span></div><div className="flex justify-between text-xl font-bold border-t pt-2 mt-2"><span>Saldo Final Esperado:</span> <span>{formatCurrency(cajaSummaryData.finalCashBalance)}</span></div></CardContent></Card><Card><CardHeader><CardTitle className="flex items-center gap-2"><Coins/>Ventas por Método</CardTitle></CardHeader><CardContent className="space-y-1 text-sm">{Object.entries(cajaSummaryData.salesByPaymentMethod).map(([method, total]) => (<div key={method} className="flex justify-between"><span>{method}:</span><span className="font-medium">{formatCurrency(total)}</span></div>))}</CardContent></Card><Card><CardHeader><CardTitle className="flex items-center gap-2"><BarChart2/>Ventas por Tipo</CardTitle></CardHeader><CardContent className="space-y-1 text-sm"><div className="flex justify-between"><span>Ventas de Mostrador:</span><span className="font-medium">{cajaSummaryData.totalSales}</span></div><div className="flex justify-between"><span>Servicios Completados:</span><span className="font-medium">{cajaSummaryData.totalServices}</span></div></CardContent></Card></div>
              <Card>
