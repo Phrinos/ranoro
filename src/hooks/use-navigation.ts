@@ -46,7 +46,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
   { 
     label: 'Cotizaciones', 
-    path: '/cotizaciones/historial', 
+    path: '/servicios/historial?tab=cotizaciones', 
     icon: FileText, 
     groupTag: 'Mi Taller',
     permissions: ['services:create'] 
@@ -226,7 +226,13 @@ const useNavigation = (): NavigationEntry[] => {
     }
     
     // Specific overrides to group related pages under one active nav item
-    if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/') || pathname.startsWith('/cotizaciones/'))) isActive = true;
+    if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/'))) isActive = true;
+    if (entry.path === '/servicios/historial?tab=cotizaciones' && pathname.startsWith('/servicios/historial')) {
+        // Special check for query params
+        const url = new URL(window.location.href);
+        isActive = url.searchParams.get('tab') === 'cotizaciones';
+    }
+
     if (entry.path === '/vehiculos' && (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios'))) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
     if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
