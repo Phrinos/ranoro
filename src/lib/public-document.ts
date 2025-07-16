@@ -1,6 +1,6 @@
 
 
-import { db } from './firebasePublic';
+import { db } from './firebaseClient'; // Changed from firebasePublic
 import { doc, setDoc } from 'firebase/firestore';
 import type { ServiceRecord, Vehicle, WorkshopInfo, PublicOwnerReport } from '@/types';
 import { cleanObjectForFirestore } from './forms';
