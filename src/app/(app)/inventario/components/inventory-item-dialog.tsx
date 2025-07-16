@@ -119,7 +119,7 @@ export function InventoryItemDialog({
               {isEditing ? "Actualiza los detalles del producto." : "Completa la información para un nuevo producto en el inventario."}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-grow overflow-y-auto px-6">
+          <div className="flex-grow overflow-y-auto px-6 py-4">
             <InventoryItemForm
               id="inventory-item-form"
               initialData={initialFormData as InventoryItem | null} 
@@ -130,7 +130,7 @@ export function InventoryItemDialog({
               onNewCategory={() => setIsCategoryDialogOpen(true)}
             />
           </div>
-           <DialogFooter className="p-6 pt-4 border-t bg-background sticky bottom-0 flex justify-end gap-2">
+           <DialogFooter className="p-6 pt-4 border-t bg-background flex-shrink-0 flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
             </Button>
