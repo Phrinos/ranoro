@@ -114,18 +114,10 @@ export function CotizacionesPageComponent() {
 
   return (
     <>
-      <PageHeader
-        title="Cotizaciones"
-        description="Gestiona y da seguimiento a todas las cotizaciones generadas."
-        actions={
-          <Button asChild>
-            <Link href="/servicios/nuevo">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nueva Cotización
-            </Link>
-          </Button>
-        }
-      />
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Cotizaciones</h1>
+        <p className="text-primary-foreground/80 mt-1">Gestiona y da seguimiento a todas las cotizaciones generadas.</p>
+      </div>
 
       <div className="mt-0 space-y-4">
           <TableToolbar {...quotesTableManager} searchPlaceholder="Buscar por folio, vehículo..." />
