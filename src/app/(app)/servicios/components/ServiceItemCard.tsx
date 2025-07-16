@@ -166,7 +166,25 @@ export function ServiceItemCard({
                         </FormItem>
                     )}
                 />
-                <FormField control={control} name={`serviceItems.${serviceIndex}.price`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente (IVA Inc.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? 0} disabled={isReadOnly} /></FormControl></FormItem> )}/>
+                <FormField
+                    control={control}
+                    name={`serviceItems.${serviceIndex}.price`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Precio Cliente (IVA Inc.)</FormLabel>
+                            <FormControl>
+                                <Input
+                                    type="number"
+                                    placeholder="0.00"
+                                    {...field}
+                                    value={field.value === 0 ? '' : field.value}
+                                    onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                    disabled={isReadOnly}
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
             </div>
 
             <div className="mt-4">

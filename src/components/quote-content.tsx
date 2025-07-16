@@ -200,6 +200,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 <div className="text-left">
                     <p className="font-semibold">¡Gracias por su preferencia!</p>
                     <p>Para dudas o aclaraciones, no dude en contactarnos.</p>
+                    <p><b>WhatsApp:</b> 4491425323</p>
                 </div>
                 <div className="text-right flex flex-col items-center justify-end mt-4 sm:mt-0">
                     <div className="relative flex justify-center items-center h-16 w-40 mb-1">
