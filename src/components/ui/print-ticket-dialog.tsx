@@ -47,23 +47,22 @@ export function PrintTicketDialog({
         else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-md",
-        "max-h-[90vh] flex flex-col p-0", // Use flex layout
+        "sm:max-w-md max-h-[90vh] flex flex-col p-0",
         dialogContentClassName
       )}>
-        <DialogHeader className="print:hidden flex-shrink-0 no-print p-6 pb-2">
+        <DialogHeader className="print:hidden flex-shrink-0 p-6 pb-2">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         
-        <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md print:p-0 print:bg-white">
+        <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 print:p-0 print:bg-white">
             <div className="printable-content print-format-receipt">
                  {children}
             </div>
         </div>
 
         {footerActions && (
-          <DialogFooter className="print:hidden flex-shrink-0 no-print p-6 pt-4 border-t bg-background sm:justify-end">
+          <DialogFooter className="print:hidden flex-shrink-0 p-6 pt-4 border-t bg-background sm:justify-end">
             {footerActions}
           </DialogFooter>
         )}
