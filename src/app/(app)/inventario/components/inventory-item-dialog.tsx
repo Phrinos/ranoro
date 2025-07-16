@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { InventoryItemForm, type InventoryItemFormValues } from "./inventory-item-form";
 import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
@@ -18,6 +19,7 @@ import { SupplierDialog } from '../proveedores/components/supplier-dialog';
 import { CategoryDialog } from './category-dialog';
 import { inventoryService } from '@/lib/services';
 import type { SupplierFormValues } from '../proveedores/components/supplier-form';
+import { Button } from '@/components/ui/button';
 
 interface InventoryItemDialogProps {
   trigger?: React.ReactNode;
@@ -110,24 +112,32 @@ export function InventoryItemDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
          {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-        <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b">
             <DialogTitle>{isEditing ? "Editar Producto de Inventario" : "Nuevo Producto de Inventario"}</DialogTitle>
             <DialogDescription>
               {isEditing ? "Actualiza los detalles del producto." : "Completa la información para un nuevo producto en el inventario."}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-grow overflow-y-auto -mx-6 px-6">
+          <div className="flex-grow overflow-y-auto px-6">
             <InventoryItemForm
+              id="inventory-item-form"
               initialData={initialFormData as InventoryItem | null} 
               onSubmit={handleSubmit}
-              onClose={() => onOpenChange(false)}
               categories={categories}
               suppliers={suppliers}
               onNewSupplier={() => setIsSupplierDialogOpen(true)}
               onNewCategory={() => setIsCategoryDialogOpen(true)}
             />
           </div>
+           <DialogFooter className="p-6 pt-4 border-t bg-background sticky bottom-0 flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+            </Button>
+            <Button type="submit" form="inventory-item-form">
+                 {isEditing ? "Actualizar Ítem" : "Crear Ítem"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       

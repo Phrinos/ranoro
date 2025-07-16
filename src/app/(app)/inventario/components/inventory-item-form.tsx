@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect } from 'react';
@@ -58,16 +59,16 @@ const inventoryItemFormSchema = z.object({
 export type InventoryItemFormValues = z.infer<typeof inventoryItemFormSchema>;
 
 interface InventoryItemFormProps {
+  id: string; // Form ID
   initialData?: Partial<InventoryItemFormValues> | null;
   onSubmit: (values: InventoryItemFormValues) => Promise<void>;
-  onClose: () => void;
   categories: InventoryCategory[];
   suppliers: Supplier[];
   onNewSupplier: () => void;
   onNewCategory: () => void;
 }
 
-export function InventoryItemForm({ initialData, onSubmit, onClose, categories, suppliers, onNewSupplier, onNewCategory }: InventoryItemFormProps) {
+export function InventoryItemForm({ id, initialData, onSubmit, categories, suppliers, onNewSupplier, onNewCategory }: InventoryItemFormProps) {
   const form = useForm<InventoryItemFormValues>({
     resolver: zodResolver(inventoryItemFormSchema),
     defaultValues: {
@@ -138,7 +139,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form id={id} onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 pt-2 pb-4">
         <Card>
           <CardHeader>
             <CardTitle>Información General</CardTitle>
@@ -390,13 +391,6 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
               </div>
           </CardContent>
         </Card>
-        
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Ítem" : "Crear Ítem")}
-          </Button>
-        </div>
       </form>
     </Form>
   );
