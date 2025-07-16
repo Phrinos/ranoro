@@ -40,7 +40,7 @@ export function SignatureDialog({ open, onOpenChange, onSave }: SignatureDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-6">
+      <DialogContent className="sm:max-w-md p-6 space-y-4">
         <DialogHeader>
           <DialogTitle>Panel de Firma del Cliente</DialogTitle>
           <DialogDescription>
@@ -51,7 +51,10 @@ export function SignatureDialog({ open, onOpenChange, onSave }: SignatureDialogP
           <SignatureCanvas
             ref={sigCanvas}
             penColor='black'
-            canvasProps={{ className: 'w-full h-full' }}
+            canvasProps={{ 
+              className: 'w-full h-full',
+              willReadFrequently: true 
+            }}
           />
         </div>
         <DialogFooter className="gap-2 sm:gap-0">
