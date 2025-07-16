@@ -224,18 +224,11 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           onOpenChange={handleDialogClose}
           title="Venta Completada"
           description={`Ticket para la venta #${saleForTicket.id}`}
-          dialogContentClassName="sm:max-w-md printable-content"
           footerActions={
-            <div className="flex flex-col-reverse sm:flex-row gap-2 w-full justify-end">
-              <Button onClick={handleCopySaleForWhatsapp} variant="outline" className="w-full sm:w-auto">
-                <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
-              </Button>
-              <Button variant="outline" onClick={handleCopyAsImage} className="w-full sm:w-auto">
-                  <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
-              </Button>
-              <Button onClick={handlePrint} className="w-full sm:w-auto">
-                  <Printer className="mr-2 h-4 w-4"/>Imprimir
-              </Button>
+            <div className="flex flex-col gap-2 w-full">
+              <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+              <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+              <Button variant="outline" onClick={handleCopySaleForWhatsapp}><MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp</Button>
             </div>
           }
         >

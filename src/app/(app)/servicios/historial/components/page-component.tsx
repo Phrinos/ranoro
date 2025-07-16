@@ -22,6 +22,7 @@ import { TicketContent } from '@/components/ticket-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
 import { Printer, Copy, MessageSquare } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
     { value: 'all', label: 'Todos los Estados' },
@@ -187,6 +188,25 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   const handlePrint = () => {
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
+  
+  const handleCopyServiceForWhatsapp = useCallback((service: ServiceRecord) => {
+    const vehicle = vehicles.find(v => v.id === service.vehicleId);
+    const workshopName = workshopInfo?.name || 'nuestro taller';
+    
+    let message = `Hola ${vehicle?.ownerName || 'Cliente'}, aquí tienes los detalles de tu servicio en ${workshopName}.`;
+    if(service.publicId){
+        const shareUrl = `${window.location.origin}/s/${service.publicId}`;
+        message += `\n\nPuedes ver los detalles y firmar de conformidad en el siguiente enlace:\n${shareUrl}`;
+    } else {
+        message += `\n\nFolio de Servicio: ${service.id}\nTotal: ${formatCurrency(service.totalCost)}`;
+    }
+    
+    message += `\n\n¡Agradecemos tu preferencia!`;
+
+    navigator.clipboard.writeText(message).then(() => {
+      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado.' });
+    });
+  }, [toast, vehicles, workshopInfo]);
 
 
   if (isLoading) {
@@ -260,12 +280,11 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
           open={isTicketDialogOpen}
           onOpenChange={setIsTicketDialogOpen}
           title="Ticket de Servicio"
-          footerActions={
-            <>
-              <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar</Button>
-              <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
-            </>
-          }
+          footerActions={<>
+            <Button variant="outline" onClick={() => handleCopyServiceForWhatsapp(recordForTicket)}><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
+            <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar</Button>
+            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+          </>}
         >
           <div id="printable-ticket">
             <TicketContent

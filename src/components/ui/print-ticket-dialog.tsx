@@ -47,14 +47,9 @@ export function PrintTicketDialog({
         else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-md max-h-[90vh] flex flex-col p-0",
+        "sm:max-w-2xl max-h-[90vh] flex flex-row p-0", // Changed to flex-row and removed padding
         dialogContentClassName
       )}>
-        <DialogHeader className="print:hidden flex-shrink-0 p-6 pb-2">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        
         <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 print:p-0 print:bg-white">
             <div className="printable-content print-format-receipt">
                  {children}
@@ -62,9 +57,17 @@ export function PrintTicketDialog({
         </div>
 
         {footerActions && (
-          <DialogFooter className="print:hidden flex-shrink-0 p-6 pt-4 border-t bg-background sm:justify-end">
-            {footerActions}
-          </DialogFooter>
+          <div className="print:hidden flex-shrink-0 border-l bg-background p-4 flex flex-col justify-between gap-2 w-48">
+            <div>
+              <DialogHeader className="p-0 text-left">
+                <DialogTitle>{title}</DialogTitle>
+                <DialogDescription>{description}</DialogDescription>
+              </DialogHeader>
+            </div>
+            <DialogFooter className="flex-col !justify-end gap-2">
+              {footerActions}
+            </DialogFooter>
+          </div>
         )}
       </DialogContent>
     </Dialog>
