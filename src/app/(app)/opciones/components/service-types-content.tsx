@@ -105,9 +105,11 @@ export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProp
                             Define un nombre claro para la categoría del servicio.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSaveType} className="py-4 space-y-4">
-                        <Label htmlFor="type-name">Nombre del Tipo de Servicio</Label>
-                        <Input id="type-name" value={currentTypeName} onChange={(e) => setCurrentTypeName(capitalizeWords(e.target.value))} />
+                    <form onSubmit={handleSaveType}>
+                        <div className="py-4 space-y-4">
+                            <Label htmlFor="type-name">Nombre del Tipo de Servicio</Label>
+                            <Input id="type-name" value={currentTypeName} onChange={(e) => setCurrentTypeName(capitalizeWords(e.target.value))} />
+                        </div>
                         <DialogFooter><Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button type="submit">Guardar</Button></DialogFooter>
                     </form>
                 </DialogContent>
