@@ -10,8 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "postinstall": "node ./scripts/update-payment-method.js && rm ./scripts/update-payment-method.js"
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": "20"

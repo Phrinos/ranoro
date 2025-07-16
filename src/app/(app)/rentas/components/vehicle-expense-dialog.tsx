@@ -73,7 +73,9 @@ export function VehicleExpenseDialog({
                       <SelectTrigger><SelectValue placeholder="Seleccione un vehículo" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {fleetVehicles.map(v => (
+                      {[...fleetVehicles]
+                        .sort((a,b) => a.licensePlate.localeCompare(b.licensePlate))
+                        .map(v => (
                         <SelectItem key={v.id} value={v.id}>{v.licensePlate} - {v.make} {v.model}</SelectItem>
                       ))}
                     </SelectContent>

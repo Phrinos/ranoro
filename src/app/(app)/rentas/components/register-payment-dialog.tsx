@@ -100,20 +100,22 @@ export function RegisterPaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md p-0">
+        <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle>Registrar Pago de Renta</DialogTitle>
           <DialogDescription>
             Seleccione el conductor y confirme el monto del pago.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6 py-4">
+        <div className="p-6 space-y-6">
           <div className="space-y-2">
             <Label htmlFor="driver-select">Conductor</Label>
             <Select onValueChange={setSelectedDriverId} value={selectedDriverId}>
                 <SelectTrigger id="driver-select"><SelectValue placeholder="Seleccione un conductor" /></SelectTrigger>
                 <SelectContent>
-                {drivers.map(d => (
+                {[...drivers]
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map(d => (
                     <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                 ))}
                 </SelectContent>
@@ -138,7 +140,7 @@ export function RegisterPaymentDialog({
             <Textarea id="note-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ej: Pago de renta semana 25" />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="p-6 pt-4 border-t">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button type="button" onClick={handleSave}>
             Registrar Pago
