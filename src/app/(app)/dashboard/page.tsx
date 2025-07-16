@@ -1,9 +1,8 @@
 
+
 "use client";
 
-import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import dynamic from 'next/dynamic';
-import { parseISO, isToday, isValid, isSameDay, startOfMonth, endOfMonth, subMonths, getDaysInMonth, endOfDay } from 'date-fns';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
@@ -21,44 +20,32 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { format } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, isValid, isToday, isSameDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { isWithinInterval } from 'date-fns';
 import { DashboardCharts } from './components/dashboard-charts';
 import { formatCurrency } from '@/lib/utils';
 
 
 const ChartLoadingSkeleton = () => (
-    <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2 mt-6">
-        <Card>
+    <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-5 mt-6">
+        <Card className="lg:col-span-3">
             <CardHeader>
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-1/2 mt-2" />
             </CardHeader>
-            <CardContent className="flex items-center justify-center h-[250px] text-muted-foreground">
+            <CardContent className="flex items-center justify-center h-[300px] text-muted-foreground">
                 <Loader2 className="h-8 w-8 animate-spin" />
             </CardContent>
         </Card>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2 mt-2" />
-                </CardHeader>
-                <CardContent className="flex items-center justify-center h-[250px] text-muted-foreground">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2 mt-2" />
-                </CardHeader>
-                <CardContent className="flex items-center justify-center h-[250px] text-muted-foreground">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                </CardContent>
-            </Card>
-        </div>
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2 mt-2" />
+            </CardHeader>
+            <CardContent className="flex items-center justify-center h-[300px] text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </CardContent>
+        </Card>
     </div>
 );
 
@@ -417,8 +404,8 @@ export default function DashboardPage() {
 
     const monthlyComparisonDataResult = [
         { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos, 'Utilidad Bruta': 0, 'Utilidad Neta': 0 },
-        { name: 'Utilidad Bruta', 'Mes Anterior': 0, 'Mes Actual': 0, 'Utilidad Bruta': lastMonthMetrics.utilidadBruta, 'Utilidad Neta': currentMonthMetrics.utilidadBruta },
-        { name: 'Utilidad Neta', 'Mes Anterior': 0, 'Mes Actual': 0, 'Utilidad Bruta': 0, 'Utilidad Neta': lastMonthMetrics.utilidadNeta, 'Mes Actual Neta': currentMonthMetrics.utilidadNeta },
+        { name: 'Utilidad Bruta', 'Mes Anterior': 0, 'Mes Actual': 0, 'Utilidad Bruta': currentMonthMetrics.utilidadBruta, 'Utilidad Neta': 0 },
+        { name: 'Utilidad Neta', 'Mes Anterior': 0, 'Mes Actual': 0, 'Utilidad Bruta': 0, 'Utilidad Neta': currentMonthMetrics.utilidadNeta },
         { name: 'Servicios', 'Mes Anterior': lastMonthMetrics.servicios, 'Mes Actual': currentMonthMetrics.servicios, 'Utilidad Bruta': 0, 'Utilidad Neta': 0 },
     ];
 
@@ -631,3 +618,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
