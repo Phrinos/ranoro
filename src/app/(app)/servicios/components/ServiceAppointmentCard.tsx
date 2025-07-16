@@ -54,9 +54,10 @@ const getPaymentMethodVariant = (method?: PaymentMethod): 'success' | 'purple' |
   }
 };
 
-const getSubStatusVariant = (subStatus?: ServiceSubStatus): 'destructive' | 'waiting' | 'success' => {
+const getSubStatusVariant = (subStatus?: ServiceSubStatus): 'destructive' | 'waiting' | 'success' | 'purple' => {
     switch(subStatus) {
         case 'En Espera de Refacciones': return 'destructive';
+        case 'Proveedor Externo': return 'purple';
         case 'Reparando': return 'waiting';
         case 'Completado': return 'success';
         default: return 'waiting';

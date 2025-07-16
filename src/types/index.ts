@@ -194,7 +194,7 @@ export interface PhotoReportGroup {
 }
 
 export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado';
-export type ServiceSubStatus = 'En Espera de Refacciones' | 'Reparando' | 'Completado';
+export type ServiceSubStatus = 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Proveedor Externo';
 
 export interface ServiceRecord {
   id: string;

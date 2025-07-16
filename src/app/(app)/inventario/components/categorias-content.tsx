@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -73,7 +74,7 @@ export function CategoriasContent({ categories: initialCategories, inventoryItem
             <p className="text-muted-foreground">Visualiza, edita y elimina categorías.</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="relative sm:w-1/3"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar categorías..." className="pl-8 bg-background" value={searchTermCategories} onChange={(e) => setSearchTermCategories(e.target.value)} /></div>
+            <div className="relative sm:w-1/3"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar categorías..." className="pl-8 bg-white" value={searchTermCategories} onChange={(e) => setSearchTermCategories(e.target.value)} /></div>
             <Button onClick={handleOpenAddCategoryDialog}><PlusCircle className="mr-2 h-4 w-4" />Nueva Categoría</Button>
         </div>
         <Card>
