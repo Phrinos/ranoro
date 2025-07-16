@@ -8,10 +8,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PageHeader } from "@/components/page-header";
 import { PosForm } from '../components/pos-form';
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, Vehicle } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { inventoryService, operationsService, messagingService } from '@/lib/services';
+import { inventoryService, operationsService } from '@/lib/services';
 import { Loader2, Copy, Printer, MessageSquare } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
@@ -19,7 +19,6 @@ import { writeBatch, doc } from 'firebase/firestore';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
-import html2canvas from 'html2canvas';
 import { formatCurrency } from '@/lib/utils';
 import { nanoid } from 'nanoid';
 
@@ -177,6 +176,7 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
   
   const handleCopyAsImage = useCallback(async () => {
     if (!ticketContentRef.current) return;
+    const html2canvas = (await import('html2canvas')).default;
     try {
       const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
       canvas.toBlob((blob) => {

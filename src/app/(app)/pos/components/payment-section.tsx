@@ -50,7 +50,7 @@ export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnl
                 <Input 
                   placeholder="Ej: Cliente Mostrador" 
                   {...field} 
-                  value={customerName || field.value}
+                  value={field.value}
                   onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
                   disabled={isReadOnly} 
                 />

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect } from "react";
@@ -67,7 +68,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
 
   useEffect(() => {
     // If it's a new form, set the default date on the client side to prevent hydration errors.
-    if (!initialData) {
+    if (!initialData?.id) {
       form.setValue('hireDate', new Date().toISOString().split('T')[0]);
     }
   }, [initialData, form]);

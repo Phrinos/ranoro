@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -60,7 +61,6 @@ interface DashboardChartsProps {
 
 
 export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyComparisonData }: DashboardChartsProps) {
-  const PIE_COLORS = ['#3B82F6', '#10B981', '#F97316', '#8B5CF6', '#EC4899'];
   const [activeDataKeys, setActiveDataKeys] = useState<string[]>(['ingresos', 'ganancia']);
 
   const toggleDataKey = (key: string) => {
@@ -123,7 +123,7 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => val > 1000 ? `${val/1000}k` : `${val}`} />
               <YAxis dataKey="name" type="category" fontSize={12} tickLine={false} axisLine={false} width={80} />
-              <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} formatter={(val, name) => [name.toString().includes('Servicios') ? val : formatCurrency(val as number), name]}/>
+              <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} formatter={(val: any, name: any) => [name.toString().includes('Servicios') ? val : formatCurrency(val as number), name]}/>
               <Legend />
               <Bar dataKey="Mes Anterior" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} />
               <Bar dataKey="Mes Actual" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />

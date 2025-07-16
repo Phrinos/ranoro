@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -15,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PackagePlus, Search } from "lucide-react";
 import type { InventoryItem } from "@/types";
+import { formatCurrency } from '@/lib/utils';
 
 interface PurchaseItemSelectionDialogProps {
   open: boolean;
@@ -35,13 +37,14 @@ export function PurchaseItemSelectionDialog({
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) {
-      return inventoryItems.slice(0, 10); // Show some initial items
+      return inventoryItems.filter(item => !item.isService).slice(0, 10);
     }
     const lowerSearchTerm = searchTerm.toLowerCase();
     return inventoryItems.filter(
       (item) =>
-        item.name.toLowerCase().includes(lowerSearchTerm) ||
-        (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm))
+        !item.isService &&
+        (item.name.toLowerCase().includes(lowerSearchTerm) ||
+         (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm)))
     ).slice(0, 10);
   }, [searchTerm, inventoryItems]);
 
@@ -94,7 +97,7 @@ export function PurchaseItemSelectionDialog({
                         {item.name} <span className="text-xs text-muted-foreground">({item.sku})</span>
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Stock: {item.quantity} | Costo: ${item.unitPrice.toFixed(2)} | Venta: ${item.sellingPrice.toFixed(2)}
+                        Stock: {item.quantity} | Costo: {formatCurrency(item.unitPrice)} | Venta: {formatCurrency(item.sellingPrice)}
                       </p>
                     </div>
                   </Button>
