@@ -21,6 +21,20 @@ import type { SupplierFormValues } from '@/app/(app)/inventario/proveedores/comp
 import { logAudit } from '../placeholder-data';
 import { cleanObjectForFirestore } from '../forms';
 
+// --- Generic Document Getter ---
+const getDocById = async (collectionName: string, id: string): Promise<any> => {
+    if (!db) throw new Error("Database not initialized.");
+    const docRef = doc(db, collectionName, id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+};
+
+const deleteDocById = async (collectionName: string, id: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await deleteDoc(doc(db, collectionName, id));
+};
+
+
 // --- Inventory Items ---
 
 const onItemsUpdate = (callback: (items: InventoryItem[]) => void): (() => void) => {
@@ -60,6 +74,12 @@ const onCategoriesUpdate = (callback: (categories: InventoryCategory[]) => void)
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryCategory)));
     });
     return unsubscribe;
+};
+
+const onCategoriesUpdatePromise = async (): Promise<InventoryCategory[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "inventoryCategories"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryCategory));
 };
 
 const saveCategory = async (data: Omit<InventoryCategory, 'id'>, id?: string): Promise<InventoryCategory> => {
@@ -122,6 +142,12 @@ const onSuppliersUpdate = (callback: (suppliers: Supplier[]) => void): (() => vo
     return unsubscribe;
 };
 
+const onSuppliersUpdatePromise = async (): Promise<Supplier[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "suppliers"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Supplier));
+};
+
 const saveSupplier = async (data: SupplierFormValues, id?: string): Promise<Supplier> => {
     if (!db) throw new Error("Database not initialized.");
     const dataToSave = { ...data, debtAmount: Number(data.debtAmount) || 0 };
@@ -159,10 +185,7 @@ const onVehiclesUpdatePromise = async (): Promise<Vehicle[]> => {
 
 
 const getVehicleById = async (id: string): Promise<Vehicle | undefined> => {
-    if (!db) throw new Error("Database not initialized.");
-    const docRef = doc(db, 'vehicles', id);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Vehicle : undefined;
+    return getDocById('vehicles', id);
 };
 
 const addVehicle = async (data: VehicleFormValues): Promise<Vehicle> => {
@@ -247,7 +270,14 @@ export const inventoryService = {
     onItemsUpdate,
     onItemsUpdatePromise,
     addItem,
+    saveItem: async (data: Partial<InventoryItemFormValues>, id: string) => {
+        if (!db) throw new Error("Database not initialized.");
+        await updateDoc(doc(db, 'inventory', id), cleanObjectForFirestore(data));
+    },
+    deleteDoc: deleteDocById,
+    getDocById,
     onCategoriesUpdate,
+    onCategoriesUpdatePromise,
     saveCategory,
     deleteCategory,
     onServiceTypesUpdate,
@@ -255,6 +285,7 @@ export const inventoryService = {
     saveServiceType,
     deleteServiceType,
     onSuppliersUpdate,
+    onSuppliersUpdatePromise,
     saveSupplier,
     deleteSupplier,
     onVehiclesUpdate,
