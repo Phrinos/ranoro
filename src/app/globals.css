@@ -119,64 +119,45 @@
 }
 
 @media print {
-  @page {
-    /* Default page settings for most documents */
+  /* Define page formats */
+  @page receipt {
+    size: 80mm auto;
+    margin: 2mm;
+  }
+  @page letter {
     size: letter;
     margin: 0.5in;
   }
 
-  /* Specific page size for thermal receipts */
-  @page receipt {
-    size: 80mm auto; /* Adjust width as needed */
-    margin: 2mm;
-  }
-
-  /* Apply the page rule to the correct element */
-  .print-format-receipt {
-    page: receipt;
-  }
-
-  /* Hide everything except the printable area */
   body * {
     visibility: hidden;
   }
-  .printable-area, .printable-area * {
+  .printable-content, .printable-content * {
     visibility: visible;
   }
-  .printable-area {
+  .printable-content {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 
-  body {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    background-color: white !important;
+  .print-format-letter {
+    page: letter;
+  }
+  .print-format-receipt {
+    page: receipt;
   }
   
   .no-print {
     display: none !important;
   }
-
-  [data-format='receipt'] {
-    width: 100% !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    page-break-after: always;
-  }
-
-  [data-format='letter'] {
-    width: 100% !important;
-    min-height: auto !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    page-break-after: always;
-  }
 }
+
 
 @layer utilities {
   /* For responsive ticket preview */

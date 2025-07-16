@@ -143,7 +143,7 @@ export default function PublicServicePage() {
   return (
      <>
         <div className="container mx-auto px-2 sm:px-4">
-            <div className="w-[8.5in] h-auto bg-white mx-auto my-4 shadow-lg printable-content">
+            <div className="bg-white mx-auto my-4 shadow-lg printable-content print-format-letter">
               <div className="p-4 print:hidden">
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                       <div>

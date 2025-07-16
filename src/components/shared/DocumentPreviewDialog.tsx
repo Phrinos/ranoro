@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useRef } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -32,17 +32,14 @@ export function DocumentPreviewDialog({
 }: DocumentPreviewDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-          "max-w-4xl max-h-[90vh] flex flex-col p-0",
-          "printable-area print-format-letter"
-      )}>
+      <DialogContent className={cn("max-w-4xl max-h-[90vh] flex flex-col p-0")}>
         <DialogHeader className="p-6 pb-2 flex-shrink-0 no-print">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto px-6 bg-muted/30 print:bg-white print:p-0">
-            <div id="printable-area-dialog" className="bg-white mx-auto my-4 shadow-lg">
+            <div className="printable-content print-format-letter bg-white mx-auto my-4 shadow-lg">
                  {children}
             </div>
         </div>

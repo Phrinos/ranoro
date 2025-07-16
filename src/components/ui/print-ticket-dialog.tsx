@@ -22,7 +22,6 @@ interface PrintTicketDialogProps {
   onDialogClose?: () => void; 
   dialogContentClassName?: string;
   footerActions?: React.ReactNode;
-  contentRef?: React.RefObject<HTMLDivElement>;
 }
 
 export function PrintTicketDialog({
@@ -34,7 +33,6 @@ export function PrintTicketDialog({
   onDialogClose,
   dialogContentClassName = "",
   footerActions,
-  contentRef,
 }: PrintTicketDialogProps) {
 
   const handleClose = () => {
@@ -52,7 +50,6 @@ export function PrintTicketDialog({
       <DialogContent className={cn(
         "sm:max-w-md",
         "flex flex-col max-h-[90vh]",
-        "printable-area print-format-receipt", // Apply print classes here
         dialogContentClassName
       )}>
         <DialogHeader className="print:hidden flex-shrink-0 no-print p-6 pb-2">
@@ -60,8 +57,8 @@ export function PrintTicketDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         
-        <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md print:bg-white print:p-0">
-            <div ref={contentRef} id="printable-content-dialog">
+        <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md print:p-0 print:bg-white">
+            <div className="printable-content print-format-receipt">
                  {children}
             </div>
         </div>
