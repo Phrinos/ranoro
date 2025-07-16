@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { ServiceRecord, PaymentMethod, InventoryItem } from "@/types";
 import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, CalendarCheck } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { addMonths, addYears, isValid, format } from "date-fns";
+import { addMonths, isValid, format } from "date-fns";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { parseDate } from "@/lib/forms";
 import { Card, CardContent } from "@/components/ui/card";
@@ -100,37 +100,25 @@ export function CompleteServiceDialog({
 
   const handleFormSubmit = (values: CompleteServiceFormValues) => {
     let nextServiceInfo: { date: string, mileage?: number } | undefined = undefined;
-    
+
     // Check if any service item description includes "aceite" or "afinación"
-    const isMaintenanceService = (service.serviceItems || []).some(item => 
-        item.name.toLowerCase().includes('afinación') || 
+    const isMaintenanceService = (service.serviceItems || []).some(item =>
+        item.name.toLowerCase().includes('afinación') ||
         item.name.toLowerCase().includes('cambio de aceite')
     );
-
-    // Find the oil with the highest performance in the service
-    const oilItem = (service.serviceItems || [])
-        .flatMap(item => item.suppliesUsed || [])
-        .map(supply => inventoryItems.find(inv => inv.id === supply?.supplyId))
-        .filter((invItem): invItem is InventoryItem => !!invItem && invItem.category.toLowerCase().includes('aceite') && !!invItem.rendimiento)
-        .sort((a, b) => (b.rendimiento || 0) - (a.rendimiento || 0))[0];
 
     const today = new Date();
     // Default next service date is 6 months from now
     const nextServiceDate = addMonths(today, 6);
-    let nextMileage: number | undefined = undefined;
 
-    // If it is a maintenance service OR an oil was found, we calculate next service
-    if (isMaintenanceService || oilItem) {
-        if (oilItem && service.mileage && oilItem.rendimiento) {
-            nextMileage = service.mileage + oilItem.rendimiento;
-        }
-
+    // If it is a maintenance service, we suggest a next service date.
+    // The mileage will be entered manually by the user in the main service form.
+    if (isMaintenanceService) {
         nextServiceInfo = {
             date: nextServiceDate.toISOString(),
-            mileage: nextMileage,
+            mileage: undefined, // Let it be manual
         };
     }
-
 
     onConfirm(service, values, nextServiceInfo);
   };
@@ -141,7 +129,7 @@ export function CompleteServiceDialog({
         <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle>Completar y Cobrar Servicio</DialogTitle>
           <DialogDescription>
-            Confirme el método de pago para {service.vehicleIdentifier}. El stock se descontará y el servicio se marcará como entregado.
+             Confirme el método de pago para marcar el servicio como entregado. El stock se descontará y se generará el ticket.
           </DialogDescription>
         </DialogHeader>
         <div className="p-6 space-y-4">
@@ -201,4 +189,3 @@ export function CompleteServiceDialog({
     </Dialog>
   );
 }
-
