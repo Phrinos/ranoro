@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Search, ListFilter, ShieldCheck, User, ChevronRight, AlertTriangle } from "lucide-react";
@@ -52,11 +52,14 @@ interface OverduePaperworkItem {
     dueDate: string;
 }
 
-export function FlotillaPageComponent() {
+export function FlotillaPageComponent({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'informe';
+  const defaultTab = (searchParams?.tab as string) || 'informe';
 
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(defaultTab);

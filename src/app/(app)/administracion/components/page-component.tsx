@@ -2,7 +2,6 @@
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";
-import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { User, AppRole, AuditLog } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -16,9 +15,12 @@ import { Loader2 } from "lucide-react";
 import { Shield, Users, BookOpen, DatabaseZap } from 'lucide-react';
 
 
-export function AdministracionPageComponent() {
-    const searchParams = useSearchParams();
-    const defaultSubTab = searchParams.get('tab') || 'usuarios';
+export function AdministracionPageComponent({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+    const defaultSubTab = (searchParams?.tab as string) || 'usuarios';
     const [activeTab, setAdminTab] = useState(defaultSubTab);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [users, setUsers] = useState<User[]>([]);

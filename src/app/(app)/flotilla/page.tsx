@@ -4,10 +4,14 @@ import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { FlotillaPageComponent } from './components/page-component';
 
-export default function FlotillaPageWrapper() {
+export default function FlotillaPageWrapper({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
     return (
         <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-            <FlotillaPageComponent />
+            <FlotillaPageComponent searchParams={searchParams} />
         </Suspense>
     )
 }

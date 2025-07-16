@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, Suspense, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -31,9 +30,12 @@ import { ReporteOperacionesContent } from './reporte-operaciones-content';
 import { ReporteInventarioContent } from './reporte-inventario-content';
 
 
-export function FinanzasPageComponent() {
-    const searchParams = useSearchParams();
-    const defaultTab = searchParams.get('tab') || 'resumen';
+export function FinanzasPageComponent({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+    const defaultTab = (searchParams?.tab as string) || 'resumen';
     
     const [activeTab, setActiveTab] = useState(defaultTab);
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);

@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -42,10 +41,13 @@ interface AggregatedAdminStaffPerformance {
 }
 
 
-export function PersonalPageComponent() {
+export function PersonalPageComponent({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   const { toast } = useToast();
-  const searchParams = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'informe';
+  const defaultTab = (searchParams?.tab as string) || 'informe';
   const [activeTab, setActiveTab] = useState(defaultTab);
   
   const [technicians, setTechnicians] = useState<Technician[]>([]);
