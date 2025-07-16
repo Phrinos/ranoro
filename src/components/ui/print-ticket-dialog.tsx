@@ -70,7 +70,7 @@ export function PrintTicketDialog({
             </DialogHeader>
 
             {/* botones al fondo, en columna y alineados a la derecha */}
-            <DialogFooter className="flex-col gap-2 items-end">
+            <DialogFooter className="flex flex-col gap-3 items-end sm:flex-col">
               {footerActions}
             </DialogFooter>
           </div>
