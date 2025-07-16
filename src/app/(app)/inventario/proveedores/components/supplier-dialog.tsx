@@ -66,14 +66,14 @@ export function SupplierDialog({
             {supplier ? "Actualiza los detalles del proveedor." : "Completa la información para un nuevo proveedor."}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto px-6">
-          <SupplierForm
-            id="supplier-form"
-            initialData={supplier}
-            onSubmit={handleSubmit}
-          />
+        <div className="flex-grow overflow-y-auto px-6 py-4">
+            <SupplierForm
+              id="supplier-form"
+              initialData={supplier}
+              onSubmit={handleSubmit}
+            />
         </div>
-        <DialogFooter className="p-6 pt-4 border-t bg-background sticky bottom-0 flex-shrink-0">
+        <DialogFooter className="p-6 pt-4 border-t bg-background flex-shrink-0 flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
