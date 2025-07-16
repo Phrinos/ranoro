@@ -23,6 +23,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
 import { Printer, Copy, MessageSquare } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { PaymentDetailsDialog } from '../../components/PaymentDetailsDialog';
 
 const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
     { value: 'all', label: 'Todos los Estados' },
@@ -133,6 +134,15 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   });
   
   const handleSaveRecord = useCallback(async (data: QuoteRecord | ServiceRecord) => {
+    if ('status' in data && data.status === 'Entregado' && data.id) {
+      const serviceToUpdate = allServices.find(s => s.id === data.id);
+      if (serviceToUpdate && serviceToUpdate.status !== 'Entregado') {
+        setServiceToComplete({ ...serviceToUpdate, ...data });
+        setIsCompleteDialogOpen(true);
+        return;
+      }
+    }
+    
     try {
       await operationsService.saveService(data);
       setIsFormDialogOpen(false);
@@ -140,7 +150,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     } catch (e) {
       toast({ title: "Error", description: `No se pudo guardar el registro.`, variant: "destructive"});
     }
-  }, [toast]);
+  }, [toast, allServices]);
 
   const handleCancelRecord = useCallback(async (serviceId: string, reason: string) => {
     try {
@@ -292,7 +302,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         />
       )}
       
-      {serviceToComplete && <CompleteServiceDialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen} service={serviceToComplete} onConfirm={handleConfirmCompletion} inventoryItems={inventoryItems}/>}
+      {serviceToComplete && <PaymentDetailsDialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen} service={serviceToComplete} onConfirm={handleConfirmCompletion} />}
       {isPreviewOpen && recordForPreview && <UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={recordForPreview}/>}
       
       {recordForTicket && (

@@ -70,7 +70,7 @@ const completeServiceSchema = z.object({
   path: ["transferFolio"],
 });
 
-type CompleteServiceFormValues = z.infer<typeof completeServiceSchema>;
+export type CompleteServiceFormValues = z.infer<typeof completeServiceSchema>;
 
 interface CompleteServiceDialogProps {
   open: boolean;
@@ -99,28 +99,7 @@ export function CompleteServiceDialog({
   const selectedPaymentMethod = form.watch("paymentMethod");
 
   const handleFormSubmit = (values: CompleteServiceFormValues) => {
-    let nextServiceInfo: { date: string, mileage?: number } | undefined = undefined;
-
-    // Check if any service item description includes "aceite" or "afinación"
-    const isMaintenanceService = (service.serviceItems || []).some(item =>
-        item.name.toLowerCase().includes('afinación') ||
-        item.name.toLowerCase().includes('cambio de aceite')
-    );
-
-    const today = new Date();
-    // Default next service date is 6 months from now
-    const nextServiceDate = addMonths(today, 6);
-
-    // If it is a maintenance service, we suggest a next service date.
-    // The mileage will be entered manually by the user in the main service form.
-    if (isMaintenanceService) {
-        nextServiceInfo = {
-            date: nextServiceDate.toISOString(),
-            mileage: undefined, // Let it be manual
-        };
-    }
-
-    onConfirm(service, values, nextServiceInfo);
+    onConfirm(service, values, service.nextServiceInfo);
   };
   
   return (
@@ -128,7 +107,7 @@ export function CompleteServiceDialog({
       <DialogContent className="sm:max-w-md p-0">
         <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle>Completar y Cobrar Servicio</DialogTitle>
-          <DialogDescription>
+           <DialogDescription>
              Confirme el método de pago para marcar el servicio como entregado. El stock se descontará y se generará el ticket.
           </DialogDescription>
         </DialogHeader>

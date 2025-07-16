@@ -25,6 +25,7 @@ import { format, parse, isValid, startOfDay, isSameDay } from 'date-fns';
 import { personnelService } from './personnel.service';
 import { cleanObjectForFirestore } from '@/lib/forms';
 import { logAudit } from '../placeholder-data';
+import { parseDate } from '@/lib/forms';
 
 
 // --- Services ---
@@ -204,40 +205,30 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
         batch.update(publicDocRef, cleanObjectForFirestore(updatedServiceData));
     }
 
-    if (service.vehicleId && updatedServiceData.nextServiceInfo) {
-      const vehicleRef = doc(db, 'vehicles', service.vehicleId);
-      batch.update(vehicleRef, { 
-        nextServiceInfo: updatedServiceData.nextServiceInfo,
-        lastServiceDate: new Date().toISOString(),
-        mileage: service.mileage // Also update the vehicle's mileage
-       });
-    } else if (service.vehicleId) {
-      const vehicleRef = doc(db, 'vehicles', service.vehicleId);
-      batch.update(vehicleRef, { 
-          lastServiceDate: new Date().toISOString(),
-          mileage: service.mileage 
-      });
+    if (service.vehicleId) {
+        const vehicleRef = doc(db, 'vehicles', service.vehicleId);
+        const vehicleUpdatePayload: any = {
+            lastServiceDate: new Date().toISOString(),
+            mileage: service.mileage, // Also update the vehicle's mileage
+        };
+        if (updatedServiceData.nextServiceInfo) {
+            vehicleUpdatePayload.nextServiceInfo = updatedServiceData.nextServiceInfo;
+        }
+        batch.update(vehicleRef, cleanObjectForFirestore(vehicleUpdatePayload));
     }
 
     // Deduct inventory
-    if (service.serviceItems && service.serviceItems.length > 0) {
-        const allSupplies = service.serviceItems.flatMap(item => item.suppliesUsed || []);
-        if (allSupplies.length > 0) {
-            const inventoryUpdates = new Map<string, number>();
-            allSupplies.forEach(supply => {
-                if (supply.supplyId && !supply.isService) {
-                    inventoryUpdates.set(supply.supplyId, (inventoryUpdates.get(supply.supplyId) || 0) + supply.quantity);
-                }
-            });
-            
-            const inventoryItems = await inventoryService.onItemsUpdatePromise();
-            const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
+    const allSupplies = (service.serviceItems || []).flatMap(item => item.suppliesUsed || []);
+    if (allSupplies.length > 0) {
+        const inventoryItems = await inventoryService.onItemsUpdatePromise();
+        const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
 
-            for (const [itemId, quantityToDeduct] of inventoryUpdates.entries()) {
-                const item = inventoryMap.get(itemId);
-                if (item) {
-                    const itemRef = doc(db, "inventory", itemId);
-                    const newQuantity = Math.max(0, item.quantity - quantityToDeduct);
+        for (const supply of allSupplies) {
+            if (supply.supplyId && !supply.isService) {
+                const item = inventoryMap.get(supply.supplyId);
+                if (item) { // Only process if item exists in inventory
+                    const itemRef = doc(db, "inventory", supply.supplyId);
+                    const newQuantity = Math.max(0, item.quantity - supply.quantity);
                     batch.update(itemRef, { quantity: newQuantity });
                 }
             }
