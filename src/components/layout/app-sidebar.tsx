@@ -91,7 +91,6 @@ export function AppSidebar({
                 fill
                 style={{objectFit: 'contain'}}
                 className="dark:invert"
-                priority
                 sizes="120px"
                 data-ai-hint="ranoro logo"
             />
