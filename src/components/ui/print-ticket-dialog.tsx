@@ -62,7 +62,7 @@ export function PrintTicketDialog({
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
-            <DialogFooter className="flex-col gap-2 !justify-start">
+            <DialogFooter className="flex-col gap-2">
               {footerActions}
             </DialogFooter>
           </div>
