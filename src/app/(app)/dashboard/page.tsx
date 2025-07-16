@@ -416,10 +416,10 @@ export default function DashboardPage() {
     const lastMonthMetrics = calculateMetricsForPeriod(lastMonthStart, lastMonthEnd);
 
     const monthlyComparisonDataResult = [
-        { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos },
-        { name: 'Utilidad Bruta', 'Mes Anterior': lastMonthMetrics.utilidadBruta, 'Mes Actual': currentMonthMetrics.utilidadBruta },
-        { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta },
-        { name: 'Servicios', 'Mes Anterior': lastMonthMetrics.servicios, 'Mes Actual': currentMonthMetrics.servicios },
+        { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos, 'Utilidad Bruta': 0, 'Utilidad Neta': 0 },
+        { name: 'Utilidad Bruta', 'Mes Anterior': 0, 'Mes Actual': 0, 'Utilidad Bruta': lastMonthMetrics.utilidadBruta, 'Utilidad Neta': currentMonthMetrics.utilidadBruta },
+        { name: 'Utilidad Neta', 'Mes Anterior': 0, 'Mes Actual': 0, 'Utilidad Bruta': 0, 'Utilidad Neta': lastMonthMetrics.utilidadNeta, 'Mes Actual Neta': currentMonthMetrics.utilidadNeta },
+        { name: 'Servicios', 'Mes Anterior': lastMonthMetrics.servicios, 'Mes Actual': currentMonthMetrics.servicios, 'Utilidad Bruta': 0, 'Utilidad Neta': 0 },
     ];
 
 

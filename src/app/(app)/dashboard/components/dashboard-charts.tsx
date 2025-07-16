@@ -26,7 +26,7 @@ const CustomTooltip = ({ active, payload, label, activeDataKeys }: any) => {
               <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: pld.color }}></div>
               <span>{`${pld.name}: `}</span>
               <span className="font-semibold ml-1">
-                {pld.dataKey === 'ingresos' || pld.dataKey === 'ganancia' || pld.dataKey === 'costos' || pld.dataKey === 'gastos'
+                {pld.dataKey === 'ingresos' || pld.dataKey === 'ganancia' || pld.dataKey === 'costos' || pld.dataKey === 'gastos' || pld.dataKey === 'utilidadBruta' || pld.dataKey === 'utilidadNeta'
                   ? formatCurrency(pld.value)
                   : pld.value.toLocaleString('es-MX')}
               </span>
@@ -56,7 +56,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 interface DashboardChartsProps {
     chartData: { name: string; ingresos: number; ganancia: number; costos: number; gastos: number; servicios: number; }[];
     serviceTypeDistribution: { name: string; value: number }[];
-    monthlyComparisonData: { name: string; 'Mes Anterior': number; 'Mes Actual': number }[];
+    monthlyComparisonData: { name: string; 'Mes Anterior': number; 'Mes Actual': number; 'Utilidad Bruta': number; 'Utilidad Neta': number }[];
 }
 
 
@@ -73,7 +73,7 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
       { key: 'ingresos', name: 'Ingresos', color: 'hsl(var(--chart-1))' },
       { key: 'ganancia', name: 'Ganancia', color: 'hsl(var(--chart-2))' },
       { key: 'costos', name: 'Costos', color: 'hsl(var(--chart-5))' },
-      { key: 'gastos', name: 'Gastos', color: 'hsl(var(--destructive))' },
+      { key: 'gastos', name: 'Gastos', color: 'hsl(var(--muted))' },
       { key: 'servicios', name: 'Servicios', color: '#F97316' },
   ];
 
@@ -96,7 +96,7 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
                 {activeDataKeys.includes('ingresos') && <Line yAxisId="left" type="monotone" dataKey="ingresos" stroke="hsl(var(--chart-1))" strokeWidth={2} name="Ingresos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                 {activeDataKeys.includes('ganancia') && <Line yAxisId="left" type="monotone" dataKey="ganancia" stroke="hsl(var(--chart-2))" strokeWidth={2} name="Ganancia" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                 {activeDataKeys.includes('costos') && <Line yAxisId="left" type="monotone" dataKey="costos" stroke="hsl(var(--chart-5))" strokeWidth={2} name="Costos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                {activeDataKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke="hsl(var(--destructive))" strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                {activeDataKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke="hsl(var(--muted))" strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                 {activeDataKeys.includes('servicios') && <Line yAxisId="right" type="monotone" dataKey="servicios" stroke="#F97316" strokeWidth={2} name="Servicios" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
             </LineChart>
           </ResponsiveContainer>
@@ -128,7 +128,9 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
               <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} formatter={(val: any, name: any) => [name.toString().includes('Servicios') ? val : formatCurrency(val as number), name]}/>
               <Legend />
               <Bar dataKey="Mes Anterior" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="Mes Actual" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="Mes Actual" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="Utilidad Bruta" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="Utilidad Neta" fill="hsl(var(--chart-5))" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
