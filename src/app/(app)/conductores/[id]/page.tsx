@@ -95,37 +95,39 @@ export default function DriverDetailPage() {
   
   const debtInfo = useMemo(() => {
     if (!driver || !assignedVehicle?.dailyRentalCost) {
-      return { totalDebt: 0, daysOwed: 0, calculatedRentDebt: 0, manualDebt: 0 };
+      return { totalDebt: 0, daysOwed: 0, balance: 0, calculatedRentDebt: 0, manualDebt: 0 };
     }
     
     const today = startOfToday();
     const monthStart = startOfMonth(today);
     const monthEnd = endOfMonth(today);
-    let calculatedRentDebt = 0;
+    
+    // Use a fixed start date for rent calculation as per previous request.
+    const rentStartDate = new Date('2024-07-01');
+    let totalExpectedAmountThisMonth = 0;
 
-    if (driver.contractDate) {
-        const contractStartDate = parseISO(driver.contractDate);
-        if (!isAfter(contractStartDate, today)) {
-            const daysInMonthOfContract = eachDayOfInterval({
-                start: contractStartDate > monthStart ? contractStartDate : monthStart,
-                end: today < monthEnd ? today : monthEnd
-            });
-            
-            const totalExpectedAmountThisMonth = daysInMonthOfContract.length * assignedVehicle.dailyRentalCost;
-            
-            const paymentsThisMonth = driverPayments
-                .filter(p => isAfter(parseISO(p.paymentDate), monthStart) || isAfter(monthStart, parseISO(p.paymentDate)))
-                .reduce((sum, p) => sum + p.amount, 0);
-
-            calculatedRentDebt = Math.max(0, totalExpectedAmountThisMonth - paymentsThisMonth);
+    if (!isAfter(rentStartDate, today)) {
+        // Calculate days to charge within the current month, starting from July 1st.
+        const startOfCalculation = isAfter(rentStartDate, monthStart) ? rentStartDate : monthStart;
+        
+        if (!isAfter(startOfCalculation, today)) {
+            const daysToCharge = differenceInCalendarDays(today, startOfCalculation) + 1;
+            totalExpectedAmountThisMonth = daysToCharge * assignedVehicle.dailyRentalCost;
         }
     }
     
+    const paymentsThisMonth = driverPayments
+        .filter(p => isAfter(parseISO(p.paymentDate), monthStart) || isAfter(monthStart, parseISO(p.paymentDate)))
+        .reduce((sum, p) => sum + p.amount, 0);
+
+    const balance = paymentsThisMonth - totalExpectedAmountThisMonth;
+    const calculatedRentDebt = Math.max(0, -balance);
+    
     const manualDebt = (driver.manualDebts || []).reduce((sum, debt) => sum + debt.amount, 0);
     const totalDebt = calculatedRentDebt + manualDebt;
-    const daysOwed = assignedVehicle?.dailyRentalCost ? Math.floor(totalDebt / assignedVehicle.dailyRentalCost) : 0;
+    const daysOwed = assignedVehicle?.dailyRentalCost ? totalDebt / assignedVehicle.dailyRentalCost : 0;
     
-    return { totalDebt, daysOwed, calculatedRentDebt, manualDebt };
+    return { totalDebt, daysOwed, balance, calculatedRentDebt, manualDebt };
 
   }, [driver, assignedVehicle, driverPayments]);
 
@@ -448,7 +450,7 @@ const handleAssignVehicle = async (newVehicleId: string) => {
                     </div>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">DÍAS PENDIENTES (APROX)</p>
-                        <p className="text-3xl font-bold">{debtInfo.daysOwed}</p>
+                        <p className="text-3xl font-bold">{debtInfo.daysOwed.toFixed(2)}</p>
                     </div>
                 </CardContent>
             </Card>

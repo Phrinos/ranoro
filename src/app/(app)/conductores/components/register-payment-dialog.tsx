@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -64,7 +65,7 @@ export function RegisterPaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md p-6">
         <DialogHeader>
           <DialogTitle>Registrar Pago para {driver.name}</DialogTitle>
           <DialogDescription>
@@ -121,14 +122,14 @@ export function RegisterPaymentDialog({
                       step="0.01"
                       min="0.01"
                       value={amountToPay}
-                      onChange={(e) => setAmountToPay(Number(e.target.value))}
+                      onChange={(e) => setAmountToPay(e.target.value === '' ? '' : Number(e.target.value))}
                       className="pl-8 h-10"
                     />
                   </div>
                 </div>
                 <div className="flex items-center justify-center text-lg font-semibold gap-2">
                     <DollarSign className="h-5 w-5 text-muted-foreground"/>
-                    <span>{formatCurrency(amountToPay)}</span>
+                    <span>{formatCurrency(amountToPay as number)}</span>
                     <ArrowRight className="h-5 w-5 text-muted-foreground"/>
                     <CalendarDays className="h-5 w-5 text-muted-foreground"/>
                     <span>Cubre {calculatedDaysFromAmount.toFixed(2)} día(s)</span>

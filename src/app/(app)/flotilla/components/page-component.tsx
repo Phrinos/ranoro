@@ -28,9 +28,6 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 type FlotillaSortOption = "plate_asc" | "plate_desc" | "owner_asc" | "owner_desc" | "rent_asc" | "rent_desc";
 type DriverSortOption = 'name_asc' | 'name_desc';
 
-const FINE_CHECK_INTERVAL_DAYS = 15;
-const FINE_CHECK_STORAGE_KEY = 'fleetFineLastCheckDate';
-
 interface MonthlyBalance {
   driverId: string;
   driverName: string;
@@ -109,7 +106,7 @@ export function FlotillaPageComponent({
   const monthlyBalances = useMemo((): MonthlyBalance[] => {
     if (isLoading) return [];
     
-    const today = new Date();
+    const today = startOfToday();
     const monthStart = startOfMonth(today);
     const monthEnd = endOfMonth(today);
 
@@ -128,10 +125,10 @@ export function FlotillaPageComponent({
         const dailyRate = vehicle?.dailyRentalCost || 0;
         
         let charges = 0;
-        if (driver.contractDate && dailyRate > 0) {
-            const contractStartDate = parseISO(driver.contractDate);
-            if (isValid(contractStartDate) && !isAfter(contractStartDate, today)) {
-                const startOfCalculation = isAfter(contractStartDate, monthStart) ? contractStartDate : monthStart;
+        const rentStartDate = new Date('2024-07-01'); // Use fixed start date
+        if (dailyRate > 0 && !isAfter(rentStartDate, today)) {
+            const startOfCalculation = isAfter(rentStartDate, monthStart) ? rentStartDate : monthStart;
+            if (!isAfter(startOfCalculation, today)) {
                 const daysInMonthSoFar = differenceInCalendarDays(today, startOfCalculation) + 1;
                 charges = daysInMonthSoFar * dailyRate;
             }
@@ -305,8 +302,8 @@ export function FlotillaPageComponent({
                                             <TableCell>{mb.vehicleInfo}</TableCell>
                                             <TableCell className="text-right text-green-600">{formatCurrency(mb.payments)}</TableCell>
                                             <TableCell className="text-right text-red-600">{formatCurrency(mb.charges)}</TableCell>
-                                            <TableCell className="text-right font-semibold">{mb.daysCovered.toFixed(1)}</TableCell>
-                                            <TableCell className="text-right font-bold text-destructive">{mb.daysOwed.toFixed(1)}</TableCell>
+                                            <TableCell className="text-right font-semibold">{mb.daysCovered.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right font-bold text-destructive">{mb.daysOwed.toFixed(2)}</TableCell>
                                             <TableCell className={cn("text-right font-bold", mb.balance >= 0 ? "text-green-700" : "text-red-700")}>{formatCurrency(mb.balance)}</TableCell>
                                         </TableRow>
                                     ))
