@@ -364,7 +364,6 @@ export default function DashboardPage() {
         ganancia: serviceProfit + salesProfit,
         costos: serviceCosts + salesCosts,
         gastos: totalExpenses,
-        servicios: servicesInMonth.length + salesInMonth.length,
       };
     });
 
@@ -396,7 +395,7 @@ export default function DashboardPage() {
 
         const utilidadNeta = utilidadBruta - gastosFijos;
 
-        return { ingresos, utilidadBruta, utilidadNeta, servicios: services.length + sales.length };
+        return { ingresos, utilidadBruta, utilidadNeta };
     };
 
     const currentMonthMetrics = calculateMetricsForPeriod(currentMonthStart, endOfDay(today));
@@ -404,9 +403,7 @@ export default function DashboardPage() {
 
     const monthlyComparisonDataResult = [
         { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos, 'Utilidad Bruta': 0, 'Utilidad Neta': 0 },
-        { name: 'Utilidad Bruta', 'Mes Anterior': 0, 'Mes Actual': 0, 'Utilidad Bruta': currentMonthMetrics.utilidadBruta, 'Utilidad Neta': 0 },
-        { name: 'Utilidad Neta', 'Mes Anterior': 0, 'Mes Actual': 0, 'Utilidad Bruta': 0, 'Utilidad Neta': currentMonthMetrics.utilidadNeta },
-        { name: 'Servicios', 'Mes Anterior': lastMonthMetrics.servicios, 'Mes Actual': currentMonthMetrics.servicios, 'Utilidad Bruta': 0, 'Utilidad Neta': 0 },
+        { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta, 'Utilidad Bruta': 0, 'Utilidad Neta': 0 },
     ];
 
 

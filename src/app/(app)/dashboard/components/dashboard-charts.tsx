@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { LineChart, Line, Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
@@ -54,14 +54,14 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 };
 
 interface DashboardChartsProps {
-    chartData: { name: string; ingresos: number; ganancia: number; costos: number; gastos: number; servicios: number; }[];
+    chartData: { name: string; ingresos: number; ganancia: number; costos: number; gastos: number; }[];
     serviceTypeDistribution: { name: string; value: number }[];
     monthlyComparisonData: { name: string; 'Mes Anterior': number; 'Mes Actual': number; 'Utilidad Bruta': number; 'Utilidad Neta': number }[];
 }
 
 
 export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyComparisonData }: DashboardChartsProps) {
-  const [activeDataKeys, setActiveDataKeys] = useState<string[]>(['ingresos', 'ganancia', 'gastos']);
+  const [activeDataKeys, setActiveDataKeys] = useState<string[]>(['ingresos', 'ganancia', 'gastos', 'costos']);
 
   const toggleDataKey = (key: string) => {
     setActiveDataKeys(prev => 
@@ -70,11 +70,10 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
   };
   
   const lineChartData = [
-      { key: 'ingresos', name: 'Ingresos', color: 'hsl(var(--chart-1))' },
-      { key: 'ganancia', name: 'Ganancia', color: '#A0A0A0' },
-      { key: 'costos', name: 'Costos', color: 'hsl(var(--primary))', opacity: 0.8 },
-      { key: 'gastos', name: 'Gastos', color: 'hsl(var(--primary))', opacity: 0.4 },
-      { key: 'servicios', name: 'Servicios', color: '#F97316' },
+      { key: 'ingresos', name: 'Ingresos', color: '#3b82f6' }, // blue
+      { key: 'ganancia', name: 'Ganancia', color: '#22c55e' }, // green
+      { key: 'gastos', name: 'Gastos', color: '#ef4444' }, // red
+      { key: 'costos', name: 'Costos', color: '#f97316' }, // orange
   ];
 
   return (
@@ -90,14 +89,12 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="left" fontSize={12} tickLine={false} axisLine={false} tickFormatter={formatCurrencyForChart} />
-                <YAxis yAxisId="right" orientation="right" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip activeDataKeys={activeDataKeys} />} cursor={{ stroke: 'hsl(var(--muted))' }}/>
                 <Legend />
-                {activeDataKeys.includes('ingresos') && <Line yAxisId="left" type="monotone" dataKey="ingresos" stroke="hsl(var(--chart-1))" strokeWidth={2} name="Ingresos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                {activeDataKeys.includes('ganancia') && <Line yAxisId="left" type="monotone" dataKey="ganancia" stroke="#A0A0A0" strokeWidth={2} name="Ganancia" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                {activeDataKeys.includes('costos') && <Line yAxisId="left" type="monotone" dataKey="costos" stroke="hsl(var(--primary))" strokeOpacity={0.8} strokeWidth={2} name="Costos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                {activeDataKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke="hsl(var(--primary))" strokeOpacity={0.4} strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                {activeDataKeys.includes('servicios') && <Line yAxisId="right" type="monotone" dataKey="servicios" stroke="#F97316" strokeWidth={2} name="Servicios" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                {activeDataKeys.includes('ingresos') && <Line yAxisId="left" type="monotone" dataKey="ingresos" stroke="#3b82f6" strokeWidth={2} name="Ingresos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                {activeDataKeys.includes('ganancia') && <Line yAxisId="left" type="monotone" dataKey="ganancia" stroke="#22c55e" strokeWidth={2} name="Ganancia" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                {activeDataKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke="#ef4444" strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                {activeDataKeys.includes('costos') && <Line yAxisId="left" type="monotone" dataKey="costos" stroke="#f97316" strokeWidth={2} name="Costos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
             </LineChart>
           </ResponsiveContainer>
           <div className="flex items-center justify-center gap-4 mt-4 text-sm flex-wrap">
@@ -125,12 +122,30 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => val > 1000 ? `${val/1000}k` : `${val}`} />
               <YAxis dataKey="name" type="category" fontSize={12} tickLine={false} axisLine={false} width={80} />
-              <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} formatter={(val: any, name: any) => [name.toString().includes('Servicios') ? val : formatCurrency(val as number), name]}/>
+              <Tooltip
+                cursor={{ fill: 'hsl(var(--muted))' }}
+                formatter={(value: number, name: string, props) => {
+                  const item = props.payload;
+                  if (name === 'Utilidad Neta') {
+                    // This is a custom check for the dynamic color display
+                    return [<span className={value >= 0 ? 'text-green-600' : 'text-red-600'}>{formatCurrency(value)}</span>, name];
+                  }
+                   if (name === 'Mes Anterior' || name === 'Mes Actual') {
+                    return [formatCurrency(value), name];
+                  }
+                  return [formatCurrency(value), name];
+                }}
+              />
               <Legend />
               <Bar dataKey="Mes Anterior" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} />
               <Bar dataKey="Mes Actual" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="Utilidad Bruta" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="Utilidad Neta" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+              {monthlyComparisonData.map((entry, index) => {
+                  const netProfit = entry['Utilidad Neta'];
+                  if (netProfit !== 0) {
+                      return <Bar key={`cell-${index}`} dataKey="Utilidad Neta" fill={netProfit >= 0 ? '#22c55e' : '#ef4444'} radius={[0, 4, 4, 0]} />;
+                  }
+                  return null;
+              })}
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
