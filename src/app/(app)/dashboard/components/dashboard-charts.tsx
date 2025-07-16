@@ -71,7 +71,7 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
   
   const lineChartData = [
       { key: 'ingresos', name: 'Ingresos', color: 'hsl(var(--chart-1))' },
-      { key: 'ganancia', name: 'Ganancia', color: 'hsl(var(--chart-2))' },
+      { key: 'ganancia', name: 'Ganancia', color: '#A0A0A0' },
       { key: 'costos', name: 'Costos', color: 'hsl(var(--primary))', opacity: 0.8 },
       { key: 'gastos', name: 'Gastos', color: 'hsl(var(--primary))', opacity: 0.4 },
       { key: 'servicios', name: 'Servicios', color: '#F97316' },
@@ -94,7 +94,7 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
                 <Tooltip content={<CustomTooltip activeDataKeys={activeDataKeys} />} cursor={{ stroke: 'hsl(var(--muted))' }}/>
                 <Legend />
                 {activeDataKeys.includes('ingresos') && <Line yAxisId="left" type="monotone" dataKey="ingresos" stroke="hsl(var(--chart-1))" strokeWidth={2} name="Ingresos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                {activeDataKeys.includes('ganancia') && <Line yAxisId="left" type="monotone" dataKey="ganancia" stroke="hsl(var(--chart-2))" strokeWidth={2} name="Ganancia" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                {activeDataKeys.includes('ganancia') && <Line yAxisId="left" type="monotone" dataKey="ganancia" stroke="#A0A0A0" strokeWidth={2} name="Ganancia" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                 {activeDataKeys.includes('costos') && <Line yAxisId="left" type="monotone" dataKey="costos" stroke="hsl(var(--primary))" strokeOpacity={0.8} strokeWidth={2} name="Costos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                 {activeDataKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke="hsl(var(--primary))" strokeOpacity={0.4} strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                 {activeDataKeys.includes('servicios') && <Line yAxisId="right" type="monotone" dataKey="servicios" stroke="#F97316" strokeWidth={2} name="Servicios" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
