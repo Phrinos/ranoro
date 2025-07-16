@@ -125,8 +125,8 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
               <YAxis dataKey="name" type="category" fontSize={12} tickLine={false} axisLine={false} width={80} />
               <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} formatter={(val: any, name: any) => [name.toString().includes('Servicios') ? val : formatCurrency(val as number), name]}/>
               <Legend />
-              <Bar dataKey="Mes Anterior" fill="hsl(var(--secondary))" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="Mes Actual" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="Mes Anterior" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="Mes Actual" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
