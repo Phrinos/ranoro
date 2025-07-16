@@ -192,6 +192,10 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     }
   }, [toast]);
   
+  const handlePrint = () => {
+    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
+  };
+  
 
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
@@ -229,17 +233,19 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
               <Button variant="outline" onClick={handleCopyAsImage} className="w-full sm:w-auto">
                   <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
               </Button>
-              <Button onClick={() => window.print()} className="w-full sm:w-auto">
+              <Button onClick={handlePrint} className="w-full sm:w-auto">
                   <Printer className="mr-2 h-4 w-4"/>Imprimir
               </Button>
             </div>
           }
         >
-          <TicketContent
-            ref={ticketContentRef}
-            sale={saleForTicket}
-            previewWorkshopInfo={workshopInfo || undefined}
-          />
+          <div id="printable-ticket">
+            <TicketContent
+                ref={ticketContentRef}
+                sale={saleForTicket}
+                previewWorkshopInfo={workshopInfo || undefined}
+            />
+          </div>
         </PrintTicketDialog>
       )}
     </>

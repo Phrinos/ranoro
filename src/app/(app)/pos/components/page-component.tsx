@@ -280,6 +280,10 @@ Total: ${formatCurrency(sale.totalAmount)}
     });
   }, [toast]);
   
+  const handlePrint = () => {
+    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
+  };
+
   const setDateToToday = () => setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
   const setDateToThisWeek = () => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
   const setDateToThisMonth = () => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
@@ -336,8 +340,20 @@ Total: ${formatCurrency(sale.totalAmount)}
             </Card>
         </TabsContent>
       </Tabs>
-      <PrintTicketDialog open={isReprintDialogOpen && !!selectedSaleForReprint} onOpenChange={setIsReprintDialogOpen} title="Reimprimir Ticket" footerActions={<><Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button></>}>
-        {selectedSaleForReprint && <TicketContent ref={ticketContentRef} sale={selectedSaleForReprint} />}
+      <PrintTicketDialog
+        open={isReprintDialogOpen && !!selectedSaleForReprint}
+        onOpenChange={setIsReprintDialogOpen}
+        title="Reimprimir Ticket"
+        footerActions={
+          <>
+            <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar</Button>
+            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+          </>
+        }
+      >
+        <div id="printable-ticket">
+          {selectedSaleForReprint && <TicketContent ref={ticketContentRef} sale={selectedSaleForReprint} />}
+        </div>
       </PrintTicketDialog>
       {selectedSale && <ViewSaleDialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} sale={selectedSale} onCancelSale={handleCancelSale} onSendWhatsapp={handleCopySaleForWhatsapp} />}
       <Dialog open={isInitialBalanceDialogOpen} onOpenChange={setIsInitialBalanceDialogOpen}>

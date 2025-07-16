@@ -115,6 +115,10 @@ function RentasPageComponent({
     }
   }, [toast]);
   
+  const handlePrint = () => {
+    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
+  };
+  
   const sortedPayments = useMemo(() => {
     return [...payments].sort((a, b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
   }, [payments]);
@@ -219,11 +223,13 @@ function RentasPageComponent({
         footerActions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4" /> Copiar Imagen</Button>
-            <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Recibo</Button>
+            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Imprimir Recibo</Button>
           </div>
         }
       >
-        {paymentForReceipt && <RentalReceiptContent ref={receiptRef} payment={paymentForReceipt} workshopInfo={workshopInfo} />}
+        <div id="printable-ticket">
+          {paymentForReceipt && <RentalReceiptContent ref={receiptRef} payment={paymentForReceipt} workshopInfo={workshopInfo} />}
+        </div>
       </PrintTicketDialog>
     </>
   );

@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { ServiceDialog } from "../../components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { CompleteServiceDialog } from "../../components/CompleteServiceDialog";
-import { TableToolbar } from "@/components/shared/table-toolbar";
+import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
@@ -173,6 +173,21 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     await operationsService.updateService(service.id, { appointmentStatus: "Confirmada" });
     toast({ title: "Cita Confirmada" });
   }, [toast]);
+  
+  const handleCopyAsImage = useCallback(async () => {
+    if (!ticketContentRef.current) return;
+    const html2canvas = (await import('html2canvas')).default;
+    try {
+      const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
+      canvas.toBlob((blob) => { if (blob) navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); });
+      toast({ title: "Copiado", description: "La imagen ha sido copiada." });
+    } catch (e) { toast({ title: "Error", description: "No se pudo copiar la imagen.", variant: "destructive" }); }
+  }, [toast]);
+
+  const handlePrint = () => {
+    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
+  };
+
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -239,7 +254,30 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       
       {serviceToComplete && <CompleteServiceDialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen} service={serviceToComplete} onConfirm={handleConfirmCompletion} inventoryItems={inventoryItems}/>}
       {isPreviewOpen && recordForPreview && <UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={recordForPreview}/>}
-      {recordForTicket && <PrintTicketDialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen} title="Ticket de Servicio" contentRef={ticketContentRef}><TicketContent ref={ticketContentRef} service={recordForTicket} vehicle={vehicles.find(v => v.id === recordForTicket.vehicleId)} technician={technicians.find(t => t.id === recordForTicket.technicianId)} previewWorkshopInfo={workshopInfo || undefined}/></PrintTicketDialog>}
+      
+      {recordForTicket && (
+        <PrintTicketDialog
+          open={isTicketDialogOpen}
+          onOpenChange={setIsTicketDialogOpen}
+          title="Ticket de Servicio"
+          footerActions={
+            <>
+              <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar</Button>
+              <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+            </>
+          }
+        >
+          <div id="printable-ticket">
+            <TicketContent
+              ref={ticketContentRef}
+              service={recordForTicket}
+              vehicle={vehicles.find(v => v.id === recordForTicket.vehicleId)}
+              technician={technicians.find(t => t.id === recordForTicket.technicianId)}
+              previewWorkshopInfo={workshopInfo || undefined}
+            />
+          </div>
+        </PrintTicketDialog>
+      )}
     </>
   );
 }

@@ -28,6 +28,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import Image from "next/image";
 import { inventoryService, operationsService } from '@/lib/services';
 import { savePublicDocument } from '@/lib/public-document';
+import { PrintLetterDialog } from "@/components/ui/print-letter-dialog";
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
   const workshopInfo = report.workshopInfo || { name: 'Taller', logoUrl: '/ranoro-logo.png' };
@@ -259,9 +260,9 @@ export default function OwnerIncomeDetailPage() {
       )}
       
       {isReportPreviewOpen && reportToPreview && (
-        <PrintTicketDialog open={isReportPreviewOpen} onOpenChange={setIsReportPreviewOpen} title="Vista Previa de Reporte" dialogContentClassName="printable-quote-dialog max-w-4xl" footerActions={<Button onClick={handleDownloadPDF}><Download className="mr-2 h-4 w-4" /> Descargar PDF</Button>}>
+        <PrintLetterDialog open={isReportPreviewOpen} onOpenChange={setIsReportPreviewOpen} title="Vista Previa de Reporte">
           <ReportContent report={reportToPreview} ref={reportContentRef} />
-        </PrintTicketDialog>
+        </PrintLetterDialog>
       )}
     </>
   );
