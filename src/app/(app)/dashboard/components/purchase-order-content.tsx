@@ -1,31 +1,52 @@
 
 'use client';
 
-import type { PurchaseRecommendation } from '@/types';
-import React from 'react';
+import type { PurchaseRecommendation, WorkshopInfo } from '@/types';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import Image from "next/image";
 
 interface PurchaseOrderContentProps {
   recommendations: PurchaseRecommendation[];
-  workshopName: string;
+  workshopInfo: WorkshopInfo;
 }
 
+const initialWorkshopInfo: WorkshopInfo = {
+  name: "RANORO",
+  phone: "4491425323",
+  addressLine1: "Av. de la Convencion de 1914 No. 1421",
+  logoUrl: "/ranoro-logo.png",
+};
+
+
 export const PurchaseOrderContent = React.forwardRef<HTMLDivElement, PurchaseOrderContentProps>(
-  ({ recommendations, workshopName }, ref) => {
+  ({ recommendations, workshopInfo: customWorkshopInfo }, ref) => {
+    const workshopInfo = { ...initialWorkshopInfo, ...customWorkshopInfo };
     const now = new Date();
     const formattedDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
 
     return (
       <div 
         ref={ref}
-        data-format="letter"
-        className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-sm"
+        className="font-sans bg-white text-black text-sm p-8"
       >
-        <header className="mb-8 border-b border-gray-300 pb-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-primary">{workshopName}</h1>
-            <div className="text-right">
+        <header className="mb-8 border-b-2 border-black pb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            {workshopInfo?.logoUrl && (
+              <div className="relative w-[150px] h-[50px]">
+                <Image 
+                    src={workshopInfo.logoUrl} 
+                    alt={`${workshopInfo.name} Logo`} 
+                    fill
+                    style={{ objectFit: 'contain' }}
+                    data-ai-hint="workshop logo"
+                    sizes="150px"
+                    crossOrigin="anonymous"
+                />
+              </div>
+            )}
+             <div className="text-left sm:text-right">
               <h2 className="text-2xl font-semibold">Orden de Compra</h2>
               <p className="text-xs text-gray-500">Generada el: {formattedDate}</p>
             </div>

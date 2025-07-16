@@ -119,45 +119,52 @@
 }
 
 @media print {
-  /* Define page formats */
-  @page receipt {
-    size: 80mm auto;
-    margin: 2mm;
-  }
-  @page letter {
-    size: letter;
-    margin: 0.5in;
-  }
-
-  body * {
+  body.printing * {
     visibility: hidden;
   }
-  .printable-content, .printable-content * {
+  .printable-area, .printable-area * {
     visibility: visible;
   }
-  .printable-content {
+  .printable-area {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
-    margin: 0 !important;
-    padding: 0 !important;
+    height: 100%;
+    margin: 0;
+    padding: 0;
     box-shadow: none !important;
     border: none !important;
+    background-color: white !important;
   }
-
-  .print-format-letter {
-    page: letter;
-  }
-  .print-format-receipt {
-    page: receipt;
-  }
-  
   .no-print {
     display: none !important;
   }
-}
 
+  /* Specific formats */
+  .print-format-letter {
+    width: 8.5in;
+    height: 11in;
+    padding: 0.5in;
+    margin: 0 auto;
+    page: letter;
+  }
+  .print-format-receipt {
+    width: 80mm;
+    margin: 0;
+    padding: 2mm;
+    page: receipt;
+  }
+
+  @page letter {
+    size: letter;
+    margin: 0;
+  }
+  @page receipt {
+    size: 80mm auto;
+    margin: 0;
+  }
+}
 
 @layer utilities {
   /* For responsive ticket preview */

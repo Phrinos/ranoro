@@ -24,7 +24,7 @@ import { operationsService } from '@/lib/services/operations.service';
 import { adminService } from '@/lib/services/admin.service';
 import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
-import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
+import { PrintLetterDialog } from '@/components/ui/print-letter-dialog';
 import { InventoryReportContent } from './inventory-report-content';
 
 
@@ -210,13 +210,13 @@ export function InventarioPageComponent({ tab }: { tab?: string }) {
         suppliers={suppliers}
       />
 
-      <DocumentPreviewDialog
+      <PrintLetterDialog
           open={isPrintDialogOpen}
           onOpenChange={setIsPrintDialogOpen}
           title="Reporte de Inventario"
       >
         <InventoryReportContent items={itemsToPrint} />
-      </DocumentPreviewDialog>
+      </PrintLetterDialog>
     </>
   );
 }

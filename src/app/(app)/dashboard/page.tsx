@@ -1,17 +1,16 @@
 
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
-import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation, ServiceTypeRecord, MonthlyFixedExpense, AdministrativeStaff } from '@/types';
+import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation, ServiceTypeRecord, MonthlyFixedExpense, AdministrativeStaff, WorkshopInfo } from '@/types';
 import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle, Package } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { PrintLetterDialog } from '@/components/ui/print-letter-dialog';
 import { PurchaseOrderContent } from './components/purchase-order-content';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,7 +68,7 @@ export default function DashboardPage() {
   const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [isPurchaseOrderDialogOpen, setIsPurchaseOrderDialogOpen] = useState(false);
-  const [workshopName, setWorkshopName] = useState<string>('RANORO');
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   
   const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -168,7 +167,7 @@ export default function DashboardPage() {
       if (storedWorkshopInfo) {
         try {
           const info = JSON.parse(storedWorkshopInfo);
-          if (info.name) setWorkshopName(info.name);
+          setWorkshopInfo(info);
         } catch (e) { console.error('Failed to parse workshop info', e); }
       }
     }
@@ -601,24 +600,17 @@ export default function DashboardPage() {
             </Card>
       </div>
 
-      {purchaseRecommendations && (
-        <PrintTicketDialog
+      {purchaseRecommendations && workshopInfo && (
+        <PrintLetterDialog
             open={isPurchaseOrderDialogOpen}
             onOpenChange={setIsPurchaseOrderDialogOpen}
             title="Orden de Compra Sugerida por IA"
-            onDialogClose={() => setPurchaseRecommendations(null)}
-            dialogContentClassName="printable-quote-dialog"
-            footerActions={
-              <Button onClick={() => window.print()}>
-                  <Printer className="mr-2 h-4 w-4" /> Imprimir Orden
-              </Button>
-            }
           >
             <PurchaseOrderContent
               recommendations={purchaseRecommendations}
-              workshopName={workshopName}
+              workshopInfo={workshopInfo}
             />
-        </PrintTicketDialog>
+        </PrintLetterDialog>
       )}
     </div>
   );
