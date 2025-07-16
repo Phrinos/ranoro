@@ -26,7 +26,7 @@ const CustomTooltip = ({ active, payload, label, activeDataKeys }: any) => {
               <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: pld.color }}></div>
               <span>{`${pld.name}: `}</span>
               <span className="font-semibold ml-1">
-                {pld.dataKey === 'ingresos' || pld.dataKey === 'ganancia' || pld.dataKey === 'costos'
+                {pld.dataKey === 'ingresos' || pld.dataKey === 'ganancia' || pld.dataKey === 'costos' || pld.dataKey === 'gastos'
                   ? formatCurrency(pld.value)
                   : pld.value.toLocaleString('es-MX')}
               </span>
@@ -54,14 +54,14 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 };
 
 interface DashboardChartsProps {
-    chartData: { name: string; ingresos: number; ganancia: number; costos: number; servicios: number; }[];
+    chartData: { name: string; ingresos: number; ganancia: number; costos: number; gastos: number; servicios: number; }[];
     serviceTypeDistribution: { name: string; value: number }[];
     monthlyComparisonData: { name: string; 'Mes Anterior': number; 'Mes Actual': number }[];
 }
 
 
 export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyComparisonData }: DashboardChartsProps) {
-  const [activeDataKeys, setActiveDataKeys] = useState<string[]>(['ingresos', 'ganancia']);
+  const [activeDataKeys, setActiveDataKeys] = useState<string[]>(['ingresos', 'ganancia', 'gastos']);
 
   const toggleDataKey = (key: string) => {
     setActiveDataKeys(prev => 
@@ -72,7 +72,8 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
   const lineChartData = [
       { key: 'ingresos', name: 'Ingresos', color: 'hsl(var(--chart-1))' },
       { key: 'ganancia', name: 'Ganancia', color: 'hsl(var(--chart-2))' },
-      { key: 'costos', name: 'Costos', color: 'hsl(var(--destructive))' },
+      { key: 'costos', name: 'Costos', color: 'hsl(var(--chart-5))' },
+      { key: 'gastos', name: 'Gastos', color: 'hsl(var(--destructive))' },
       { key: 'servicios', name: 'Servicios', color: '#F97316' },
   ];
 
@@ -94,7 +95,8 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
                 <Legend />
                 {activeDataKeys.includes('ingresos') && <Line yAxisId="left" type="monotone" dataKey="ingresos" stroke="hsl(var(--chart-1))" strokeWidth={2} name="Ingresos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                 {activeDataKeys.includes('ganancia') && <Line yAxisId="left" type="monotone" dataKey="ganancia" stroke="hsl(var(--chart-2))" strokeWidth={2} name="Ganancia" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                {activeDataKeys.includes('costos') && <Line yAxisId="left" type="monotone" dataKey="costos" stroke="hsl(var(--destructive))" strokeWidth={2} name="Costos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                {activeDataKeys.includes('costos') && <Line yAxisId="left" type="monotone" dataKey="costos" stroke="hsl(var(--chart-5))" strokeWidth={2} name="Costos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                {activeDataKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke="hsl(var(--destructive))" strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                 {activeDataKeys.includes('servicios') && <Line yAxisId="right" type="monotone" dataKey="servicios" stroke="#F97316" strokeWidth={2} name="Servicios" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
             </LineChart>
           </ResponsiveContainer>

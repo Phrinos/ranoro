@@ -10,6 +10,7 @@ import {
   deleteDoc,
   writeBatch,
   getDocs,
+  query,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList, ServiceTypeRecord, MonthlyFixedExpense } from "@/types";
@@ -234,6 +235,13 @@ const onFixedExpensesUpdate = (callback: (expenses: MonthlyFixedExpense[]) => vo
     return unsubscribe;
 };
 
+const onFixedExpensesUpdatePromise = async (): Promise<MonthlyFixedExpense[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(query(collection(db, "fixedMonthlyExpenses")));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MonthlyFixedExpense));
+};
+
+
 
 export const inventoryService = {
     onItemsUpdate,
@@ -259,4 +267,5 @@ export const inventoryService = {
     savePriceList,
     deletePriceList,
     onFixedExpensesUpdate,
+    onFixedExpensesUpdatePromise,
 };

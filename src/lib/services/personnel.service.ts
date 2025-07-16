@@ -77,6 +77,12 @@ const onAdminStaffUpdate = (callback: (staff: AdministrativeStaff[]) => void): (
     return unsubscribe;
 };
 
+const onAdminStaffUpdatePromise = async (): Promise<AdministrativeStaff[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "administrativeStaff"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdministrativeStaff));
+}
+
 const getAdminStaffById = async (id: string): Promise<AdministrativeStaff | undefined> => {
     if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, 'administrativeStaff', id);
@@ -154,6 +160,7 @@ export const personnelService = {
     addTechnician,
     archiveTechnician,
     onAdminStaffUpdate,
+    onAdminStaffUpdatePromise,
     getAdminStaffById,
     saveAdminStaff,
     addAdminStaff,

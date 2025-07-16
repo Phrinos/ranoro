@@ -7,7 +7,7 @@ import { parseISO, isToday, isValid, isSameDay, startOfMonth, endOfMonth, subMon
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
-import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation, ServiceTypeRecord } from '@/types';
+import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation, ServiceTypeRecord, MonthlyFixedExpense, AdministrativeStaff } from '@/types';
 import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
@@ -93,6 +93,8 @@ export default function DashboardPage() {
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [allTechnicians, setAllTechnicians] = useState<Technician[]>([]);
+  const [allAdminStaff, setAllAdminStaff] = useState<AdministrativeStaff[]>([]);
+  const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
@@ -109,6 +111,8 @@ export default function DashboardPage() {
       operationsService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
       personnelService.onTechniciansUpdate(setAllTechnicians),
+      personnelService.onAdminStaffUpdate(setAllAdminStaff),
+      inventoryService.onFixedExpensesUpdate(setFixedExpenses),
     ];
     
     // Check when all initial data loads are complete
@@ -117,6 +121,8 @@ export default function DashboardPage() {
         operationsService.onSalesUpdatePromise(),
         inventoryService.onItemsUpdatePromise(),
         personnelService.onTechniciansUpdatePromise(),
+        personnelService.onAdminStaffUpdatePromise(),
+        inventoryService.onFixedExpensesUpdatePromise(),
     ]).then(() => setIsLoading(false));
 
     return () => unsubs.forEach(unsub => unsub());
@@ -339,12 +345,38 @@ export default function DashboardPage() {
           return itemCost + ((invItem?.unitPrice || 0) * item.quantity);
         }, 0);
       }, 0);
+
+      // --- Calculate Expenses ---
+      const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
+      const totalAdminSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
+      const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+      
+      const totalMonthlyExpenses = totalTechnicianSalaries + totalAdminSalaries + totalFixedExp;
+      
+      const totalOperationalProfit = serviceProfit + salesProfit;
+      const isProfitableForCommissions = totalOperationalProfit > totalMonthlyExpenses;
+
+      let totalTechnicianCommissions = 0;
+      let totalAdministrativeCommissions = 0;
+      if (isProfitableForCommissions) {
+        allTechnicians.filter(t => !t.isArchived).forEach(tech => {
+          totalTechnicianCommissions += servicesInMonth
+            .filter(s => s.technicianId === tech.id)
+            .reduce((sum, s) => sum + (s.serviceProfit || 0), 0) * (tech.commissionRate || 0);
+        });
+        allAdminStaff.filter(s => !s.isArchived).forEach(admin => {
+          totalAdministrativeCommissions += serviceProfit * (admin.commissionRate || 0);
+        });
+      }
+      const totalExpenses = totalMonthlyExpenses + totalTechnicianCommissions + totalAdministrativeCommissions;
+
       
       return {
         name: format(monthDate, 'MMM yy', { locale: es }),
         ingresos: serviceRevenue + salesRevenue,
         ganancia: serviceProfit + salesProfit,
         costos: serviceCosts + salesCosts,
+        gastos: totalExpenses,
         servicios: servicesInMonth.length + salesInMonth.length,
       };
     });
@@ -386,7 +418,7 @@ export default function DashboardPage() {
       serviceTypeDistribution: Object.entries(serviceTypeDist).map(([name, value]) => ({ name, value })),
       monthlyComparisonData: monthlyComparisonDataResult,
     };
-  }, [allServices, allSales, allInventory, chartTimeRange]);
+  }, [allServices, allSales, allInventory, allTechnicians, allAdminStaff, fixedExpenses, chartTimeRange]);
 
 
   return (
