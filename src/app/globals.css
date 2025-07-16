@@ -175,44 +175,41 @@
      REGLAS DE IMPRESIÓN PARA DOCUMENTO CARTA
    ========================================= */
   @media print {
-    @page {
-      size: A4 portrait;
-      margin: 12mm; /* coincide con tu padding de pantalla */
-    }
-
-    #printable-report {
-      width: 100% !important;   /* ocupa todo el ancho útil  */
-      max-width: none !important;
-      margin: 0 !important;     /* sin centrado */
-      box-shadow: none !important;
-    }
-
-    /* repetir <thead>/<tfoot> automáticamente */
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
-
-    /* evita cortar tarjetas/resúmenes a medias */
-    .no-page-break { break-inside: avoid; page-break-inside: avoid; }
-    .force-new-page { break-before: page; page-break-before: always; }
-  }
-
-
-  /* For responsive ticket preview */
-  .ticket-preview-content[data-format="receipt"] {
-      transform-origin: top center;
-      margin: 0 auto; /* Center the ticket */
-  }
-
-  @media (max-width: 340px) {
-    .ticket-preview-content[data-format="receipt"] {
-      transform: scale(0.9);
+    .print-format-letter {
+        @page {
+            size: letter portrait;
+            margin: 1cm;
+        }
     }
   }
-  @media (min-width: 341px) and (max-width: 640px) {
-    .ticket-preview-content[data-format="receipt"] {
-      transform: scale(1);
+  
+  /* =========================================
+     REGLAS DE IMPRESIÓN PARA TICKET 80mm
+   ========================================= */
+   @media print {
+    .print-format-receipt {
+        @page {
+            size: 80mm auto; /* 80mm width, auto height */
+            margin: 2mm;
+        }
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        background-color: white !important;
+        color: black !important;
+        font-size: 9pt !important;
+        line-height: 1.2 !important;
     }
-  }
+
+    .print-format-receipt * {
+        background-color: transparent !important;
+        color: black !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+   }
 }
 
 
