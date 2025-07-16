@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation, ServiceTypeRecord, MonthlyFixedExpense, AdministrativeStaff } from '@/types';
-import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from 'lucide-react'; 
+import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle, Package } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
@@ -82,6 +82,7 @@ export default function DashboardPage() {
   const [allTechnicians, setAllTechnicians] = useState<Technician[]>([]);
   const [allAdminStaff, setAllAdminStaff] = useState<AdministrativeStaff[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
+  const [allServiceTypes, setAllServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
@@ -100,6 +101,7 @@ export default function DashboardPage() {
       personnelService.onTechniciansUpdate(setAllTechnicians),
       personnelService.onAdminStaffUpdate(setAllAdminStaff),
       inventoryService.onFixedExpensesUpdate(setFixedExpenses),
+      inventoryService.onServiceTypesUpdate(setAllServiceTypes),
     ];
     
     // Check when all initial data loads are complete
@@ -110,6 +112,7 @@ export default function DashboardPage() {
         personnelService.onTechniciansUpdatePromise(),
         personnelService.onAdminStaffUpdatePromise(),
         inventoryService.onFixedExpensesUpdatePromise(),
+        inventoryService.onServiceTypesUpdatePromise(),
     ]).then(() => setIsLoading(false));
 
     return () => unsubs.forEach(unsub => unsub());
@@ -294,19 +297,14 @@ export default function DashboardPage() {
     }
   };
   
-  const { chartData, serviceTypeDistribution, monthlyComparisonData } = useMemo(() => {
+  const { financialChartData, operationalChartData, serviceTypeDistribution, monthlyComparisonData } = useMemo(() => {
     const today = new Date();
-    let monthsToProcess = 1;
-
-    switch (chartTimeRange) {
-        case 'thisMonth': monthsToProcess = 1; break;
-        case 'last6Months': monthsToProcess = 6; break;
-        case 'last12Months': monthsToProcess = 12; break;
-    }
-
+    const monthsToProcess = 6;
     const months = Array.from({ length: monthsToProcess }, (_, i) => subMonths(today, i)).reverse();
     
-    const chartDataResult = months.map(monthDate => {
+    const uniqueServiceTypes = Array.from(new Set(allServiceTypes.map(st => st.name)));
+
+    const financialData = months.map(monthDate => {
       const monthStart = startOfMonth(monthDate);
       const monthEnd = endOfMonth(monthDate);
       
@@ -333,11 +331,9 @@ export default function DashboardPage() {
         }, 0);
       }, 0);
 
-      // --- Calculate Expenses ---
       const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
       const totalAdminSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
       const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-      
       const totalMonthlyExpenses = totalTechnicianSalaries + totalAdminSalaries + totalFixedExp;
       
       const totalOperationalProfit = serviceProfit + salesProfit;
@@ -346,24 +342,37 @@ export default function DashboardPage() {
       let totalTechnicianCommissions = 0;
       let totalAdministrativeCommissions = 0;
       if (isProfitableForCommissions) {
-        allTechnicians.filter(t => !t.isArchived).forEach(tech => {
-          totalTechnicianCommissions += servicesInMonth
-            .filter(s => s.technicianId === tech.id)
-            .reduce((sum, s) => sum + (s.serviceProfit || 0), 0) * (tech.commissionRate || 0);
-        });
-        allAdminStaff.filter(s => !s.isArchived).forEach(admin => {
-          totalAdministrativeCommissions += serviceProfit * (admin.commissionRate || 0);
-        });
+        allTechnicians.filter(t => !t.isArchived).forEach(tech => { totalTechnicianCommissions += servicesInMonth.filter(s => s.technicianId === tech.id).reduce((sum, s) => sum + (s.serviceProfit || 0), 0) * (tech.commissionRate || 0); });
+        allAdminStaff.filter(s => !s.isArchived).forEach(admin => { totalAdministrativeCommissions += serviceProfit * (admin.commissionRate || 0); });
       }
       const totalExpenses = totalMonthlyExpenses + totalTechnicianCommissions + totalAdministrativeCommissions;
 
+      return { name: format(monthDate, 'MMM yy', { locale: es }), ingresos: serviceRevenue + salesRevenue, ganancia: serviceProfit + salesProfit, costos: serviceCosts + salesCosts, gastos: totalExpenses };
+    });
+
+    const operationalData = months.map(monthDate => {
+      const monthStart = startOfMonth(monthDate);
+      const monthEnd = endOfMonth(monthDate);
       
+      const servicesInMonth = allServices.filter(s => {
+        const d = parseDate(s.deliveryDateTime);
+        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, { start: monthStart, end: monthEnd });
+      });
+
+      const salesInMonth = allSales.filter(s => {
+          const d = parseDate(s.saleDate);
+          return s.status !== 'Cancelado' && d && isValid(d) && isWithinInterval(d, {start: monthStart, end: monthEnd});
+      });
+      
+      const serviceCountsByType = uniqueServiceTypes.reduce((acc, type) => {
+        acc[type] = servicesInMonth.filter(s => s.serviceType === type).length;
+        return acc;
+      }, {} as Record<string, number>);
+
       return {
         name: format(monthDate, 'MMM yy', { locale: es }),
-        ingresos: serviceRevenue + salesRevenue,
-        ganancia: serviceProfit + salesProfit,
-        costos: serviceCosts + salesCosts,
-        gastos: totalExpenses,
+        'Ventas POS': salesInMonth.length,
+        ...serviceCountsByType
       };
     });
 
@@ -376,7 +385,6 @@ export default function DashboardPage() {
         return acc;
     }, {} as Record<string, number>);
 
-    // Comparison Chart Data
     const currentMonthStart = startOfMonth(today);
     const lastMonthStart = startOfMonth(subMonths(today, 1));
     const lastMonthEnd = endOfMonth(lastMonthStart);
@@ -385,34 +393,32 @@ export default function DashboardPage() {
         const services = allServices.filter(s => s.status === 'Entregado' && parseDate(s.deliveryDateTime) && isWithinInterval(parseDate(s.deliveryDateTime)!, { start, end }));
         const sales = allSales.filter(s => s.status !== 'Cancelado' && parseDate(s.saleDate) && isWithinInterval(parseDate(s.saleDate)!, { start, end }));
         const ingresos = services.reduce((sum, s) => sum + (s.totalCost || 0), 0) + sales.reduce((sum, s) => sum + s.totalAmount, 0);
-        const utilidadBruta = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
         
-        // Gastos Fijos (sin comisiones)
         const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
         const totalAdminSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
         const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
         const gastosFijos = totalTechnicianSalaries + totalAdminSalaries + totalFixedExp;
+        const utilidadBruta = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
 
         const utilidadNeta = utilidadBruta - gastosFijos;
-
-        return { ingresos, utilidadBruta, utilidadNeta };
+        return { ingresos, utilidadNeta };
     };
 
     const currentMonthMetrics = calculateMetricsForPeriod(currentMonthStart, endOfDay(today));
     const lastMonthMetrics = calculateMetricsForPeriod(lastMonthStart, lastMonthEnd);
-
     const monthlyComparisonDataResult = [
-        { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos, 'Utilidad Bruta': 0, 'Utilidad Neta': 0 },
-        { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta, 'Utilidad Bruta': 0, 'Utilidad Neta': 0 },
+        { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos, 'Utilidad Neta': 0 },
+        { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta, 'Utilidad Neta': 0 },
     ];
 
-
     return {
-      chartData: chartDataResult,
+      financialChartData: financialData,
+      operationalChartData: operationalData,
       serviceTypeDistribution: Object.entries(serviceTypeDist).map(([name, value]) => ({ name, value })),
       monthlyComparisonData: monthlyComparisonDataResult,
+      allServiceTypes: uniqueServiceTypes
     };
-  }, [allServices, allSales, allInventory, allTechnicians, allAdminStaff, fixedExpenses, chartTimeRange]);
+  }, [allServices, allSales, allInventory, allTechnicians, allAdminStaff, fixedExpenses, allServiceTypes]);
 
 
   return (
@@ -485,13 +491,7 @@ export default function DashboardPage() {
         </Card>
       </div>
       
-      <div className="flex justify-center items-center gap-2 mb-6 bg-muted p-2 rounded-md">
-        <Button variant={chartTimeRange === 'thisMonth' ? 'default' : 'ghost'} onClick={() => setChartTimeRange('thisMonth')}>Este Mes</Button>
-        <Button variant={chartTimeRange === 'last6Months' ? 'default' : 'ghost'} onClick={() => setChartTimeRange('last6Months')}>Últimos 6 Meses</Button>
-        <Button variant={chartTimeRange === 'last12Months' ? 'default' : 'ghost'} onClick={() => setChartTimeRange('last12Months')}>Últimos 12 Meses</Button>
-      </div>
-      
-      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts chartData={chartData} serviceTypeDistribution={serviceTypeDistribution} monthlyComparisonData={monthlyComparisonData} />}
+      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts financialChartData={financialChartData} operationalChartData={operationalChartData} serviceTypeDistribution={serviceTypeDistribution} monthlyComparisonData={monthlyComparisonData} allServiceTypes={financialChartData.allServiceTypes} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <Card className="shadow-lg">
