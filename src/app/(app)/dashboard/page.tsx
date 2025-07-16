@@ -491,7 +491,7 @@ export default function DashboardPage() {
         </Card>
       </div>
       
-      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts financialChartData={financialChartData} operationalChartData={operationalChartData} serviceTypeDistribution={serviceTypeDistribution} monthlyComparisonData={monthlyComparisonData} allServiceTypes={financialChartData.allServiceTypes} />}
+      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts financialChartData={financialChartData} operationalChartData={operationalChartData} serviceTypeDistribution={serviceTypeDistribution} monthlyComparisonData={monthlyComparisonData} allServiceTypes={allServiceTypes.map(st => st.name)} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <Card className="shadow-lg">
