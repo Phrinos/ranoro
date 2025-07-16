@@ -80,7 +80,7 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md w-full p-6 space-y-6">
         <DialogHeader>
           <DialogTitle>Añadir Insumo al Servicio</DialogTitle>
           <DialogDescription>
@@ -88,7 +88,7 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4 min-h-[300px]">
+        <div className="space-y-4 min-h-[300px]">
           {!selectedItem ? (
             <>
               <div className="relative">
@@ -187,4 +187,3 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
     </Dialog>
   );
 }
-
