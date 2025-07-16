@@ -281,8 +281,8 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
           onOpenChange={setIsTicketDialogOpen}
           title="Ticket de Servicio"
           footerActions={<>
-            <Button variant="outline" onClick={() => handleCopyServiceForWhatsapp(recordForTicket)}><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
-            <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar</Button>
+            <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+            <Button variant="outline" onClick={() => handleCopyServiceForWhatsapp(recordForTicket)}><MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp</Button>
             <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
           </>}
         >

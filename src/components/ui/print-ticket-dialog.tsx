@@ -57,7 +57,7 @@ export function PrintTicketDialog({
         </div>
 
         {footerActions && (
-          <div className="print:hidden flex-shrink-0 border-l bg-background p-4 flex flex-col gap-4 w-48">
+          <div className="print:hidden flex-shrink-0 border-l bg-background p-4 flex flex-col gap-4 w-auto">
             <DialogHeader className="p-0 text-left">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>

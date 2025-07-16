@@ -220,11 +220,11 @@ function RentasPageComponent({
         onOpenChange={(isOpen) => !isOpen && setPaymentForReceipt(null)}
         title="Recibo de Pago de Renta"
         footerActions={
-          <div className="flex flex-col gap-2 w-full">
-             <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
-             <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4" /> Copiar Imagen</Button>
-             <Button variant="outline" onClick={() => {}}><MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp</Button>
-          </div>
+          <>
+            <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4" />Copiar Imagen</Button>
+            <Button variant="outline" onClick={() => {}}><MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp</Button>
+            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
+          </>
         }
       >
         <div id="printable-ticket">
