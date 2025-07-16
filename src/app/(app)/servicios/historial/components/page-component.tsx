@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -242,8 +241,8 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="activos">Servicios Activos (Hoy)</TabsTrigger>
-          <TabsTrigger value="historial">Historial Completo</TabsTrigger>
+          <TabsTrigger value="activos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Servicios Activos (Hoy)</TabsTrigger>
+          <TabsTrigger value="historial" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Historial Completo</TabsTrigger>
         </TabsList>
 
         <TabsContent value="activos" className="mt-0 space-y-4">
