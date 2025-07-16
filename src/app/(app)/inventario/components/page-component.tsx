@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer } from "lucide-react";
 import { InventoryItemDialog } from "./inventory-item-dialog";
@@ -29,12 +28,9 @@ import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog
 import { InventoryReportContent } from './inventory-report-content';
 
 
-export function InventarioPageComponent() {
-  const searchParams = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'informe';
-
+export function InventarioPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeTab, setActiveTab] = useState(tab || 'informe');
   
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);

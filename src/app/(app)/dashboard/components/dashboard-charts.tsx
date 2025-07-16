@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState } from 'react';
@@ -8,6 +9,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { ServiceTypeRecord } from '@/types';
 
 
 const formatCurrencyForChart = (value: number) => {
@@ -54,18 +56,18 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 
 
 interface DashboardChartsProps {
-    financialChartData: { name: string; ingresos: number; ganancia: number; costos: number; gastos: number; }[];
+    financialChartData: { name: string; ingresos: number; ganancia: number; gastos: number; }[];
     operationalChartData: { name: string; 'Ventas POS': number; [key: string]: number | string; }[];
     serviceTypeDistribution: { name: string; value: number }[];
     monthlyComparisonData: { name: string; 'Mes Anterior': number; 'Mes Actual': number; 'Utilidad Neta': number }[];
-    allServiceTypes: string[];
+    allServiceTypes: ServiceTypeRecord[];
 }
 
 
 export function DashboardCharts({ financialChartData, operationalChartData, serviceTypeDistribution, monthlyComparisonData, allServiceTypes }: DashboardChartsProps) {
-  const [activeFinancialKeys, setActiveFinancialKeys] = useState<string[]>(['ingresos', 'ganancia', 'gastos', 'costos']);
+  const [activeFinancialKeys, setActiveFinancialKeys] = useState<string[]>(['ingresos', 'ganancia', 'gastos']);
   
-  const allOperationalKeys = ['Ventas POS', ...allServiceTypes];
+  const allOperationalKeys = ['Ventas POS', ...allServiceTypes.map(st => st.name)];
   const [activeOperationalKeys, setActiveOperationalKeys] = useState<string[]>(allOperationalKeys);
 
   const toggleFinancialKey = (key: string) => {
@@ -84,7 +86,6 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
       { key: 'ingresos', name: 'Ingresos', color: '#3b82f6' }, // blue
       { key: 'ganancia', name: 'Ganancia', color: '#22c55e' }, // green-500
       { key: 'gastos', name: 'Gastos', color: '#ef4444' }, // red-500
-      { key: 'costos', name: 'Costos', color: '#f97316' }, // orange-500
   ];
   
   const operationalLineColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -118,7 +119,6 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
                       {activeFinancialKeys.includes('ingresos') && <Line yAxisId="left" type="monotone" dataKey="ingresos" stroke={financialLineData.find(d=>d.key==='ingresos')?.color} strokeWidth={2} name="Ingresos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                       {activeFinancialKeys.includes('ganancia') && <Line yAxisId="left" type="monotone" dataKey="ganancia" stroke={financialLineData.find(d=>d.key==='ganancia')?.color} strokeWidth={2} name="Ganancia" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                       {activeFinancialKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke={financialLineData.find(d=>d.key==='gastos')?.color} strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                      {activeFinancialKeys.includes('costos') && <Line yAxisId="left" type="monotone" dataKey="costos" stroke={financialLineData.find(d=>d.key==='costos')?.color} strokeWidth={2} name="Costos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                   </LineChart>
                 </ResponsiveContainer>
                 <div className="flex items-center justify-center gap-4 mt-4 text-sm flex-wrap">

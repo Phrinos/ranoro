@@ -2,7 +2,6 @@
 "use client";
 
 import { Suspense, useState, useEffect, useMemo } from "react";
-import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { User, AppRole, ServiceTypeRecord } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
@@ -17,10 +16,8 @@ import { TiposDeServicioPageContent } from './service-types-content';
 import { ManualUsuarioPageContent } from './manual-content';
 
 
-export function OpcionesPageComponent() {
-    const searchParams = useSearchParams();
-    const defaultTab = searchParams.get('tab') || 'perfil';
-    const [activeTab, setActiveTab] = useState(defaultTab);
+export function OpcionesPageComponent({ tab }: { tab?: string }) {
+    const [activeTab, setActiveTab] = useState(tab || 'perfil');
     
     // Unified state for all necessary data
     const [currentUser, setCurrentUser] = useState<User | null>(null);

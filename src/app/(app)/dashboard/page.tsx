@@ -320,34 +320,38 @@ export default function DashboardPage() {
       
       const serviceRevenue = servicesInMonth.reduce((sum, s) => sum + (s.totalCost || 0), 0);
       const serviceProfit = servicesInMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-      const serviceCosts = servicesInMonth.reduce((sum, s) => sum + (s.totalSuppliesWorkshopCost || 0), 0);
-      
       const salesRevenue = salesInMonth.reduce((sum, s) => sum + s.totalAmount, 0);
       const salesProfit = salesInMonth.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
-      const salesCosts = salesInMonth.reduce((cost, sale) => {
-        return cost + sale.items.reduce((itemCost, item) => {
-          const invItem = allInventory.find(i => i.id === item.inventoryItemId);
-          return itemCost + ((invItem?.unitPrice || 0) * item.quantity);
-        }, 0);
-      }, 0);
 
+      const totalOperationalProfit = serviceProfit + salesProfit;
+      
       const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
       const totalAdminSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
       const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
       const totalMonthlyExpenses = totalTechnicianSalaries + totalAdminSalaries + totalFixedExp;
       
-      const totalOperationalProfit = serviceProfit + salesProfit;
       const isProfitableForCommissions = totalOperationalProfit > totalMonthlyExpenses;
 
       let totalTechnicianCommissions = 0;
       let totalAdministrativeCommissions = 0;
       if (isProfitableForCommissions) {
-        allTechnicians.filter(t => !t.isArchived).forEach(tech => { totalTechnicianCommissions += servicesInMonth.filter(s => s.technicianId === tech.id).reduce((sum, s) => sum + (s.serviceProfit || 0), 0) * (tech.commissionRate || 0); });
-        allAdminStaff.filter(s => !s.isArchived).forEach(admin => { totalAdministrativeCommissions += serviceProfit * (admin.commissionRate || 0); });
+        totalTechnicianCommissions = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => {
+          const techProfit = servicesInMonth.filter(s => s.technicianId === tech.id).reduce((s, serv) => s + (serv.serviceProfit || 0), 0);
+          return sum + (techProfit * (tech.commissionRate || 0));
+        }, 0);
+        
+        totalAdministrativeCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => {
+          return sum + (totalOperationalProfit * (admin.commissionRate || 0));
+        }, 0);
       }
-      const totalExpenses = totalMonthlyExpenses + totalTechnicianCommissions + totalAdministrativeCommissions;
+      const totalVariableExpenses = totalTechnicianCommissions + totalAdministrativeCommissions;
 
-      return { name: format(monthDate, 'MMM yy', { locale: es }), ingresos: serviceRevenue + salesRevenue, ganancia: serviceProfit + salesProfit, costos: serviceCosts + salesCosts, gastos: totalExpenses };
+      return { 
+        name: format(monthDate, 'MMM yy', { locale: es }), 
+        ingresos: serviceRevenue + salesRevenue, 
+        ganancia: totalOperationalProfit, 
+        gastos: totalMonthlyExpenses + totalVariableExpenses
+      };
     });
 
     const operationalData = months.map(monthDate => {
@@ -385,27 +389,31 @@ export default function DashboardPage() {
         return acc;
     }, {} as Record<string, number>);
 
-    const currentMonthStart = startOfMonth(today);
-    const lastMonthStart = startOfMonth(subMonths(today, 1));
-    const lastMonthEnd = endOfMonth(lastMonthStart);
-    
     const calculateMetricsForPeriod = (start: Date, end: Date) => {
-        const services = allServices.filter(s => s.status === 'Entregado' && parseDate(s.deliveryDateTime) && isWithinInterval(parseDate(s.deliveryDateTime)!, { start, end }));
-        const sales = allSales.filter(s => s.status !== 'Cancelado' && parseDate(s.saleDate) && isWithinInterval(parseDate(s.saleDate)!, { start, end }));
+        const services = allServices.filter(s => s.status === 'Entregado' && parseDate(s.deliveryDateTime) && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, { start, end }));
+        const sales = allSales.filter(s => s.status !== 'Cancelado' && parseDate(s.saleDate) && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, { start, end }));
+        
         const ingresos = services.reduce((sum, s) => sum + (s.totalCost || 0), 0) + sales.reduce((sum, s) => sum + s.totalAmount, 0);
+        const utilidadBruta = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
         
         const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
         const totalAdminSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
-        const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-        const gastosFijos = totalTechnicianSalaries + totalAdminSalaries + totalFixedExp;
-        const utilidadBruta = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
+        const gastosFijos = totalTechnicianSalaries + totalAdminSalaries + fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-        const utilidadNeta = utilidadBruta - gastosFijos;
+        let utilidadNeta = utilidadBruta - gastosFijos;
+        // Do not add commissions if there is no profit after fixed expenses
+        if (utilidadBruta > gastosFijos) {
+           const techCommissions = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + services.filter(s => s.technicianId === tech.id).reduce((s, serv) => s + (serv.serviceProfit || 0), 0) * (tech.commissionRate || 0), 0);
+           const adminCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => sum + utilidadBruta * (admin.commissionRate || 0), 0);
+           utilidadNeta -= (techCommissions + adminCommissions);
+        }
+
         return { ingresos, utilidadNeta };
     };
 
-    const currentMonthMetrics = calculateMetricsForPeriod(currentMonthStart, endOfDay(today));
-    const lastMonthMetrics = calculateMetricsForPeriod(lastMonthStart, lastMonthEnd);
+    const currentMonthMetrics = calculateMetricsForPeriod(startOfMonth(today), endOfDay(today));
+    const lastMonthMetrics = calculateMetricsForPeriod(startOfMonth(subMonths(today, 1)), endOfMonth(subMonths(today, 1)));
+    
     const monthlyComparisonDataResult = [
         { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos, 'Utilidad Neta': 0 },
         { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta, 'Utilidad Neta': 0 },
@@ -491,7 +499,7 @@ export default function DashboardPage() {
         </Card>
       </div>
       
-      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts financialChartData={financialChartData} operationalChartData={operationalChartData} serviceTypeDistribution={serviceTypeDistribution} monthlyComparisonData={monthlyComparisonData} allServiceTypes={allServiceTypes.map(st => st.name)} />}
+      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts financialChartData={financialChartData} operationalChartData={operationalChartData} serviceTypeDistribution={serviceTypeDistribution} monthlyComparisonData={monthlyComparisonData} allServiceTypes={allServiceTypes} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <Card className="shadow-lg">

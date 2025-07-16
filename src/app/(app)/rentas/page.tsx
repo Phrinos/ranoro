@@ -20,8 +20,13 @@ import html2canvas from 'html2canvas';
 import { inventoryService, operationsService, personnelService } from '@/lib/services';
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/vehicle-expense-dialog';
 import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/owner-withdrawal-dialog';
+import { useRouter } from 'next/navigation';
 
-function RentasPageComponent() {
+function RentasPageComponent({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   const [isLoading, setIsLoading] = useState(true);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -34,6 +39,7 @@ function RentasPageComponent() {
 
   const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -43,7 +49,7 @@ function RentasPageComponent() {
     unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
     unsubs.push(operationsService.onRentalPaymentsUpdate((data) => {
         setPayments(data);
-        setIsLoading(false); // Consider loaded after payments are fetched
+        setIsLoading(false);
     }));
 
     const storedInfo = localStorage.getItem('workshopTicketInfo');
@@ -51,6 +57,13 @@ function RentasPageComponent() {
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
+
+  useEffect(() => {
+    if (searchParams.action === 'registrar') {
+      setIsPaymentDialogOpen(true);
+      router.replace('/rentas', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   
   const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
@@ -216,8 +229,10 @@ function RentasPageComponent() {
   );
 }
 
-export default function RentasPageWrapper() {
-    return (<Suspense fallback={<div>Cargando...</div>}><RentasPageComponent /></Suspense>)
+export default function RentasPageWrapper({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+    return (<Suspense fallback={<div>Cargando...</div>}><RentasPageComponent searchParams={searchParams} /></Suspense>)
 }
-
-
