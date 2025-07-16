@@ -8,12 +8,24 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Ranoro - Gestión de Taller',
-  description: 'Aplicación para la gestión eficiente de talleres mecánicos by Arturo Valdelamar',
+  title: 'RANORO - Tu taller en una app',
+  description: 'El sistema operativo inteligente para tu taller mecánico. Por Arturo Valdelamar',
   icons: {
     icon: '/ranoro-logo.png', // Main favicon
     shortcut: '/ranoro-logo.png',
     apple: '/ranoro-logo.png',
+  },
+  openGraph: {
+    title: 'RANORO - Tu taller en una app',
+    description: 'El sistema operativo inteligente para tu taller mecánico.',
+    images: [
+      {
+        url: '/home.png', // Use absolute URL in production if deployed
+        width: 1200,
+        height: 630,
+        alt: 'Ranoro - El sistema operativo inteligente para tu taller mecánico.',
+      },
+    ],
   },
 };
 
