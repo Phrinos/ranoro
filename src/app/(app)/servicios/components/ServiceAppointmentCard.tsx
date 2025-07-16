@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusTracker } from "./StatusTracker";
-import type { ServiceRecord, Vehicle, Technician, PaymentMethod } from '@/types';
+import type { ServiceRecord, Vehicle, Technician, PaymentMethod, ServiceSubStatus } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Edit, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench, Eye, Printer } from 'lucide-react';
@@ -53,6 +53,15 @@ const getPaymentMethodVariant = (method?: PaymentMethod): 'success' | 'purple' |
     default: return 'outline';
   }
 };
+
+const getSubStatusVariant = (subStatus?: ServiceSubStatus): 'destructive' | 'waiting' | 'success' => {
+    switch(subStatus) {
+        case 'En Espera de Refacciones': return 'destructive';
+        case 'Reparando': return 'waiting';
+        case 'Completado': return 'success';
+        default: return 'waiting';
+    }
+}
 
 
 export const ServiceAppointmentCard = React.memo(({
@@ -141,6 +150,11 @@ export const ServiceAppointmentCard = React.memo(({
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
                         {isCancelled ? (
                             <Badge variant="destructive" className="mb-1 font-bold">CANCELADO</Badge>
+                        ) : isWorkshop && service.subStatus ? (
+                            <div className="flex items-center gap-2">
+                                <Badge variant={getSubStatusVariant(service.subStatus)}>{service.subStatus}</Badge>
+                                <Badge variant={getStatusBadgeVariant(service.status)} className="mb-1">{service.status}</Badge>
+                            </div>
                         ) : (isWorkshop || isCompleted) ? (
                             <Badge variant={getStatusBadgeVariant(service.status)} className="mb-1">{service.status}</Badge>
                         ) : !isQuote ? (

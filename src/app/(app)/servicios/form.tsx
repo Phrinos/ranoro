@@ -1,4 +1,5 @@
 
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -224,6 +225,7 @@ export function ServiceForm(props:Props){
       const selectedVehicle = parentVehicles.find(v => v.id === watchedVehicleId);
       if (selectedVehicle) {
         setValue('customerName', selectedVehicle.ownerName);
+        setValue('allVehiclesForDialog' as any, parentVehicles);
       }
     }
   }, [watchedVehicleId, parentVehicles, setValue]);
@@ -410,13 +412,16 @@ export function ServiceForm(props:Props){
                     />
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b">
+                        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b flex justify-between items-center">
                             <TabsList className={cn("grid w-full", "grid-cols-4")}>
                                 <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
                                 <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
                                 <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
                                 <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
                             </TabsList>
+                             <Button variant="ghost" size="icon" onClick={() => setIsPreviewOpen(true)} title="Vista Previa" className="ml-2">
+                                <Eye className="h-5 w-5"/>
+                            </Button>
                         </div>
                         <TabsContent value="details" className="mt-0">
                             <ServiceDetailsCard
@@ -531,7 +536,7 @@ export function ServiceForm(props:Props){
         <UnifiedPreviewDialog
             open={isPreviewOpen}
             onOpenChange={setIsPreviewOpen}
-            service={initialDataService}
+            service={getValues()}
         />
       )}
 

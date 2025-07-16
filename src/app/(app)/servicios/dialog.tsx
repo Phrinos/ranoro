@@ -10,11 +10,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter
 } from '@/components/ui/dialog';
-import { ServiceForm } from './components/service-form';
+import { ServiceForm } from './form';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from '@/types';
 import { useToast } from '@/hooks/use-toast'; 
 import { operationsService } from '@/lib/services';
+import { Button } from '@/components/ui/button';
+import { Ban } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Textarea } from '@/components/ui/textarea';
 
 
 interface ServiceDialogProps {
@@ -53,6 +58,7 @@ export function ServiceDialog({
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
+  const [cancellationReason, setCancellationReason] = useState("");
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
@@ -112,6 +118,7 @@ export function ServiceDialog({
 
 
   const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
+  const showCancelButton = !isReadOnly && service?.id && service.status !== 'Entregado' && service.status !== 'Cancelado';
       
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

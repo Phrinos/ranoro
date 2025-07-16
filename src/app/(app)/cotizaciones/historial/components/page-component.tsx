@@ -58,7 +58,7 @@ export function CotizacionesPageComponent() {
     initialData: allQuotes,
     searchKeys: ['id', 'vehicleIdentifier', 'description'],
     dateFilterKey: 'quoteDate',
-    initialSortOption: 'date_desc',
+    initialSortOption: 'quoteDate_desc', // Sort by quote date, newest first
   });
 
   const handleSaveRecord = useCallback(async (data: QuoteRecord | ServiceRecord) => {
