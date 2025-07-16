@@ -57,12 +57,20 @@ export function PrintTicketDialog({
         </div>
 
         {footerActions && (
-          <div className="print:hidden flex-shrink-0 border-l bg-background p-4 flex flex-col gap-4 w-auto">
+          <div
+            className={cn(
+              "print:hidden flex-shrink-0 border-l bg-background p-4",
+              "flex flex-col justify-between w-56"
+            )}
+          >
+            {/* header fijo en la parte superior */}
             <DialogHeader className="p-0 text-left">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
-            <DialogFooter className="flex-col gap-2">
+
+            {/* botones al fondo, en columna y alineados a la derecha */}
+            <DialogFooter className="flex-col gap-2 items-end">
               {footerActions}
             </DialogFooter>
           </div>
