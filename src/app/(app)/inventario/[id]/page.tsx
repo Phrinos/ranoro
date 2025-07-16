@@ -2,17 +2,16 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore, placeholderServiceRecords, placeholderSales } from '@/lib/placeholder-data';
-import type { InventoryItem } from '@/types';
+import type { InventoryItem, ServiceRecord, SaleReceipt } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, Package, Server, ArrowRight } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, Package, Server, ArrowRight, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { InventoryItemDialog } from '../components/inventory-item-dialog';
 import type { InventoryItemFormValues } from '../components/inventory-item-form';
 import { useToast } from '@/hooks/use-toast';
@@ -27,9 +26,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Separator } from '@/components/ui/separator';
+import { inventoryService, operationsService } from '@/lib/services';
+import { parseDate } from '@/lib/forms';
 
 interface InventoryMovement {
     date: string;
@@ -46,94 +47,113 @@ export default function InventoryItemDetailPage() {
   const router = useRouter();
 
   const [item, setItem] = useState<InventoryItem | null | undefined>(undefined);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [history, setHistory] = useState<InventoryMovement[]>([]);
 
   useEffect(() => {
-    const foundItem = placeholderInventory.find(i => i.id === itemId);
-    setItem(foundItem || null);
+    const fetchData = async () => {
+      if (!itemId) return;
+      
+      // Fetch the specific item
+      const fetchedItem = await inventoryService.getDocById('inventory', itemId) as InventoryItem;
+      setItem(fetchedItem || null);
 
-    if (foundItem) {
-        // Corrected logic to handle the new ServiceRecord structure
-        const serviceExits = placeholderServiceRecords.flatMap(service =>
-            (service.serviceItems || [])
-                .flatMap(item => item.suppliesUsed || [])
-                .filter(supply => supply.supplyId === foundItem.id)
-                .map(supply => ({
-                    date: service.serviceDate,
-                    type: 'Salida por Servicio' as const,
-                    quantity: supply.quantity,
-                    relatedId: service.id,
-                    unitType: foundItem.unitType,
-                }))
-        );
+      // Fetch related data for history and dialogs
+      const [servicesData, salesData, categoriesData, suppliersData] = await Promise.all([
+          operationsService.onServicesUpdatePromise(),
+          operationsService.onSalesUpdatePromise(),
+          inventoryService.onCategoriesUpdatePromise(),
+          inventoryService.onSuppliersUpdatePromise()
+      ]);
+      setAllServices(servicesData);
+      setAllSales(salesData);
+      setCategories(categoriesData);
+      setSuppliers(suppliersData);
+    };
+
+    fetchData();
+  }, [itemId]);
+
+  const history = useMemo((): InventoryMovement[] => {
+    if (!item) return [];
+
+    const serviceExits = allServices.flatMap(service =>
+      (service.serviceItems || [])
+        .flatMap(item => item.suppliesUsed || [])
+        .filter(supply => supply.supplyId === item.id)
+        .map(supply => ({
+          date: service.deliveryDateTime || service.serviceDate,
+          type: 'Salida por Servicio' as const,
+          quantity: supply.quantity,
+          relatedId: service.id,
+          unitType: item.unitType,
+        }))
+    );
+
+    const saleExits = allSales.flatMap(sale =>
+      (sale.items || [])
+        .filter(saleItem => saleItem.inventoryItemId === item.id)
+        .map(saleItem => ({
+          date: sale.saleDate,
+          type: 'Salida por Venta' as const,
+          quantity: saleItem.quantity,
+          relatedId: sale.id,
+          unitType: item.unitType,
+        }))
+    );
+    
+    // NOTE: Purchase history (Entrada) would need to be sourced from a 'purchases' collection if it existed.
+    const allMovements = [...serviceExits, ...saleExits]
+        .filter(move => move.date && isValid(parseDate(move.date)!))
+        .sort((a,b) => parseDate(b.date)!.getTime() - parseDate(a.date)!.getTime());
         
-        const saleExits = placeholderSales.flatMap(sale =>
-            (sale.items || [])
-                .filter(saleItem => saleItem.inventoryItemId === foundItem.id)
-                .map(saleItem => ({
-                    date: sale.saleDate,
-                    type: 'Salida por Venta' as const,
-                    quantity: saleItem.quantity,
-                    relatedId: sale.id,
-                    unitType: foundItem.unitType,
-                }))
-        );
-
-        // NOTE: Purchase history is not recorded, so 'Entrada por Compra' cannot be generated.
-        const allMovements = [...serviceExits, ...saleExits].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setHistory(allMovements);
-    }
-  }, [itemId, item]);
+    return allMovements;
+  }, [item, allServices, allSales]);
 
   const handleSaveEditedItem = async (formData: InventoryItemFormValues) => {
     if (!item) return;
 
-    const updatedItemData: Partial<InventoryItem> = {
-      ...formData,
-      isService: formData.isService || false,
-      quantity: formData.isService ? 0 : Number(formData.quantity),
-      lowStockThreshold: formData.isService ? 0 : Number(formData.lowStockThreshold),
-      unitPrice: Number(formData.unitPrice) || 0,
-      sellingPrice: Number(formData.sellingPrice) || 0,
-    };
-    
-    const updatedItem = { ...item, ...updatedItemData } as InventoryItem;
-    setItem(updatedItem);
-
-    const pIndex = placeholderInventory.findIndex(i => i.id === updatedItem.id);
-    if (pIndex !== -1) {
-      placeholderInventory[pIndex] = updatedItem;
+    try {
+      await inventoryService.saveItem(formData, item.id);
+      const updatedItem = await inventoryService.getDocById('inventory', item.id) as InventoryItem;
+      setItem(updatedItem);
+      setIsEditDialogOpen(false);
+      toast({
+        title: "Ítem Actualizado",
+        description: `Los datos de ${formData.name} han sido actualizados.`,
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Error al actualizar",
+        description: "No se pudo guardar el ítem.",
+        variant: 'destructive',
+      });
     }
-    
-    persistToFirestore(['inventory']);
-
-    setIsEditDialogOpen(false);
-    toast({
-      title: "Ítem Actualizado",
-      description: `Los datos de ${updatedItem.name} han sido actualizados.`,
-    });
   };
   
   const handleDeleteItem = async () => {
     if (!item) return;
-    const itemIndex = placeholderInventory.findIndex(i => i.id === item.id);
-    if (itemIndex > -1) {
-      placeholderInventory.splice(itemIndex, 1);
+    try {
+        await inventoryService.deleteDoc('inventory', item.id);
+        toast({
+            title: "Ítem Eliminado",
+            description: `${item.name} ha sido eliminado.`,
+            variant: "destructive",
+        });
+        router.push('/inventario'); 
+    } catch(e) {
+         toast({ title: "Error", description: "No se pudo eliminar el ítem.", variant: "destructive" });
     }
-    
-    await persistToFirestore(['inventory']);
-    
-    toast({
-      title: "Ítem Eliminado",
-      description: `${item.name} ha sido eliminado.`,
-    });
-    router.push('/inventario'); 
   };
 
 
   if (item === undefined) {
-    return <div className="container mx-auto py-8 text-center">Cargando datos del ítem...</div>;
+    return <div className="container mx-auto py-8 text-center flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /> Cargando datos del ítem...</div>;
   }
 
   if (!item) {
@@ -293,9 +313,11 @@ export default function InventoryItemDetailPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {history.map((move, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell>{format(parseISO(move.date), 'dd MMM yyyy, HH:mm', { locale: es })}</TableCell>
+                                {history.map((move, index) => {
+                                  const date = parseDate(move.date);
+                                  return (
+                                    <TableRow key={`${move.relatedId}-${index}`}>
+                                        <TableCell>{date ? format(date, 'dd MMM yyyy, HH:mm', { locale: es }) : 'Fecha no disponible'}</TableCell>
                                         <TableCell>
                                             <Badge variant={move.type === 'Salida por Venta' ? 'destructive' : 'secondary'}>{move.type}</Badge>
                                         </TableCell>
@@ -312,7 +334,7 @@ export default function InventoryItemDetailPage() {
                                             </Link>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )})}
                             </TableBody>
                         </Table>
                     </div>
@@ -329,8 +351,8 @@ export default function InventoryItemDetailPage() {
             onOpenChange={setIsEditDialogOpen}
             item={item}
             onSave={handleSaveEditedItem}
-            categories={placeholderCategories} 
-            suppliers={placeholderSuppliers}
+            categories={categories} 
+            suppliers={suppliers}
           />
       )}
     </div>
