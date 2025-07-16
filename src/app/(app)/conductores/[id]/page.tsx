@@ -38,7 +38,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-type DocType = 'ineUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl';
+type DocType = 'ineFrontUrl' | 'ineBackUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl';
 
 export default function DriverDetailPage() {
   const params = useParams();
@@ -370,7 +370,8 @@ export default function DriverDetailPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
-                { type: 'ineUrl', label: 'INE' },
+                { type: 'ineFrontUrl', label: 'INE (Frente)' },
+                { type: 'ineBackUrl', label: 'INE (Reverso)' },
                 { type: 'licenseUrl', label: 'Licencia de Conducir' },
                 { type: 'proofOfAddressUrl', label: 'Comprobante de Domicilio' },
                 { type: 'promissoryNoteUrl', label: 'Pagaré' },

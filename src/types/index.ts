@@ -90,7 +90,8 @@ export interface Driver {
   emergencyPhone: string;
   assignedVehicleId?: string;
   documents?: {
-    ineUrl?: string;
+    ineFrontUrl?: string;
+    ineBackUrl?: string;
     licenseUrl?: string;
     proofOfAddressUrl?: string;
     promissoryNoteUrl?: string;
