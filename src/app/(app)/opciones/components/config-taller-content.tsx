@@ -199,7 +199,7 @@ export function ConfigTallerPageContent() {
               <CardHeader><CardTitle className="text-lg">Logo del Taller</CardTitle></CardHeader>
               <CardContent className="flex flex-col md:flex-row items-center gap-6">
                 <div className="w-48 h-48 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/50 shrink-0 relative">
-                  {watchedLogoUrl ? <Image src={watchedLogoUrl} alt="Logo del Taller" fill style={{objectFit: 'contain'}} /> : <Building className="h-16 w-16 text-muted-foreground" />}
+                  {watchedLogoUrl ? <Image src={watchedLogoUrl} alt="Logo del Taller" fill style={{objectFit: 'contain'}} sizes="192px" /> : <Building className="h-16 w-16 text-muted-foreground" />}
                 </div>
                 <div className="space-y-2 flex-grow">
                   <FormLabel>Subir Nuevo Logo</FormLabel>

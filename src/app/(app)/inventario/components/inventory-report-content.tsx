@@ -73,6 +73,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
                     fill
                     style={{ objectFit: 'contain' }}
                     data-ai-hint="workshop logo"
+                    sizes="150px"
                 />
               </div>
             ) : <div className="h-[50px]"></div>}

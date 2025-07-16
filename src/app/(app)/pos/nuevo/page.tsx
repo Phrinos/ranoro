@@ -21,6 +21,7 @@ import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { nanoid } from 'nanoid';
+import html2canvas from 'html2canvas';
 
 // --- Schema Definitions ---
 const saleItemSchema = z.object({
@@ -176,7 +177,7 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
   
   const handleCopyAsImage = useCallback(async () => {
     if (!ticketContentRef.current) return;
-    const html2canvas = (await import('html2canvas')).default;
+    
     try {
       const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
       canvas.toBlob((blob) => {

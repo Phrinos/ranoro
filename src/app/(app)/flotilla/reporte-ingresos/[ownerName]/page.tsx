@@ -36,7 +36,7 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
     <div ref={ref} className="p-8 font-sans bg-white text-black" data-format="letter">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b-2 border-black pb-4">
         <div className="relative h-16 w-40 mb-4 sm:mb-0">
-            {workshopInfo.logoUrl && <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" />}
+            {workshopInfo.logoUrl && <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} sizes="160px" data-ai-hint="workshop logo" />}
         </div>
         <div className="text-left sm:text-right">
           <h1 className="text-2xl font-bold">Reporte de Ingresos de Flotilla</h1>

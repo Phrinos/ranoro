@@ -32,10 +32,19 @@ const nextConfig = {
     ];
   },
 
+  // 5. Ignorar advertencias de Webpack
+  webpack: (config) => {
+    config.ignoreWarnings ||= [];
+    config.ignoreWarnings.push({
+      module: /handlebars/,
+      message: /require\.extensions/,
+    });
+    return config;
+  },
+  
   // ✅ 6. allowedDevOrigins → en raíz
   allowedDevOrigins: [
-    "https://*-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
-    "https://6000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
+    "https://*-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
   ],
 };
 

@@ -254,7 +254,7 @@ export default function LandingPage() {
                 <AnimatedDiv className="text-center max-w-3xl mx-auto">
                     <h2 className="text-3xl md:text-4xl font-extrabold">¿Por qué elegir Ranoro?</h2>
                 </AnimatedDiv>
-                <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                 <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <AnimatedDiv className="text-center">
                         <BookOpen className="mx-auto h-10 w-10 text-primary mb-2"/>
                         <h4 className="font-bold text-lg">Enfoque vertical</h4>

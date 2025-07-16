@@ -380,7 +380,7 @@ export default function DriverDetailPage() {
                   <CardContent className="flex flex-col items-center gap-4">
                     <div className="w-full h-40 bg-muted rounded-md flex items-center justify-center border relative">
                       {driver.documents?.[type as keyof Driver['documents']] ? (
-                        <Image src={driver.documents[type as keyof Driver['documents']]!} alt={label} layout="fill" className="object-contain" data-ai-hint="document photo"/>
+                        <Image src={driver.documents[type as keyof Driver['documents']]!} alt={label} layout="fill" className="object-contain" data-ai-hint="document photo" sizes="(max-width: 768px) 100vw, 50vw"/>
                       ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <FileX className="h-8 w-8" />

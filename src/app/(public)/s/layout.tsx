@@ -3,6 +3,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Detalle de Servicio - Ranoro',
@@ -39,8 +40,7 @@ export default function ServiceSheetLayout({
                   fill
                   style={{ objectFit: 'contain' }}
                   className="dark:invert"
-                  priority
-                  sizes="(max-width: 768px) 120px, 140px"
+                  sizes="140px"
                   data-ai-hint="ranoro logo"
                 />
              </Link>

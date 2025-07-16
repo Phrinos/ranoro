@@ -133,7 +133,7 @@ export default function LoginPage() {
           fill
           className="object-cover object-center"
           sizes="50vw"
-          priority
+          
         />
       </div>
       <div className="flex items-center justify-center py-12 bg-gray-50 dark:bg-gray-900">
@@ -146,7 +146,6 @@ export default function LoginPage() {
                   fill
                   style={{objectFit: 'contain'}}
                   className="dark:invert"
-                  priority
                   sizes="180px"
                   data-ai-hint="ranoro logo"
               />
