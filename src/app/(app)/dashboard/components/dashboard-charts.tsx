@@ -72,8 +72,8 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
   const lineChartData = [
       { key: 'ingresos', name: 'Ingresos', color: 'hsl(var(--chart-1))' },
       { key: 'ganancia', name: 'Ganancia', color: 'hsl(var(--chart-2))' },
-      { key: 'costos', name: 'Costos', color: 'hsl(var(--chart-5))' },
-      { key: 'gastos', name: 'Gastos', color: 'hsl(var(--muted))' },
+      { key: 'costos', name: 'Costos', color: 'hsl(var(--primary))', opacity: 0.8 },
+      { key: 'gastos', name: 'Gastos', color: 'hsl(var(--primary))', opacity: 0.4 },
       { key: 'servicios', name: 'Servicios', color: '#F97316' },
   ];
 
@@ -95,8 +95,8 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
                 <Legend />
                 {activeDataKeys.includes('ingresos') && <Line yAxisId="left" type="monotone" dataKey="ingresos" stroke="hsl(var(--chart-1))" strokeWidth={2} name="Ingresos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                 {activeDataKeys.includes('ganancia') && <Line yAxisId="left" type="monotone" dataKey="ganancia" stroke="hsl(var(--chart-2))" strokeWidth={2} name="Ganancia" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                {activeDataKeys.includes('costos') && <Line yAxisId="left" type="monotone" dataKey="costos" stroke="hsl(var(--chart-5))" strokeWidth={2} name="Costos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                {activeDataKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke="hsl(var(--muted))" strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                {activeDataKeys.includes('costos') && <Line yAxisId="left" type="monotone" dataKey="costos" stroke="hsl(var(--primary))" strokeOpacity={0.8} strokeWidth={2} name="Costos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                {activeDataKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke="hsl(var(--primary))" strokeOpacity={0.4} strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                 {activeDataKeys.includes('servicios') && <Line yAxisId="right" type="monotone" dataKey="servicios" stroke="#F97316" strokeWidth={2} name="Servicios" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
             </LineChart>
           </ResponsiveContainer>
@@ -105,7 +105,7 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
                 <div key={item.key} className="flex items-center space-x-2">
                     <Checkbox id={item.key} checked={activeDataKeys.includes(item.key)} onCheckedChange={() => toggleDataKey(item.key)} />
                     <Label htmlFor={item.key} className="flex items-center cursor-pointer">
-                        <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
+                        <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color, opacity: item.opacity || 1 }}></div>
                         {item.name}
                     </Label>
                 </div>
@@ -130,7 +130,7 @@ export function DashboardCharts({ chartData, serviceTypeDistribution, monthlyCom
               <Bar dataKey="Mes Anterior" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} />
               <Bar dataKey="Mes Actual" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
               <Bar dataKey="Utilidad Bruta" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="Utilidad Neta" fill="hsl(var(--chart-5))" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="Utilidad Neta" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
