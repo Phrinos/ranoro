@@ -346,9 +346,9 @@ Total: ${formatCurrency(sale.totalAmount)}
         onOpenChange={setIsReprintDialogOpen}
         title="Reimprimir Ticket"
         footerActions={<>
-          <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar</Button>
-          <Button variant="outline" onClick={() => handleCopySaleForWhatsapp(selectedSaleForReprint!)}><MessageSquare className="mr-2 h-4 w-4" /> WhatsApp</Button>
-          <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+          <Button onClick={handleCopyAsImage} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar</Button>
+          <Button onClick={() => handleCopySaleForWhatsapp(selectedSaleForReprint!)} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><MessageSquare className="mr-2 h-4 w-4" /> WhatsApp</Button>
+          <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
         </>}
       >
         <div id="printable-ticket">
