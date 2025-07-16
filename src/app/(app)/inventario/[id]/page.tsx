@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, Package, Server, ArrowRight, Loader2 } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, Package, Server, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -60,7 +60,7 @@ export default function InventoryItemDetailPage() {
       return;
     }
     try {
-      const fetchedItem = await inventoryService.getDocById('inventory', itemId) as InventoryItem;
+      const fetchedItem = await inventoryService.getDocById('inventory', itemId);
       setItem(fetchedItem || null);
 
       if (fetchedItem) {
@@ -127,7 +127,7 @@ export default function InventoryItemDetailPage() {
 
     try {
       await inventoryService.saveItem(formData, item.id);
-      const updatedItem = await inventoryService.getDocById('inventory', item.id) as InventoryItem;
+      const updatedItem = await inventoryService.getDocById('inventory', item.id);
       setItem(updatedItem);
       setIsEditDialogOpen(false);
       toast({
@@ -179,6 +179,12 @@ export default function InventoryItemDetailPage() {
 
   return (
     <div className="container mx-auto py-8">
+      <div className="mb-4">
+        <Button variant="outline" onClick={() => router.back()}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Volver
+        </Button>
+      </div>
       <PageHeader
         title={item.name}
         description={`Marca: ${item.brand || 'N/A'} | SKU: ${item.sku || 'N/A'} | ID: ${item.id}`}
