@@ -119,12 +119,14 @@
 }
 
 @media print {
-  body.printing * {
+  body.printing {
     visibility: hidden;
   }
+  
   .printable-area, .printable-area * {
     visibility: visible;
   }
+  
   .printable-area {
     position: absolute;
     left: 0;
@@ -137,32 +139,78 @@
     border: none !important;
     background-color: white !important;
   }
+
   .no-print {
     display: none !important;
   }
 
-  /* Specific formats */
+  /* --- Specific Print Formats --- */
   .print-format-letter {
     width: 8.5in;
     height: 11in;
     padding: 0.5in;
     margin: 0 auto;
-    page: letter;
   }
+
   .print-format-receipt {
     width: 80mm;
     margin: 0;
     padding: 2mm;
-    page: receipt;
+  }
+  
+  /* --- Advanced Report Formatting --- */
+  .report-header-no-print {
+    display: none;
   }
 
-  @page letter {
+  @page {
     size: letter;
-    margin: 0;
+    margin: 0.75in;
+    @top-center {
+      content: element(printHeader);
+    }
+    @bottom-center {
+      content: element(printFooter);
+    }
   }
-  @page receipt {
-    size: 80mm auto;
-    margin: 0;
+
+  .print-header-footer {
+    display: block;
+    position: running(printHeader);
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .print-header {
+    position: running(printHeader);
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .print-footer {
+    position: running(printFooter);
+    text-align: right;
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+    counter-increment: page;
+  }
+
+  .print-footer .page-number::after {
+    content: counter(page) " de " counter(pages);
+  }
+  
+  thead {
+    display: table-header-group; /* Ensures header repeats on each page */
+  }
+
+  tbody {
+    display: table-row-group;
+  }
+
+  tr {
+    page-break-inside: avoid;
   }
 }
 
