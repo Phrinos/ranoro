@@ -59,8 +59,8 @@ const manualSections = [
         content: ( <>
             <p>Genera presupuestos profesionales y da seguimiento a tus oportunidades de venta. Este módulo ahora está integrado con "Servicios".</p>
             <ul className="list-disc pl-5 mt-2 space-y-2">
-                <li><strong>Creación Unificada:</strong> Inicia un nuevo registro desde "Servicios" > "Nuevo Servicio". Por defecto, se crea como "Cotización".</li>
-                <li><strong>Inteligencia Artificial:</strong> La IA puede sugerir una cotización completa (insumos, mano de obra y precio) basándose en una simple descripción del trabajo y el historial de servicios similares.</li>
+            <li><strong>Creación Unificada:</strong> Inicia un nuevo registro desde "Servicios" &gt; "Nuevo Servicio". Por defecto, se crea como "Cotización".</li>
+            <li><strong>Inteligencia Artificial:</strong> La IA puede sugerir una cotización completa (insumos, mano de obra y precio) basándose en una simple descripción del trabajo y el historial de servicios similares.</li>
                 <li><strong>Historial y Seguimiento:</strong> Consulta todas las cotizaciones en su propia pestaña. Filtra y ordena para encontrar rápidamente lo que necesitas.</li>
                 <li><strong>Convertir a Servicio:</strong> Simplemente cambia el estado de "Cotización" a "Agendado" o "En Taller" para convertirla en una orden de servicio activa, conservando toda la información.</li>
             </ul>
