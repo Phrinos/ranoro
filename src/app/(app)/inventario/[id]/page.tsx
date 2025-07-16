@@ -11,7 +11,7 @@ import { Archive, Edit, ShieldAlert, Package, Server, ArrowRight, Loader2 } from
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { InventoryItemDialog } from '../components/inventory-item-dialog';
 import type { InventoryItemFormValues } from '../components/inventory-item-form';
 import { useToast } from '@/hooks/use-toast';
@@ -54,29 +54,37 @@ export default function InventoryItemDetailPage() {
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!itemId) return;
-      
-      // Fetch the specific item
+  const fetchItemAndRelatedData = useCallback(async () => {
+    if (!itemId) {
+      setItem(null);
+      return;
+    }
+    try {
       const fetchedItem = await inventoryService.getDocById('inventory', itemId) as InventoryItem;
       setItem(fetchedItem || null);
 
-      // Fetch related data for history and dialogs
-      const [servicesData, salesData, categoriesData, suppliersData] = await Promise.all([
-          operationsService.onServicesUpdatePromise(),
-          operationsService.onSalesUpdatePromise(),
-          inventoryService.onCategoriesUpdatePromise(),
-          inventoryService.onSuppliersUpdatePromise()
-      ]);
-      setAllServices(servicesData);
-      setAllSales(salesData);
-      setCategories(categoriesData);
-      setSuppliers(suppliersData);
-    };
+      if (fetchedItem) {
+        const [servicesData, salesData, categoriesData, suppliersData] = await Promise.all([
+            operationsService.onServicesUpdatePromise(),
+            operationsService.onSalesUpdatePromise(),
+            inventoryService.onCategoriesUpdatePromise(),
+            inventoryService.onSuppliersUpdatePromise()
+        ]);
+        setAllServices(servicesData);
+        setAllSales(salesData);
+        setCategories(categoriesData);
+        setSuppliers(suppliersData);
+      }
+    } catch (error) {
+        console.error("Error fetching item details:", error);
+        setItem(null);
+        toast({ title: 'Error', description: 'No se pudieron cargar los datos del ítem.', variant: 'destructive' });
+    }
+  }, [itemId, toast]);
 
-    fetchData();
-  }, [itemId]);
+  useEffect(() => {
+    fetchItemAndRelatedData();
+  }, [fetchItemAndRelatedData]);
 
   const history = useMemo((): InventoryMovement[] => {
     if (!item) return [];
