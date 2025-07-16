@@ -1,18 +1,13 @@
 
+
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  placeholderVehicles,
-  placeholderRentalPayments,
-  placeholderServiceRecords,
-  placeholderVehicleExpenses,
-} from '@/lib/placeholder-data';
-import type { PublicOwnerReport, WorkshopInfo, VehicleMonthlyReport } from '@/types';
+import type { PublicOwnerReport, WorkshopInfo, VehicleMonthlyReport, Vehicle, RentalPayment, ServiceRecord, VehicleExpense } from '@/types';
 import {
   format,
   parseISO,
@@ -24,14 +19,17 @@ import {
   isValid,
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, DollarSign, Calendar, ArrowLeft, Loader2, Copy, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, DollarSign, Calendar, ArrowLeft, Loader2, Copy, Download, ShieldAlert } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import Image from "next/legacy/image";
-
+import Image from "next/image";
+import { inventoryService, operationsService } from '@/lib/services';
+import { savePublicDocument } from '@/lib/public-document';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebasePublic';
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
   const workshopInfo = report.workshopInfo || { name: 'Taller', logoUrl: '/ranoro-logo.png' };
@@ -39,7 +37,9 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
   return (
     <div ref={ref} className="p-8 font-sans bg-white text-black" data-format="letter">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b-2 border-black pb-4">
-        <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} width={150} height={40} className="h-16 mb-4 sm:mb-0" style={{width: 'auto', height: 'auto'}} data-ai-hint="workshop logo" />
+        <div className="relative h-16 w-40 mb-4 sm:mb-0">
+            {workshopInfo.logoUrl && <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} sizes="160px" data-ai-hint="workshop logo" />}
+        </div>
         <div className="text-left sm:text-right">
           <h1 className="text-2xl font-bold">Reporte de Ingresos de Flotilla</h1>
           <p className="text-sm">Propietario: <span className="font-semibold">{report.ownerName}</span></p>

@@ -132,7 +132,7 @@ export default function LoginPage() {
           alt="Ranoro Login"
           fill
           className="object-cover object-center"
-          sizes="(max-width: 768px) 100vw, 50vw"
+          sizes="50vw"
           priority
         />
       </div>
@@ -146,6 +146,8 @@ export default function LoginPage() {
                   fill
                   style={{objectFit: 'contain'}}
                   className="dark:invert"
+                  priority
+                  sizes="180px"
                   data-ai-hint="ranoro logo"
               />
             </Link>

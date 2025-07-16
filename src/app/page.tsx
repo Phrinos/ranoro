@@ -105,6 +105,8 @@ export default function LandingPage() {
               fill
               style={{objectFit: 'contain'}}
               className="dark:invert"
+              priority
+              sizes="(max-width: 768px) 120px, 140px"
               data-ai-hint="ranoro logo"
             />
           </Link>
@@ -133,6 +135,7 @@ export default function LandingPage() {
               fill
               className="object-cover object-center"
               priority
+              sizes="100vw"
               data-ai-hint="mechanic workshop"
             />
             <div className="absolute inset-0 bg-black/60 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
@@ -422,6 +425,7 @@ export default function LandingPage() {
                           alt="Ranoro Logo"
                           fill
                           style={{objectFit: 'contain'}}
+                          sizes="140px"
                           data-ai-hint="ranoro logo"
                         />
                     </Link>

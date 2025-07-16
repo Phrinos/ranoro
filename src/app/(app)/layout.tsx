@@ -114,6 +114,7 @@ export default function AppLayout({
               className="dark:invert"
               style={{objectFit: 'contain'}}
               priority
+              sizes="200px"
               data-ai-hint="ranoro logo"
             />
           </div>

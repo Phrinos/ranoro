@@ -20,6 +20,8 @@ export default function LegalLayout({
               fill
               style={{ objectFit: 'contain' }}
               className="dark:invert"
+              priority
+              sizes="(max-width: 768px) 120px, 140px"
               data-ai-hint="ranoro logo"
             />
           </Link>
@@ -36,7 +38,7 @@ export default function LegalLayout({
                     alt="Mecánico trabajando en un vehículo"
                     fill
                     className="object-cover object-center"
-                    data-ai-hint="mechanic workshop"
+                    sizes="(max-width: 768px) 100vw, 896px"
                 />
             </div>
           <article className="prose dark:prose-invert max-w-none rounded-b-xl border-x border-b bg-card p-4 sm:p-6 md:p-8 lg:p-10 shadow-sm">
