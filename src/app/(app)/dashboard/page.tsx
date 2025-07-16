@@ -399,8 +399,17 @@ export default function DashboardPage() {
         const services = allServices.filter(s => s.status === 'Entregado' && parseDate(s.deliveryDateTime) && isWithinInterval(parseDate(s.deliveryDateTime)!, { start, end }));
         const sales = allSales.filter(s => s.status !== 'Cancelado' && parseDate(s.saleDate) && isWithinInterval(parseDate(s.saleDate)!, { start, end }));
         const ingresos = services.reduce((sum, s) => sum + (s.totalCost || 0), 0) + sales.reduce((sum, s) => sum + s.totalAmount, 0);
-        const ganancia = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
-        return { ingresos, ganancia, servicios: services.length + sales.length };
+        const utilidadBruta = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
+        
+        // Gastos Fijos (sin comisiones)
+        const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
+        const totalAdminSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
+        const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const gastosFijos = totalTechnicianSalaries + totalAdminSalaries + totalFixedExp;
+
+        const utilidadNeta = utilidadBruta - gastosFijos;
+
+        return { ingresos, utilidadBruta, utilidadNeta, servicios: services.length + sales.length };
     };
 
     const currentMonthMetrics = calculateMetricsForPeriod(currentMonthStart, endOfDay(today));
@@ -408,7 +417,8 @@ export default function DashboardPage() {
 
     const monthlyComparisonDataResult = [
         { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos },
-        { name: 'Ganancia', 'Mes Anterior': lastMonthMetrics.ganancia, 'Mes Actual': currentMonthMetrics.ganancia },
+        { name: 'Utilidad Bruta', 'Mes Anterior': lastMonthMetrics.utilidadBruta, 'Mes Actual': currentMonthMetrics.utilidadBruta },
+        { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta },
         { name: 'Servicios', 'Mes Anterior': lastMonthMetrics.servicios, 'Mes Actual': currentMonthMetrics.servicios },
     ];
 
