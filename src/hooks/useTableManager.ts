@@ -32,7 +32,7 @@ export function useTableManager<T extends { [key: string]: any }>({
       const lowercasedTerm = searchTerm.toLowerCase();
       data = data.filter(item => 
         searchKeys.some(key => 
-          String(item[key]).toLowerCase().includes(lowercasedTerm)
+          String(item[key] ?? '').toLowerCase().includes(lowercasedTerm)
         )
       );
     }

@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -153,12 +154,11 @@ const FormMessage = React.forwardRef<
   if (!body) {
     return null
   }
-
-  // Hide the component if there's no message body to render
+  
   return (
     <p
       ref={ref}
-      className={cn("hidden", className)} // Changed to hidden
+      className={cn("text-sm font-medium text-destructive", className)}
       {...props}
     >
       {body}

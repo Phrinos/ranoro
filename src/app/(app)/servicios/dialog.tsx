@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState } from 'react';
@@ -78,7 +79,7 @@ export function ServiceDialog({
         toast({
             title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`,
             description: `Ocurrió un problema al intentar guardar desde el diálogo.`,
-            variant: 'destructive',
+            variant: "destructive",
         });
     }
   };

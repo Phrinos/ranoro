@@ -7,8 +7,7 @@ import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency, capitalizeWords } from "@/lib/utils";
-import { TabsContent } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Check, Eye, Signature, Loader2, AlertCircle, CalendarCheck } from 'lucide-react';
 import { QuoteContent } from '@/components/quote-content';
 import { Button } from '@/components/ui/button';
@@ -186,7 +185,7 @@ const SafetyChecklistDisplay = ({
             {inspection.technicianSignature && (
                  <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
                     <div className="relative w-full h-full max-w-[200px] aspect-video">
-                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" fill style={{objectFit: 'contain'}} crossOrigin="anonymous"/>
+                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" fill className="object-contain" crossOrigin="anonymous"/>
                     </div>
                     <div className="mt-2 pt-1 w-64 text-center">
                         <p className="text-xs font-bold">FIRMA DEL TÉCNICO ({format(new Date(), "dd/MM/yyyy")})</p>
@@ -251,8 +250,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         )}
         <header className="mb-2 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-start gap-2">
-            <div className="relative w-[150px] h-auto">
-                <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} width={150} height={50} style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" />
+            <div className="relative w-[150px] h-[50px]">
+                <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" />
             </div>
             <div className="text-right">
               <h1 className="text-xl font-bold">ORDEN DE SERVICIO</h1>

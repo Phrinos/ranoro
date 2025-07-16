@@ -270,7 +270,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
     if (entry.path === '/opciones' && pathname.startsWith('/mensajeria')) isActive = false;
-    if (entry.path === '/rentas' && pathname.startsWith('/rentas?action=registrar')) isActive = false; // Don't highlight 'Ingresos' for 'Registrar Pago'
+    if (entry.path === '/rentas' && pathname.startsWith('/rentas?action=registrar')) isActive = true;
 
     return { ...entry, isActive };
   });

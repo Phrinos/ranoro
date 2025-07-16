@@ -11,12 +11,14 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { VehicleForm } from "./vehicle-form";
 import type { Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import type { VehicleFormValues } from "./vehicle-form";
 import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface VehicleDialogProps {
   trigger?: React.ReactNode; 
@@ -24,6 +26,7 @@ interface VehicleDialogProps {
   onSave?: (data: VehicleFormValues) => Promise<void>;
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
+  hideCloseButton?: boolean; // New prop
 }
 
 export function VehicleDialog({
@@ -32,6 +35,7 @@ export function VehicleDialog({
   onSave,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
+  hideCloseButton = false,
 }: VehicleDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -71,14 +75,6 @@ export function VehicleDialog({
                     <DialogTitle>{dialogTitle}</DialogTitle>
                     <DialogDescription>{dialogDescription}</DialogDescription>
                 </div>
-                <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button type="submit" form="vehicle-form">
-                        {vehicle && 'id' in vehicle && vehicle.id ? "Actualizar Vehículo" : "Crear Vehículo"}
-                    </Button>
-                </div>
             </DialogHeader>
             <div className="flex-grow overflow-y-auto px-6">
                 <VehicleForm
@@ -87,6 +83,20 @@ export function VehicleDialog({
                     onSubmit={handleSubmit}
                 />
             </div>
+             <DialogFooter className="p-6 pt-4 border-t sticky bottom-0 bg-background flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancelar
+                </Button>
+                <Button type="submit" form="vehicle-form">
+                    {vehicle && 'id' in vehicle && vehicle.id ? "Actualizar Vehículo" : "Crear Vehículo"}
+                </Button>
+            </DialogFooter>
+             {!hideCloseButton && (
+              <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </DialogClose>
+            )}
         </DialogContent>
       )}
     </Dialog>

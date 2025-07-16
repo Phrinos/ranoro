@@ -1,14 +1,21 @@
-/* app/(app)/servicios/page.tsx
-   — PÉGALO TAL CUAL —                                                   */
 
-   'use client'
 
-    import { redirect } from 'next/navigation';
+"use client";
 
-    // This page is now obsolete.
-    // The main entry point is /servicios/historial
-    export default function ServiciosRedirectPage() {
-        redirect('/servicios/historial');
-        return null;
-    }
-   
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+
+// This page is now obsolete.
+// The main entry point is /servicios/historial
+function Redirector() {
+    redirect('/servicios/historial');
+    return null;
+}
+
+export default function ServiciosRedirectPage() {
+    return (
+        <Suspense fallback={<div>Cargando...</div>}>
+            <Redirector />
+        </Suspense>
+    );
+}
