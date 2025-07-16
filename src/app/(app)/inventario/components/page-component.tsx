@@ -214,7 +214,6 @@ export function InventarioPageComponent({ tab }: { tab?: string }) {
           open={isPrintDialogOpen}
           onOpenChange={setIsPrintDialogOpen}
           title="Reporte de Inventario"
-          onPrint={() => window.print()}
       >
         <InventoryReportContent items={itemsToPrint} />
       </DocumentPreviewDialog>
