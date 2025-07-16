@@ -2,7 +2,7 @@
 
 import { db } from './firebasePublic';
 import { doc, setDoc } from 'firebase/firestore';
-import type { ServiceRecord, QuoteRecord, Vehicle, WorkshopInfo, PublicOwnerReport } from '@/types';
+import type { ServiceRecord, Vehicle, WorkshopInfo, PublicOwnerReport } from '@/types';
 import { cleanObjectForFirestore } from './forms';
 
 

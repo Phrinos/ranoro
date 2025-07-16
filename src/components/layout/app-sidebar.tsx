@@ -18,17 +18,11 @@ import {
   SidebarGroupContent,
   useSidebar, // Import useSidebar hook
 } from "@/components/ui/sidebar";
-import useNavigation, { type NavigationEntry } from "@/hooks/use-navigation";
+import useNavigation from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
 import {
   Settings,
   LogOut,
-  Users,
-  ShieldQuestion,
-  DatabaseZap,
-  Database,
-  Bell,
-  BookOpen,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,17 +31,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
-import type { User, ServiceRecord, AppRole } from "@/types";
-import { format, parseISO, isValid } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { parseDate } from '@/lib/forms';
-import { cn } from "@/lib/utils";
+import type { User, NavigationEntry } from "@/types";
 
 
 export function AppSidebar({
@@ -59,7 +45,6 @@ export function AppSidebar({
 }) {
   const navItems = useNavigation();
   const router = useRouter();
-  const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar(); // Get sidebar context
 
   const handleLogout = async () => {

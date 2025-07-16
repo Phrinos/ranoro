@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CheckCircle, Wrench, Package, LineChart, BrainCircuit, Rocket, Target, Users, BookOpen, Shield, BarChart3, RadioTower, DollarSign, DatabaseZap, Truck } from 'lucide-react';
+import { CheckCircle, Wrench, Package, LineChart, BrainCircuit, Rocket, Target, Users, BookOpen, Shield, DollarSign, DatabaseZap, Truck } from 'lucide-react';
 import React, { useRef } from 'react';
 import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 import { cn } from '@/lib/utils';

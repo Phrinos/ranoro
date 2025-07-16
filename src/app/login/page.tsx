@@ -12,12 +12,10 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 import Image from "next/image";
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { capitalizeWords } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { auth, db } from '@/lib/firebaseClient';
 import { 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup
 } from 'firebase/auth';
@@ -36,11 +34,6 @@ export default function LoginPage() {
   const [emailLogin, setEmailLogin] = useState('');
   const [passwordLogin, setPasswordLogin] = useState('');
   
-  const [nameRegister, setNameRegister] = useState('');
-  const [emailRegister, setEmailRegister] = useState('');
-  const [passwordRegister, setPasswordRegister] = useState('');
-  const [confirmPasswordRegister, setConfirmPasswordRegister] = useState('');
-
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();

@@ -6,54 +6,25 @@ import { usePathname } from 'next/navigation';
 import React, { useMemo } from 'react';
 import {
   LayoutDashboard,
-  List,
-  History,
-  PlusCircle,
-  Shapes,
-  Car,
-  UserCog,
-  Users,
-  ShoppingCart,
-  DatabaseZap,
-  LucideIcon,
-  type Icon,
-  Archive,
   Wrench,
-  Package,
-  Settings,
-  Building,
-  CalendarClock,
-  DollarSign,
+  FileText,
   Receipt,
-  LineChart,
-  ShieldQuestion,
-  FileText, 
-  ClipboardList, 
-  BarChart3, 
-  Briefcase,
-  BarChartHorizontal,
-  Database,
-  BookOpen,
+  Package,
+  DollarSign,
+  Users,
+  Settings,
   Truck,
-  Wallet,
-  UserCircle,
-  Landmark,
+  LineChart,
   Shield,
+  PlusCircle,
+  Landmark,
   LayoutGrid,
   CalendarDays,
   MessageSquare
 } from 'lucide-react';
-import type { User, AppRole } from '@/types';
+import type { User, AppRole, NavigationEntry } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
 
-export interface NavigationEntry {
-  label: string;
-  icon: LucideIcon | typeof Icon;
-  path: string;
-  isActive?: boolean;
-  groupTag: string;
-  permissions?: string[]; 
-}
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Mi Taller

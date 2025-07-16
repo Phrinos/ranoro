@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -41,7 +41,7 @@ export function PurchaseItemSelectionDialog({
     return inventoryItems.filter(
       (item) =>
         item.name.toLowerCase().includes(lowerSearchTerm) ||
-        item.sku.toLowerCase().includes(lowerSearchTerm)
+        (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm))
     ).slice(0, 10);
   }, [searchTerm, inventoryItems]);
 

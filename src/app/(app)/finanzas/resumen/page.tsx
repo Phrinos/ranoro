@@ -12,7 +12,7 @@ function Redirector() {
 
 export default function ResumenRedirectPage() {
     return (
-        <Suspense fallback={<div>Cargando...</div>}>
+        <Suspense fallback={<div>Redireccionando...</div>}>
             <Redirector />
         </Suspense>
     );

@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -50,9 +50,6 @@ export function ServiceDialog({
   onOpenChange: setControlledOpen,
   onVehicleCreated,
   mode = 'service', // Default to service mode
-  onDelete,
-  onCancelService,
-  onViewQuoteRequest,
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -119,8 +116,8 @@ export function ServiceDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-      <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-0 flex-shrink-0">
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>

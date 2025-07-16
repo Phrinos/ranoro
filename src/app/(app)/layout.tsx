@@ -3,13 +3,9 @@
 "use client";
 
 import {
-  collection,
   onSnapshot,
   doc,
-  writeBatch,
   getDoc,
-  query,
-  where,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebaseClient";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -18,7 +14,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { useEffect, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
-import type { ServiceRecord, User, Vehicle, Technician, InventoryItem, Driver } from "@/types";
+import type { User, Vehicle, Driver } from "@/types";
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { cn } from "@/lib/utils";

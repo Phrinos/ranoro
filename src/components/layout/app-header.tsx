@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from "next/image";
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, UserCircle, Car, Settings, LifeBuoy, LogOut, Wrench, Users, BarChart2, FileText, ShoppingCart, Truck, Tags, DollarSign, UserPlus, ShieldAlert } from 'lucide-react';
+import { Menu, UserCircle, Settings, LifeBuoy, LogOut } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigation } from '@/hooks/use-navigation';
