@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +13,7 @@ import type { ServiceTypeRecord } from '@/types';
 import { PlusCircle, Trash2, Edit } from 'lucide-react';
 import { inventoryService } from '@/lib/services';
 import { capitalizeWords } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface TiposDeServicioProps {
     serviceTypes: ServiceTypeRecord[];
@@ -42,7 +43,6 @@ export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProp
             await inventoryService.saveServiceType({ name: trimmedName }, editingType?.id);
             toast({ title: `Tipo de servicio ${editingType ? 'actualizado' : 'creado'}.` });
             setIsDialogOpen(false);
-            // The parent component will receive the update via the onSnapshot listener
         } catch (error) {
             console.error("Error saving service type:", error);
             toast({ title: "Error al guardar", variant: "destructive" });
@@ -50,14 +50,12 @@ export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProp
     };
 
     const handleDeleteType = async (type: ServiceTypeRecord) => {
-        if (window.confirm(`¿Seguro que quieres eliminar "${type.name}"?`)) {
-            try {
-                await inventoryService.deleteServiceType(type.id);
-                toast({ title: "Tipo de servicio eliminado.", variant: "destructive" });
-            } catch (error) {
-                console.error("Error deleting service type:", error);
-                toast({ title: "Error al eliminar", variant: "destructive" });
-            }
+        try {
+            await inventoryService.deleteServiceType(type.id);
+            toast({ title: "Tipo de servicio eliminado.", variant: "destructive" });
+        } catch (error) {
+            console.error("Error deleting service type:", error);
+            toast({ title: "Error al eliminar", variant: "destructive" });
         }
     };
     
@@ -83,7 +81,12 @@ export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProp
                                         <TableCell className="font-medium">{type.name}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(type)}><Edit className="h-4 w-4"/></Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteType(type)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                             <ConfirmDialog
+                                                triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                                                title={`¿Eliminar "${type.name}"?`}
+                                                description="Esta acción no se puede deshacer. Los servicios existentes que usen este tipo no serán afectados, pero no podrá ser seleccionado para nuevos servicios."
+                                                onConfirm={() => handleDeleteType(type)}
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -96,7 +99,12 @@ export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProp
             </CardContent>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
-                    <DialogHeader><DialogTitle>{editingType ? 'Editar' : 'Nuevo'} Tipo de Servicio</DialogTitle></DialogHeader>
+                    <DialogHeader>
+                        <DialogTitle>{editingType ? 'Editar' : 'Nuevo'} Tipo de Servicio</DialogTitle>
+                         <DialogDescription>
+                            Define un nombre claro para la categoría del servicio.
+                        </DialogDescription>
+                    </DialogHeader>
                     <form onSubmit={handleSaveType} className="py-4 space-y-4">
                         <Label htmlFor="type-name">Nombre del Tipo de Servicio</Label>
                         <Input id="type-name" value={currentTypeName} onChange={(e) => setCurrentTypeName(capitalizeWords(e.target.value))} />

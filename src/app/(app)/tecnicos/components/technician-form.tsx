@@ -79,7 +79,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form id="technician-form" onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -208,14 +208,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
             </FormItem>
           )}
         />
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Staff" : "Crear Staff")}
-          </Button>
-        </div>
+        {/* Buttons are now in the dialog footer */}
       </form>
     </Form>
   );
