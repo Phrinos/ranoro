@@ -22,7 +22,7 @@ interface PrintTicketDialogProps {
   onDialogClose?: () => void; 
   dialogContentClassName?: string;
   footerActions?: React.ReactNode;
-  contentRef?: React.RefObject<HTMLDivElement>; // Added ref for external access
+  contentRef?: React.RefObject<HTMLDivElement>;
 }
 
 export function PrintTicketDialog({
@@ -50,23 +50,24 @@ export function PrintTicketDialog({
         else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-md", // Default width
-        "flex flex-col max-h-[90vh]", // Ensure dialog doesn't overflow viewport
-        dialogContentClassName 
+        "sm:max-w-md",
+        "flex flex-col max-h-[90vh]",
+        "printable-area print-format-receipt", // Apply print classes here
+        dialogContentClassName
       )}>
-        <DialogHeader className="print:hidden flex-shrink-0">
+        <DialogHeader className="print:hidden flex-shrink-0 no-print p-6 pb-2">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         
-        <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md">
-            <div ref={contentRef}>
+        <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md print:bg-white print:p-0">
+            <div ref={contentRef} id="printable-content-dialog">
                  {children}
             </div>
         </div>
 
         {footerActions && (
-          <DialogFooter className="print:hidden flex-shrink-0">
+          <DialogFooter className="print:hidden flex-shrink-0 no-print p-6 pt-4 border-t bg-background sm:justify-end">
             {footerActions}
           </DialogFooter>
         )}

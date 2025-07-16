@@ -119,11 +119,31 @@
 }
 
 @media print {
-  body > *:not(.printable-content) {
-    display: none !important;
+  @page {
+    /* Default page settings for most documents */
+    size: letter;
+    margin: 0.5in;
   }
-  .printable-content {
-    display: block !important;
+
+  /* Specific page size for thermal receipts */
+  @page receipt {
+    size: 80mm auto; /* Adjust width as needed */
+    margin: 2mm;
+  }
+
+  /* Apply the page rule to the correct element */
+  .print-format-receipt {
+    page: receipt;
+  }
+
+  /* Hide everything except the printable area */
+  body * {
+    visibility: hidden;
+  }
+  .printable-area, .printable-area * {
+    visibility: visible;
+  }
+  .printable-area {
     position: absolute;
     left: 0;
     top: 0;
@@ -139,25 +159,13 @@
   .no-print {
     display: none !important;
   }
-  
-  /* Specific for thermal receipt printing */
-  @page {
-    size: 80mm auto; /* Adjust width as needed */
-    margin: 2mm;
-  }
 
   [data-format='receipt'] {
     width: 100% !important;
     padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
-    page-break-after: always; /* Auto-cut command */
-  }
-
-  /* Specific for letter size document printing */
-  @page {
-    size: letter;
-    margin: 0.5in;
+    page-break-after: always;
   }
 
   [data-format='letter'] {
@@ -169,7 +177,6 @@
     page-break-after: always;
   }
 }
-
 
 @layer utilities {
   /* For responsive ticket preview */

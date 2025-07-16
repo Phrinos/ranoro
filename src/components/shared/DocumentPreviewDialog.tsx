@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DocumentPreviewDialogProps {
   open: boolean;
@@ -31,14 +32,17 @@ export function DocumentPreviewDialog({
 }: DocumentPreviewDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+      <DialogContent className={cn(
+          "max-w-4xl max-h-[90vh] flex flex-col p-0",
+          "printable-area print-format-letter"
+      )}>
         <DialogHeader className="p-6 pb-2 flex-shrink-0 no-print">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto px-6 bg-muted/30 print:bg-white print:p-0">
-            <div id="printable-area-dialog" className="bg-white mx-auto my-4 shadow-lg printable-content">
+            <div id="printable-area-dialog" className="bg-white mx-auto my-4 shadow-lg">
                  {children}
             </div>
         </div>
