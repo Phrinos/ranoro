@@ -119,60 +119,83 @@
 }
 
 @layer utilities {
-  /* =========================================
-   REGLAS DE IMPRESIÓN PARA EL REPORTE
-   ========================================= */
-  @media print {
-    /* 1️⃣  Ocupa todo el papel (elimina max-w‑* / mx-auto / padding) */
-    #print-area {
-      margin: 0 !important;
-      padding: 0 !important;
-      width: 100% !important;
-      max-width: none !important;
-    }
+  .text-shadow {
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+  }
+  
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+  }
 
-    /* 2️⃣  A4 vertical y márgenes reducidos */
-    @page {
-      size: A4 portrait;
-      margin: 12mm;
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
     }
-
-    /* 3️⃣  Encabezado solo en la primera página */
-    .print-header-once {
-      page-break-after: avoid; /* evita partirlo a medias */
-    }
-    /* cualquier header clonado por tu grid queda oculto */
-    .print-header-once + .print-header-once {
-      display: none !important;
-      visibility: hidden !important;
-    }
-
-    /* 4️⃣  Repite solo los encabezados de tabla (thead) */
-    thead {
-      display: table-header-group;
-    }
-    tfoot {
-      display: table-footer-group;
-    }
-
-    /* 5️⃣  Ajustes de tabla: que quepa sin scroll */
-    .inventory-table {
-      width: 100% !important;
-      table-layout: fixed;
-      border-collapse: collapse;
-    }
-    .inventory-table th,
-    .inventory-table td {
-      padding: 4px 6px;
-      font-size: 11pt; /* o el que necesites */
-      word-break: break-word;
-    }
-
-    /* 6️⃣  Quita sombras, bordes y backgrounds que se ven grises */
-    * {
-      box-shadow: none !important;
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
+
+  /* =========================================
+    REGLAS DE IMPRESIÓN GENERALES
+   ========================================= */
+  @media print {
+    body {
+      background-color: white !important;
+    }
+
+    .printable-content, .printable-content * {
+      visibility: visible !important;
+    }
+
+    body > *:not(.printable-content) {
+      display: none !important;
+    }
+    
+    .printable-content {
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+  }
+
+  /* =========================================
+     REGLAS DE IMPRESIÓN PARA DOCUMENTO CARTA
+   ========================================= */
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 12mm; /* coincide con tu padding de pantalla */
+    }
+
+    #printable-report {
+      width: 100% !important;   /* ocupa todo el ancho útil  */
+      max-width: none !important;
+      margin: 0 !important;     /* sin centrado */
+      box-shadow: none !important;
+    }
+
+    /* repetir <thead>/<tfoot> automáticamente */
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+
+    /* evita cortar tarjetas/resúmenes a medias */
+    .no-page-break { break-inside: avoid; page-break-inside: avoid; }
+    .force-new-page { break-before: page; page-break-before: always; }
+  }
+
 
   /* For responsive ticket preview */
   .ticket-preview-content[data-format="receipt"] {
@@ -231,50 +254,4 @@ input[type=number] {
   height: 5px;
   border-radius: 50%;
   background-color: hsl(var(--primary-foreground));
-}
-
-@media print {
-  .no-print {
-    display: none !important;
-  }
-}
-
-.printable-content {
-  /* Default styles for screen */
-}
-
-@media print {
-  body {
-    visibility: hidden;
-  }
-
-  .printable-content, .printable-content * {
-    visibility: visible;
-  }
-
-  .printable-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    box-shadow: none !important;
-    border: none !important;
-    background-color: white !important;
-  }
-}
-
-.print-format-letter {
-    width: 8.5in;
-    min-height: 11in;
-    padding: 0.5in;
-    margin: 1rem auto;
-}
-
-.print-format-receipt {
-    width: 80mm;
-    margin: 0;
-    padding: 2mm;
 }

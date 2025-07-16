@@ -58,8 +58,12 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
     const totalProductsCount = productsOnly.length;
 
     return (
-      <section ref={ref} id="print-area">
-        <header className="report-header print-header-once">
+      <div
+        ref={ref}
+        id="printable-report"
+        className="font-sans bg-white text-black text-sm p-4"
+      >
+        <header className="report-header no-page-break">
             <div className="mb-8 border-b-2 border-black pb-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 {workshopInfo?.logoUrl ? (
@@ -160,7 +164,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
             </TableBody>
           </Table>
         </main>
-      </section>
+      </div>
     );
   }
 );
