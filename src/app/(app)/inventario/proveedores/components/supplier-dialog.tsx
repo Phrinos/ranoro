@@ -59,21 +59,21 @@ export function SupplierDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh]">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b">
           <DialogTitle>{supplier ? "Editar Proveedor" : "Nuevo Proveedor"}</DialogTitle>
           <DialogDescription>
             {supplier ? "Actualiza los detalles del proveedor." : "Completa la información para un nuevo proveedor."}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto -mx-6 px-6">
+        <div className="flex-grow overflow-y-auto px-6">
           <SupplierForm
             id="supplier-form"
             initialData={supplier}
             onSubmit={handleSubmit}
           />
         </div>
-        <DialogFooter className="flex-shrink-0">
+        <DialogFooter className="p-6 pt-4 border-t bg-background sticky bottom-0 flex-shrink-0">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

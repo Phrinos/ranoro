@@ -51,24 +51,22 @@ export function CategoryDialog({ open, onOpenChange, category, onSave, existingC
             {category ? "Modifica el nombre de la categoría." : "Añade una nueva categoría para organizar tus productos."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="py-4">
-            <Label htmlFor="category-name">Nombre de la Categoría</Label>
-            <Input
-              id="category-name"
-              value={name}
-              onChange={(e) => setName(capitalizeWords(e.target.value))}
-              className="mt-2"
-              placeholder="Ej: Filtros, Aceites"
-            />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit">Guardar</Button>
-          </DialogFooter>
+        <form id="category-form" onSubmit={handleSubmit} className="py-4">
+          <Label htmlFor="category-name">Nombre de la Categoría</Label>
+          <Input
+            id="category-name"
+            value={name}
+            onChange={(e) => setName(capitalizeWords(e.target.value))}
+            className="mt-2"
+            placeholder="Ej: Filtros, Aceites"
+          />
         </form>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="category-form">Guardar</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
