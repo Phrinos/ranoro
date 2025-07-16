@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -65,12 +64,12 @@ export function AddItemDialog({ open, onOpenChange, inventoryItems, onItemSelect
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg w-full p-6 space-y-6">
         <DialogHeader>
-          <DialogTitle>Añadir Artículo/Servicio</DialogTitle>
+          <DialogTitle>Añadir Artículo a la Venta</DialogTitle>
           <DialogDescription>Busque o cree un nuevo artículo para añadirlo a la venta.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 min-h-[300px]">
           {!selectedItem ? (
             <>
               <div className="relative">
