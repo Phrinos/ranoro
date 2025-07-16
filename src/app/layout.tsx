@@ -11,9 +11,9 @@ export const metadata: Metadata = {
   title: 'RANORO - Tu taller en una app',
   description: 'El sistema operativo inteligente para tu taller mecánico. Por Arturo Valdelamar',
   icons: {
-    icon: '/ranoro-logo.png', // Main favicon
-    shortcut: '/ranoro-logo.png',
-    apple: '/ranoro-logo.png',
+    icon: '/favicon.ico', // Main favicon
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
   },
   openGraph: {
     title: 'RANORO - Tu taller en una app',
