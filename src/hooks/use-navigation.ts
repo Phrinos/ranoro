@@ -226,8 +226,7 @@ const useNavigation = (): NavigationEntry[] => {
     }
     
     // Specific overrides to group related pages under one active nav item
-    if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/'))) isActive = true;
-    if (entry.path === '/cotizaciones/historial' && pathname.startsWith('/cotizaciones/')) isActive = true;
+    if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/') || pathname.startsWith('/cotizaciones/'))) isActive = true;
     if (entry.path === '/vehiculos' && (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios'))) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
     if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
