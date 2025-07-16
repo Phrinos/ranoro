@@ -225,15 +225,18 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
         const inventoryUpdates = new Map<string, number>();
 
         allSupplies.forEach(supply => {
-            if (!supply.isService) {
+            if (supply.supplyId && !supply.isService) {
                 inventoryUpdates.set(supply.supplyId, (inventoryUpdates.get(supply.supplyId) || 0) + supply.quantity);
             }
         });
-
+        
+        // Fetch all inventory items once to avoid multiple reads inside the loop
         const inventoryItems = await inventoryService.onItemsUpdatePromise();
+        const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
 
         for (const [itemId, quantityToDeduct] of inventoryUpdates.entries()) {
-            const item = inventoryItems.find(inv => inv.id === itemId);
+            const item = inventoryMap.get(itemId);
+            // Only proceed if the item exists in our inventory map
             if(item) {
                 const itemRef = doc(db, "inventory", itemId);
                 const newQuantity = Math.max(0, item.quantity - quantityToDeduct);
