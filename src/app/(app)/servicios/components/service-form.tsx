@@ -1,3 +1,4 @@
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -223,6 +224,7 @@ export function ServiceForm(props:Props){
       const selectedVehicle = parentVehicles.find(v => v.id === watchedVehicleId);
       if (selectedVehicle) {
         setValue('customerName', selectedVehicle.ownerName);
+        setValue('allVehiclesForDialog' as any, parentVehicles);
       }
     }
   }, [watchedVehicleId, parentVehicles, setValue]);
@@ -538,7 +540,7 @@ export function ServiceForm(props:Props){
         <UiDialogContent className="max-w-4xl p-2">
             <UiDialogHeader className="print:hidden"><UiDialogTitle>Vista Previa de Imagen</UiDialogTitle></UiDialogHeader>
             <div className="relative aspect-video w-full">
-                {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada" fill className="object-contain" />)}
+                {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada" fill style={{objectFit:"contain"}} sizes="(max-width: 768px) 100vw, 1024px" />)}
             </div>
         </UiDialogContent>
       </Dialog>
@@ -566,7 +568,7 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 {(watch(`photoReports.${index}.photos`) || []).map((photoUrl: string, pIndex: number) => (
                                     <button type="button" key={pIndex} className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group" onClick={() => onViewImage(photoUrl)}>
-                                        <Image src={photoUrl} alt={`Foto ${pIndex + 1}`} fill className="object-contain" data-ai-hint="car damage photo"/>
+                                        <Image src={photoUrl} alt={`Foto ${pIndex + 1}`} fill style={{objectFit:"contain"}} sizes="300px" data-ai-hint="car damage photo"/>
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"><Eye className="h-6 w-6 text-white" /></div>
                                     </button>
                                 ))}

@@ -31,12 +31,12 @@ export function PriceListDialog({ open, onOpenChange, onSave, record, inventoryI
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-2 flex-shrink-0">
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto -mx-6 px-6">
+        <div className="flex-grow overflow-y-auto px-6 py-4">
           <PriceListForm
             initialData={record}
             onSubmit={onSave}

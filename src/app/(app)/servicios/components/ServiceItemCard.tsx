@@ -8,7 +8,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Card } from '@/components/ui/card';
 import { Plus, PlusCircle, Trash2, Wrench, Tags } from "lucide-react";
-import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList } from "@/types";
+import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle } from "@/types";
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AddSupplyDialog } from './add-supply-dialog';
@@ -42,7 +42,7 @@ export function ServiceItemCard({
     categories,
     suppliers
 }: ServiceItemCardProps) {
-    const { control, getValues, setValue, formState: { errors } } = useFormContext<ServiceFormValues>();
+    const { control, getValues, setValue, formState: { errors }, watch } = useFormContext<ServiceFormValues>();
     const { fields, append, remove } = useFieldArray({
         control,
         name: `serviceItems.${serviceIndex}.suppliesUsed`
@@ -56,6 +56,12 @@ export function ServiceItemCard({
 
     
     const serviceItemErrors = errors.serviceItems?.[serviceIndex];
+    
+    // Watch for the vehicleId at the top-level form
+    const currentVehicleId = watch('vehicleId');
+    const allVehicles = watch('allVehiclesForDialog') as Vehicle[] | undefined || []; // Assuming you pass this down or have it in context
+    const currentVehicle = allVehicles.find(v => v.id === currentVehicleId);
+
     
     const handleAddSupply = (supply: ServiceSupply) => {
         append(supply);
@@ -96,7 +102,7 @@ export function ServiceItemCard({
             append({
                 supplyId: newItem.id,
                 supplyName: newItem.name,
-                quantity: 1,
+                quantity: 1, // Default quantity for new items
                 unitPrice: newItem.unitPrice,
                 sellingPrice: newItem.sellingPrice,
                 isService: newItem.isService,
@@ -226,6 +232,7 @@ export function ServiceItemCard({
                 open={isAddToPriceListDialogOpen}
                 onOpenChange={setIsAddToPriceListDialogOpen}
                 serviceToSave={getValues(`serviceItems.${serviceIndex}`)}
+                currentVehicle={currentVehicle}
                 onSave={handleSaveToPriceList}
             />
         </Card>
