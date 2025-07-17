@@ -229,7 +229,7 @@ export function PaymentDetailsDialog({
               {(selectedPaymentMethod?.includes("Tarjeta")) && (
                  <Card className="p-4 bg-white dark:bg-card">
                     <p className="text-sm font-medium mb-4">Información de Tarjeta</p>
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="confirmCardFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('cardFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
@@ -238,9 +238,9 @@ export function PaymentDetailsDialog({
               {(selectedPaymentMethod?.includes("Transferencia")) && (
                 <Card className="p-4 bg-white dark:bg-card">
                     <p className="text-sm font-medium mb-4">Información de Transferencia</p>
-                    <div className="space-y-4">
-                        <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="confirmTransferFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio Transferencia</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('transferFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="confirmTransferFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('transferFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
                 </Card>
               )}
