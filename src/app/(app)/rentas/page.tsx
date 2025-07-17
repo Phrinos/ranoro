@@ -161,6 +161,7 @@ function RentasPageComponent({
                         <TableHead className="text-white">Conductor</TableHead>
                         <TableHead className="text-white">Vehículo</TableHead>
                         <TableHead className="text-right text-white">Monto</TableHead>
+                        <TableHead className="text-white">Concepto</TableHead>
                         <TableHead className="text-right text-white">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -173,6 +174,7 @@ function RentasPageComponent({
                                 <TableCell className="font-semibold">{p.driverName}</TableCell>
                                 <TableCell>{p.vehicleLicensePlate}</TableCell>
                                 <TableCell className="text-right font-bold">{formatCurrency(p.amount)}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{p.note || 'N/A'}</TableCell>
                                 <TableCell className="text-right">
                                     <Button variant="ghost" size="icon" onClick={() => setPaymentForReceipt(p)}>
                                         <Printer className="h-4 w-4"/>
@@ -182,7 +184,7 @@ function RentasPageComponent({
                         ))
                      ) : (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center h-24">
+                            <TableCell colSpan={7} className="text-center h-24">
                                 No hay pagos registrados.
                             </TableCell>
                         </TableRow>
