@@ -128,7 +128,7 @@ export function PaymentDetailsDialog({
   const selectedPaymentMethod = watch("paymentMethod");
   const isMixedPayment = selectedPaymentMethod?.includes('+') || selectedPaymentMethod?.includes('/');
 
-  // Reset form when dialog opens/closes or service changes
+  // Reset form when dialog opens or service changes
   useEffect(() => {
     if (open) {
       reset({
@@ -215,13 +215,13 @@ export function PaymentDetailsDialog({
                   <p className="text-sm font-medium mb-4">Desglose de Pago</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {selectedPaymentMethod.includes('Efectivo') && (
-                        <FormField control={form.control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8 bg-white dark:bg-card"/></FormControl></div><FormMessage /></FormItem>)} />
                       )}
                       {selectedPaymentMethod.includes('Tarjeta') && (
-                        <FormField control={form.control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8 bg-white dark:bg-card"/></FormControl></div><FormMessage /></FormItem>)} />
                       )}
                       {selectedPaymentMethod.includes('Transferencia') && (
-                        <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8 bg-white dark:bg-card"/></FormControl></div><FormMessage /></FormItem>)} />
                       )}
                   </div>
                 </Card>
