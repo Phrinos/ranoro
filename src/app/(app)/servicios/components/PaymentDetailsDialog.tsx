@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -86,7 +87,7 @@ export function PaymentDetailsDialog({
   const form = useForm<PaymentDetailsFormValues>({
     resolver: zodResolver(paymentDetailsSchema),
     defaultValues: {
-      paymentMethod: service.paymentMethod || undefined, // Set to undefined to show placeholder
+      paymentMethod: service.paymentMethod || undefined,
       cardFolio: service.cardFolio || '',
       transferFolio: service.transferFolio || '',
     }
@@ -100,7 +101,7 @@ export function PaymentDetailsDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md p-6">
         <DialogHeader>
           <DialogTitle>Editar Detalles de Pago</DialogTitle>
           <DialogDescription>Modifique el método de pago o los folios para el servicio {service.id}.</DialogDescription>
