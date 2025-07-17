@@ -239,7 +239,32 @@ export const ReceptionAndDelivery = ({
                     </div>
                  )}
             </div>
-            <div>
+            
+             {watch('status') === 'Entregado' && (
+              <div className="pt-4 border-t">
+                <FormLabel className="font-semibold text-base">Detalles del Pago</FormLabel>
+                <div className="mt-2 space-y-2 text-sm p-3 border rounded-md bg-muted/50">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Método de Pago:</span>
+                    <span className="font-semibold">{watch('paymentMethod') || 'No especificado'}</span>
+                  </div>
+                  {watch('cardFolio') && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Folio Tarjeta:</span>
+                      <span className="font-mono">{watch('cardFolio')}</span>
+                    </div>
+                  )}
+                  {watch('transferFolio') && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Folio Transferencia:</span>
+                      <span className="font-mono">{watch('transferFolio')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-4 border-t">
               <FormLabel className="font-semibold text-base">Firma de Conformidad</FormLabel>
               <div className="mt-2 p-3 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
                 {customerSignatureDelivery ? (
