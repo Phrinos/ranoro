@@ -8,6 +8,7 @@ import {
   addDoc,
   updateDoc,
   getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { Technician, AdministrativeStaff, Driver } from "@/types";
@@ -15,6 +16,7 @@ import type { TechnicianFormValues } from "@/app/(app)/tecnicos/components/techn
 import type { AdministrativeStaffFormValues } from "@/app/(app)/administrativos/components/administrative-staff-form";
 import type { DriverFormValues } from "@/app/(app)/conductores/components/driver-form";
 import { cleanObjectForFirestore } from '../forms';
+import { inventoryService } from './inventory.service';
 
 // --- Technicians ---
 
@@ -154,7 +156,24 @@ const saveDriver = async (data: Partial<DriverFormValues>, existingId?: string):
 
 const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
-    await updateDoc(doc(db, 'drivers', id), { isArchived });
+
+    const batch = writeBatch(db);
+    const driverRef = doc(db, 'drivers', id);
+    
+    // Archive/unarchive the driver
+    batch.update(driverRef, { isArchived });
+
+    // If archiving, unassign the vehicle
+    if (isArchived) {
+        const driverDoc = await getDoc(driverRef);
+        const driverData = driverDoc.data() as Driver;
+        if (driverData?.assignedVehicleId) {
+            const vehicleRef = doc(db, 'vehicles', driverData.assignedVehicleId);
+            batch.update(vehicleRef, { assignedVehicleId: null });
+        }
+    }
+
+    await batch.commit();
 };
 
 
