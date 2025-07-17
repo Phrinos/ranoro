@@ -106,7 +106,7 @@ export function ServiceForm(props:Props){
   const defaultValues = useMemo<ServiceFormValues>(() => {
     const firstType = serviceTypes[0]?.name ?? 'Servicio General';
     const now = new Date();
-    const status = initialDataService?.status ?? 'Cotizacion';
+    const status = initialDataService?.status ?? (mode === 'quote' ? 'Cotizacion' : 'En Taller');
 
     if (initialDataService) {
       return {
@@ -157,9 +157,11 @@ export function ServiceForm(props:Props){
     })();
 
     return {
-      status: 'Cotizacion',
+      status: status,
       serviceType: firstType,
-      quoteDate: now,
+      quoteDate: status === 'Cotizacion' ? now : undefined,
+      serviceDate: status === 'Agendado' ? now : undefined,
+      receptionDateTime: status === 'En Taller' ? now : undefined,
       technicianId: '',
       technicianName: null, 
       customerSignatureReception: null,
@@ -191,7 +193,7 @@ export function ServiceForm(props:Props){
       serviceAdvisorId: authUser?.id,
       serviceAdvisorName: authUser?.name,
     } as ServiceFormValues;
-  }, [initialDataService, serviceTypes]);
+  }, [initialDataService, serviceTypes, mode]);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -602,3 +604,4 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
         </Card>
     );
 };
+
