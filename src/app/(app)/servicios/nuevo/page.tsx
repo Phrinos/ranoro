@@ -105,6 +105,7 @@ export default function NuevoServicioPage() {
         title="Nuevo Servicio / Cotización"
         description="Complete la información. El registro se guardará en la base de datos al finalizar."
       />
+      
       <FormProvider {...methods}>
         <ServiceForm
           vehicles={vehicles}

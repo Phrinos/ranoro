@@ -1,4 +1,5 @@
 
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -124,6 +125,7 @@ export function ServiceForm(props:Props){
         cardFolio: initialDataService.cardFolio || '',
         transferFolio: initialDataService.transferFolio || '',
         nextServiceInfo: initialDataService.nextServiceInfo || undefined,
+        mileage: initialDataService.mileage || undefined,
         serviceItems:
           initialDataService.serviceItems?.length
             ? initialDataService.serviceItems
@@ -158,6 +160,7 @@ export function ServiceForm(props:Props){
       status: 'Cotizacion',
       serviceType: firstType,
       quoteDate: now,
+      technicianId: '',
       technicianName: null, 
       customerSignatureReception: null,
       customerSignatureDelivery: null,
@@ -166,6 +169,13 @@ export function ServiceForm(props:Props){
       cardFolio: '',
       transferFolio: '',
       nextServiceInfo: undefined,
+      vehicleId: '',
+      mileage: undefined,
+      notes: '',
+      subStatus: undefined,
+      vehicleConditions: '',
+      customerItems: '',
+      fuelLevel: '',
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -592,4 +602,3 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
         </Card>
     );
 };
-
