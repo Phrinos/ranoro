@@ -343,6 +343,7 @@ export function PosPageComponent({ tab }: { tab?: string }) {
       userName: currentUser?.name || 'Sistema',
     });
     setIsInitialBalanceDialogOpen(false);
+    setInitialBalanceAmount(''); // Reset amount after saving
     toast({ title: 'Saldo Inicial Guardado' });
   }, [initialBalanceAmount, toast, dateRange]);
   

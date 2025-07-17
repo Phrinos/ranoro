@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from "date-fns";
 import { es } from 'date-fns/locale';
 
 interface Option {
@@ -68,12 +67,20 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
         setIsCalendarOpen(false);
     };
 
+    const handleCalendarSelect = (range?: DateRange) => {
+        setTempDateRange(range);
+    };
+
     const setPresetDateRange = (range: DateRange) => {
         onDateRangeChange(range);
         setTempDateRange(range);
     };
 
     const setDateToToday = () => setPresetDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
+    const setDateToYesterday = () => {
+      const yesterday = subDays(new Date(), 1);
+      setPresetDateRange({ from: startOfDay(yesterday), to: endOfDay(yesterday) });
+    };
     const setDateToThisWeek = () => setPresetDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
     const setDateToThisMonth = () => setPresetDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
     
@@ -102,10 +109,11 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                 <PopoverContent className="w-auto p-0" align="end">
                     <div className="flex p-2">
                         <Button variant="ghost" size="sm" onClick={setDateToToday}>Hoy</Button>
+                        <Button variant="ghost" size="sm" onClick={setDateToYesterday}>Ayer</Button>
                         <Button variant="ghost" size="sm" onClick={setDateToThisWeek}>Semana</Button>
                         <Button variant="ghost" size="sm" onClick={setDateToThisMonth}>Mes</Button>
                     </div>
-                <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} locale={es} showOutsideDays={false} />
+                <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={handleCalendarSelect} numberOfMonths={2} locale={es} showOutsideDays={false} />
                 <div className="p-2 border-t flex justify-end">
                     <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
                 </div>
