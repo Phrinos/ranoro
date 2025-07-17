@@ -15,10 +15,6 @@ function RentasPage() {
 
     useEffect(() => {
       if (action === 'registrar') {
-        // You might want to handle this logic inside the RentasPageComponent
-        // or trigger a state update that opens the dialog.
-        // For now, we can clear the query param to avoid loops.
-        // A more robust solution might use state management.
         router.replace('/rentas?tab=' + (tab || 'resumen'), { scroll: false });
       }
     }, [action, tab, router]);

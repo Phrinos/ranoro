@@ -16,7 +16,7 @@ import { subDays, isBefore, parseISO, isValid, differenceInCalendarDays, startOf
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn, calculateDriverDebt } from "@/lib/utils";
 import { DriverDialog } from '../../conductores/components/driver-dialog';
 import type { DriverFormValues } from '../../conductores/components/driver-form';
 import Link from 'next/link';
@@ -104,7 +104,7 @@ export function FlotillaPageComponent({
 
   const fleetVehicles = useMemo(() => allVehicles.filter(v => v.isFleetVehicle), [allVehicles]);
   const nonFleetVehicles = useMemo(() => allVehicles.filter(v => !v.isFleetVehicle), [allVehicles]);
-
+  
   const monthlyBalances = useMemo((): MonthlyBalance[] => {
     if (isLoading) return [];
     
@@ -121,32 +121,16 @@ export function FlotillaPageComponent({
         acc[p.driverId].totalDaysCovered += p.daysCovered;
         return acc;
     }, {} as Record<string, { totalAmount: number, totalDaysCovered: number }>);
-
+    
     return allDrivers.filter(d => !d.isArchived).map(driver => {
+        const debtInfo = calculateDriverDebt(driver, allPayments, allVehicles);
         const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
         const dailyRate = vehicle?.dailyRentalCost || 0;
         
-        let charges = 0;
-        const rentStartDate = new Date('2024-07-01'); // Use fixed start date
-        if (dailyRate > 0 && !isAfter(rentStartDate, today)) {
-            const startOfCalculation = isAfter(rentStartDate, monthStart) ? rentStartDate : monthStart;
-            if (!isAfter(startOfCalculation, today)) {
-                const daysInMonthSoFar = differenceInCalendarDays(today, startOfCalculation) + 1;
-                charges = daysInMonthSoFar * dailyRate;
-            }
-        }
-        
-        const manualDebtsThisMonth = (driver.manualDebts || []).filter(d => {
-            const dDate = parseISO(d.date);
-            return isValid(dDate) && isWithinInterval(dDate, { start: monthStart, end: monthEnd });
-        }).reduce((sum, d) => sum + d.amount, 0);
-
-        const totalCharges = charges + manualDebtsThisMonth;
-        const driverPaymentsInfo = paymentsThisMonthByDriver[driver.id] || { totalAmount: 0, totalDaysCovered: 0 };
-        const totalPayments = driverPaymentsInfo.totalAmount;
-        const balance = totalPayments - totalCharges;
-        const debt = Math.max(0, -balance);
-        const daysOwed = dailyRate > 0 ? debt / dailyRate : 0;
+        const paymentsInfo = paymentsThisMonthByDriver[driver.id] || { totalAmount: 0, totalDaysCovered: 0 };
+        const totalCharges = debtInfo.rentalDebt + debtInfo.manualDebt + debtInfo.depositDebt;
+        const totalPayments = paymentsInfo.totalAmount;
+        const balance = totalPayments - (totalCharges > paymentsInfo.totalAmount ? totalCharges - (debtInfo.rentalDebt - paymentsInfo.totalAmount) : totalCharges);
         
         return {
             driverId: driver.id,
@@ -154,9 +138,9 @@ export function FlotillaPageComponent({
             vehicleInfo: vehicle ? `${vehicle.licensePlate} (${formatCurrency(dailyRate)}/día)` : 'N/A',
             charges: totalCharges,
             payments: totalPayments,
-            daysCovered: driverPaymentsInfo.totalDaysCovered,
+            daysCovered: paymentsInfo.totalDaysCovered,
             balance: balance,
-            daysOwed: daysOwed,
+            daysOwed: debtInfo.totalDebt / (dailyRate || 1),
         };
     }).sort((a,b) => a.driverName.localeCompare(b.driverName));
   }, [isLoading, allDrivers, allVehicles, allPayments]);
@@ -285,11 +269,11 @@ export function FlotillaPageComponent({
                                 <TableRow>
                                     <TableHead className="text-white">Conductor</TableHead>
                                     <TableHead className="text-white">Vehículo (Renta)</TableHead>
-                                    <TableHead className="text-right text-white">Pagos</TableHead>
-                                    <TableHead className="text-right text-white">Cargos</TableHead>
+                                    <TableHead className="text-right text-white">Pagos (Mes)</TableHead>
+                                    <TableHead className="text-right text-white">Adeudo Total</TableHead>
                                     <TableHead className="text-right text-white">Días Pagados (Mes)</TableHead>
-                                    <TableHead className="text-right text-white">Días Adeudo</TableHead>
-                                    <TableHead className="text-right text-white">Balance</TableHead>
+                                    <TableHead className="text-right text-white">Días Adeudo (Aprox)</TableHead>
+                                    <TableHead className="text-right text-white">Balance (Mes)</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -361,8 +345,8 @@ export function FlotillaPageComponent({
             <Tabs defaultValue="activos" className="w-full">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <TabsList>
-                    <TabsTrigger value="activos">Activos</TabsTrigger>
-                    <TabsTrigger value="archivados">Archivados</TabsTrigger>
+                    <TabsTrigger value="activos" onClick={() => setShowArchivedDrivers(false)} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Activos</TabsTrigger>
+                    <TabsTrigger value="archivados" onClick={() => setShowArchivedDrivers(true)} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Archivados</TabsTrigger>
                   </TabsList>
                   <Button onClick={() => handleOpenDriverDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Conductor</Button>
                 </div>
@@ -370,12 +354,7 @@ export function FlotillaPageComponent({
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input type="search" placeholder="Buscar por nombre o teléfono..." className="w-full sm:w-1/2 lg:w-1/3 pl-8" value={searchTermDrivers} onChange={e => setSearchTermDrivers(e.target.value)} />
                 </div>
-                <TabsContent value="activos" className="mt-4">
-                    <Card><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Teléfono</TableHead><TableHead>Vehículo Asignado</TableHead><TableHead className="text-right">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">No se encontraron conductores activos.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
-                </TabsContent>
-                <TabsContent value="archivados" className="mt-4">
-                    <Card><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Teléfono</TableHead><TableHead>Vehículo Asignado</TableHead><TableHead className="text-right">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">No se encontraron conductores archivados.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
-                </TabsContent>
+                <Card className="mt-4"><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Teléfono</TableHead><TableHead>Vehículo Asignado</TableHead><TableHead className="text-right">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">{showArchivedDrivers ? "No hay conductores archivados." : "No se encontraron conductores activos."}</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
             </Tabs>
         </TabsContent>
         <TabsContent value="vehiculos" className="space-y-6">

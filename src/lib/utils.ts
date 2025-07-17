@@ -137,8 +137,7 @@ export function normalizeDataUrl(raw?: string | null): string {
 
     
 /**
- * Calculates the total debt for a given driver, focusing on the current month's rental activity.
- * This includes rental debt for the current month, deposit debt, and manual debts.
+ * Calculates the total debt for a given driver, including rental arrears, deposit, and manual debts.
  * @param driver The driver object.
  * @param allPayments Array of all rental payments.
  * @param allVehicles Array of all vehicles to find the assigned one.
@@ -153,32 +152,23 @@ export function calculateDriverDebt(driver: Driver, allPayments: RentalPayment[]
     // 2. Calculate Manual Debt
     const manualDebt = (driver.manualDebts || []).reduce((sum, debt) => sum + debt.amount, 0);
 
-    // 3. Calculate Rental Debt for the CURRENT MONTH
+    // 3. Calculate cumulative Rental Debt since the beginning of the contract
     let rentalDebt = 0;
     const assignedVehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
     
     if (driver.contractDate && assignedVehicle?.dailyRentalCost) {
         const today = startOfToday();
-        const monthStart = startOfMonth(today);
-        const monthEnd = endOfMonth(today);
-        
         const contractStartDate = parseISO(driver.contractDate);
         
         if (!isAfter(contractStartDate, today)) {
-            // Determine the start of the calculation period for this month
-            const calculationStart = isAfter(contractStartDate, monthStart) ? contractStartDate : monthStart;
+            const totalDaysSinceContractStart = differenceInCalendarDays(today, contractStartDate) + 1;
+            const totalExpectedRental = totalDaysSinceContractStart * assignedVehicle.dailyRentalCost;
             
-            // Calculate how many days of rent should have been paid THIS MONTH
-            const daysToChargeThisMonth = differenceInCalendarDays(today, calculationStart) + 1;
-            const expectedRentalThisMonth = daysToChargeThisMonth * assignedVehicle.dailyRentalCost;
-            
-            // Calculate how much has been paid THIS MONTH
-            const paymentsThisMonth = allPayments
-                .filter(p => p.driverId === driver.id && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }))
+            const totalPaymentsMade = allPayments
+                .filter(p => p.driverId === driver.id)
                 .reduce((sum, p) => sum + p.amount, 0);
 
-            // The rental debt is what's expected this month minus what was paid this month
-            rentalDebt = Math.max(0, expectedRentalThisMonth - paymentsThisMonth);
+            rentalDebt = Math.max(0, totalExpectedRental - totalPaymentsMade);
         }
     }
 
