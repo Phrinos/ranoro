@@ -3,28 +3,32 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
-import { PageHeader } from '@/components/page-header';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, Printer, Copy, Loader2, ArrowUpCircle, ArrowDownCircle, MessageSquare, Edit, User, TrendingDown, DollarSign, AlertCircle } from 'lucide-react';
-import { RegisterPaymentDialog } from './components/register-payment-dialog';
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { PlusCircle, UserCheck, UserX, Search } from "lucide-react";
+import { RegisterPaymentDialog } from "./register-payment-dialog";
 import type { RentalPayment, Driver, Vehicle, WorkshopInfo, VehicleExpense, OwnerWithdrawal, User as RanoroUser } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, parseISO, compareDesc, isValid, startOfMonth, endOfMonth, isWithinInterval, isSameDay } from 'date-fns';
+import { format, parseISO, compareDesc, isValid, startOfMonth, endOfMonth, isWithinInterval, isSameDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { RentalReceiptContent } from './components/rental-receipt-content';
-import { formatCurrency, calculateDriverDebt } from "@/lib/utils";
+import { RentalReceiptContent } from './rental-receipt-content';
+import { formatCurrency, calculateDriverDebt, cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import html2canvas from 'html2canvas';
 import { inventoryService, operationsService, personnelService } from '@/lib/services';
-import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/vehicle-expense-dialog';
-import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/owner-withdrawal-dialog';
+import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './vehicle-expense-dialog';
+import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './owner-withdrawal-dialog';
 import { useRouter } from 'next/navigation';
-import { EditPaymentNoteDialog } from './components/edit-payment-note-dialog';
+import { EditPaymentNoteDialog } from './edit-payment-note-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare } from 'lucide-react';
+
 
 function RentasPageComponent({ tab }: { tab?: string }) {
   const defaultTab = tab || 'resumen';
