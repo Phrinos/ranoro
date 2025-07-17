@@ -35,7 +35,7 @@ const saleItemSchema = z.object({
 });
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
-  'Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia'
+  'Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia', 'Efectivo/Tarjeta'
 ];
 
 const posFormSchema = z.object({

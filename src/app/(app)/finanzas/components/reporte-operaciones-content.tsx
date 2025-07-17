@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -111,7 +112,7 @@ export function ReporteOperacionesContent({ allSales, allServices, allInventory,
     }
   };
   
-  const paymentMethods: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia'];
+  const paymentMethods: (PaymentMethod | 'all')[] = ['all', 'Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia', 'Efectivo/Tarjeta'];
 
   return (
     <div className="space-y-4">
@@ -172,9 +173,8 @@ export function ReporteOperacionesContent({ allSales, allServices, allInventory,
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Filtrar por Método de Pago</DropdownMenuLabel>
               <DropdownMenuRadioGroup value={reporteOpPaymentMethodFilter} onValueChange={(v) => setReporteOpPaymentMethodFilter(v as PaymentMethod | 'all')}>
-                <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
                 {paymentMethods.map(method => (
-                  <DropdownMenuRadioItem key={method} value={method}>{method}</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem key={method} value={method}>{method === 'all' ? 'Todos' : method}</DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>

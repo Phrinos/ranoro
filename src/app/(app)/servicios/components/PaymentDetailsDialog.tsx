@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,7 +34,8 @@ const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
   "Tarjeta",
   "Transferencia",
   "Efectivo+Transferencia",
-  "Tarjeta+Transferencia"
+  "Tarjeta+Transferencia",
+  "Efectivo/Tarjeta"
 ];
 
 const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
@@ -42,6 +44,7 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Transferencia": Send,
   "Efectivo+Transferencia": WalletCards,
   "Tarjeta+Transferencia": ArrowRightLeft,
+  "Efectivo/Tarjeta": WalletCards,
 };
 
 const paymentDetailsSchema = z.object({
@@ -49,7 +52,7 @@ const paymentDetailsSchema = z.object({
   cardFolio: z.string().optional(),
   transferFolio: z.string().optional(),
 }).refine(data => {
-  if ((data.paymentMethod === "Tarjeta" || data.paymentMethod === "Tarjeta+Transferencia") && !data.cardFolio) {
+  if ((data.paymentMethod?.includes('Tarjeta')) && !data.cardFolio) {
     return false;
   }
   return true;
@@ -57,7 +60,7 @@ const paymentDetailsSchema = z.object({
   message: "El folio de la tarjeta es obligatorio.",
   path: ["cardFolio"],
 }).refine(data => {
-  if ((data.paymentMethod === "Transferencia" || data.paymentMethod === "Efectivo+Transferencia" || data.paymentMethod === "Tarjeta+Transferencia") && !data.transferFolio) {
+  if ((data.paymentMethod?.includes('Transferencia')) && !data.transferFolio) {
     return false;
   }
   return true;
@@ -136,10 +139,10 @@ export function PaymentDetailsDialog({
                   </FormItem>
                 )}
               />
-              {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+              {(selectedPaymentMethod?.includes("Tarjeta")) && (
                 <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} /></FormControl><FormMessage /></FormItem>)}/>
               )}
-              {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+              {(selectedPaymentMethod?.includes("Transferencia")) && (
                 <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} /></FormControl><FormMessage /></FormItem>)}/>
               )}
             </form>

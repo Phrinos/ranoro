@@ -340,7 +340,7 @@ export interface SaleItem {
   unitType?: 'units' | 'ml' | 'liters';
 }
 
-export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Efectivo+Transferencia' | 'Tarjeta+Transferencia';
+export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Efectivo+Transferencia' | 'Tarjeta+Transferencia' | 'Efectivo/Tarjeta';
 
 export interface SaleReceipt {
   id: string;

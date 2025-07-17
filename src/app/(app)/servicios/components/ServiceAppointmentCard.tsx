@@ -43,10 +43,11 @@ const getAppointmentStatus = (service: ServiceRecord): { label: string; variant:
     return { label: 'Sin confirmar', variant: 'lightRed' };
 };
 
-const getPaymentMethodVariant = (method?: PaymentMethod): 'success' | 'purple' | 'blue' | 'lightGreen' | 'lightPurple' | 'outline' => {
+const getPaymentMethodVariant = (method?: PaymentMethod): 'success' | 'purple' | 'blue' | 'lightGreen' | 'lightPurple' | 'outline' | 'teal' => {
   switch (method) {
     case 'Efectivo': return 'success';
     case 'Tarjeta': return 'purple';
+    case 'Efectivo/Tarjeta': return 'teal';
     case 'Transferencia': return 'blue';
     case 'Efectivo+Transferencia': return 'lightGreen';
     case 'Tarjeta+Transferencia': return 'lightPurple';

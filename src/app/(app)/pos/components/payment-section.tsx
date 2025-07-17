@@ -19,7 +19,8 @@ const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
   "Tarjeta",
   "Transferencia",
   "Efectivo+Transferencia",
-  "Tarjeta+Transferencia"
+  "Tarjeta+Transferencia",
+  "Efectivo/Tarjeta"
 ];
 
 const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
@@ -28,6 +29,7 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Transferencia": Send,
   "Efectivo+Transferencia": WalletCards,
   "Tarjeta+Transferencia": ArrowRightLeft,
+  "Efectivo/Tarjeta": WalletCards,
 };
 
 export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnly?: boolean, customerName?: string }) {
@@ -103,7 +105,7 @@ export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnl
             </FormItem>
           )}
         />
-        {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+        {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia" || selectedPaymentMethod === "Efectivo/Tarjeta") && (
           <FormField
             control={control}
             name="cardFolio"
