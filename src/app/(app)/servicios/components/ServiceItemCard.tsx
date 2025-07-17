@@ -64,7 +64,15 @@ export function ServiceItemCard({
 
     
     const handleAddSupply = (supply: ServiceSupply) => {
-        append(supply);
+        append({
+            supplyId: supply.supplyId || `manual_${Date.now()}`,
+            supplyName: supply.supplyName || 'Insumo Manual',
+            quantity: supply.quantity || 1,
+            unitPrice: supply.unitPrice || 0,
+            sellingPrice: supply.sellingPrice,
+            isService: supply.isService,
+            unitType: supply.unitType,
+        });
         setIsAddSupplyDialogOpen(false);
     };
 

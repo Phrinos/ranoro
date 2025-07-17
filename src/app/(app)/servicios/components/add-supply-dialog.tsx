@@ -33,6 +33,8 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
   const [manualName, setManualName] = useState('');
   const [manualQuantity, setManualQuantity] = useState<number | ''>(1);
   const [manualPrice, setManualPrice] = useState<number | ''>('');
+  const [manualSellingPrice, setManualSellingPrice] = useState<number | ''>('');
+
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) {
@@ -52,6 +54,7 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
     setManualName('');
     setManualQuantity(1);
     setManualPrice('');
+    setManualSellingPrice('');
     setActiveTab('buscar');
   };
   
@@ -102,7 +105,7 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
         supplyName: capitalizeWords(manualName.trim()),
         quantity: Number(manualQuantity),
         unitPrice: Number(manualPrice) || 0,
-        sellingPrice: 0,
+        sellingPrice: Number(manualSellingPrice) || 0,
         isService: true, // Manual items are treated as one-off services/items not in stock
     });
     onOpenChange(false);
@@ -195,7 +198,7 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
                     <Label htmlFor="manual-name">Nombre del Insumo</Label>
                     <Input id="manual-name" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Ej: Tornillo especial" />
                 </div>
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="manual-quantity">Cantidad</Label>
                         <Input id="manual-quantity" type="number" value={manualQuantity} onChange={(e) => setManualQuantity(e.target.value === '' ? '' : Number(e.target.value))} placeholder="1" />
@@ -203,6 +206,10 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
                     <div className="space-y-2">
                         <Label htmlFor="manual-price">Costo Unitario (Taller)</Label>
                         <Input id="manual-price" type="number" value={manualPrice} onChange={(e) => setManualPrice(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00"/>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="manual-selling-price">Precio Venta (Cliente)</Label>
+                        <Input id="manual-selling-price" type="number" value={manualSellingPrice} onChange={(e) => setManualSellingPrice(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00"/>
                     </div>
                 </div>
             </TabsContent>
