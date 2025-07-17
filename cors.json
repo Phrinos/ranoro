@@ -5,9 +5,12 @@
       "http://localhost:3000",
       "https://ranoro-jm8l0.web.app",
       "https://ranoro-jm8l0.firebaseapp.com",
-      "https://ranoro.mx"
+      "https://ranoro.mx",
+      "https://*-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
     ],
-    "method": ["GET"],
+    "method": [
+      "GET"
+    ],
     "maxAgeSeconds": 3600
   }
 ]
