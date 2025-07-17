@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Printer, Copy, Loader2, ArrowUpCircle, ArrowDownCircle, MessageSquare } from 'lucide-react';
+import { PlusCircle, Printer, Copy, Loader2, ArrowUpCircle, ArrowDownCircle, MessageSquare, Edit } from 'lucide-react';
 import { RegisterPaymentDialog } from './components/register-payment-dialog';
 import type { RentalPayment, Driver, Vehicle, WorkshopInfo, VehicleExpense, OwnerWithdrawal } from '@/types';
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,7 @@ import { inventoryService, operationsService, personnelService } from '@/lib/ser
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/vehicle-expense-dialog';
 import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/owner-withdrawal-dialog';
 import { useRouter } from 'next/navigation';
+import { EditPaymentNoteDialog } from './components/edit-payment-note-dialog';
 
 function RentasPageComponent({
   searchParams,
@@ -36,6 +37,9 @@ function RentasPageComponent({
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
+  const [isEditNoteDialogOpen, setIsEditNoteDialogOpen] = useState(false);
+  const [paymentToEdit, setPaymentToEdit] = useState<RentalPayment | null>(null);
+
 
   const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -74,6 +78,16 @@ function RentasPageComponent({
         toast({ title: 'Pago Registrado' });
         setIsPaymentDialogOpen(false);
         setPaymentForReceipt(newPayment);
+    } catch (e: any) {
+        toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
+  
+  const handleUpdatePaymentNote = async (paymentId: string, note: string) => {
+    try {
+        await operationsService.updateRentalPayment(paymentId, { note });
+        toast({ title: 'Concepto Actualizado' });
+        setIsEditNoteDialogOpen(false);
     } catch (e: any) {
         toast({ title: 'Error', description: e.message, variant: 'destructive' });
     }
@@ -176,6 +190,9 @@ function RentasPageComponent({
                                 <TableCell className="text-right font-bold">{formatCurrency(p.amount)}</TableCell>
                                 <TableCell className="text-xs text-muted-foreground">{p.note || 'N/A'}</TableCell>
                                 <TableCell className="text-right">
+                                    <Button variant="ghost" size="icon" onClick={() => { setPaymentToEdit(p); setIsEditNoteDialogOpen(true); }}>
+                                        <Edit className="h-4 w-4"/>
+                                    </Button>
                                     <Button variant="ghost" size="icon" onClick={() => setPaymentForReceipt(p)}>
                                         <Printer className="h-4 w-4"/>
                                     </Button>
@@ -215,6 +232,13 @@ function RentasPageComponent({
         onOpenChange={setIsWithdrawalDialogOpen}
         owners={uniqueOwners}
         onSave={handleSaveWithdrawal}
+      />
+      
+      <EditPaymentNoteDialog
+        open={isEditNoteDialogOpen}
+        onOpenChange={setIsEditNoteDialogOpen}
+        payment={paymentToEdit}
+        onSave={handleUpdatePaymentNote}
       />
       
       <PrintTicketDialog

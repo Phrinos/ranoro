@@ -471,6 +471,13 @@ const addRentalPayment = async (driverId: string, amount: number, note: string |
     return { id: newPaymentRef.id, ...newPayment };
 };
 
+const updateRentalPayment = async (paymentId: string, data: Partial<RentalPayment>): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const paymentRef = doc(db, "rentalPayments", paymentId);
+    await updateDoc(paymentRef, cleanObjectForFirestore(data));
+};
+
+
 const onVehicleExpensesUpdatePromise = async (): Promise<VehicleExpense[]> => {
     if (!db) return [];
     const snapshot = await getDocs(collection(db, "vehicleExpenses"));
@@ -528,6 +535,7 @@ export const operationsService = {
     onRentalPaymentsUpdate,
     onRentalPaymentsUpdatePromise,
     addRentalPayment,
+    updateRentalPayment,
     onVehicleExpensesUpdatePromise,
     addVehicleExpense,
     addOwnerWithdrawal,
