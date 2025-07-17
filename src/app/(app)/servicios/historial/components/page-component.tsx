@@ -40,6 +40,7 @@ const paymentMethodOptions: { value: PaymentMethod | 'all'; label: string }[] = 
     { value: 'Transferencia', label: 'Transferencia' },
     { value: 'Efectivo+Transferencia', label: 'Efectivo+Transferencia' },
     { value: 'Tarjeta+Transferencia', label: 'Tarjeta+Transferencia' },
+    { value: 'Efectivo/Tarjeta', label: 'Efectivo/Tarjeta' },
 ];
 
 export function HistorialServiciosPageComponent({ status }: { status?: string }) {
@@ -90,11 +91,13 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   }, []);
 
   const { activeServices, historicalServices } = useMemo(() => {
-    const todayServices = allServices.filter(s => {
+    const servicesForToday = allServices.filter(s => {
       const serviceDate = parseDate(s.serviceDate);
       const deliveryDate = parseDate(s.deliveryDateTime);
+      // Activos son los que están en Taller o Agendados para hoy.
       if (s.status === 'En Taller') return true;
       if (s.status === 'Agendado' && serviceDate && isToday(serviceDate)) return true;
+      // También mostramos los que se completaron/cancelaron hoy para tener el resumen del día.
       if ((s.status === 'Entregado' || s.status === 'Cancelado') && deliveryDate && isToday(deliveryDate)) return true;
       return false;
     });
@@ -111,7 +114,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       return 99; // Default case
     };
 
-    const sortedActiveServices = todayServices.sort((a, b) => {
+    const sortedActiveServices = servicesForToday.sort((a, b) => {
         const priorityA = getStatusPriority(a);
         const priorityB = getStatusPriority(b);
         if (priorityA !== priorityB) {

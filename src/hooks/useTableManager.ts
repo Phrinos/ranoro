@@ -37,14 +37,14 @@ export function useTableManager<T extends { [key: string]: any }>({
       );
     }
 
-    if (dateRange && dateRange.from) { 
+    if (dateRange?.from) { 
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
       data = data.filter(item => {
         const dateValue = item[dateFilterKey];
         if (!dateValue) return false;
         const parsedDate = parseDate(dateValue); // Use robust parser
-        return isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
+        return parsedDate && isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
       });
     }
 
