@@ -213,7 +213,7 @@ export function PaymentDetailsDialog({
               {isMixedPayment && (
                 <Card className="p-4 bg-white dark:bg-card">
                   <p className="text-sm font-medium mb-4">Desglose de Pago</p>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {selectedPaymentMethod.includes('Efectivo') && (
                         <FormField control={form.control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
                       )}
@@ -221,22 +221,28 @@ export function PaymentDetailsDialog({
                         <FormField control={form.control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
                       )}
                       {selectedPaymentMethod.includes('Transferencia') && (
-                        <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
                       )}
                   </div>
                 </Card>
               )}
               {(selectedPaymentMethod?.includes("Tarjeta")) && (
-                <div className="space-y-2 pt-2">
-                  <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="confirmCardFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio Tarjeta</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('cardFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
-                </div>
+                 <Card className="p-4 bg-white dark:bg-card">
+                    <p className="text-sm font-medium mb-4">Información de Tarjeta</p>
+                    <div className="space-y-4">
+                      <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="confirmCardFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio Tarjeta</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('cardFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                    </div>
+                </Card>
               )}
               {(selectedPaymentMethod?.includes("Transferencia")) && (
-                <div className="space-y-2 pt-2">
-                  <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
-                  <FormField control={form.control} name="confirmTransferFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio Transferencia</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('transferFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
-                </div>
+                <Card className="p-4 bg-white dark:bg-card">
+                    <p className="text-sm font-medium mb-4">Información de Transferencia</p>
+                    <div className="space-y-4">
+                        <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="confirmTransferFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio Transferencia</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('transferFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                    </div>
+                </Card>
               )}
             </form>
           </Form>
