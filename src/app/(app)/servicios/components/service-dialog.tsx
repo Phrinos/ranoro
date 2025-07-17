@@ -135,10 +135,10 @@ export function ServiceDialog({
   }, [open, service, mode]);
 
   
-  const handleInternalCompletion = async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
-    if (onComplete) {
-      const serviceWithAllData = { ...service, ...fullFormDataForCompletion, nextServiceInfo };
-      await onComplete(serviceWithAllData, paymentDetails, nextServiceInfo);
+  const handleInternalCompletion = async (paymentDetails: any, nextServiceInfo?: any) => {
+    if (onComplete && fullFormDataForCompletion) {
+      // Pass the complete, updated form data to the parent handler
+      await onComplete(fullFormDataForCompletion, paymentDetails, nextServiceInfo);
     }
     onOpenChange(false);
     setIsCompleteDialogOpen(false);
@@ -152,6 +152,7 @@ export function ServiceDialog({
     }
 
     if ('status' in formData && formData.status === 'Entregado' && service?.status !== 'Entregado') {
+        // When completing, we use the *current* form data, not the initial service data
         setFullFormDataForCompletion(formData);
         setServiceToComplete(formData as ServiceRecord);
         setIsCompleteDialogOpen(true);

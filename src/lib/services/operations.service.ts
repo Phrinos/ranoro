@@ -197,17 +197,17 @@ const deleteService = async (serviceId: string): Promise<void> => {
 const completeService = async (service: ServiceRecord, paymentAndNextServiceDetails: Partial<ServiceRecord>, batch: ReturnType<typeof writeBatch>): Promise<void> => {
     const serviceRef = doc(db, "serviceRecords", service.id);
     
-    const updatedServiceData = {
-      ...paymentAndNextServiceDetails,
-      status: 'Entregado',
-      deliveryDateTime: new Date().toISOString(),
+    const dataToUpdate = {
+        ...paymentAndNextServiceDetails,
+        status: 'Entregado' as const, // Ensure status is correctly typed
+        deliveryDateTime: new Date().toISOString(),
     };
-    
-    batch.update(serviceRef, cleanObjectForFirestore(updatedServiceData));
+
+    batch.update(serviceRef, cleanObjectForFirestore(dataToUpdate));
     
     if (service.publicId) {
         const publicDocRef = doc(db, 'publicServices', service.publicId);
-        batch.update(publicDocRef, cleanObjectForFirestore(updatedServiceData));
+        batch.update(publicDocRef, cleanObjectForFirestore(dataToUpdate));
     }
 
     if (service.vehicleId) {
@@ -216,8 +216,8 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
             lastServiceDate: new Date().toISOString(),
             mileage: service.mileage, 
         };
-        if (updatedServiceData.nextServiceInfo) {
-            vehicleUpdatePayload.nextServiceInfo = updatedServiceData.nextServiceInfo;
+        if (dataToUpdate.nextServiceInfo) {
+            vehicleUpdatePayload.nextServiceInfo = dataToUpdate.nextServiceInfo;
         }
         batch.update(vehicleRef, cleanObjectForFirestore(vehicleUpdatePayload));
     }
