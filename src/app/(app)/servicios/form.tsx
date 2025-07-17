@@ -423,7 +423,7 @@ export function ServiceForm(props:Props){
                                 <Eye className="h-5 w-5"/>
                             </Button>
                         </div>
-                        <TabsContent value="details" className="mt-0">
+                        <TabsContent value="details" className="mt-0 space-y-4">
                             <ServiceDetailsCard
                                 isReadOnly={props.isReadOnly}
                                 technicians={technicians}
@@ -438,6 +438,7 @@ export function ServiceForm(props:Props){
                                 categories={allCategories}
                                 suppliers={allSuppliers}
                             />
+                            {watchedStatus === 'Entregado' && <PaymentSection isReadOnly={true} />}
                         </TabsContent>
                         <TabsContent value="reception" className="mt-0">
                            <ReceptionAndDelivery 

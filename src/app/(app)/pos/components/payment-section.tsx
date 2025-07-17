@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,6 +12,7 @@ import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, MessageSquare } 
 import type { PaymentMethod } from '@/types';
 import { cn } from '@/lib/utils';
 import { capitalizeWords } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -35,6 +36,36 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
 export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnly?: boolean, customerName?: string }) {
   const { control, watch, formState: { errors } } = useFormContext();
   const selectedPaymentMethod = watch("paymentMethod");
+  const isDelivered = watch('status') === 'Entregado';
+
+  // If the form is read-only AND it's a delivered service, we display info, not a form.
+  if (isReadOnly && isDelivered) {
+    return (
+       <Card>
+        <CardHeader>
+            <CardTitle>Detalles del Pago</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+            <div className="flex justify-between">
+                <span className="text-muted-foreground">Método de Pago:</span>
+                <Badge variant="outline">{watch('paymentMethod') || 'N/A'}</Badge>
+            </div>
+             {watch('cardFolio') && (
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Folio Tarjeta:</span>
+                    <span className="font-mono">{watch('cardFolio')}</span>
+                </div>
+            )}
+            {watch('transferFolio') && (
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Folio Transferencia:</span>
+                    <span className="font-mono">{watch('transferFolio')}</span>
+                </div>
+            )}
+        </CardContent>
+       </Card>
+    );
+  }
 
   return (
     <Card>
