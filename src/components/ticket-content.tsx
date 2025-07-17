@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem, WorkshopInfo } from '@/types';
@@ -93,12 +92,14 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
         <div className="text-center mb-1 space-y-0 leading-tight">
           {workshopInfo.logoUrl && (
             <div className="mx-auto mb-1 relative" style={{ width: logoWidth ? `${logoWidth}px` : '120px', height: `${(logoWidth || 120) / 3}px` }}>
-                <img 
+                <Image 
                   src={workshopInfo.logoUrl} 
                   alt="Logo" 
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  fill
+                  style={{ objectFit: 'contain' }}
                   crossOrigin="anonymous"
                   data-ai-hint="workshop logo"
+                  unoptimized // Add this to prevent Next.js image optimization issues in some contexts
                 />
             </div>
           )}

@@ -11,9 +11,9 @@ export const metadata: Metadata = {
   title: 'RANORO - Tu taller en una app',
   description: 'El sistema operativo inteligente para tu taller mecánico. Por Arturo Valdelamar',
   icons: {
-    icon: '/favicon.ico', // Main favicon
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    icon: '/ranoro-logo.png', // Use logo directly as favicon
+    shortcut: '/ranoro-logo.png',
+    apple: '/ranoro-logo.png',
   },
   openGraph: {
     title: 'RANORO - Tu taller en una app',
@@ -36,9 +36,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-      </head>
       <body className={`${inter.className} font-body antialiased`}>
         {children}
         <Toaster />
