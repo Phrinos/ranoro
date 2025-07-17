@@ -97,7 +97,10 @@ export function PosPageComponent({ tab }: { tab?: string }) {
   const [initialCashBalance, setInitialCashBalance] = useState<InitialCashBalance | null>(null);
   
   // States for UI control
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const now = new Date();
+    return { from: startOfMonth(now), to: endOfMonth(now) };
+  });
   const [ventasSearchTerm, setVentasSearchTerm] = useState("");
   const [ventasSortOption, setVentasSortOption] = useState<SaleSortOption>("date_desc");
   const [ventasPaymentMethodFilter, setVentasPaymentMethodFilter] = useState<PaymentMethod | "all">("all");
@@ -124,12 +127,8 @@ export function PosPageComponent({ tab }: { tab?: string }) {
         setIsLoading(false);
     }));
 
-    if (!dateRange) {
-        setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
-    }
-
     return () => unsubs.forEach(unsub => unsub());
-  }, [dateRange]);
+  }, []);
 
   const filteredAndSortedSales = useMemo(() => {
     let list = [...allSales];
@@ -146,9 +145,18 @@ export function PosPageComponent({ tab }: { tab?: string }) {
     if (ventasPaymentMethodFilter !== "all") {
       list = list.filter(s => s.paymentMethod === ventasPaymentMethodFilter);
     }
-    list.sort((a, b) => compareDesc(parseISO(a.saleDate), parseISO(b.saleDate)));
+    
+    list.sort((a, b) => {
+        const isACancelled = a.status === 'Cancelado';
+        const isBCancelled = b.status === 'Cancelado';
+
+        if (isACancelled && !isBCancelled) return 1;
+        if (!isACancelled && isBCancelled) return -1;
+        
+        return compareDesc(parseISO(a.saleDate), parseISO(b.saleDate));
+    });
     return list;
-  }, [dateRange, ventasSearchTerm, ventasPaymentMethodFilter, ventasSortOption, allSales]);
+  }, [dateRange, ventasSearchTerm, ventasPaymentMethodFilter, allSales]);
 
   const ventasSummaryData = useMemo(() => {
     const salesInRange = filteredAndSortedSales.filter(s => s.status !== 'Cancelado');
