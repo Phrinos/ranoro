@@ -23,6 +23,8 @@ import { Button } from '@/components/ui/button';
 import { Ban, Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
+import { formatCurrency } from '@/lib/utils';
+import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 
 
 interface ServiceDialogProps {
@@ -77,6 +79,7 @@ export function ServiceDialog({
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [fullFormDataForCompletion, setFullFormDataForCompletion] = useState<any>(null);
   const [cancellationReason, setCancellationReason] = useState("");
+  const [totalCost, setTotalCost] = useState(0);
 
 
   useEffect(() => {
@@ -210,9 +213,15 @@ export function ServiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-2 flex-shrink-0">
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
+        <DialogHeader className="p-6 pb-2 flex-shrink-0 grid grid-cols-2">
+            <div>
+              <DialogTitle>{dialogTitle}</DialogTitle>
+              <DialogDescription>{dialogDescription}</DialogDescription>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Costo Total del Servicio</p>
+              <p className="text-3xl font-bold text-primary">{formatCurrency(totalCost)}</p>
+            </div>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto px-6">
             <ServiceForm
@@ -228,6 +237,7 @@ export function ServiceDialog({
               mode={mode}
               onStatusChange={setFormStatus}
               onVehicleCreated={onVehicleCreated}
+              onTotalCostChange={setTotalCost}
             />
         </div>
         <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex justify-between items-center w-full">
