@@ -173,13 +173,13 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
                 {renderDashedLine()}
                 <div className="text-center" style={{ fontSize: `${bodyFontSize}px` }}>
                     <p>Pagado con: {operation.paymentMethod}</p>
-                    { (operation.paymentMethod?.includes('+') || operation.paymentMethod?.includes('/')) && (
-                        <div className="text-left text-xs pl-2">
-                            {operation.amountInCash ? <p>- Efectivo: {formatCurrency(operation.amountInCash)}</p> : null}
-                            {operation.amountInCard ? <p>- Tarjeta: {formatCurrency(operation.amountInCard)}</p> : null}
-                            {operation.amountInTransfer ? <p>- Transferencia: {formatCurrency(operation.amountInTransfer)}</p> : null}
-                        </div>
-                    )}
+                    <div className="text-left text-xs pl-2">
+                      { (operation.paymentMethod?.includes('+') || operation.paymentMethod?.includes('/')) && operation.amountInCash ? <p>- Efectivo: {formatCurrency(operation.amountInCash)}</p> : null}
+                      { (operation.paymentMethod?.includes('+') || operation.paymentMethod?.includes('/')) && operation.amountInCard ? <p>- Tarjeta: {formatCurrency(operation.amountInCard)}</p> : null}
+                      { (operation.paymentMethod?.includes('+') || operation.paymentMethod?.includes('/')) && operation.amountInTransfer ? <p>- Transferencia: {formatCurrency(operation.amountInTransfer)}</p> : null}
+                      {operation.cardFolio && <p>Folio Tarjeta: {operation.cardFolio}</p>}
+                      {operation.transferFolio && <p>Folio Transf: {operation.transferFolio}</p>}
+                    </div>
                 </div>
             </>
         )}
