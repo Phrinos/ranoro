@@ -69,7 +69,18 @@ export function ServiceDialog({
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
-  const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
+  
+  const onOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setCancellationReason(""); // Reset reason when dialog closes
+    }
+    if (isControlled) {
+      setControlledOpen(isOpen);
+    } else {
+      setUncontrolledOpen(isOpen);
+    }
+  };
+
 
   const handleComplete = async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
     if (onComplete) {

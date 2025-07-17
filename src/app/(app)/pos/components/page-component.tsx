@@ -35,7 +35,7 @@ import { operationsService, inventoryService, messagingService } from '@/lib/ser
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc, collection, addDoc, getDoc } from 'firebase/firestore';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const cashTransactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -83,6 +83,39 @@ function CashTransactionForm({ type, onSubmit }: { type: 'Entrada' | 'Salida', o
     </Form>
   )
 }
+
+function TransactionsList({ transactions }: { transactions: CashDrawerTransaction[] }) {
+    return (
+        <Card>
+            <CardHeader><CardTitle>Transacciones del Día</CardTitle></CardHeader>
+            <CardContent>
+                <ScrollArea className="h-48">
+                    {transactions.length > 0 ? (
+                        <Table>
+                            <TableBody>
+                                {transactions.map(t => (
+                                    <TableRow key={t.id}>
+                                        <TableCell>
+                                            <p className={cn("font-semibold", t.type === 'Entrada' ? 'text-green-600' : 'text-red-600')}>{t.type}</p>
+                                            <p className="text-xs text-muted-foreground">{t.concept}</p>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <p className="font-bold">{formatCurrency(t.amount)}</p>
+                                            <p className="text-xs text-muted-foreground">{t.userName}</p>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <div className="text-center text-muted-foreground p-4">No hay transacciones manuales hoy.</div>
+                    )}
+                </ScrollArea>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export function PosPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
@@ -361,10 +394,18 @@ Total: ${formatCurrency(sale.totalAmount)}
         </TabsContent>
         <TabsContent value="caja" className="mt-6 space-y-6">
              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"><div><h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2><p className="text-muted-foreground">Controla el flujo de efectivo.</p></div>{dateFilterComponent}</div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"><Card className="lg:col-span-2"><CardHeader><CardTitle className="flex items-center gap-2"><Wallet/>Cajón de Dinero</CardTitle></CardHeader><CardContent className="space-y-2 text-lg"><div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.initialBalance)}</span></div><div className="flex justify-between text-green-600"><span>(+) Ventas en Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashSales)}</span></div><div className="flex justify-between text-green-600"><span>(+) Entradas de Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashIn)}</span></div><div className="flex justify-between text-red-600"><span>(-) Salidas de Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashOut)}</span></div><div className="flex justify-between text-xl font-bold border-t pt-2 mt-2"><span>Saldo Final Esperado:</span> <span>{formatCurrency(cajaSummaryData.finalCashBalance)}</span></div></CardContent></Card><Card><CardHeader><CardTitle className="flex items-center gap-2"><Coins/>Ventas por Método</CardTitle></CardHeader><CardContent className="space-y-1 text-sm">{Object.entries(cajaSummaryData.salesByPaymentMethod).map(([method, total]) => (<div key={method} className="flex justify-between"><span>{method}:</span><span className="font-medium">{formatCurrency(total)}</span></div>))}</CardContent></Card><Card><CardHeader><CardTitle className="flex items-center gap-2"><BarChart2/>Ventas por Tipo</CardTitle></CardHeader><CardContent className="space-y-1 text-sm"><div className="flex justify-between"><span>Ventas de Mostrador:</span><span className="font-medium">{cajaSummaryData.totalSales}</span></div><div className="flex justify-between"><span>Servicios Completados:</span><span className="font-medium">{cajaSummaryData.totalServices}</span></div></CardContent></Card></div>
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="lg:col-span-2"><CardHeader><CardTitle className="flex items-center gap-2"><Wallet/>Cajón de Dinero</CardTitle></CardHeader><CardContent className="space-y-2 text-lg"><div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.initialBalance)}</span></div><div className="flex justify-between text-green-600"><span>(+) Ventas en Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashSales)}</span></div><div className="flex justify-between text-green-600"><span>(+) Entradas de Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashIn)}</span></div><div className="flex justify-between text-red-600"><span>(-) Salidas de Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashOut)}</span></div><div className="flex justify-between text-xl font-bold border-t pt-2 mt-2"><span>Saldo Final Esperado:</span> <span>{formatCurrency(cajaSummaryData.finalCashBalance)}</span></div></CardContent></Card>
+                <Card><CardHeader><CardTitle className="flex items-center gap-2"><Coins/>Ventas por Método</CardTitle></CardHeader><CardContent className="space-y-1 text-sm">{Object.entries(cajaSummaryData.salesByPaymentMethod).map(([method, total]) => (<div key={method} className="flex justify-between"><span>{method}:</span><span className="font-medium">{formatCurrency(total)}</span></div>))}</CardContent></Card>
+                <Card><CardHeader><CardTitle className="flex items-center gap-2"><BarChart2/>Ventas por Tipo</CardTitle></CardHeader><CardContent className="space-y-1 text-sm"><div className="flex justify-between"><span>Ventas de Mostrador:</span><span className="font-medium">{cajaSummaryData.totalSales}</span></div><div className="flex justify-between"><span>Servicios Completados:</span><span className="font-medium">{cajaSummaryData.totalServices}</span></div></CardContent></Card>
+             </div>
              <Card>
                 <CardHeader><div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"><div><CardTitle>Transacciones de Caja</CardTitle><CardDescription>Entradas y salidas manuales de efectivo.</CardDescription></div><div className="flex gap-2"><Button variant="outline" onClick={() => setIsInitialBalanceDialogOpen(true)}>Saldo Inicial</Button><Button onClick={() => setIsCorteDialogOpen(true)}><Printer className="mr-2 h-4 w-4"/> Corte de Caja</Button></div></div></CardHeader>
-                <CardContent className="grid md:grid-cols-2 gap-6"><Card><CardHeader><CardTitle className="flex items-center gap-2 text-green-600"><ArrowUpCircle/>Registrar Entrada</CardTitle></CardHeader><CardContent><CashTransactionForm type="Entrada" onSubmit={handleAddTransaction} /></CardContent></Card><Card><CardHeader><CardTitle className="flex items-center gap-2 text-red-600"><ArrowDownCircle/>Registrar Salida</CardTitle></CardHeader><CardContent><CashTransactionForm type="Salida" onSubmit={handleAddTransaction} /></CardContent></Card></CardContent>
+                <CardContent className="grid md:grid-cols-3 gap-6">
+                    <Card><CardHeader><CardTitle className="flex items-center gap-2 text-green-600"><ArrowUpCircle/>Registrar Entrada</CardTitle></CardHeader><CardContent><CashTransactionForm type="Entrada" onSubmit={handleAddTransaction} /></CardContent></Card>
+                    <Card><CardHeader><CardTitle className="flex items-center gap-2 text-red-600"><ArrowDownCircle/>Registrar Salida</CardTitle></CardHeader><CardContent><CashTransactionForm type="Salida" onSubmit={handleAddTransaction} /></CardContent></Card>
+                    <TransactionsList transactions={allCashTransactions.filter(t => isWithinInterval(parseISO(t.date), {start: startOfDay(dateRange?.from || new Date()), end: endOfDay(dateRange?.to || dateRange?.from || new Date())}))} />
+                </CardContent>
             </Card>
         </TabsContent>
       </Tabs>
@@ -392,9 +433,9 @@ Total: ${formatCurrency(sale.totalAmount)}
               <strong>{format(dateRange?.from || new Date(), "dd/MM/yyyy", { locale: es })}</strong>.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-2">
             <Label htmlFor="initial-balance">Monto Inicial</Label>
-            <div className="relative mt-2">
+            <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="initial-balance"
