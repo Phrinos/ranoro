@@ -113,36 +113,36 @@ export function PaymentDetailsDialog({
   const form = useForm<PaymentDetailsFormValues>({
     resolver: zodResolver(paymentDetailsSchema),
     defaultValues: {
-      paymentMethod: undefined,
-      cardFolio: '',
-      confirmCardFolio: '',
-      transferFolio: '',
-      confirmTransferFolio: '',
+      paymentMethod: service.paymentMethod,
+      cardFolio: service.cardFolio || '',
+      confirmCardFolio: service.cardFolio || '',
+      transferFolio: service.transferFolio || '',
+      confirmTransferFolio: service.transferFolio || '',
       amountInCash: service.amountInCash,
       amountInCard: service.amountInCard,
       amountInTransfer: service.amountInTransfer,
     }
   });
   
-  const { watch, trigger, setValue } = form;
+  const { watch, trigger, setValue, reset } = form;
   const selectedPaymentMethod = watch("paymentMethod");
   const isMixedPayment = selectedPaymentMethod?.includes('+') || selectedPaymentMethod?.includes('/');
 
-  // Reset form when dialog opens/closes
+  // Reset form when dialog opens/closes or service changes
   useEffect(() => {
-    if (!open) {
-      form.reset({
-        paymentMethod: undefined,
-        cardFolio: '',
-        confirmCardFolio: '',
-        transferFolio: '',
-        confirmTransferFolio: '',
+    if (open) {
+      reset({
+        paymentMethod: service.paymentMethod,
+        cardFolio: service.cardFolio || '',
+        confirmCardFolio: service.cardFolio || '',
+        transferFolio: service.transferFolio || '',
+        confirmTransferFolio: service.transferFolio || '',
         amountInCash: service.amountInCash,
         amountInCard: service.amountInCard,
         amountInTransfer: service.amountInTransfer,
       });
     }
-  }, [open, form, service]);
+  }, [open, service, reset]);
 
   const handleFolioBlur = (field: 'cardFolio' | 'transferFolio') => {
     const confirmField = `confirm${field.charAt(0).toUpperCase() + field.slice(1)}` as 'confirmCardFolio' | 'confirmTransferFolio';
@@ -192,7 +192,9 @@ export function PaymentDetailsDialog({
                     <FormLabel>Método de Pago</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Seleccione método de pago" /></SelectTrigger>
+                        <SelectTrigger className="bg-white dark:bg-card">
+                          <SelectValue placeholder="Seleccione método de pago" />
+                        </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {paymentMethods.map(method => {
