@@ -69,13 +69,13 @@ const paymentDetailsSchema = z.object({
   path: ["transferFolio"],
 });
 
-type PaymentDetailsFormValues = z.infer<typeof paymentDetailsSchema>;
+export type PaymentDetailsFormValues = z.infer<typeof paymentDetailsSchema>;
 
 interface PaymentDetailsDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
-  onConfirm: (service: ServiceRecord, paymentDetails: PaymentDetailsFormValues) => void;
+  onConfirm: (serviceId: string, paymentDetails: PaymentDetailsFormValues) => void;
 }
 
 export function PaymentDetailsDialog({
@@ -96,20 +96,20 @@ export function PaymentDetailsDialog({
   const selectedPaymentMethod = form.watch("paymentMethod");
 
   const handleFormSubmit = (values: PaymentDetailsFormValues) => {
-    onConfirm(service, values);
+    onConfirm(service.id, values);
   };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Detalles de Pago</DialogTitle>
-          <DialogDescription>Confirme el método de pago para el servicio.</DialogDescription>
+          <DialogTitle>Editar Detalles de Pago</DialogTitle>
+          <DialogDescription>Modifique el método de pago o los folios para el servicio {service.id}.</DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
           <Card>
             <CardContent className="p-4 text-center">
-              <p className="text-sm text-muted-foreground">Total a Pagar</p>
+              <p className="text-sm text-muted-foreground">Total Pagado</p>
               <p className="text-4xl font-bold text-primary">{formatCurrency(service.totalCost)}</p>
             </CardContent>
           </Card>
@@ -150,7 +150,7 @@ export function PaymentDetailsDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button type="submit" form="payment-details-form">Confirmar y Completar</Button>
+          <Button type="submit" form="payment-details-form">Guardar Cambios</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

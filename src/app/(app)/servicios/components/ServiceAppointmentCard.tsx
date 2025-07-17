@@ -26,6 +26,7 @@ interface ServiceAppointmentCardProps {
     onComplete?: () => void;
     onCancel?: () => void;
     onPrintTicket?: () => void;
+    onEditPayment?: () => void;
 }
 
 const getServiceDescriptionText = (service: ServiceRecord) => {
@@ -76,6 +77,7 @@ export const ServiceAppointmentCard = React.memo(({
     onComplete,
     onCancel,
     onPrintTicket,
+    onEditPayment,
 }: ServiceAppointmentCardProps) => {
     const vehicle = vehicles.find(v => v.id === service.vehicleId);
     const appointmentStatus = getAppointmentStatus(service);
@@ -175,6 +177,11 @@ export const ServiceAppointmentCard = React.memo(({
                             {onComplete && service.status === 'En Taller' && service.subStatus === 'Completado' && (
                                <Button variant="ghost" size="icon" onClick={onComplete} title="Completar y Cobrar">
                                     <DollarSign className="h-4 w-4 text-green-600" />
+                                </Button>
+                            )}
+                            {onEditPayment && service.status === 'Entregado' && (
+                                <Button variant="ghost" size="icon" onClick={onEditPayment} title="Editar Pago">
+                                    <DollarSign className="h-4 w-4" />
                                 </Button>
                             )}
                             <Button variant="ghost" size="icon" onClick={onView} title="Ver Documento"><Eye className="h-4 w-4" /></Button>

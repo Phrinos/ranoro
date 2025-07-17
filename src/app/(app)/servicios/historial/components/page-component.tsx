@@ -23,7 +23,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
 import { Printer, Copy, MessageSquare } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { PaymentDetailsDialog } from '../../components/PaymentDetailsDialog';
+import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../../components/PaymentDetailsDialog';
 
 const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
     { value: 'all', label: 'Todos los Estados' },
@@ -67,6 +67,10 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   const [recordForTicket, setRecordForTicket] = useState<ServiceRecord | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
+  
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [serviceToEditPayment, setServiceToEditPayment] = useState<ServiceRecord | null>(null);
+
 
   useEffect(() => {
     const unsubs = [
@@ -179,6 +183,18 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     setServiceToComplete(service);
     setIsCompleteDialogOpen(true);
   }, []);
+  
+  const handleOpenPaymentDialog = useCallback((service: ServiceRecord) => {
+    setServiceToEditPayment(service);
+    setIsPaymentDialogOpen(true);
+  }, []);
+
+  const handleUpdatePaymentDetails = useCallback(async (serviceId: string, paymentDetails: PaymentDetailsFormValues) => {
+    await operationsService.updateService(serviceId, paymentDetails);
+    toast({ title: "Detalles de Pago Actualizados" });
+    setIsPaymentDialogOpen(false);
+  }, [toast]);
+
 
   const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
      if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
@@ -257,6 +273,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       onComplete={() => handleOpenCompleteDialog(record)}
       onPrintTicket={() => handlePrintTicket(record)}
       onConfirm={() => handleConfirmAppointment(record)}
+      onEditPayment={() => handleOpenPaymentDialog(record)}
       onCancel={() => {
         if (record.id) {
           const reason = prompt("Motivo de la cancelación:");
@@ -312,6 +329,15 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
           service={serviceToComplete}
           onConfirm={handleConfirmCompletion}
           inventoryItems={inventoryItems}
+        />
+      )}
+      
+      {serviceToEditPayment && (
+        <PaymentDetailsDialog
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+          service={serviceToEditPayment}
+          onConfirm={handleUpdatePaymentDetails}
         />
       )}
 
