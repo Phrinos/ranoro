@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -149,10 +148,8 @@ export function PosPageComponent({ tab }: { tab?: string }) {
     list.sort((a, b) => {
         const isACancelled = a.status === 'Cancelado';
         const isBCancelled = b.status === 'Cancelado';
-
         if (isACancelled && !isBCancelled) return 1;
         if (!isACancelled && isBCancelled) return -1;
-        
         return compareDesc(parseISO(a.saleDate), parseISO(b.saleDate));
     });
     return list;
@@ -188,26 +185,35 @@ export function PosPageComponent({ tab }: { tab?: string }) {
     
     const transactionsInRange = allCashTransactions.filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }));
     const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start, end }));
-    const servicesInRange = allServices.filter(s => {
-        const dateToParse = s.deliveryDateTime || s.serviceDate;
-        if (!dateToParse) return false;
-        const sDate = parseISO(dateToParse);
-        return s.status === 'Completado' && isValid(sDate) && isWithinInterval(sDate, { start, end });
-    });
+    const servicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start, end }));
     
-    const totalCashSales = salesInRange.filter(s => s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + s.totalAmount, 0) + servicesInRange.filter(s => s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + s.totalCost, 0);
+    const cashFromSales = salesInRange
+        .filter(s => s.paymentMethod?.includes('Efectivo'))
+        .reduce((sum, s) => {
+            if (s.paymentMethod === 'Efectivo') return sum + s.totalAmount;
+            return sum + (s.amountInCash || 0);
+        }, 0);
+
+    const cashFromServices = servicesInRange
+        .filter(s => s.paymentMethod?.includes('Efectivo'))
+        .reduce((sum, s) => {
+            if (s.paymentMethod === 'Efectivo') return sum + (s.totalCost || 0);
+            return sum + (s.amountInCash || 0);
+        }, 0);
+
+    const totalCashOperations = cashFromSales + cashFromServices;
     const totalCashIn = transactionsInRange.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
     const totalCashOut = transactionsInRange.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
-    const finalCashBalance = initialBalance + totalCashSales + totalCashIn - totalCashOut;
+    const finalCashBalance = initialBalance + totalCashOperations + totalCashIn - totalCashOut;
     
     const salesByPaymentMethod: Record<string, number> = {};
     [...salesInRange, ...servicesInRange].forEach(op => {
       const method = op.paymentMethod || 'Efectivo';
-      const amount = 'totalAmount' in op ? op.totalAmount : op.totalCost;
+      const amount = 'totalAmount' in op ? op.totalAmount : (op.totalCost || 0);
       salesByPaymentMethod[method] = (salesByPaymentMethod[method] || 0) + amount;
     });
 
-    return { initialBalance, totalCashSales, totalCashIn, totalCashOut, finalCashBalance, salesByPaymentMethod, totalSales: salesInRange.length, totalServices: servicesInRange.length };
+    return { initialBalance, totalCashSales: totalCashOperations, totalCashIn, totalCashOut, finalCashBalance, salesByPaymentMethod, totalSales: salesInRange.length, totalServices: servicesInRange.length };
   }, [dateRange, allSales, allServices, allCashTransactions, initialCashBalance]);
   
   const handleCancelSale = useCallback(async (saleId: string, reason: string) => {
