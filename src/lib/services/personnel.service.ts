@@ -146,11 +146,17 @@ const saveDriver = async (data: Partial<DriverFormValues>, existingId?: string):
         const docSnap = await getDoc(docRef);
         return { id: docSnap.id, ...(docSnap.data() as Omit<Driver, 'id'>) };
     } else {
-        const newDriverData = { ...dataToSave, documents: {}, manualDebts: [] };
+        const newDriverData = { ...dataToSave, documents: {}, manualDebts: [], isArchived: false };
         const docRef = await addDoc(collection(db, 'drivers'), cleanObjectForFirestore(newDriverData));
         return { id: docRef.id, ...newDriverData };
     }
 };
+
+const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await updateDoc(doc(db, 'drivers', id), { isArchived });
+};
+
 
 export const personnelService = {
     onTechniciansUpdate,
@@ -167,5 +173,6 @@ export const personnelService = {
     archiveAdminStaff,
     onDriversUpdate,
     getDriverById,
-    saveDriver
+    saveDriver,
+    archiveDriver,
 };

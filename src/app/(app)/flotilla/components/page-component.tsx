@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'rea
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Search, ListFilter, ShieldCheck, User, ChevronRight, AlertTriangle } from "lucide-react";
+import { PlusCircle, Search, ListFilter, ShieldCheck, User, ChevronRight, AlertTriangle, UserCheck, UserX } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AddVehicleToFleetDialog } from "./add-vehicle-to-fleet-dialog";
@@ -74,6 +74,7 @@ export function FlotillaPageComponent({
   const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [sortOptionDrivers, setSortOptionDrivers] = useState<DriverSortOption>('name_asc');
+  const [showArchivedDrivers, setShowArchivedDrivers] = useState(false);
 
   const [lastFineCheckDate, setLastFineCheckDate] = useState<Date | null>(null);
 
@@ -121,7 +122,7 @@ export function FlotillaPageComponent({
         return acc;
     }, {} as Record<string, { totalAmount: number, totalDaysCovered: number }>);
 
-    return allDrivers.map(driver => {
+    return allDrivers.filter(d => !d.isArchived).map(driver => {
         const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
         const dailyRate = vehicle?.dailyRentalCost || 0;
         
@@ -191,14 +192,14 @@ export function FlotillaPageComponent({
   }, [fleetVehicles, searchTermVehicles, sortOptionVehicles]);
   
   const filteredDrivers = useMemo(() => {
-    let itemsToDisplay = [...allDrivers];
+    let itemsToDisplay = allDrivers.filter(driver => showArchivedDrivers ? !!driver.isArchived : !driver.isArchived);
     if (searchTermDrivers.trim()) {
         const lowerSearch = searchTermDrivers.toLowerCase();
         itemsToDisplay = itemsToDisplay.filter(driver => driver.name.toLowerCase().includes(lowerSearch) || driver.phone.toLowerCase().includes(lowerSearch));
     }
     itemsToDisplay.sort((a, b) => (sortOptionDrivers === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)));
     return itemsToDisplay;
-  }, [allDrivers, searchTermDrivers, sortOptionDrivers]);
+  }, [allDrivers, searchTermDrivers, sortOptionDrivers, showArchivedDrivers]);
 
   const uniqueOwners = useMemo(() => Array.from(new Set(fleetVehicles.map(v => v.ownerName))).sort(), [fleetVehicles]);
 
@@ -357,11 +358,25 @@ export function FlotillaPageComponent({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{uniqueOwners.map(owner => (<Link key={owner} href={`/flotilla/reporte-ingresos/${encodeURIComponent(owner)}`} passHref><Card className="hover:bg-muted hover:border-primary/50 transition-all shadow-sm"><CardContent className="p-4 flex items-center justify-between"><div className="flex items-center gap-3"><User className="h-5 w-5 text-muted-foreground" /><span className="font-semibold">{owner}</span></div><ChevronRight className="h-5 w-5 text-muted-foreground" /></CardContent></Card></Link>))}</div>
         </TabsContent>
         <TabsContent value="conductores" className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div><h2 className="text-2xl font-semibold tracking-tight">Conductores</h2><p className="text-muted-foreground">Gestiona la información de los conductores.</p></div>
-              <Button onClick={() => handleOpenDriverDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Conductor</Button>
-          </div>
-          <Card><CardHeader><Input type="search" placeholder="Buscar por nombre o teléfono..." className="w-full sm:w-1/2 lg:w-1/3" value={searchTermDrivers} onChange={e => setSearchTermDrivers(e.target.value)} /></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Teléfono</TableHead><TableHead>Vehículo Asignado</TableHead><TableHead className="text-right">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">No se encontraron conductores.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
+            <Tabs defaultValue="activos" className="w-full">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <TabsList>
+                    <TabsTrigger value="activos">Activos</TabsTrigger>
+                    <TabsTrigger value="archivados">Archivados</TabsTrigger>
+                  </TabsList>
+                  <Button onClick={() => handleOpenDriverDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Conductor</Button>
+                </div>
+                <div className="relative mt-4">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input type="search" placeholder="Buscar por nombre o teléfono..." className="w-full sm:w-1/2 lg:w-1/3 pl-8" value={searchTermDrivers} onChange={e => setSearchTermDrivers(e.target.value)} />
+                </div>
+                <TabsContent value="activos" className="mt-4">
+                    <Card><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Teléfono</TableHead><TableHead>Vehículo Asignado</TableHead><TableHead className="text-right">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">No se encontraron conductores activos.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
+                </TabsContent>
+                <TabsContent value="archivados" className="mt-4">
+                    <Card><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Teléfono</TableHead><TableHead>Vehículo Asignado</TableHead><TableHead className="text-right">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">No se encontraron conductores archivados.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
+                </TabsContent>
+            </Tabs>
         </TabsContent>
         <TabsContent value="vehiculos" className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

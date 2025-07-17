@@ -99,6 +99,7 @@ export interface Driver {
   depositAmount?: number;
   contractDate?: string; // ISO string
   manualDebts?: ManualDebtEntry[];
+  isArchived?: boolean;
 }
 
 export interface RentalPayment {

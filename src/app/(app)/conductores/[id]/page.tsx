@@ -6,7 +6,7 @@ import type { Driver, RentalPayment, ManualDebtEntry, Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User as UserIcon, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2, FileX, Receipt, Trash2 } from 'lucide-react';
+import { ShieldAlert, Edit, User as UserIcon, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2, FileX, Receipt, Trash2, Archive } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from 'next/link';
@@ -281,6 +281,17 @@ const handleAssignVehicle = async (newVehicleId: string) => {
     toast({ title: 'Adeudo Eliminado', variant: 'destructive' });
   };
 
+  const handleArchiveDriver = async () => {
+    if (!driver) return;
+    try {
+      await personnelService.archiveDriver(driver.id, !driver.isArchived);
+      toast({ title: `Conductor ${driver.isArchived ? 'Restaurado' : 'Archivado'}` });
+      router.push('/flotilla?tab=conductores'); 
+    } catch (e) {
+      toast({ title: "Error al archivar", variant: "destructive" });
+    }
+  };
+
 
 
   if (driver === undefined) {
@@ -302,11 +313,39 @@ const handleAssignVehicle = async (newVehicleId: string) => {
   return (
     <>
     <div className="container mx-auto py-8">
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <Button variant="outline" size="sm" className="bg-white text-black hover:bg-gray-100" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
         </Button>
+         <div className="flex gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                  <Button variant="destructive" >
+                  <Archive className="mr-2 h-4 w-4" />
+                  {driver.isArchived ? 'Restaurar Conductor' : 'Archivar Conductor'}
+                  </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                  <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro de {driver.isArchived ? 'restaurar' : 'archivar'} este registro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Esta acción {driver.isArchived ? 'restaurará' : 'archivará'} el registro de {driver.name} y lo {driver.isArchived ? 'mostrará' : 'ocultará'} de las listas principales.
+                  </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleArchiveDriver} className="bg-destructive hover:bg-destructive/90">
+                      Sí, {driver.isArchived ? 'Restaurar' : 'Archivar'}
+                  </AlertDialogAction>
+                  </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar
+            </Button>
+        </div>
       </div>
       <div className="mb-6 grid gap-1">
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl font-headline">
@@ -328,10 +367,6 @@ const handleAssignVehicle = async (newVehicleId: string) => {
             <Card className="lg:col-span-3">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Información del Conductor</CardTitle>
-                <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar
-                </Button>
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
                 <div className="flex items-center gap-3"><UserIcon className="h-4 w-4 text-muted-foreground" /><span>{driver.name}</span></div>
