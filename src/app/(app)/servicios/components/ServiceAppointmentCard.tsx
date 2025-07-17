@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from 'react';
@@ -105,23 +104,10 @@ export const ServiceAppointmentCard = React.memo(({
 
     const renderPaymentBadge = () => {
         if (!isCompleted || !service.paymentMethod) return null;
-
-        const isMixed = service.paymentMethod.includes('+') || service.paymentMethod.includes('/');
-        let badgeText = service.paymentMethod;
-
-        if (isMixed) {
-            const parts = [];
-            if (service.amountInCash) parts.push(`Efectivo: ${formatCurrency(service.amountInCash)}`);
-            if (service.amountInCard) parts.push(`Tarjeta: ${formatCurrency(service.amountInCard)}`);
-            if (service.amountInTransfer) parts.push(`Transf: ${formatCurrency(service.amountInTransfer)}`);
-            if (parts.length > 0) {
-                badgeText = parts.join(' / ');
-            }
-        }
-
+        
         return (
             <Badge variant={getPaymentMethodVariant(service.paymentMethod)} className="mt-1 text-xs whitespace-nowrap">
-                {badgeText}
+                {service.paymentMethod}
             </Badge>
         );
     };
