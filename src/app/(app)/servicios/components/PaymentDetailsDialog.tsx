@@ -66,7 +66,7 @@ const paymentDetailsSchema = z.object({
   }
   return true;
 }, {
-  message: "Los folios de tarjeta no coinciden.",
+  message: "Los folios no coinciden.",
   path: ["confirmCardFolio"],
 }).refine(data => {
     if (data.paymentMethod?.includes('Transferencia')) {
@@ -230,8 +230,8 @@ export function PaymentDetailsDialog({
                  <Card className="p-4 bg-white dark:bg-card">
                     <p className="text-sm font-medium mb-4">Información de Tarjeta</p>
                     <div className="space-y-4">
-                      <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="confirmCardFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio Tarjeta</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('cardFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="confirmCardFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('cardFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
                 </Card>
               )}
