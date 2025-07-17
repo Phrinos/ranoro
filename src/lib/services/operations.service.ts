@@ -123,6 +123,11 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
         data.publicId = nanoid(12);
     }
     
+    // Automatically set delivery date if status is 'Entregado' and it's not set
+    if (data.status === 'Entregado' && !data.deliveryDateTime) {
+      data.deliveryDateTime = new Date().toISOString();
+    }
+    
     const fieldsToNullify: (keyof ServiceRecord)[] = ['customerSignatureReception', 'customerSignatureDelivery', 'technicianName'];
     fieldsToNullify.forEach(key => {
         if (!data[key]) {
@@ -527,4 +532,3 @@ export const operationsService = {
     addVehicleExpense,
     addOwnerWithdrawal,
 };
-

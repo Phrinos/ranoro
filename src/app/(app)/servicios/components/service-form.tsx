@@ -411,15 +411,20 @@ export function ServiceForm(props:Props){
                     />
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b">
-                            <TabsList className={cn("grid w-full", "grid-cols-4")}>
-                                <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
-                                <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
-                                <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
-                                <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
-                            </TabsList>
+                        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b">
+                            <div className="flex justify-between items-center">
+                                <TabsList className={cn("grid w-full", "grid-cols-4")}>
+                                    <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
+                                    <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
+                                    <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
+                                    <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
+                                </TabsList>
+                                 <Button variant="ghost" size="icon" onClick={() => setIsPreviewOpen(true)} title="Vista Previa" className="ml-2">
+                                    <Eye className="h-5 w-5"/>
+                                </Button>
+                            </div>
                         </div>
-                        <TabsContent value="details" className="mt-0">
+                        <TabsContent value="details" className="mt-0 space-y-4">
                             <ServiceDetailsCard
                                 isReadOnly={props.isReadOnly}
                                 technicians={technicians}
@@ -434,6 +439,50 @@ export function ServiceForm(props:Props){
                                 categories={allCategories}
                                 suppliers={allSuppliers}
                             />
+                            {showNextServiceCard && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <CalendarCheck className="h-5 w-5 text-blue-600" />
+                                            Próximo Servicio Recomendado
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <FormField
+                                                control={control}
+                                                name="nextServiceInfo.date"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <div className="flex gap-2 mb-2">
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
+                                                        </div>
+                                                        <FormLabel>Fecha Próximo Servicio</FormLabel>
+                                                        <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={control}
+                                                name="nextServiceInfo.mileage"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <div className="flex gap-2 mb-2">
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
+                                                        </div>
+                                                        <FormLabel>Kilometraje Próximo Servicio</FormLabel>
+                                                        <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                            {watchedStatus === 'Entregado' && <PaymentSection isReadOnly={true} />}
                         </TabsContent>
                         <TabsContent value="reception" className="mt-0">
                            <ReceptionAndDelivery 
@@ -465,52 +514,6 @@ export function ServiceForm(props:Props){
                             />
                         </TabsContent>
                     </Tabs>
-                    
-                    {showNextServiceCard && (
-                        <div className="space-y-6 mt-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg flex items-center gap-2">
-                                        <CalendarCheck className="h-5 w-5 text-blue-600" />
-                                        Próximo Servicio Recomendado
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <FormField
-                                            control={control}
-                                            name="nextServiceInfo.date"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <div className="flex gap-2 mb-2">
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
-                                                    </div>
-                                                    <FormLabel>Fecha Próximo Servicio</FormLabel>
-                                                    <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={control}
-                                            name="nextServiceInfo.mileage"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <div className="flex gap-2 mb-2">
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
-                                                    </div>
-                                                    <FormLabel>Kilometraje Próximo Servicio</FormLabel>
-                                                    <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
                 </div>
             </form>
         </FormProvider>
@@ -528,11 +531,11 @@ export function ServiceForm(props:Props){
         onSave={handleSignatureSave}
       />
 
-       {isPreviewOpen && initialDataService && (
+       {isPreviewOpen && (
         <UnifiedPreviewDialog
             open={isPreviewOpen}
             onOpenChange={setIsPreviewOpen}
-            service={initialDataService}
+            service={getValues() as ServiceRecord}
         />
       )}
 
