@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -87,7 +86,7 @@ export function PaymentDetailsDialog({
   const form = useForm<PaymentDetailsFormValues>({
     resolver: zodResolver(paymentDetailsSchema),
     defaultValues: {
-      paymentMethod: service.paymentMethod || 'Efectivo',
+      paymentMethod: service.paymentMethod || undefined, // Set to undefined to show placeholder
       cardFolio: service.cardFolio || '',
       transferFolio: service.transferFolio || '',
     }
@@ -121,7 +120,7 @@ export function PaymentDetailsDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Método de Pago</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Seleccione método de pago" /></SelectTrigger>
                       </FormControl>
@@ -140,10 +139,10 @@ export function PaymentDetailsDialog({
                 )}
               />
               {(selectedPaymentMethod?.includes("Tarjeta")) && (
-                <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
               )}
               {(selectedPaymentMethod?.includes("Transferencia")) && (
-                <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
               )}
             </form>
           </Form>
