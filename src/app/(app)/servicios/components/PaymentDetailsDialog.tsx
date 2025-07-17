@@ -29,6 +29,8 @@ import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, DollarSign } fro
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import React, { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -52,12 +54,30 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
 const paymentDetailsSchema = z.object({
   paymentMethod: z.enum(paymentMethods, { required_error: "Debe seleccionar un método de pago." }),
   cardFolio: z.string().optional(),
+  confirmCardFolio: z.string().optional(),
   transferFolio: z.string().optional(),
+  confirmTransferFolio: z.string().optional(),
   amountInCash: z.coerce.number().optional(),
   amountInCard: z.coerce.number().optional(),
   amountInTransfer: z.coerce.number().optional(),
 }).refine(data => {
-  if ((data.paymentMethod?.includes('Tarjeta')) && !data.cardFolio) {
+  if (data.paymentMethod?.includes('Tarjeta')) {
+    return data.cardFolio === data.confirmCardFolio;
+  }
+  return true;
+}, {
+  message: "Los folios de tarjeta no coinciden.",
+  path: ["confirmCardFolio"],
+}).refine(data => {
+    if (data.paymentMethod?.includes('Transferencia')) {
+        return data.transferFolio === data.confirmTransferFolio;
+    }
+    return true;
+}, {
+    message: "Los folios de transferencia no coinciden.",
+    path: ["confirmTransferFolio"],
+}).refine(data => {
+  if (data.paymentMethod?.includes('Tarjeta') && !data.cardFolio) {
     return false;
   }
   return true;
@@ -65,7 +85,7 @@ const paymentDetailsSchema = z.object({
   message: "El folio de la tarjeta es obligatorio.",
   path: ["cardFolio"],
 }).refine(data => {
-  if ((data.paymentMethod?.includes('Transferencia')) && !data.transferFolio) {
+  if (data.paymentMethod?.includes('Transferencia') && !data.transferFolio) {
     return false;
   }
   return true;
@@ -89,20 +109,60 @@ export function PaymentDetailsDialog({
   service,
   onConfirm,
 }: PaymentDetailsDialogProps) {
+  const { toast } = useToast();
   const form = useForm<PaymentDetailsFormValues>({
     resolver: zodResolver(paymentDetailsSchema),
     defaultValues: {
-      paymentMethod: service.paymentMethod || undefined,
-      cardFolio: service.cardFolio || '',
-      transferFolio: service.transferFolio || '',
+      paymentMethod: undefined,
+      cardFolio: '',
+      confirmCardFolio: '',
+      transferFolio: '',
+      confirmTransferFolio: '',
       amountInCash: service.amountInCash,
       amountInCard: service.amountInCard,
       amountInTransfer: service.amountInTransfer,
     }
   });
-
-  const selectedPaymentMethod = form.watch("paymentMethod");
+  
+  const { watch, trigger, setValue } = form;
+  const selectedPaymentMethod = watch("paymentMethod");
   const isMixedPayment = selectedPaymentMethod?.includes('+') || selectedPaymentMethod?.includes('/');
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      form.reset({
+        paymentMethod: undefined,
+        cardFolio: '',
+        confirmCardFolio: '',
+        transferFolio: '',
+        confirmTransferFolio: '',
+        amountInCash: service.amountInCash,
+        amountInCard: service.amountInCard,
+        amountInTransfer: service.amountInTransfer,
+      });
+    }
+  }, [open, form, service]);
+
+  const handleFolioBlur = (field: 'cardFolio' | 'transferFolio') => {
+    const confirmField = `confirm${field.charAt(0).toUpperCase() + field.slice(1)}` as 'confirmCardFolio' | 'confirmTransferFolio';
+    
+    const folioValue = form.getValues(field);
+    const confirmFolioValue = form.getValues(confirmField);
+
+    if (folioValue && confirmFolioValue && folioValue !== confirmFolioValue) {
+        toast({
+            title: "Los folios no coinciden",
+            description: "Por favor, verifique e ingrese los folios nuevamente.",
+            variant: "destructive"
+        });
+        setValue(field, '');
+        setValue(confirmField, '');
+    } else {
+      trigger(confirmField);
+    }
+  };
+
 
   const handleFormSubmit = (values: PaymentDetailsFormValues) => {
     onConfirm(service.id, values);
@@ -149,24 +209,32 @@ export function PaymentDetailsDialog({
                 )}
               />
               {isMixedPayment && (
-                <div className="space-y-2 rounded-md border p-4">
-                  <p className="text-sm font-medium">Desglose de Pago</p>
-                  {selectedPaymentMethod.includes('Efectivo') && (
-                    <FormField control={form.control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
-                  )}
-                  {selectedPaymentMethod.includes('Tarjeta') && (
-                    <FormField control={form.control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
-                  )}
-                  {selectedPaymentMethod.includes('Transferencia') && (
-                    <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
-                  )}
-                </div>
+                <Card className="p-4 bg-white dark:bg-card">
+                  <p className="text-sm font-medium mb-4">Desglose de Pago</p>
+                  <div className="space-y-2">
+                      {selectedPaymentMethod.includes('Efectivo') && (
+                        <FormField control={form.control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                      )}
+                      {selectedPaymentMethod.includes('Tarjeta') && (
+                        <FormField control={form.control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                      )}
+                      {selectedPaymentMethod.includes('Transferencia') && (
+                        <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                      )}
+                  </div>
+                </Card>
               )}
               {(selectedPaymentMethod?.includes("Tarjeta")) && (
-                <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                <div className="space-y-2 pt-2">
+                  <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="confirmCardFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio Tarjeta</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('cardFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                </div>
               )}
               {(selectedPaymentMethod?.includes("Transferencia")) && (
-                <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                <div className="space-y-2 pt-2">
+                  <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} value={field.value ?? ''} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="confirmTransferFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio Transferencia</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => handleFolioBlur('transferFolio')} className="bg-white dark:bg-card" /></FormControl><FormMessage /></FormItem>)}/>
+                </div>
               )}
             </form>
           </Form>
