@@ -16,7 +16,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply } from "@/types";
+import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply, User } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
@@ -24,7 +24,7 @@ import type { ExtractedService, ExtractedVehicle } from '@/ai/flows/data-migrati
 import { format, parse, isValid, startOfDay, isSameDay } from 'date-fns';
 import { personnelService } from './personnel.service';
 import { cleanObjectForFirestore } from '@/lib/forms';
-import { logAudit } from '../placeholder-data';
+import { logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '../placeholder-data';
 import { parseDate } from '@/lib/forms';
 
 
@@ -448,6 +448,9 @@ const addRentalPayment = async (driverId: string, amount: number, note: string |
     const vehicle = await inventoryService.getVehicleById(driver.assignedVehicleId || '');
     if (!vehicle) throw new Error("Assigned vehicle not found.");
     
+    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    const user = authUserString ? JSON.parse(authUserString) as RanoroUser : null;
+    
     const newPayment: Omit<RentalPayment, 'id'> = {
         driverId: driver.id,
         driverName: driver.name,
@@ -456,6 +459,7 @@ const addRentalPayment = async (driverId: string, amount: number, note: string |
         amount: amount,
         daysCovered: amount / (vehicle.dailyRentalCost || 1),
         note: note,
+        registeredBy: user?.name || 'Sistema',
     };
     
     const batch = writeBatch(db);
@@ -475,6 +479,16 @@ const updateRentalPayment = async (paymentId: string, data: Partial<RentalPaymen
     if (!db) throw new Error("Database not initialized.");
     const paymentRef = doc(db, "rentalPayments", paymentId);
     await updateDoc(paymentRef, cleanObjectForFirestore(data));
+};
+
+
+const onVehicleExpensesUpdate = (callback: (expenses: VehicleExpense[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "vehicleExpenses"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehicleExpense)));
+    });
+    return unsubscribe;
 };
 
 
@@ -536,6 +550,7 @@ export const operationsService = {
     onRentalPaymentsUpdatePromise,
     addRentalPayment,
     updateRentalPayment,
+    onVehicleExpensesUpdate,
     onVehicleExpensesUpdatePromise,
     addVehicleExpense,
     addOwnerWithdrawal,

@@ -111,6 +111,7 @@ export interface RentalPayment {
   amount: number;
   daysCovered: number;
   note?: string;
+  registeredBy?: string; // User's name
 }
 
 export interface OwnerWithdrawal {
