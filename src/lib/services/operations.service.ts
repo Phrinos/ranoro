@@ -419,7 +419,7 @@ const onInitialCashBalanceUpdate = (callback: (balance: InitialCashBalance | nul
 
 const setInitialCashBalance = async (balance: InitialCashBalance): Promise<void> => {
     if (!db) throw new Error("Database not connected");
-    const docId = format(parseISO(balance.date), 'yyyy-MM-dd');
+    const docId = format(parseDate(balance.date)!, 'yyyy-MM-dd');
     const docRef = doc(db, "initialCashBalances", docId);
     await setDoc(docRef, balance);
 };

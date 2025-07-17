@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -383,7 +384,33 @@ Total: ${formatCurrency(sale.totalAmount)}
       </PrintTicketDialog>
       {selectedSale && <ViewSaleDialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} sale={selectedSale} onCancelSale={handleCancelSale} onSendWhatsapp={handleCopySaleForWhatsapp} />}
       <Dialog open={isInitialBalanceDialogOpen} onOpenChange={setIsInitialBalanceDialogOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Saldo Inicial de Caja</DialogTitle></DialogHeader><div className="py-4"><Input type="number" placeholder="500.00" value={initialBalanceAmount} onChange={(e) => setInitialBalanceAmount(e.target.value === '' ? '' : Number(e.target.value))}/></div><DialogFooter><Button onClick={handleSetInitialBalance}>Guardar</Button></DialogFooter></DialogContent>
+        <DialogContent className="sm:max-w-md p-6">
+          <DialogHeader className="text-left">
+            <DialogTitle>Saldo Inicial de Caja</DialogTitle>
+            <DialogDescription>
+              Ingrese la cantidad de efectivo con la que inicia la caja para el día{" "}
+              <strong>{format(dateRange?.from || new Date(), "dd/MM/yyyy", { locale: es })}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="initial-balance">Monto Inicial</Label>
+            <div className="relative mt-2">
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="initial-balance"
+                type="number"
+                placeholder="500.00"
+                value={initialBalanceAmount}
+                onChange={(e) => setInitialBalanceAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                className="pl-8"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsInitialBalanceDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSetInitialBalance}>Guardar Saldo Inicial</Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
       <PrintTicketDialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen} title="Corte de Caja">
          <CorteDiaContent reportData={cajaSummaryData} date={dateRange?.from || new Date()} transactions={allCashTransactions.filter(t => isWithinInterval(parseISO(t.date), {start: startOfDay(dateRange?.from || new Date()), end: endOfDay(dateRange?.to || dateRange?.from || new Date())}))}/>
