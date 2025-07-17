@@ -9,7 +9,7 @@ import * as z from 'zod';
 import { PageHeader } from "@/components/page-header";
 import { ServiceForm } from "../components/service-form";
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord } from '@/types'; 
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService, personnelService } from '@/lib/services';
 import { Loader2, Copy, Printer, MessageSquare, Save, X } from 'lucide-react';
@@ -70,7 +70,7 @@ export default function NuevoServicioPage() {
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
-
+  
   const handleSaveNewService = async (data: ServiceRecord | QuoteRecord) => {
     try {
       const savedRecord = await operationsService.saveService(data);
@@ -115,6 +115,7 @@ export default function NuevoServicioPage() {
           onClose={() => router.push('/servicios/historial')}
           mode="quote" // Start as a quote by default
           onVehicleCreated={handleVehicleCreated}
+          onTotalCostChange={() => {}} // No-op for this page as total is not displayed in header
         />
         <div className="mt-6 flex justify-end gap-2">
             <Button variant="outline" onClick={() => router.push('/servicios/historial')}>

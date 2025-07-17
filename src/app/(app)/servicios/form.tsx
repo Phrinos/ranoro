@@ -81,6 +81,7 @@ interface Props {
   mode?:'service'|'quote'
   onStatusChange?: (status: ServiceRecord['status']) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
+  onTotalCostChange?: (cost: number) => void;
 }
 
 export function ServiceForm(props:Props){
@@ -97,6 +98,7 @@ export function ServiceForm(props:Props){
     mode = 'service',
     onStatusChange,
     onVehicleCreated,
+    onTotalCostChange,
   } = props;
 
   const { toast } = useToast();
@@ -190,6 +192,12 @@ export function ServiceForm(props:Props){
   const { control, setValue, watch, formState, handleSubmit, reset, getValues } = form;
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
+  useEffect(() => {
+    if(onTotalCostChange) {
+      onTotalCostChange(totalCost);
+    }
+  }, [totalCost, onTotalCostChange]);
+
   const watchedStatus = watch('status');
   const watchedSubStatus = watch('subStatus');
   const watchedVehicleId = watch('vehicleId');
