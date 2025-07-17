@@ -9,12 +9,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, DollarSign, Wallet, ArrowUpCircle, ArrowDownCircle, Coins, Wrench, BarChart2, Printer, PlusCircle, Copy, Filter, Eye, Loader2, CheckCircle, AlertTriangle, MessageSquare } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, DollarSign, Wallet, ArrowUpCircle, ArrowDownCircle, Coins, Wrench, BarChart2, Printer, PlusCircle, Copy, Filter, Eye, Loader2, CheckCircle, AlertTriangle, MessageSquare, History } from "lucide-react";
 import { SalesTable } from "./sales-table";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import type { SaleReceipt, PaymentMethod, User, ServiceRecord, InventoryItem, FinancialOperation, CashDrawerTransaction, InitialCashBalance, AggregatedInventoryItem, WorkshopInfo } from "@/types";
-import { format, parseISO, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay } from "date-fns";
+import { format, parseISO, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, subDays } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import Link from "next/link";
@@ -48,7 +48,10 @@ type SaleSortOption = "date_desc" | "date_asc" | "total_desc" | "total_asc" | "c
 function CashTransactionForm({ type, onSubmit }: { type: 'Entrada' | 'Salida', onSubmit: (type: 'Entrada' | 'Salida', values: CashTransactionFormValues) => void }) {
   const form = useForm<CashTransactionFormValues>({ resolver: zodResolver(cashTransactionSchema) });
   const { handleSubmit, reset } = form;
-  const onFormSubmit = (data: CashTransactionFormValues) => { onSubmit(type, data); reset(); };
+  const onFormSubmit = (data: CashTransactionFormValues) => {
+    onSubmit(type, data);
+    reset({ concept: '', amount: 0 }); // Reset form after submission
+  };
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
@@ -85,34 +88,26 @@ function CashTransactionForm({ type, onSubmit }: { type: 'Entrada' | 'Salida', o
 }
 
 function TransactionsList({ transactions }: { transactions: CashDrawerTransaction[] }) {
+    if (!transactions.length) {
+        return <div className="text-center text-muted-foreground p-4">No hay transacciones manuales hoy.</div>;
+    }
     return (
-        <Card>
-            <CardHeader><CardTitle>Transacciones del Día</CardTitle></CardHeader>
-            <CardContent>
-                <ScrollArea className="h-48">
-                    {transactions.length > 0 ? (
-                        <Table>
-                            <TableBody>
-                                {transactions.map(t => (
-                                    <TableRow key={t.id}>
-                                        <TableCell>
-                                            <p className={cn("font-semibold", t.type === 'Entrada' ? 'text-green-600' : 'text-red-600')}>{t.type}</p>
-                                            <p className="text-xs text-muted-foreground">{t.concept}</p>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <p className="font-bold">{formatCurrency(t.amount)}</p>
-                                            <p className="text-xs text-muted-foreground">{t.userName}</p>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <div className="text-center text-muted-foreground p-4">No hay transacciones manuales hoy.</div>
-                    )}
-                </ScrollArea>
-            </CardContent>
-        </Card>
+        <Table>
+            <TableBody>
+                {transactions.map(t => (
+                    <TableRow key={t.id}>
+                        <TableCell>
+                            <p className={cn("font-semibold", t.type === 'Entrada' ? 'text-green-600' : 'text-red-600')}>{t.type}</p>
+                            <p className="text-xs text-muted-foreground">{t.concept}</p>
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <p className="font-bold">{formatCurrency(t.amount)}</p>
+                            <p className="text-xs text-muted-foreground">{t.userName}</p>
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
     );
 }
 
@@ -209,6 +204,49 @@ export function PosPageComponent({ tab }: { tab?: string }) {
     return { totalSalesCount, totalRevenue, totalProfit, mostSoldItem };
   }, [filteredAndSortedSales, allInventory]);
 
+  const cashMovementsInRange = useMemo(() => {
+    if (!dateRange?.from) return [];
+    const start = startOfDay(dateRange.from);
+    const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+    
+    const movements: (CashDrawerTransaction & { relatedType?: 'Venta' | 'Servicio' })[] = [];
+
+    // Manual Transactions
+    allCashTransactions
+        .filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }))
+        .forEach(t => movements.push(t));
+
+    // Sales
+    allSales
+        .filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo') && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start, end }))
+        .forEach(s => movements.push({
+            id: `sale-${s.id}`,
+            date: s.saleDate,
+            type: 'Entrada',
+            amount: s.paymentMethod === 'Efectivo' ? s.totalAmount : (s.amountInCash || 0),
+            concept: `Venta POS #${s.id.slice(0, 6)}`,
+            userId: 'system',
+            userName: 'Sistema',
+            relatedType: 'Venta',
+        }));
+
+    // Services
+    allServices
+        .filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo') && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start, end }))
+        .forEach(s => movements.push({
+            id: `service-${s.id}`,
+            date: s.deliveryDateTime!,
+            type: 'Entrada',
+            amount: s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : (s.amountInCash || 0),
+            concept: `Servicio #${s.id.slice(0,6)} (${s.vehicleIdentifier})`,
+            userId: 'system',
+            userName: 'Sistema',
+            relatedType: 'Servicio',
+        }));
+
+    return movements.sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+  }, [dateRange, allCashTransactions, allSales, allServices]);
+
   const cajaSummaryData = useMemo(() => {
     if (!dateRange?.from) return { initialBalance: 0, totalCashSales: 0, totalCashIn: 0, totalCashOut: 0, finalCashBalance: 0, salesByPaymentMethod: {}, totalSales: 0, totalServices: 0 };
     const start = startOfDay(dateRange.from);
@@ -217,7 +255,6 @@ export function PosPageComponent({ tab }: { tab?: string }) {
     const balanceDoc = initialCashBalance;
     const initialBalance = (balanceDoc && isSameDay(parseISO(balanceDoc.date), start)) ? balanceDoc.amount : 0;
     
-    const transactionsInRange = allCashTransactions.filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }));
     const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start, end }));
     const servicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start, end }));
     
@@ -236,8 +273,12 @@ export function PosPageComponent({ tab }: { tab?: string }) {
         }, 0);
 
     const totalCashOperations = cashFromSales + cashFromServices;
-    const totalCashIn = transactionsInRange.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
-    const totalCashOut = transactionsInRange.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
+    const totalCashIn = allCashTransactions
+      .filter(t => t.type === 'Entrada' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }))
+      .reduce((sum, t) => sum + t.amount, 0);
+    const totalCashOut = allCashTransactions
+      .filter(t => t.type === 'Salida' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }))
+      .reduce((sum, t) => sum + t.amount, 0);
     const finalCashBalance = initialBalance + totalCashOperations + totalCashIn - totalCashOut;
     
     const salesByPaymentMethod: Record<string, number> = {};
@@ -335,6 +376,10 @@ Total: ${formatCurrency(sale.totalAmount)}
   };
 
   const setDateToToday = () => setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
+  const setDateToYesterday = () => {
+    const yesterday = subDays(new Date(), 1);
+    setDateRange({ from: startOfDay(yesterday), to: endOfDay(yesterday) });
+  };
   const setDateToThisWeek = () => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
   const setDateToThisMonth = () => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
   
@@ -344,6 +389,7 @@ Total: ${formatCurrency(sale.totalAmount)}
   const dateFilterComponent = (
     <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
       <Button variant="outline" size="sm" onClick={setDateToToday} className="bg-card">Hoy</Button>
+      <Button variant="outline" size="sm" onClick={setDateToYesterday} className="bg-card">Ayer</Button>
       <Button variant="outline" size="sm" onClick={setDateToThisWeek} className="bg-card">Semana</Button>
       <Button variant="outline" size="sm" onClick={setDateToThisMonth} className="bg-card">Mes</Button>
       <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Rango</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="end"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent></Popover>
@@ -365,6 +411,7 @@ Total: ${formatCurrency(sale.totalAmount)}
               <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
               <TabsTrigger value="ventas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Ventas</TabsTrigger>
               <TabsTrigger value="caja" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Caja</TabsTrigger>
+              <TabsTrigger value="movimientos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Movimientos</TabsTrigger>
             </TabsList>
           </ScrollArea>
         </div>
@@ -404,7 +451,41 @@ Total: ${formatCurrency(sale.totalAmount)}
                 <CardContent className="grid md:grid-cols-3 gap-6">
                     <Card><CardHeader><CardTitle className="flex items-center gap-2 text-green-600"><ArrowUpCircle/>Registrar Entrada</CardTitle></CardHeader><CardContent><CashTransactionForm type="Entrada" onSubmit={handleAddTransaction} /></CardContent></Card>
                     <Card><CardHeader><CardTitle className="flex items-center gap-2 text-red-600"><ArrowDownCircle/>Registrar Salida</CardTitle></CardHeader><CardContent><CashTransactionForm type="Salida" onSubmit={handleAddTransaction} /></CardContent></Card>
-                    <TransactionsList transactions={allCashTransactions.filter(t => isWithinInterval(parseISO(t.date), {start: startOfDay(dateRange?.from || new Date()), end: endOfDay(dateRange?.to || dateRange?.from || new Date())}))} />
+                    <Card><CardHeader><CardTitle>Transacciones del Día</CardTitle></CardHeader><CardContent><ScrollArea className="h-48"><TransactionsList transactions={allCashTransactions.filter(t => isSameDay(parseISO(t.date), dateRange?.from || new Date()))} /></ScrollArea></CardContent></Card>
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="movimientos" className="mt-6 space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div><h2 className="text-2xl font-semibold tracking-tight">Movimientos de Caja</h2><p className="text-muted-foreground">Registro histórico de todas las transacciones de efectivo.</p></div>
+                {dateFilterComponent}
+            </div>
+            <Card>
+                <CardContent className="pt-6">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Fecha</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Concepto</TableHead>
+                                <TableHead>Usuario</TableHead>
+                                <TableHead className="text-right">Monto</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {cashMovementsInRange.length > 0 ? cashMovementsInRange.map(m => (
+                                <TableRow key={m.id}>
+                                    <TableCell>{format(parseISO(m.date), "dd MMM, HH:mm", { locale: es })}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={m.type === 'Entrada' ? 'success' : 'destructive'}>{m.type}</Badge>
+                                    </TableCell>
+                                    <TableCell>{m.concept}</TableCell>
+                                    <TableCell>{m.userName}</TableCell>
+                                    <TableCell className={cn("text-right font-bold", m.type === 'Entrada' ? 'text-green-600' : 'text-red-600')}>{formatCurrency(m.amount)}</TableCell>
+                                </TableRow>
+                            )) : <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay movimientos en este período.</TableCell></TableRow>}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
         </TabsContent>
@@ -425,7 +506,7 @@ Total: ${formatCurrency(sale.totalAmount)}
       </PrintTicketDialog>
       {selectedSale && <ViewSaleDialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} sale={selectedSale} onCancelSale={handleCancelSale} onSendWhatsapp={handleCopySaleForWhatsapp} />}
       <Dialog open={isInitialBalanceDialogOpen} onOpenChange={setIsInitialBalanceDialogOpen}>
-        <DialogContent className="sm:max-w-md p-6">
+        <DialogContent className="sm:max-w-md p-6 space-y-4">
           <DialogHeader className="text-left">
             <DialogTitle>Saldo Inicial de Caja</DialogTitle>
             <DialogDescription>
@@ -454,7 +535,7 @@ Total: ${formatCurrency(sale.totalAmount)}
         </DialogContent>
       </Dialog>
       <PrintTicketDialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen} title="Corte de Caja">
-         <CorteDiaContent reportData={cajaSummaryData} date={dateRange?.from || new Date()} transactions={allCashTransactions.filter(t => isWithinInterval(parseISO(t.date), {start: startOfDay(dateRange?.from || new Date()), end: endOfDay(dateRange?.to || dateRange?.from || new Date())}))}/>
+         <CorteDiaContent reportData={cajaSummaryData} date={dateRange?.from || new Date()} transactions={allCashTransactions.filter(t => isSameDay(parseISO(t.date), dateRange?.from || new Date()))}/>
       </PrintTicketDialog>
     </>
   );
