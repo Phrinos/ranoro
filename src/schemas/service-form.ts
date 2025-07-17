@@ -91,14 +91,17 @@ export const serviceFormSchema = z.object({
     serviceAdvisorId: z.string().optional(),
     serviceAdvisorName: z.string().optional(),
     serviceAdvisorSignatureDataUrl: z.string().optional(),
-    photoReports: z.array(photoReportSchema).optional(),
     paymentMethod: z.string().optional(),
     cardFolio: z.string().optional(),
     transferFolio: z.string().optional(),
+    amountInCash: z.coerce.number().optional(),
+    amountInCard: z.coerce.number().optional(),
+    amountInTransfer: z.coerce.number().optional(),
     nextServiceInfo: z.object({
         date: z.string().optional(),
         mileage: z.number().optional(), // Allow any number, not just integer
     }).optional().nullable(),
+    photoReports: z.array(photoReportSchema).optional(),
     customerName: z.string().optional(),
     totalCost: z.number().optional(),
 }).refine(

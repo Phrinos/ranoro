@@ -236,6 +236,9 @@ export interface ServiceRecord {
   paymentMethod?: PaymentMethod;
   cardFolio?: string;
   transferFolio?: string;
+  amountInCash?: number;
+  amountInCard?: number;
+  amountInTransfer?: number;
   nextServiceInfo?: {
     date: string;
     mileage?: number;
@@ -356,6 +359,9 @@ export interface SaleReceipt {
   status?: 'Completado' | 'Cancelado';
   cancellationReason?: string;
   cancelledBy?: string;
+  amountInCash?: number;
+  amountInCard?: number;
+  amountInTransfer?: number;
 }
 
 // QuoteRecord is now deprecated and merged into ServiceRecord.

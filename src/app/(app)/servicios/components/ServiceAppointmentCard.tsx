@@ -103,6 +103,29 @@ export const ServiceAppointmentCard = React.memo(({
         }
     };
 
+    const renderPaymentBadge = () => {
+        if (!isCompleted || !service.paymentMethod) return null;
+
+        const isMixed = service.paymentMethod.includes('+') || service.paymentMethod.includes('/');
+        let badgeText = service.paymentMethod;
+
+        if (isMixed) {
+            const parts = [];
+            if (service.amountInCash) parts.push(`Efectivo: ${formatCurrency(service.amountInCash)}`);
+            if (service.amountInCard) parts.push(`Tarjeta: ${formatCurrency(service.amountInCard)}`);
+            if (service.amountInTransfer) parts.push(`Transf: ${formatCurrency(service.amountInTransfer)}`);
+            if (parts.length > 0) {
+                badgeText = parts.join(' / ');
+            }
+        }
+
+        return (
+            <Badge variant={getPaymentMethodVariant(service.paymentMethod)} className="mt-1 text-xs whitespace-nowrap">
+                {badgeText}
+            </Badge>
+        );
+    };
+
     return (
         <Card className="shadow-sm overflow-hidden mb-4">
             <CardContent className="p-0">
@@ -144,11 +167,7 @@ export const ServiceAppointmentCard = React.memo(({
                                     <TrendingUp className="h-4 w-4" /> {formatCurrency(service.serviceProfit)}
                                 </p>
                             </div>
-                             {isCompleted && service.paymentMethod && (
-                                <Badge variant={getPaymentMethodVariant(service.paymentMethod)} className="mt-1">
-                                    {service.paymentMethod}
-                                </Badge>
-                             )}
+                            {renderPaymentBadge()}
                         </div>
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">

@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, MessageSquare } from 'lucide-react';
+import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, MessageSquare, DollarSign } from 'lucide-react';
 import type { PaymentMethod } from '@/types';
 import { cn } from '@/lib/utils';
 import { capitalizeWords } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useServiceTotals } from '@/hooks/use-service-form-hooks';
 
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -34,9 +35,11 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
 };
 
 export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnly?: boolean, customerName?: string }) {
-  const { control, watch, formState: { errors } } = useFormContext();
+  const form = useFormContext();
+  const { control, watch, formState: { errors } } = form;
   const selectedPaymentMethod = watch("paymentMethod");
   const isDelivered = watch('status') === 'Entregado';
+  const { totalCost } = useServiceTotals(form as any);
 
   // If the form is read-only AND it's a delivered service, we display info, not a form.
   if (isReadOnly && isDelivered) {
@@ -66,6 +69,8 @@ export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnl
        </Card>
     );
   }
+
+  const isMixedPayment = selectedPaymentMethod?.includes('+') || selectedPaymentMethod?.includes('/');
 
   return (
     <Card>
@@ -136,7 +141,22 @@ export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnl
             </FormItem>
           )}
         />
-        {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia" || selectedPaymentMethod === "Efectivo/Tarjeta") && (
+        {isMixedPayment && (
+          <div className="space-y-2 rounded-md border p-4">
+            <p className="text-sm font-medium">Desglose de Pago</p>
+            {selectedPaymentMethod.includes('Efectivo') && (
+              <FormField control={control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+            )}
+            {selectedPaymentMethod.includes('Tarjeta') && (
+              <FormField control={control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+            )}
+            {selectedPaymentMethod.includes('Transferencia') && (
+              <FormField control={control} name="amountInTransfer" render={({ field }) => (<FormItem><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+            )}
+          </div>
+        )}
+
+        {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod?.includes("Tarjeta")) && (
           <FormField
             control={control}
             name="cardFolio"
@@ -149,7 +169,7 @@ export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnl
             )}
           />
         )}
-        {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+        {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod?.includes("Transferencia")) && (
           <FormField
             control={control}
             name="transferFolio"
