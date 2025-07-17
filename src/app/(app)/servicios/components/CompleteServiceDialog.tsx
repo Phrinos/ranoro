@@ -31,6 +31,10 @@ import { addMonths, isValid, format } from "date-fns";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { parseDate } from "@/lib/forms";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { capitalizeWords } from "@/lib/utils";
+import React, { useEffect } from 'react';
+
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
   "Efectivo",
@@ -89,6 +93,8 @@ export function CompleteServiceDialog({
   onConfirm,
   inventoryItems,
 }: CompleteServiceDialogProps) {
+  const { toast } = useToast();
+
   const form = useForm<CompleteServiceFormValues>({
     resolver: zodResolver(completeServiceSchema),
     defaultValues: {
@@ -98,10 +104,18 @@ export function CompleteServiceDialog({
     }
   });
 
-  const selectedPaymentMethod = form.watch("paymentMethod");
+  const { watch, formState } = form;
+  const selectedPaymentMethod = watch("paymentMethod");
+
+  const nextServiceInfo = useMemo(() => {
+      // Set default next service date to 6 months from now
+      const nextDate = addMonths(new Date(), 6);
+      return { date: nextDate.toISOString(), mileage: undefined };
+  }, [service]);
+
 
   const handleFormSubmit = (values: CompleteServiceFormValues) => {
-    onConfirm(service, values, service.nextServiceInfo);
+    onConfirm(service, values, nextServiceInfo);
   };
   
   return (
@@ -162,7 +176,7 @@ export function CompleteServiceDialog({
         </div>
         <DialogFooter className="p-6 pt-4 border-t bg-background">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button type="submit" form="complete-service-form">
+          <Button type="submit" form="complete-service-form" disabled={form.formState.isSubmitting || !form.formState.isValid}>
             Cobrar y Completar
           </Button>
         </DialogFooter>

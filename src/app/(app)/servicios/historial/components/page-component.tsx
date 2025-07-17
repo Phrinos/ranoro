@@ -103,15 +103,16 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     });
 
     const getStatusPriority = (service: ServiceRecord): number => {
-      if (service.status === 'Agendado' && service.appointmentStatus === 'Confirmada') return 1;
-      if (service.status === 'En Taller' && service.subStatus === 'En Espera de Refacciones') return 2;
-      if (service.status === 'En Taller' && service.subStatus === 'Reparando') return 3;
-      if (service.status === 'En Taller' && !service.subStatus) return 3; // Default for 'En Taller'
-      if (service.status === 'En Taller' && service.subStatus === 'Completado') return 4;
-      if (service.status === 'Entregado') return 5;
-      if (service.status === 'Agendado' && service.appointmentStatus !== 'Confirmada') return 6;
-      if (service.status === 'Cancelado') return 7;
-      return 99; // Default case
+        if (service.status === 'En Taller' && service.subStatus === 'En Espera de Refacciones') return 1;
+        if (service.status === 'En Taller' && service.subStatus === 'Proveedor Externo') return 2;
+        if (service.status === 'Agendado' && service.appointmentStatus === 'Confirmada') return 3;
+        if (service.status === 'En Taller' && service.subStatus === 'Reparando') return 4;
+        if (service.status === 'En Taller' && !service.subStatus) return 4;
+        if (service.status === 'Agendado' && service.appointmentStatus !== 'Confirmada') return 5;
+        if (service.status === 'En Taller' && service.subStatus === 'Completado') return 6;
+        if (service.status === 'Entregado') return 7;
+        if (service.status === 'Cancelado') return 8;
+        return 99; // Default case
     };
 
     const sortedActiveServices = servicesForToday.sort((a, b) => {
@@ -120,7 +121,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         if (priorityA !== priorityB) {
             return priorityA - priorityB;
         }
-        // If priorities are the same, sort by time
         const dateA = parseDate(a.serviceDate)?.getTime() ?? 0;
         const dateB = parseDate(b.serviceDate)?.getTime() ?? 0;
         return dateA - dateB;
@@ -305,7 +305,16 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         />
       )}
       
-      {serviceToComplete && <PaymentDetailsDialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen} service={serviceToComplete} onConfirm={handleConfirmCompletion} />}
+      {serviceToComplete && (
+        <CompleteServiceDialog 
+          open={isCompleteDialogOpen}
+          onOpenChange={setIsCompleteDialogOpen}
+          service={serviceToComplete}
+          onConfirm={handleConfirmCompletion}
+          inventoryItems={inventoryItems}
+        />
+      )}
+
       {isPreviewOpen && recordForPreview && <UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={recordForPreview}/>}
       
       {recordForTicket && (

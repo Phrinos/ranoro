@@ -193,9 +193,9 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
     const serviceRef = doc(db, "serviceRecords", service.id);
     
     const updatedServiceData = {
+      ...paymentAndNextServiceDetails,
       status: 'Entregado',
       deliveryDateTime: new Date().toISOString(),
-      ...paymentAndNextServiceDetails,
     };
     
     batch.update(serviceRef, cleanObjectForFirestore(updatedServiceData));
@@ -209,7 +209,7 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
         const vehicleRef = doc(db, 'vehicles', service.vehicleId);
         const vehicleUpdatePayload: any = {
             lastServiceDate: new Date().toISOString(),
-            mileage: service.mileage, // Also update the vehicle's mileage
+            mileage: service.mileage, 
         };
         if (updatedServiceData.nextServiceInfo) {
             vehicleUpdatePayload.nextServiceInfo = updatedServiceData.nextServiceInfo;

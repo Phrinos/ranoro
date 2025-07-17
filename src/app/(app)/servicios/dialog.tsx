@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Ban } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
+import { CompleteServiceDialog } from './components/CompleteServiceDialog';
 
 
 interface ServiceDialogProps {
@@ -31,6 +32,7 @@ interface ServiceDialogProps {
   inventoryItems: InventoryItem[]; 
   serviceTypes: ServiceTypeRecord[];
   onSave?: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
+  onComplete?: (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => void;
   isReadOnly?: boolean; 
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
@@ -50,6 +52,7 @@ export function ServiceDialog({
   inventoryItems, 
   serviceTypes,
   onSave, 
+  onComplete,
   isReadOnly = false,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
@@ -59,15 +62,36 @@ export function ServiceDialog({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
   const [cancellationReason, setCancellationReason] = useState("");
+  
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const [formDataForCompletion, setFormDataForCompletion] = useState<any>(null);
+
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
+  const handleComplete = async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
+    if (onComplete) {
+      // Merge original service data with any form changes and the payment details
+      const serviceWithAllData = { ...service, ...formDataForCompletion, nextServiceInfo };
+      await onComplete(serviceWithAllData, paymentDetails, nextServiceInfo);
+    }
+    setIsCompleteDialogOpen(false);
+    onOpenChange(false);
+  };
+
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
     if (isReadOnly) {
       onOpenChange(false);
       return;
+    }
+    
+    const isNowCompleting = 'status' in formData && formData.status === 'Entregado' && service?.status !== 'Entregado';
+    if(isNowCompleting) {
+        setFormDataForCompletion(formData);
+        setIsCompleteDialogOpen(true);
+        return;
     }
 
     try {
@@ -121,25 +145,36 @@ export function ServiceDialog({
   const showCancelButton = !isReadOnly && service?.id && service.status !== 'Entregado' && service.status !== 'Cancelado';
       
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-      <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-0 flex-shrink-0">
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
-        </DialogHeader>
-        <ServiceForm
-          initialDataService={service}
-          vehicles={vehicles} 
-          technicians={technicians}
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
+        <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-0 flex-shrink-0">
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>{dialogDescription}</DialogDescription>
+          </DialogHeader>
+          <ServiceForm
+            initialDataService={service}
+            vehicles={vehicles} 
+            technicians={technicians}
+            inventoryItems={inventoryItems}
+            serviceTypes={serviceTypes}
+            onSubmit={internalOnSave}
+            onClose={() => onOpenChange(false)}
+            isReadOnly={isReadOnly}
+            mode={mode}
+          />
+        </DialogContent>
+      </Dialog>
+       {service && (
+        <CompleteServiceDialog
+          open={isCompleteDialogOpen}
+          onOpenChange={setIsCompleteDialogOpen}
+          service={service}
+          onConfirm={handleComplete}
           inventoryItems={inventoryItems}
-          serviceTypes={serviceTypes}
-          onSubmit={internalOnSave}
-          onClose={() => onOpenChange(false)}
-          isReadOnly={isReadOnly}
-          mode={mode}
         />
-      </DialogContent>
-    </Dialog>
+      )}
+    </>
   );
 }
