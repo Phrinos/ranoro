@@ -28,6 +28,7 @@ const FINE_CHECK_STORAGE_KEY = 'lastFineCheckDate';
 
 type FlotillaSortOption = "plate_asc" | "plate_desc" | "owner_asc" | "owner_desc" | "rent_asc" | "rent_desc";
 type DriverSortOption = 'name_asc' | 'name_desc';
+type BalanceSortOption = 'driverName_asc' | 'driverName_desc' | 'daysOwed_desc' | 'daysOwed_asc' | 'balance_desc' | 'balance_asc';
 
 interface MonthlyBalance {
   driverId: string;
@@ -76,6 +77,9 @@ export function FlotillaPageComponent({
   const [sortOptionDrivers, setSortOptionDrivers] = useState<DriverSortOption>('name_asc');
   const [showArchivedDrivers, setShowArchivedDrivers] = useState(false);
 
+  // States for 'informe' tab
+  const [balanceSortOption, setBalanceSortOption] = useState<BalanceSortOption>('daysOwed_desc');
+
   const [lastFineCheckDate, setLastFineCheckDate] = useState<Date | null>(null);
 
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
@@ -122,7 +126,7 @@ export function FlotillaPageComponent({
         return acc;
     }, {} as Record<string, { totalAmount: number, totalDaysCovered: number }>);
     
-    return allDrivers.filter(d => !d.isArchived).map(driver => {
+    const balances = allDrivers.filter(d => !d.isArchived).map(driver => {
         const debtInfo = calculateDriverDebt(driver, allPayments, allVehicles);
         const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
         const dailyRate = vehicle?.dailyRentalCost || 0;
@@ -142,8 +146,21 @@ export function FlotillaPageComponent({
             balance: balance,
             daysOwed: debtInfo.totalDebt / (dailyRate || 1),
         };
-    }).sort((a,b) => a.driverName.localeCompare(b.driverName));
-  }, [isLoading, allDrivers, allVehicles, allPayments]);
+    });
+
+    return balances.sort((a, b) => {
+        switch (balanceSortOption) {
+            case 'driverName_asc': return a.driverName.localeCompare(b.driverName);
+            case 'driverName_desc': return b.driverName.localeCompare(a.driverName);
+            case 'daysOwed_desc': return b.daysOwed - a.daysOwed;
+            case 'daysOwed_asc': return a.daysOwed - b.daysOwed;
+            case 'balance_desc': return b.balance - a.balance;
+            case 'balance_asc': return a.balance - b.balance;
+            default: return b.daysOwed - a.daysOwed;
+        }
+    });
+
+  }, [isLoading, allDrivers, allVehicles, allPayments, balanceSortOption]);
   
   const overduePaperwork = useMemo((): OverduePaperworkItem[] => {
     if (isLoading) return [];
@@ -259,7 +276,25 @@ export function FlotillaPageComponent({
                             <CardTitle>Estado de Cuenta Mensual</CardTitle>
                             <CardDescription>Resumen de saldos de todos los conductores para el mes de {format(new Date(), "MMMM", { locale: es })}.</CardDescription>
                         </div>
-                        <p className="text-sm text-muted-foreground">Día {getDate(new Date())} del mes</p>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                    <ListFilter className="mr-2 h-4 w-4" />
+                                    Ordenar por
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                                <DropdownMenuRadioGroup value={balanceSortOption} onValueChange={(v) => setBalanceSortOption(v as BalanceSortOption)}>
+                                    <DropdownMenuRadioItem value="daysOwed_desc">Mayor Adeudo</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="daysOwed_asc">Menor Adeudo</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="driverName_asc">Conductor (A-Z)</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="driverName_desc">Conductor (Z-A)</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="balance_desc">Mejor Balance (Mes)</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="balance_asc">Peor Balance (Mes)</DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </CardHeader>
                 <CardContent>
