@@ -265,10 +265,22 @@ export function FinanzasPageComponent({
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
-                        <TabsTrigger value="operaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Operaciones</TabsTrigger>
-                        <TabsTrigger value="inventario" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inventario</TabsTrigger>
+                    <TabsList className="flex w-full gap-2 sm:gap-4 overflow-x-auto scrollbar-hide p-0 bg-transparent">
+                        <TabsTrigger 
+                            value="resumen" 
+                            className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                            Resumen
+                        </TabsTrigger>
+                        <TabsTrigger 
+                            value="operaciones" 
+                            className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                            Operaciones
+                        </TabsTrigger>
+                        <TabsTrigger 
+                            value="inventario" 
+                            className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                            Inventario
+                        </TabsTrigger>
                     </TabsList>
                 </div>
                 
