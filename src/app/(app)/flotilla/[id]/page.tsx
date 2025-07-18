@@ -118,8 +118,10 @@ export default function FleetVehicleDetailPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Button variant="outline" className="bg-white text-black hover:bg-gray-100" onClick={() => router.back()}>
-              <ArrowLeft className="mr-2 h-4 w-4"/> Volver
+            <Button variant="outline" className="bg-white text-black hover:bg-gray-100" asChild>
+              <Link href="/flotilla?tab=vehiculos">
+                <ArrowLeft className="mr-2 h-4 w-4"/> Volver
+              </Link>
             </Button>
           </div>
         }

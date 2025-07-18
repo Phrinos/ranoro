@@ -317,9 +317,11 @@ const handleAssignVehicle = async (newVehicleId: string) => {
     <>
     <div className="container mx-auto py-8">
       <div className="mb-4 flex items-center justify-between">
-        <Button variant="outline" size="sm" className="bg-white text-black hover:bg-gray-100" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver
+        <Button variant="outline" size="sm" className="bg-white text-black hover:bg-gray-100" asChild>
+            <Link href="/flotilla?tab=conductores">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Volver
+            </Link>
         </Button>
          <div className="flex gap-2">
             <AlertDialog>
