@@ -206,49 +206,6 @@ export function PosPageComponent({ tab }: { tab?: string }) {
     return { totalSalesCount, totalRevenue, totalProfit, mostSoldItem };
   }, [filteredAndSortedSales, allInventory]);
 
-  const cashMovementsInRange = useMemo(() => {
-    if (!dateRange?.from) return [];
-    const start = startOfDay(dateRange.from);
-    const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-    
-    const movements: (CashDrawerTransaction & { relatedType?: 'Venta' | 'Servicio' })[] = [];
-
-    // Manual Transactions
-    allCashTransactions
-        .filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }))
-        .forEach(t => movements.push(t));
-
-    // Sales
-    allSales
-        .filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo') && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start, end }))
-        .forEach(s => movements.push({
-            id: `sale-${s.id}`,
-            date: s.saleDate,
-            type: 'Entrada',
-            amount: s.paymentMethod === 'Efectivo' ? s.totalAmount : (s.amountInCash || 0),
-            concept: `Venta POS #${s.id.slice(0, 6)}`,
-            userId: 'system',
-            userName: 'Sistema',
-            relatedType: 'Venta',
-        }));
-
-    // Services
-    allServices
-        .filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo') && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start, end }))
-        .forEach(s => movements.push({
-            id: `service-${s.id}`,
-            date: s.deliveryDateTime!,
-            type: 'Entrada',
-            amount: s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : (s.amountInCash || 0),
-            concept: `Servicio #${s.id.slice(0,6)} (${s.vehicleIdentifier})`,
-            userId: 'system',
-            userName: 'Sistema',
-            relatedType: 'Servicio',
-        }));
-
-    return movements.sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
-  }, [dateRange, allCashTransactions, allSales, allServices]);
-
   const cajaSummaryData = useMemo(() => {
     if (!dateRange?.from) return { initialBalance: 0, totalCashSales: 0, totalCashIn: 0, totalCashOut: 0, finalCashBalance: 0, salesByPaymentMethod: {}, totalSales: 0, totalServices: 0 };
     const start = startOfDay(dateRange.from);
@@ -431,7 +388,7 @@ Total: ${formatCurrency(sale.totalAmount)}
                     'break-words whitespace-normal leading-snug',
                     activeTab === tabInfo.value
                       ? 'bg-red-700 text-white shadow'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-200'
                   )}
                 >
                   {tabInfo.label}
@@ -456,7 +413,7 @@ Total: ${formatCurrency(sale.totalAmount)}
                         <Button asChild className="flex-1 sm:flex-initial"><Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link></Button>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap w-full">{dateFilterComponent}</div>
+                        {dateFilterComponent}
                     </div>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
                         <div className="relative flex-1 w-full sm:max-w-xs">
@@ -490,7 +447,7 @@ Total: ${formatCurrency(sale.totalAmount)}
             </Card>
         </TabsContent>
         <TabsContent value="caja" className="mt-6 space-y-6">
-             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div><h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2><p className="text-muted-foreground">Controla el flujo de efectivo para la fecha seleccionada.</p></div>
                 <div className="flex items-center gap-2 flex-wrap w-full justify-start sm:justify-end">{dateFilterComponent}</div>
              </div>
