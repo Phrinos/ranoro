@@ -1,17 +1,20 @@
 
 
-import { Suspense } from 'react';
-import { Loader2 } from 'lucide-react';
-import { FlotillaPageComponent } from './components/page-component';
+"use client";
 
-export default function FlotillaPageWrapper({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+
+function Redirector() {
+    // Redirect to the new default page for the "Fleet" section
+    redirect('/rentas');
+    return null;
+}
+
+export default function FlotillaPageWrapper() {
     return (
         <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-            <FlotillaPageComponent searchParams={searchParams} />
+            <Redirector />
         </Suspense>
     )
 }

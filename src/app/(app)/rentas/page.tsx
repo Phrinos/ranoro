@@ -22,7 +22,7 @@ function RentasPage() {
       }
     }, [action, tab, router]);
 
-    return <RentasPageComponent tab={tab || undefined} action={action} />;
+    return <RentasPageComponent tab={tab || 'resumen'} action={action} />;
 }
 
 export default function RentasPageWrapper() {

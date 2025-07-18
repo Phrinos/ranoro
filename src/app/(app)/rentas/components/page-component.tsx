@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -25,7 +26,7 @@ import { useRouter } from 'next/navigation';
 import { EditPaymentNoteDialog } from './edit-payment-note-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, ListFilter, Badge } from 'lucide-react';
+import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, ListFilter, Badge, Share2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Link from 'next/link';
 import type { DateRange } from 'react-day-picker';
@@ -194,21 +195,50 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
     }
   };
   
-  const handleCopyAsImage = useCallback(async () => {
-    if (!receiptRef.current) return;
+  const handleCopyAsImage = useCallback(async (isForSharing: boolean = false) => {
+    if (!receiptRef.current || !paymentForReceipt) return null;
     try {
         const canvas = await html2canvas(receiptRef.current, { scale: 2.5, backgroundColor: null });
-        canvas.toBlob((blob) => {
-            if (blob) {
-                navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                toast({ title: "Copiado", description: "La imagen del recibo ha sido copiada." });
-            }
-        });
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error("No se pudo crear el blob de la imagen.");
+
+        if (isForSharing) {
+            return new File([blob], `recibo_renta_${paymentForReceipt.id}.png`, { type: 'image/png' });
+        } else {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            toast({ title: "Copiado", description: "La imagen del recibo ha sido copiada." });
+            return null;
+        }
     } catch (e) {
-        console.error("Error copying image:", e);
-        toast({ title: "Error", description: "No se pudo copiar la imagen del recibo.", variant: "destructive" });
+        console.error("Error handling image:", e);
+        toast({ title: "Error", description: "No se pudo procesar la imagen del recibo.", variant: "destructive" });
+        return null;
     }
-  }, [toast]);
+  }, [paymentForReceipt, toast]);
+
+  const handleShare = async () => {
+    const imageFile = await handleCopyAsImage(true);
+    if (imageFile && navigator.share) {
+      try {
+        await navigator.share({
+          files: [imageFile],
+          title: 'Recibo de Renta',
+          text: `Recibo de pago de renta de ${workshopInfo?.name || 'nuestro taller'}.`,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        toast({ title: 'Error al compartir', variant: 'destructive' });
+      }
+    } else if (imageFile) {
+        // Fallback for desktop browsers that don't support navigator.share with files
+        const driver = drivers.find(d => d.id === paymentForReceipt?.driverId);
+        const phone = driver?.phone;
+        const message = `Recibo de tu pago en ${workshopInfo?.name || 'nuestro taller'}. ¡Gracias!`;
+        const whatsappUrl = `https://wa.me/${phone ? phone.replace(/\D/g, '') : ''}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        toast({ title: 'Copiado', description: 'Usa Ctrl+V o Cmd+V para pegar la imagen en WhatsApp.' });
+    }
+  };
   
   const handlePrint = () => {
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
@@ -508,8 +538,8 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
         title="Recibo de Pago de Renta"
         footerActions={
           <>
-            <Button onClick={handleCopyAsImage} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-            <Button onClick={() => {}} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp</Button>
+            <Button onClick={() => handleCopyAsImage(false)} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+            <Button onClick={handleShare} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><Share2 className="mr-2 h-4 w-4" />Compartir</Button>
             <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
           </>
         }

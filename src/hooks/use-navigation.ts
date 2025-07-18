@@ -243,13 +243,12 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/admin/configuracion-ticket') || pathname.startsWith('/mensajeria'))) isActive = true;
     if (entry.path === '/finanzas' && (pathname.startsWith('/finanzas') || pathname.startsWith('/facturacion'))) isActive = true;
     if (entry.path === '/administracion' && (pathname.startsWith('/administracion') || pathname.startsWith('/admin'))) isActive = true;
-    if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores'))) isActive = true;
-    if (entry.path === '/rentas' && pathname.startsWith('/rentas')) isActive = true;
+    if (entry.path === '/rentas' && (pathname.startsWith('/rentas') || pathname.startsWith('/flotilla'))) isActive = true; // Group /flotilla under /rentas (Ingresos)
     
     // Deactivations for clarity
     if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/agenda') || pathname.startsWith('/servicios/nuevo'))) isActive = false;
     if (entry.path === '/finanzas' && pathname.startsWith('/finanzas/reporte')) isActive = false;
-    if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
+    if (entry.path === '/flotilla') isActive = false; // Deactivate the old /flotilla link as it's now grouped under /rentas
     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
     if (entry.path === '/opciones' && pathname.startsWith('/mensajeria')) isActive = false;
     if (entry.path === '/rentas' && pathname.startsWith('/rentas?action=registrar')) isActive = true;

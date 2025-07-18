@@ -12,7 +12,7 @@ import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supp
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService } from '@/lib/services';
-import { Loader2, Copy, Printer, MessageSquare, Save, X } from 'lucide-react';
+import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
@@ -113,11 +113,10 @@ export default function NuevaVentaPage() {
   const handleCopySaleForWhatsapp = useCallback(() => {
     if (!saleForTicket) return;
     const workshopName = workshopInfo?.name || 'nuestro taller';
-    const message = `Hola ${saleForTicket.customerName || 'Cliente'}, gracias por tu compra en ${workshopName}.
+    const message = `Hola ${saleForTicket.customerName || 'Cliente'}, aquí tienes los detalles de tu compra en ${workshopName}.
 Folio de Venta: ${saleForTicket.id}
 Total: ${formatCurrency(saleForTicket.totalAmount)}
-
-¡Agradecemos tu preferencia!`;
+¡Gracias por tu preferencia!`;
 
     navigator.clipboard.writeText(message).then(() => {
       toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado.' });
@@ -175,23 +174,46 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     router.push('/pos'); // Navigate to the main POS page
   };
   
-  const handleCopyAsImage = useCallback(async () => {
-    if (!ticketContentRef.current) return;
-    
+  const handleCopyAsImage = useCallback(async (isForSharing: boolean = false) => {
+    if (!ticketContentRef.current || !saleForTicket) return null;
     try {
       const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
-      canvas.toBlob((blob) => {
-        if (blob) {
-          navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          toast({ title: 'Copiado', description: 'La imagen ha sido copiada.' });
-        }
-      });
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error("Could not create blob from canvas.");
+      
+      if (isForSharing) {
+        return new File([blob], `ticket_${saleForTicket.id}.png`, { type: 'image/png' });
+      } else {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        toast({ title: "Copiado", description: "La imagen ha sido copiada." });
+        return null;
+      }
     } catch (e) {
-      console.error('Error copying image:', e);
-      toast({ title: 'Error', description: 'No se pudo copiar la imagen del ticket.', variant: 'destructive' });
+      console.error('Error handling image:', e);
+      toast({ title: "Error", description: "No se pudo procesar la imagen del ticket.", variant: "destructive" });
+      return null;
     }
-  }, [toast]);
+  }, [saleForTicket, toast]);
   
+  const handleShare = async () => {
+    const imageFile = await handleCopyAsImage(true);
+    if (imageFile && navigator.share) {
+      try {
+        await navigator.share({
+          files: [imageFile],
+          title: 'Ticket de Venta',
+          text: `Ticket de tu compra en ${workshopInfo?.name || 'nuestro taller'}.`,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        toast({ title: 'Error al compartir', variant: 'destructive' });
+      }
+    } else if (imageFile) {
+        // Fallback for desktop browsers that don't support navigator.share with files
+        handleCopySaleForWhatsapp();
+    }
+  };
+
   const handlePrint = () => {
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
@@ -243,8 +265,8 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           title="Venta Completada"
           description={`Ticket para la venta #${saleForTicket.id}`}
           footerActions={<>
-              <Button onClick={handleCopyAsImage} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-              <Button onClick={handleCopySaleForWhatsapp} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp</Button>
+              <Button onClick={() => handleCopyAsImage(false)} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+              <Button onClick={handleShare} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><Share2 className="mr-2 h-4 w-4" /> Compartir Ticket</Button>
               <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
           </>}
         >
