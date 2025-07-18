@@ -22,6 +22,7 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { inventoryService } from '@/lib/services';
 import { differenceInMonths, parseISO, isValid } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from "@/lib/utils";
 
 const vehicleSortOptions = [
     { value: 'lastServiceDate_desc', label: 'Último Servicio (Más Reciente)' },
@@ -156,6 +157,12 @@ export function VehiculosPageComponent({ isFleet }: { isFleet?: boolean }) {
     if (isLoading) {
       return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
+    
+    const tabs = [
+        { value: "resumen", label: "Resumen" },
+        { value: "vehiculos", label: "Lista de Vehículos" },
+        { value: "precotizaciones", label: "Precotizaciones" },
+    ];
 
     return (
         <>
@@ -165,14 +172,24 @@ export function VehiculosPageComponent({ isFleet }: { isFleet?: boolean }) {
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="relative border-b">
-                    <ScrollArea className="w-full whitespace-nowrap">
-                        <TabsList className="inline-flex h-auto">
-                            <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
-                            <TabsTrigger value="vehiculos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Lista de Vehículos</TabsTrigger>
-                            <TabsTrigger value="precotizaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Precotizaciones</TabsTrigger>
-                        </TabsList>
-                    </ScrollArea>
+                <div className="w-full">
+                    <div className="flex flex-wrap w-full gap-2 sm:gap-4">
+                        {tabs.map((tabInfo) => (
+                            <button
+                                key={tabInfo.value}
+                                onClick={() => setActiveTab(tabInfo.value)}
+                                className={cn(
+                                    'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
+                                    'break-words whitespace-normal leading-snug',
+                                    activeTab === tabInfo.value
+                                    ? 'bg-red-700 text-white shadow'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                )}
+                            >
+                            {tabInfo.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <TabsContent value="resumen" className="mt-6">
