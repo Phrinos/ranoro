@@ -356,14 +356,14 @@ const handleAssignVehicle = async (newVehicleId: string) => {
       </div>
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-            <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
-            <TabsTrigger value="documents" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Documentos</TabsTrigger>
-            <TabsTrigger value="deuda" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Deuda</TabsTrigger>
-            <TabsTrigger value="payments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Pagos</TabsTrigger>
+        <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
+            <TabsTrigger value="details" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Detalles</TabsTrigger>
+            <TabsTrigger value="documents" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Documentos</TabsTrigger>
+            <TabsTrigger value="deuda" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Deuda</TabsTrigger>
+            <TabsTrigger value="payments" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Pagos</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details">
+        <TabsContent value="details" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-3">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -427,7 +427,7 @@ const handleAssignVehicle = async (newVehicleId: string) => {
           </Card>
         </TabsContent>
         
-        <TabsContent value="documents">
+        <TabsContent value="documents" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Documentos del Conductor</CardTitle>
@@ -481,7 +481,7 @@ const handleAssignVehicle = async (newVehicleId: string) => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="deuda" className="space-y-6">
+        <TabsContent value="deuda" className="mt-6 space-y-6">
             <Card className="lg:col-span-1 bg-amber-50 dark:bg-amber-900/50 border-amber-200">
                 <CardHeader>
                     <CardTitle className="text-lg text-amber-900 dark:text-amber-200">Estado de Cuenta</CardTitle>
@@ -547,7 +547,7 @@ const handleAssignVehicle = async (newVehicleId: string) => {
             </Card>
         </TabsContent>
 
-        <TabsContent value="payments">
+        <TabsContent value="payments" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Historial de Pagos</CardTitle>

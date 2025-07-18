@@ -135,19 +135,19 @@ export default function FleetVehicleDetailPage() {
           <TabsTrigger value="paperwork" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Trámites</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details" className="space-y-6">
+        <TabsContent value="details" className="mt-6 space-y-6">
           <DetailsTabContent vehicle={vehicle} onEdit={() => setIsVehicleEditDialogOpen(true)} />
         </TabsContent>
         
-        <TabsContent value="maintenances">
+        <TabsContent value="maintenances" className="mt-6">
           <MaintenancesTabContent vehicleId={vehicle.id} />
         </TabsContent>
 
-        <TabsContent value="fines">
+        <TabsContent value="fines" className="mt-6">
           <FinesTabContent vehicle={vehicle} />
         </TabsContent>
 
-        <TabsContent value="paperwork">
+        <TabsContent value="paperwork" className="mt-6">
           <PaperworkTabContent vehicle={vehicle} setVehicle={setVehicle} />
         </TabsContent>
       </Tabs>
