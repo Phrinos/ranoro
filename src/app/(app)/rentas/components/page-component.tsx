@@ -29,6 +29,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, ListFilter } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Link from 'next/link';
+import type { DateRange } from 'react-day-picker';
 
 
 interface MonthlyBalance {
@@ -119,7 +120,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
         const balance = paymentsThisMonth - chargesThisMonth;
         
         const { totalDebt } = calculateDriverDebt(driver, payments, vehicles);
-        const realBalance = -totalDebt;
+        const realBalance = balance + (driver.depositAmount || 0) - (driver.requiredDepositAmount || 0) - (driver.manualDebts || []).reduce((sum,d) => sum + d.amount, 0);
         
         const rentalDebtThisMonth = Math.max(0, -balance);
         const daysOwed = dailyRate > 0 ? rentalDebtThisMonth / dailyRate : 0;

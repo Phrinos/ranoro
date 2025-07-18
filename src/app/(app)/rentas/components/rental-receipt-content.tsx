@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { RentalPayment, WorkshopInfo, Driver } from '@/types';
@@ -71,6 +72,10 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
         <div className="flex justify-between">
           <span>Folio:</span>
           <span>{payment.id}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Asesor:</span>
+          <span>{payment.registeredBy}</span>
         </div>
         
         <div className="border-t border-dashed border-neutral-400 mt-1 mb-2"></div>
