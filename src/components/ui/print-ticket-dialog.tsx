@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { Separator } from './separator';
 
 interface PrintTicketDialogProps {
   open: boolean;
@@ -48,9 +49,14 @@ export function PrintTicketDialog({
         else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-2xl max-h-[90vh] flex flex-col p-0",
+        "sm:max-w-md max-h-[90vh] flex flex-col p-0",
         dialogContentClassName
       )}>
+        <DialogHeader className="p-4 sm:p-6 text-left border-b no-print">
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        
         <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 print:p-0 print:bg-white flex justify-center">
             <div className="printable-content print-format-receipt">
                  {children}
@@ -58,23 +64,14 @@ export function PrintTicketDialog({
         </div>
 
         {footerActions && (
-          <div
-            className={cn(
-              "print:hidden flex-shrink-0 sm:border-l bg-background",
-              "flex flex-col justify-between w-full sm:w-56"
-            )}
-          >
-            <DialogHeader className="p-4 text-left border-b sm:border-b-0">
-              <DialogTitle>{title}</DialogTitle>
-              <DialogDescription>{description}</DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="flex flex-col gap-2 p-4">
+          <>
+            <Separator className="no-print" />
+            <DialogFooter className="p-4 flex-col sm:flex-row sm:justify-end gap-2 no-print">
               {footerActions}
             </DialogFooter>
-          </div>
+          </>
         )}
       </DialogContent>
     </Dialog>
   );
 }
-
