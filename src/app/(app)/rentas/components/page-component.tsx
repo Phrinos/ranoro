@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -11,7 +12,7 @@ import { RegisterPaymentDialog } from "./register-payment-dialog";
 import type { RentalPayment, Driver, Vehicle, WorkshopInfo, VehicleExpense, OwnerWithdrawal, User as RanoroUser } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, parseISO, compareDesc, isValid, startOfMonth, endOfMonth, isWithinInterval, isSameDay, subDays, startOfWeek, endOfWeek, getDate, isAfter, differenceInCalendarDays, compareAsc } from 'date-fns';
+import { format, parseISO, compareDesc, isValid, startOfMonth, endOfMonth, isWithinInterval, isSameDay, subDays, startOfWeek, endOfWeek, getDate, isAfter, differenceInCalendarDays, compareAsc, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './rental-receipt-content';
@@ -581,6 +582,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
         open={!!paymentForReceipt}
         onOpenChange={(isOpen) => !isOpen && setPaymentForReceipt(null)}
         title="Recibo de Pago de Renta"
+        dialogContentClassName="max-w-xs sm:max-w-md"
         footerActions={
           <>
             <Button onClick={() => handleCopyAsImage(false)} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
@@ -589,8 +591,8 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
           </>
         }
       >
-        <div id="printable-ticket">
-          {paymentForReceipt && (
+        <div className="max-h-[85vh] overflow-y-auto">
+            {paymentForReceipt && (
              <RentalReceiptContent 
                 ref={receiptRef} 
                 payment={paymentForReceipt} 
