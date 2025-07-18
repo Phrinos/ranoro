@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -126,16 +127,16 @@ export function RegisterPurchaseDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-4 flex-shrink-0">
             <DialogTitle>Registrar Nueva Compra</DialogTitle>
             <DialogDescription>
               Seleccione un proveedor, ingrese los detalles de la factura y añada los productos comprados.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={handleSubmit(onSave)} className="flex-grow overflow-hidden flex flex-col gap-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
+            <form onSubmit={handleSubmit(onSave)} className="flex-grow overflow-hidden flex flex-col gap-4 px-6 pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                         control={control}
                         name="supplierId"
@@ -229,7 +230,7 @@ export function RegisterPurchaseDialog({
                 </div>
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="border-t pt-4">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <Button type="submit" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Guardando..." : "Registrar Compra"}
