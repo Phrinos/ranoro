@@ -89,7 +89,7 @@ export const ReceptionAndDelivery = ({
       {/* --- RECEPCIÓN CARD --- */}
       <Card>
         <CardHeader>
-          <CardTitle>Recepción del Vehículo</CardTitle>
+          <CardTitle>Ingreso del Vehículo</CardTitle>
           <CardDescription>
             Documenta el estado y las pertenencias del vehículo al ingresar.
           </CardDescription>
@@ -97,7 +97,7 @@ export const ReceptionAndDelivery = ({
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="space-y-2">
-                <FormLabel>Fecha y Hora de Recepción</FormLabel>
+                <FormLabel>Fecha y Hora de Ingreso</FormLabel>
                 <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
                     {formattedReceptionDate || 'Pendiente'}
                 </div>
@@ -173,7 +173,7 @@ export const ReceptionAndDelivery = ({
           </div>
           
           <div className="pt-4 border-t">
-            <FormLabel className="font-semibold text-base">Firma de Recepción</FormLabel>
+            <FormLabel className="font-semibold text-base">Firma de Ingreso</FormLabel>
             <div className="mt-2 p-3 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
                 {customerSignatureReception ? (
                     <Image 
@@ -193,7 +193,7 @@ export const ReceptionAndDelivery = ({
             </div>
              {!isReadOnly && (
               <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('reception')}>
-                <Signature className="mr-2 h-4 w-4" />{customerSignatureReception ? 'Cambiar Firma de Recepción' : 'Capturar Firma de Recepción'}
+                <Signature className="mr-2 h-4 w-4" />{customerSignatureReception ? 'Cambiar Firma de Ingreso' : 'Capturar Firma de Ingreso'}
               </Button>
             )}
           </div>
@@ -203,7 +203,7 @@ export const ReceptionAndDelivery = ({
       {/* --- ENTREGA CARD --- */}
       <Card>
         <CardHeader>
-          <CardTitle>Entrega y Conformidad</CardTitle>
+          <CardTitle>Salida y Conformidad</CardTitle>
           <CardDescription>
             Documenta la entrega del vehículo al cliente.
           </CardDescription>
@@ -211,7 +211,7 @@ export const ReceptionAndDelivery = ({
         <CardContent className="space-y-6">
             <div className="space-y-2">
                  <div className="flex justify-between items-center">
-                    <FormLabel>Fecha y Hora de Entrega</FormLabel>
+                    <FormLabel>Fecha y Hora de Salida</FormLabel>
                     {!isReadOnly && (
                         <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingDelivery(!isEditingDelivery)}>
                             <Edit className="h-4 w-4" />
@@ -261,10 +261,10 @@ export const ReceptionAndDelivery = ({
               </div>
               {!isReadOnly && (
                 <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('delivery')}>
-                  <Signature className="mr-2 h-4 w-4" />{customerSignatureDelivery ? 'Cambiar Firma de Entrega' : 'Capturar Firma de Entrega'}
+                  <Signature className="mr-2 h-4 w-4" />{customerSignatureDelivery ? 'Cambiar Firma de Salida' : 'Capturar Firma de Salida'}
                 </Button>
               )}
-            </div>
+            </CardContent>
         </CardContent>
       </Card>
     </div>
