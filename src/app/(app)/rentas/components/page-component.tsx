@@ -40,6 +40,7 @@ interface MonthlyBalance {
   daysPaid: number;
   daysOwed: number;
   balance: number;
+  realBalance: number;
 }
 type BalanceSortOption = 'driverName_asc' | 'driverName_desc' | 'daysOwed_desc' | 'daysOwed_asc' | 'balance_desc' | 'balance_asc';
 
@@ -112,6 +113,9 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
         const balance = paymentsThisMonth - chargesThisMonth;
         const daysOwed = balance < 0 ? Math.abs(balance) / dailyRate : 0;
         
+        const depositDebt = Math.max(0, (driver.requiredDepositAmount || 3500) - (driver.depositAmount || 0));
+        const realBalance = balance - depositDebt;
+        
         return {
             driverId: driver.id,
             driverName: driver.name,
@@ -121,6 +125,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
             daysPaid: daysPaidThisMonth,
             daysOwed,
             balance,
+            realBalance,
         };
     });
 
@@ -310,9 +315,8 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
                                       <TableHead className="text-white">Vehículo</TableHead>
                                       <TableHead className="text-right text-white">Pagos (Mes)</TableHead>
                                       <TableHead className="text-right text-white">Cargos (Mes)</TableHead>
-                                      <TableHead className="text-right text-white">Días Pagados (Mes)</TableHead>
-                                      <TableHead className="text-right text-white">Días Adeudo (Mes)</TableHead>
                                       <TableHead className="text-right text-white">Balance (Mes)</TableHead>
+                                      <TableHead className="text-right text-white">Balance Real</TableHead>
                                   </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -320,16 +324,15 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
                                       monthlyBalances.map(mb => (
                                           <TableRow 
                                               key={mb.driverId} 
-                                              className={cn("cursor-pointer hover:bg-muted/50", mb.balance < 0 && "bg-red-50 dark:bg-red-900/30")}
+                                              className={cn("cursor-pointer hover:bg-muted/50", mb.realBalance < 0 && "bg-red-50 dark:bg-red-900/30")}
                                               onClick={() => router.push(`/conductores/${mb.driverId}`)}
                                           >
                                               <TableCell className="font-semibold">{mb.driverName}</TableCell>
                                               <TableCell>{mb.vehicleInfo}</TableCell>
                                               <TableCell className="text-right text-green-600">{formatCurrency(mb.payments)}</TableCell>
                                               <TableCell className="text-right text-red-600">{formatCurrency(mb.charges)}</TableCell>
-                                              <TableCell className="text-right font-semibold">{mb.daysPaid.toFixed(2)}</TableCell>
-                                              <TableCell className="text-right font-bold text-destructive">{mb.daysOwed.toFixed(2)}</TableCell>
                                               <TableCell className={cn("text-right font-bold", mb.balance >= 0 ? "text-green-700" : "text-red-700")}>{formatCurrency(mb.balance)}</TableCell>
+                                              <TableCell className={cn("text-right font-bold", mb.realBalance >= 0 ? "text-green-700" : "text-red-700")}>{formatCurrency(mb.realBalance)}</TableCell>
                                           </TableRow>
                                       ))
                                   ) : (
@@ -451,3 +454,4 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 }
 
 export { RentasPageComponent };
+
