@@ -28,6 +28,7 @@ import { db } from '@/lib/firebaseClient';
 import { PrintLetterDialog } from '@/components/ui/print-letter-dialog';
 import { InventoryReportContent } from './inventory-report-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from "@/lib/utils";
 
 
 export function InventarioPageComponent({
@@ -74,9 +75,15 @@ export function InventarioPageComponent({
   }, []);
   
   const handlePrint = useCallback((items: InventoryItem[]) => {
-      setItemsToPrint(items);
+      const itemsToPrintWithCategory = items.map(item => ({
+        ...item,
+        category: item.category || 'Sin Categoría'
+      })).sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+      
+      setItemsToPrint(itemsToPrintWithCategory);
       setIsPrintDialogOpen(true);
   }, []);
+
 
   const handleOpenItemDialog = useCallback(() => {
     setEditingItem(null); // Ensure we're creating a new item
@@ -168,12 +175,12 @@ export function InventarioPageComponent({
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
-                <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
-                <TabsTrigger value="productos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Productos y Servicios</TabsTrigger>
-                <TabsTrigger value="categorias" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Categorías</TabsTrigger>
-                <TabsTrigger value="proveedores" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Proveedores</TabsTrigger>
-                <TabsTrigger value="analisis" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Análisis IA</TabsTrigger>
+            <TabsList className="h-auto p-0 bg-transparent flex flex-wrap w-full gap-2 sm:gap-4">
+                <TabsTrigger value="informe" className={cn('flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug', activeTab === 'informe' ? 'bg-primary text-white shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>Informe</TabsTrigger>
+                <TabsTrigger value="productos" className={cn('flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug', activeTab === 'productos' ? 'bg-primary text-white shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>Productos y Servicios</TabsTrigger>
+                <TabsTrigger value="categorias" className={cn('flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug', activeTab === 'categorias' ? 'bg-primary text-white shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>Categorías</TabsTrigger>
+                <TabsTrigger value="proveedores" className={cn('flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug', activeTab === 'proveedores' ? 'bg-primary text-white shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>Proveedores</TabsTrigger>
+                <TabsTrigger value="analisis" className={cn('flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug', activeTab === 'analisis' ? 'bg-primary text-white shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>Análisis IA</TabsTrigger>
             </TabsList>
         </div>
         
@@ -221,13 +228,18 @@ export function InventarioPageComponent({
         suppliers={suppliers}
       />
 
-      <PrintLetterDialog
-          open={isPrintDialogOpen}
-          onOpenChange={setIsPrintDialogOpen}
-          title="Reporte de Inventario"
-      >
-        <InventoryReportContent ref={printContentRef} items={itemsToPrint} />
-      </PrintLetterDialog>
+       <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+                <div className="flex-grow overflow-y-auto px-6 bg-muted/30 print:bg-white print:p-0">
+                    <InventoryReportContent ref={printContentRef} items={itemsToPrint} />
+                </div>
+                 <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
+                    <Button onClick={() => window.print()}>
+                        <Printer className="mr-2 h-4 w-4" /> Imprimir
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </>
   );
 }

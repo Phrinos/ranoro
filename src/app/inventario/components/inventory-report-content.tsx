@@ -61,7 +61,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
       <div
         ref={ref}
         id="printable-report"
-        className="font-sans bg-white text-black text-sm p-4"
+        className="font-sans bg-white text-black text-sm p-4 print-format-letter"
       >
         <header className="report-header no-page-break">
             <div className="mb-8 border-b-2 border-black pb-4">
