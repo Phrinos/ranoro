@@ -235,14 +235,13 @@ export function ServiceDialog({
           onVehicleCreated={onVehicleCreated}
           onTotalCostChange={setTotalCost}
         />
-        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-2">
-            <div className="flex justify-start">
+        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-row justify-between items-center w-full gap-2">
+            <div>
                 {showCancelButton && onCancelService && (
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                <Ban className="h-4 w-4 mr-2" />
-                                Cancelar
+                            <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Cancelar Servicio">
+                                <Ban className="h-4 w-4" />
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -270,14 +269,13 @@ export function ServiceDialog({
                     </AlertDialog>
                 )}
             </div>
-            <div className="flex flex-row gap-2 w-full sm:w-auto justify-end">
-               <Button variant="outline" type="button" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cerrar</Button>
+            <div className="flex flex-row gap-2 items-center">
+               <Button variant="outline" type="button" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-initial">Cerrar</Button>
                {!isReadOnly && (
                    <Button 
                        type="submit" 
                        form="service-form" 
-                       disabled={false} 
-                       className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                       className="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700"
                    >
                        {service?.id ? 'Guardar' : 'Crear Registro'}
                    </Button>
