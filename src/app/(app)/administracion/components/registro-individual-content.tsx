@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -179,12 +180,12 @@ export function RegistroIndividualContent() {
                 {vehicleNotFound && !searchedVehicle && <div className="flex items-center text-sm text-destructive"><AlertCircle className="mr-2 h-4 w-4" /> Vehículo no encontrado. Verifique los datos.</div>}
                 {searchedVehicle && (
                     <Card className="bg-muted/50">
-                        <CardHeader className="p-4 flex flex-row items-center justify-between">
+                        <CardHeader className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                             <div>
                                 <CardTitle className="text-base flex items-center gap-2"><Car className="h-5 w-5"/> {searchedVehicle.make} {searchedVehicle.model} ({searchedVehicle.year})</CardTitle>
                                 <CardDescription>Placa: {searchedVehicle.licensePlate}</CardDescription>
                             </div>
-                            <div className="text-right">
+                            <div className="text-left sm:text-right">
                                 <p className="text-sm font-semibold flex items-center gap-2"><User className="h-4 w-4"/> {searchedVehicle.ownerName}</p>
                                 <p className="text-xs text-muted-foreground">{searchedVehicle.ownerPhone}</p>
                             </div>
@@ -204,8 +205,8 @@ export function RegistroIndividualContent() {
             <div className="space-y-4 p-4 border rounded-md">
                 <h3 className="font-semibold">3. Costos y Pago</h3>
                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                     <FormField control={form.control} name="totalCost" render={({ field }) => ( <FormItem><FormLabel>Costo Total (Cliente)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="1200.00" {...field} value={field.value || ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
-                     <FormField control={form.control} name="suppliesCost" render={({ field }) => ( <FormItem><FormLabel>Costo Insumos (Taller)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="750.00" {...field} value={field.value || ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
+                     <FormField control={form.control} name="totalCost" render={({ field }) => ( <FormItem><FormLabel>Costo Total (Cliente)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="1200.00" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
+                     <FormField control={form.control} name="suppliesCost" render={({ field }) => ( <FormItem><FormLabel>Costo Insumos (Taller)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="750.00" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
                      <div><FormLabel>Ganancia</FormLabel><div className="h-10 flex items-center p-2 border rounded-md bg-muted/50 font-semibold">{formatCurrency(serviceProfit)}</div></div>
                       <FormField control={form.control} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione método"/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
                  </div>

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -141,13 +142,15 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                   <div className="overflow-x-auto rounded-md border">
                   <Table>
                     <TableHeader className="bg-black">
-                      <TableRow><TableHead className="text-white">Nombre</TableHead><TableHead className="text-white">Email</TableHead><TableHead className="text-white">Teléfono</TableHead><TableHead className="text-white">Rol</TableHead><TableHead className="text-right text-white">Acciones</TableHead></TableRow>
+                      <TableRow><TableHead className="text-white">Nombre</TableHead><TableHead className="text-white">Email</TableHead><TableHead className="text-white hidden sm:table-cell">Teléfono</TableHead><TableHead className="text-white hidden sm:table-cell">Rol</TableHead><TableHead className="text-right text-white">Acciones</TableHead></TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredUsers.map(user => (
                         <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.name}</TableCell><TableCell>{user.email}</TableCell><TableCell>{user.phone || 'N/A'}</TableCell>
-                          <TableCell><span className={`px-2 py-1 text-xs rounded-full font-medium ${ user.role === 'Superadministrador' ? 'bg-red-100 text-red-700' : user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }`}>{user.role}</span></TableCell>
+                          <TableCell className="font-medium">{user.name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell className="hidden sm:table-cell">{user.phone || 'N/A'}</TableCell>
+                          <TableCell className="hidden sm:table-cell"><span className={`px-2 py-1 text-xs rounded-full font-medium ${ user.role === 'Superadministrador' ? 'bg-red-100 text-red-700' : user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }`}>{user.role}</span></TableCell>
                           <TableCell className="text-right">
                             {canEditOrDelete(user) && ( <> <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Usuario?</AlertDialogTitle><AlertDialogDescription>¿Seguro que quieres eliminar a "{user.name}"? Esta acción es permanente.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></>)}
                           </TableCell>

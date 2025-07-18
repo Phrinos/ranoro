@@ -68,7 +68,7 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
             <Input
               type="search"
               placeholder="Buscar por usuario, acción o descripción..."
-              className="w-full rounded-lg bg-card pl-8 md:w-full lg:w-2/3"
+              className="w-full rounded-lg bg-card pl-8"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -116,7 +116,7 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
                 {filteredLogs.length > 0 ? (
                   filteredLogs.map(log => (
                     <TableRow key={log.id}>
-                      <TableCell className="font-mono text-xs">{log.date ? format(parseISO(log.date), "dd/MM/yy, HH:mm:ss", { locale: es }) : "Fecha no disponible"}</TableCell>
+                      <TableCell className="font-mono text-xs whitespace-nowrap">{log.date ? format(parseISO(log.date), "dd/MM/yy, HH:mm:ss", { locale: es }) : "Fecha no disponible"}</TableCell>
                       <TableCell className="font-medium">{log.userName}</TableCell>
                       <TableCell><Badge variant={log.actionType === 'Eliminar' || log.actionType === 'Cancelar' ? 'destructive' : 'secondary'}>{log.actionType}</Badge></TableCell>
                       <TableCell>{log.description}</TableCell>

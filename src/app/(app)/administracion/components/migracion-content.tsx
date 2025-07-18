@@ -241,7 +241,7 @@ export function MigracionPageContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <Select value={migrationType} onValueChange={(v) => setMigrationType(v as MigrationType)}>
-                        <SelectTrigger className="w-full md:w-1/2 bg-white">
+                        <SelectTrigger className="w-full md:w-1/2 bg-card">
                             <SelectValue placeholder="Seleccionar tipo de migración" />
                         </SelectTrigger>
                         <SelectContent>
