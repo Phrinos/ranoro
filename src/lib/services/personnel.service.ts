@@ -9,6 +9,8 @@ import {
   updateDoc,
   getDocs,
   writeBatch,
+  query,
+  where,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { Technician, AdministrativeStaff, Driver } from "@/types";
@@ -121,7 +123,8 @@ const archiveAdminStaff = async (id: string, isArchived: boolean): Promise<void>
 
 const onDriversUpdate = (callback: (drivers: Driver[]) => void): (() => void) => {
     if (!db) return () => {};
-    const unsubscribe = onSnapshot(collection(db, "drivers"), (snapshot) => {
+    const q = query(collection(db, "drivers"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Driver)));
     });
     return unsubscribe;
@@ -163,13 +166,12 @@ const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => 
     // Archive/unarchive the driver
     batch.update(driverRef, { isArchived });
 
-    // If archiving, unassign the vehicle
+    // If archiving, unassign the vehicle from the driver
     if (isArchived) {
         const driverDoc = await getDoc(driverRef);
         const driverData = driverDoc.data() as Driver;
         if (driverData?.assignedVehicleId) {
-            const vehicleRef = doc(db, 'vehicles', driverData.assignedVehicleId);
-            batch.update(vehicleRef, { assignedVehicleId: null });
+            batch.update(driverRef, { assignedVehicleId: null });
         }
     }
 
