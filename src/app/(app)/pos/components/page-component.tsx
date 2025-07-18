@@ -445,15 +445,39 @@ Total: ${formatCurrency(sale.totalAmount)}
         <TabsContent value="ventas" className="mt-6 space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div><h2 className="text-2xl font-semibold tracking-tight">Historial de Ventas</h2><p className="text-muted-foreground">Consulta, filtra y reimprime tickets.</p></div>
-                <Button asChild><Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link></Button>
             </div>
-            {dateFilterComponent}
             <Card>
-                <CardHeader className="flex flex-col gap-4"><div className="flex flex-col sm:flex-row items-center gap-4 flex-wrap"><div className="relative flex-1 w-full min-w-[200px] sm:min-w-[300px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por ID, cliente, artículo..." className="w-full rounded-lg bg-card pl-8" value={ventasSearchTerm} onChange={(e) => setVentasSearchTerm(e.target.value)} /></div><div className="flex items-center gap-2 w-full sm:w-auto"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={ventasSortOption} onValueChange={(v) => setVentasSortOption(v as SaleSortOption)}><DropdownMenuRadioItem value="date_desc">Más Reciente</DropdownMenuRadioItem><DropdownMenuRadioItem value="date_asc">Más Antiguo</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu><DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto bg-card"><Filter className="mr-2 h-4 w-4" />Pago</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Método de Pago</DropdownMenuLabel><DropdownMenuRadioGroup value={ventasPaymentMethodFilter} onValueChange={(v) => setVentasPaymentMethodFilter(v as PaymentMethod | 'all')}>
-                    {paymentMethods.map(method => (
-                      <DropdownMenuRadioItem key={method} value={method}>{method === 'all' ? 'Todos' : method}</DropdownMenuRadioItem>
-                    ))}
-                </DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu></div></div></CardHeader>
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="relative flex-1 w-full min-w-[200px] sm:min-w-[300px]">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input type="search" placeholder="Buscar por ID, cliente, artículo..." className="w-full rounded-lg bg-card pl-8" value={ventasSearchTerm} onChange={(e) => setVentasSearchTerm(e.target.value)} />
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                            {dateFilterComponent}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup value={ventasSortOption} onValueChange={(v) => setVentasSortOption(v as SaleSortOption)}>
+                                        <DropdownMenuRadioItem value="date_desc">Más Reciente</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="date_asc">Más Antiguo</DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><Filter className="mr-2 h-4 w-4" />Pago</Button></DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Método de Pago</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup value={ventasPaymentMethodFilter} onValueChange={(v) => setVentasPaymentMethodFilter(v as PaymentMethod | 'all')}>
+                                        {paymentMethods.map(method => (<DropdownMenuRadioItem key={method} value={method}>{method === 'all' ? 'Todos' : method}</DropdownMenuRadioItem>))}
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button asChild className="flex-1 sm:flex-initial"><Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link></Button>
+                        </div>
+                    </div>
+                </CardHeader>
                 <CardContent><SalesTable sales={filteredAndSortedSales} onReprintTicket={handleReprintSale} inventoryItems={allInventory} onEditSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }}/></CardContent>
             </Card>
         </TabsContent>
