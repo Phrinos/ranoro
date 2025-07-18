@@ -264,7 +264,7 @@ export const ReceptionAndDelivery = ({
                   <Signature className="mr-2 h-4 w-4" />{customerSignatureDelivery ? 'Cambiar Firma de Salida' : 'Capturar Firma de Salida'}
                 </Button>
               )}
-            </CardContent>
+            </div>
         </CardContent>
       </Card>
     </div>
