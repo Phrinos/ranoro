@@ -21,7 +21,7 @@ import { writeBatch } from 'firebase/firestore';
 import { TicketContent } from '@/components/ticket-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
-import { Printer, Copy, MessageSquare } from "lucide-react";
+import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../../components/PaymentDetailsDialog';
 
@@ -224,15 +224,45 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     toast({ title: "Cita Confirmada" });
   }, [toast]);
   
-  const handleCopyAsImage = useCallback(async () => {
-    if (!ticketContentRef.current) return;
+  const handleCopyAsImage = useCallback(async (isForSharing: boolean = false) => {
+    if (!ticketContentRef.current || !recordForTicket) return null;
     const html2canvas = (await import('html2canvas')).default;
     try {
       const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
-      canvas.toBlob((blob) => { if (blob) navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); });
-      toast({ title: "Copiado", description: "La imagen ha sido copiada." });
-    } catch (e) { toast({ title: "Error", description: "No se pudo copiar la imagen.", variant: "destructive" }); }
-  }, [toast]);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error("Could not create blob from canvas.");
+      
+      if (isForSharing) {
+        return new File([blob], `ticket_servicio_${recordForTicket.id}.png`, { type: 'image/png' });
+      } else {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        toast({ title: "Copiado", description: "La imagen ha sido copiada." });
+        return null;
+      }
+    } catch (e) {
+      console.error('Error handling image:', e);
+      toast({ title: "Error", description: "No se pudo procesar la imagen del ticket.", variant: "destructive" });
+      return null;
+    }
+  }, [recordForTicket, toast]);
+  
+  const handleShare = async () => {
+    const imageFile = await handleCopyAsImage(true);
+    if (imageFile && navigator.share) {
+      try {
+        await navigator.share({
+          files: [imageFile],
+          title: 'Ticket de Servicio',
+          text: `Ticket de tu servicio en ${workshopInfo?.name || 'nuestro taller'}.`,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        toast({ title: 'Error al compartir', variant: 'destructive' });
+      }
+    } else {
+        handleCopyServiceForWhatsapp(recordForTicket!);
+    }
+  };
 
   const handlePrint = () => {
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
@@ -366,8 +396,8 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
           onOpenChange={setIsTicketDialogOpen}
           title="Ticket de Servicio"
           footerActions={<>
-            <Button onClick={handleCopyAsImage} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-            <Button onClick={() => handleCopyServiceForWhatsapp(recordForTicket)} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp</Button>
+            <Button onClick={() => handleCopyAsImage(false)} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+            <Button onClick={handleShare} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
             <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
           </>}
         >

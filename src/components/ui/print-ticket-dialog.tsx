@@ -47,7 +47,7 @@ export function PrintTicketDialog({
         else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-md max-h-[90vh] flex flex-col p-0", // Use flex-col to structure vertically
+        "sm:max-w-md max-h-[90vh] flex flex-col p-0",
         dialogContentClassName
       )}>
         <DialogHeader className="p-4 sm:p-6 text-left border-b no-print flex-shrink-0">
