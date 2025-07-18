@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from 'react';
@@ -12,7 +11,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Separator } from './separator';
 
 interface PrintTicketDialogProps {
   open: boolean;
