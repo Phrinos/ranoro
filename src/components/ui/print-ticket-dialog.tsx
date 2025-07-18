@@ -48,10 +48,10 @@ export function PrintTicketDialog({
         else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-2xl max-h-[90vh] flex flex-col sm:flex-row p-0",
+        "sm:max-w-2xl max-h-[90vh] flex flex-col p-0",
         dialogContentClassName
       )}>
-        <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 print:p-0 print:bg-white">
+        <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 print:p-0 print:bg-white flex justify-center">
             <div className="printable-content print-format-receipt">
                  {children}
             </div>
@@ -60,18 +60,15 @@ export function PrintTicketDialog({
         {footerActions && (
           <div
             className={cn(
-              "print:hidden flex-shrink-0 border-l bg-background p-4",
+              "print:hidden flex-shrink-0 sm:border-l bg-background",
               "flex flex-col justify-between w-full sm:w-56"
             )}
           >
-            {/* header fijo en la parte superior */}
-            <DialogHeader className="p-0 text-left">
+            <DialogHeader className="p-4 text-left border-b sm:border-b-0">
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
-
-            {/* botones al fondo, en columna y alineados a la derecha */}
-            <DialogFooter className="flex flex-col gap-3 items-end sm:flex-col">
+            <DialogFooter className="flex flex-col gap-2 p-4">
               {footerActions}
             </DialogFooter>
           </div>
@@ -80,3 +77,4 @@ export function PrintTicketDialog({
     </Dialog>
   );
 }
+
