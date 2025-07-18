@@ -27,29 +27,6 @@ const FINE_CHECK_STORAGE_KEY = 'lastFineCheckDate';
 
 type FlotillaSortOption = "plate_asc" | "plate_desc" | "owner_asc" | "owner_desc" | "rent_asc" | "rent_desc";
 type DriverSortOption = 'name_asc' | 'name_desc';
-type BalanceSortOption = 'driverName_asc' | 'driverName_desc' | 'daysOwed_desc' | 'daysOwed_asc' | 'balance_desc' | 'balance_asc';
-
-interface MonthlyBalance {
-  driverId: string;
-  driverName: string;
-  vehicleInfo: string;
-  payments: number;
-  charges: number;
-  daysPaid: number;
-  daysOwed: number;
-  balance: number;
-}
-
-
-interface OverduePaperworkItem {
-    vehicleId: string;
-    vehicleInfo: string;
-    vehicleLicensePlate: string;
-    ownerName: string;
-    paperworkId: string;
-    paperworkName: string;
-    dueDate: string;
-}
 
 export function FlotillaPageComponent({
   searchParams,
@@ -58,7 +35,7 @@ export function FlotillaPageComponent({
 }) {
   const { toast } = useToast();
   const router = useRouter();
-  const defaultTab = (searchParams?.tab as string) || 'informe';
+  const defaultTab = (searchParams?.tab as string) || 'conductores';
 
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -77,22 +54,17 @@ export function FlotillaPageComponent({
   const [sortOptionDrivers, setSortOptionDrivers] = useState<DriverSortOption>('name_asc');
   const [showArchivedDrivers, setShowArchivedDrivers] = useState(false);
 
-  // States for 'informe' tab
-  const [balanceSortOption, setBalanceSortOption] = useState<BalanceSortOption>('daysOwed_desc');
-
   const [lastFineCheckDate, setLastFineCheckDate] = useState<Date | null>(null);
 
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
   const [allDrivers, setAllDrivers] = useState<Driver[]>([]);
-  const [allPayments, setAllPayments] = useState<RentalPayment[]>([]);
 
   useEffect(() => {
     setIsLoading(true);
     const unsubs = [
         inventoryService.onVehiclesUpdate(setAllVehicles),
-        personnelService.onDriversUpdate(setAllDrivers),
-        operationsService.onRentalPaymentsUpdate((data) => {
-            setAllPayments(data);
+        personnelService.onDriversUpdate((data) => {
+            setAllDrivers(data);
             setIsLoading(false);
         }),
     ];
@@ -109,75 +81,6 @@ export function FlotillaPageComponent({
   const fleetVehicles = useMemo(() => allVehicles.filter(v => v.isFleetVehicle), [allVehicles]);
   const nonFleetVehicles = useMemo(() => allVehicles.filter(v => !v.isFleetVehicle), [allVehicles]);
   
-  const monthlyBalances = useMemo((): MonthlyBalance[] => {
-    if (isLoading) return [];
-    
-    const today = new Date();
-    const monthStart = startOfMonth(today);
-    const daysSoFar = getDate(today);
-
-    const balances = allDrivers.filter(d => !d.isArchived).map(driver => {
-        const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
-        const dailyRate = vehicle?.dailyRentalCost || 0;
-        
-        const paymentsThisMonth = allPayments
-            .filter(p => p.driverId === driver.id && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: today }))
-            .reduce((sum, p) => sum + p.amount, 0);
-            
-        const daysPaidThisMonth = dailyRate > 0 ? paymentsThisMonth / dailyRate : 0;
-        const chargesThisMonth = dailyRate * daysSoFar;
-        const balance = paymentsThisMonth - chargesThisMonth;
-        const daysOwed = balance < 0 ? Math.abs(balance) / dailyRate : 0;
-        
-        return {
-            driverId: driver.id,
-            driverName: driver.name,
-            vehicleInfo: vehicle ? `${vehicle.licensePlate} (${formatCurrency(dailyRate)}/día)` : 'N/A',
-            payments: paymentsThisMonth,
-            charges: chargesThisMonth,
-            daysPaid: daysPaidThisMonth,
-            daysOwed,
-            balance,
-        };
-    });
-
-    return balances.sort((a, b) => {
-        switch (balanceSortOption) {
-            case 'driverName_asc': return a.driverName.localeCompare(b.driverName);
-            case 'driverName_desc': return b.driverName.localeCompare(a.driverName);
-            case 'daysOwed_desc': return b.daysOwed - a.daysOwed;
-            case 'daysOwed_asc': return a.daysOwed - b.daysOwed;
-            case 'balance_desc': return b.balance - a.balance;
-            case 'balance_asc': return a.balance - b.balance;
-            default: return b.daysOwed - a.daysOwed;
-        }
-    });
-
-  }, [isLoading, allDrivers, allVehicles, allPayments, balanceSortOption]);
-  
-  const overduePaperwork = useMemo((): OverduePaperworkItem[] => {
-    if (isLoading) return [];
-    const today = startOfToday();
-    const alerts: OverduePaperworkItem[] = [];
-    fleetVehicles.forEach(vehicle => {
-      (vehicle.paperwork || []).forEach(p => {
-        const dueDate = parseISO(p.dueDate);
-        if (p.status === 'Pendiente' && isValid(dueDate) && !isAfter(dueDate, today)) {
-          alerts.push({
-            vehicleId: vehicle.id,
-            vehicleLicensePlate: vehicle.licensePlate,
-            vehicleInfo: `${vehicle.make} ${vehicle.model} ${vehicle.year}`,
-            ownerName: vehicle.ownerName,
-            paperworkId: p.id,
-            paperworkName: p.name,
-            dueDate: p.dueDate
-          });
-        }
-      });
-    });
-    return alerts.sort((a, b) => compareAsc(parseISO(a.dueDate), parseISO(b.dueDate)));
-  }, [isLoading, fleetVehicles]);
-
   const filteredFleetVehicles = useMemo(() => {
     let vehicles = [...fleetVehicles];
     if (searchTermVehicles) vehicles = vehicles.filter(v => v.licensePlate.toLowerCase().includes(searchTermVehicles.toLowerCase()) || v.make.toLowerCase().includes(searchTermVehicles.toLowerCase()) || v.model.toLowerCase().includes(searchTermVehicles.toLowerCase()) || v.ownerName.toLowerCase().includes(searchTermVehicles.toLowerCase()));
@@ -194,8 +97,6 @@ export function FlotillaPageComponent({
     itemsToDisplay.sort((a, b) => (sortOptionDrivers === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)));
     return itemsToDisplay;
   }, [allDrivers, searchTermDrivers, sortOptionDrivers, showArchivedDrivers]);
-
-  const uniqueOwners = useMemo(() => Array.from(new Set(fleetVehicles.map(v => v.ownerName))).sort(), [fleetVehicles]);
 
   const handleAddVehicleToFleet = async (vehicleId: string, costs: { dailyRentalCost: number; gpsMonthlyCost: number; adminMonthlyCost: number; insuranceMonthlyCost: number; }) => {
     const vehicle = allVehicles.find(v => v.id === vehicleId);
@@ -252,128 +153,15 @@ export function FlotillaPageComponent({
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Gestión de Flotilla</h1>
-        <p className="text-primary-foreground/80 mt-1">Administra vehículos, conductores, pagos y reportes de tu flotilla.</p>
+        <p className="text-primary-foreground/80 mt-1">Administra vehículos y conductores de tu flotilla.</p>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="w-full">
             <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
-                <TabsTrigger value="informe" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Informe</TabsTrigger>
-                <TabsTrigger value="reportes" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Reportes</TabsTrigger>
                 <TabsTrigger value="conductores" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Conductores</TabsTrigger>
                 <TabsTrigger value="vehiculos" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Vehículos</TabsTrigger>
             </TabsList>
         </div>
-        <TabsContent value="informe" className="mt-6 space-y-6">
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle>Estado de Cuenta Mensual</CardTitle>
-                            <CardDescription>Resumen de saldos de todos los conductores para el mes de {format(new Date(), "MMMM", { locale: es })}.</CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm">
-                                        <ListFilter className="mr-2 h-4 w-4" />
-                                        Ordenar por
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                                    <DropdownMenuRadioGroup value={balanceSortOption} onValueChange={(v) => setBalanceSortOption(v as BalanceSortOption)}>
-                                        <DropdownMenuRadioItem value="daysOwed_desc">Mayor Adeudo</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="daysOwed_asc">Menor Adeudo</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="driverName_asc">Conductor (A-Z)</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="driverName_desc">Conductor (Z-A)</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="balance_desc">Mejor Balance (Mes)</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="balance_asc">Peor Balance (Mes)</DropdownMenuRadioItem>
-                                    </DropdownMenuRadioGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <span className="text-sm text-muted-foreground">Día {getDate(new Date())} del mes</span>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="rounded-md border overflow-x-auto">
-                        <Table>
-                            <TableHeader className="bg-black">
-                                <TableRow>
-                                    <TableHead className="text-white">Conductor</TableHead>
-                                    <TableHead className="text-white">Vehículo</TableHead>
-                                    <TableHead className="text-right text-white">Pagos (Mes)</TableHead>
-                                    <TableHead className="text-right text-white">Cargos (Mes)</TableHead>
-                                    <TableHead className="text-right text-white">Días Pagados (Mes)</TableHead>
-                                    <TableHead className="text-right text-white">Días Adeudo (Mes)</TableHead>
-                                    <TableHead className="text-right text-white">Balance (Mes)</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {monthlyBalances.length > 0 ? (
-                                    monthlyBalances.map(mb => (
-                                        <TableRow 
-                                            key={mb.driverId} 
-                                            className={cn("cursor-pointer hover:bg-muted/50", mb.balance < 0 && "bg-red-50 dark:bg-red-900/30")}
-                                            onClick={() => router.push(`/conductores/${mb.driverId}`)}
-                                        >
-                                            <TableCell className="font-semibold">{mb.driverName}</TableCell>
-                                            <TableCell>{mb.vehicleInfo}</TableCell>
-                                            <TableCell className="text-right text-green-600">{formatCurrency(mb.payments)}</TableCell>
-                                            <TableCell className="text-right text-red-600">{formatCurrency(mb.charges)}</TableCell>
-                                            <TableCell className="text-right font-semibold">{mb.daysPaid.toFixed(2)}</TableCell>
-                                            <TableCell className="text-right font-bold text-destructive">{mb.daysOwed.toFixed(2)}</TableCell>
-                                            <TableCell className={cn("text-right font-bold", mb.balance >= 0 ? "text-green-700" : "text-red-700")}>{formatCurrency(mb.balance)}</TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow><TableCell colSpan={7} className="h-24 text-center">No hay conductores activos.</TableCell></TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-            <Card className="border-orange-500/50 bg-orange-50 dark:bg-orange-900/30">
-                <CardHeader><CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300"><AlertTriangle />Trámites Vencidos o por Vencer</CardTitle></CardHeader>
-                <CardContent>
-                    {overduePaperwork.length > 0 ? (
-                        <div className="rounded-md border overflow-x-auto">
-                            <Table>
-                                <TableHeader className="bg-orange-100 dark:bg-orange-800/50">
-                                    <TableRow>
-                                        <TableHead className="font-semibold text-orange-800 dark:text-orange-200">Placa</TableHead>
-                                        <TableHead className="font-semibold text-orange-800 dark:text-orange-200">Vehículo</TableHead>
-                                        <TableHead className="font-semibold text-orange-800 dark:text-orange-200">Propietario</TableHead>
-                                        <TableHead className="font-semibold text-orange-800 dark:text-orange-200">Trámite</TableHead>
-                                        <TableHead className="text-right font-semibold text-orange-800 dark:text-orange-200">Vencimiento</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {overduePaperwork.map(item => (
-                                        <TableRow key={item.paperworkId} className="hover:bg-orange-100/50 dark:hover:bg-orange-800/20">
-                                            <TableCell className="font-medium">
-                                                <Link href={`/flotilla/${item.vehicleId}`} className="hover:underline text-primary">{item.vehicleLicensePlate}</Link>
-                                            </TableCell>
-                                            <TableCell>{item.vehicleInfo}</TableCell>
-                                            <TableCell>{item.ownerName}</TableCell>
-                                            <TableCell className="font-semibold">{item.paperworkName}</TableCell>
-                                            <TableCell className="text-right font-bold text-destructive">{format(parseISO(item.dueDate), "dd MMM, yyyy", { locale: es })}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    ) : <p className="text-muted-foreground text-center py-4">No hay trámites vencidos.</p>}
-                </CardContent>
-            </Card>
-        </TabsContent>
-        <TabsContent value="reportes" className="mt-6 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div><h2 className="text-2xl font-semibold tracking-tight">Reporte de Ingresos de Flotilla</h2><p className="text-muted-foreground">Seleccione un propietario para ver el detalle de ingresos de sus vehículos.</p></div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{uniqueOwners.map(owner => (<Link key={owner} href={`/flotilla/reporte-ingresos/${encodeURIComponent(owner)}`} passHref><Card className="hover:bg-muted hover:border-primary/50 transition-all shadow-sm"><CardContent className="p-4 flex items-center justify-between"><div className="flex items-center gap-3"><User className="h-5 w-5 text-muted-foreground" /><span className="font-semibold">{owner}</span></div><ChevronRight className="h-5 w-5 text-muted-foreground" /></CardContent></Card></Link>))}</div>
-        </TabsContent>
         <TabsContent value="conductores" className="mt-6 space-y-6">
             <Tabs defaultValue="activos" className="w-full">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

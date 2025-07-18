@@ -12,7 +12,7 @@ import { RegisterPaymentDialog } from "./register-payment-dialog";
 import type { RentalPayment, Driver, Vehicle, WorkshopInfo, VehicleExpense, OwnerWithdrawal, User as RanoroUser } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, parseISO, compareDesc, isValid, startOfMonth, endOfMonth, isWithinInterval, isSameDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
+import { format, parseISO, compareDesc, isValid, startOfMonth, endOfMonth, isWithinInterval, isSameDay, subDays, startOfWeek, endOfWeek, getDate } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './rental-receipt-content';
@@ -25,10 +25,20 @@ import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './owner-w
 import { useRouter } from 'next/navigation';
 import { EditPaymentNoteDialog } from './edit-payment-note-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare } from 'lucide-react';
+import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, ListFilter } from 'lucide-react';
 
+interface MonthlyBalance {
+  driverId: string;
+  driverName: string;
+  vehicleInfo: string;
+  payments: number;
+  charges: number;
+  daysPaid: number;
+  daysOwed: number;
+  balance: number;
+}
+type BalanceSortOption = 'driverName_asc' | 'driverName_desc' | 'daysOwed_desc' | 'daysOwed_asc' | 'balance_desc' | 'balance_asc';
 
 function RentasPageComponent({ tab, action }: { tab?: string, action?: string | null }) {
   const defaultTab = tab || 'resumen';
@@ -46,7 +56,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
   const [isEditNoteDialogOpen, setIsEditNoteDialogOpen] = useState(false);
   const [paymentToEdit, setPaymentToEdit] = useState<RentalPayment | null>(null);
-
+  const [balanceSortOption, setBalanceSortOption] = useState<BalanceSortOption>('daysOwed_desc');
 
   const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -78,6 +88,52 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 
   
   const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
+  
+    const monthlyBalances = useMemo((): MonthlyBalance[] => {
+    if (isLoading) return [];
+    
+    const today = new Date();
+    const monthStart = startOfMonth(today);
+    const daysSoFar = getDate(today);
+
+    const balances = drivers.filter(d => !d.isArchived).map(driver => {
+        const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
+        const dailyRate = vehicle?.dailyRentalCost || 0;
+        
+        const paymentsThisMonth = payments
+            .filter(p => p.driverId === driver.id && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: today }))
+            .reduce((sum, p) => sum + p.amount, 0);
+            
+        const daysPaidThisMonth = dailyRate > 0 ? paymentsThisMonth / dailyRate : 0;
+        const chargesThisMonth = dailyRate * daysSoFar;
+        const balance = paymentsThisMonth - chargesThisMonth;
+        const daysOwed = balance < 0 ? Math.abs(balance) / dailyRate : 0;
+        
+        return {
+            driverId: driver.id,
+            driverName: driver.name,
+            vehicleInfo: vehicle ? `${vehicle.licensePlate} (${formatCurrency(dailyRate)}/día)` : 'N/A',
+            payments: paymentsThisMonth,
+            charges: chargesThisMonth,
+            daysPaid: daysPaidThisMonth,
+            daysOwed,
+            balance,
+        };
+    });
+
+    return balances.sort((a, b) => {
+        switch (balanceSortOption) {
+            case 'driverName_asc': return a.driverName.localeCompare(b.driverName);
+            case 'driverName_desc': return b.driverName.localeCompare(a.driverName);
+            case 'daysOwed_desc': return b.daysOwed - a.daysOwed;
+            case 'daysOwed_asc': return a.daysOwed - b.daysOwed;
+            case 'balance_desc': return b.balance - a.balance;
+            case 'balance_asc': return a.balance - b.balance;
+            default: return b.daysOwed - a.daysOwed;
+        }
+    });
+
+  }, [isLoading, drivers, vehicles, payments, balanceSortOption]);
 
   const handleSavePayment = async (driverId: string, amount: number, note: string | undefined, mileage?: number) => {
     try {
@@ -197,7 +253,9 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
             <div className="w-full mb-6">
                 <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
                     <TabsTrigger value="resumen" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Resumen Mensual</TabsTrigger>
+                    <TabsTrigger value="estado_cuenta" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Estado de Cuenta</TabsTrigger>
                     <TabsTrigger value="historial" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Historial de Pagos</TabsTrigger>
+                    <TabsTrigger value="reportes" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Reportes</TabsTrigger>
                 </TabsList>
             </div>
             <TabsContent value="resumen" className="space-y-6">
@@ -207,6 +265,78 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
                     <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Mayor Deudor</CardTitle><User className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-xl font-bold truncate">{summaryData.driverWithMostDebt?.name || 'N/A'}</div><p className="text-xs text-muted-foreground">Debe {formatCurrency(summaryData.driverWithMostDebt?.debt || 0)}</p></CardContent></Card>
                     <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Gastos de Flotilla (Mes)</CardTitle><TrendingDown className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalExpenses)}</div><p className="text-xs text-muted-foreground">Gastos de vehículos este mes.</p></CardContent></Card>
                 </div>
+            </TabsContent>
+            <TabsContent value="estado_cuenta">
+                <Card>
+                  <CardHeader>
+                      <div className="flex justify-between items-center">
+                          <div>
+                              <CardTitle>Estado de Cuenta Mensual</CardTitle>
+                              <CardDescription>Resumen de saldos de todos los conductores para el mes de {format(new Date(), "MMMM", { locale: es })}.</CardDescription>
+                          </div>
+                          <div className="flex items-center gap-2">
+                              <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                      <Button variant="outline" size="sm">
+                                          <ListFilter className="mr-2 h-4 w-4" />
+                                          Ordenar por
+                                      </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                      <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                                      <DropdownMenuRadioGroup value={balanceSortOption} onValueChange={(v) => setBalanceSortOption(v as BalanceSortOption)}>
+                                          <DropdownMenuRadioItem value="daysOwed_desc">Mayor Adeudo</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="daysOwed_asc">Menor Adeudo</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="driverName_asc">Conductor (A-Z)</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="driverName_desc">Conductor (Z-A)</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="balance_desc">Mejor Balance (Mes)</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="balance_asc">Peor Balance (Mes)</DropdownMenuRadioItem>
+                                      </DropdownMenuRadioGroup>
+                                  </DropdownMenuContent>
+                              </DropdownMenu>
+                              <span className="text-sm text-muted-foreground">Día {getDate(new Date())} del mes</span>
+                          </div>
+                      </div>
+                  </CardHeader>
+                  <CardContent>
+                      <div className="rounded-md border overflow-x-auto">
+                          <Table>
+                              <TableHeader className="bg-black">
+                                  <TableRow>
+                                      <TableHead className="text-white">Conductor</TableHead>
+                                      <TableHead className="text-white">Vehículo</TableHead>
+                                      <TableHead className="text-right text-white">Pagos (Mes)</TableHead>
+                                      <TableHead className="text-right text-white">Cargos (Mes)</TableHead>
+                                      <TableHead className="text-right text-white">Días Pagados (Mes)</TableHead>
+                                      <TableHead className="text-right text-white">Días Adeudo (Mes)</TableHead>
+                                      <TableHead className="text-right text-white">Balance (Mes)</TableHead>
+                                  </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                  {monthlyBalances.length > 0 ? (
+                                      monthlyBalances.map(mb => (
+                                          <TableRow 
+                                              key={mb.driverId} 
+                                              className={cn("cursor-pointer hover:bg-muted/50", mb.balance < 0 && "bg-red-50 dark:bg-red-900/30")}
+                                              onClick={() => router.push(`/conductores/${mb.driverId}`)}
+                                          >
+                                              <TableCell className="font-semibold">{mb.driverName}</TableCell>
+                                              <TableCell>{mb.vehicleInfo}</TableCell>
+                                              <TableCell className="text-right text-green-600">{formatCurrency(mb.payments)}</TableCell>
+                                              <TableCell className="text-right text-red-600">{formatCurrency(mb.charges)}</TableCell>
+                                              <TableCell className="text-right font-semibold">{mb.daysPaid.toFixed(2)}</TableCell>
+                                              <TableCell className="text-right font-bold text-destructive">{mb.daysOwed.toFixed(2)}</TableCell>
+                                              <TableCell className={cn("text-right font-bold", mb.balance >= 0 ? "text-green-700" : "text-red-700")}>{formatCurrency(mb.balance)}</TableCell>
+                                          </TableRow>
+                                      ))
+                                  ) : (
+                                      <TableRow><TableCell colSpan={7} className="h-24 text-center">No hay conductores activos.</TableCell></TableRow>
+                                  )}
+                              </TableBody>
+                          </Table>
+                      </div>
+                  </CardContent>
+              </Card>
             </TabsContent>
             <TabsContent value="historial">
                  <Card>
@@ -260,6 +390,12 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
                   </CardContent>
               </Card>
             </TabsContent>
+            <TabsContent value="reportes" className="mt-6 space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div><h2 className="text-2xl font-semibold tracking-tight">Reporte de Ingresos de Flotilla</h2><p className="text-muted-foreground">Seleccione un propietario para ver el detalle de ingresos de sus vehículos.</p></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{uniqueOwners.map(owner => (<Link key={owner} href={`/flotilla/reporte-ingresos/${encodeURIComponent(owner)}`} passHref><Card className="hover:bg-muted hover:border-primary/50 transition-all shadow-sm"><CardContent className="p-4 flex items-center justify-between"><div className="flex items-center gap-3"><User className="h-5 w-5 text-muted-foreground" /><span className="font-semibold">{owner}</span></div><ChevronRight className="h-5 w-5 text-muted-foreground" /></CardContent></Card></Link>))}</div>
+            </TabsContent>
       </Tabs>
       
       <RegisterPaymentDialog
@@ -312,5 +448,3 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 }
 
 export { RentasPageComponent };
-
-
