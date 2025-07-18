@@ -484,7 +484,10 @@ Total: ${formatCurrency(sale.totalAmount)}
             </Card>
         </TabsContent>
         <TabsContent value="caja" className="mt-6 space-y-6">
-             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"><div><h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2><p className="text-muted-foreground">Controla el flujo de efectivo para la fecha seleccionada.</p></div>{dateFilterComponent}</div>
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div><h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2><p className="text-muted-foreground">Controla el flujo de efectivo para la fecha seleccionada.</p></div>
+                <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">{dateFilterComponent}</div>
+             </div>
              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-1">
                     <CardHeader>
