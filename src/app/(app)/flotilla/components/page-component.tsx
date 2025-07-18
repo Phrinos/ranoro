@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -85,8 +84,23 @@ export function FlotillaPageComponent({
   
   const filteredFleetVehicles = useMemo(() => {
     let vehicles = [...fleetVehicles];
-    if (searchTermVehicles) vehicles = vehicles.filter(v => v.licensePlate.toLowerCase().includes(searchTermVehicles.toLowerCase()) || v.make.toLowerCase().includes(searchTermVehicles.toLowerCase()) || v.model.toLowerCase().includes(searchTermVehicles.toLowerCase()) || v.ownerName.toLowerCase().includes(searchTermVehicles.toLowerCase()));
-    vehicles.sort((a, b) => (sortOptionVehicles === 'plate_desc' ? b.licensePlate.localeCompare(a.licensePlate) : a.licensePlate.localeCompare(b.licensePlate)));
+    if (searchTermVehicles) {
+      const lowerSearch = searchTermVehicles.toLowerCase();
+      vehicles = vehicles.filter(v => 
+        v.licensePlate.toLowerCase().includes(lowerSearch) || 
+        v.make.toLowerCase().includes(lowerSearch) || 
+        v.model.toLowerCase().includes(lowerSearch) || 
+        v.ownerName.toLowerCase().includes(lowerSearch)
+      );
+    }
+    vehicles.sort((a, b) => {
+      switch (sortOptionVehicles) {
+        case 'plate_desc': return b.licensePlate.localeCompare(a.licensePlate);
+        case 'plate_asc':
+        default:
+          return a.licensePlate.localeCompare(b.licensePlate);
+      }
+    });
     return vehicles;
   }, [fleetVehicles, searchTermVehicles, sortOptionVehicles]);
   
@@ -173,9 +187,25 @@ export function FlotillaPageComponent({
                   </TabsList>
                   <Button onClick={() => handleOpenDriverDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Conductor</Button>
                 </div>
-                <div className="relative mt-4">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input type="search" placeholder="Buscar por nombre o teléfono..." className="w-full sm:w-1/2 lg:w-1/3 pl-8" value={searchTermDrivers} onChange={e => setSearchTermDrivers(e.target.value)} />
+                <div className="flex items-center gap-2 mt-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input type="search" placeholder="Buscar por nombre o teléfono..." className="w-full sm:w-1/2 lg:w-1/3 pl-8" value={searchTermDrivers} onChange={e => setSearchTermDrivers(e.target.value)} />
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-9">
+                              <ListFilter className="mr-2 h-4 w-4" /> Ordenar
+                          </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                          <DropdownMenuRadioGroup value={sortOptionDrivers} onValueChange={(v) => setSortOptionDrivers(v as DriverSortOption)}>
+                              <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                          </DropdownMenuRadioGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
                 <Card className="mt-4"><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Teléfono</TableHead><TableHead>Vehículo Asignado</TableHead><TableHead className="text-right">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">{showArchivedDrivers ? "No hay conductores archivados." : "No se encontraron conductores activos."}</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
             </Tabs>
@@ -185,8 +215,29 @@ export function FlotillaPageComponent({
               <div><h2 className="text-2xl font-semibold tracking-tight">Vehículos de la Flotilla</h2><p className="text-muted-foreground">Gestiona los vehículos que forman parte de tu flotilla.</p></div>
               <div className="flex flex-col sm:flex-row gap-2"><Button variant="secondary" onClick={() => setIsFineCheckDialogOpen(true)}><ShieldCheck className="mr-2 h-4 w-4" />Revisar Multas</Button><Button onClick={() => setIsAddVehicleDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Añadir Vehículo</Button></div>
           </div>
-          <Card><CardHeader><Input type="search" placeholder="Buscar por placa, marca, modelo o propietario..." className="w-full sm:w-1/2 lg:w-1/3" value={searchTermVehicles} onChange={e => setSearchTermVehicles(e.target.value)} /></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Placa</TableHead><TableHead>Vehículo</TableHead><TableHead>Conductor</TableHead><TableHead>Propietario</TableHead><TableHead className="text-right">Renta Diaria</TableHead></TableRow></TableHeader><TableBody>{filteredFleetVehicles.length > 0 ? filteredFleetVehicles.map(v => {
-            const driver = allDrivers.find(d => d.assignedVehicleId === v.id && !d.isArchived);
+          <Card><CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input type="search" placeholder="Buscar por placa, marca, modelo o propietario..." className="w-full pl-8" value={searchTermVehicles} onChange={e => setSearchTermVehicles(e.target.value)} />
+                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-9">
+                            <ListFilter className="mr-2 h-4 w-4" /> Ordenar
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                        <DropdownMenuRadioGroup value={sortOptionVehicles} onValueChange={(v) => setSortOptionVehicles(v as FlotillaSortOption)}>
+                            <DropdownMenuRadioItem value="plate_asc">Placa (A-Z)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="plate_desc">Placa (Z-A)</DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+          </CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Placa</TableHead><TableHead>Vehículo</TableHead><TableHead>Conductor</TableHead><TableHead>Propietario</TableHead><TableHead className="text-right">Renta Diaria</TableHead></TableRow></TableHeader><TableBody>{filteredFleetVehicles.length > 0 ? filteredFleetVehicles.map(v => {
+            const driver = allDrivers.find(d => d.id === v.assignedVehicleId && !d.isArchived);
             const isAssigned = !!driver;
             return (
               <TableRow key={v.id} className={cn("cursor-pointer hover:bg-muted/50", !isAssigned && "bg-red-50 dark:bg-red-900/30 text-red-900 dark:text-red-200 hover:bg-red-100 dark:hover:bg-red-900/40")} onClick={() => router.push(`/flotilla/${v.id}`)}>
