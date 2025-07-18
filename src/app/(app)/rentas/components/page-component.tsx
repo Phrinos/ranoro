@@ -12,7 +12,7 @@ import { RegisterPaymentDialog } from "./register-payment-dialog";
 import type { RentalPayment, Driver, Vehicle, WorkshopInfo, VehicleExpense, OwnerWithdrawal, User as RanoroUser } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, parseISO, compareDesc, isValid, startOfMonth, endOfMonth, isWithinInterval, isSameDay, subDays, startOfWeek, endOfWeek, getDate } from 'date-fns';
+import { format, parseISO, compareDesc, isValid, startOfMonth, endOfMonth, isWithinInterval, isSameDay, subDays, startOfWeek, endOfWeek, getDate, isAfter, differenceInCalendarDays, compareAsc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './rental-receipt-content';
@@ -99,7 +99,6 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
     const today = new Date();
     const monthStart = startOfMonth(today);
     const monthEnd = endOfMonth(today);
-    const daysSoFar = getDate(today);
 
     const balances = drivers.filter(d => !d.isArchived).map(driver => {
         const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
@@ -113,13 +112,14 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
         
         const contractStartDate = driver.contractDate ? parseISO(driver.contractDate) : today;
         const calculationStartDate = isAfter(contractStartDate, monthStart) ? contractStartDate : monthStart;
+        
         const daysToChargeThisMonth = !isAfter(calculationStartDate, today) ? differenceInCalendarDays(today, calculationStartDate) + 1 : 0;
         const chargesThisMonth = dailyRate * daysToChargeThisMonth;
         
         const balance = paymentsThisMonth - chargesThisMonth;
         
         const { totalDebt } = calculateDriverDebt(driver, payments, vehicles);
-        const realBalance = balance - totalDebt; // This is not quite right, it should be based on the totalDebt. Let's adjust this.
+        const realBalance = -totalDebt;
         
         const rentalDebtThisMonth = Math.max(0, -balance);
         const daysOwed = dailyRate > 0 ? rentalDebtThisMonth / dailyRate : 0;
@@ -133,7 +133,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
             daysPaid: daysPaidThisMonth,
             daysOwed,
             balance,
-            realBalance: -totalDebt,
+            realBalance,
         };
     });
 
