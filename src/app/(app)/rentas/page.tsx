@@ -14,12 +14,15 @@ function RentasPage() {
     const action = searchParams.get('action');
 
     useEffect(() => {
+      // Clean up the URL after the action has been acknowledged,
+      // but keep other params like 'tab'.
       if (action === 'registrar') {
-        router.replace('/rentas?tab=' + (tab || 'resumen'), { scroll: false });
+        const newUrl = `/rentas${tab ? `?tab=${tab}` : ''}`;
+        router.replace(newUrl, { scroll: false });
       }
     }, [action, tab, router]);
 
-    return <RentasPageComponent tab={tab || undefined} />;
+    return <RentasPageComponent tab={tab || undefined} action={action} />;
 }
 
 export default function RentasPageWrapper() {

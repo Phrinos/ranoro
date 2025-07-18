@@ -30,7 +30,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare } from 'lucide-react';
 
 
-function RentasPageComponent({ tab }: { tab?: string }) {
+function RentasPageComponent({ tab, action }: { tab?: string, action?: string | null }) {
   const defaultTab = tab || 'resumen';
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -51,6 +51,12 @@ function RentasPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (action === 'registrar') {
+      setIsPaymentDialogOpen(true);
+    }
+  }, [action]);
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -306,4 +312,5 @@ function RentasPageComponent({ tab }: { tab?: string }) {
 }
 
 export { RentasPageComponent };
+
 
