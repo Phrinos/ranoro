@@ -166,6 +166,14 @@ export function InventarioPageComponent({
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
+  const tabsConfig = [
+    { value: "informe", label: "Informe" },
+    { value: "productos", label: "Productos y Servicios" },
+    { value: "categorias", label: "Categorías" },
+    { value: "proveedores", label: "Proveedores" },
+    { value: "analisis", label: "Análisis IA" },
+  ];
+
   return (
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
@@ -175,13 +183,23 @@ export function InventarioPageComponent({
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="w-full">
-            <TabsList className="h-auto p-0 bg-transparent flex flex-wrap w-full gap-2 sm:gap-4">
-                <TabsTrigger value="informe" className={cn('flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug', activeTab === 'informe' ? 'bg-primary text-white shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>Informe</TabsTrigger>
-                <TabsTrigger value="productos" className={cn('flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug', activeTab === 'productos' ? 'bg-primary text-white shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>Productos y Servicios</TabsTrigger>
-                <TabsTrigger value="categorias" className={cn('flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug', activeTab === 'categorias' ? 'bg-primary text-white shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>Categorías</TabsTrigger>
-                <TabsTrigger value="proveedores" className={cn('flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug', activeTab === 'proveedores' ? 'bg-primary text-white shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>Proveedores</TabsTrigger>
-                <TabsTrigger value="analisis" className={cn('flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug', activeTab === 'analisis' ? 'bg-primary text-white shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80')}>Análisis IA</TabsTrigger>
-            </TabsList>
+            <div className="flex flex-wrap w-full gap-2 sm:gap-4">
+              {tabsConfig.map(tabInfo => (
+                <button
+                  key={tabInfo.value}
+                  onClick={() => setActiveTab(tabInfo.value)}
+                  className={cn(
+                    'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
+                    'break-words whitespace-normal leading-snug',
+                    activeTab === tabInfo.value
+                      ? 'bg-red-700 text-white shadow'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  )}
+                >
+                  {tabInfo.label}
+                </button>
+              ))}
+            </div>
         </div>
         
         <TabsContent value="informe" className="mt-6">
