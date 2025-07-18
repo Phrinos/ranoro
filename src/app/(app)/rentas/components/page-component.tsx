@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -26,7 +24,7 @@ import { useRouter } from 'next/navigation';
 import { EditPaymentNoteDialog } from './edit-payment-note-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, ListFilter } from 'lucide-react';
+import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, ListFilter, Badge } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Link from 'next/link';
 import type { DateRange } from 'react-day-picker';
@@ -241,6 +239,10 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
     return { totalCollected, totalDebt, driverWithMostDebt, totalExpenses };
   }, [payments, drivers, vehicles, expenses]);
 
+  const totalPaymentsAllTime = useMemo(() => {
+    return payments.reduce((sum, p) => sum + p.amount, 0);
+  }, [payments]);
+
   
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
 
@@ -260,6 +262,13 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
              <ArrowDownCircle className="mr-2 h-4 w-4 text-red-500"/>
              Gasto
           </Button>
+          <div className="flex items-center gap-2 p-2 h-10 rounded-md border bg-card text-card-foreground shadow-sm">
+            <Wallet className="h-5 w-5 text-green-500" />
+            <div className="flex flex-col items-end">
+              <span className="text-xs text-muted-foreground -mb-1">Saldo en Caja</span>
+              <span className="font-bold">{formatCurrency(totalPaymentsAllTime)}</span>
+            </div>
+          </div>
           <Button onClick={() => setIsPaymentDialogOpen(true)} className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" />
               Registrar Pago
@@ -376,11 +385,14 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
                                 sortedPayments.map(p => (
                                     <TableRow key={p.id}>
                                         <TableCell className="font-mono">{p.id.slice(-6)}</TableCell>
-                                        <TableCell>{p.registeredBy}</TableCell>
+                                        <TableCell>{p.registeredBy || 'N/A'}</TableCell>
                                         <TableCell>{format(parseISO(p.paymentDate), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
                                         <TableCell className="font-semibold">{p.driverName}</TableCell>
                                         <TableCell>{p.vehicleLicensePlate}</TableCell>
-                                        <TableCell className="text-right font-bold">{formatCurrency(p.amount)}</TableCell>
+                                        <TableCell className="text-right font-bold">
+                                            {formatCurrency(p.amount)}
+                                            {p.paymentMethod && <Badge variant="outline" className="mt-1 ml-2 text-xs">{p.paymentMethod}</Badge>}
+                                        </TableCell>
                                         <TableCell className="text-xs text-muted-foreground">{p.note || 'N/A'}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => { setPaymentToEdit(p); setIsEditNoteDialogOpen(true); }}>
