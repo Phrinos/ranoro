@@ -237,14 +237,14 @@ export function ServiceDialog({
               onTotalCostChange={setTotalCost}
             />
         </div>
-        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center w-full gap-4">
+        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-4">
             <div className="w-full sm:w-auto flex justify-start">
                 {showCancelButton && onCancelService && (
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button type="button" variant="destructive" className="w-full sm:w-auto">
-                                <Ban className="mr-2 h-4 w-4" />
-                                Cancelar
+                            <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                <Ban className="h-5 w-5" />
+                                <span className="sr-only">Cancelar</span>
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
