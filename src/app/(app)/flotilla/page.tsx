@@ -4,6 +4,7 @@
 
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 
 function Redirector() {
     // Redirect to the new default page for the "Fleet" section
