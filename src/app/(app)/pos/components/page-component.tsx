@@ -398,6 +398,13 @@ Total: ${formatCurrency(sale.totalAmount)}
     </div>
   );
 
+  const posTabs = [
+    { value: "informe", label: "Informe" },
+    { value: "ventas", label: "Ventas" },
+    { value: "caja", label: "Caja" },
+    { value: "movimientos", label: "Movimientos" },
+  ];
+
   if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
   
   return (
@@ -408,12 +415,23 @@ Total: ${formatCurrency(sale.totalAmount)}
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-            <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
-            <TabsTrigger value="ventas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Ventas</TabsTrigger>
-            <TabsTrigger value="caja" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Caja</TabsTrigger>
-            <TabsTrigger value="movimientos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Movimientos</TabsTrigger>
-          </TabsList>
+            <div className="flex flex-wrap w-full gap-2 sm:gap-4">
+              {posTabs.map((tabInfo) => (
+                <button
+                  key={tabInfo.value}
+                  onClick={() => setActiveTab(tabInfo.value)}
+                  className={cn(
+                    'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
+                    'break-words whitespace-normal leading-snug',
+                    activeTab === tabInfo.value
+                      ? 'bg-red-700 text-white shadow'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  )}
+                >
+                  {tabInfo.label}
+                </button>
+              ))}
+            </div>
         </div>
         <TabsContent value="informe" className="mt-6 space-y-6">
             <div className="space-y-2"><h2 className="text-2xl font-semibold tracking-tight">Resumen de Ventas y Ganancias</h2><p className="text-muted-foreground">Datos para el período seleccionado.</p></div>
