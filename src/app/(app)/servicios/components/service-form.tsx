@@ -1,5 +1,4 @@
 
-
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -414,6 +413,13 @@ export function ServiceForm(props:Props){
   const showNextServiceCard = useMemo(() => {
     return (watchedStatus === 'En Taller' && watchedSubStatus === 'Completado') || watchedStatus === 'Entregado';
   }, [watchedStatus, watchedSubStatus]);
+  
+  const formTabs = [
+      { id: 'details', label: 'Detalles' },
+      { id: 'reception', label: 'Recepción/Entrega' },
+      { id: 'photoreport', label: 'Fotos' },
+      { id: 'checklist', label: 'Revisión' },
+  ];
 
 
   return (
@@ -430,12 +436,24 @@ export function ServiceForm(props:Props){
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b flex justify-between items-center">
-                            <TabsList className={cn("grid w-full", "grid-cols-4")}>
-                                <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
-                                <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
-                                <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
-                                <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
-                            </TabsList>
+                            <div className="flex flex-wrap w-full gap-2 sm:gap-4">
+                              {formTabs.map((tab) => (
+                                <button
+                                  key={tab.id}
+                                  type="button"
+                                  onClick={() => setActiveTab(tab.id)}
+                                  className={cn(
+                                    'flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
+                                    'break-words whitespace-normal leading-snug',
+                                    activeTab === tab.id
+                                      ? 'bg-red-700 text-white shadow'
+                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                  )}
+                                >
+                                  {tab.label}
+                                </button>
+                              ))}
+                            </div>
                              <Button variant="ghost" size="icon" onClick={() => setIsPreviewOpen(true)} title="Vista Previa" className="ml-2">
                                 <Eye className="h-5 w-5"/>
                             </Button>
@@ -604,4 +622,3 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
         </Card>
     );
 };
-
