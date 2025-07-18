@@ -61,17 +61,17 @@ export function AdministracionPageComponent({
             <Tabs value={activeTab} onValueChange={setAdminTab} className="w-full">
                 <div className="relative border-b">
                     <ScrollArea className="w-full whitespace-nowrap">
-                        <TabsList className="inline-flex h-auto">
-                            <TabsTrigger value="usuarios" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                        <TabsList className="inline-flex h-auto p-1 bg-muted rounded-md scrollbar-hide">
+                            <TabsTrigger value="usuarios" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                                 <Users className="h-5 w-5"/>Usuarios
                             </TabsTrigger>
-                            <TabsTrigger value="roles" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                            <TabsTrigger value="roles" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                                 <Shield className="h-5 w-5"/>Roles y Permisos
                             </TabsTrigger>
-                            <TabsTrigger value="auditoria" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                            <TabsTrigger value="auditoria" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                                  <BookOpen className="h-5 w-5"/>Auditoría
                             </TabsTrigger>
-                            <TabsTrigger value="migracion" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                            <TabsTrigger value="migracion" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                                 <DatabaseZap className="h-5 w-5"/>Migración de Datos
                             </TabsTrigger>
                         </TabsList>
