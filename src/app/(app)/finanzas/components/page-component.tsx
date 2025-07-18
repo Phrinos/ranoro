@@ -300,7 +300,7 @@ export function FinanzasPageComponent({
                         <CardContent className="space-y-4 text-base">
                             <div className="grid grid-cols-4 gap-4 font-semibold text-sm text-muted-foreground border-b pb-2">
                                 <div className="col-span-1">Categoría</div>
-                                <div className="col-span-1 text-right">Operaciones</div>
+                                <div className="col-span-1 text-right">Ops.</div>
                                 <div className="col-span-1 text-right">Ingresos</div>
                                 <div className="col-span-1 text-right">Ganancia</div>
                             </div>
@@ -314,10 +314,10 @@ export function FinanzasPageComponent({
                                     </div>
                                 ))}
                             </div>
-                            <div className="grid grid-cols-4 gap-4 items-center font-bold text-base pt-4 border-t mt-4">
-                                <div className="col-span-2 text-right">Total Ingresos Brutos:</div>
-                                <div className="col-span-1 text-right text-lg">{formatCurrency(financialSummary.totalOperationalIncome)}</div>
-                                <div className="col-span-1 text-right text-lg text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</div>
+                            <div className="flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-4 items-end font-bold text-base pt-4 border-t mt-4">
+                                <div className="col-span-2 text-right w-full sm:w-auto">Total Ingresos Brutos:</div>
+                                <div className="col-span-1 text-right text-lg w-full sm:w-auto">{formatCurrency(financialSummary.totalOperationalIncome)}</div>
+                                <div className="col-span-1 text-right text-lg text-green-600 w-full sm:w-auto">{formatCurrency(financialSummary.totalOperationalProfit)}</div>
                             </div>
                         </CardContent>
                       </Card>

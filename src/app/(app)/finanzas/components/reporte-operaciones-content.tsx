@@ -120,10 +120,14 @@ export function ReporteOperacionesContent({ allSales, allServices, allInventory,
         <h2 className="text-2xl font-semibold tracking-tight">Detalle de Operaciones</h2>
         <p className="text-muted-foreground">Ventas y servicios completados en el período seleccionado.</p>
       </div>
-      <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
-            <Button variant="outline" size="sm" onClick={() => { setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) }); setTempDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) }); }} className="bg-card">Hoy</Button>
-            <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Esta Semana</Button>
-            <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfMonth(new Date()), to: endOfMonth(new Date()) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Este Mes</Button>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex-1 w-full">
+            <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input type="search" placeholder="Buscar por ID o descripción..." className="w-full rounded-lg bg-card pl-8" value={reporteOpSearchTerm} onChange={(e) => setReporteOpSearchTerm(e.target.value)} />
+            </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:justify-end">
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
                     <Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}>
@@ -138,13 +142,6 @@ export function ReporteOperacionesContent({ allSales, allServices, allInventory,
                     </div>
                 </PopoverContent>
             </Popover>
-      </div>
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Buscar por ID o descripción..." className="w-full rounded-lg bg-card pl-8" value={reporteOpSearchTerm} onChange={(e) => setReporteOpSearchTerm(e.target.value)} />
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="flex-1 sm:flex-initial bg-card">
