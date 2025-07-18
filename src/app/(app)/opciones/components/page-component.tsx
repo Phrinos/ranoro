@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Suspense, useState, useEffect, useMemo } from "react";
@@ -77,13 +78,13 @@ export function OpcionesPageComponent({ tab }: { tab?: string }) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full">
-            <TabsList className="flex w-full overflow-x-auto gap-2 scrollbar-hide px-1 py-1 h-auto">
+        <div className="w-full overflow-x-auto scrollbar-hide">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:flex w-full gap-2 px-2 py-1">
               {availableTabs.map(tab => (
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
-                  className="whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-colors
+                  className="flex-1 min-w-max text-center px-4 py-2 rounded-md transition-colors duration-200
                     data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
                     data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground"
                 >
