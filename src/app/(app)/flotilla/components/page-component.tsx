@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -35,12 +33,13 @@ interface MonthlyBalance {
   driverId: string;
   driverName: string;
   vehicleInfo: string;
-  charges: number;
   payments: number;
-  balance: number;
+  charges: number;
+  daysPaid: number;
   daysOwed: number;
-  daysCovered: number;
+  balance: number;
 }
+
 
 interface OverduePaperworkItem {
     vehicleId: string;
@@ -113,39 +112,32 @@ export function FlotillaPageComponent({
   const monthlyBalances = useMemo((): MonthlyBalance[] => {
     if (isLoading) return [];
     
-    const today = startOfToday();
+    const today = new Date();
     const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
+    const daysSoFar = getDate(today);
 
-    const paymentsThisMonthByDriver = allPayments.filter(p => {
-        const pDate = parseISO(p.paymentDate);
-        return isValid(pDate) && isWithinInterval(pDate, { start: monthStart, end: monthEnd });
-    }).reduce((acc, p) => {
-        if (!acc[p.driverId]) acc[p.driverId] = { totalAmount: 0, totalDaysCovered: 0};
-        acc[p.driverId].totalAmount += p.amount;
-        acc[p.driverId].totalDaysCovered += p.daysCovered;
-        return acc;
-    }, {} as Record<string, { totalAmount: number, totalDaysCovered: number }>);
-    
     const balances = allDrivers.filter(d => !d.isArchived).map(driver => {
-        const debtInfo = calculateDriverDebt(driver, allPayments, allVehicles);
         const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
         const dailyRate = vehicle?.dailyRentalCost || 0;
         
-        const paymentsInfo = paymentsThisMonthByDriver[driver.id] || { totalAmount: 0, totalDaysCovered: 0 };
-        const totalCharges = debtInfo.rentalDebt + debtInfo.manualDebt + debtInfo.depositDebt;
-        const totalPayments = paymentsInfo.totalAmount;
-        const balance = totalPayments - (totalCharges > paymentsInfo.totalAmount ? totalCharges - (debtInfo.rentalDebt - paymentsInfo.totalAmount) : totalCharges);
+        const paymentsThisMonth = allPayments
+            .filter(p => p.driverId === driver.id && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: today }))
+            .reduce((sum, p) => sum + p.amount, 0);
+            
+        const daysPaidThisMonth = dailyRate > 0 ? paymentsThisMonth / dailyRate : 0;
+        const chargesThisMonth = dailyRate * daysSoFar;
+        const balance = paymentsThisMonth - chargesThisMonth;
+        const daysOwed = balance < 0 ? Math.abs(balance) / dailyRate : 0;
         
         return {
             driverId: driver.id,
             driverName: driver.name,
             vehicleInfo: vehicle ? `${vehicle.licensePlate} (${formatCurrency(dailyRate)}/día)` : 'N/A',
-            charges: totalCharges,
-            payments: totalPayments,
-            daysCovered: paymentsInfo.totalDaysCovered,
-            balance: balance,
-            daysOwed: debtInfo.totalDebt / (dailyRate || 1),
+            payments: paymentsThisMonth,
+            charges: chargesThisMonth,
+            daysPaid: daysPaidThisMonth,
+            daysOwed,
+            balance,
         };
     });
 
@@ -279,25 +271,28 @@ export function FlotillaPageComponent({
                             <CardTitle>Estado de Cuenta Mensual</CardTitle>
                             <CardDescription>Resumen de saldos de todos los conductores para el mes de {format(new Date(), "MMMM", { locale: es })}.</CardDescription>
                         </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    <ListFilter className="mr-2 h-4 w-4" />
-                                    Ordenar por
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                                <DropdownMenuRadioGroup value={balanceSortOption} onValueChange={(v) => setBalanceSortOption(v as BalanceSortOption)}>
-                                    <DropdownMenuRadioItem value="daysOwed_desc">Mayor Adeudo</DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="daysOwed_asc">Menor Adeudo</DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="driverName_asc">Conductor (A-Z)</DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="driverName_desc">Conductor (Z-A)</DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="balance_desc">Mejor Balance (Mes)</DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="balance_asc">Peor Balance (Mes)</DropdownMenuRadioItem>
-                                </DropdownMenuRadioGroup>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                        <ListFilter className="mr-2 h-4 w-4" />
+                                        Ordenar por
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup value={balanceSortOption} onValueChange={(v) => setBalanceSortOption(v as BalanceSortOption)}>
+                                        <DropdownMenuRadioItem value="daysOwed_desc">Mayor Adeudo</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="daysOwed_asc">Menor Adeudo</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="driverName_asc">Conductor (A-Z)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="driverName_desc">Conductor (Z-A)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="balance_desc">Mejor Balance (Mes)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="balance_asc">Peor Balance (Mes)</DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <span className="text-sm text-muted-foreground">Día {getDate(new Date())} del mes</span>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -306,11 +301,11 @@ export function FlotillaPageComponent({
                             <TableHeader className="bg-black">
                                 <TableRow>
                                     <TableHead className="text-white">Conductor</TableHead>
-                                    <TableHead className="text-white">Vehículo (Renta)</TableHead>
+                                    <TableHead className="text-white">Vehículo</TableHead>
                                     <TableHead className="text-right text-white">Pagos (Mes)</TableHead>
-                                    <TableHead className="text-right text-white">Adeudo Total</TableHead>
+                                    <TableHead className="text-right text-white">Cargos (Mes)</TableHead>
                                     <TableHead className="text-right text-white">Días Pagados (Mes)</TableHead>
-                                    <TableHead className="text-right text-white">Días Adeudo (Aprox)</TableHead>
+                                    <TableHead className="text-right text-white">Días Adeudo (Mes)</TableHead>
                                     <TableHead className="text-right text-white">Balance (Mes)</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -319,14 +314,14 @@ export function FlotillaPageComponent({
                                     monthlyBalances.map(mb => (
                                         <TableRow 
                                             key={mb.driverId} 
-                                            className={cn("cursor-pointer hover:bg-muted/50", mb.daysOwed > 2 && "bg-red-50 dark:bg-red-900/30")}
+                                            className={cn("cursor-pointer hover:bg-muted/50", mb.balance < 0 && "bg-red-50 dark:bg-red-900/30")}
                                             onClick={() => router.push(`/conductores/${mb.driverId}`)}
                                         >
                                             <TableCell className="font-semibold">{mb.driverName}</TableCell>
                                             <TableCell>{mb.vehicleInfo}</TableCell>
                                             <TableCell className="text-right text-green-600">{formatCurrency(mb.payments)}</TableCell>
                                             <TableCell className="text-right text-red-600">{formatCurrency(mb.charges)}</TableCell>
-                                            <TableCell className="text-right font-semibold">{mb.daysCovered.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right font-semibold">{mb.daysPaid.toFixed(2)}</TableCell>
                                             <TableCell className="text-right font-bold text-destructive">{mb.daysOwed.toFixed(2)}</TableCell>
                                             <TableCell className={cn("text-right font-bold", mb.balance >= 0 ? "text-green-700" : "text-red-700")}>{formatCurrency(mb.balance)}</TableCell>
                                         </TableRow>
