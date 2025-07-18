@@ -25,7 +25,7 @@ import { operationsService } from '@/lib/services/operations.service';
 import { adminService } from '@/lib/services/admin.service';
 import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
-import { PrintLetterDialog } from '@/components/ui/print-letter-dialog';
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { InventoryReportContent } from './inventory-report-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
