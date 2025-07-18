@@ -98,6 +98,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
     
     const today = new Date();
     const monthStart = startOfMonth(today);
+    const monthEnd = endOfMonth(today);
     const daysSoFar = getDate(today);
 
     const balances = drivers.filter(d => !d.isArchived).map(driver => {
@@ -105,16 +106,23 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
         const dailyRate = vehicle?.dailyRentalCost || 0;
         
         const paymentsThisMonth = payments
-            .filter(p => p.driverId === driver.id && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: today }))
+            .filter(p => p.driverId === driver.id && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }))
             .reduce((sum, p) => sum + p.amount, 0);
             
         const daysPaidThisMonth = dailyRate > 0 ? paymentsThisMonth / dailyRate : 0;
-        const chargesThisMonth = dailyRate * daysSoFar;
-        const balance = paymentsThisMonth - chargesThisMonth;
-        const daysOwed = balance < 0 ? Math.abs(balance) / dailyRate : 0;
         
-        const depositDebt = Math.max(0, (driver.requiredDepositAmount || 3500) - (driver.depositAmount || 0));
-        const realBalance = balance - depositDebt;
+        const contractStartDate = driver.contractDate ? parseISO(driver.contractDate) : today;
+        const calculationStartDate = isAfter(contractStartDate, monthStart) ? contractStartDate : monthStart;
+        const daysToChargeThisMonth = !isAfter(calculationStartDate, today) ? differenceInCalendarDays(today, calculationStartDate) + 1 : 0;
+        const chargesThisMonth = dailyRate * daysToChargeThisMonth;
+        
+        const balance = paymentsThisMonth - chargesThisMonth;
+        
+        const { totalDebt } = calculateDriverDebt(driver, payments, vehicles);
+        const realBalance = balance - totalDebt; // This is not quite right, it should be based on the totalDebt. Let's adjust this.
+        
+        const rentalDebtThisMonth = Math.max(0, -balance);
+        const daysOwed = dailyRate > 0 ? rentalDebtThisMonth / dailyRate : 0;
         
         return {
             driverId: driver.id,
@@ -125,7 +133,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
             daysPaid: daysPaidThisMonth,
             daysOwed,
             balance,
-            realBalance,
+            realBalance: -totalDebt,
         };
     });
 
@@ -135,8 +143,8 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
             case 'driverName_desc': return b.driverName.localeCompare(a.driverName);
             case 'daysOwed_desc': return b.daysOwed - a.daysOwed;
             case 'daysOwed_asc': return a.daysOwed - b.daysOwed;
-            case 'balance_desc': return b.balance - a.balance;
-            case 'balance_asc': return a.balance - b.balance;
+            case 'balance_desc': return b.realBalance - a.realBalance;
+            case 'balance_asc': return a.realBalance - b.realBalance;
             default: return b.daysOwed - a.daysOwed;
         }
     });
@@ -454,4 +462,3 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 }
 
 export { RentasPageComponent };
-
