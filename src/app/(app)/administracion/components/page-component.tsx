@@ -59,23 +59,21 @@ export function AdministracionPageComponent({
             </div>
             
             <Tabs value={activeTab} onValueChange={setAdminTab} className="w-full">
-                <div className="relative border-b">
-                    <ScrollArea className="w-full whitespace-nowrap">
-                        <TabsList className="inline-flex h-auto p-1 bg-muted rounded-md scrollbar-hide">
-                            <TabsTrigger value="usuarios" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                                <Users className="h-5 w-5"/>Usuarios
-                            </TabsTrigger>
-                            <TabsTrigger value="roles" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                                <Shield className="h-5 w-5"/>Roles y Permisos
-                            </TabsTrigger>
-                            <TabsTrigger value="auditoria" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                                 <BookOpen className="h-5 w-5"/>Auditoría
-                            </TabsTrigger>
-                            <TabsTrigger value="migracion" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                                <DatabaseZap className="h-5 w-5"/>Migración de Datos
-                            </TabsTrigger>
-                        </TabsList>
-                    </ScrollArea>
+                <div className="w-full overflow-x-auto scrollbar-hide">
+                    <TabsList className="grid w-full grid-cols-4 gap-2 sm:gap-4">
+                        <TabsTrigger value="usuarios" className="flex-1 min-w-[150px] text-center px-4 py-2 rounded-md transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                            <Users className="h-5 w-5 mr-2"/>Usuarios
+                        </TabsTrigger>
+                        <TabsTrigger value="roles" className="flex-1 min-w-[150px] text-center px-4 py-2 rounded-md transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                            <Shield className="h-5 w-5 mr-2"/>Roles y Permisos
+                        </TabsTrigger>
+                        <TabsTrigger value="auditoria" className="flex-1 min-w-[150px] text-center px-4 py-2 rounded-md transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                             <BookOpen className="h-5 w-5 mr-2"/>Auditoría
+                        </TabsTrigger>
+                        <TabsTrigger value="migracion" className="flex-1 min-w-[150px] text-center px-4 py-2 rounded-md transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                            <DatabaseZap className="h-5 w-5 mr-2"/>Migración de Datos
+                        </TabsTrigger>
+                    </TabsList>
                 </div>
                 <TabsContent value="usuarios" className="mt-6">
                     <UsuariosPageContent currentUser={currentUser} initialUsers={users} initialRoles={roles} />
