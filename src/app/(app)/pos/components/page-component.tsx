@@ -249,6 +249,17 @@ export function PosPageComponent({ tab }: { tab?: string }) {
 
     return { initialBalance, totalCashSales: totalCashOperations, totalCashIn, totalCashOut, finalCashBalance, salesByPaymentMethod, totalSales: salesInRange.length, totalServices: servicesInRange.length };
   }, [dateRange, allSales, allServices, allCashTransactions, initialCashBalance]);
+
+  const cashMovementsInRange = useMemo(() => {
+    if (!dateRange?.from) return [];
+    const from = startOfDay(dateRange.from);
+    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+
+    return allCashTransactions.filter(transaction => {
+        const transactionDate = parseISO(transaction.date);
+        return isValid(transactionDate) && isWithinInterval(transactionDate, { start: from, end: to });
+    }).sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+  }, [dateRange, allCashTransactions]);
   
   const handleCancelSale = useCallback(async (saleId: string, reason: string) => {
     if (!db) return;
@@ -412,34 +423,34 @@ Total: ${formatCurrency(sale.totalAmount)}
                         <div><h2 className="text-2xl font-semibold tracking-tight">Historial de Ventas</h2><p className="text-muted-foreground">Consulta, filtra y reimprime tickets.</p></div>
                         <Button asChild className="flex-1 sm:flex-initial"><Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link></Button>
                     </div>
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                        {dateFilterComponent}
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                        <div className="relative flex-1 w-full sm:max-w-xs">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input type="search" placeholder="Buscar por ID, cliente, artículo..." className="w-full rounded-lg bg-card pl-8" value={ventasSearchTerm} onChange={(e) => setVentasSearchTerm(e.target.value)} />
-                        </div>
-                        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                                    <DropdownMenuRadioGroup value={ventasSortOption} onValueChange={(v) => setVentasSortOption(v as SaleSortOption)}>
-                                        <DropdownMenuRadioItem value="date_desc">Más Reciente</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="date_asc">Más Antiguo</DropdownMenuRadioItem>
-                                    </DropdownMenuRadioGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><Filter className="mr-2 h-4 w-4" />Pago</Button></DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Método de Pago</DropdownMenuLabel>
-                                    <DropdownMenuRadioGroup value={ventasPaymentMethodFilter} onValueChange={(v) => setVentasPaymentMethodFilter(v as PaymentMethod | 'all')}>
-                                        {paymentMethods.map(method => (<DropdownMenuRadioItem key={method} value={method}>{method === 'all' ? 'Todos' : method}</DropdownMenuRadioItem>))}
-                                    </DropdownMenuRadioGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 flex-wrap w-full justify-start sm:justify-end">{dateFilterComponent}</div>
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                            <div className="relative flex-1 w-full sm:max-w-xs">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input type="search" placeholder="Buscar por ID, cliente, artículo..." className="w-full rounded-lg bg-card pl-8" value={ventasSearchTerm} onChange={(e) => setVentasSearchTerm(e.target.value)} />
+                            </div>
+                            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                                        <DropdownMenuRadioGroup value={ventasSortOption} onValueChange={(v) => setVentasSortOption(v as SaleSortOption)}>
+                                            <DropdownMenuRadioItem value="date_desc">Más Reciente</DropdownMenuRadioItem>
+                                            <DropdownMenuRadioItem value="date_asc">Más Antiguo</DropdownMenuRadioItem>
+                                        </DropdownMenuRadioGroup>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><Filter className="mr-2 h-4 w-4" />Pago</Button></DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Método de Pago</DropdownMenuLabel>
+                                        <DropdownMenuRadioGroup value={ventasPaymentMethodFilter} onValueChange={(v) => setVentasPaymentMethodFilter(v as PaymentMethod | 'all')}>
+                                            {paymentMethods.map(method => (<DropdownMenuRadioItem key={method} value={method}>{method === 'all' ? 'Todos' : method}</DropdownMenuRadioItem>))}
+                                        </DropdownMenuRadioGroup>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
@@ -447,7 +458,7 @@ Total: ${formatCurrency(sale.totalAmount)}
             </Card>
         </TabsContent>
         <TabsContent value="caja" className="mt-6 space-y-6">
-             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div><h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2><p className="text-muted-foreground">Controla el flujo de efectivo para la fecha seleccionada.</p></div>
                 <div className="flex items-center gap-2 flex-wrap w-full justify-start sm:justify-end">{dateFilterComponent}</div>
              </div>
