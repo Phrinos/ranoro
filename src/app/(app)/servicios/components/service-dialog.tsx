@@ -220,31 +220,29 @@ export function ServiceDialog({
               <p className="text-3xl font-bold text-primary">{formatCurrency(totalCost)}</p>
             </div>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto px-6">
-            <ServiceForm
-              initialDataService={service}
-              vehicles={vehicles} 
-              technicians={technicians}
-              inventoryItems={inventoryItems}
-              serviceTypes={serviceTypes}
-              onSubmit={internalOnSave}
-              onClose={() => onOpenChange(false)}
-              onCancelService={onCancelService}
-              isReadOnly={isReadOnly}
-              mode={mode}
-              onStatusChange={setFormStatus}
-              onVehicleCreated={onVehicleCreated}
-              onTotalCostChange={setTotalCost}
-            />
-        </div>
-        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-4">
-            <div className="w-full sm:w-auto flex justify-start">
+        <ServiceForm
+          initialDataService={service}
+          vehicles={vehicles} 
+          technicians={technicians}
+          inventoryItems={inventoryItems}
+          serviceTypes={serviceTypes}
+          onSubmit={internalOnSave}
+          onClose={() => onOpenChange(false)}
+          onCancelService={onCancelService}
+          isReadOnly={isReadOnly}
+          mode={mode}
+          onStatusChange={setFormStatus}
+          onVehicleCreated={onVehicleCreated}
+          onTotalCostChange={setTotalCost}
+        />
+        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-col sm:flex-row sm:justify-between sm:items-center w-full gap-2">
+            <div className="flex justify-start">
                 {showCancelButton && onCancelService && (
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                <Ban className="h-5 w-5" />
-                                <span className="sr-only">Cancelar</span>
+                            <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                <Ban className="h-4 w-4 mr-2" />
+                                Cancelar
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -272,14 +270,14 @@ export function ServiceDialog({
                     </AlertDialog>
                 )}
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-               <Button variant="outline" type="button" onClick={() => onOpenChange(false)} className="w-full">Cerrar</Button>
+            <div className="flex flex-row gap-2 w-full sm:w-auto justify-end">
+               <Button variant="outline" type="button" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cerrar</Button>
                {!isReadOnly && (
                    <Button 
                        type="submit" 
                        form="service-form" 
                        disabled={false} 
-                       className="w-full bg-green-600 hover:bg-green-700"
+                       className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
                    >
                        {service?.id ? 'Actualizar Registro' : 'Crear Registro'}
                    </Button>
