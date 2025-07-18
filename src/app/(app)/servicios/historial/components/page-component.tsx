@@ -253,7 +253,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     message += `\n\n¡Agradecemos tu preferencia!`;
 
     navigator.clipboard.writeText(message).then(() => {
-      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado.' });
+      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
     });
   }, [toast, vehicles, workshopInfo]);
 
@@ -301,7 +301,24 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         </TabsContent>
 
         <TabsContent value="historial" className="mt-0 space-y-4">
-          <TableToolbar {...historicalTableManager} filterOptions={[{ value: 'status', label: 'Estado', options: serviceStatusOptions }, { value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions }]} searchPlaceholder="Buscar por folio, placa..." />
+          <TableToolbar 
+            searchTerm={historicalTableManager.searchTerm}
+            onSearchTermChange={historicalTableManager.setSearchTerm}
+            searchPlaceholder="Buscar por folio, placa..."
+            dateRange={historicalTableManager.dateRange}
+            onDateRangeChange={historicalTableManager.setDateRange}
+            sortOption={historicalTableManager.sortOption}
+            onSortOptionChange={historicalTableManager.setSortOption}
+            otherFilters={{
+                status: historicalTableManager.otherFilters['status'] || 'all',
+                paymentMethod: historicalTableManager.otherFilters['paymentMethod'] || 'all',
+            }}
+            onFilterChange={historicalTableManager.setOtherFilters}
+            filterOptions={[
+                { value: 'status', label: 'Estado', options: serviceStatusOptions },
+                { value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions },
+            ]}
+          />
           {filteredHistorical.length > 0 ? filteredHistorical.map(renderServiceCard) : <p className="text-center text-muted-foreground py-10">No hay servicios que coincidan.</p>}
         </TabsContent>
       </Tabs>
