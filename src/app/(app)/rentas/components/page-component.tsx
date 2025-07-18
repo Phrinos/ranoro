@@ -217,13 +217,21 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
   const sortedPayments = useMemo(() => {
     return [...payments].sort((a, b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
   }, [payments]);
+  
+  const sortedExpenses = useMemo(() => {
+      return [...expenses].sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+  }, [expenses]);
+  
+  const sortedWithdrawals = useMemo(() => {
+      return [...withdrawals].sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+  }, [withdrawals]);
 
   const uniqueOwners = useMemo(() => Array.from(new Set(vehicles.filter(v => v.isFleetVehicle).map(v => v.ownerName))).sort(), [vehicles]);
 
   const summaryData = useMemo(() => {
       const { totalCollectedThisMonth, totalDebt, totalMonthlyBalance } = monthlyBalances.reduce((acc, curr) => {
           acc.totalCollectedThisMonth += curr.payments;
-          acc.totalDebt += curr.realBalance;
+          acc.totalDebt += curr.realBalance < 0 ? curr.realBalance : 0;
           acc.totalMonthlyBalance += curr.balance;
           return acc;
       }, { totalCollectedThisMonth: 0, totalDebt: 0, totalMonthlyBalance: 0 });
@@ -238,7 +246,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 
       return {
           totalCollected: totalCollectedThisMonth,
-          totalDebt: totalDebt < 0 ? Math.abs(totalDebt) : 0, // Only show if it's a negative total balance
+          totalDebt: Math.abs(totalDebt),
           totalMonthlyBalance,
           driverWithMostDebt,
           totalExpenses
@@ -287,10 +295,11 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="w-full mb-6">
                 <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
-                    <TabsTrigger value="resumen" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Resumen Mensual</TabsTrigger>
-                    <TabsTrigger value="estado_cuenta" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Estado de Cuenta</TabsTrigger>
-                    <TabsTrigger value="historial" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Historial de Pagos</TabsTrigger>
-                    <TabsTrigger value="reportes" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Reportes</TabsTrigger>
+                    <TabsTrigger value="resumen" className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Resumen</TabsTrigger>
+                    <TabsTrigger value="estado_cuenta" className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Estado de Cuenta</TabsTrigger>
+                    <TabsTrigger value="historial" className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Historial</TabsTrigger>
+                    <TabsTrigger value="gastos_retiros" className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Gastos y Retiros</TabsTrigger>
+                    <TabsTrigger value="reportes" className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Reportes</TabsTrigger>
                 </TabsList>
             </div>
             <TabsContent value="resumen" className="space-y-6">
@@ -394,7 +403,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
                                 sortedPayments.map(p => (
                                     <TableRow key={p.id}>
                                         <TableCell className="font-mono">{p.id.slice(-6)}</TableCell>
-                                        <TableCell>{p.registeredBy || 'N/A'}</TableCell>
+                                        <TableCell>{p.registeredBy || 'Sistema'}</TableCell>
                                         <TableCell>{format(parseISO(p.paymentDate), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
                                         <TableCell className="font-semibold">{p.driverName}</TableCell>
                                         <TableCell>{p.vehicleLicensePlate}</TableCell>
@@ -425,6 +434,36 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
                     </div>
                   </CardContent>
               </Card>
+            </TabsContent>
+            <TabsContent value="gastos_retiros">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader><CardTitle>Historial de Gastos</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="rounded-md border overflow-x-auto">
+                      <Table>
+                        <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Vehículo</TableHead><TableHead>Desc.</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                          {sortedExpenses.length > 0 ? sortedExpenses.map(e => (<TableRow key={e.id}><TableCell>{format(parseISO(e.date), "dd/MM/yy")}</TableCell><TableCell>{e.vehicleLicensePlate}</TableCell><TableCell>{e.description}</TableCell><TableCell className="text-right font-semibold">{formatCurrency(e.amount)}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">Sin gastos</TableCell></TableRow>}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle>Historial de Retiros</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="rounded-md border overflow-x-auto">
+                        <Table>
+                          <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Propietario</TableHead><TableHead>Razón</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
+                          <TableBody>
+                            {sortedWithdrawals.length > 0 ? sortedWithdrawals.map(w => (<TableRow key={w.id}><TableCell>{format(parseISO(w.date), "dd/MM/yy")}</TableCell><TableCell>{w.ownerName}</TableCell><TableCell>{w.reason || 'N/A'}</TableCell><TableCell className="text-right font-semibold">{formatCurrency(w.amount)}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">Sin retiros</TableCell></TableRow>}
+                          </TableBody>
+                        </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
             <TabsContent value="reportes" className="mt-6 space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
