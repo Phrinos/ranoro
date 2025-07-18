@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -30,6 +29,7 @@ import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Link from 'next/link';
 import type { DateRange } from 'react-day-picker';
+import { parseDate } from '@/lib/forms';
 
 
 interface MonthlyBalance {
@@ -63,6 +63,11 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
   const [isEditNoteDialogOpen, setIsEditNoteDialogOpen] = useState(false);
   const [paymentToEdit, setPaymentToEdit] = useState<RentalPayment | null>(null);
   const [balanceSortOption, setBalanceSortOption] = useState<BalanceSortOption>('daysOwed_desc');
+  
+  const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
+    const now = new Date();
+    return { from: startOfMonth(now), to: endOfMonth(now) };
+  });
 
   const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -92,23 +97,21 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
-
   
   const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
   
-    const monthlyBalances = useMemo((): MonthlyBalance[] => {
+  const monthlyBalances = useMemo((): MonthlyBalance[] => {
     if (isLoading) return [];
     
     const today = new Date();
     const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
-
+    
     const balances = drivers.filter(d => !d.isArchived).map(driver => {
         const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
         const dailyRate = vehicle?.dailyRentalCost || 0;
         
         const paymentsThisMonth = payments
-            .filter(p => p.driverId === driver.id && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }))
+            .filter(p => p.driverId === driver.id && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: today }))
             .reduce((sum, p) => sum + p.amount, 0);
             
         const daysPaidThisMonth = dailyRate > 0 ? paymentsThisMonth / dailyRate : 0;
@@ -245,64 +248,73 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
   };
   
   const sortedPayments = useMemo(() => {
-    return [...payments].sort((a, b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
+    return [...payments].sort((a, b) => compareDesc(parseDate(a.paymentDate)!, parseDate(b.paymentDate)!));
   }, [payments]);
   
   const sortedExpenses = useMemo(() => {
-      return [...expenses].sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+      return [...expenses].sort((a,b) => compareDesc(parseDate(a.date)!, parseDate(b.date)!));
   }, [expenses]);
   
   const sortedWithdrawals = useMemo(() => {
-      return [...withdrawals].sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+      return [...withdrawals].sort((a,b) => compareDesc(parseDate(a.date)!, parseDate(b.date)!));
   }, [withdrawals]);
 
   const uniqueOwners = useMemo(() => Array.from(new Set(vehicles.filter(v => v.isFleetVehicle).map(v => v.ownerName))).sort(), [vehicles]);
 
   const summaryData = useMemo(() => {
-      const { totalCollectedThisMonth, totalDebt, totalMonthlyBalance } = monthlyBalances.reduce((acc, curr) => {
-          acc.totalCollectedThisMonth += curr.payments;
-          acc.totalDebt += curr.realBalance < 0 ? curr.realBalance : 0;
-          acc.totalMonthlyBalance += curr.balance;
-          return acc;
-      }, { totalCollectedThisMonth: 0, totalDebt: 0, totalMonthlyBalance: 0 });
+    if (!filterDateRange?.from) {
+        return { totalCollected: 0, totalDebt: 0, totalMonthlyBalance: 0, driverWithMostDebt: null, totalExpenses: 0 };
+    }
+    const { from, to } = filterDateRange;
+    const interval = { start: startOfDay(from), end: endOfDay(to || from) };
 
-      const driverWithMostDebt = monthlyBalances.length > 0 
-          ? monthlyBalances.reduce((prev, curr) => (prev.daysOwed > curr.daysOwed ? prev : curr)) 
-          : null;
+    const totalCollectedThisPeriod = payments
+        .filter(p => isWithinInterval(parseDate(p.paymentDate)!, interval))
+        .reduce((sum, p) => sum + p.amount, 0);
 
-      const totalExpenses = expenses
-          .filter(e => isWithinInterval(parseISO(e.date), { start: startOfMonth(new Date()), end: endOfMonth(new Date()) }))
-          .reduce((sum, e) => sum + e.amount, 0);
+    const totalExpensesThisPeriod = expenses
+        .filter(e => isWithinInterval(parseDate(e.date)!, interval))
+        .reduce((sum, e) => sum + e.amount, 0);
 
-      return {
-          totalCollected: totalCollectedThisMonth,
-          totalDebt: Math.abs(totalDebt),
-          totalMonthlyBalance,
-          driverWithMostDebt,
-          totalExpenses
-      };
-  }, [monthlyBalances, expenses]);
+    const { totalDebt, totalMonthlyBalance } = monthlyBalances.reduce((acc, curr) => {
+        acc.totalDebt += curr.realBalance < 0 ? curr.realBalance : 0;
+        acc.totalMonthlyBalance += curr.balance;
+        return acc;
+    }, { totalDebt: 0, totalMonthlyBalance: 0 });
+
+    const driverWithMostDebt = monthlyBalances.length > 0
+        ? monthlyBalances.reduce((prev, curr) => (prev.daysOwed > curr.daysOwed ? prev : curr))
+        : null;
+
+    return {
+        totalCollected: totalCollectedThisPeriod,
+        totalDebt: Math.abs(totalDebt),
+        totalMonthlyBalance,
+        driverWithMostDebt,
+        totalExpenses: totalExpensesThisPeriod
+    };
+  }, [filterDateRange, payments, expenses, monthlyBalances]);
 
 
   const totalCashBalance = useMemo(() => {
-    const today = new Date();
-    const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
+    if (!filterDateRange?.from) return 0;
+    const { from, to } = filterDateRange;
+    const interval = { start: startOfDay(from), end: endOfDay(to || from) };
 
     const totalIncome = payments
-      .filter(p => isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }))
+      .filter(p => isWithinInterval(parseDate(p.paymentDate)!, interval))
       .reduce((sum, p) => sum + p.amount, 0);
       
     const totalWithdrawals = withdrawals
-      .filter(w => isWithinInterval(parseISO(w.date), { start: monthStart, end: monthEnd }))
+      .filter(w => isWithinInterval(parseDate(w.date)!, interval))
       .reduce((sum, w) => sum + w.amount, 0);
       
     const totalVehicleExpenses = expenses
-      .filter(e => isWithinInterval(parseISO(e.date), { start: monthStart, end: monthEnd }))
+      .filter(e => isWithinInterval(parseDate(e.date)!, interval))
       .reduce((sum, e) => sum + e.amount, 0);
       
     return totalIncome - totalWithdrawals - totalVehicleExpenses;
-  }, [payments, withdrawals, expenses]);
+  }, [filterDateRange, payments, withdrawals, expenses]);
 
   
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
@@ -347,11 +359,24 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
                 </TabsList>
             </div>
             <TabsContent value="resumen" className="space-y-6">
+                <div className="flex justify-end">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal bg-card",!filterDateRange && "text-muted-foreground")}>
+                                <CalendarDateIcon className="mr-2 h-4 w-4" />
+                                {filterDateRange?.from ? (filterDateRange.to ? (`${format(filterDateRange.from, "LLL dd, y", { locale: es })} - ${format(filterDateRange.to, "LLL dd, y", { locale: es })}`) : format(filterDateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar initialFocus mode="range" defaultMonth={filterDateRange?.from} selected={filterDateRange} onSelect={setFilterDateRange} numberOfMonths={2} locale={es} />
+                        </PopoverContent>
+                    </Popover>
+                </div>
                 <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Recaudado (Mes Actual)</CardTitle><DollarSign className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalCollected)}</div><p className="text-xs text-muted-foreground">{format(new Date(), "MMMM yyyy", {locale: es})}</p></CardContent></Card>
+                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Recaudado (Periodo)</CardTitle><DollarSign className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalCollected)}</div><p className="text-xs text-muted-foreground">Total de pagos de renta en el periodo</p></CardContent></Card>
                     <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Deuda Total Pendiente</CardTitle><AlertCircle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-destructive">{formatCurrency(summaryData.totalDebt)}</div><p className="text-xs text-muted-foreground">Suma de balances reales de todos.</p></CardContent></Card>
                     <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance del Mes (Flotilla)</CardTitle><LineChart className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className={cn("text-2xl font-bold", summaryData.totalMonthlyBalance >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(summaryData.totalMonthlyBalance)}</div><p className="text-xs text-muted-foreground">Pagos vs. cargos del mes actual.</p></CardContent></Card>
-                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Gastos de Flotilla (Mes)</CardTitle><TrendingDown className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalExpenses)}</div><p className="text-xs text-muted-foreground">Gastos de vehículos este mes.</p></CardContent></Card>
+                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Gastos de Flotilla (Periodo)</CardTitle><TrendingDown className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalExpenses)}</div><p className="text-xs text-muted-foreground">Gastos de vehículos en el periodo.</p></CardContent></Card>
                 </div>
             </TabsContent>
             <TabsContent value="estado_cuenta">
@@ -582,8 +607,3 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 }
 
 export { RentasPageComponent };
-
-
-
-
-
