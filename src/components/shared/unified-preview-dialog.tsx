@@ -181,7 +181,7 @@ En el enlace podrás:
             )}
           </DialogHeader>
           
-          <div className="flex-grow overflow-y-auto px-6 bg-muted/30">
+          <div className="flex-grow overflow-y-auto px-6 bg-muted/30 relative pb-[80px]"> {/* Add padding-bottom */}
              <div id="printable-area-dialog" className="w-[8.5in] h-[11in] bg-white mx-auto my-4 shadow-lg p-8">
                 {isLoading ? (
                     <div className="flex justify-center items-center h-full"><Loader2 className="mr-2 h-8 w-8 animate-spin" /> Cargando...</div>
@@ -200,7 +200,7 @@ En el enlace podrás:
             </div>
           </div>
           
-          <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end">
+          <DialogFooter className="p-4 border-t flex-shrink-0 bg-background sm:justify-end absolute bottom-0 left-0 right-0">
             <div className="flex flex-col sm:flex-row gap-2">
               {documentType === 'service' && (
                 <Button onClick={handleShareService} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
