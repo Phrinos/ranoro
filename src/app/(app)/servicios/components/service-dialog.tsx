@@ -279,7 +279,7 @@ export function ServiceDialog({
                        disabled={false} 
                        className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
                    >
-                       {service?.id ? 'Actualizar Registro' : 'Crear Registro'}
+                       {service?.id ? 'Guardar' : 'Crear Registro'}
                    </Button>
                )}
             </div>
