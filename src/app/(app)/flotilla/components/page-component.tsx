@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -190,11 +191,11 @@ export function FlotillaPageComponent({
                 <div className="flex items-center gap-2 mt-4">
                     <div className="relative flex-1">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input type="search" placeholder="Buscar por nombre o teléfono..." className="w-full sm:w-1/2 lg:w-1/3 pl-8" value={searchTermDrivers} onChange={e => setSearchTermDrivers(e.target.value)} />
+                        <Input type="search" placeholder="Buscar por nombre o teléfono..." className="w-full sm:w-1/2 lg:w-1/3 pl-8 bg-card" value={searchTermDrivers} onChange={e => setSearchTermDrivers(e.target.value)} />
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-9">
+                          <Button variant="outline" size="sm" className="h-9 bg-card">
                               <ListFilter className="mr-2 h-4 w-4" /> Ordenar
                           </Button>
                       </DropdownMenuTrigger>
