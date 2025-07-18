@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, DollarSign, Wallet, ArrowUpCircle, ArrowDownCircle, Coins, Wrench, BarChart2, Printer, PlusCircle, Copy, Filter, Eye, Loader2, CheckCircle, AlertTriangle, MessageSquare, History, Pencil } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, DollarSign, Wallet, ArrowUpCircle, ArrowDownCircle, Coins, Wrench, BarChart2, Printer, PlusCircle, Copy, Filter, Eye, Loader2, CheckCircle, AlertTriangle, MessageSquare, History, Pencil, Trash2 } from "lucide-react";
 import { SalesTable } from "./sales-table";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
@@ -33,10 +33,11 @@ import { Label } from "@/components/ui/label";
 import { calculateSaleProfit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { operationsService, inventoryService, messagingService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
-import { writeBatch, doc, collection, addDoc, getDoc } from 'firebase/firestore';
+import { writeBatch, doc, collection, addDoc, getDoc, getDocs } from 'firebase/firestore';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 const cashTransactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -360,6 +361,11 @@ export function PosPageComponent({ tab }: { tab?: string }) {
     });
     toast({ title: `Se registró una ${type.toLowerCase()} de caja.` });
   }, [toast]);
+
+  const handleDeleteTransaction = useCallback(async (transactionId: string) => {
+    await operationsService.deleteCashTransaction(transactionId);
+    toast({ title: `Transacción eliminada.` });
+  }, [toast]);
   
   const handleCopySaleForWhatsapp = useCallback((sale: SaleReceipt) => {
     const workshopName = JSON.parse(localStorage.getItem('workshopTicketInfo') || '{}').name || 'nuestro taller';
@@ -443,13 +449,14 @@ Total: ${formatCurrency(sale.totalAmount)}
             </div>
         </TabsContent>
         <TabsContent value="ventas" className="mt-6 space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div><h2 className="text-2xl font-semibold tracking-tight">Historial de Ventas</h2><p className="text-muted-foreground">Consulta, filtra y reimprime tickets.</p></div>
-            </div>
             <Card>
                 <CardHeader className="space-y-4">
+                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div><h2 className="text-2xl font-semibold tracking-tight">Historial de Ventas</h2><p className="text-muted-foreground">Consulta, filtra y reimprime tickets.</p></div>
+                        <Button asChild className="flex-1 sm:flex-initial"><Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link></Button>
+                    </div>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                        {dateFilterComponent}
+                      <div className="flex items-center gap-2 flex-wrap w-full">{dateFilterComponent}</div>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
                         <div className="relative flex-1 w-full sm:max-w-xs">
@@ -476,7 +483,6 @@ Total: ${formatCurrency(sale.totalAmount)}
                                     </DropdownMenuRadioGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button asChild className="flex-1 sm:flex-initial"><Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link></Button>
                         </div>
                     </div>
                 </CardHeader>
@@ -486,7 +492,7 @@ Total: ${formatCurrency(sale.totalAmount)}
         <TabsContent value="caja" className="mt-6 space-y-6">
              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div><h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2><p className="text-muted-foreground">Controla el flujo de efectivo para la fecha seleccionada.</p></div>
-                <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">{dateFilterComponent}</div>
+                <div className="flex items-center gap-2 flex-wrap w-full justify-start sm:justify-end">{dateFilterComponent}</div>
              </div>
              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-1">
@@ -537,6 +543,7 @@ Total: ${formatCurrency(sale.totalAmount)}
                                 <TableHead>Concepto</TableHead>
                                 <TableHead>Usuario</TableHead>
                                 <TableHead className="text-right">Monto</TableHead>
+                                <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -549,8 +556,18 @@ Total: ${formatCurrency(sale.totalAmount)}
                                     <TableCell>{m.concept}</TableCell>
                                     <TableCell>{m.userName}</TableCell>
                                     <TableCell className={cn("text-right font-bold", m.type === 'Entrada' ? 'text-green-600' : 'text-red-600')}>{formatCurrency(m.amount)}</TableCell>
+                                    <TableCell className="text-right">
+                                        {!m.relatedType && ( // Only show delete for manual transactions
+                                            <ConfirmDialog
+                                                triggerButton={<Button variant="ghost" size="icon" title="Eliminar Transacción"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                                                title="¿Eliminar Transacción?"
+                                                description={`¿Seguro que quieres eliminar la ${m.type.toLowerCase()} de "${m.concept}" por ${formatCurrency(m.amount)}? Esta acción es permanente.`}
+                                                onConfirm={() => handleDeleteTransaction(m.id)}
+                                            />
+                                        )}
+                                    </TableCell>
                                 </TableRow>
-                            )) : <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay movimientos en este período.</TableCell></TableRow>}
+                            )) : <TableRow><TableCell colSpan={6} className="h-24 text-center">No hay movimientos en este período.</TableCell></TableRow>}
                         </TableBody>
                     </Table>
                 </CardContent>

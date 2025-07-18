@@ -407,6 +407,29 @@ const addCashTransaction = async (transaction: Omit<CashDrawerTransaction, 'id' 
     });
 };
 
+const deleteCashTransaction = async (transactionId: string): Promise<void> => {
+    if (!db) throw new Error("Database not connected");
+    const docRef = doc(db, "cashDrawerTransactions", transactionId);
+    
+    // Log before deleting
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const userString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+      const user = userString ? JSON.parse(userString) : { id: 'system', name: 'Sistema' };
+      
+      await logAudit('Eliminar', `Se eliminó la transacción de caja manual: "${data.concept}" por ${formatCurrency(data.amount)}.`, {
+        entityType: 'Otro', // Or a new one like 'Transacción de Caja'
+        entityId: transactionId,
+        userId: user.id,
+        userName: user.name,
+      });
+    }
+
+    await deleteDoc(docRef);
+};
+
+
 const onInitialCashBalanceUpdate = (callback: (balance: InitialCashBalance | null) => void): (() => void) => {
     if(!db) return () => {};
     const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
@@ -553,6 +576,7 @@ export const operationsService = {
     registerSale,
     onCashTransactionsUpdate,
     addCashTransaction,
+    deleteCashTransaction,
     onInitialCashBalanceUpdate,
     setInitialCashBalance,
     onRentalPaymentsUpdate,
