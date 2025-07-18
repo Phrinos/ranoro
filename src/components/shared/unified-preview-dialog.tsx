@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer, MessageSquare, Download, Loader2, Eye, Wrench, ShieldCheck, Camera } from 'lucide-react';
-import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
+import type { ServiceRecord, Vehicle, WorkshopInfo, InventoryItem } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -28,7 +28,7 @@ interface UnifiedPreviewDialogProps {
 export function UnifiedPreviewDialog({ 
   open, 
   onOpenChange, 
-  service, 
+  service: initialService, 
   vehicle: initialVehicle,
   documentType = 'service',
   textContent,
@@ -42,6 +42,7 @@ export function UnifiedPreviewDialog({
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(initialVehicle);
+  const [service, setService] = useState<ServiceRecord | undefined | null>(initialService);
   const [isLoading, setIsLoading] = useState(true);
 
   const showOrder = service && service.status !== 'Cotizacion' && service.status !== 'Agendado';
@@ -77,13 +78,30 @@ export function UnifiedPreviewDialog({
         const fetchData = async () => {
             setIsLoading(true);
 
-            if (!initialVehicle && service?.vehicleId) {
-              const fetchedVehicle = await inventoryService.getVehicleById(service.vehicleId);
+            if (!initialVehicle && initialService?.vehicleId) {
+              const fetchedVehicle = await inventoryService.getVehicleById(initialService.vehicleId);
               setVehicle(fetchedVehicle || null);
             } else if (initialVehicle !== undefined) {
               setVehicle(initialVehicle);
             }
             
+            // Fetch latest inventory to get updated supply names
+            if (initialService) {
+                const inventoryItems = await inventoryService.onItemsUpdatePromise();
+                const inventoryMap = new Map(inventoryItems.map(i => [i.id, i.name]));
+                const updatedService = {
+                    ...initialService,
+                    serviceItems: (initialService.serviceItems || []).map(item => ({
+                        ...item,
+                        suppliesUsed: (item.suppliesUsed || []).map(supply => ({
+                            ...supply,
+                            supplyName: inventoryMap.get(supply.supplyId) || supply.supplyName,
+                        }))
+                    }))
+                };
+                setService(updatedService);
+            }
+
             setIsLoading(false);
         };
         
@@ -92,7 +110,7 @@ export function UnifiedPreviewDialog({
         setIsLoading(false);
       }
     }
-  }, [open, service, initialVehicle, defaultTabValue, documentType]);
+  }, [open, initialService, initialVehicle, defaultTabValue, documentType]);
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
