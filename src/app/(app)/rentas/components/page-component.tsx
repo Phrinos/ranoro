@@ -146,7 +146,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
             case 'driverName_desc': return b.driverName.localeCompare(a.driverName);
             case 'daysOwed_desc': return b.daysOwed - a.daysOwed;
             case 'daysOwed_asc': return a.daysOwed - b.daysOwed;
-            case 'balance_desc': return b.realBalance - b.realBalance;
+            case 'balance_desc': return b.realBalance - a.realBalance;
             case 'balance_asc': return a.realBalance - b.realBalance;
             default: return b.daysOwed - a.daysOwed;
         }
@@ -285,9 +285,22 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 
 
   const totalCashBalance = useMemo(() => {
-    const totalIncome = payments.reduce((sum, p) => sum + p.amount, 0);
-    const totalWithdrawals = withdrawals.reduce((sum, w) => sum + w.amount, 0);
-    const totalVehicleExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const today = new Date();
+    const monthStart = startOfMonth(today);
+    const monthEnd = endOfMonth(today);
+
+    const totalIncome = payments
+      .filter(p => isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }))
+      .reduce((sum, p) => sum + p.amount, 0);
+      
+    const totalWithdrawals = withdrawals
+      .filter(w => isWithinInterval(parseISO(w.date), { start: monthStart, end: monthEnd }))
+      .reduce((sum, w) => sum + w.amount, 0);
+      
+    const totalVehicleExpenses = expenses
+      .filter(e => isWithinInterval(parseISO(e.date), { start: monthStart, end: monthEnd }))
+      .reduce((sum, e) => sum + e.amount, 0);
+      
     return totalIncome - totalWithdrawals - totalVehicleExpenses;
   }, [payments, withdrawals, expenses]);
 
@@ -569,6 +582,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 }
 
 export { RentasPageComponent };
+
 
 
 
