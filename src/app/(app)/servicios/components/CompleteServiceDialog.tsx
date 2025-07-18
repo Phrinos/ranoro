@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { ServiceRecord, PaymentMethod, InventoryItem } from "@/types";
 import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, CalendarCheck } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { addMonths, isValid, format } from "date-fns";
+import { addYears, isValid, format } from "date-fns";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { parseDate } from "@/lib/forms";
 import { Card, CardContent } from "@/components/ui/card";
@@ -108,8 +108,8 @@ export function CompleteServiceDialog({
   const selectedPaymentMethod = watch("paymentMethod");
 
   const nextServiceInfo = useMemo(() => {
-      // Set default next service date to 6 months from now
-      const nextDate = addMonths(new Date(), 6);
+      // Set default next service date to 1 year from now
+      const nextDate = addYears(new Date(), 1);
       return { date: nextDate.toISOString(), mileage: undefined };
   }, [service]);
 

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -63,12 +64,9 @@ export function PrintTicketDialog({
         </div>
 
         {footerActions && (
-          <>
-            <Separator className="no-print" />
-            <DialogFooter className="p-4 flex-col sm:flex-row sm:justify-end gap-2 no-print flex-shrink-0">
+          <DialogFooter className="p-4 flex-col sm:flex-row sm:justify-end gap-2 no-print flex-shrink-0 border-t">
               {footerActions}
-            </DialogFooter>
-          </>
+          </DialogFooter>
         )}
       </DialogContent>
     </Dialog>
