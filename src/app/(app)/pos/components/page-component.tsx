@@ -447,14 +447,16 @@ Total: ${formatCurrency(sale.totalAmount)}
                 <div><h2 className="text-2xl font-semibold tracking-tight">Historial de Ventas</h2><p className="text-muted-foreground">Consulta, filtra y reimprime tickets.</p></div>
             </div>
             <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="relative flex-1 w-full min-w-[200px] sm:min-w-[300px]">
+                <CardHeader className="space-y-4">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                        {dateFilterComponent}
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                        <div className="relative flex-1 w-full sm:max-w-xs">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input type="search" placeholder="Buscar por ID, cliente, artículo..." className="w-full rounded-lg bg-card pl-8" value={ventasSearchTerm} onChange={(e) => setVentasSearchTerm(e.target.value)} />
                         </div>
-                        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-                            {dateFilterComponent}
+                        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
