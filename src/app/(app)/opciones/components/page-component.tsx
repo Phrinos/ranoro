@@ -78,15 +78,15 @@ export function OpcionesPageComponent({ tab }: { tab?: string }) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full overflow-x-auto scrollbar-hide">
-            <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:flex w-full gap-2 px-2 py-1">
+        <div className="w-full">
+            <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
               {availableTabs.map(tab => (
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
-                  className="flex-1 min-w-max text-center px-4 py-2 rounded-md transition-colors duration-200
-                    data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
-                    data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground"
+                  className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base
+                    data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md 
+                    data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80"
                 >
                   <tab.icon className="h-5 w-5 mr-2" />
                   {tab.label}
