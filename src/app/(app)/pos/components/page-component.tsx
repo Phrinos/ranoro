@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, DollarSign, Wallet, ArrowUpCircle, ArrowDownCircle, Coins, Wrench, BarChart2, Printer, PlusCircle, Copy, Filter, Eye, Loader2, CheckCircle, AlertTriangle, MessageSquare, History } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, DollarSign, Wallet, ArrowUpCircle, ArrowDownCircle, Coins, Wrench, BarChart2, Printer, PlusCircle, Copy, Filter, Eye, Loader2, CheckCircle, AlertTriangle, MessageSquare, History, Pencil } from "lucide-react";
 import { SalesTable } from "./sales-table";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
@@ -405,7 +405,7 @@ Total: ${formatCurrency(sale.totalAmount)}
     { value: "movimientos", label: "Movimientos" },
   ];
 
-  if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
+  if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
   
   return (
     <>
@@ -485,23 +485,29 @@ Total: ${formatCurrency(sale.totalAmount)}
              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"><div><h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2><p className="text-muted-foreground">Controla el flujo de efectivo para la fecha seleccionada.</p></div>{dateFilterComponent}</div>
              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-1">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Wallet/>Cajón de Dinero</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex justify-between items-center text-lg">
-                      <span>Saldo Inicial:</span> 
-                      <div className="flex items-center gap-2">
-                          <span className="font-medium">{formatCurrency(cajaSummaryData.initialBalance)}</span>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsInitialBalanceDialogOpen(true)}><Pencil className="h-3 w-3"/></Button>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center text-lg text-green-600"><span>(+) Ventas Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashSales)}</span></div>
-                    <div className="flex justify-between items-center text-lg text-green-600"><span>(+) Entradas:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashIn)}</span></div>
-                    <div className="flex justify-between items-center text-lg text-red-600"><span>(-) Salidas:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashOut)}</span></div>
-                    <div className="flex justify-between items-center text-2xl font-bold border-t pt-2 mt-2"><span>Saldo Final:</span> <span>{formatCurrency(cajaSummaryData.finalCashBalance)}</span></div>
-                  </CardContent>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Wallet className="text-primary"/>Cajón de Dinero</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="p-4 rounded-lg bg-muted border text-center">
+                            <p className="text-sm font-medium text-muted-foreground">SALDO FINAL ESPERADO</p>
+                            <p className="text-4xl font-bold text-primary">{formatCurrency(cajaSummaryData.finalCashBalance)}</p>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Saldo Inicial:</span> 
+                                <div className="flex items-center gap-1">
+                                    <span className="font-medium">{formatCurrency(cajaSummaryData.initialBalance)}</span>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsInitialBalanceDialogOpen(true)}><Pencil className="h-3 w-3"/></Button>
+                                </div>
+                            </div>
+                            <div className="flex justify-between items-center text-green-600"><span>(+) Ventas Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashSales)}</span></div>
+                            <div className="flex justify-between items-center text-green-600"><span>(+) Entradas Manuales:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashIn)}</span></div>
+                            <div className="flex justify-between items-center text-red-600"><span>(-) Salidas Manuales:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashOut)}</span></div>
+                        </div>
+                    </CardContent>
                 </Card>
+
                 <Card className="lg:col-span-2">
                     <CardHeader><div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"><div><CardTitle>Transacciones Manuales</CardTitle><CardDescription>Entradas y salidas de efectivo no relacionadas a ventas.</CardDescription></div><Button onClick={() => setIsCorteDialogOpen(true)}><Printer className="mr-2 h-4 w-4"/> Corte de Caja</Button></div></CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6">
