@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -218,26 +219,30 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
   const uniqueOwners = useMemo(() => Array.from(new Set(vehicles.filter(v => v.isFleetVehicle).map(v => v.ownerName))).sort(), [vehicles]);
 
   const summaryData = useMemo(() => {
-    const today = new Date();
-    const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
+      const { totalCollectedThisMonth, totalDebt, totalMonthlyBalance } = monthlyBalances.reduce((acc, curr) => {
+          acc.totalCollectedThisMonth += curr.payments;
+          acc.totalDebt += curr.realBalance;
+          acc.totalMonthlyBalance += curr.balance;
+          return acc;
+      }, { totalCollectedThisMonth: 0, totalDebt: 0, totalMonthlyBalance: 0 });
 
-    const paymentsThisMonth = payments.filter(p => isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }));
-    const totalCollected = paymentsThisMonth.reduce((sum, p) => sum + p.amount, 0);
+      const driverWithMostDebt = monthlyBalances.length > 0 
+          ? monthlyBalances.reduce((prev, curr) => (prev.daysOwed > curr.daysOwed ? prev : curr)) 
+          : null;
 
-    const expensesThisMonth = expenses.filter(e => isValid(parseISO(e.date)) && isWithinInterval(parseISO(e.date), { start: monthStart, end: monthEnd }));
-    const totalExpenses = expensesThisMonth.reduce((sum, e) => sum + e.amount, 0);
+      const totalExpenses = expenses
+          .filter(e => isWithinInterval(parseISO(e.date), { start: startOfMonth(new Date()), end: endOfMonth(new Date()) }))
+          .reduce((sum, e) => sum + e.amount, 0);
 
-    const driverDebts = drivers.map(driver => ({
-        ...driver,
-        debt: calculateDriverDebt(driver, payments, vehicles).totalDebt
-    }));
-    
-    const totalDebt = driverDebts.reduce((sum, d) => sum + d.debt, 0);
-    const driverWithMostDebt = driverDebts.length > 0 ? driverDebts.reduce((prev, curr) => (prev.debt > curr.debt ? prev : curr)) : null;
+      return {
+          totalCollected: totalCollectedThisMonth,
+          totalDebt: totalDebt < 0 ? Math.abs(totalDebt) : 0, // Only show if it's a negative total balance
+          totalMonthlyBalance,
+          driverWithMostDebt,
+          totalExpenses
+      };
+  }, [monthlyBalances, expenses]);
 
-    return { totalCollected, totalDebt, driverWithMostDebt, totalExpenses };
-  }, [payments, drivers, vehicles, expenses]);
 
   const totalPaymentsAllTime = useMemo(() => {
     return payments.reduce((sum, p) => sum + p.amount, 0);
@@ -287,8 +292,8 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
             <TabsContent value="resumen" className="space-y-6">
                 <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                     <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Recaudado (Mes Actual)</CardTitle><DollarSign className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalCollected)}</div><p className="text-xs text-muted-foreground">{format(new Date(), "MMMM yyyy", {locale: es})}</p></CardContent></Card>
-                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Deuda Total Pendiente</CardTitle><AlertCircle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-destructive">{formatCurrency(summaryData.totalDebt)}</div><p className="text-xs text-muted-foreground">Suma de adeudos de todos los conductores.</p></CardContent></Card>
-                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Mayor Deudor</CardTitle><User className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-xl font-bold truncate">{summaryData.driverWithMostDebt?.name || 'N/A'}</div><p className="text-xs text-muted-foreground">Debe {formatCurrency(summaryData.driverWithMostDebt?.debt || 0)}</p></CardContent></Card>
+                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Deuda Total Pendiente</CardTitle><AlertCircle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-destructive">{formatCurrency(summaryData.totalDebt)}</div><p className="text-xs text-muted-foreground">Suma de balances reales de todos.</p></CardContent></Card>
+                    <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance del Mes (Flotilla)</CardTitle><LineChart className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className={cn("text-2xl font-bold", summaryData.totalMonthlyBalance >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(summaryData.totalMonthlyBalance)}</div><p className="text-xs text-muted-foreground">Pagos vs. cargos del mes actual.</p></CardContent></Card>
                     <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Gastos de Flotilla (Mes)</CardTitle><TrendingDown className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalExpenses)}</div><p className="text-xs text-muted-foreground">Gastos de vehículos este mes.</p></CardContent></Card>
                 </div>
             </TabsContent>
