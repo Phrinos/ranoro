@@ -53,6 +53,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [payments, setPayments] = useState<RentalPayment[]>([]);
   const [expenses, setExpenses] = useState<VehicleExpense[]>([]);
+  const [withdrawals, setWithdrawals] = useState<OwnerWithdrawal[]>([]);
   const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>({});
   
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -79,6 +80,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
     unsubs.push(personnelService.onDriversUpdate(setDrivers));
     unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
     unsubs.push(operationsService.onVehicleExpensesUpdate(setExpenses));
+    unsubs.push(operationsService.onOwnerWithdrawalsUpdate(setWithdrawals));
     unsubs.push(operationsService.onRentalPaymentsUpdate((data) => {
         setPayments(data);
         setIsLoading(false);
@@ -244,9 +246,11 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
   }, [monthlyBalances, expenses]);
 
 
-  const totalPaymentsAllTime = useMemo(() => {
-    return payments.reduce((sum, p) => sum + p.amount, 0);
-  }, [payments]);
+  const totalCashBalance = useMemo(() => {
+    const totalIncome = payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalWithdrawals = withdrawals.reduce((sum, w) => sum + w.amount, 0);
+    return totalIncome - totalWithdrawals;
+  }, [payments, withdrawals]);
 
   
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
@@ -271,7 +275,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
             <Wallet className="h-5 w-5 text-green-500" />
             <div className="flex flex-col items-end">
               <span className="text-xs text-muted-foreground -mb-1">Saldo en Caja</span>
-              <span className="font-bold">{formatCurrency(totalPaymentsAllTime)}</span>
+              <span className="font-bold">{formatCurrency(totalCashBalance)}</span>
             </div>
           </div>
           <Button onClick={() => setIsPaymentDialogOpen(true)} className="w-full sm:w-auto">
@@ -395,8 +399,8 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
                                         <TableCell className="font-semibold">{p.driverName}</TableCell>
                                         <TableCell>{p.vehicleLicensePlate}</TableCell>
                                         <TableCell className="text-right font-bold">
-                                            {formatCurrency(p.amount)}
-                                            {p.paymentMethod && <Badge variant="outline" className="mt-1 ml-2 text-xs">{p.paymentMethod}</Badge>}
+                                            <p>{formatCurrency(p.amount)}</p>
+                                            {p.paymentMethod && <Badge variant="outline" className="mt-1 text-xs">{p.paymentMethod}</Badge>}
                                         </TableCell>
                                         <TableCell className="text-xs text-muted-foreground">{p.note || 'N/A'}</TableCell>
                                         <TableCell className="text-right">

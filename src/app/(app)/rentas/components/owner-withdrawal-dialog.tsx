@@ -52,15 +52,15 @@ export function OwnerWithdrawalDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle>Registrar Retiro de Dinero</DialogTitle>
           <DialogDescription>
             Seleccione el propietario y el monto a retirar de las ganancias de la flotilla.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 py-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="px-6 space-y-6">
             <FormField
               control={form.control}
               name="ownerName"
@@ -110,7 +110,7 @@ export function OwnerWithdrawalDialog({
                 </FormItem>
               )}
             />
-            <DialogFooter>
+             <DialogFooter className="p-6 pt-4 -mx-6 -mb-6">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Registrando..." : "Registrar Retiro"}

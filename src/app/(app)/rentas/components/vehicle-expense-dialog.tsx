@@ -53,15 +53,15 @@ export function VehicleExpenseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle>Registrar Gasto de Vehículo</DialogTitle>
           <DialogDescription>
             Registre un gasto asociado a un vehículo de la flotilla, como pago de placas, tenencia, etc.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 py-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="px-6 space-y-6">
             <FormField
               control={form.control}
               name="vehicleId"
@@ -113,7 +113,7 @@ export function VehicleExpenseDialog({
                 </FormItem>
               )}
             />
-            <DialogFooter>
+            <DialogFooter className="p-6 pt-4 -mx-6 -mb-6">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Registrando..." : "Registrar Gasto"}

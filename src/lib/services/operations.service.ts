@@ -512,6 +512,15 @@ const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'veh
     return { id: docRef.id, ...newExpense };
 };
 
+const onOwnerWithdrawalsUpdate = (callback: (withdrawals: OwnerWithdrawal[]) => void): (() => void) => {
+  if (!db) return () => {};
+  const q = query(collection(db, "ownerWithdrawals"));
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as OwnerWithdrawal)));
+  });
+  return unsubscribe;
+};
+
 const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): Promise<OwnerWithdrawal> => {
     if (!db) throw new Error("Database not initialized.");
     const newWithdrawal = { ...data, date: new Date().toISOString() };
@@ -553,5 +562,6 @@ export const operationsService = {
     onVehicleExpensesUpdate,
     onVehicleExpensesUpdatePromise,
     addVehicleExpense,
+    onOwnerWithdrawalsUpdate,
     addOwnerWithdrawal,
 };
