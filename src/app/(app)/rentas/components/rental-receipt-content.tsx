@@ -2,12 +2,11 @@
 
 "use client";
 
-import type { RentalPayment, WorkshopInfo, Driver } from '@/types';
-import { format, parseISO } from 'date-fns';
+import type { RentalPayment, WorkshopInfo, Driver, Vehicle } from '@/types';
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
 import Image from "next/image";
-import { placeholderDrivers, placeholderVehicles, placeholderRentalPayments } from '@/lib/placeholder-data';
 import { calculateDriverDebt, formatCurrency } from '@/lib/utils';
 import { AlertTriangle } from 'lucide-react';
 
@@ -21,23 +20,36 @@ const initialWorkshopInfo: WorkshopInfo = {
 
 interface RentalReceiptContentProps {
   payment: RentalPayment;
+  driver?: Driver;
+  allPaymentsForDriver?: RentalPayment[];
+  vehicle?: Vehicle;
   workshopInfo?: Partial<WorkshopInfo>;
 }
 
 export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalReceiptContentProps>(
-  ({ payment, workshopInfo: customWorkshopInfo }, ref) => {
+  ({ payment, driver, allPaymentsForDriver, vehicle, workshopInfo: customWorkshopInfo }, ref) => {
     const workshopInfo = { ...initialWorkshopInfo, ...customWorkshopInfo };
 
     const formattedDateTime = format(parseISO(payment.paymentDate), "dd/MM/yyyy HH:mm:ss", { locale: es });
     const formattedAmount = `$${payment.amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-    const driver = useMemo(() => placeholderDrivers.find(d => d.id === payment.driverId), [payment.driverId]);
+    const debtInfo = useMemo(() => {
+        if (!driver || !allPaymentsForDriver || !vehicle) return { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
+        return calculateDriverDebt(driver, allPaymentsForDriver, [vehicle]);
+    }, [driver, allPaymentsForDriver, vehicle]);
 
-    const driverDebt = useMemo(() => {
-        if (!driver) return { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
-        // We pass ALL payments and vehicles to get the most accurate, up-to-date debt calculation
-        return calculateDriverDebt(driver, placeholderRentalPayments, placeholderVehicles);
-    }, [driver]);
+    const monthlyPayments = useMemo(() => {
+      if (!allPaymentsForDriver) return { total: 0, days: 0 };
+      const monthStart = startOfMonth(new Date());
+      const monthEnd = endOfMonth(new Date());
+
+      const paymentsThisMonth = allPaymentsForDriver.filter(p => isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }));
+      const total = paymentsThisMonth.reduce((sum, p) => sum + p.amount, 0);
+      const days = paymentsThisMonth.reduce((sum, p) => sum + p.daysCovered, 0);
+      
+      return { total, days };
+
+    }, [allPaymentsForDriver]);
 
     return (
       <div 
@@ -55,10 +67,10 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
                     style={{ objectFit: 'contain' }}
                     crossOrigin="anonymous"
                     data-ai-hint="workshop logo"
+                    unoptimized
                 />
             </div>
           )}
-          <h1 className="text-lg font-bold">{workshopInfo.name}</h1>
           <p>{workshopInfo.addressLine1}</p>
           <p>Tel: {workshopInfo.phone}</p>
         </div>
@@ -89,16 +101,25 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
             <div className="flex justify-between text-lg"><span>TOTAL PAGADO:</span><span className="font-bold">{formattedAmount}</span></div>
         </div>
         
-        {driverDebt.totalDebt > 0 && (
+        <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
+        <div className="my-2 p-2 border border-blue-500 bg-blue-50 text-blue-800">
+            <h4 className="font-bold">Resumen Mensual</h4>
+            <div className="space-y-0.5 text-xs mt-1">
+                <div className="flex justify-between"><span>Pagos del mes:</span><span>{formatCurrency(monthlyPayments.total)}</span></div>
+                <div className="flex justify-between"><span>Días cubiertos:</span><span>{monthlyPayments.days.toFixed(2)} días</span></div>
+            </div>
+        </div>
+        
+        {debtInfo.totalDebt > 0 && (
             <>
                 <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
                 <div className="my-2 p-2 border border-red-500 bg-red-50 text-red-800">
                     <h4 className="font-bold flex items-center gap-1"><AlertTriangle className="h-3 w-3"/>AVISO DE ADEUDO</h4>
                     <div className="space-y-0.5 text-xs mt-1">
-                        {driverDebt.depositDebt > 0 && <div className="flex justify-between"><span>Deuda de depósito:</span><span>{formatCurrency(driverDebt.depositDebt)}</span></div>}
-                        {driverDebt.rentalDebt > 0 && <div className="flex justify-between"><span>Deuda de renta (mensual):</span><span>{formatCurrency(driverDebt.rentalDebt)}</span></div>}
-                        {driverDebt.manualDebt > 0 && <div className="flex justify-between"><span>Adeudo Pendiente:</span><span>{formatCurrency(driverDebt.manualDebt)}</span></div>}
-                        <div className="flex justify-between font-bold border-t border-red-300 mt-1 pt-1"><span>Deuda Total Restante:</span><span>{formatCurrency(driverDebt.totalDebt)}</span></div>
+                        {debtInfo.depositDebt > 0 && <div className="flex justify-between"><span>Deuda de depósito:</span><span>{formatCurrency(debtInfo.depositDebt)}</span></div>}
+                        {debtInfo.rentalDebt > 0 && <div className="flex justify-between"><span>Deuda de renta:</span><span>{formatCurrency(debtInfo.rentalDebt)}</span></div>}
+                        {debtInfo.manualDebt > 0 && <div className="flex justify-between"><span>Adeudo pendiente:</span><span>{formatCurrency(debtInfo.manualDebt)}</span></div>}
+                        <div className="flex justify-between font-bold border-t border-red-300 mt-1 pt-1"><span>Deuda Total Restante:</span><span>{formatCurrency(debtInfo.totalDebt)}</span></div>
                     </div>
                 </div>
             </>

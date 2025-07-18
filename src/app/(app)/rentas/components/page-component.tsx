@@ -551,7 +551,16 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
         }
       >
         <div id="printable-ticket">
-          {paymentForReceipt && <RentalReceiptContent ref={receiptRef} payment={paymentForReceipt} workshopInfo={workshopInfo} />}
+          {paymentForReceipt && (
+             <RentalReceiptContent 
+                ref={receiptRef} 
+                payment={paymentForReceipt} 
+                workshopInfo={workshopInfo} 
+                driver={drivers.find(d => d.id === paymentForReceipt.driverId)}
+                allPaymentsForDriver={payments.filter(p => p.driverId === paymentForReceipt.driverId)}
+                vehicle={vehicles.find(v => v.licensePlate === paymentForReceipt.vehicleLicensePlate)}
+             />
+          )}
         </div>
       </PrintTicketDialog>
     </>
@@ -559,4 +568,5 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 }
 
 export { RentasPageComponent };
+
 
