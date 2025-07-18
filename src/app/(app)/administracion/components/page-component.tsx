@@ -59,18 +59,18 @@ export function AdministracionPageComponent({
             </div>
             
             <Tabs value={activeTab} onValueChange={setAdminTab} className="w-full">
-                <div className="w-full overflow-x-auto scrollbar-hide">
-                    <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-                        <TabsTrigger value="usuarios" className="flex-1 min-w-[150px] text-center px-4 py-2 rounded-md transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                <div className="w-full">
+                    <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
+                        <TabsTrigger value="usuarios" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
                             <Users className="h-5 w-5 mr-2"/>Usuarios
                         </TabsTrigger>
-                        <TabsTrigger value="roles" className="flex-1 min-w-[150px] text-center px-4 py-2 rounded-md transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                        <TabsTrigger value="roles" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
                             <Shield className="h-5 w-5 mr-2"/>Roles y Permisos
                         </TabsTrigger>
-                        <TabsTrigger value="auditoria" className="flex-1 min-w-[150px] text-center px-4 py-2 rounded-md transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                        <TabsTrigger value="auditoria" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
                              <BookOpen className="h-5 w-5 mr-2"/>Auditoría
                         </TabsTrigger>
-                        <TabsTrigger value="migracion" className="flex-1 min-w-[150px] text-center px-4 py-2 rounded-md transition-colors duration-200 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                        <TabsTrigger value="migracion" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
                             <DatabaseZap className="h-5 w-5 mr-2"/>Migración de Datos
                         </TabsTrigger>
                     </TabsList>
