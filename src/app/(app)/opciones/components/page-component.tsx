@@ -9,6 +9,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } fr
 import { adminService, inventoryService } from '@/lib/services';
 import { Loader2, BookOpen, Settings, UserCircle, Building, Shapes } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 // Import all content components
 import { PerfilPageContent } from './perfil-content';
@@ -83,14 +84,20 @@ export function OpcionesPageComponent({ tab }: { tab?: string }) {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+            <div className="w-full overflow-x-auto scrollbar-hide">
+              <TabsList className="grid w-full grid-cols-5 gap-2 h-auto">
                     {availableTabs.map(tab => (
-                        <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
-                            <tab.icon className="h-5 w-5"/>{tab.label}
+                        <TabsTrigger 
+                            key={tab.value} 
+                            value={tab.value} 
+                            className="flex-1 min-w-max text-center px-4 py-2 rounded-md transition-colors duration-200
+                                data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
+                                data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground"
+                        >
+                            <tab.icon className="h-5 w-5 mr-2"/>{tab.label}
                         </TabsTrigger>
                     ))}
-                </TabsList>
+              </TabsList>
             </div>
             
             {availableTabs.map(tab => (
