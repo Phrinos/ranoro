@@ -153,11 +153,11 @@ export default function OwnerIncomeDetailPage() {
     const ownerVehicleIds = new Set(ownerVehicles.map(v => v.id));
     const ownerVehiclePlates = new Set(ownerVehicles.map(v => v.licensePlate));
 
-    const currentMonthOwnerPayments = allPayments.filter(p => isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }) && ownerVehiclePlates.has(p.vehicleLicensePlate));
-    const prevMonthOwnerPayments = allPayments.filter(p => isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: prevMonthStart, end: prevMonthEnd }) && ownerVehiclePlates.has(p.vehicleLicensePlate));
+    const currentMonthOwnerPayments = allPayments.filter(p => p.paymentDate && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }) && ownerVehiclePlates.has(p.vehicleLicensePlate));
+    const prevMonthOwnerPayments = allPayments.filter(p => p.paymentDate && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: prevMonthStart, end: prevMonthEnd }) && ownerVehiclePlates.has(p.vehicleLicensePlate));
     
-    const currentMonthServices = allServices.filter(s => ownerVehicleIds.has(s.vehicleId) && isValid(parseISO(s.serviceDate)) && isWithinInterval(parseISO(s.serviceDate), { start: monthStart, end: monthEnd }));
-    const currentMonthExpenses = allExpenses.filter(e => ownerVehicleIds.has(e.vehicleId) && isValid(parseISO(e.date)) && isWithinInterval(parseISO(e.date), { start: monthStart, end: monthEnd }));
+    const currentMonthServices = allServices.filter(s => s.serviceDate && ownerVehicleIds.has(s.vehicleId) && isValid(parseISO(s.serviceDate)) && isWithinInterval(parseISO(s.serviceDate), { start: monthStart, end: monthEnd }));
+    const currentMonthExpenses = allExpenses.filter(e => e.date && ownerVehicleIds.has(e.vehicleId) && isValid(parseISO(e.date)) && isWithinInterval(parseISO(e.date), { start: monthStart, end: monthEnd }));
 
     const currentMonthIncome = currentMonthOwnerPayments.reduce((sum, p) => sum + p.amount, 0);
     const prevMonthIncome = prevMonthOwnerPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -267,3 +267,4 @@ export default function OwnerIncomeDetailPage() {
     </>
   );
 }
+
