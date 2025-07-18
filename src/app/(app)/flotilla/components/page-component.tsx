@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -50,6 +51,7 @@ export function FlotillaPageComponent({
 
   // States for 'conductores' tab
   const [searchTermDrivers, setSearchTermDrivers] = useState('');
+  const [sortOptionDrivers, setSortOptionDrivers] = useState<DriverSortOption>('name_asc');
   const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [showArchivedDrivers, setShowArchivedDrivers] = useState(false);
