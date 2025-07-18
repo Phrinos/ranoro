@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -183,7 +184,18 @@ export function FlotillaPageComponent({
               <div><h2 className="text-2xl font-semibold tracking-tight">Vehículos de la Flotilla</h2><p className="text-muted-foreground">Gestiona los vehículos que forman parte de tu flotilla.</p></div>
               <div className="flex flex-col sm:flex-row gap-2"><Button variant="secondary" onClick={() => setIsFineCheckDialogOpen(true)}><ShieldCheck className="mr-2 h-4 w-4" />Revisar Multas</Button><Button onClick={() => setIsAddVehicleDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Añadir Vehículo</Button></div>
           </div>
-          <Card><CardHeader><Input type="search" placeholder="Buscar por placa, marca, modelo o propietario..." className="w-full sm:w-1/2 lg:w-1/3" value={searchTermVehicles} onChange={e => setSearchTermVehicles(e.target.value)} /></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Placa</TableHead><TableHead>Vehículo</TableHead><TableHead>Color</TableHead><TableHead>Propietario</TableHead><TableHead className="text-right">Renta Diaria</TableHead></TableRow></TableHeader><TableBody>{filteredFleetVehicles.length > 0 ? filteredFleetVehicles.map(v => (<TableRow key={v.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/flotilla/${v.id}`)}><TableCell className="font-medium">{v.licensePlate}</TableCell><TableCell>{v.make} {v.model} {v.year}</TableCell><TableCell>{v.color || 'N/A'}</TableCell><TableCell>{v.ownerName}</TableCell><TableCell className="text-right font-semibold">${(v.dailyRentalCost || 0).toFixed(2)}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay vehículos en la flotilla.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
+          <Card><CardHeader><Input type="search" placeholder="Buscar por placa, marca, modelo o propietario..." className="w-full sm:w-1/2 lg:w-1/3" value={searchTermVehicles} onChange={e => setSearchTermVehicles(e.target.value)} /></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Placa</TableHead><TableHead>Vehículo</TableHead><TableHead>Conductor</TableHead><TableHead>Propietario</TableHead><TableHead className="text-right">Renta Diaria</TableHead></TableRow></TableHeader><TableBody>{filteredFleetVehicles.length > 0 ? filteredFleetVehicles.map(v => {
+            const driver = allDrivers.find(d => d.assignedVehicleId === v.id);
+            return (
+              <TableRow key={v.id} className={cn("cursor-pointer hover:bg-muted/50", !v.assignedVehicleId && "bg-red-50 dark:bg-red-900/30 text-red-900 dark:text-red-200 hover:bg-red-100 dark:hover:bg-red-900/40")} onClick={() => router.push(`/flotilla/${v.id}`)}>
+                <TableCell className="font-medium">{v.licensePlate}</TableCell>
+                <TableCell>{v.make} {v.model} {v.year}</TableCell>
+                <TableCell>{driver ? driver.name : <span className="font-semibold">NO ASIGNADO</span>}</TableCell>
+                <TableCell>{v.ownerName}</TableCell>
+                <TableCell className="text-right font-semibold">${(v.dailyRentalCost || 0).toFixed(2)}</TableCell>
+              </TableRow>
+            )
+          }) : <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay vehículos en la flotilla.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
         </TabsContent>
       </Tabs>
       <AddVehicleToFleetDialog open={isAddVehicleDialogOpen} onOpenChange={setIsAddVehicleDialogOpen} vehicles={nonFleetVehicles} onAddVehicle={handleAddVehicleToFleet} />
