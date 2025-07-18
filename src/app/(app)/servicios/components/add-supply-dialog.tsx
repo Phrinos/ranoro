@@ -142,10 +142,12 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
                         filteredItems.map((item) => (
                           <Button key={item.id} variant="ghost" className="w-full justify-start text-left h-auto py-1.5 px-2" onClick={() => handleSelectItem(item)}>
                             <div>
-                              <p className="font-medium">{item.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {item.isService ? "Servicio" : `Stock: ${item.quantity}`} | Costo: {formatCurrency(item.unitPrice)}
-                              </p>
+                                <p className="font-medium">
+                                    {item.brand || ''} {item.name} <span className="text-xs text-muted-foreground">({item.sku || 'N/A'})</span>
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Cat: {item.category} | Stock: {item.isService ? 'N/A' : item.quantity} | Costo: {formatCurrency(item.unitPrice)}
+                                </p>
                             </div>
                           </Button>
                         ))
@@ -228,4 +230,3 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
     </Dialog>
   );
 }
-
