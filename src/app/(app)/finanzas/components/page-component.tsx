@@ -264,14 +264,12 @@ export function FinanzasPageComponent({
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="relative border-b">
-                    <ScrollArea className="w-full whitespace-nowrap">
-                        <TabsList className="inline-flex h-auto">
-                            <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
-                            <TabsTrigger value="operaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Operaciones</TabsTrigger>
-                            <TabsTrigger value="inventario" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inventario</TabsTrigger>
-                        </TabsList>
-                    </ScrollArea>
+                <div className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
+                        <TabsTrigger value="operaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Operaciones</TabsTrigger>
+                        <TabsTrigger value="inventario" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inventario</TabsTrigger>
+                    </TabsList>
                 </div>
                 
                  <TabsContent value="resumen" className="mt-6">

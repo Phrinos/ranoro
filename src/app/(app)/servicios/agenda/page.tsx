@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
@@ -10,7 +9,7 @@ import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Ed
 import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { format, isTomorrow, compareAsc, isSameDay, addDays, parseISO, isValid } from "date-fns";
+import { format, isTomorrow, compareAsc, isSameDay, addDays, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -75,7 +74,7 @@ function AgendaPageComponent() {
         setIsLoading(false);
     }));
 
-    return () => unsubs.forEach(unsub => unsub());
+    return () => unsubs.forEach((unsub) => unsub());
   }, []);
   
   const { scheduledServices, todayServices, tomorrowServices, futureServices } = useMemo(() => {

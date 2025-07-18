@@ -192,14 +192,12 @@ export function PersonalPageComponent({
       </div>
 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="relative border-b">
-          <ScrollArea className="w-full whitespace-nowrap">
-            <TabsList className="inline-flex h-auto">
-              <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
-              <TabsTrigger value="tecnicos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Personal Técnico</TabsTrigger>
-              <TabsTrigger value="administrativos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Personal Administrativo</TabsTrigger>
-            </TabsList>
-          </ScrollArea>
+        <div className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
+            <TabsTrigger value="tecnicos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Personal Técnico</TabsTrigger>
+            <TabsTrigger value="administrativos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Personal Administrativo</TabsTrigger>
+          </TabsList>
         </div>
 
         <TabsContent value="informe" className="mt-6 space-y-6">

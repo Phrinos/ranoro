@@ -407,15 +407,13 @@ Total: ${formatCurrency(sale.totalAmount)}
         <p className="text-primary-foreground/80 mt-1">Registra ventas, gestiona tu caja y analiza el rendimiento de tus operaciones.</p>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="relative border-b">
-          <ScrollArea className="w-full whitespace-nowrap">
-            <TabsList className="inline-flex h-auto">
-              <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
-              <TabsTrigger value="ventas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Ventas</TabsTrigger>
-              <TabsTrigger value="caja" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Caja</TabsTrigger>
-              <TabsTrigger value="movimientos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Movimientos</TabsTrigger>
-            </TabsList>
-          </ScrollArea>
+        <div className="w-full">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+            <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
+            <TabsTrigger value="ventas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Ventas</TabsTrigger>
+            <TabsTrigger value="caja" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Caja</TabsTrigger>
+            <TabsTrigger value="movimientos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Movimientos</TabsTrigger>
+          </TabsList>
         </div>
         <TabsContent value="informe" className="mt-6 space-y-6">
             <div className="space-y-2"><h2 className="text-2xl font-semibold tracking-tight">Resumen de Ventas y Ganancias</h2><p className="text-muted-foreground">Datos para el período seleccionado.</p></div>

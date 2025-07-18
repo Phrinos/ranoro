@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -379,7 +380,7 @@ export function FlotillaPageComponent({
         <TabsContent value="conductores" className="space-y-6">
             <Tabs defaultValue="activos" className="w-full">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <TabsList>
+                  <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="activos" onClick={() => setShowArchivedDrivers(false)} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Activos</TabsTrigger>
                     <TabsTrigger value="archivados" onClick={() => setShowArchivedDrivers(true)} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Archivados</TabsTrigger>
                   </TabsList>

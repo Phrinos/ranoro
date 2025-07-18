@@ -167,16 +167,14 @@ export function InventarioPageComponent({
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="relative border-b">
-            <ScrollArea className="w-full whitespace-nowrap">
-              <TabsList className="inline-flex h-auto">
-                  <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
-                  <TabsTrigger value="productos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Productos y Servicios</TabsTrigger>
-                  <TabsTrigger value="categorias" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Categorías</TabsTrigger>
-                  <TabsTrigger value="proveedores" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Proveedores</TabsTrigger>
-                  <TabsTrigger value="analisis" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Análisis IA</TabsTrigger>
-              </TabsList>
-            </ScrollArea>
+        <div className="w-full">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+                <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
+                <TabsTrigger value="productos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Productos y Servicios</TabsTrigger>
+                <TabsTrigger value="categorias" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Categorías</TabsTrigger>
+                <TabsTrigger value="proveedores" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Proveedores</TabsTrigger>
+                <TabsTrigger value="analisis" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Análisis IA</TabsTrigger>
+            </TabsList>
         </div>
         
         <TabsContent value="informe" className="mt-6">
