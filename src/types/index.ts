@@ -96,6 +96,7 @@ export interface Driver {
     proofOfAddressUrl?: string;
     promissoryNoteUrl?: string;
   };
+  requiredDepositAmount?: number;
   depositAmount?: number;
   contractDate?: string; // ISO string
   manualDebts?: ManualDebtEntry[];

@@ -22,7 +22,8 @@ const driverFormSchema = z.object({
   address: z.string().min(5, "La dirección es obligatoria."),
   phone: z.string().min(7, "Ingrese un número de teléfono válido."),
   emergencyPhone: z.string().min(7, "Ingrese un teléfono de emergencia válido."),
-  depositAmount: z.coerce.number().min(0, "El depósito no puede ser negativo.").optional(),
+  requiredDepositAmount: z.coerce.number().min(0, "El depósito requerido no puede ser negativo.").optional(),
+  depositAmount: z.coerce.number().min(0, "El depósito pagado no puede ser negativo.").optional(),
   contractDate: z.date({
     required_error: "La fecha del contrato es requerida.",
     invalid_type_error: "Por favor seleccione una fecha válida.",
@@ -42,6 +43,7 @@ export function DriverForm({ id, initialData, onSubmit }: DriverFormProps) {
     resolver: zodResolver(driverFormSchema),
     defaultValues: initialData ? {
         ...initialData,
+        requiredDepositAmount: initialData.requiredDepositAmount ?? 3500, // Default to 3500 if not present
         depositAmount: initialData.depositAmount ?? undefined,
         contractDate: initialData.contractDate ? new Date(initialData.contractDate) : undefined,
     } : {
@@ -49,6 +51,7 @@ export function DriverForm({ id, initialData, onSubmit }: DriverFormProps) {
       address: "",
       phone: "",
       emergencyPhone: "",
+      requiredDepositAmount: 3500,
       depositAmount: undefined,
       contractDate: new Date(),
     },
@@ -106,10 +109,26 @@ export function DriverForm({ id, initialData, onSubmit }: DriverFormProps) {
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
                 control={form.control}
+                name="requiredDepositAmount"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Depósito Total Requerido</FormLabel>
+                    <FormControl>
+                        <div className="relative">
+                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input type="number" step="0.01" placeholder="Ej: 3500.00" {...field} value={field.value ?? ''} className="pl-8" />
+                        </div>
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
                 name="depositAmount"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Depósito en Garantía</FormLabel>
+                    <FormLabel>Depósito Pagado</FormLabel>
                     <FormControl>
                         <div className="relative">
                             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -120,7 +139,8 @@ export function DriverForm({ id, initialData, onSubmit }: DriverFormProps) {
                     </FormItem>
                 )}
             />
-            <FormField
+         </div>
+         <FormField
               control={form.control}
               name="contractDate"
               render={({ field }) => (
@@ -143,7 +163,6 @@ export function DriverForm({ id, initialData, onSubmit }: DriverFormProps) {
                 </FormItem>
               )}
             />
-         </div>
       </form>
     </Form>
   );

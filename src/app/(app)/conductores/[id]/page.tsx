@@ -309,6 +309,9 @@ const handleAssignVehicle = async (newVehicleId: string) => {
   }
 
   const fleetVehicles = allVehicles.filter(v => v.isFleetVehicle);
+  const depositPaid = driver.depositAmount || 0;
+  const depositRequired = driver.requiredDepositAmount || 0;
+  const depositOwed = Math.max(0, depositRequired - depositPaid);
 
   return (
     <>
@@ -341,10 +344,6 @@ const handleAssignVehicle = async (newVehicleId: string) => {
                   </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-            </Button>
         </div>
       </div>
       <div className="mb-6 grid gap-1">
@@ -355,11 +354,11 @@ const handleAssignVehicle = async (newVehicleId: string) => {
       </div>
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
-            <TabsTrigger value="details" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Detalles</TabsTrigger>
-            <TabsTrigger value="documents" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Documentos</TabsTrigger>
-            <TabsTrigger value="deuda" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Deuda</TabsTrigger>
-            <TabsTrigger value="payments" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Pagos</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+            <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
+            <TabsTrigger value="documents" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Documentos</TabsTrigger>
+            <TabsTrigger value="deuda" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Deuda</TabsTrigger>
+            <TabsTrigger value="payments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Pagos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -367,13 +366,22 @@ const handleAssignVehicle = async (newVehicleId: string) => {
             <Card className="lg:col-span-3">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Información del Conductor</CardTitle>
+                 <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
                 <div className="flex items-center gap-3"><UserIcon className="h-4 w-4 text-muted-foreground" /><span>{driver.name}</span></div>
                 <div className="flex items-center gap-3"><Home className="h-4 w-4 text-muted-foreground" /><span>{driver.address}</span></div>
                 <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" /><span>{driver.phone}</span></div>
                 <div className="flex items-center gap-3"><AlertTriangle className="h-4 w-4 text-muted-foreground" /><span>Tel. Emergencia: {driver.emergencyPhone}</span></div>
-                <div className="flex items-center gap-3"><DollarSign className="h-4 w-4 text-muted-foreground" /><span>Depósito: {driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</span></div>
+                <div className="flex items-center gap-3"><DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <span>
+                        Depósito: {formatCurrency(depositPaid)} de {formatCurrency(depositRequired)}
+                        {depositOwed > 0 && <span className="text-destructive font-semibold"> (Adeudo: {formatCurrency(depositOwed)})</span>}
+                    </span>
+                </div>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3"><FileText className="h-4 w-4 text-muted-foreground" /><span>Contrato: {driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'No generado'}</span></div>
                     <Button onClick={() => setIsContractDialogOpen(true)} disabled={!driver?.depositAmount} size="sm">
