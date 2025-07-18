@@ -237,14 +237,14 @@ export function ServiceDialog({
               onTotalCostChange={setTotalCost}
             />
         </div>
-        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex justify-between items-center w-full">
-            <div>
+        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center w-full gap-4">
+            <div className="w-full sm:w-auto flex justify-start">
                 {showCancelButton && onCancelService && (
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button type="button" variant="destructive">
+                            <Button type="button" variant="destructive" className="w-full sm:w-auto">
                                 <Ban className="mr-2 h-4 w-4" />
-                                Cancelar Servicio
+                                Cancelar
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -272,10 +272,15 @@ export function ServiceDialog({
                     </AlertDialog>
                 )}
             </div>
-            <div className="flex justify-end gap-2">
-               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cerrar</Button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+               <Button variant="outline" type="button" onClick={() => onOpenChange(false)} className="w-full">Cerrar</Button>
                {!isReadOnly && (
-                   <Button type="submit" form="service-form" disabled={false}>
+                   <Button 
+                       type="submit" 
+                       form="service-form" 
+                       disabled={false} 
+                       className="w-full bg-green-600 hover:bg-green-700"
+                   >
                        {service?.id ? 'Actualizar Registro' : 'Crear Registro'}
                    </Button>
                )}
@@ -296,4 +301,3 @@ export function ServiceDialog({
     </>
   );
 }
-
