@@ -287,8 +287,9 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
   const totalCashBalance = useMemo(() => {
     const totalIncome = payments.reduce((sum, p) => sum + p.amount, 0);
     const totalWithdrawals = withdrawals.reduce((sum, w) => sum + w.amount, 0);
-    return totalIncome - totalWithdrawals;
-  }, [payments, withdrawals]);
+    const totalVehicleExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    return totalIncome - totalWithdrawals - totalVehicleExpenses;
+  }, [payments, withdrawals, expenses]);
 
   
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
@@ -568,5 +569,6 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 }
 
 export { RentasPageComponent };
+
 
 
