@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -339,7 +338,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
           <div className="flex items-center gap-2 p-2 h-10 rounded-md border bg-card text-card-foreground shadow-sm">
             <Wallet className="h-5 w-5 text-green-500" />
             <div className="flex flex-col items-end">
-              <span className="text-xs text-muted-foreground -mb-1">Saldo en Caja</span>
+              <span className="text-xs text-muted-foreground -mb-1">Caja</span>
               <span className="font-bold">{formatCurrency(totalCashBalance)}</span>
             </div>
           </div>
