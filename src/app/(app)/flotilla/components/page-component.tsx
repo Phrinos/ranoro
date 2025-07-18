@@ -216,16 +216,21 @@ export function FlotillaPageComponent({
         <TabsContent value="vehiculos" className="mt-6 space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div><h2 className="text-2xl font-semibold tracking-tight">Vehículos de la Flotilla</h2><p className="text-muted-foreground">Gestiona los vehículos que forman parte de tu flotilla.</p></div>
-              <div className="flex flex-col sm:flex-row gap-2"><Button variant="secondary" onClick={() => setIsFineCheckDialogOpen(true)}><ShieldCheck className="mr-2 h-4 w-4" />Revisar Multas</Button><Button onClick={() => setIsAddVehicleDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Añadir Vehículo</Button></div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" className="bg-orange-100 text-orange-800 hover:bg-orange-200" onClick={() => setIsFineCheckDialogOpen(true)}>
+                    <ShieldCheck className="mr-2 h-4 w-4" />Revisar Multas
+                </Button>
+                <Button onClick={() => setIsAddVehicleDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Añadir Vehículo</Button>
+              </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input type="search" placeholder="Buscar por placa, marca, modelo o propietario..." className="w-full pl-8" value={searchTermVehicles} onChange={e => setSearchTermVehicles(e.target.value)} />
+                <Input type="search" placeholder="Buscar por placa, marca, modelo o propietario..." className="w-full pl-8 bg-card" value={searchTermVehicles} onChange={e => setSearchTermVehicles(e.target.value)} />
             </div>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9">
+                    <Button variant="outline" size="sm" className="h-9 bg-card">
                         <ListFilter className="mr-2 h-4 w-4" /> Ordenar
                     </Button>
                 </DropdownMenuTrigger>
