@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Search, ListFilter, ShieldCheck, User, ChevronRight, AlertTriangle, UserCheck, UserX } from "lucide-react";
@@ -28,14 +29,11 @@ const FINE_CHECK_STORAGE_KEY = 'lastFineCheckDate';
 type FlotillaSortOption = "plate_asc" | "plate_desc" | "owner_asc" | "owner_desc" | "rent_asc" | "rent_desc";
 type DriverSortOption = 'name_asc' | 'name_desc';
 
-export function FlotillaPageComponent({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+export function FlotillaPageComponent() {
   const { toast } = useToast();
   const router = useRouter();
-  const defaultTab = (searchParams?.tab as string) || 'conductores';
+  const searchParams = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'conductores';
 
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(defaultTab);
