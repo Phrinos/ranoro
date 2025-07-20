@@ -125,7 +125,7 @@ const createInvoiceFlow = ai.defineFlow(
     try {
       const invoice = await facturapi.invoices.create({
         customer: customer.id,
-        use: input.customer.cfdiUse,
+        cfdi_use: input.customer.cfdiUse, // Correct for v2.0
         payment_form: input.customer.paymentForm ?? '01',
         items,
         folio_number: `RAN-${ticket.id?.slice(-6) || Date.now()}`
