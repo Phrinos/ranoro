@@ -6,11 +6,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm, FormProvider } from "react-hook-form";
+import { Form, FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Search, FileText, FileJson, Send } from 'lucide-react';
+import { Loader2, Search, FileText, FileJson } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -18,7 +17,7 @@ import Image from 'next/image';
 import { billingService } from '@/lib/services/billing.service';
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { BillingForm, billingFormSchema, type BillingFormValues } from './components/billing-form';
-import { createInvoice } from '@/ai/flows/billing-flow';
+import { createInvoiceAction } from './actions';
 import { formatCurrency } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -78,10 +77,14 @@ export default function FacturarPage() {
     if (!searchResult) return;
     setIsSubmitting(true);
     try {
-      const result = await createInvoice({ customer: data, ticket: searchResult });
-      toast({ title: "¡Factura Creada!", description: "La factura ha sido creada y enviada a su correo.", duration: 7000 });
-      setSearchResult(null); // Reset form
-      searchForm.reset();
+      const result = await createInvoiceAction(data, searchResult);
+      if (result.success) {
+        toast({ title: "¡Factura Creada!", description: "La factura ha sido creada y enviada a su correo.", duration: 7000 });
+        setSearchResult(null); // Reset form
+        searchForm.reset();
+      } else {
+        throw new Error(result.error);
+      }
     } catch (e: any) {
       console.error("Error creating invoice", e);
       toast({ title: "Error al Facturar", description: e.message, variant: "destructive", duration: 7000 });
@@ -124,7 +127,7 @@ export default function FacturarPage() {
             </CardHeader>
             <CardContent>
               {!searchResult ? (
-                <Form {...searchForm}>
+                <FormProvider {...searchForm}>
                   <form onSubmit={searchForm.handleSubmit(onSearchSubmit)} className="space-y-4">
                     <FormField
                       control={searchForm.control}
@@ -158,7 +161,7 @@ export default function FacturarPage() {
                       Buscar Ticket
                     </Button>
                   </form>
-                </Form>
+                </FormProvider>
               ) : (
                 <div className="space-y-6">
                    <Alert variant="default" className="border-green-500 bg-green-50">
@@ -167,7 +170,7 @@ export default function FacturarPage() {
                       <AlertDescription>
                         <p><strong>Folio:</strong> {searchResult.id}</p>
                         <p><strong>Fecha:</strong> {ticketDate ? format(parseISO(ticketDate), "dd MMMM, yyyy", {locale: es}) : 'N/A'}</p>
-                        <p><strong>Total:</strong> {formatCurrency('totalAmount' in searchResult ? searchResult.totalAmount : searchResult.totalCost)}</p>
+                        <p><strong>Total:</strong> {formatCurrency('totalAmount' in searchResult ? searchResult.totalAmount : (searchResult.totalCost || 0))}</p>
                       </AlertDescription>
                   </Alert>
 
