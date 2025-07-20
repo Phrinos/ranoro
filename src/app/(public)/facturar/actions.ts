@@ -1,7 +1,7 @@
 'use server';
 
 import { createInvoice } from '@/ai/flows/billing-flow';
-import type { BillingFormValues } from '@/schemas/billing-form';
+import { type BillingFormValues } from '@/app/facturar/components/billing-schema';
 import type { SaleReceipt, ServiceRecord } from '@/types';
 import { revalidatePath } from 'next/cache';
 
