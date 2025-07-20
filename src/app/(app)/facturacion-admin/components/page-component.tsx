@@ -148,6 +148,13 @@ export function FacturacionAdminPageComponent() {
         <p className="text-primary-foreground/80 mt-1">Configura tu conexión con FacturAPI y gestiona tu portal de cliente.</p>
       </div>
       
+      <Button asChild size="lg" className="w-full mb-6">
+        <Link href="/facturar" target="_blank">
+            Ir al Portal Público de Auto-Facturación
+            <ExternalLink className="ml-2 h-5 w-5"/>
+        </Link>
+      </Button>
+
       <Tabs defaultValue="portal" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="portal">Portal de Facturas</TabsTrigger>
