@@ -50,4 +50,3 @@ const findTicket = async (folio: string, total: number): Promise<TicketType | nu
 export const billingService = {
   findTicket,
 };
-

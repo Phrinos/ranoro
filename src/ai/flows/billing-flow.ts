@@ -6,7 +6,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { serviceFormSchema } from '@/schemas/service-form';
 import { billingFormSchema } from '@/app/facturar/components/billing-form';
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
@@ -73,7 +72,7 @@ const createInvoiceFlow = ai.defineFlow(
     }
 
     // 2. Prepare invoice items
-    const items = ('items' in ticket ? ticket.items : ticket.serviceItems).map(item => {
+    const items = ('items' in ticket ? ticket.items : (ticket.serviceItems || [])).map(item => {
         const price = 'unitPrice' in item ? item.unitPrice : item.price;
         const description = 'itemName' in item ? item.itemName : item.name;
         
