@@ -5,7 +5,7 @@ import { useFormContext } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { type BillingFormValues } from '@/app/facturar/components/billing-schema';
+import { type BillingFormValues } from './billing-schema';
 
 const cfdiUseOptions = [
     { value: 'G01', label: 'G01 - Adquisición de mercancías' },

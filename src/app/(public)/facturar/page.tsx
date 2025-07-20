@@ -17,7 +17,7 @@ import Image from 'next/image';
 import { billingService } from '@/lib/services/billing.service';
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { BillingForm } from './components/billing-form';
-import { billingFormSchema, type BillingFormValues } from '@/app/facturar/components/billing-schema';
+import { billingFormSchema, type BillingFormValues } from './components/billing-schema';
 import { createInvoiceAction } from './actions';
 import { formatCurrency } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';

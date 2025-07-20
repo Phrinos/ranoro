@@ -5,7 +5,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { billingFormSchema } from '@/app/facturar/components/billing-schema';
+import { billingFormSchema } from '@/app/(public)/facturar/components/billing-schema';
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic';
