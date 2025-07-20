@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormProvider, useForm, FormField, FormItem, FormLabel, FormControl, FormMessage } from "react-hook-form";
+import { Form, FormProvider, useForm, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Search, FileText, FileJson } from 'lucide-react';
@@ -50,7 +50,7 @@ export default function FacturarPage() {
     resolver: zodResolver(searchSchema),
   });
 
-  const billingForm = useForm<BillingFormValues>({
+  const billingMethods = useForm<BillingFormValues>({
     resolver: zodResolver(billingFormSchema),
   });
 
@@ -129,39 +129,41 @@ export default function FacturarPage() {
             <CardContent>
               {!searchResult ? (
                 <FormProvider {...searchForm}>
-                  <form onSubmit={searchForm.handleSubmit(onSearchSubmit)} className="space-y-4">
-                    <FormField
-                      control={searchForm.control}
-                      name="folio"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Folio del Ticket</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ej: SALE-ABC123XYZ" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={searchForm.control}
-                      name="total"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Monto Total (con IVA)</FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" placeholder="Ej: 1599.00" {...field} />
-                          </FormControl>
-                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                      Buscar Ticket
-                    </Button>
-                  </form>
+                  <Form {...searchForm}>
+                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit)} className="space-y-4">
+                      <FormField
+                        control={searchForm.control}
+                        name="folio"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Folio del Ticket</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ej: SALE-ABC123XYZ" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={searchForm.control}
+                        name="total"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Monto Total (con IVA)</FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="Ej: 1599.00" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+                      <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                        Buscar Ticket
+                      </Button>
+                    </form>
+                  </Form>
                 </FormProvider>
               ) : (
                 <div className="space-y-6">
@@ -176,14 +178,16 @@ export default function FacturarPage() {
                   </Alert>
 
                   <h3 className="text-lg font-semibold border-t pt-4">Ingresa tus Datos Fiscales</h3>
-                  <FormProvider {...billingForm}>
-                    <form onSubmit={billingForm.handleSubmit(onBillingDataSubmit)} className="space-y-4">
-                        <BillingForm />
-                        <Button type="submit" className="w-full" disabled={isSubmitting}>
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileJson className="mr-2 h-4 w-4"/>}
-                            {isSubmitting ? 'Generando Factura...' : 'Generar Factura'}
-                        </Button>
-                    </form>
+                  <FormProvider {...billingMethods}>
+                    <Form {...billingMethods}>
+                      <form onSubmit={billingMethods.handleSubmit(onBillingDataSubmit)} className="space-y-4">
+                          <BillingForm />
+                          <Button type="submit" className="w-full" disabled={isSubmitting}>
+                              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileJson className="mr-2 h-4 w-4"/>}
+                              {isSubmitting ? 'Generando Factura...' : 'Generar Factura'}
+                          </Button>
+                      </form>
+                    </Form>
                   </FormProvider>
                 </div>
               )}
