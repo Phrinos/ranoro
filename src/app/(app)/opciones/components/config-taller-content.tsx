@@ -51,10 +51,6 @@ const tallerSchema = z.object({
   contactPersonName: z.string().optional(),
   contactPersonPhone: z.string().optional(),
   contactPersonRole: z.string().optional(),
-  // FacturAPI fields
-  facturapiLiveApiKey: z.string().optional().or(z.literal('')),
-  facturapiTestApiKey: z.string().optional().or(z.literal('')),
-  facturapiBillingMode: z.enum(['live', 'test']).default('test'),
 });
 
 type TallerFormValues = z.infer<typeof tallerSchema>;
@@ -74,7 +70,6 @@ export function ConfigTallerPageContent() {
     resolver: zodResolver(tallerSchema),
     defaultValues: {
         name: 'RANORO', phone: '', addressLine1: '', logoUrl: '/ranoro-logo.png', timezone: 'America/Mexico_City',
-        facturapiLiveApiKey: '', facturapiTestApiKey: '', facturapiBillingMode: 'test'
     },
   });
 
@@ -250,28 +245,6 @@ export function ConfigTallerPageContent() {
                 <FormField control={form.control} name="contactPersonRole" render={({ field }) => (<FormItem><FormLabel>Puesto</FormLabel><FormControl><Input placeholder="Gerente de Servicio" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl></FormItem>)} />
               </CardContent>
             </Card>
-            
-             <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2"><FileJson/>Configuración de Facturación (FacturAPI)</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField control={form.control} name="facturapiLiveApiKey" render={({ field }) => (<FormItem><FormLabel>Live API Key</FormLabel><FormControl><Input type="password" placeholder="sk_live_..." {...field} /></FormControl></FormItem>)} />
-                  <FormField control={form.control} name="facturapiTestApiKey" render={({ field }) => (<FormItem><FormLabel>Test API Key</FormLabel><FormControl><Input type="password" placeholder="sk_test_..." {...field} /></FormControl></FormItem>)} />
-                  <FormField control={form.control} name="facturapiBillingMode" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Modo de Facturación</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="test">Pruebas (Test)</SelectItem>
-                          <SelectItem value="live">Producción (Live)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )} />
-                </CardContent>
-             </Card>
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={form.formState.isSubmitting}><Save className="mr-2 h-4 w-4" />{form.formState.isSubmitting ? 'Guardando...' : 'Guardar Información'}</Button>
