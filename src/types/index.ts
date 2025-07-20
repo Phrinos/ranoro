@@ -31,6 +31,10 @@ export interface WorkshopInfo {
   contactPersonPhone?: string;
   contactPersonRole?: string;
   timezone?: string;
+  // FacturAPI fields
+  facturapiLiveApiKey?: string;
+  facturapiTestApiKey?: string;
+  facturapiBillingMode?: 'live' | 'test';
 }
 
 export interface VehiclePaperwork {
@@ -422,6 +426,8 @@ export interface CashDrawerTransaction {
   concept: string;
   userId: string;
   userName: string;
+  relatedType?: 'Venta' | 'Servicio';
+  relatedId?: string;
 }
 
 export interface InitialCashBalance {

@@ -1,69 +1,96 @@
 
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Search, FileText } from 'lucide-react';
+import { Loader2, Search, FileText, FileJson, Send } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import Image from 'next/image';
+import { billingService } from '@/lib/services/billing.service';
+import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
+import { BillingForm, billingFormSchema, type BillingFormValues } from '../components/billing-form';
+import { createInvoice } from '@/ai/flows/billing-flow';
+import { formatCurrency } from '@/lib/utils';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const searchSchema = z.object({
-  folio: z.string().min(5, "El folio debe tener al menos 5 caracteres."),
+  folio: z.string().min(5, "El folio debe tener al menos 5 caracteres.").trim(),
   total: z.coerce.number().min(0.01, "El monto debe ser mayor a cero."),
 });
 
 type SearchFormValues = z.infer<typeof searchSchema>;
+type TicketType = SaleReceipt | ServiceRecord;
 
 export default function FacturarPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [searchResult, setSearchResult] = useState<any>(null); // Replace 'any' with your ticket type
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchResult, setSearchResult] = useState<TicketType | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>({});
 
-  const form = useForm<SearchFormValues>({
+  useEffect(() => {
+    const stored = localStorage.getItem('workshopTicketInfo');
+    if (stored) {
+        try { setWorkshopInfo(JSON.parse(stored)); } catch {}
+    }
+  }, []);
+
+  const searchForm = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
   });
 
-  const onSearchSubmit = (data: SearchFormValues) => {
+  const billingForm = useForm<BillingFormValues>({
+    resolver: zodResolver(billingFormSchema),
+  });
+
+  const onSearchSubmit = async (data: SearchFormValues) => {
     setIsLoading(true);
     setError(null);
     setSearchResult(null);
     
-    // Simulate API call
-    setTimeout(() => {
-      // TODO: Replace with actual API call to your backend
-      // Your backend would then query the 'serviceRecords' or 'sales' collection
-      
-      // Example of a failed search
-      if (data.folio.toLowerCase().includes("fail")) {
-        setError("No se encontró ningún ticket con la información proporcionada. Por favor, verifique el folio y el monto.");
+    try {
+      const result = await billingService.findTicket(data.folio, data.total);
+      if (result) {
+        setSearchResult(result);
+        toast({ title: "Ticket Encontrado", description: "Por favor, complete sus datos fiscales para facturar." });
       } else {
-        // Example of a successful search
-        setSearchResult({
-          folio: data.folio,
-          total: data.total,
-          date: new Date().toISOString(),
-          description: "Cambio de aceite y filtro de aire",
-        });
+        setError("No se encontró ningún ticket con la información proporcionada. Por favor, verifique el folio y el monto.");
       }
-      setIsLoading(false);
-    }, 1500);
+    } catch (e: any) {
+       setError(e.message || "Ocurrió un error al buscar el ticket.");
+    } finally {
+        setIsLoading(false);
+    }
   };
   
-  // TODO: Create the form for client fiscal data capture
-  const onBillingDataSubmit = (data: any) => {
-    console.log("Billing data submitted:", data);
-    toast({ title: "Factura Solicitada", description: "Enviaremos la factura a tu correo electrónico en breve." });
+  const onBillingDataSubmit = async (data: BillingFormValues) => {
+    if (!searchResult) return;
+    setIsSubmitting(true);
+    try {
+      const result = await createInvoice({ customer: data, ticket: searchResult });
+      toast({ title: "¡Factura Creada!", description: "La factura ha sido creada y enviada a su correo.", duration: 7000 });
+      setSearchResult(null); // Reset form
+      searchForm.reset();
+    } catch (e: any) {
+      console.error("Error creating invoice", e);
+      toast({ title: "Error al Facturar", description: e.message, variant: "destructive", duration: 7000 });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  const ticketDate = searchResult ? ('saleDate' in searchResult ? searchResult.saleDate : searchResult.serviceDate) : null;
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
@@ -97,10 +124,10 @@ export default function FacturarPage() {
             </CardHeader>
             <CardContent>
               {!searchResult ? (
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSearchSubmit)} className="space-y-4">
+                <Form {...searchForm}>
+                  <form onSubmit={searchForm.handleSubmit(onSearchSubmit)} className="space-y-4">
                     <FormField
-                      control={form.control}
+                      control={searchForm.control}
                       name="folio"
                       render={({ field }) => (
                         <FormItem>
@@ -113,7 +140,7 @@ export default function FacturarPage() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={searchForm.control}
                       name="total"
                       render={({ field }) => (
                         <FormItem>
@@ -138,17 +165,22 @@ export default function FacturarPage() {
                       <FileText className="h-4 w-4 text-green-600" />
                       <AlertTitle className="text-green-700">Ticket Encontrado</AlertTitle>
                       <AlertDescription>
-                        <p><strong>Folio:</strong> {searchResult.folio}</p>
-                        <p><strong>Descripción:</strong> {searchResult.description}</p>
+                        <p><strong>Folio:</strong> {searchResult.id}</p>
+                        <p><strong>Fecha:</strong> {ticketDate ? format(parseISO(ticketDate), "dd MMMM, yyyy", {locale: es}) : 'N/A'}</p>
+                        <p><strong>Total:</strong> {formatCurrency('totalAmount' in searchResult ? searchResult.totalAmount : searchResult.totalCost)}</p>
                       </AlertDescription>
                   </Alert>
 
                   <h3 className="text-lg font-semibold border-t pt-4">Ingresa tus Datos Fiscales</h3>
-                  {/* Placeholder for the actual billing form */}
-                  <div className="text-center p-8 border-dashed border-2 rounded-md">
-                    <p className="text-muted-foreground">El formulario para ingresar los datos del cliente para la facturación irá aquí.</p>
-                     <Button className="mt-4" disabled>Generar Factura (Próximamente)</Button>
-                  </div>
+                  <FormProvider {...billingForm}>
+                    <form onSubmit={billingForm.handleSubmit(onBillingDataSubmit)} className="space-y-4">
+                        <BillingForm />
+                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileJson className="mr-2 h-4 w-4"/>}
+                            {isSubmitting ? 'Generando Factura...' : 'Generar Factura'}
+                        </Button>
+                    </form>
+                  </FormProvider>
                 </div>
               )}
             </CardContent>
