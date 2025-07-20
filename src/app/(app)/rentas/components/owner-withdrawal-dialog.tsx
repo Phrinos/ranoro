@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -67,7 +68,7 @@ export function OwnerWithdrawalDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Propietario de la Flotilla</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value ?? ''}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Seleccione un propietario" /></SelectTrigger>
                     </FormControl>
@@ -104,7 +105,7 @@ export function OwnerWithdrawalDialog({
                 <FormItem>
                   <FormLabel>Motivo (Opcional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Ej: Adelanto de ganancias" {...field} />
+                    <Textarea placeholder="Ej: Adelanto de ganancias" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

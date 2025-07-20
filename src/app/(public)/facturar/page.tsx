@@ -139,7 +139,7 @@ export default function FacturarPage() {
                           <FormItem>
                             <FormLabel>Folio del Ticket</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ej: SALE-ABC123XYZ" {...field} />
+                              <Input placeholder="Ej: SALE-ABC123XYZ" {...field} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -152,7 +152,7 @@ export default function FacturarPage() {
                           <FormItem>
                             <FormLabel>Monto Total (con IVA)</FormLabel>
                             <FormControl>
-                              <Input type="number" step="0.01" placeholder="Ej: 1599.00" {...field} />
+                              <Input type="number" step="0.01" placeholder="Ej: 1599.00" {...field} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

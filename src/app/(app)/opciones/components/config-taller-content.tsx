@@ -216,14 +216,14 @@ export function ConfigTallerPageContent() {
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Building/>Datos Generales</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Taller</FormLabel><FormControl><Input placeholder="Mi Taller Mecánico" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Calle Principal 123, Colonia" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Taller</FormLabel><FormControl><Input placeholder="Mi Taller Mecánico" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Calle Principal 123, Colonia" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono Principal</FormLabel><FormControl><Input placeholder="4491234567" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono Principal</FormLabel><FormControl><Input placeholder="4491234567" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="timezone" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Zona Horaria del Taller</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Seleccione una zona horaria" /></SelectTrigger></FormControl>
                         <SelectContent>
                           {TIMEZONE_OPTIONS.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
@@ -233,16 +233,16 @@ export function ConfigTallerPageContent() {
                     </FormItem>
                   )} />
                 </div>
-                <FormField control={form.control} name="googleMapsUrl" render={({ field }) => (<FormItem><FormLabel>Enlace de Google Maps (Opcional)</FormLabel><FormControl><Input placeholder="https://maps.app.goo.gl/..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="googleMapsUrl" render={({ field }) => (<FormItem><FormLabel>Enlace de Google Maps (Opcional)</FormLabel><FormControl><Input placeholder="https://maps.app.goo.gl/..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><User/>Contacto Principal</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={form.control} name="contactPersonName" render={({ field }) => (<FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl></FormItem>)} />
-                <FormField control={form.control} name="contactPersonPhone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input placeholder="4497654321" {...field} /></FormControl></FormItem>)} />
-                <FormField control={form.control} name="contactPersonRole" render={({ field }) => (<FormItem><FormLabel>Puesto</FormLabel><FormControl><Input placeholder="Gerente de Servicio" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl></FormItem>)} />
+                <FormField control={form.control} name="contactPersonName" render={({ field }) => (<FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl></FormItem>)} />
+                <FormField control={form.control} name="contactPersonPhone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input placeholder="4497654321" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                <FormField control={form.control} name="contactPersonRole" render={({ field }) => (<FormItem><FormLabel>Puesto</FormLabel><FormControl><Input placeholder="Gerente de Servicio" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl></FormItem>)} />
               </CardContent>
             </Card>
 

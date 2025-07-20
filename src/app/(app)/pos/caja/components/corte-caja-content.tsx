@@ -6,6 +6,7 @@ import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import type { WorkshopInfo, CashDrawerTransaction } from '@/types';
 import { cn, formatCurrency } from '@/lib/utils';
+import Image from 'next/image';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -76,6 +77,19 @@ export function CorteDiaContent({ reportData, date, transactions, previewWorksho
       className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0"
     >
       <div className="text-center mb-2">
+        {workshopInfo.logoUrl && (
+            <div className="mx-auto mb-1 relative" style={{ width: `${workshopInfo.logoWidth || 120}px`, height: `${(workshopInfo.logoWidth || 120) / 3}px`}}>
+                <Image 
+                  src={workshopInfo.logoUrl} 
+                  alt="Logo" 
+                  fill
+                  style={{ objectFit: 'contain' }}
+                  crossOrigin="anonymous"
+                  data-ai-hint="workshop logo"
+                  unoptimized
+                />
+            </div>
+          )}
         <h1 className="text-lg font-bold">{workshopInfo.name}</h1>
         <p>{workshopInfo.addressLine1}</p>
         {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}

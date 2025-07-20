@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -68,7 +69,7 @@ export function VehicleExpenseDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Vehículo de la Flotilla</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value ?? ''}>
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Seleccione un vehículo" /></SelectTrigger>
                     </FormControl>
@@ -107,7 +108,7 @@ export function VehicleExpenseDialog({
                 <FormItem>
                   <FormLabel>Descripción del Gasto</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Ej: Pago de tenencia 2024" {...field} />
+                    <Textarea placeholder="Ej: Pago de tenencia 2024" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

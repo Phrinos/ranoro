@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -64,7 +65,7 @@ export function BillingForm() {
           <FormItem>
             <FormLabel>RFC</FormLabel>
             <FormControl>
-              <Input placeholder="XAXX010101000" {...field} />
+              <Input placeholder="XAXX010101000" {...field} value={field.value ?? ''} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -77,7 +78,7 @@ export function BillingForm() {
           <FormItem>
             <FormLabel>Nombre o Razón Social</FormLabel>
             <FormControl>
-              <Input placeholder="Nombre completo o razón social" {...field} />
+              <Input placeholder="Nombre completo o razón social" {...field} value={field.value ?? ''} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -90,7 +91,7 @@ export function BillingForm() {
           <FormItem>
             <FormLabel>Correo Electrónico</FormLabel>
             <FormControl>
-              <Input type="email" placeholder="correo@ejemplo.com" {...field} />
+              <Input type="email" placeholder="correo@ejemplo.com" {...field} value={field.value ?? ''} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -103,7 +104,7 @@ export function BillingForm() {
           <FormItem>
             <FormLabel>Código Postal</FormLabel>
             <FormControl>
-              <Input placeholder="20000" {...field} />
+              <Input placeholder="20000" {...field} value={field.value ?? ''} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -115,7 +116,7 @@ export function BillingForm() {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Régimen Fiscal</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value ?? ''}>
                 <FormControl>
                     <SelectTrigger>
                     <SelectValue placeholder="Seleccione su régimen fiscal..." />
@@ -135,7 +136,7 @@ export function BillingForm() {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Uso de CFDI</FormLabel>
-             <Select onValueChange={field.onChange} defaultValue={field.value}>
+             <Select onValueChange={field.onChange} defaultValue={field.value ?? ''}>
                 <FormControl>
                     <SelectTrigger>
                     <SelectValue placeholder="Seleccione un uso de CFDI..." />

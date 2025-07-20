@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -96,7 +97,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Nombre del Proveedor</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Repuestos Acme S.A." {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
+                <Input placeholder="Ej: Repuestos Acme S.A." {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -109,7 +110,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Descripción (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Ej: Especialistas en partes de suspensión, entrega a domicilio..." {...field}/>
+                <Textarea placeholder="Ej: Especialistas en partes de suspensión, entrega a domicilio..." {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -123,7 +124,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
               <FormItem>
                 <FormLabel>Persona de Contacto (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
+                  <Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -136,7 +137,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
               <FormItem>
                 <FormLabel>Teléfono (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: 555-123456" {...field} />
+                  <Input placeholder="Ej: 555-123456" {...field} value={field.value ?? ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -150,7 +151,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Email (Opcional)</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="Ej: contacto@proveedor.com" {...field} />
+                <Input type="email" placeholder="Ej: contacto@proveedor.com" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -163,7 +164,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Dirección (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Ej: Calle Falsa 123, Ciudad, Provincia" {...field}/>
+                <Textarea placeholder="Ej: Calle Falsa 123, Ciudad, Provincia" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -180,6 +181,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
                   <Input
                     placeholder="Ej: XAXX010101000"
                     {...field}
+                    value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                   />
                 </FormControl>
@@ -193,7 +195,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Régimen Fiscal (Opcional)</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione un régimen fiscal" />
@@ -233,7 +235,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
               <FormItem>
                 <FormLabel>Nota de Deuda (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Factura #123 pendiente" {...field} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))}/>
+                  <Input placeholder="Ej: Factura #123 pendiente" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))}/>
                 </FormControl>
                 <FormMessage />
               </FormItem>

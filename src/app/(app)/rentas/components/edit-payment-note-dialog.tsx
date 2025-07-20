@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -71,7 +72,7 @@ export function EditPaymentNoteDialog({
                 <FormItem>
                   <FormLabel>Concepto / Nota</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Ej: Pago de renta semana 25" {...field} />
+                    <Textarea placeholder="Ej: Pago de renta semana 25" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

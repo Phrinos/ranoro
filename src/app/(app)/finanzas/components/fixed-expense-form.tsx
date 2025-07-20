@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,7 +57,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
             <FormItem>
               <FormLabel>Nombre del Gasto</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Renta del Local" {...field} />
+                <Input placeholder="Ej: Renta del Local" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -88,6 +89,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
                 <Textarea
                   placeholder="Detalles adicionales sobre el gasto (ej: contrato #123, pago de luz CFE...)"
                   {...field}
+                  value={field.value ?? ''}
                 />
               </FormControl>
               <FormMessage />

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -143,7 +144,7 @@ export function RegisterPurchaseDialog({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Proveedor</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un proveedor"/></SelectTrigger></FormControl>
                                     <SelectContent>
                                         {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
@@ -175,7 +176,7 @@ export function RegisterPurchaseDialog({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Método de Pago</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un método"/></SelectTrigger></FormControl>
                                     <SelectContent>
                                         {purchasePaymentMethods.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -204,10 +205,10 @@ export function RegisterPurchaseDialog({
                         <TableRow key={field.id}>
                           <TableCell className="font-medium">{field.name}</TableCell>
                           <TableCell>
-                            <FormField control={control} name={`items.${index}.quantity`} render={({ field: qtyField }) => ( <FormControl><Input type="number" {...qtyField} className="h-8" /></FormControl> )}/>
+                            <FormField control={control} name={`items.${index}.quantity`} render={({ field: qtyField }) => ( <FormControl><Input type="number" {...qtyField} value={qtyField.value ?? ''} className="h-8" /></FormControl> )}/>
                           </TableCell>
                            <TableCell>
-                            <FormField control={control} name={`items.${index}.unitPrice`} render={({ field: priceField }) => ( <FormControl><Input type="number" {...priceField} className="h-8" /></FormControl> )}/>
+                            <FormField control={control} name={`items.${index}.unitPrice`} render={({ field: priceField }) => ( <FormControl><Input type="number" {...priceField} value={priceField.value ?? ''} className="h-8" /></FormControl> )}/>
                           </TableCell>
                           <TableCell className="text-right font-medium">{formatCurrency((getValues(`items.${index}.quantity`) || 0) * (getValues(`items.${index}.unitPrice`) || 0))}</TableCell>
                           <TableCell>

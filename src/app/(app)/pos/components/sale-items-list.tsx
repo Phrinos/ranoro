@@ -7,7 +7,7 @@ import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { FormField, FormLabel } from '@/components/ui/form';
+import { FormField, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { PlusCircle, Trash2, Minus, Plus, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
