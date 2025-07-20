@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import Link from 'next/link';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const FIRESTORE_DOC_ID = 'main';
 
@@ -27,7 +28,7 @@ const facturapiSchema = z.object({
 
 type FacturapiFormValues = z.infer<typeof facturapiSchema>;
 
-export function FacturacionAdminPageComponent() {
+function ConfiguracionContent() {
   const { toast } = useToast();
   
   const form = useForm<FacturapiFormValues>({
@@ -64,13 +65,7 @@ export function FacturacionAdminPageComponent() {
   };
 
   return (
-    <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Facturación</h1>
-        <p className="text-primary-foreground/80 mt-1">Configura tu conexión con FacturAPI y gestiona tu portal de cliente.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Configuración de FacturAPI</CardTitle>
@@ -126,6 +121,45 @@ export function FacturacionAdminPageComponent() {
           </CardContent>
         </Card>
       </div>
+  );
+}
+
+function PortalContent() {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Historial de Facturas Emitidas</CardTitle>
+                <CardDescription>Consulta todas las facturas que han sido generadas a través del sistema.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center justify-center h-48 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">Próximamente: Historial de facturas aquí.</p>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+export function FacturacionAdminPageComponent() {
+  return (
+    <>
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Facturación</h1>
+        <p className="text-primary-foreground/80 mt-1">Configura tu conexión con FacturAPI y gestiona tu portal de cliente.</p>
+      </div>
+      
+      <Tabs defaultValue="portal" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="portal">Portal de Facturas</TabsTrigger>
+              <TabsTrigger value="configuracion">Configuración</TabsTrigger>
+          </TabsList>
+          <TabsContent value="portal">
+              <PortalContent />
+          </TabsContent>
+          <TabsContent value="configuracion">
+              <ConfiguracionContent />
+          </TabsContent>
+      </Tabs>
     </>
   );
 }
