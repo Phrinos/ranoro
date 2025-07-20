@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Módulo completo para crear, cancelar y obtener PDF de facturas CFDI con FacturAPI v2.
@@ -107,7 +108,7 @@ const createInvoiceFlow = ai.defineFlow(
         product: {
           description,
           product_key: '81111500', // Servicios de reparación y mantenimiento automotriz
-          unit_price: price / 1.16, // Price already includes tax, so we get the pre-tax amount
+          unit_price: Number((price / 1.16).toFixed(2)), // Price already includes tax, get pre-tax, ensure number
           taxes: [{
             type: 'IVA',
             rate: 0.16,
