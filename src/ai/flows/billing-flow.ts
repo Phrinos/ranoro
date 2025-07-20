@@ -79,18 +79,35 @@ const createInvoiceFlow = ai.defineFlow(
     if (!('items' in ticket) && !('serviceItems' in ticket)) {
       throw new Error('El ticket no contiene artículos válidos para facturar.');
     }
+    
+    // Improved item extraction logic
+    const items = ('items' in ticket && Array.isArray(ticket.items) ? ticket.items : ('serviceItems' in ticket && Array.isArray(ticket.serviceItems) ? ticket.serviceItems : [])).map(item => {
+      // Determine price and description based on item type
+      let price: number;
+      let description: string;
+      let quantity: number;
 
-    const items = ('items' in ticket && ticket.items ? ticket.items : ('serviceItems' in ticket ? ticket.serviceItems : [])).map(item => {
-      const price = 'totalPrice' in item ? item.totalPrice : ('price' in item ? (item.price || 0) : 0);
-      const description = 'itemName' in item ? item.itemName : ('name' in item ? item.name : 'Artículo sin descripción');
-      const quantity = 'quantity' in item ? item.quantity : 1;
+      if ('totalPrice' in item) { // Likely a SaleItem from SaleReceipt
+        price = item.totalPrice;
+        description = item.itemName;
+        quantity = item.quantity;
+      } else if ('price' in item) { // Likely a ServiceItem from ServiceRecord
+        price = item.price || 0;
+        description = item.name;
+        quantity = 1; // Service items are treated as a single unit
+      } else {
+        // Fallback for unexpected item structures
+        price = 0;
+        description = 'Artículo sin descripción';
+        quantity = 1;
+      }
       
       return {
         quantity: quantity,
         product: {
           description,
           product_key: '81111500', // Servicios de reparación y mantenimiento automotriz
-          unit_price: price / 1.16,
+          unit_price: price / 1.16, // Price already includes tax, so we get the pre-tax amount
           taxes: [{
             type: 'IVA',
             rate: 0.16,
@@ -98,7 +115,12 @@ const createInvoiceFlow = ai.defineFlow(
           }]
         }
       };
-    });
+    }).filter(item => item.product.unit_price > 0); // Ensure we don't bill for items with no cost
+
+    if (items.length === 0) {
+        throw new Error("No se encontraron artículos con costo para facturar en este ticket.");
+    }
+
 
     try {
       const invoice = await facturapi.invoices.create({
