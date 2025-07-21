@@ -10,7 +10,30 @@ import { billingFormSchema } from '@/app/(public)/facturar/components/billing-sc
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic';
-import Facturapi from 'facturapi';
+import Facturapi, { type Invoice } from 'facturapi';
+
+/* -------------------------------------
+ * Utility to get FacturAPI instance
+ * ------------------------------------- */
+const getFacturapiInstance = async (): Promise<Facturapi> => {
+    if (!db) throw new Error('Database not initialized.');
+
+    const configSnap = await getDoc(doc(db, 'workshopConfig', 'main'));
+    if (!configSnap.exists()) {
+      throw new Error('La configuración del taller no ha sido establecida.');
+    }
+
+    const workshopInfo = configSnap.data() as WorkshopInfo;
+
+    const apiKey = workshopInfo.facturapiBillingMode === 'live'
+      ? workshopInfo.facturapiLiveApiKey
+      : workshopInfo.facturapiTestApiKey || process.env.FACTURAPI_TEST_API_KEY;
+
+    if (!apiKey) throw new Error('La API Key de FacturAPI no está configurada.');
+
+    return new Facturapi(apiKey);
+};
+
 
 /* -------------------------------------
  * ✅ Crear factura CFDI
@@ -42,22 +65,7 @@ const createInvoiceFlow = ai.defineFlow(
     outputSchema: z.any(),
   },
   async (input) => {
-    if (!db) throw new Error('Database not initialized.');
-
-    const configSnap = await getDoc(doc(db, 'workshopConfig', 'main'));
-    if (!configSnap.exists()) {
-      throw new Error('La configuración del taller no ha sido establecida.');
-    }
-
-    const workshopInfo = configSnap.data() as WorkshopInfo;
-
-    const apiKey = workshopInfo.facturapiBillingMode === 'live'
-      ? workshopInfo.facturapiLiveApiKey
-      : workshopInfo.facturapiTestApiKey || 'sk_test_1Wz0BaKGxlLrMVxQ3d3kWpxtjZweYZvydp4ODEe23g';
-
-    if (!apiKey) throw new Error('La API Key de FacturAPI no está configurada.');
-
-    const facturapi = new Facturapi(apiKey);
+    const facturapi = await getFacturapiInstance();
     const ticket = input.ticket as SaleReceipt | ServiceRecord;
 
     let customer;
@@ -81,18 +89,15 @@ const createInvoiceFlow = ai.defineFlow(
       throw new Error('El ticket no contiene artículos válidos para facturar.');
     }
     
-    // Corrected item mapping for v2 API using 'price'
     const items = ('items' in ticket && Array.isArray(ticket.items) ? ticket.items : ('serviceItems' in ticket && Array.isArray(ticket.serviceItems) ? ticket.serviceItems : [])).map(item => {
       let unitPriceWithTax: number;
       let description: string;
       let quantity: number;
     
-      // Case 1: SaleReceipt item
       if ('totalPrice' in item && 'quantity' in item && item.quantity > 0) {
         unitPriceWithTax = item.totalPrice / item.quantity;
         description = item.itemName;
         quantity = item.quantity;
-      // Case 2: ServiceRecord item
       } else if ('price' in item) {
         unitPriceWithTax = item.price || 0;
         description = item.name;
@@ -127,13 +132,12 @@ const createInvoiceFlow = ai.defineFlow(
     try {
       const invoice = await facturapi.invoices.create({
         customer: customer.id,
-        use: input.customer.cfdiUse, // Use 'use' field as required by API v2
+        use: input.customer.cfdiUse,
         payment_form: input.customer.paymentForm ?? '01',
         items,
         folio_number: `RAN-${ticket.id?.slice(-6) || Date.now()}`
       });
 
-      // This is the crucial step to stamp the invoice and send it.
       await facturapi.invoices.sendByEmail(invoice.id);
 
       return {
@@ -158,23 +162,10 @@ const createInvoiceFlow = ai.defineFlow(
 
 export async function cancelInvoice(invoiceId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const configSnap = await getDoc(doc(db, 'workshopConfig', 'main'));
-    if (!configSnap.exists()) {
-      throw new Error('La configuración del taller no ha sido encontrada.');
-    }
-
-    const workshopInfo = configSnap.data() as WorkshopInfo;
-
-    const apiKey = workshopInfo.facturapiBillingMode === 'live'
-      ? workshopInfo.facturapiLiveApiKey
-      : workshopInfo.facturapiTestApiKey || 'sk_test_1Wz0BaKGxlLrMVxQ3d3kWpxtjZweYZvydp4ODEe23g';
-
-    const facturapi = new Facturapi(apiKey);
-
+    const facturapi = await getFacturapiInstance();
     await facturapi.invoices.cancel(invoiceId, {
       motive: '02', // 01: Comprobante emitido con errores con relación. 02: Comprobante emitido con errores sin relación. 
     });
-
     return { success: true };
   } catch (e: any) {
     console.error('Cancelación de factura fallida:', e);
@@ -188,18 +179,7 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
 
 export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    const configSnap = await getDoc(doc(db, 'workshopConfig', 'main'));
-    if (!configSnap.exists()) {
-      throw new Error('No se encontró configuración del taller.');
-    }
-
-    const workshopInfo = configSnap.data() as WorkshopInfo;
-
-    const apiKey = workshopInfo.facturapiBillingMode === 'live'
-      ? workshopInfo.facturapiLiveApiKey
-      : workshopInfo.facturapiTestApiKey || 'sk_test_1Wz0BaKGxlLrMVxQ3d3kWpxtjZweYZvydp4ODEe23g';
-
-    const facturapi = new Facturapi(apiKey);
+    const facturapi = await getFacturapiInstance();
     const invoice = await facturapi.invoices.retrieve(invoiceId);
 
     return {
@@ -214,3 +194,51 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
     };
   }
 }
+
+
+/* -------------------------------------
+ * 🧾 Obtener historial de facturas
+ * ------------------------------------- */
+const InvoiceSchema = z.object({
+  id: z.string(),
+  created_at: z.string(),
+  total: z.number(),
+  status: z.string(),
+  folio_number: z.string().nullable(),
+  customer: z.object({
+    legal_name: z.string(),
+    tax_id: z.string(),
+  }),
+  pdf_url: z.string().url().nullable(),
+  xml_url: z.string().url().nullable(),
+});
+
+const GetInvoicesOutputSchema = z.object({
+  data: z.array(z.any()),
+  page: z.number(),
+  total_pages: z.number(),
+  total_results: z.number(),
+});
+
+export async function getInvoices(): Promise<z.infer<typeof GetInvoicesOutputSchema>> {
+  return getInvoicesFlow();
+}
+
+const getInvoicesFlow = ai.defineFlow(
+  {
+    name: 'getInvoicesFlow',
+    inputSchema: z.void(),
+    outputSchema: GetInvoicesOutputSchema,
+  },
+  async () => {
+    try {
+      const facturapi = await getFacturapiInstance();
+      // Fetch all invoices, sorted by date descending.
+      const response = await facturapi.invoices.list({ limit: 100, page: 1, 'date[gte]': '2023-01-01' });
+      return response;
+    } catch (e: any) {
+      console.error('FacturAPI list invoices error:', e.data || e.message);
+      throw new Error(`Error al obtener facturas: ${e.data?.message || e.message}`);
+    }
+  }
+);

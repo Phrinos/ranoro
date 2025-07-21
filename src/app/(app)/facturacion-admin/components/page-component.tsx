@@ -17,6 +17,7 @@ import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HistorialContent } from './historial-content';
 
 const FIRESTORE_DOC_ID = 'main';
 
@@ -124,21 +125,6 @@ function ConfiguracionContent() {
   );
 }
 
-function PortalContent() {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Historial de Facturas Emitidas</CardTitle>
-                <CardDescription>Consulta todas las facturas que han sido generadas a través del sistema.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center justify-center h-48 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">Próximamente: Historial de facturas aquí.</p>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
 
 export function FacturacionAdminPageComponent() {
   return (
@@ -155,13 +141,13 @@ export function FacturacionAdminPageComponent() {
         </Link>
       </Button>
 
-      <Tabs defaultValue="portal" className="w-full">
+      <Tabs defaultValue="historial" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="portal">Portal de Facturas</TabsTrigger>
+              <TabsTrigger value="historial">Historial de Facturas</TabsTrigger>
               <TabsTrigger value="configuracion">Configuración</TabsTrigger>
           </TabsList>
-          <TabsContent value="portal">
-              <PortalContent />
+          <TabsContent value="historial">
+              <HistorialContent />
           </TabsContent>
           <TabsContent value="configuracion">
               <ConfiguracionContent />
