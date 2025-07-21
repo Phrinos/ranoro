@@ -81,7 +81,7 @@ const createInvoiceFlow = ai.defineFlow(
       throw new Error('El ticket no contiene artículos válidos para facturar.');
     }
     
-    // Improved item extraction logic for v2 API
+    // Corrected item mapping for v2 API using 'price'
     const items = ('items' in ticket && Array.isArray(ticket.items) ? ticket.items : ('serviceItems' in ticket && Array.isArray(ticket.serviceItems) ? ticket.serviceItems : [])).map(item => {
       let unitPriceWithTax: number;
       let description: string;
@@ -96,22 +96,21 @@ const createInvoiceFlow = ai.defineFlow(
       } else if ('price' in item) {
         unitPriceWithTax = item.price || 0;
         description = item.name;
-        quantity = 1; // Service items are usually a single unit (e.g., "Afinación Mayor")
+        quantity = 1; 
       } else {
-        // Fallback for unexpected item structures, ensures we don't proceed with invalid data
         unitPriceWithTax = 0;
         description = 'Artículo sin descripción';
         quantity = 1;
       }
       
-      const unitPriceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(4));
+      const priceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(4));
     
       return {
         quantity: quantity,
         product: {
           description,
-          product_key: '81111500', // SAT code for "Servicios de reparación y mantenimiento automotriz"
-          unit_price: unitPriceBeforeTax,
+          product_key: '81111500', 
+          price: priceBeforeTax, // Use 'price' field as required by API v2
           taxes: [{
             type: 'IVA',
             rate: 0.16,
@@ -119,7 +118,7 @@ const createInvoiceFlow = ai.defineFlow(
           }]
         }
       };
-    }).filter(item => item.product.unit_price > 0 && item.quantity > 0); 
+    }).filter(item => item.product.price > 0 && item.quantity > 0); 
 
     if (items.length === 0) {
         throw new Error("No se encontraron artículos con costo para facturar en este ticket.");
