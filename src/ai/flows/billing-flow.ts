@@ -81,35 +81,37 @@ const createInvoiceFlow = ai.defineFlow(
       throw new Error('El ticket no contiene artículos válidos para facturar.');
     }
     
-    // Improved item extraction logic
+    // Improved item extraction logic for v2 API
     const items = ('items' in ticket && Array.isArray(ticket.items) ? ticket.items : ('serviceItems' in ticket && Array.isArray(ticket.serviceItems) ? ticket.serviceItems : [])).map(item => {
-      // Determine price, description and quantity based on item type
       let unitPriceWithTax: number;
       let description: string;
       let quantity: number;
-
-      if ('totalPrice' in item && 'quantity' in item && item.quantity > 0) { // Likely a SaleItem from SaleReceipt
+    
+      // Case 1: SaleReceipt item
+      if ('totalPrice' in item && 'quantity' in item && item.quantity > 0) {
         unitPriceWithTax = item.totalPrice / item.quantity;
         description = item.itemName;
         quantity = item.quantity;
-      } else if ('price' in item) { // Likely a ServiceItem from ServiceRecord
+      // Case 2: ServiceRecord item
+      } else if ('price' in item) {
         unitPriceWithTax = item.price || 0;
         description = item.name;
-        quantity = 1; // Service items are treated as a single unit
+        quantity = 1; // Service items are usually a single unit (e.g., "Afinación Mayor")
       } else {
-        // Fallback for unexpected item structures
+        // Fallback for unexpected item structures, ensures we don't proceed with invalid data
         unitPriceWithTax = 0;
         description = 'Artículo sin descripción';
         quantity = 1;
       }
       
-      const unitPriceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(2));
-
+      // Crucial: Calculate price before tax, which is required by FacturAPI's unit_price
+      const unitPriceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(4));
+    
       return {
         quantity: quantity,
         product: {
           description,
-          product_key: '81111500', // Servicios de reparación y mantenimiento automotriz
+          product_key: '81111500', // SAT code for "Servicios de reparación y mantenimiento automotriz"
           unit_price: unitPriceBeforeTax,
           taxes: [{
             type: 'IVA',
@@ -118,7 +120,7 @@ const createInvoiceFlow = ai.defineFlow(
           }]
         }
       };
-    }).filter(item => item.product.unit_price > 0); // Ensure we don't bill for items with no cost
+    }).filter(item => item.product.unit_price > 0 && item.quantity > 0); // Ensure we don't bill for items with no cost or quantity
 
     if (items.length === 0) {
         throw new Error("No se encontraron artículos con costo para facturar en este ticket.");
@@ -127,7 +129,7 @@ const createInvoiceFlow = ai.defineFlow(
     try {
       const invoice = await facturapi.invoices.create({
         customer: customer.id,
-        cfdi_use: input.customer.cfdiUse, // Correct for v2.0
+        cfdi_use: input.customer.cfdiUse,
         payment_form: input.customer.paymentForm ?? '01',
         items,
         folio_number: `RAN-${ticket.id?.slice(-6) || Date.now()}`
@@ -171,7 +173,7 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
     const facturapi = new Facturapi(apiKey);
 
     await facturapi.invoices.cancel(invoiceId, {
-      motive: '02', // 01: Error en la factura, 02: Operación no realizada
+      motive: '02', // 01: Comprobante emitido con errores con relación. 02: Comprobante emitido con errores sin relación. 
     });
 
     return { success: true };
