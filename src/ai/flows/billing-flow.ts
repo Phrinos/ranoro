@@ -63,7 +63,7 @@ const createInvoiceFlow = ai.defineFlow(
     let customer;
     try {
       const existing = await facturapi.customers.list({ q: input.customer.rfc });
-      customer = existing.data.length ? existing.data[0] : await facturapi.customers.create({
+      customer = existing.data.length > 0 ? existing.data[0] : await facturapi.customers.create({
         legal_name: input.customer.name,
         tax_id: input.customer.rfc,
         email: input.customer.email,
@@ -103,14 +103,14 @@ const createInvoiceFlow = ai.defineFlow(
         quantity = 1;
       }
       
-      const priceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(2));
+      const unitPriceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(2));
     
       return {
         quantity: quantity,
         product: {
           description,
           product_key: '81111500', 
-          price: priceBeforeTax, // Use 'price' field as required by API v2
+          price: unitPriceBeforeTax,
           taxes: [{
             type: 'IVA',
             rate: 0.16,
