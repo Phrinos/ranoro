@@ -133,6 +133,7 @@ const createInvoiceFlow = ai.defineFlow(
         folio_number: `RAN-${ticket.id?.slice(-6) || Date.now()}`
       });
 
+      // This is the crucial step to stamp the invoice and send it.
       await facturapi.invoices.sendByEmail(invoice.id);
 
       return {
