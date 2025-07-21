@@ -103,7 +103,7 @@ const createInvoiceFlow = ai.defineFlow(
         quantity = 1;
       }
       
-      const priceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(4));
+      const priceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(2));
     
       return {
         quantity: quantity,
@@ -127,7 +127,7 @@ const createInvoiceFlow = ai.defineFlow(
     try {
       const invoice = await facturapi.invoices.create({
         customer: customer.id,
-        cfdi_use: input.customer.cfdiUse,
+        use: input.customer.cfdiUse, // Use 'use' field as required by API v2
         payment_form: input.customer.paymentForm ?? '01',
         items,
         folio_number: `RAN-${ticket.id?.slice(-6) || Date.now()}`
