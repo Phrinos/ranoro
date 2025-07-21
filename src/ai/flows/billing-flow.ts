@@ -104,7 +104,6 @@ const createInvoiceFlow = ai.defineFlow(
         quantity = 1;
       }
       
-      // Crucial: Calculate price before tax, which is required by FacturAPI's unit_price
       const unitPriceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(4));
     
       return {
@@ -120,7 +119,7 @@ const createInvoiceFlow = ai.defineFlow(
           }]
         }
       };
-    }).filter(item => item.product.unit_price > 0 && item.quantity > 0); // Ensure we don't bill for items with no cost or quantity
+    }).filter(item => item.product.unit_price > 0 && item.quantity > 0); 
 
     if (items.length === 0) {
         throw new Error("No se encontraron artículos con costo para facturar en este ticket.");
