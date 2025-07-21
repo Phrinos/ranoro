@@ -83,32 +83,34 @@ const createInvoiceFlow = ai.defineFlow(
     
     // Improved item extraction logic
     const items = ('items' in ticket && Array.isArray(ticket.items) ? ticket.items : ('serviceItems' in ticket && Array.isArray(ticket.serviceItems) ? ticket.serviceItems : [])).map(item => {
-      // Determine price and description based on item type
-      let price: number;
+      // Determine price, description and quantity based on item type
+      let unitPriceWithTax: number;
       let description: string;
       let quantity: number;
 
-      if ('totalPrice' in item) { // Likely a SaleItem from SaleReceipt
-        price = item.totalPrice;
+      if ('totalPrice' in item && 'quantity' in item && item.quantity > 0) { // Likely a SaleItem from SaleReceipt
+        unitPriceWithTax = item.totalPrice / item.quantity;
         description = item.itemName;
         quantity = item.quantity;
       } else if ('price' in item) { // Likely a ServiceItem from ServiceRecord
-        price = item.price || 0;
+        unitPriceWithTax = item.price || 0;
         description = item.name;
         quantity = 1; // Service items are treated as a single unit
       } else {
         // Fallback for unexpected item structures
-        price = 0;
+        unitPriceWithTax = 0;
         description = 'Artículo sin descripción';
         quantity = 1;
       }
       
+      const unitPriceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(2));
+
       return {
         quantity: quantity,
         product: {
           description,
           product_key: '81111500', // Servicios de reparación y mantenimiento automotriz
-          unit_price: Number((price / 1.16).toFixed(2)), // Price already includes tax, get pre-tax, ensure number
+          unit_price: unitPriceBeforeTax,
           taxes: [{
             type: 'IVA',
             rate: 0.16,
@@ -121,7 +123,6 @@ const createInvoiceFlow = ai.defineFlow(
     if (items.length === 0) {
         throw new Error("No se encontraron artículos con costo para facturar en este ticket.");
     }
-
 
     try {
       const invoice = await facturapi.invoices.create({
