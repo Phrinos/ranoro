@@ -146,15 +146,14 @@ export function FinanzasPageComponent({
         let totalAdministrativeCommissions = 0;
 
         if (isProfitableForCommissions) {
-          allTechnicians.filter(t => !t.isArchived).forEach(tech => {
-            totalTechnicianCommissions += servicesInRange
-              .filter(s => s.technicianId === tech.id)
-              .reduce((sum, s) => sum + (s.serviceProfit || 0), 0) * (tech.commissionRate || 0);
-          });
+          totalTechnicianCommissions = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => {
+            const techProfit = servicesInRange.filter(s => s.technicianId === tech.id).reduce((s, serv) => s + (serv.serviceProfit || 0), 0);
+            return sum + (techProfit * (tech.commissionRate || 0));
+          }, 0);
           
-          allAdminStaff.filter(s => !s.isArchived).forEach(admin => {
-            totalAdministrativeCommissions += totalProfitFromServices * (admin.commissionRate || 0);
-          });
+          totalAdministrativeCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => {
+            return sum + totalProfitFromServices * (admin.commissionRate || 0);
+          }, 0);
         }
         
         const totalExpenses = totalMonthlyExpenses + totalTechnicianCommissions + totalAdministrativeCommissions;
