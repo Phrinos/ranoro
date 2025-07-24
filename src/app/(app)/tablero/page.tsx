@@ -4,9 +4,9 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { ServiceRecord, Vehicle, Technician, ServiceSubStatus, ServiceTypeRecord, InventoryItem } from '@/types';
+import type { ServiceRecord, Vehicle, Technician, ServiceSubStatus, ServiceTypeRecord, InventoryItem, Personnel } from '@/types';
 import { ServiceDialog } from '../servicios/components/service-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
@@ -96,7 +96,7 @@ export default function TableroPage() {
   const { toast } = useToast();
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -109,7 +109,7 @@ export default function TableroPage() {
     const unsubs = [
       operationsService.onServicesUpdate(setServices),
       inventoryService.onVehiclesUpdate(setVehicles),
-      personnelService.onTechniciansUpdate(setTechnicians),
+      personnelService.onPersonnelUpdate(setPersonnel),
       inventoryService.onItemsUpdate(setInventoryItems),
       inventoryService.onServiceTypesUpdate((data) => {
           setServiceTypes(data);
@@ -268,7 +268,7 @@ export default function TableroPage() {
           onOpenChange={setIsServiceDialogOpen}
           service={editingService}
           vehicles={vehicles}
-          technicians={technicians}
+          technicians={personnel}
           inventoryItems={inventoryItems}
           serviceTypes={serviceTypes}
           mode="service"
