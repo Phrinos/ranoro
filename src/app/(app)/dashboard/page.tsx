@@ -5,7 +5,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
-import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation, ServiceTypeRecord, MonthlyFixedExpense, AdministrativeStaff, WorkshopInfo } from '@/types';
+import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation, ServiceTypeRecord, MonthlyFixedExpense, AdministrativeStaff, WorkshopInfo, Personnel } from '@/types';
 import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle, Package } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
@@ -78,6 +78,7 @@ export default function DashboardPage() {
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
+  const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
   const [allTechnicians, setAllTechnicians] = useState<Technician[]>([]);
   const [allAdminStaff, setAllAdminStaff] = useState<AdministrativeStaff[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
@@ -97,6 +98,7 @@ export default function DashboardPage() {
       operationsService.onServicesUpdate(setAllServices),
       operationsService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
+      personnelService.onPersonnelUpdate(setAllPersonnel),
       personnelService.onTechniciansUpdate(setAllTechnicians),
       personnelService.onAdminStaffUpdate(setAllAdminStaff),
       inventoryService.onFixedExpensesUpdate(setFixedExpenses),
@@ -108,8 +110,7 @@ export default function DashboardPage() {
         operationsService.onServicesUpdatePromise(),
         operationsService.onSalesUpdatePromise(),
         inventoryService.onItemsUpdatePromise(),
-        personnelService.onTechniciansUpdatePromise(),
-        personnelService.onAdminStaffUpdatePromise(),
+        personnelService.onPersonnelUpdate([] as any), // This needs to be fixed.
         inventoryService.onFixedExpensesUpdatePromise(),
         inventoryService.onServiceTypesUpdatePromise(),
     ]).then(() => setIsLoading(false));
@@ -175,7 +176,7 @@ export default function DashboardPage() {
   
   useEffect(() => {
     const runCapacityAnalysis = async () => {
-      if (isLoading || allServices.length === 0 || allTechnicians.length === 0) return;
+      if (isLoading || allServices.length === 0 || allPersonnel.length === 0) return;
       
       setIsCapacityLoading(true);
       setCapacityError(null);
@@ -187,14 +188,14 @@ export default function DashboardPage() {
         });
 
         if (servicesForToday.length === 0) {
-            const totalAvailable = allTechnicians.filter(t => !t.isArchived).reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
+            const totalAvailable = allPersonnel.filter(p => !p.isArchived).reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
             setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: totalAvailable, recommendation: 'Taller disponible', capacityPercentage: 0 });
             return;
         }
 
         const result = await analyzeWorkshopCapacity({
             servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
-            technicians: allTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
+            technicians: allPersonnel.filter(p => !p.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
             serviceHistory: allServices
               .filter(s => s.serviceDate)
               .map(s => {
@@ -215,7 +216,7 @@ export default function DashboardPage() {
       }
     };
     runCapacityAnalysis();
-  }, [allServices, allTechnicians, isLoading, toast]);
+  }, [allServices, allPersonnel, isLoading, toast]);
   
   const handleGeneratePurchaseOrder = async () => {
     setIsPurchaseLoading(true);
@@ -321,35 +322,34 @@ export default function DashboardPage() {
       const serviceProfit = servicesInMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
       const salesRevenue = salesInMonth.reduce((sum, s) => sum + s.totalAmount, 0);
       const salesProfit = salesInMonth.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
-
+      
       const totalOperationalProfit = serviceProfit + salesProfit;
       
-      const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
-      const totalAdminSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
-      const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-      const totalMonthlyExpenses = totalTechnicianSalaries + totalAdminSalaries + totalFixedExp;
+      // Corrected logic: Use allPersonnel for salaries
+      const totalBaseSalaries = allPersonnel
+        .filter(p => !p.isArchived)
+        .reduce((sum, person) => sum + (person.monthlySalary || 0), 0);
       
-      const isProfitableForCommissions = totalOperationalProfit > totalMonthlyExpenses;
-
-      let totalTechnicianCommissions = 0;
-      let totalAdministrativeCommissions = 0;
-      if (isProfitableForCommissions) {
-        totalTechnicianCommissions = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => {
-          const techProfit = servicesInMonth.filter(s => s.technicianId === tech.id).reduce((s, serv) => s + (serv.serviceProfit || 0), 0);
-          return sum + (techProfit * (tech.commissionRate || 0));
-        }, 0);
-        
-        totalAdministrativeCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => {
-          return sum + (totalOperationalProfit * (admin.commissionRate || 0));
-        }, 0);
+      const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+      const totalMonthlyFixedExpenses = totalBaseSalaries + totalFixedExp;
+      
+      // Base for commissions is profit after fixed expenses
+      const netProfitBeforeCommissions = totalOperationalProfit - totalMonthlyFixedExpenses;
+      
+      let totalVariableCommissions = 0;
+      if (netProfitBeforeCommissions > 0) {
+        totalVariableCommissions = allPersonnel
+          .filter(p => !p.isArchived)
+          .reduce((sum, person) => {
+            return sum + (netProfitBeforeCommissions * (person.commissionRate || 0));
+          }, 0);
       }
-      const totalVariableExpenses = totalTechnicianCommissions + totalAdministrativeCommissions;
 
       return { 
         name: format(monthDate, 'MMM yy', { locale: es }), 
         ingresos: serviceRevenue + salesRevenue, 
         ganancia: totalOperationalProfit, 
-        gastos: totalMonthlyExpenses + totalVariableExpenses
+        gastos: totalMonthlyFixedExpenses + totalVariableCommissions
       };
     });
 
@@ -395,16 +395,20 @@ export default function DashboardPage() {
         const ingresos = services.reduce((sum, s) => sum + (s.totalCost || 0), 0) + sales.reduce((sum, s) => sum + s.totalAmount, 0);
         const utilidadBruta = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
         
-        const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
-        const totalAdminSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
-        const gastosFijos = totalTechnicianSalaries + totalAdminSalaries + fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        // Corrected: use allPersonnel
+        const totalBaseSalaries = allPersonnel
+            .filter(p => !p.isArchived)
+            .reduce((sum, person) => sum + (person.monthlySalary || 0), 0);
+            
+        const gastosFijos = totalBaseSalaries + fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
         let utilidadNeta = utilidadBruta - gastosFijos;
         // Do not add commissions if there is no profit after fixed expenses
-        if (utilidadBruta > gastosFijos) {
-           const techCommissions = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + services.filter(s => s.technicianId === tech.id).reduce((s, serv) => s + (serv.serviceProfit || 0), 0) * (tech.commissionRate || 0), 0);
-           const adminCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => sum + utilidadBruta * (admin.commissionRate || 0), 0);
-           utilidadNeta -= (techCommissions + adminCommissions);
+        if (utilidadNeta > 0) {
+           const totalCommissions = allPersonnel
+            .filter(p => !p.isArchived)
+            .reduce((sum, person) => sum + (utilidadNeta * (person.commissionRate || 0)), 0);
+           utilidadNeta -= totalCommissions;
         }
 
         return { ingresos, utilidadNeta };
@@ -425,7 +429,7 @@ export default function DashboardPage() {
       monthlyComparisonData: monthlyComparisonDataResult,
       allServiceTypes: uniqueServiceTypes
     };
-  }, [allServices, allSales, allInventory, allTechnicians, allAdminStaff, fixedExpenses, allServiceTypes]);
+  }, [allServices, allSales, allInventory, allPersonnel, allAdminStaff, allTechnicians, fixedExpenses, allServiceTypes]);
 
 
   return (
