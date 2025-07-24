@@ -61,6 +61,13 @@ const taxRegimeOptions = [
     { value: "616", label: "616 - Sin obligaciones fiscales" },
 ];
 
+const normalizeText = (text: string) => {
+    return text
+        .normalize("NFD") // Decompose accented characters
+        .replace(/[\u0300-\u036f]/g, "") // Remove combining diacritical marks
+        .toUpperCase();
+};
+
 export function BillingForm() {
   const { control } = useFormContext<BillingFormValues>();
 
@@ -73,7 +80,12 @@ export function BillingForm() {
           <FormItem>
             <FormLabel>RFC</FormLabel>
             <FormControl>
-              <Input placeholder="XAXX010101000" {...field} value={field.value ?? ''} />
+              <Input
+                placeholder="XAXX010101000"
+                {...field}
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(normalizeText(e.target.value))}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -86,7 +98,12 @@ export function BillingForm() {
           <FormItem>
             <FormLabel>Nombre o Razón Social</FormLabel>
             <FormControl>
-              <Input placeholder="Nombre completo o razón social" {...field} value={field.value ?? ''} />
+              <Input
+                placeholder="Nombre completo o razón social"
+                {...field}
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(normalizeText(e.target.value))}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
