@@ -108,7 +108,7 @@ export function PersonnelForm({ id, initialData, onSubmit, appRoles }: Personnel
           control={form.control}
           name="contactInfo"
           render={({ field }) => (
-            <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input placeholder="Ej: 555-123456" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input placeholder="Ej: 555-123456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
           )}
         />
         <FormField

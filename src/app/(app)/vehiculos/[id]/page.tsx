@@ -18,6 +18,7 @@ import type {
   QuoteRecord,
   InventoryItem,
   ServiceTypeRecord,
+  Personnel,
 } from "@/types";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -69,7 +70,7 @@ export default function VehicleDetailPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
@@ -80,7 +81,7 @@ export default function VehicleDetailPage() {
 
   const [showPrintTicketDialog, setShowPrintTicketDialog] = useState(false);
   const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
-  const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Technician | null>(null);
+  const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Personnel | null>(null);
 
   const fetchVehicleAndServices = useCallback(async () => {
     const fetchedVehicle = await inventoryService.getVehicleById(vehicleId);
@@ -93,7 +94,7 @@ export default function VehicleDetailPage() {
 
   useEffect(() => {
     fetchVehicleAndServices();
-    personnelService.onTechniciansUpdate(setTechnicians);
+    personnelService.onPersonnelUpdate(setPersonnel);
     inventoryService.onItemsUpdate(setInventory);
     inventoryService.onServiceTypesUpdate(setServiceTypes);
     inventoryService.onVehiclesUpdate(setAllVehicles); // to pass to dialog
@@ -218,7 +219,7 @@ export default function VehicleDetailPage() {
                         <TableCell>{formattedDate}</TableCell>
                         <TableCell>{service.mileage ? `${service.mileage.toLocaleString("es-ES")} km` : "N/A"}</TableCell>
                         <TableCell>{getServiceDescriptionText(service)}</TableCell>
-                        <TableCell>{technicians.find((t) => t.id === service.technicianId)?.name || service.technicianId}</TableCell>
+                        <TableCell>{personnel.find((t) => t.id === service.technicianId)?.name || service.technicianId}</TableCell>
                         <TableCell className="text-right">${(service.totalCost || 0).toLocaleString("es-ES", { minimumFractionDigits: 2 })}</TableCell>
                         <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
                     </TableRow>
@@ -228,7 +229,7 @@ export default function VehicleDetailPage() {
         </TabsContent>
       </Tabs>
       {vehicle && (<VehicleDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} vehicle={vehicle} onSave={handleSaveEditedVehicle}/>)}
-      {selectedService && (<ServiceDialog open={isViewServiceDialogOpen} onOpenChange={setIsViewServiceDialogOpen} service={selectedService} vehicles={allVehicles} technicians={technicians} inventoryItems={inventory} isReadOnly={false} onSave={handleServiceUpdated} mode="service" serviceTypes={serviceTypes} />)}
+      {selectedService && (<ServiceDialog open={isViewServiceDialogOpen} onOpenChange={setIsViewServiceDialogOpen} service={selectedService} vehicles={allVehicles} technicians={personnel} inventoryItems={inventory} isReadOnly={false} onSave={handleServiceUpdated} mode="service" serviceTypes={serviceTypes} />)}
     </div>
   );
 }

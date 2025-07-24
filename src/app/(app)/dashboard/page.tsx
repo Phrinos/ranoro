@@ -99,8 +99,6 @@ export default function DashboardPage() {
       operationsService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
       personnelService.onPersonnelUpdate(setAllPersonnel),
-      personnelService.onTechniciansUpdate(setAllTechnicians),
-      personnelService.onAdminStaffUpdate(setAllAdminStaff),
       inventoryService.onFixedExpensesUpdate(setFixedExpenses),
       inventoryService.onServiceTypesUpdate(setAllServiceTypes),
     ];
@@ -427,9 +425,8 @@ export default function DashboardPage() {
       operationalChartData: operationalData,
       serviceTypeDistribution: Object.entries(serviceTypeDist).map(([name, value]) => ({ name, value })),
       monthlyComparisonData: monthlyComparisonDataResult,
-      allServiceTypes: uniqueServiceTypes
     };
-  }, [allServices, allSales, allInventory, allPersonnel, allAdminStaff, allTechnicians, fixedExpenses, allServiceTypes]);
+  }, [allServices, allSales, allInventory, allPersonnel, fixedExpenses, allServiceTypes]);
 
 
   return (
@@ -502,7 +499,7 @@ export default function DashboardPage() {
         </Card>
       </div>
       
-      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts financialChartData={financialChartData} operationalChartData={operationalChartData} serviceTypeDistribution={serviceTypeDistribution} monthlyComparisonData={monthlyComparisonData} allServiceTypes={allServiceTypes} />}
+      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts financialChartData={financialChartData} operationalChartData={operationalChartData} serviceTypeDistribution={serviceTypeDistribution} monthlyComparisonData={monthlyComparisonData} allServiceTypes={allServiceTypes.map(st => st as ServiceTypeRecord)} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <Card className="shadow-lg">

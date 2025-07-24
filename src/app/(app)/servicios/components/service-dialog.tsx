@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -13,7 +11,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord, Personnel } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -32,7 +30,7 @@ interface ServiceDialogProps {
   service?: ServiceRecord | null; 
   quote?: Partial<QuoteRecord> | null; // For quote mode initialization
   vehicles: Vehicle[]; 
-  technicians: Technician[]; 
+  technicians: Personnel[]; 
   inventoryItems: InventoryItem[]; 
   serviceTypes: ServiceTypeRecord[];
   onSave?: (data: ServiceRecord | QuoteRecord) => Promise<void>; 

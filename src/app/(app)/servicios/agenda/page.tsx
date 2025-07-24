@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
 import { ServiceDialog } from "../components/service-dialog";
-import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo, Personnel } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, isTomorrow, compareAsc, isSameDay, addDays, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -41,7 +41,7 @@ function AgendaPageComponent() {
   
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]); 
-  const [technicians, setTechnicians] = useState<Technician[]>([]); 
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]); 
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,7 +67,7 @@ function AgendaPageComponent() {
 
     unsubs.push(operationsService.onServicesUpdate(setAllServices));
     unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
-    unsubs.push(personnelService.onTechniciansUpdate(setTechnicians));
+    unsubs.push(personnelService.onPersonnelUpdate(setPersonnel));
     unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
     unsubs.push(inventoryService.onServiceTypesUpdate((data) => {
         setServiceTypes(data);
@@ -146,14 +146,14 @@ function AgendaPageComponent() {
           const servicesForToday = todayServices;
           
           if (servicesForToday.length === 0) {
-              setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: technicians.reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0), recommendation: "Taller disponible", capacityPercentage: 0 });
+              setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: personnel.reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0), recommendation: "Taller disponible", capacityPercentage: 0 });
               setIsCapacityLoading(false);
               return;
           }
 
           const result = await analyzeWorkshopCapacity({
             servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
-            technicians: technicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
+            technicians: personnel.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
             serviceHistory: allServices
               .filter(s => s.serviceDate)
               .map(s => ({
@@ -171,7 +171,7 @@ function AgendaPageComponent() {
       };
       runCapacityAnalysis();
     }
-  }, [agendaView, toast, isLoading, allServices, technicians, todayServices]);
+  }, [agendaView, toast, isLoading, allServices, personnel, todayServices]);
 
   const totalEarningsToday = useMemo(() => {
     return todayServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
@@ -301,24 +301,24 @@ function AgendaPageComponent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={technicians} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} onComplete={() => handleOpenCompleteDialog(service)} onCancel={() => { const reason = prompt('Motivo de cancelación:'); if(reason) handleCancelService(service.id, reason)}}/>)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
+              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={personnel} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} onComplete={() => handleOpenCompleteDialog(service)} onCancel={() => { const reason = prompt('Motivo de cancelación:'); if(reason) handleCancelService(service.id, reason)}}/>)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
             </CardContent>
           </Card>
            <Card>
             <CardHeader><CardTitle>Citas para Mañana</CardTitle></CardHeader>
             <CardContent>
-              {tomorrowServices.length > 0 ? tomorrowServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={technicians} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
+              {tomorrowServices.length > 0 ? tomorrowServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={personnel} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
             </CardContent>
           </Card>
            <Card>
             <CardHeader><CardTitle>Próximas Citas</CardTitle></CardHeader>
             <CardContent>
-              {futureServices.length > 0 ? futureServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={technicians} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas futuras agendadas.</p>}
+              {futureServices.length > 0 ? futureServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={personnel} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas futuras agendadas.</p>}
             </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="calendario">
-          <ServiceCalendar services={scheduledServices} vehicles={vehicles} technicians={technicians} onServiceClick={(s) => handleOpenServiceDialog(s)} />
+          <ServiceCalendar services={scheduledServices} vehicles={vehicles} technicians={personnel} onServiceClick={(s) => handleOpenServiceDialog(s)} />
         </TabsContent>
       </Tabs>
 
@@ -328,7 +328,7 @@ function AgendaPageComponent() {
           onOpenChange={setIsServiceDialogOpen}
           service={editingService}
           vehicles={vehicles}
-          technicians={technicians}
+          technicians={personnel}
           inventoryItems={inventoryItems}
           serviceTypes={serviceTypes}
           onSave={handleSaveService}

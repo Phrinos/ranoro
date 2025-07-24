@@ -11,6 +11,7 @@ import {
   writeBatch,
   query,
   where,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { Technician, AdministrativeStaff, Driver, Personnel, Area } from "@/types";
@@ -21,10 +22,55 @@ import { inventoryService } from './inventory.service';
 // --- Unified Personnel ---
 const onPersonnelUpdate = (callback: (personnel: Personnel[]) => void): (() => void) => {
     if (!db) return () => {};
-    const unsubscribe = onSnapshot(collection(db, "personnel"), (snapshot) => {
-        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel)));
+
+    let combinedPersonnel: Personnel[] = [];
+    const personnelMap = new Map<string, Personnel>();
+
+    const updateCombinedList = () => {
+        // Create a new array from the map values
+        callback(Array.from(personnelMap.values()));
+    };
+
+    const techniciansUnsubscribe = onSnapshot(collection(db, "technicians"), (snapshot) => {
+        snapshot.docs.forEach(doc => {
+            const data = doc.data() as Omit<Technician, 'id'>;
+            const existing = personnelMap.get(data.name) || { id: doc.id, name: data.name, roles: [] };
+            if (!existing.roles.includes('Técnico')) {
+                existing.roles.push('Técnico');
+            }
+            personnelMap.set(data.name, { ...existing, ...data });
+        });
+        updateCombinedList();
     });
-    return unsubscribe;
+
+    const adminUnsubscribe = onSnapshot(collection(db, "administrativeStaff"), (snapshot) => {
+        snapshot.docs.forEach(doc => {
+            const data = doc.data() as Omit<AdministrativeStaff, 'id'>;
+            const existing = personnelMap.get(data.name) || { id: doc.id, name: data.name, roles: [] };
+            if (!existing.roles.includes('Administrativo')) {
+                existing.roles.push('Administrativo');
+            }
+            personnelMap.set(data.name, { ...existing, ...data });
+        });
+        updateCombinedList();
+    });
+    
+    // Fallback for the new `personnel` collection
+    const personnelUnsubscribe = onSnapshot(collection(db, "personnel"), (snapshot) => {
+        snapshot.docs.forEach(doc => {
+            const data = doc.data() as Personnel;
+            personnelMap.set(data.name, { ...data, id: doc.id });
+        });
+        updateCombinedList();
+    });
+
+
+    // Return a function that unsubscribes from all listeners
+    return () => {
+        techniciansUnsubscribe();
+        adminUnsubscribe();
+        personnelUnsubscribe();
+    };
 };
 
 const savePersonnel = async (data: PersonnelFormValues, id?: string): Promise<Personnel> => {

@@ -73,7 +73,7 @@ import { Input } from "@/components/ui/input";
 interface Props {
   initialDataService?: ServiceRecord|null
   vehicles:Vehicle[]; 
-  technicians: Personnel[]; // Changed from Technician
+  technicians: Personnel[];
   inventoryItems:InventoryItem[]
   serviceTypes:ServiceTypeRecord[]
   onSubmit:(d:ServiceRecord|QuoteRecord)=>Promise<void>
