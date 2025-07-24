@@ -57,12 +57,9 @@ export function PersonalPageComponent({
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [searchTermTech, setSearchTermTech] = useState('');
-  const [showArchivedTech, setShowArchivedTech] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
   
-  const [searchTermAdmin, setSearchTermAdmin] = useState('');
-  const [showArchivedAdmin, setShowArchivedAdmin] = useState(false);
-
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(undefined);
   
   const [isTechnicianDialogOpen, setIsTechnicianDialogOpen] = useState(false);
@@ -141,10 +138,16 @@ export function PersonalPageComponent({
 
     const getPerformanceRecord = (id: string, name: string): UnifiedPerformanceData => {
         const normalizedName = name.trim().toLowerCase();
-        if (!performanceMap.has(normalizedName)) {
-            performanceMap.set(normalizedName, { id, name, roles: [], totalRevenue: 0, baseSalary: 0, totalCommissionEarned: 0, totalEarnings: 0 });
+        // Find if a record for this person (by name) already exists
+        for (const record of performanceMap.values()) {
+            if (record.name.trim().toLowerCase() === normalizedName) {
+                return record;
+            }
         }
-        return performanceMap.get(normalizedName)!;
+        // If not, create a new one
+        const newRecord = { id, name, roles: [], totalRevenue: 0, baseSalary: 0, totalCommissionEarned: 0, totalEarnings: 0 };
+        performanceMap.set(normalizedName, newRecord);
+        return newRecord;
     };
 
     activeTechnicians.forEach(tech => {
@@ -153,10 +156,11 @@ export function PersonalPageComponent({
         
         const techServices = completedServicesInRange.filter(s => s.technicianId === tech.id);
         record.totalRevenue += techServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-        record.baseSalary = Math.max(record.baseSalary, tech.monthlySalary || 0);
+        record.baseSalary = Math.max(record.baseSalary, tech.monthlySalary || 0); // Take the highest salary if duplicated
         
         if (isProfitableForCommissions) {
-            record.totalCommissionEarned += netProfitForCommissions * (tech.commissionRate || 0);
+            const techGeneratedProfit = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+            record.totalCommissionEarned += techGeneratedProfit * (tech.commissionRate || 0);
         }
     });
 
@@ -184,23 +188,21 @@ export function PersonalPageComponent({
     };
   }, [technicians, adminStaff, services, sales, inventory, fixedExpenses, filterDateRange, isLoading]);
 
-  const filteredTechnicians = useMemo(() => {
-    let items = technicians.filter(tech => showArchivedTech ? !!tech.isArchived : !tech.isArchived);
-    if (searchTermTech) {
-      const lowerSearch = searchTermTech.toLowerCase();
-      items = items.filter(tech => tech.name.toLowerCase().includes(lowerSearch) || tech.area.toLowerCase().includes(lowerSearch) || tech.specialty.toLowerCase().includes(lowerSearch));
+  const allPersonnel = useMemo(() => {
+    // This will be replaced with the new unified data model
+    const techs = technicians.map(t => ({...t, type: 'Técnico'}));
+    const admins = adminStaff.map(a => ({...a, type: 'Administrativo'}));
+    return [...techs, ...admins];
+  }, [technicians, adminStaff]);
+  
+  const filteredPersonnel = useMemo(() => {
+    let items = allPersonnel.filter(p => showArchived ? !!p.isArchived : !p.isArchived);
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      items = items.filter(p => p.name.toLowerCase().includes(lowerSearch) || ('area' in p && p.area.toLowerCase().includes(lowerSearch)) || ('specialty' in p && p.specialty.toLowerCase().includes(lowerSearch)) || ('roleOrArea' in p && p.roleOrArea.toLowerCase().includes(lowerSearch)));
     }
     return items.sort((a,b) => a.name.localeCompare(b.name));
-  }, [technicians, showArchivedTech, searchTermTech]);
-
-  const filteredAdminStaff = useMemo(() => {
-    let items = adminStaff.filter(staff => showArchivedAdmin ? !!staff.isArchived : !staff.isArchived);
-    if (searchTermAdmin) {
-       const lowerSearch = searchTermAdmin.toLowerCase();
-       items = items.filter(staff => staff.name.toLowerCase().includes(lowerSearch) || staff.roleOrArea.toLowerCase().includes(lowerSearch));
-    }
-    return items.sort((a,b) => a.name.localeCompare(b.name));
-  }, [adminStaff, showArchivedAdmin, searchTermAdmin]);
+  }, [allPersonnel, showArchived, searchTerm]);
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
   
@@ -215,8 +217,7 @@ export function PersonalPageComponent({
         <div className="w-full">
           <TabsList className="flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
             <TabsTrigger value="informe" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80 break-words whitespace-normal leading-snug">Informe</TabsTrigger>
-            <TabsTrigger value="tecnicos" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80 break-words whitespace-normal leading-snug">Personal Técnico</TabsTrigger>
-            <TabsTrigger value="administrativos" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80 break-words whitespace-normal leading-snug">Personal Administrativo</TabsTrigger>
+            <TabsTrigger value="personal" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80 break-words whitespace-normal leading-snug">Personal</TabsTrigger>
           </TabsList>
         </div>
 
@@ -282,56 +283,36 @@ export function PersonalPageComponent({
             </Card>
         </TabsContent>
 
-        <TabsContent value="tecnicos" className="mt-6 space-y-6">
+        <TabsContent value="personal" className="mt-6 space-y-6">
             <Card>
               <CardHeader>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
-                        <CardTitle>Lista de Staff Técnico</CardTitle>
-                        <CardDescription>Visualiza y gestiona al personal técnico.</CardDescription>
+                        <CardTitle>Lista de Personal</CardTitle>
+                        <CardDescription>Visualiza y gestiona a todo el personal del taller.</CardDescription>
                       </div>
                       <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <Button className="w-full sm:w-auto" onClick={() => setIsTechnicianDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Técnico</Button>
+                        {/* The "New" button will be unified later */}
+                        <Button className="w-full sm:w-auto" onClick={() => setIsTechnicianDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Personal</Button>
                       </div>
                   </div>
                    <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
                     <div className="relative flex-1 sm:flex-initial w-full sm:w-auto">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input type="search" placeholder="Buscar por nombre, área..." className="pl-8 w-full sm:w-[250px] lg:w-[300px] bg-background" value={searchTermTech} onChange={(e) => setSearchTermTech(e.target.value)} />
+                      <Input type="search" placeholder="Buscar por nombre, área..." className="pl-8 w-full sm:w-[250px] lg:w-[300px] bg-background" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
-                    <Button variant="outline" className="w-full sm:w-auto bg-background" onClick={() => setShowArchivedTech(!showArchivedTech)}>
-                      {showArchivedTech ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}
-                      {showArchivedTech ? "Ver Activos" : "Ver Archivados"}
+                    <Button variant="outline" className="w-full sm:w-auto bg-background" onClick={() => setShowArchived(!showArchived)}>
+                      {showArchived ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}
+                      {showArchived ? "Ver Activos" : "Ver Archivados"}
                     </Button>
                    </div>
               </CardHeader>
-              <CardContent><div className="overflow-x-auto"><TechniciansTable technicians={filteredTechnicians} /></div></CardContent>
-            </Card>
-        </TabsContent>
-        <TabsContent value="administrativos" className="mt-6 space-y-6">
-           <Card>
-              <CardHeader>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div>
-                          <CardTitle>Lista de Staff Administrativo</CardTitle>
-                          <CardDescription>Visualiza y gestiona al personal administrativo.</CardDescription>
-                      </div>
-                       <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <Button className="w-full sm:w-auto" onClick={() => setIsStaffDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Staff</Button>
-                      </div>
-                  </div>
-                  <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
-                    <div className="relative flex-1 sm:flex-initial w-full sm:w-auto">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input type="search" placeholder="Buscar por nombre, rol..." className="pl-8 w-full sm:w-[250px] lg:w-[300px] bg-background" value={searchTermAdmin} onChange={(e) => setSearchTermAdmin(e.target.value)} />
-                    </div>
-                    <Button variant="outline" className="w-full sm:w-auto bg-background" onClick={() => setShowArchivedAdmin(!showArchivedAdmin)}>
-                      {showArchivedAdmin ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}
-                      {showArchivedAdmin ? "Ver Activos" : "Ver Archivados"}
-                    </Button>
-                  </div>
-              </CardHeader>
-              <CardContent><div className="overflow-x-auto"><AdministrativeStaffTable staffList={filteredAdminStaff} /></div></CardContent>
+              <CardContent>
+                <div className="overflow-x-auto">
+                    {/* Placeholder for the new unified table */}
+                    <p className="text-center text-muted-foreground py-10">La tabla unificada de personal se mostrará aquí.</p>
+                </div>
+              </CardContent>
             </Card>
         </TabsContent>
       </Tabs>
