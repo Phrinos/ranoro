@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PageHeader } from "@/components/page-header";
 import { ServiceForm } from "../components/service-form";
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, Personnel } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService, personnelService } from '@/lib/services';
@@ -37,7 +37,7 @@ export default function NuevoServicioPage() {
   const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -56,7 +56,7 @@ export default function NuevoServicioPage() {
       inventoryService.onCategoriesUpdate(setAllCategories),
       inventoryService.onSuppliersUpdate(setAllSuppliers),
       inventoryService.onVehiclesUpdate(setVehicles),
-      personnelService.onTechniciansUpdate(setTechnicians),
+      personnelService.onPersonnelUpdate(setPersonnel),
       inventoryService.onServiceTypesUpdate((data) => {
         setServiceTypes(data);
         setIsLoading(false);
@@ -109,7 +109,7 @@ export default function NuevoServicioPage() {
       <FormProvider {...methods}>
         <ServiceForm
           vehicles={vehicles}
-          technicians={technicians}
+          technicians={personnel}
           inventoryItems={currentInventoryItems}
           serviceTypes={serviceTypes}
           onSubmit={handleSaveNewService}
