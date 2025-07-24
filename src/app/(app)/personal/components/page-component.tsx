@@ -141,19 +141,22 @@ export function PersonalPageComponent({
     const totalBaseSalaries = totalTechSalaries + totalAdminSalaries;
     const totalFixedSystemExpenses = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     
-    // Commissions are only paid if the operational profit covers fixed expenses
-    const isProfitableForCommissions = totalOperationalProfit > (totalBaseSalaries + totalFixedSystemExpenses);
+    // GANANCIA NETA REAL
+    const netProfitAfterExpenses = totalOperationalProfit - (totalBaseSalaries + totalFixedSystemExpenses);
+    
+    const isProfitableForCommissions = netProfitAfterExpenses > 0;
 
     const aggTechPerformance: AggregatedTechnicianPerformance[] = activeTechnicians.map(tech => {
       const techServices = completedServicesInRange.filter(s => s.technicianId === tech.id);
       const totalRevenue = techServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
       const totalProfit = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-      const totalCommissionEarned = isProfitableForCommissions ? totalProfit * (tech.commissionRate || 0) : 0;
+      // Comisión sobre la ganancia neta del taller, no la individual ni la bruta.
+      const totalCommissionEarned = isProfitableForCommissions ? netProfitAfterExpenses * (tech.commissionRate || 0) : 0;
       return { technicianId: tech.id, technicianName: tech.name, totalRevenue, totalProfit, totalCommissionEarned };
     });
 
     const aggAdminPerformance: AggregatedAdminStaffPerformance[] = activeAdminStaff.map(staff => {
-      const commissionEarned = isProfitableForCommissions ? totalOperationalProfit * (staff.commissionRate || 0) : 0;
+      const commissionEarned = isProfitableForCommissions ? netProfitAfterExpenses * (staff.commissionRate || 0) : 0;
       const baseSalary = staff.monthlySalary || 0;
       return { staffId: staff.id, staffName: staff.name, baseSalary, commissionEarned, totalEarnings: baseSalary + commissionEarned };
     });
