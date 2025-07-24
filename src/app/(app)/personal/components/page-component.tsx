@@ -6,7 +6,7 @@ import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'rea
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, UserCheck, UserX, Search, TrendingUp, Users, ChevronsRight, ListFilter, Badge } from "lucide-react";
+import { PlusCircle, UserCheck, UserX, Search, TrendingUp, Users, ChevronsRight, ListFilter, Badge, DollarSign } from "lucide-react";
 import { PersonnelTable } from "./personnel-table";
 import { PersonnelDialog } from "./personnel-dialog";
 import type { User, Technician, ServiceRecord, AdministrativeStaff, SaleReceipt, MonthlyFixedExpense, Personnel, AppRole, Area } from '@/types';
@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/utils";
-import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User as UserIcon, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight } from 'lucide-react';
+import { Loader2, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User as UserIcon, TrendingDown, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import type { DateRange } from 'react-day-picker';
 import { personnelService, operationsService, inventoryService, adminService } from '@/lib/services';
@@ -105,11 +105,11 @@ export function PersonalPageComponent({
     if (!dateRange?.from) return [];
     
     const from = startOfDay(dateRange.from);
-    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isWithinInterval(parseDate(s.saleDate)!, interval));
-    const servicesInRange = allServices.filter(s => s.status === 'Entregado' && isWithinInterval(parseDate(s.deliveryDateTime)!, interval));
+    const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, interval));
+    const servicesInRange = allServices.filter(s => s.status === 'Entregado' && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, interval));
 
     const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
     
@@ -161,9 +161,9 @@ export function PersonalPageComponent({
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen de Rendimiento</TabsTrigger>
-          <TabsTrigger value="personal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Lista de Personal</TabsTrigger>
-          <TabsTrigger value="areas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Áreas de Trabajo</TabsTrigger>
+          <TabsTrigger value="resumen" className="data-[state=active]:bg-red-700 data-[state=active]:text-primary-foreground">Resumen de Rendimiento</TabsTrigger>
+          <TabsTrigger value="personal" className="data-[state=active]:bg-red-700 data-[state=active]:text-primary-foreground">Lista de Personal</TabsTrigger>
+          <TabsTrigger value="areas" className="data-[state=active]:bg-red-700 data-[state=active]:text-primary-foreground">Áreas de Trabajo</TabsTrigger>
         </TabsList>
         <TabsContent value="resumen" className="mt-6 space-y-6">
             <Card>
@@ -182,13 +182,11 @@ export function PersonalPageComponent({
                 <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {performanceData.map(person => (
                         <Card key={person.id} className="shadow-sm">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-lg flex justify-between items-start">
-                                  <span>{person.name}</span>
-                                  <div className="flex flex-wrap gap-1 justify-end">
-                                    {person.roles.map(r => <Badge key={r} variant="secondary">{r}</Badge>)}
-                                  </div>
-                                </CardTitle>
+                            <CardHeader className="pb-2 flex-row justify-between items-start">
+                                <CardTitle className="text-lg">{person.name}</CardTitle>
+                                <div className="flex flex-wrap gap-1 justify-end shrink-0">
+                                  {person.roles?.map(r => <Badge key={r} variant="secondary">{r}</Badge>)}
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm">
                                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(person.generatedRevenue)}</span></div>
