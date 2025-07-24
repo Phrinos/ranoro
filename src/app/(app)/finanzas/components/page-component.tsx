@@ -81,10 +81,9 @@ export function FinanzasPageComponent({
     const financialSummary = useMemo(() => {
         const emptyState = { 
             monthYearLabel: 'Cargando...', totalOperationalIncome: 0, totalIncomeFromSales: 0, totalIncomeFromServices: 0,
-            totalProfitFromSales: 0, totalProfitFromServices: 0, totalCostOfGoods: 0, totalOperationalProfit: 0, totalSalaries: 0, 
-            totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0, totalFixedExpenses: 0, totalMonthlyExpenses: 0, 
-            totalTechnicianCommissions: 0, totalAdministrativeCommissions: 0, totalExpenses: 0, netProfit: 0, 
-            isProfitableForCommissions: false, serviceIncomeBreakdown: {},
+            totalProfitFromSales: 0, totalProfitFromServices: 0, totalCostOfGoods: 0, totalOperationalProfit: 0, 
+            totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0, totalFixedExpenses: 0,
+            totalVariableCommissions: 0, netProfit: 0, isProfitableForCommissions: false, serviceIncomeBreakdown: {},
             totalInventoryValue: 0, totalUnitsSold: 0
         };
 
@@ -135,34 +134,25 @@ export function FinanzasPageComponent({
 
         const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
         const totalAdministrativeSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
-        const totalBaseSalaries = totalTechnicianSalaries + totalAdministrativeSalaries;
         const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-        const totalMonthlyExpenses = totalBaseSalaries + totalFixedExpenses;
+        const totalBaseExpenses = totalTechnicianSalaries + totalAdministrativeSalaries + totalFixedExpenses;
         
-        const netProfitBeforeCommissions = totalOperationalProfit - totalMonthlyExpenses;
+        const netProfitBeforeCommissions = totalOperationalProfit - totalBaseExpenses;
         const isProfitableForCommissions = netProfitBeforeCommissions > 0;
         
-        let totalTechnicianCommissions = 0;
-        let totalAdministrativeCommissions = 0;
-
+        let totalVariableCommissions = 0;
         if (isProfitableForCommissions) {
-          totalTechnicianCommissions = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => {
-            const techProfitGenerated = servicesInRange
-              .filter(s => s.technicianId === tech.id)
-              .reduce((s, serv) => s + (serv.serviceProfit || 0), 0);
-            // La comisión del técnico se calcula sobre la ganancia que generó
-            return sum + (techProfitGenerated * (tech.commissionRate || 0));
+          const techCommissions = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => {
+            return sum + (netProfitBeforeCommissions * (tech.commissionRate || 0));
           }, 0);
           
-          totalAdministrativeCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => {
-            // La comisión administrativa se calcula sobre la ganancia neta real del taller ANTES de comisiones.
+          const adminCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => {
             return sum + (netProfitBeforeCommissions * (admin.commissionRate || 0));
           }, 0);
+          totalVariableCommissions = techCommissions + adminCommissions;
         }
         
-        const totalVariableCommissions = totalTechnicianCommissions + totalAdministrativeCommissions;
-        const totalExpenses = totalMonthlyExpenses + totalVariableCommissions;
-        const netProfit = totalOperationalProfit - totalExpenses;
+        const netProfit = netProfitBeforeCommissions - totalVariableCommissions;
 
         const dateLabel = dateRange.to && !isSameDay(dateRange.from, dateRange.to)
             ? `${format(from, 'dd MMM', { locale: es })} - ${format(to, 'dd MMM, yyyy', { locale: es })}`
@@ -175,9 +165,8 @@ export function FinanzasPageComponent({
         return { 
             monthYearLabel: dateLabel, totalOperationalIncome, totalIncomeFromSales, totalIncomeFromServices, 
             totalProfitFromSales, totalProfitFromServices, totalCostOfGoods, totalOperationalProfit,
-            totalSalaries: totalBaseSalaries, totalTechnicianSalaries, totalAdministrativeSalaries, 
-            totalFixedExpenses, totalMonthlyExpenses, totalTechnicianCommissions, totalAdministrativeCommissions,
-            totalExpenses, netProfit, isProfitableForCommissions, serviceIncomeBreakdown,
+            totalTechnicianSalaries, totalAdministrativeSalaries, totalFixedExpenses,
+            totalVariableCommissions, netProfit, isProfitableForCommissions, serviceIncomeBreakdown,
             totalInventoryValue, totalUnitsSold
         };
     }, [dateRange, isLoading, allSales, allServices, allInventory, allTechnicians, allAdminStaff, fixedExpenses]);
@@ -294,9 +283,27 @@ export function FinanzasPageComponent({
                       <Card className="lg:col-span-2">
                         <CardHeader><CardTitle className="text-xl flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary" />Estado de Resultados</CardTitle><CardDescription>Resumen de pérdidas y ganancias para el periodo: {financialSummary.monthYearLabel}</CardDescription></CardHeader>
                         <CardContent className="space-y-4 text-base">
-                            <div className="space-y-2"><div className="flex justify-between items-center"><span className="text-muted-foreground">Ingresos Operativos Totales:</span><span className="font-semibold text-lg">{formatCurrency(financialSummary.totalOperationalIncome)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Costo Total de Insumos:</span><span className="font-semibold text-lg text-orange-500">-{formatCurrency(financialSummary.totalCostOfGoods)}</span></div><hr className="my-2 border-dashed"/><div className="flex justify-between items-center font-bold text-xl pt-1"><span className="text-foreground">(=) Ganancia Bruta Operativa:</span><span className="text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span></div></div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingresos Operativos Totales:</span><span className="font-semibold text-lg">{formatCurrency(financialSummary.totalOperationalIncome)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Costo Total de Insumos:</span><span className="font-semibold text-lg text-orange-500">-{formatCurrency(financialSummary.totalCostOfGoods)}</span></div>
+                                <hr className="my-2 border-dashed"/><div className="flex justify-between items-center font-bold text-xl pt-1"><span className="text-foreground">(=) Ganancia Bruta Operativa:</span><span className="text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span></div></div>
                             <hr className="my-4 border-border"/>
-                            <div className="space-y-2"><div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Gastos Mensuales Fijos:</span><span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalMonthlyExpenses)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Comisiones Variables:</span><span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalTechnicianCommissions + financialSummary.totalAdministrativeCommissions)}</span></div>{!financialSummary.isProfitableForCommissions && (<p className="text-xs text-right text-muted-foreground pt-1">Las comisiones no se aplican porque la ganancia no cubrió los gastos fijos.</p>)}<hr className="my-2 border-dashed"/><div className="flex justify-between items-center font-bold text-2xl pt-1"><span className="text-foreground">(=) Resultado Neto del Periodo:</span><span className={cn('text-2xl', financialSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(financialSummary.netProfit)}</span></div></div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">(-) Gastos Mensuales Fijos:</span>
+                                    <span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalTechnicianSalaries + financialSummary.totalAdministrativeSalaries + financialSummary.totalFixedExpenses)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">(-) Comisiones Variables:</span>
+                                    <span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalVariableCommissions)}</span>
+                                </div>
+                                {!financialSummary.isProfitableForCommissions && (<p className="text-xs text-right text-muted-foreground pt-1">Las comisiones no se aplican porque la ganancia no cubrió los gastos fijos.</p>)}
+                                <hr className="my-2 border-dashed"/>
+                                <div className="flex justify-between items-center font-bold text-2xl pt-1">
+                                    <span className="text-foreground">(=) Resultado Neto del Periodo:</span>
+                                    <span className={cn('text-2xl', financialSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(financialSummary.netProfit)}</span>
+                                </div>
+                            </div>
                         </CardContent>
                       </Card>
                       <Card>
@@ -331,15 +338,10 @@ export function FinanzasPageComponent({
                               <h3 className="font-semibold text-lg">Nómina y Comisiones</h3>
                               <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldos Base (Técnicos):</span><span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianSalaries)}</span></div>
                               <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldos Base (Admin.):</span><span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeSalaries)}</span></div>
-                              <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones (Técnicos):</span><span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianCommissions)}</span></div>
-                              <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones (Admin.):</span><span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeCommissions)}</span></div>
-                              <hr className="my-2 border-dashed"/>
-                              <div className="flex justify-between font-bold"><span className="text-foreground">Total Nómina y Comisiones:</span><span className="text-red-600">{formatCurrency(financialSummary.totalSalaries + financialSummary.totalTechnicianCommissions + financialSummary.totalAdministrativeCommissions)}</span></div>
+                              <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones Variables:</span><span className="font-semibold">{formatCurrency(financialSummary.totalVariableCommissions)}</span></div>
                               
                               <h3 className="font-semibold text-lg pt-4">Servicios y Gastos Fijos</h3>
                               {fixedExpenses.length > 0 ? (fixedExpenses.map(expense => (<div key={expense.id} className="flex justify-between items-center"><span className="text-muted-foreground">{expense.name}:</span><span className="font-semibold">{formatCurrency(expense.amount)}</span></div>))) : (<p className="text-sm text-muted-foreground text-center">No hay gastos fijos registrados.</p>)}
-                              <hr className="my-2 border-dashed"/>
-                              <div className="flex justify-between font-bold"><span className="text-foreground">Total Gastos Fijos:</span><span className="text-red-600">{formatCurrency(financialSummary.totalFixedExpenses)}</span></div>
                           </CardContent>
                       </Card>
                     </div>
@@ -370,3 +372,4 @@ export function FinanzasPageComponent({
     );
 
     
+}
