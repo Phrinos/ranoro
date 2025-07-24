@@ -7,15 +7,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
-import { Loader2, ShieldAlert, Eye, Wrench, ShieldCheck, Camera } from 'lucide-react';
+import { Loader2, ShieldAlert, Eye, Wrench, ShieldCheck, Camera, Download } from 'lucide-react';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { Download } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { savePublicDocument } from '@/lib/public-document';
@@ -189,7 +188,10 @@ export default function PublicServicePage() {
         
         <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
             <DialogContent className="max-w-4xl p-2">
-                <DialogHeader><DialogTitle>Vista Previa de Imagen</DialogTitle></DialogHeader>
+                <DialogHeader className="print:hidden">
+                  <DialogTitle>Vista Previa de Imagen</DialogTitle>
+                  <DialogDescription>Visualización de la imagen adjunta.</DialogDescription>
+                </DialogHeader>
                 <div className="relative aspect-video w-full">
                     {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada" fill style={{objectFit:"contain"}} sizes="(max-width: 768px) 100vw, 1024px" crossOrigin="anonymous" />)}
                 </div>

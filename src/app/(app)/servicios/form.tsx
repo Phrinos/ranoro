@@ -46,7 +46,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import type {
   ServiceRecord, Vehicle, Technician, InventoryItem,
-  QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, SafetyCheckValue, InventoryCategory, Supplier, PaymentMethod
+  QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, SafetyCheckValue, InventoryCategory, Supplier, PaymentMethod, Personnel
 } from '@/types'
 
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
@@ -72,7 +72,9 @@ import { Input } from "@/components/ui/input";
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
   initialDataService?: ServiceRecord|null
-  vehicles:Vehicle[]; technicians:Technician[]; inventoryItems:InventoryItem[]
+  vehicles:Vehicle[]; 
+  technicians: Personnel[];
+  inventoryItems:InventoryItem[]
   serviceTypes:ServiceTypeRecord[]
   onSubmit:(d:ServiceRecord|QuoteRecord)=>Promise<void>
   onClose:()=>void
@@ -81,7 +83,7 @@ interface Props {
   mode?:'service'|'quote'
   onStatusChange?: (status: ServiceRecord['status']) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
-  onTotalCostChange?: (cost: number) => void;
+  onTotalCostChange: (cost: number) => void;
 }
 
 export function ServiceForm(props:Props){
@@ -106,7 +108,7 @@ export function ServiceForm(props:Props){
   const defaultValues = useMemo<ServiceFormValues>(() => {
     const firstType = serviceTypes[0]?.name ?? 'Servicio General';
     const now = new Date();
-    const status = initialDataService?.status ?? 'Cotizacion';
+    const status = initialDataService?.status ?? (mode === 'quote' ? 'Cotizacion' : 'En Taller');
 
     if (initialDataService) {
       return {
@@ -125,6 +127,7 @@ export function ServiceForm(props:Props){
         cardFolio: initialDataService.cardFolio || '',
         transferFolio: initialDataService.transferFolio || '',
         nextServiceInfo: initialDataService.nextServiceInfo || undefined,
+        mileage: initialDataService.mileage || undefined,
         serviceItems:
           initialDataService.serviceItems?.length
             ? initialDataService.serviceItems
@@ -156,9 +159,12 @@ export function ServiceForm(props:Props){
     })();
 
     return {
-      status: 'Cotizacion',
+      status: status,
       serviceType: firstType,
-      quoteDate: now,
+      quoteDate: status === 'Cotizacion' ? now : undefined,
+      serviceDate: status === 'Agendado' ? now : undefined,
+      receptionDateTime: status === 'En Taller' ? now : undefined,
+      technicianId: '',
       technicianName: null, 
       customerSignatureReception: null,
       customerSignatureDelivery: null,
@@ -167,6 +173,13 @@ export function ServiceForm(props:Props){
       cardFolio: '',
       transferFolio: '',
       nextServiceInfo: undefined,
+      vehicleId: '',
+      mileage: undefined,
+      notes: '',
+      subStatus: undefined,
+      vehicleConditions: '',
+      customerItems: '',
+      fuelLevel: '',
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -182,7 +195,7 @@ export function ServiceForm(props:Props){
       serviceAdvisorId: authUser?.id,
       serviceAdvisorName: authUser?.name,
     } as ServiceFormValues;
-  }, [initialDataService, serviceTypes]);
+  }, [initialDataService, serviceTypes, mode]);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -193,9 +206,7 @@ export function ServiceForm(props:Props){
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
   useEffect(() => {
-    if(onTotalCostChange) {
-      onTotalCostChange(totalCost);
-    }
+    onTotalCostChange(totalCost);
   }, [totalCost, onTotalCostChange]);
 
   const watchedStatus = watch('status');
@@ -405,6 +416,13 @@ export function ServiceForm(props:Props){
   const showNextServiceCard = useMemo(() => {
     return (watchedStatus === 'En Taller' && watchedSubStatus === 'Completado') || watchedStatus === 'Entregado';
   }, [watchedStatus, watchedSubStatus]);
+  
+  const formTabs = [
+      { id: 'details', label: 'Detalles' },
+      { id: 'reception', label: 'Ingreso/Salida' },
+      { id: 'photoreport', label: 'Fotos' },
+      { id: 'checklist', label: 'Revisión' },
+  ];
 
 
   return (
@@ -551,7 +569,10 @@ export function ServiceForm(props:Props){
 
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <UiDialogContent className="max-w-4xl p-2">
-            <UiDialogHeader className="print:hidden"><UiDialogTitle>Vista Previa de Imagen</UiDialogTitle></UiDialogHeader>
+            <UiDialogHeader className="print:hidden">
+                <UiDialogTitle>Vista Previa de Imagen</UiDialogTitle>
+                <DialogDescription>Visualización de la imagen adjunta.</DialogDescription>
+            </UiDialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada" fill style={{objectFit:"contain"}} sizes="(max-width: 768px) 100vw, 1024px" />)}
             </div>

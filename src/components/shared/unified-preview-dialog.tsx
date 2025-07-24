@@ -231,7 +231,10 @@ En el enlace podrás:
 
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <DialogContent className="max-w-4xl p-2">
-          <DialogHeader className="print:hidden"><DialogTitle>Vista Previa de Imagen</DialogTitle></DialogHeader>
+          <DialogHeader className="print:hidden">
+            <DialogTitle>Vista Previa de Imagen</DialogTitle>
+            <DialogDescription>Visualización de la imagen adjunta.</DialogDescription>
+          </DialogHeader>
           <div className="relative aspect-video w-full">
             {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill style={{objectFit:"contain"}} sizes="(max-width: 768px) 100vw, 1024px" crossOrigin="anonymous" />)}
           </div>

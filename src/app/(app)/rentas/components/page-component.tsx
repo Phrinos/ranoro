@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, UserCheck, UserX, Search } from "lucide-react";
+import { PlusCircle, UserCheck, UserX, Search, TrendingUp, Users, ChevronsRight, ListFilter, Badge, DollarSign } from "lucide-react";
 import { RegisterPaymentDialog } from "./register-payment-dialog";
 import type { RentalPayment, Driver, Vehicle, WorkshopInfo, VehicleExpense, OwnerWithdrawal, User as RanoroUser } from '@/types';
 import { useToast } from "@/hooks/use-toast";
@@ -25,7 +26,7 @@ import { useRouter } from 'next/navigation';
 import { EditPaymentNoteDialog } from './edit-payment-note-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, ListFilter, Badge, Share2 } from 'lucide-react';
+import { Loader2, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User, TrendingDown, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, ListFilter, Share2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Link from 'next/link';
 import type { DateRange } from 'react-day-picker';
@@ -581,6 +582,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
         open={!!paymentForReceipt}
         onOpenChange={(isOpen) => !isOpen && setPaymentForReceipt(null)}
         title="Recibo de Pago de Renta"
+        description="Vista previa del recibo para imprimir o compartir."
         dialogContentClassName="max-w-xs sm:max-w-md"
         footerActions={
           <>
