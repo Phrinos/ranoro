@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/badge';
 
 
 interface UnifiedPerformanceData {
-  id: string;
+  id: string; // Use the first ID found as the main identifier
   name: string;
   roles: string[];
   totalRevenue: number;
@@ -139,12 +139,12 @@ export function PersonalPageComponent({
 
     const performanceMap = new Map<string, UnifiedPerformanceData>();
 
-    // Helper to initialize or get a performance record
     const getPerformanceRecord = (id: string, name: string): UnifiedPerformanceData => {
-        if (!performanceMap.has(id)) {
-            performanceMap.set(id, { id, name, roles: [], totalRevenue: 0, baseSalary: 0, totalCommissionEarned: 0, totalEarnings: 0 });
+        const normalizedName = name.trim().toLowerCase();
+        if (!performanceMap.has(normalizedName)) {
+            performanceMap.set(normalizedName, { id, name, roles: [], totalRevenue: 0, baseSalary: 0, totalCommissionEarned: 0, totalEarnings: 0 });
         }
-        return performanceMap.get(id)!;
+        return performanceMap.get(normalizedName)!;
     };
 
     activeTechnicians.forEach(tech => {
@@ -153,7 +153,7 @@ export function PersonalPageComponent({
         
         const techServices = completedServicesInRange.filter(s => s.technicianId === tech.id);
         record.totalRevenue += techServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-        record.baseSalary = Math.max(record.baseSalary, tech.monthlySalary || 0); // Take the highest salary if duplicated
+        record.baseSalary = Math.max(record.baseSalary, tech.monthlySalary || 0);
         
         if (isProfitableForCommissions) {
             record.totalCommissionEarned += netProfitForCommissions * (tech.commissionRate || 0);
