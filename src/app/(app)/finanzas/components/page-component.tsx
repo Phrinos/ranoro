@@ -91,7 +91,7 @@ export function FinanzasPageComponent({
         if (isLoading || !dateRange?.from) return emptyState;
         
         const from = startOfDay(dateRange.from);
-        const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+        const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
         
         const salesInRange = allSales.filter(s => {
           const sDate = parseDate(s.saleDate);
@@ -139,20 +139,24 @@ export function FinanzasPageComponent({
         const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         const totalMonthlyExpenses = totalBaseSalaries + totalFixedExpenses;
         
-        const profitAfterFixedExpenses = totalOperationalProfit - totalMonthlyExpenses;
-        const isProfitableForCommissions = profitAfterFixedExpenses > 0;
+        const netProfitBeforeCommissions = totalOperationalProfit - totalMonthlyExpenses;
+        const isProfitableForCommissions = netProfitBeforeCommissions > 0;
         
         let totalTechnicianCommissions = 0;
         let totalAdministrativeCommissions = 0;
 
         if (isProfitableForCommissions) {
           totalTechnicianCommissions = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => {
-            const techProfit = servicesInRange.filter(s => s.technicianId === tech.id).reduce((s, serv) => s + (serv.serviceProfit || 0), 0);
-            return sum + (techProfit * (tech.commissionRate || 0));
+            const techProfitGenerated = servicesInRange
+              .filter(s => s.technicianId === tech.id)
+              .reduce((s, serv) => s + (serv.serviceProfit || 0), 0);
+            // La comisión del técnico se calcula sobre la ganancia que generó
+            return sum + (techProfitGenerated * (tech.commissionRate || 0));
           }, 0);
           
           totalAdministrativeCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => {
-            return sum + (profitAfterFixedExpenses * (admin.commissionRate || 0));
+            // La comisión administrativa se calcula sobre la ganancia neta real del taller ANTES de comisiones.
+            return sum + (netProfitBeforeCommissions * (admin.commissionRate || 0));
           }, 0);
         }
         
@@ -364,4 +368,5 @@ export function FinanzasPageComponent({
             />
         </>
     );
-}
+
+    
