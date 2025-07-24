@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect } from "react";
@@ -110,6 +111,19 @@ export function PersonnelForm({ id, initialData, onSubmit, appRoles }: Personnel
             <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input placeholder="Ej: 555-123456" {...field} /></FormControl><FormMessage /></FormItem>
           )}
         />
+        <FormField
+            control={form.control}
+            name="hireDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Fecha de Contratación</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         <FormField
             control={form.control}
             name="monthlySalary"

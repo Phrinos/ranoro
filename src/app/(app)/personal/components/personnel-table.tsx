@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from "react";
@@ -16,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, Archive, Users } from "lucide-react";
 import type { Personnel } from "@/types";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface PersonnelTableProps {
   personnel: Personnel[];
@@ -43,6 +46,7 @@ export const PersonnelTable = React.memo(({ personnel, onEdit, onArchive }: Pers
             <TableHead className="font-bold text-white">Nombre</TableHead>
             <TableHead className="font-bold text-white">Roles</TableHead>
             <TableHead className="font-bold text-white">Contacto</TableHead>
+            <TableHead className="font-bold text-white">Contratación</TableHead>
             <TableHead className="text-right font-bold text-white">Sueldo Base</TableHead>
             <TableHead className="text-right font-bold text-white">Acciones</TableHead>
           </TableRow>
@@ -57,6 +61,7 @@ export const PersonnelTable = React.memo(({ personnel, onEdit, onArchive }: Pers
                 </div>
               </TableCell>
               <TableCell>{person.contactInfo || 'N/A'}</TableCell>
+              <TableCell>{person.hireDate ? format(parseISO(person.hireDate), 'dd MMM yyyy', { locale: es }) : 'N/A'}</TableCell>
               <TableCell className="text-right">${(person.monthlySalary || 0).toLocaleString('es-ES')}</TableCell>
               <TableCell className="text-right">
                 <Button variant="ghost" size="icon" onClick={() => onEdit(person)} className="mr-2">
