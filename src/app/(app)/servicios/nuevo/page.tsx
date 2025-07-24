@@ -24,7 +24,7 @@ import { nanoid } from 'nanoid';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import html2canvas from 'html2canvas';
 
 // --- Schema Definitions ---
@@ -200,6 +200,11 @@ Total: ${formatCurrency(serviceForPreview.totalCost)}
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
   
+  const handleVehicleCreated = async (newVehicleData: VehicleFormValues) => {
+      await inventoryService.addVehicle(newVehicleData);
+      toast({ title: "Vehículo Creado" });
+  };
+
 
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
