@@ -41,6 +41,7 @@ export default function ServiceSheetLayout({
                   style={{ objectFit: 'contain' }}
                   className="dark:invert"
                   sizes="140px"
+                  priority
                   data-ai-hint="ranoro logo"
                 />
              </Link>

@@ -147,6 +147,7 @@ export default function LoginPage() {
                   style={{objectFit: 'contain'}}
                   className="dark:invert"
                   sizes="180px"
+                  priority
                   data-ai-hint="ranoro logo"
               />
             </Link>
