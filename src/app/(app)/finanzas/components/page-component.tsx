@@ -21,7 +21,7 @@ import {
 import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
-import { FixedExpensesDialog } from './fixed-expenses-dialog'; 
+import { FixedExpensesDialog } from './fixed-expense-form'; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { DateRange } from 'react-day-picker';
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
@@ -140,7 +140,8 @@ export function FinanzasPageComponent({
         const totalMonthlyExpenses = totalBaseSalaries + totalFixedExpenses;
         
         // Check for profitability before calculating commissions
-        const isProfitableForCommissions = totalOperationalProfit > totalMonthlyExpenses;
+        const profitAfterFixedExpenses = totalOperationalProfit - totalMonthlyExpenses;
+        const isProfitableForCommissions = profitAfterFixedExpenses > 0;
         
         let totalTechnicianCommissions = 0;
         let totalAdministrativeCommissions = 0;
@@ -152,11 +153,13 @@ export function FinanzasPageComponent({
           }, 0);
           
           totalAdministrativeCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => {
-            return sum + totalProfitFromServices * (admin.commissionRate || 0);
+            // Commission for admin is based on the total operational profit
+            return sum + totalOperationalProfit * (admin.commissionRate || 0);
           }, 0);
         }
         
-        const totalExpenses = totalMonthlyExpenses + totalTechnicianCommissions + totalAdministrativeCommissions;
+        const totalVariableCommissions = totalTechnicianCommissions + totalAdministrativeCommissions;
+        const totalExpenses = totalMonthlyExpenses + totalVariableCommissions;
         const netProfit = totalOperationalProfit - totalExpenses;
 
         const dateLabel = dateRange.to && !isSameDay(dateRange.from, dateRange.to)
