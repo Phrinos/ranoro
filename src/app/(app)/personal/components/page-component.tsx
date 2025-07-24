@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, UserCheck, UserX, Search, TrendingUp, Users, ChevronsRight } from "lucide-react";
+import { PlusCircle, UserCheck, UserX, Search, TrendingUp, Users, ChevronsRight, ListFilter, Badge } from "lucide-react";
 import { PersonnelTable } from "./personnel-table";
 import { PersonnelDialog } from "./personnel-dialog";
 import type { User, Technician, ServiceRecord, AdministrativeStaff, SaleReceipt, MonthlyFixedExpense, Personnel, AppRole, Area } from '@/types';
@@ -14,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/utils";
-import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User as UserIcon, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, ListFilter, Badge } from 'lucide-react';
+import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User as UserIcon, TrendingDown, DollarSign, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import type { DateRange } from 'react-day-picker';
 import { personnelService, operationsService, inventoryService, adminService } from '@/lib/services';
@@ -184,7 +185,9 @@ export function PersonalPageComponent({
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-lg flex justify-between items-start">
                                   <span>{person.name}</span>
-                                  <div className="flex flex-wrap gap-1 justify-end">{person.roles.map(r => <Badge key={r} variant="secondary">{r}</Badge>)}</div>
+                                  <div className="flex flex-wrap gap-1 justify-end">
+                                    {person.roles.map(r => <Badge key={r} variant="secondary">{r}</Badge>)}
+                                  </div>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm">
