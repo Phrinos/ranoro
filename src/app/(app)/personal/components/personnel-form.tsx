@@ -69,6 +69,13 @@ export function PersonnelForm({ id, initialData, onSubmit, appRoles }: Personnel
           )}
         />
         <FormField
+          control={form.control}
+          name="specialty"
+          render={({ field }) => (
+            <FormItem><FormLabel>Especialidad</FormLabel><FormControl><Input placeholder="Ej: Especialista en frenos ABS" {...field} /></FormControl><FormMessage /></FormItem>
+          )}
+        />
+        <FormField
             control={form.control}
             name="roles"
             render={() => (

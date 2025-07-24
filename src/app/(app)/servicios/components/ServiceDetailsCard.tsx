@@ -15,7 +15,7 @@ import { CalendarIcon, PlusCircle, BrainCircuit, Loader2 } from "lucide-react";
 import { ServiceItemCard } from './ServiceItemCard';
 import { Separator } from "@/components/ui/separator";
 import type { ServiceFormValues } from "@/schemas/service-form";
-import type { Technician, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from "@/types";
+import type { Technician, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Personnel } from "@/types";
 import { cn } from "@/lib/utils";
 import { format, setHours, setMinutes, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -26,7 +26,7 @@ import type { InventoryItemFormValues } from "../../inventario/components/invent
 
 interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
-  technicians: Technician[];
+  technicians: Personnel[];
   inventoryItems: InventoryItem[];
   serviceTypes: ServiceTypeRecord[];
   mode: 'service' | 'quote';
