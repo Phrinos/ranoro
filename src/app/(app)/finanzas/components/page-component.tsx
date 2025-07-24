@@ -139,7 +139,6 @@ export function FinanzasPageComponent({
         const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         const totalMonthlyExpenses = totalBaseSalaries + totalFixedExpenses;
         
-        // Check for profitability before calculating commissions
         const profitAfterFixedExpenses = totalOperationalProfit - totalMonthlyExpenses;
         const isProfitableForCommissions = profitAfterFixedExpenses > 0;
         
@@ -153,8 +152,7 @@ export function FinanzasPageComponent({
           }, 0);
           
           totalAdministrativeCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => {
-            // Commission for admin is based on the total operational profit
-            return sum + totalOperationalProfit * (admin.commissionRate || 0);
+            return sum + (profitAfterFixedExpenses * (admin.commissionRate || 0));
           }, 0);
         }
         
