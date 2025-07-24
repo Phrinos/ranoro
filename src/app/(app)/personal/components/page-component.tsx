@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -112,17 +111,17 @@ export function PersonalPageComponent({
     const servicesInRange = allServices.filter(s => s.status === 'Entregado' && isWithinInterval(parseDate(s.deliveryDateTime)!, interval));
 
     const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-    const fixedSalaries = allPersonnel.filter(p => !p.isArchived).reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
+    
+    const activePersonnel = allPersonnel.filter(p => !p.isArchived);
+    const fixedSalaries = activePersonnel.reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
     const otherFixedExpenses = fixedExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const netProfit = grossProfit - fixedSalaries - otherFixedExpenses;
+    const totalFixedExpenses = fixedSalaries + otherFixedExpenses;
 
-    const isProfitable = netProfit > 0;
-
-    return allPersonnel
-      .filter(p => !p.isArchived)
-      .map(person => {
+    const netProfitForCommissions = Math.max(0, grossProfit - totalFixedExpenses);
+    
+    return activePersonnel.map(person => {
         const generatedRevenue = servicesInRange.filter(s => s.technicianId === person.id).reduce((sum, s) => sum + (s.totalCost || 0), 0);
-        const commission = isProfitable ? netProfit * (person.commissionRate || 0) : 0;
+        const commission = netProfitForCommissions * (person.commissionRate || 0);
         const totalSalary = (person.monthlySalary || 0) + commission;
 
         return {
@@ -161,9 +160,9 @@ export function PersonalPageComponent({
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="resumen">Resumen de Rendimiento</TabsTrigger>
-          <TabsTrigger value="personal">Lista de Personal</TabsTrigger>
-          <TabsTrigger value="areas">Áreas de Trabajo</TabsTrigger>
+          <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen de Rendimiento</TabsTrigger>
+          <TabsTrigger value="personal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Lista de Personal</TabsTrigger>
+          <TabsTrigger value="areas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Áreas de Trabajo</TabsTrigger>
         </TabsList>
         <TabsContent value="resumen" className="mt-6 space-y-6">
             <Card>
@@ -229,7 +228,7 @@ export function PersonalPageComponent({
         onOpenChange={setIsPersonnelDialogOpen}
         personnel={editingPersonnel}
         onSave={handleSavePersonnel}
-        appRoles={areas} // Using areas as roles
+        appRoles={areas}
       />
     </>
   );
