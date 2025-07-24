@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -79,7 +80,6 @@ export default function DashboardPage() {
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
-  const [allTechnicians, setAllTechnicians] = useState<Technician[]>([]);
   const [allAdminStaff, setAllAdminStaff] = useState<AdministrativeStaff[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
   const [allServiceTypes, setAllServiceTypes] = useState<ServiceTypeRecord[]>([]);
