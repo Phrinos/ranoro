@@ -32,7 +32,7 @@ interface AggregatedTechnicianPerformance {
   technicianId: string;
   technicianName: string;
   totalRevenue: number;
-  totalProfit: number;
+  baseSalary: number;
   totalCommissionEarned: number; 
 }
 interface AggregatedAdminStaffPerformance {
@@ -132,7 +132,7 @@ export function PersonalPageComponent({
     const totalAdminSalaries = activeAdminStaff.reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
 
     const completedServicesInRange = services.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isWithinInterval(parseISO(s.deliveryDateTime), { start: dateFrom, end: dateTo }));
-    const completedSalesInRange = sales.filter(s => s.status === 'Completado' && s.saleDate && isWithinInterval(parseISO(s.saleDate), { start: dateFrom, end: dateTo }));
+    const completedSalesInRange = sales.filter(s => s.status !== 'Cancelado' && s.saleDate && isWithinInterval(parseISO(s.saleDate), { start: dateFrom, end: dateTo }));
 
     const totalProfitFromServices = completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
     const totalProfitFromSales = completedSalesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, inventory), 0);
@@ -141,22 +141,29 @@ export function PersonalPageComponent({
     const totalBaseSalaries = totalTechSalaries + totalAdminSalaries;
     const totalFixedSystemExpenses = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     
-    // GANANCIA NETA REAL
-    const netProfitAfterExpenses = totalOperationalProfit - (totalBaseSalaries + totalFixedSystemExpenses);
+    // GANANCIA NETA REAL (Base para comisiones)
+    const netProfitForCommissions = totalOperationalProfit - (totalBaseSalaries + totalFixedSystemExpenses);
     
-    const isProfitableForCommissions = netProfitAfterExpenses > 0;
+    const isProfitableForCommissions = netProfitForCommissions > 0;
 
     const aggTechPerformance: AggregatedTechnicianPerformance[] = activeTechnicians.map(tech => {
       const techServices = completedServicesInRange.filter(s => s.technicianId === tech.id);
       const totalRevenue = techServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-      const totalProfit = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-      // Comisión sobre la ganancia neta del taller, no la individual ni la bruta.
-      const totalCommissionEarned = isProfitableForCommissions ? netProfitAfterExpenses * (tech.commissionRate || 0) : 0;
-      return { technicianId: tech.id, technicianName: tech.name, totalRevenue, totalProfit, totalCommissionEarned };
+      const techProfitContribution = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+      
+      const totalCommissionEarned = isProfitableForCommissions ? netProfitForCommissions * (tech.commissionRate || 0) : 0;
+      
+      return { 
+        technicianId: tech.id, 
+        technicianName: tech.name, 
+        totalRevenue: totalRevenue, 
+        baseSalary: tech.monthlySalary || 0,
+        totalCommissionEarned: totalCommissionEarned
+      };
     });
 
     const aggAdminPerformance: AggregatedAdminStaffPerformance[] = activeAdminStaff.map(staff => {
-      const commissionEarned = isProfitableForCommissions ? netProfitAfterExpenses * (staff.commissionRate || 0) : 0;
+      const commissionEarned = isProfitableForCommissions ? netProfitForCommissions * (staff.commissionRate || 0) : 0;
       const baseSalary = staff.monthlySalary || 0;
       return { staffId: staff.id, staffName: staff.name, baseSalary, commissionEarned, totalEarnings: baseSalary + commissionEarned };
     });
@@ -232,7 +239,7 @@ export function PersonalPageComponent({
             <Card>
                 <CardHeader>
                     <CardTitle>Rendimiento Individual</CardTitle>
-                    <CardDescription>Comisiones potenciales basadas en la ganancia generada en el período seleccionado.</CardDescription>
+                    <CardDescription>Sueldo total potencial basado en la ganancia neta del taller en el período seleccionado.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     { (aggregatedTechnicianPerformance.length > 0 || aggregatedAdminPerformance.length > 0) ? (
@@ -244,9 +251,10 @@ export function PersonalPageComponent({
                                         <CardTitle className="text-base font-medium">{techPerf.technicianName}</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-1 text-sm pb-4">
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Ingresos Totales:</span><span className="font-semibold">{formatCurrency(techPerf.totalRevenue)}</span></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Ganancia Total:</span><span className="font-semibold text-green-600">{formatCurrency(techPerf.totalProfit)}</span></div>
-                                        <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Potencial:</span><span className="font-semibold text-blue-600">{formatCurrency(techPerf.totalCommissionEarned)}</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(techPerf.totalRevenue)}</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(techPerf.baseSalary)}</span></div>
+                                        <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisiones {format(filterDateRange?.from ?? new Date(), 'MMMM', {locale: es})}:</span><span className="font-semibold text-blue-600">{formatCurrency(techPerf.totalCommissionEarned)}</span></div>
+                                        <div className="flex justify-between font-bold pt-1 border-t mt-1"><span className="text-muted-foreground">Sueldo total:</span><span className="text-green-600">{formatCurrency(techPerf.baseSalary + techPerf.totalCommissionEarned)}</span></div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -257,9 +265,9 @@ export function PersonalPageComponent({
                                         <CardTitle className="text-base font-medium">{staffPerf.staffName}</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-1 text-sm pb-4">
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Salario Base:</span><span className="font-semibold">{formatCurrency(staffPerf.baseSalary)}</span></div>
-                                        <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Potencial:</span><span className="font-semibold text-blue-600">{formatCurrency(staffPerf.commissionEarned)}</span></div>
-                                        <div className="flex justify-between font-bold pt-1 border-t mt-1"><span className="text-muted-foreground">Total (Potencial):</span><span className="text-green-600">{formatCurrency(staffPerf.totalEarnings)}</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(staffPerf.baseSalary)}</span></div>
+                                        <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisiones {format(filterDateRange?.from ?? new Date(), 'MMMM', {locale: es})}:</span><span className="font-semibold text-blue-600">{formatCurrency(staffPerf.commissionEarned)}</span></div>
+                                        <div className="flex justify-between font-bold pt-1 border-t mt-1"><span className="text-muted-foreground">Sueldo total:</span><span className="text-green-600">{formatCurrency(staffPerf.totalEarnings)}</span></div>
                                     </CardContent>
                                 </Card>
                             ))}
