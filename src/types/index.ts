@@ -37,6 +37,20 @@ export interface WorkshopInfo {
   facturapiBillingMode?: 'live' | 'test';
 }
 
+export interface Personnel {
+  id: string;
+  name: string;
+  roles: string[];
+  contactInfo?: string;
+  hireDate?: string;
+  monthlySalary?: number;
+  commissionRate?: number;
+  standardHoursPerDay?: number;
+  notes?: string;
+  specialty?: string;
+  isArchived?: boolean;
+}
+
 export interface VehiclePaperwork {
   id: string;
   name: string;
@@ -519,7 +533,7 @@ export interface AuditLog {
   userName: string;
   actionType: 'Crear' | 'Editar' | 'Eliminar' | 'Cancelar' | 'Archivar' | 'Pagar' | 'Registrar' | 'Acceso' | 'Otro';
   description: string;
-  entityType?: 'Usuario' | 'Rol' | 'Servicio' | 'Cotización' | 'Producto' | 'Categoría' | 'Proveedor' | 'Venta' | 'Vehículo' | 'Conductor' | 'Pago' | 'Gasto' | 'Compra';
+  entityType?: 'Usuario' | 'Rol' | 'Servicio' | 'Cotización' | 'Producto' | 'Categoría' | 'Proveedor' | 'Venta' | 'Vehículo' | 'Conductor' | 'Pago' | 'Gasto' | 'Compra' | 'Personal';
   entityId?: string;
 }
 

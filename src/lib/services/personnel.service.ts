@@ -7,20 +7,55 @@ import {
   getDoc,
   addDoc,
   updateDoc,
+  deleteDoc,
   getDocs,
   writeBatch,
   query,
   where,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { Technician, AdministrativeStaff, Driver } from "@/types";
+import type { Technician, AdministrativeStaff, Driver, Personnel } from "@/types";
 import type { TechnicianFormValues } from "@/app/(app)/tecnicos/components/technician-form";
 import type { AdministrativeStaffFormValues } from "@/app/(app)/administrativos/components/administrative-staff-form";
 import type { DriverFormValues } from "@/app/(app)/conductores/components/driver-form";
+import type { PersonnelFormValues } from '@/app/(app)/personal/components/personnel-form';
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
 
-// --- Technicians ---
+// --- Unified Personnel ---
+const onPersonnelUpdate = (callback: (personnel: Personnel[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const unsubscribe = onSnapshot(collection(db, "personnel"), (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel)));
+    });
+    return unsubscribe;
+};
+
+const savePersonnel = async (data: PersonnelFormValues, id?: string): Promise<Personnel> => {
+    if (!db) throw new Error("Database not initialized.");
+    const dataToSave = {
+        ...data,
+        hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
+    };
+    const cleanedData = cleanObjectForFirestore(dataToSave);
+    
+    if (id) {
+        await updateDoc(doc(db, 'personnel', id), cleanedData);
+        return { id, ...dataToSave };
+    } else {
+        const fullData = { ...cleanedData, isArchived: false };
+        const docRef = await addDoc(collection(db, 'personnel'), fullData);
+        return { id: docRef.id, ...fullData };
+    }
+};
+
+const archivePersonnel = async (id: string, isArchived: boolean): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await updateDoc(doc(db, 'personnel', id), { isArchived });
+};
+
+
+// --- Technicians (Deprecated, will be removed) ---
 
 const onTechniciansUpdate = (callback: (technicians: Technician[]) => void): (() => void) => {
     if (!db) return () => {};
@@ -71,7 +106,7 @@ const archiveTechnician = async (id: string, isArchived: boolean): Promise<void>
 };
 
 
-// --- Administrative Staff ---
+// --- Administrative Staff (Deprecated, will be removed) ---
 
 const onAdminStaffUpdate = (callback: (staff: AdministrativeStaff[]) => void): (() => void) => {
     if (!db) return () => {};
@@ -180,6 +215,9 @@ const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => 
 
 
 export const personnelService = {
+    onPersonnelUpdate,
+    savePersonnel,
+    archivePersonnel,
     onTechniciansUpdate,
     onTechniciansUpdatePromise,
     getTechnicianById,
