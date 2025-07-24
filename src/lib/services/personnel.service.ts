@@ -73,6 +73,13 @@ const onPersonnelUpdate = (callback: (personnel: Personnel[]) => void): (() => v
     };
 };
 
+const onPersonnelUpdatePromise = async (): Promise<Personnel[]> => {
+    if (!db) return [];
+    const personnelSnapshot = await getDocs(collection(db, "personnel"));
+    return personnelSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel));
+};
+
+
 const savePersonnel = async (data: PersonnelFormValues, id?: string): Promise<Personnel> => {
     if (!db) throw new Error("Database not initialized.");
     const dataToSave = {
@@ -186,6 +193,7 @@ const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => 
 
 export const personnelService = {
     onPersonnelUpdate,
+    onPersonnelUpdatePromise,
     savePersonnel,
     archivePersonnel,
     onDriversUpdate,

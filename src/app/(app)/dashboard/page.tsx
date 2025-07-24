@@ -108,7 +108,7 @@ export default function DashboardPage() {
         operationsService.onServicesUpdatePromise(),
         operationsService.onSalesUpdatePromise(),
         inventoryService.onItemsUpdatePromise(),
-        personnelService.onPersonnelUpdate([] as any), // This needs to be fixed.
+        personnelService.onPersonnelUpdatePromise(),
         inventoryService.onFixedExpensesUpdatePromise(),
         inventoryService.onServiceTypesUpdatePromise(),
     ]).then(() => setIsLoading(false));
