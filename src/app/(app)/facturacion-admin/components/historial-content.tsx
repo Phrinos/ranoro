@@ -1,11 +1,10 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 import { getInvoices, cancelInvoice as cancelInvoiceFlow } from '@/ai/flows/billing-flow';
 import type { Invoice } from 'facturapi';
 import { Loader2, FileDown, Ban, RefreshCw, AlertCircle } from 'lucide-react';
