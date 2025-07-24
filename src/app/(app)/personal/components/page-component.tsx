@@ -26,20 +26,16 @@ import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon
 import { personnelService, operationsService, inventoryService } from '@/lib/services';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 
-interface AggregatedTechnicianPerformance {
-  technicianId: string;
-  technicianName: string;
+interface UnifiedPerformanceData {
+  id: string;
+  name: string;
+  roles: string[];
   totalRevenue: number;
   baseSalary: number;
-  totalCommissionEarned: number; 
-}
-interface AggregatedAdminStaffPerformance {
-  staffId: string;
-  staffName: string;
-  baseSalary: number;
-  commissionEarned: number;
+  totalCommissionEarned: number;
   totalEarnings: number;
 }
 
@@ -114,22 +110,18 @@ export function PersonalPageComponent({
   };
   
   const {
-      totalTechnicians, totalMonthlyTechnicianSalaries, aggregatedTechnicianPerformance,
-      totalAdministrativeStaff, totalMonthlyAdministrativeSalaries, aggregatedAdminPerformance
+      totalTechnicians, totalMonthlyTechnicianSalaries,
+      totalAdministrativeStaff, totalMonthlyAdministrativeSalaries,
+      unifiedPerformanceData
   } = useMemo(() => {
-    const emptyResult = { totalTechnicians: 0, totalMonthlyTechnicianSalaries: 0, aggregatedTechnicianPerformance: [], totalAdministrativeStaff: 0, totalMonthlyAdministrativeSalaries: 0, aggregatedAdminPerformance: [] };
+    const emptyResult = { totalTechnicians: 0, totalMonthlyTechnicianSalaries: 0, totalAdministrativeStaff: 0, totalMonthlyAdministrativeSalaries: 0, unifiedPerformanceData: [] };
     if (isLoading || !filterDateRange?.from) return emptyResult;
 
     const dateFrom = startOfDay(filterDateRange.from);
     const dateTo = filterDateRange.to ? endOfDay(filterDateRange.to) : endOfDay(filterDateRange.from);
 
     const activeTechnicians = technicians.filter(t => !t.isArchived);
-    const totalTechs = activeTechnicians.length;
-    const totalTechSalaries = activeTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
-
     const activeAdminStaff = adminStaff.filter(s => !s.isArchived);
-    const totalAdmins = activeAdminStaff.length;
-    const totalAdminSalaries = activeAdminStaff.reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
 
     const completedServicesInRange = services.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isWithinInterval(parseISO(s.deliveryDateTime), { start: dateFrom, end: dateTo }));
     const completedSalesInRange = sales.filter(s => s.status !== 'Cancelado' && s.saleDate && isWithinInterval(parseISO(s.saleDate), { start: dateFrom, end: dateTo }));
@@ -138,39 +130,57 @@ export function PersonalPageComponent({
     const totalProfitFromSales = completedSalesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, inventory), 0);
     const totalOperationalProfit = totalProfitFromServices + totalProfitFromSales;
     
-    const totalBaseSalaries = totalTechSalaries + totalAdminSalaries;
+    const totalBaseTechSalaries = activeTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
+    const totalBaseAdminSalaries = activeAdminStaff.reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
     const totalFixedSystemExpenses = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     
-    // GANANCIA NETA REAL (Base para comisiones)
-    const netProfitForCommissions = totalOperationalProfit - (totalBaseSalaries + totalFixedSystemExpenses);
-    
+    const netProfitForCommissions = totalOperationalProfit - (totalBaseTechSalaries + totalBaseAdminSalaries + totalFixedSystemExpenses);
     const isProfitableForCommissions = netProfitForCommissions > 0;
 
-    const aggTechPerformance: AggregatedTechnicianPerformance[] = activeTechnicians.map(tech => {
-      const techServices = completedServicesInRange.filter(s => s.technicianId === tech.id);
-      const totalRevenue = techServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-      const techProfitContribution = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-      
-      const totalCommissionEarned = isProfitableForCommissions ? netProfitForCommissions * (tech.commissionRate || 0) : 0;
-      
-      return { 
-        technicianId: tech.id, 
-        technicianName: tech.name, 
-        totalRevenue: totalRevenue, 
-        baseSalary: tech.monthlySalary || 0,
-        totalCommissionEarned: totalCommissionEarned
-      };
+    const performanceMap = new Map<string, UnifiedPerformanceData>();
+
+    // Helper to initialize or get a performance record
+    const getPerformanceRecord = (id: string, name: string): UnifiedPerformanceData => {
+        if (!performanceMap.has(id)) {
+            performanceMap.set(id, { id, name, roles: [], totalRevenue: 0, baseSalary: 0, totalCommissionEarned: 0, totalEarnings: 0 });
+        }
+        return performanceMap.get(id)!;
+    };
+
+    activeTechnicians.forEach(tech => {
+        const record = getPerformanceRecord(tech.id, tech.name);
+        if (!record.roles.includes('Técnico')) record.roles.push('Técnico');
+        
+        const techServices = completedServicesInRange.filter(s => s.technicianId === tech.id);
+        record.totalRevenue += techServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+        record.baseSalary = Math.max(record.baseSalary, tech.monthlySalary || 0); // Take the highest salary if duplicated
+        
+        if (isProfitableForCommissions) {
+            record.totalCommissionEarned += netProfitForCommissions * (tech.commissionRate || 0);
+        }
     });
 
-    const aggAdminPerformance: AggregatedAdminStaffPerformance[] = activeAdminStaff.map(staff => {
-      const commissionEarned = isProfitableForCommissions ? netProfitForCommissions * (staff.commissionRate || 0) : 0;
-      const baseSalary = staff.monthlySalary || 0;
-      return { staffId: staff.id, staffName: staff.name, baseSalary, commissionEarned, totalEarnings: baseSalary + commissionEarned };
+    activeAdminStaff.forEach(staff => {
+        const record = getPerformanceRecord(staff.id, staff.name);
+        if (!record.roles.includes('Administrativo')) record.roles.push('Administrativo');
+        
+        record.baseSalary = Math.max(record.baseSalary, staff.monthlySalary || 0);
+        
+        if (isProfitableForCommissions) {
+            record.totalCommissionEarned += netProfitForCommissions * (staff.commissionRate || 0);
+        }
     });
-    
+
+    performanceMap.forEach(record => {
+        record.totalEarnings = record.baseSalary + record.totalCommissionEarned;
+    });
+
     return {
-        totalTechnicians: totalTechs, totalMonthlyTechnicianSalaries: totalTechSalaries, aggregatedTechnicianPerformance: aggTechPerformance,
-        totalAdministrativeStaff: totalAdmins, totalMonthlyAdministrativeSalaries: totalAdminSalaries, aggregatedAdminPerformance: aggAdminPerformance
+        totalTechnicians: activeTechnicians.length,
+        totalMonthlyTechnicianSalaries: totalBaseTechSalaries,
+        totalAdministrativeStaff: activeAdminStaff.length,
+        totalMonthlyAdministrativeSalaries: totalBaseAdminSalaries,
+        unifiedPerformanceData: Array.from(performanceMap.values())
     };
   }, [technicians, adminStaff, services, sales, inventory, fixedExpenses, filterDateRange, isLoading]);
 
@@ -242,32 +252,25 @@ export function PersonalPageComponent({
                     <CardDescription>Sueldo total potencial basado en la ganancia neta del taller en el período seleccionado.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    { (aggregatedTechnicianPerformance.length > 0 || aggregatedAdminPerformance.length > 0) ? (
+                    { (unifiedPerformanceData.length > 0) ? (
                         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-                            {aggregatedTechnicianPerformance.map(techPerf => (
-                                <Card key={techPerf.technicianId} className="shadow-sm border">
+                            {unifiedPerformanceData.map(perf => (
+                                <Card key={perf.id} className="shadow-sm border">
                                     <CardHeader className="pb-3 pt-4">
-                                        <CardDescription className="text-xs font-semibold text-blue-600">Técnico</CardDescription>
-                                        <CardTitle className="text-base font-medium">{techPerf.technicianName}</CardTitle>
+                                        <div className="flex justify-between items-center">
+                                            <CardTitle className="text-base font-medium">{perf.name}</CardTitle>
+                                            <div className="flex gap-1">
+                                                {perf.roles.map(role => <Badge key={role} variant={role === 'Técnico' ? 'default' : 'secondary'}>{role}</Badge>)}
+                                            </div>
+                                        </div>
                                     </CardHeader>
                                     <CardContent className="space-y-1 text-sm pb-4">
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(techPerf.totalRevenue)}</span></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(techPerf.baseSalary)}</span></div>
-                                        <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisiones {format(filterDateRange?.from ?? new Date(), 'MMMM', {locale: es})}:</span><span className="font-semibold text-blue-600">{formatCurrency(techPerf.totalCommissionEarned)}</span></div>
-                                        <div className="flex justify-between font-bold pt-1 border-t mt-1"><span className="text-muted-foreground">Sueldo total:</span><span className="text-green-600">{formatCurrency(techPerf.baseSalary + techPerf.totalCommissionEarned)}</span></div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                            {aggregatedAdminPerformance.map(staffPerf => (
-                                <Card key={staffPerf.staffId} className="shadow-sm border">
-                                    <CardHeader className="pb-3 pt-4">
-                                        <CardDescription className="text-xs font-semibold text-purple-600">Administrativo</CardDescription>
-                                        <CardTitle className="text-base font-medium">{staffPerf.staffName}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-1 text-sm pb-4">
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(staffPerf.baseSalary)}</span></div>
-                                        <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisiones {format(filterDateRange?.from ?? new Date(), 'MMMM', {locale: es})}:</span><span className="font-semibold text-blue-600">{formatCurrency(staffPerf.commissionEarned)}</span></div>
-                                        <div className="flex justify-between font-bold pt-1 border-t mt-1"><span className="text-muted-foreground">Sueldo total:</span><span className="text-green-600">{formatCurrency(staffPerf.totalEarnings)}</span></div>
+                                        {perf.roles.includes('Técnico') && (
+                                            <div className="flex justify-between"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(perf.totalRevenue)}</span></div>
+                                        )}
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(perf.baseSalary)}</span></div>
+                                        <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisiones {format(filterDateRange?.from ?? new Date(), 'MMMM', {locale: es})}:</span><span className="font-semibold text-blue-600">{formatCurrency(perf.totalCommissionEarned)}</span></div>
+                                        <div className="flex justify-between font-bold pt-1 border-t mt-1"><span className="text-muted-foreground">Sueldo total:</span><span className="text-green-600">{formatCurrency(perf.totalEarnings)}</span></div>
                                     </CardContent>
                                 </Card>
                             ))}
