@@ -6,10 +6,10 @@ import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'rea
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, UserCheck, UserX, Search, TrendingUp, Users } from "lucide-react";
+import { PlusCircle, UserCheck, UserX, Search, TrendingUp, Users, ChevronsRight } from "lucide-react";
 import { PersonnelTable } from "./personnel-table";
 import { PersonnelDialog } from "./personnel-dialog";
-import type { User, Technician, ServiceRecord, AdministrativeStaff, SaleReceipt, MonthlyFixedExpense, Personnel, AppRole } from '@/types';
+import type { User, Technician, ServiceRecord, AdministrativeStaff, SaleReceipt, MonthlyFixedExpense, Personnel, AppRole, Area } from '@/types';
 import type { PersonnelFormValues } from "./personnel-form";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -26,6 +26,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import { parseDate } from '@/lib/forms';
+import { AreasContent } from './areas-content';
 
 
 export function PersonalPageComponent({
@@ -43,6 +44,7 @@ export function PersonalPageComponent({
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
   const [appRoles, setAppRoles] = useState<AppRole[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,9 +61,8 @@ export function PersonalPageComponent({
   useEffect(() => {
     setIsLoading(true);
     const unsubs: (() => void)[] = [
-      personnelService.onPersonnelUpdate((data) => {
-        setAllPersonnel(data);
-      }),
+      personnelService.onPersonnelUpdate((data) => setAllPersonnel(data)),
+      personnelService.onAreasUpdate(setAreas),
       operationsService.onSalesUpdate(setAllSales),
       operationsService.onServicesUpdate(setAllServices),
       inventoryService.onItemsUpdate(setAllInventory),
@@ -159,9 +160,10 @@ export function PersonalPageComponent({
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="resumen">Resumen de Rendimiento</TabsTrigger>
           <TabsTrigger value="personal">Lista de Personal</TabsTrigger>
+          <TabsTrigger value="areas">Áreas de Trabajo</TabsTrigger>
         </TabsList>
         <TabsContent value="resumen" className="mt-6 space-y-6">
             <Card>
@@ -187,10 +189,10 @@ export function PersonalPageComponent({
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm">
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Trabajo Ingresado:</span><span className="font-semibold">{formatCurrency(person.generatedRevenue)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldo Base:</span><span className="font-semibold">{formatCurrency(person.baseSalary)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(person.generatedRevenue)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(person.baseSalary)}</span></div>
                                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Comisiones {format(dateRange!.from!, 'MMM', { locale: es })}:</span><span className="font-semibold text-green-600">{formatCurrency(person.commission)}</span></div>
-                                <div className="flex justify-between items-center border-t pt-2 mt-2 font-bold"><span className="text-foreground">Sueldo Total:</span><span className="text-lg">{formatCurrency(person.totalSalary)}</span></div>
+                                <div className="flex justify-between items-center border-t pt-2 mt-2 font-bold"><span className="text-foreground">Sueldo total:</span><span className="text-lg">{formatCurrency(person.totalSalary)}</span></div>
                             </CardContent>
                         </Card>
                     ))}
@@ -217,6 +219,9 @@ export function PersonalPageComponent({
             </div>
             <Card className="mt-4"><CardContent className="p-0"><PersonnelTable personnel={filteredPersonnel} onEdit={handleOpenDialog} onArchive={handleArchivePersonnel} /></CardContent></Card>
         </TabsContent>
+         <TabsContent value="areas" className="mt-6 space-y-6">
+            <AreasContent areas={areas} />
+        </TabsContent>
       </Tabs>
       
       <PersonnelDialog
@@ -224,7 +229,7 @@ export function PersonalPageComponent({
         onOpenChange={setIsPersonnelDialogOpen}
         personnel={editingPersonnel}
         onSave={handleSavePersonnel}
-        appRoles={appRoles.filter(r => r.name !== 'Superadministrador')}
+        appRoles={areas} // Using areas as roles
       />
     </>
   );

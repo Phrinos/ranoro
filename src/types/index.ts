@@ -37,10 +37,15 @@ export interface WorkshopInfo {
   facturapiBillingMode?: 'live' | 'test';
 }
 
+export interface Area {
+  id: string;
+  name: string;
+}
+
 export interface Personnel {
   id: string;
   name: string;
-  roles: string[];
+  roles: string[]; // This will now store names of Areas
   contactInfo?: string;
   hireDate?: string;
   monthlySalary?: number;

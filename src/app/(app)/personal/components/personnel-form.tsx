@@ -9,14 +9,14 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { Personnel, AppRole } from "@/types";
+import type { Personnel, Area } from "@/types";
 import { DollarSign } from "lucide-react";
 import { capitalizeWords } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const personnelFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
-  roles: z.array(z.string()).min(1, "Debe seleccionar al menos un rol."),
+  roles: z.array(z.string()).min(1, "Debe seleccionar al menos un área/rol."),
   contactInfo: z.string().min(7, "El teléfono debe tener al menos 7 caracteres.").optional().or(z.literal('')),
   hireDate: z.string().optional(),
   monthlySalary: z.coerce.number().min(0, "El sueldo no puede ser negativo.").optional(),
@@ -32,7 +32,7 @@ interface PersonnelFormProps {
   id: string;
   initialData?: Personnel | null;
   onSubmit: (values: PersonnelFormValues) => void;
-  appRoles: AppRole[];
+  appRoles: Area[]; // Changed from AppRole to Area
 }
 
 export function PersonnelForm({ id, initialData, onSubmit, appRoles }: PersonnelFormProps) {
@@ -73,7 +73,7 @@ export function PersonnelForm({ id, initialData, onSubmit, appRoles }: Personnel
             name="roles"
             render={() => (
                 <FormItem>
-                    <FormLabel>Roles Asignados</FormLabel>
+                    <FormLabel>Áreas / Roles Asignados</FormLabel>
                     <div className="space-y-2 rounded-md border p-4">
                         {appRoles.map((role) => (
                         <FormField
