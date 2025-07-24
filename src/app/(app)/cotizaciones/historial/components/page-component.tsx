@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { ServiceDialog } from "../../../servicios/components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TableToolbar } from "@/components/shared/table-toolbar";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, Personnel } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
 import { ServiceAppointmentCard } from "../../../servicios/components/ServiceAppointmentCard";
@@ -26,7 +26,7 @@ export function CotizacionesPageComponent() {
   
   const [allQuotes, setAllQuotes] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,7 +43,7 @@ export function CotizacionesPageComponent() {
         setAllQuotes(services.filter(s => s.status === 'Cotizacion'));
       }),
       inventoryService.onVehiclesUpdate(setVehicles),
-      personnelService.onTechniciansUpdate(setTechnicians),
+      personnelService.onPersonnelUpdate(setPersonnel),
       inventoryService.onItemsUpdate(setInventoryItems),
       inventoryService.onServiceTypesUpdate((data) => {
           setServiceTypes(data);
@@ -100,7 +100,7 @@ export function CotizacionesPageComponent() {
       key={record.id}
       service={record}
       vehicles={vehicles}
-      technicians={technicians}
+      technicians={personnel as Technician[]}
       onEdit={() => handleOpenFormDialog(record)}
       onView={() => handleShowPreview(record)}
       onCancel={() => {
@@ -130,7 +130,7 @@ export function CotizacionesPageComponent() {
           onOpenChange={setIsFormDialogOpen}
           service={editingRecord}
           vehicles={vehicles}
-          technicians={technicians}
+          technicians={personnel}
           inventoryItems={inventoryItems}
           serviceTypes={serviceTypes}
           onCancelService={handleCancelRecord}
