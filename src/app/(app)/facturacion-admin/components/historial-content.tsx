@@ -13,6 +13,7 @@ import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import Link from 'next/link';
 
 export function HistorialContent() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -25,6 +26,10 @@ export function HistorialContent() {
     setError(null);
     try {
       const result = await getInvoices();
+      if (result === null) {
+          setError("No se han configurado las credenciales de Factura.com. Por favor, vaya a la pestaña de 'Configuración'.");
+          return;
+      }
       setInvoices(result.data);
     } catch (e: any) {
       setError(e.message || 'Error al cargar las facturas.');
