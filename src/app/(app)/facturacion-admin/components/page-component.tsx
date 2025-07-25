@@ -66,7 +66,7 @@ function ConfiguracionContent() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Configuración de Factura.com</CardTitle>
@@ -77,8 +77,8 @@ function ConfiguracionContent() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField control={form.control} name="facturaComApiKey" render={({ field }) => (<FormItem><FormLabel>API Key</FormLabel><FormControl><Input type="password" placeholder="Tu API Key de Factura.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="facturaComApiSecret" render={({ field }) => (<FormItem><FormLabel>API Secret</FormLabel><FormControl><Input type="password" placeholder="Tu API Secret de Factura.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="facturaComApiKey" render={({ field }) => (<FormItem><FormLabel>API Key</FormLabel><FormControl><Input type="password" placeholder="Tu API Key de Factura.com" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="facturaComApiSecret" render={({ field }) => (<FormItem><FormLabel>API Secret</FormLabel><FormControl><Input type="password" placeholder="Tu API Secret de Factura.com" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="facturaComBillingMode" render={({ field }) => (
                     <FormItem>
                     <FormLabel>Modo de Facturación</FormLabel>
@@ -97,28 +97,6 @@ function ConfiguracionContent() {
                 </Button>
               </form>
             </Form>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Portal de Auto-Facturación</CardTitle>
-            <CardDescription>
-              Enlace que puedes compartir con tus clientes para que ellos mismos generen su factura.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center text-center space-y-4 pt-8">
-             <div className="p-6 bg-muted/50 rounded-lg">
-              <FileJson className="h-16 w-16 text-primary mx-auto" />
-            </div>
-             <p className="max-w-prose text-muted-foreground">
-              Tus clientes pueden ingresar el folio de su ticket (de servicio o venta) y el monto total para generar su factura CFDI 4.0 al instante.
-            </p>
-            <Button asChild size="lg" className="w-full">
-              <Link href="/facturar" target="_blank">
-                Ir al Portal de Facturación <ExternalLink className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
           </CardContent>
         </Card>
       </div>
