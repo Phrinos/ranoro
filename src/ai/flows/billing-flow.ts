@@ -2,12 +2,33 @@
 'use server';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { billingFormSchema } from '@/app/(public)/facturar/components/billing-schema';
+import { billingFormSchema as clientBillingFormSchema } from '@/app/(public)/facturar/components/billing-schema';
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient.js';
 import { format } from 'date-fns';
 import { regimesFisica, regimesMoral, detectarTipoPersona } from '@/lib/sat-catalogs';
+
+
+// --- Zod Schemas ---
+// Define a local schema that includes all necessary fields for the backend flow.
+const billingFormSchema = clientBillingFormSchema.extend({
+    cfdiUse: z.string().min(1, { message: 'El Uso de CFDI es requerido en el backend.' }),
+});
+
+const CreateInvoiceInputSchema = z.object({
+  customer: billingFormSchema,
+  ticket: z.any(),
+});
+
+const CreateInvoiceOutputSchema = z.object({
+  success: z.boolean(),
+  invoiceId: z.string().optional(),
+  invoiceUrl: z.string().optional(),
+  status: z.string().optional(),
+  error: z.string().optional(),
+});
+
 
 // --- Utility to get Factura.com API credentials ---
 const getFacturaComInstance = async () => {
@@ -23,27 +44,9 @@ const getFacturaComInstance = async () => {
 
   const isLiveMode = workshopInfo.facturaComBillingMode === 'live';
   
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('🔑 Factura.com credentials in use. Mode:', isLiveMode ? 'Live' : 'Test');
-    console.log('🔑 Token (cortado):', apiKey.slice(0, 8) + '…');
-  }
-  
   return { apiKey, apiSecret, isLiveMode };
 };
 
-// --- Zod Schemas ---
-const CreateInvoiceInputSchema = z.object({
-  customer: billingFormSchema,
-  ticket: z.any(),
-});
-
-const CreateInvoiceOutputSchema = z.object({
-  success: z.boolean(),
-  invoiceId: z.string().optional(),
-  invoiceUrl: z.string().optional(),
-  status: z.string().optional(),
-  error: z.string().optional(),
-});
 
 /**
  * Main function to create a CFDI invoice with Factura.com
@@ -134,11 +137,11 @@ const createInvoiceFlow = ai.defineFlow(
             }
         };
     });
-
+    
     const receptorData: any = {
         Rfc: customer.rfc,
         Nombre: customer.name,
-        UsoCFDI: customer.cfdiUse,
+        UsoCFDI: customer.cfdiUse.trim(), // Use the value passed from the client
         RegimenFiscalReceptor: customer.taxSystem,
         DomicilioFiscalReceptor: customer.address.zip,
         Email: customer.email,
@@ -151,7 +154,7 @@ const createInvoiceFlow = ai.defineFlow(
 
     const invoiceData = {
         Serie: 'RAN',
-        Folio: ticket.id.slice(-10), // Optional folio
+        Folio: ticket.id.slice(-10),
         TipoDocumento: 'ingreso',
         Moneda: 'MXN',
         FormaPago: customer.paymentForm || '01',
@@ -172,7 +175,7 @@ const createInvoiceFlow = ai.defineFlow(
     if (apiSecret) {
       headers['F-Secret-Key'] = apiSecret;
     }
-
+    
     const response = await fetch(url, {
       method: 'POST',
       headers,

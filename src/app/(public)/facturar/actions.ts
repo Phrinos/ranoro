@@ -18,7 +18,7 @@ export async function createInvoiceAction(
     const response = await createInvoice({
       customer: {
         ...customerData,
-        paymentForm: '01', // Default to 'Efectivo' for now
+        paymentForm: '01', 
       },
       ticket: ticketData,
     });
@@ -27,8 +27,7 @@ export async function createInvoiceAction(
         throw new Error(response?.error || 'Error inesperado desde el flujo de creación.');
     }
 
-    // Optional: revalidate paths if invoice creation should update some cached data
-    // revalidatePath('/facturacion-admin/historial'); 
+    revalidatePath('/facturacion-admin'); 
 
     return response;
   } catch (error) {
