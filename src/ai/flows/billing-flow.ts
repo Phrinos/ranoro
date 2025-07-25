@@ -9,7 +9,7 @@ import { db } from '@/lib/firebasePublic';
 import axios from 'axios';
 import { format } from 'date-fns';
 
-const FDC_API_BASE_URL = 'https://factura.com/api';
+const FDC_API_BASE_URL = 'https://www.facturapi.io/v2';
 
 // --- Utility to get Factura.com API credentials ---
 const getFacturaComInstance = async () => {
@@ -22,12 +22,13 @@ const getFacturaComInstance = async () => {
   
   const apiKey = workshopInfo.facturaComApiKey;
   const apiSecret = workshopInfo.facturaComApiSecret;
+  const isLiveMode = workshopInfo.facturaComBillingMode === 'live';
 
-  if (!apiKey || !apiSecret) {
-    throw new Error('Las credenciales de Factura.com no están configuradas.');
+  if (!apiKey) {
+    throw new Error('La API Key de Factura.com no está configurada.');
   }
   
-  return { apiKey, apiSecret };
+  return { apiKey, isLiveMode };
 };
 
 // --- Zod Schemas ---
@@ -61,7 +62,7 @@ const createInvoiceFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const { apiKey, apiSecret } = await getFacturaComInstance();
+      const { apiKey, isLiveMode } = await getFacturaComInstance();
       const { customer, ticket } = input;
       
       const ticketItems = ('items' in ticket && Array.isArray(ticket.items) 
@@ -70,89 +71,53 @@ const createInvoiceFlow = ai.defineFlow(
             ? ticket.serviceItems 
             : [])
       ).map(item => {
-          const unitPriceWithTax = ('totalPrice' in item && item.quantity > 0) 
-            ? (item.totalPrice / item.quantity) 
-            : ('price' in item ? item.price || 0 : 0);
-          
-          const unitPrice = unitPriceWithTax / 1.16;
-          const totalLinePrice = ('totalPrice' in item ? item.totalPrice : (item.price * item.quantity));
-          const basePrice = totalLinePrice / 1.16;
-          const taxAmount = totalLinePrice - basePrice;
-
           return {
-            Desc: 'itemName' in item ? item.itemName : 'name' in item ? item.name : 'Artículo',
-            ClaveProdServ: '81111500', // Servicios de Mantenimiento y Reparación de Vehículos
-            ClaveUnidad: 'E48', // Unidad de servicio
-            Unidad: 'Unidad',
-            Cantidad: 'quantity' in item ? item.quantity : 1,
-            ValorUnitario: unitPrice,
-            Importe: basePrice,
-            Impuestos: {
-              Traslados: [{
-                Base: basePrice.toFixed(2),
-                Impuesto: '002', // IVA
-                TipoFactor: 'Tasa',
-                TasaOCuota: '0.160000',
-                Importe: taxAmount.toFixed(2)
-              }]
+            quantity: 'quantity' in item ? item.quantity : 1,
+            product: {
+              description: 'itemName' in item ? item.itemName : 'name' in item ? item.name : 'Artículo',
+              price: ('totalPrice' in item && item.quantity > 0) 
+                  ? (item.totalPrice / item.quantity) 
+                  : ('price' in item ? item.price || 0 : 0),
+              tax_included: true,
+              product_key: '81111500', // Servicios de Mantenimiento y Reparación de Vehículos
+              unit_key: 'E48', // Unidad de servicio
             }
           };
       });
 
-      const total = ticket.totalAmount || ticket.totalCost;
-      const subTotal = total / 1.16;
-      const iva = total - subTotal;
-
       const invoiceData = {
-        Receptor: {
-          UID: customer.rfc, 
-          Nombre: customer.name,
-          RFC: customer.rfc,
-          UsoCFDI: customer.cfdiUse,
-          RegimenFiscalReceptor: customer.taxSystem,
+        use: customer.cfdiUse,
+        payment_form: customer.paymentForm || '01',
+        customer: {
+          legal_name: customer.name,
+          tax_id: customer.rfc,
+          email: customer.email,
+          tax_system: customer.taxSystem,
+          address: {
+            zip: customer.address.zip
+          }
         },
-        TipoCfdi: 'I',
-        FormaPago: customer.paymentForm || '01',
-        MetodoPago: 'PUE',
-        Moneda: 'MXN',
-        Fecha: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
-        Serie: 'RAN',
-        Folio: ticket.id?.slice(-6) || Date.now(),
-        SubTotal: subTotal.toFixed(2),
-        Total: total.toFixed(2),
-        Descuento: "0.00",
-        Impuestos: {
-          TotalImpuestosTrasladados: iva.toFixed(2),
-          Traslados: [{
-            Base: subTotal.toFixed(2),
-            Impuesto: '002',
-            TipoFactor: 'Tasa',
-            TasaOCuota: '0.160000',
-            Importe: iva.toFixed(2)
-          }]
-        },
-        Conceptos: ticketItems,
-        send_email: true,
-        email: customer.email,
+        items: ticketItems,
+        series: 'RAN',
       };
 
-      const response = await axios.post(`${FDC_API_BASE_URL}/v4/cfdi`, invoiceData, {
-        headers: {
-          'F-API-KEY': apiKey,
-          'F-SECRET-KEY': apiSecret,
-          'Content-Type': 'application/json'
-        }
-      });
+      const url = `${FDC_API_BASE_URL}/invoices`;
+      const headers = {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      };
+      
+      const response = await axios.post(url, invoiceData, { headers });
 
-      if (response.data.status === 'error') {
+      if (response.status < 200 || response.status >= 300) {
         throw new Error(response.data.message || 'Error desconocido de Factura.com');
       }
 
       return {
         success: true,
-        invoiceId: response.data.UID,
-        invoiceUrl: response.data.PDF,
-        status: response.data.Status,
+        invoiceId: response.data.id,
+        invoiceUrl: response.data.pdf_url,
+        status: response.data.status,
       };
 
     } catch (e: any) {
@@ -170,11 +135,10 @@ const createInvoiceFlow = ai.defineFlow(
 
 export async function cancelInvoice(invoiceId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const { apiKey, apiSecret } = await getFacturaComInstance();
-    await axios.delete(`${FDC_API_BASE_URL}/v4/cfdi/${invoiceId}`, {
+    const { apiKey } = await getFacturaComInstance();
+    await axios.delete(`${FDC_API_BASE_URL}/invoices/${invoiceId}`, {
       headers: {
-        'F-API-KEY': apiKey,
-        'F-SECRET-KEY': apiSecret,
+        'Authorization': `Bearer ${apiKey}`
       }
     });
     return { success: true };
@@ -186,14 +150,21 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
 
 /* -------------------------------------
  * 📥 Obtener PDF de factura CFDI
- * (Factura.com lo envía por correo, pero podemos construir la URL si es necesario)
  * ------------------------------------- */
 
 export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: boolean; url?: string; error?: string }> {
-  // Factura.com does not provide a direct PDF URL in the same way.
-  // The PDF is sent by email. We can construct a link to their portal if needed.
-  // For now, this function will return a placeholder.
-  return Promise.resolve({ success: true, url: `https://factura.com/cfdi/${invoiceId}/pdf` });
+  try {
+    const { apiKey } = await getFacturaComInstance();
+    const response = await axios.get(`${FDC_API_BASE_URL}/invoices/${invoiceId}`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    });
+    return { success: true, url: response.data.pdf_url };
+  } catch (e: any) {
+     console.error('Get PDF URL error:', e.response?.data || e.message);
+     return { success: false, error: e.response?.data?.message || e.message };
+  }
 }
 
 /* -------------------------------------
@@ -202,11 +173,10 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
 
 export async function getInvoices(): Promise<any> {
     try {
-      const { apiKey, apiSecret } = await getFacturaComInstance();
-      const response = await axios.get(`${FDC_API_BASE_URL}/v4/cfdi`, {
+      const { apiKey } = await getFacturaComInstance();
+      const response = await axios.get(`${FDC_API_BASE_URL}/invoices`, {
         headers: {
-          'F-API-KEY': apiKey,
-          'F-SECRET-KEY': apiSecret,
+          'Authorization': `Bearer ${apiKey}`
         },
         params: {
           limit: 100,
@@ -216,9 +186,9 @@ export async function getInvoices(): Promise<any> {
 
       return {
         data: response.data.data,
-        page: response.data.current_page,
-        total_pages: response.data.last_page,
-        total_results: response.data.total,
+        page: response.data.page,
+        total_pages: response.data.total_pages,
+        total_results: response.data.total_results,
       }
     } catch (e: any) {
       console.error('Factura.com list invoices error:', e.response?.data || e.message);
