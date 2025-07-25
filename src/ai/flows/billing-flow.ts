@@ -124,7 +124,7 @@ const createInvoiceFlow = ai.defineFlow(
         quantity = 1;
       }
       
-      const unitPriceBeforeTax = Number((unitPriceWithTax / 1.16).toFixed(2));
+      const unitPriceBeforeTax = unitPriceWithTax / 1.16;
     
       return {
         quantity: quantity,
