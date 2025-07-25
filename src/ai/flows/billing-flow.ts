@@ -187,18 +187,24 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
   try {
     const facturaCom = await getFacturaComInstance();
     if (!facturaCom) throw new Error('Credenciales de facturación no configuradas.');
-    const { apiKey } = facturaCom;
+    const { apiKey, isLiveMode } = facturaCom;
 
-    const response = await fetch(`${FDC_API_BASE_URL}/invoices/${invoiceId}`, {
-      method: 'DELETE',
+    const response = await fetch(`${FDC_API_BASE_URL}/invoices/${invoiceId}/cancel`, {
+      method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`
-      }
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+          motive: '02', // 02: Comprobante emitido con errores sin relación.
+          mode: isLiveMode ? 'live' : 'test'
+      })
     });
 
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al cancelar la factura.');
+        const errorMessage = errorData.message || (Array.isArray(errorData.errors) ? errorData.errors.map((e: any) => e.message).join(', ') : 'Error al cancelar la factura.');
+        throw new Error(errorMessage);
     }
 
     return { success: true };
@@ -207,6 +213,7 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
     return { success: false, error: e.message };
   }
 }
+
 
 /* -------------------------------------
  * 📥 Obtener PDF de factura CFDI
