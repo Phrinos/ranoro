@@ -22,10 +22,9 @@ const getFacturaComInstance = async () => {
   const workshopInfo = configSnap.data() as WorkshopInfo;
   
   const apiKey = workshopInfo.facturaComApiKey;
-  const apiSecret = workshopInfo.facturaComApiSecret;
-  const isLiveMode = workshopInfo.facturaComBillingMode === 'live';
+  if (!apiKey) return null; // Explicitly return null if API key is not set.
 
-  if (!apiKey) return null;
+  const isLiveMode = workshopInfo.facturaComBillingMode === 'live';
   
   return { apiKey, isLiveMode };
 };
@@ -199,7 +198,10 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
 
 export async function getInvoices(): Promise<any> {
     const facturaCom = await getFacturaComInstance();
-    if (!facturaCom) return null; // Return null if not configured
+    if (facturaCom === null) {
+      // Intentionally return null to indicate missing credentials, which the frontend will handle.
+      return null;
+    }
     const { apiKey } = facturaCom;
 
     try {
@@ -209,7 +211,6 @@ export async function getInvoices(): Promise<any> {
         },
         params: {
           limit: 100,
-          // Add other params like date ranges if needed
         }
       });
 

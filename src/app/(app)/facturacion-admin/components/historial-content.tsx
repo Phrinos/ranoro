@@ -14,23 +14,38 @@ import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
+import type { WorkshopInfo } from '@/types';
 
 export function HistorialContent() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasCredentials, setHasCredentials] = useState(false);
   const { toast } = useToast();
 
-  const fetchInvoices = useCallback(async () => {
+  const fetchCredentialsAndInvoices = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    if (!db) {
+        setError("La base de datos no está disponible.");
+        setIsLoading(false);
+        return;
+    }
+
     try {
-      const result = await getInvoices();
-      if (result === null) {
-          setError("No se han configurado las credenciales de Factura.com. Por favor, vaya a la pestaña de 'Configuración'.");
-          return;
+      const configSnap = await getDoc(doc(db, 'workshopConfig', 'main'));
+      const configData = configSnap.data() as WorkshopInfo;
+      
+      if (configData && configData.facturaComApiKey) {
+        setHasCredentials(true);
+        const result = await getInvoices();
+        setInvoices(result.data);
+      } else {
+        setHasCredentials(false);
+        setError("No se han configurado las credenciales de Factura.com. Por favor, vaya a la pestaña de 'Configuración'.");
       }
-      setInvoices(result.data);
     } catch (e: any) {
       setError(e.message || 'Error al cargar las facturas.');
       toast({ title: "Error", description: e.message, variant: "destructive" });
@@ -39,16 +54,17 @@ export function HistorialContent() {
     }
   }, [toast]);
 
+
   useEffect(() => {
-    fetchInvoices();
-  }, [fetchInvoices]);
+    fetchCredentialsAndInvoices();
+  }, [fetchCredentialsAndInvoices]);
 
   const handleCancelInvoice = async (invoiceId: string) => {
     try {
         const result = await cancelInvoiceFlow(invoiceId);
         if(result.success) {
             toast({ title: "Factura Cancelada", description: "La factura ha sido cancelada exitosamente." });
-            fetchInvoices(); // Refresh the list
+            fetchCredentialsAndInvoices(); // Refresh the list
         } else {
             throw new Error(result.error || 'Error desconocido al cancelar');
         }
@@ -75,6 +91,17 @@ export function HistorialContent() {
     }
   }
 
+  if (isLoading) {
+    return (
+        <Card>
+            <CardContent className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                <Loader2 className="h-12 w-12 animate-spin" />
+                <p className="mt-4">Cargando historial de facturas...</p>
+            </CardContent>
+        </Card>
+    );
+  }
+
   if (error) {
     return (
         <Card>
@@ -82,7 +109,7 @@ export function HistorialContent() {
                 <AlertCircle className="h-12 w-12 mb-4" />
                 <h3 className="text-lg font-semibold">Ocurrió un Error</h3>
                 <p className="text-sm mt-1">{error}</p>
-                <Button onClick={fetchInvoices} className="mt-4">
+                <Button onClick={fetchCredentialsAndInvoices} className="mt-4">
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Reintentar
                 </Button>
@@ -98,7 +125,7 @@ export function HistorialContent() {
             <CardTitle>Historial de Facturas Emitidas</CardTitle>
             <CardDescription>Consulta todas las facturas que han sido generadas a través del sistema.</CardDescription>
         </div>
-        <Button onClick={fetchInvoices} variant="outline" size="sm" disabled={isLoading}>
+        <Button onClick={fetchCredentialsAndInvoices} variant="outline" size="sm" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCw className="mr-2 h-4 w-4"/>}
             Actualizar
         </Button>
@@ -118,9 +145,7 @@ export function HistorialContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
-              ) : invoices.length > 0 ? (
+              {invoices.length > 0 ? (
                 invoices.map(invoice => (
                   <TableRow key={invoice.id}>
                     <TableCell>{format(parseISO(invoice.created_at), 'dd MMM yyyy', { locale: es })}</TableCell>
