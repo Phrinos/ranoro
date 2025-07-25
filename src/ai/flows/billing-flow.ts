@@ -135,6 +135,20 @@ const createInvoiceFlow = ai.defineFlow(
         };
     });
 
+    const receptorData: any = {
+        Rfc: customer.rfc,
+        Nombre: customer.name,
+        UsoCFDI: customer.cfdiUse,
+        RegimenFiscalReceptor: customer.taxSystem,
+        DomicilioFiscalReceptor: customer.address.zip,
+        Email: customer.email,
+    };
+    
+    // Add Uid if RFC is generic
+    if (customer.rfc === 'XAXX010101000' || customer.rfc === 'XEXX010101000') {
+      receptorData.Uid = `PG-${Date.now()}`;
+    }
+
     const invoiceData = {
         Serie: 'RAN',
         Folio: ticket.id.slice(-10), // Optional folio
@@ -144,14 +158,7 @@ const createInvoiceFlow = ai.defineFlow(
         MetodoPago: 'PUE',
         LugarExpedicion: '20267', // Workshop's Zip Code
 
-        Receptor: {
-            Rfc: customer.rfc,
-            Nombre: customer.name,
-            UsoCFDI: customer.cfdiUse,
-            RegimenFiscalReceptor: customer.taxSystem,
-            DomicilioFiscalReceptor: customer.address.zip,
-            Email: customer.email,
-        },
+        Receptor: receptorData,
         Conceptos: conceptos,
     };
     
