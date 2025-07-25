@@ -46,6 +46,9 @@ const tallerSchema = z.object({
   contactPersonName: z.string().optional(),
   contactPersonPhone: z.string().optional(),
   contactPersonRole: z.string().optional(),
+  facturaComApiKey: z.string().optional(),
+  facturaComApiSecret: z.string().optional(),
+  facturaComBillingMode: z.enum(['live', 'test']).optional(),
 });
 
 type TallerFormValues = z.infer<typeof tallerSchema>;
@@ -87,10 +90,11 @@ export function ConfigTallerPageContent() {
 
   const onSubmit = async (data: TallerFormValues) => {
     try {
-      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
+      const dataToSave = cleanObjectForFirestore(data);
+      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(dataToSave));
       if (db) {
         const configRef = doc(db, 'workshopConfig', FIRESTORE_DOC_ID);
-        await setDoc(configRef, data, { merge: true });
+        await setDoc(configRef, dataToSave, { merge: true });
       }
       toast({ title: 'Información guardada', description: 'Se actualizaron los datos del taller.' });
     } catch {
@@ -164,6 +168,15 @@ export function ConfigTallerPageContent() {
     }
   };
 
+  const cleanObjectForFirestore = (obj: any) => {
+    return Object.entries(obj).reduce((acc, [key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+  };
+
   return (
     <>
     <Card className="max-w-4xl mx-auto shadow-lg">
@@ -191,7 +204,7 @@ export function ConfigTallerPageContent() {
                   <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Taller</FormLabel><FormControl><Input {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono de Contacto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                   <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Calle, Número, Colonia, C.P." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                   <FormField control={form.control} name="googleMapsUrl" render={({ field }) => (<FormItem><FormLabel>URL de Google Maps (Opcional)</FormLabel><FormControl><Input type="url" placeholder="https://maps.app.goo.gl/..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                   <FormField control={form.control} name="googleMapsUrl" render={({ field }) => (<FormItem><FormLabel>URL de Google Maps (Opcional)</FormLabel><FormControl><Input type="url" placeholder="https://maps.app.goo.gl/..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
               </CardContent>
             </Card>
             
