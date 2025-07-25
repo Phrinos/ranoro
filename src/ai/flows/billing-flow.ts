@@ -104,6 +104,7 @@ const createInvoiceFlow = ai.defineFlow(
       });
 
       const invoiceData = {
+        series: 'RAN',
         use: customer.cfdiUse,
         payment_form: customer.paymentForm || '01',
         customer: {
@@ -116,7 +117,6 @@ const createInvoiceFlow = ai.defineFlow(
           }
         },
         items: ticketItems,
-        series: 'RAN',
       };
 
       const url = `${FDC_API_BASE_URL}/invoices`;
