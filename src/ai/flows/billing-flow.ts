@@ -135,7 +135,7 @@ const createInvoiceFlow = ai.defineFlow(
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${isLiveMode ? apiKey : apiKey}`, // Use appropriate key based on mode
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(invoiceData)
@@ -157,7 +157,8 @@ const createInvoiceFlow = ai.defineFlow(
 
     } catch (e: any) {
       console.error('❌ Error general en createInvoiceFlow:', e.message);
-      return { success: false, error: e.message || 'Error inesperado al crear la factura' };
+      // Ensure the error is re-thrown so the wrapper can catch it.
+      throw e;
     }
   }
 );
