@@ -20,7 +20,8 @@ import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { BillingForm } from './components/billing-form';
 import { billingFormSchema, type BillingFormValues } from './components/billing-schema';
 import { createInvoiceAction } from './actions';
-import { formatCurrency, parseDate } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
+import { parseDate } from '@/lib/forms';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 
