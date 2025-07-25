@@ -2,7 +2,6 @@
 'use server';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { billingFormSchema as clientBillingFormSchema } from '@/app/(public)/facturar/components/billing-schema';
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient.js';
@@ -12,9 +11,22 @@ import { regimesFisica, regimesMoral, detectarTipoPersona } from '@/lib/sat-cata
 
 // --- Zod Schemas ---
 // Define a local schema that includes all necessary fields for the backend flow.
-const billingFormSchema = clientBillingFormSchema.extend({
-    cfdiUse: z.string().min(1, { message: 'El Uso de CFDI es requerido en el backend.' }),
+// This avoids module boundary issues with client-side schemas.
+const billingFormSchema = z.object({
+  rfc: z.string()
+    .trim()
+    .min(12, { message: 'El RFC debe tener entre 12 y 13 caracteres.' })
+    .max(13, { message: 'El RFC debe tener entre 12 y 13 caracteres.' }),
+  name: z.string().min(1, { message: 'El nombre o razón social es requerido.' }),
+  email: z.string().email({ message: 'Correo inválido.' }),
+  address: z.object({
+    zip: z.string().length(5, { message: 'El código postal debe tener 5 dígitos.' }),
+  }),
+  taxSystem: z.string().trim().min(1, { message: 'Debe seleccionar un régimen fiscal.'}),
+  cfdiUse: z.string().min(1, { message: 'El Uso de CFDI es requerido en el backend.' }),
+  paymentForm: z.string().optional(),
 });
+
 
 const CreateInvoiceInputSchema = z.object({
   customer: billingFormSchema,
