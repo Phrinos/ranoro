@@ -95,6 +95,7 @@ export default function FacturarPage() {
   };
 
   const ticketDate = searchResult ? ('saleDate' in searchResult ? searchResult.saleDate : searchResult.serviceDate) : null;
+  const ticketTotal = searchResult ? ('totalAmount' in searchResult ? searchResult.totalAmount : (searchResult.totalCost || 0)) : 0;
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
@@ -173,7 +174,7 @@ export default function FacturarPage() {
                       <AlertDescription>
                         <p><strong>Folio:</strong> {searchResult.id}</p>
                         <p><strong>Fecha:</strong> {ticketDate ? format(parseISO(ticketDate), "dd MMMM, yyyy", {locale: es}) : 'N/A'}</p>
-                        <p><strong>Total:</strong> {formatCurrency('totalAmount' in searchResult ? searchResult.totalAmount : (searchResult.totalCost || 0))}</p>
+                        <p><strong>Total:</strong> {formatCurrency(ticketTotal)}</p>
                       </AlertDescription>
                   </Alert>
 

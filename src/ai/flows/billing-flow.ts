@@ -93,32 +93,33 @@ const createInvoiceFlow = ai.defineFlow(
       }
 
       const IVA_RATE = 0.16;
-
-      // Unify item processing
       let ticketItems;
+
+      // Determine ticket type and process items accordingly
       if ('items' in ticket && Array.isArray(ticket.items)) { // This is a SaleReceipt
           ticketItems = ticket.items.map((item: any) => ({
               quantity: item.quantity,
               product: {
                   description: item.itemName,
-                  price: item.unitPrice / (1 + IVA_RATE), // Calculate pre-tax price
-                  tax_included: false, // Price is now pre-tax
-                  product_key: '01010101', // Generic product key
-                  unit_key: 'H87', // Pieza
+                  price: item.unitPrice / (1 + IVA_RATE),
+                  tax_included: false,
+                  product_key: '01010101', 
+                  unit_key: 'H87', 
               }
           }));
       } else { // This is a ServiceRecord
           ticketItems = (ticket.serviceItems || []).map((item: any) => ({
-              quantity: 1, // Service items are usually a single unit
+              quantity: 1, 
               product: {
                   description: item.name,
-                  price: item.price / (1 + IVA_RATE), // Calculate pre-tax price
+                  price: item.price / (1 + IVA_RATE),
                   tax_included: false,
-                  product_key: '81111500', // Maintenance and Repair Services
-                  unit_key: 'E48', // Unit of service
+                  product_key: '81111500', 
+                  unit_key: 'E48', 
               }
           }));
       }
+
 
       const invoiceData = {
         use: customer.cfdiUse,
@@ -133,6 +134,7 @@ const createInvoiceFlow = ai.defineFlow(
         },
         items: ticketItems,
         payment_form: customer.paymentForm || '01',
+        series: 'RAN'
       };
 
       const url = `${FDC_API_BASE_URL}/invoices`;
