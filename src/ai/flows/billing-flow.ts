@@ -68,17 +68,33 @@ const createInvoiceFlow = ai.defineFlow(
     const facturapi = await getFacturapiInstance();
     const ticket = input.ticket as SaleReceipt | ServiceRecord;
 
+    // --- RFC & Tax Regime Validation ---
+    const rfc = input.customer.rfc.toUpperCase();
+    const taxSystem = input.customer.taxSystem;
+    const isMoral = rfc.length === 12;
+    const isFisica = rfc.length === 13;
+
+    if (isFisica && taxSystem.startsWith('60')) {
+        // Valid for physical person
+    } else if (isMoral && (taxSystem.startsWith('60') || taxSystem === '626')) {
+        // Valid for moral person
+    } else if (!isFisica && !isMoral) {
+        throw new Error('El RFC proporcionado no parece ser válido (debe tener 12 o 13 caracteres).');
+    } else {
+        throw new Error(`El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona ${isFisica ? 'física' : 'moral'}.`);
+    }
+
     let customer;
     try {
-      const existing = await facturapi.customers.list({ q: input.customer.rfc });
+      const existing = await facturapi.customers.list({ q: rfc });
       customer = existing.data.length > 0 ? existing.data[0] : await facturapi.customers.create({
         legal_name: input.customer.name,
-        tax_id: input.customer.rfc,
+        tax_id: rfc,
         email: input.customer.email,
         address: {
           zip: input.customer.address.zip,
         },
-        tax_system: input.customer.taxSystem,
+        tax_system: taxSystem,
       });
     } catch (e: any) {
       console.error('FacturAPI customer error:', e.data || e.message);
