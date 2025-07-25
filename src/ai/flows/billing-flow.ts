@@ -74,8 +74,8 @@ const createInvoiceFlow = ai.defineFlow(
     const ticket = input.ticket as SaleReceipt | ServiceRecord;
 
     // --- RFC & Tax Regime Validation ---
-    const rfc = input.customer.rfc.toUpperCase();
-    const taxSystem = input.customer.taxSystem;
+    const rfc = input.customer.rfc.trim().toUpperCase();
+    const taxSystem = input.customer.taxSystem.trim();
     const isMoral = rfc.length === 12;
     const isFisica = rfc.length === 13;
 
