@@ -6,7 +6,6 @@ import { billingFormSchema } from '@/app/(public)/facturar/components/billing-sc
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic';
-import axios from 'axios';
 import { format } from 'date-fns';
 import { regimesFisica, regimesMoral, detectarTipoPersona } from '@/lib/sat-catalogs';
 
@@ -121,28 +120,31 @@ const createInvoiceFlow = ai.defineFlow(
       };
 
       const url = `${FDC_API_BASE_URL}/invoices`;
-      const headers = {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      };
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(invoiceData)
+      });
       
-      const response = await axios.post(url, invoiceData, { headers });
+      const responseData = await response.json();
 
-      if (response.status < 200 || response.status >= 300) {
-        throw new Error(response.data.message || 'Error desconocido de Factura.com');
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Error desconocido de Factura.com');
       }
 
       return {
         success: true,
-        invoiceId: response.data.id,
-        invoiceUrl: response.data.pdf_url,
-        status: response.data.status,
+        invoiceId: responseData.id,
+        invoiceUrl: responseData.pdf_url,
+        status: responseData.status,
       };
 
     } catch (e: any) {
-      console.error('❌ Error general en createInvoiceFlow:', e.response?.data || e.message);
-      const errorMessage = e.response?.data?.message || e.message || 'Error inesperado al crear la factura';
-      return { success: false, error: errorMessage };
+      console.error('❌ Error general en createInvoiceFlow:', e.message);
+      return { success: false, error: e.message || 'Error inesperado al crear la factura' };
     }
   }
 );
@@ -158,15 +160,22 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
     if (!facturaCom) throw new Error('Credenciales de facturación no configuradas.');
     const { apiKey } = facturaCom;
 
-    await axios.delete(`${FDC_API_BASE_URL}/invoices/${invoiceId}`, {
+    const response = await fetch(`${FDC_API_BASE_URL}/invoices/${invoiceId}`, {
+      method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${apiKey}`
       }
     });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al cancelar la factura.');
+    }
+
     return { success: true };
   } catch (e: any) {
-    console.error('Cancelación de factura fallida:', e.response?.data || e.message);
-    return { success: false, error: e.response?.data?.message || e.message };
+    console.error('Cancelación de factura fallida:', e.message);
+    return { success: false, error: e.message };
   }
 }
 
@@ -180,15 +189,20 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
     if (!facturaCom) throw new Error('Credenciales de facturación no configuradas.');
     const { apiKey } = facturaCom;
 
-    const response = await axios.get(`${FDC_API_BASE_URL}/invoices/${invoiceId}`, {
+    const response = await fetch(`${FDC_API_BASE_URL}/invoices/${invoiceId}`, {
       headers: {
         'Authorization': `Bearer ${apiKey}`
       }
     });
-    return { success: true, url: response.data.pdf_url };
+    
+    const responseData = await response.json();
+    if (!response.ok) {
+      throw new Error(responseData.message || 'Error al obtener la factura.');
+    }
+    return { success: true, url: responseData.pdf_url };
   } catch (e: any) {
-     console.error('Get PDF URL error:', e.response?.data || e.message);
-     return { success: false, error: e.response?.data?.message || e.message };
+     console.error('Get PDF URL error:', e.message);
+     return { success: false, error: e.message };
   }
 }
 
@@ -205,23 +219,25 @@ export async function getInvoices(): Promise<any> {
     const { apiKey } = facturaCom;
 
     try {
-      const response = await axios.get(`${FDC_API_BASE_URL}/invoices`, {
+      const response = await fetch(`${FDC_API_BASE_URL}/invoices?limit=100`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         },
-        params: {
-          limit: 100,
-        }
       });
 
+      const responseData = await response.json();
+      if (!response.ok) {
+          throw new Error(responseData.message || 'Error al obtener la lista de facturas.');
+      }
+
       return {
-        data: response.data.data,
-        page: response.data.page,
-        total_pages: response.data.total_pages,
-        total_results: response.data.total_results,
+        data: responseData.data,
+        page: responseData.page,
+        total_pages: responseData.total_pages,
+        total_results: responseData.total_results,
       }
     } catch (e: any) {
-      console.error('Factura.com list invoices error:', e.response?.data || e.message);
-      throw new Error(`Error al obtener facturas: ${e.response?.data?.message || e.message}`);
+      console.error('Factura.com list invoices error:', e.message);
+      throw new Error(`Error al obtener facturas: ${e.message}`);
     }
 }
