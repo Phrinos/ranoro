@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { regimesFisica, regimesMoral, detectarTipoPersona } from '@/lib/sat-catalogs';
 
 
-const FDC_API_BASE_URL = 'https://api.factura.com/v4';
+const FDC_API_BASE_URL = 'https://api.factura.com/v1';
 
 // --- Utility to get Factura.com API credentials ---
 const getFacturaComInstance = async () => {
@@ -101,7 +101,7 @@ const createInvoiceFlow = ai.defineFlow(
               quantity: item.quantity,
               product: {
                   description: item.itemName,
-                  price: item.unitPrice / (1 + IVA_RATE),
+                  price: item.totalPrice / item.quantity / (1 + IVA_RATE), // Correctly calculate pre-tax unit price
                   tax_included: false,
                   product_key: '01010101', 
                   unit_key: 'H87', 
@@ -134,7 +134,6 @@ const createInvoiceFlow = ai.defineFlow(
         },
         items: ticketItems,
         payment_form: customer.paymentForm || '01',
-        series: 'RAN'
       };
 
       const url = `${FDC_API_BASE_URL}/invoices`;
@@ -147,12 +146,22 @@ const createInvoiceFlow = ai.defineFlow(
         body: JSON.stringify({ ...invoiceData, mode: isLiveMode ? 'live' : 'test' })
       });
       
-      const responseData = await response.json();
-
       if (!response.ok) {
-        const errorMessage = responseData.message || (Array.isArray(responseData.errors) ? responseData.errors.map((e: any) => e.message).join(', ') : 'Error desconocido de Factura.com');
-        throw new Error(errorMessage);
+        // Read the response text to avoid JSON parsing errors on HTML error pages
+        const errorText = await response.text();
+        console.error(`❌ Factura.com API Error (${response.status}):`, errorText);
+        try {
+          // Attempt to parse as JSON, but handle failure gracefully
+          const errorJson = JSON.parse(errorText);
+          const errorMessage = errorJson.message || (Array.isArray(errorJson.errors) ? errorJson.errors.map((e: any) => e.message).join(', ') : 'Error desconocido de Factura.com');
+          throw new Error(errorMessage);
+        } catch (jsonError) {
+          // If parsing fails, it means the response was not JSON (e.g., HTML error page)
+          throw new Error(`Error de comunicación con el servicio de facturación (código: ${response.status}). Intente de nuevo más tarde.`);
+        }
       }
+      
+      const responseData = await response.json();
 
       return {
         success: true,
