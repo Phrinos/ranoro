@@ -23,7 +23,6 @@ export async function createInvoiceAction(
       ticket: ticketData,
     });
     
-    // Step 2: Ensure proper handling of the flow's response
     if (!response?.success) {
         throw new Error(response?.error || 'Error inesperado desde el flujo de creación.');
     }
