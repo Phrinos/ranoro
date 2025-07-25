@@ -211,33 +211,36 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
  * ------------------------------------- */
 
 export async function getInvoices(): Promise<any> {
-    const facturaCom = await getFacturaComInstance();
-    if (facturaCom === null) {
-      // Intentionally return null to indicate missing credentials, which the frontend will handle.
-      return null;
+  const facturaCom = await getFacturaComInstance();
+  if (facturaCom === null) {
+    // Intentionally return null to indicate missing credentials, which the frontend will handle.
+    return null;
+  }
+  const { apiKey } = facturaCom;
+
+  try {
+    const response = await fetch(`${FDC_API_BASE_URL}/invoices?limit=100`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Error del servidor: ${response.status}`);
     }
-    const { apiKey } = facturaCom;
 
-    try {
-      const response = await fetch(`${FDC_API_BASE_URL}/invoices?limit=100`, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`
-        },
-      });
+    const responseData = await response.json();
 
-      const responseData = await response.json();
-      if (!response.ok) {
-          throw new Error(responseData.message || 'Error al obtener la lista de facturas.');
-      }
-
-      return {
-        data: responseData.data,
-        page: responseData.page,
-        total_pages: responseData.total_pages,
-        total_results: responseData.total_results,
-      }
-    } catch (e: any) {
-      console.error('Factura.com list invoices error:', e.message);
-      throw new Error(`Error al obtener facturas: ${e.message}`);
-    }
+    return {
+      data: responseData.data,
+      page: responseData.page,
+      total_pages: responseData.total_pages,
+      total_results: responseData.total_results,
+    };
+  } catch (e: any) {
+    console.error('Factura.com list invoices error:', e.message);
+    // Re-throw the error to be handled by the caller, ensuring a consistent error handling flow.
+    throw new Error(`Error al obtener facturas: ${e.message}`);
+  }
 }
