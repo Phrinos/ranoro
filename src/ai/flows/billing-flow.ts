@@ -10,175 +10,160 @@ import { billingFormSchema } from '@/app/(public)/facturar/components/billing-sc
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic';
-import Facturapi, { type Invoice } from 'facturapi';
+import Facturapi from 'facturapi';
+import { 
+  detectarTipoPersona, 
+  regimesFisica, 
+  regimesMoral 
+} from '@/lib/sat-catalogs';
 
-/* -------------------------------------
- * Utility to get FacturAPI instance
- * ------------------------------------- */
+// --- Utility to get FacturAPI instance ---
 const getFacturapiInstance = async (): Promise<Facturapi> => {
     if (!db) throw new Error('Database not initialized.');
-
     const configSnap = await getDoc(doc(db, 'workshopConfig', 'main'));
     if (!configSnap.exists()) {
       throw new Error('La configuración del taller no ha sido establecida.');
     }
-
     const workshopInfo = configSnap.data() as WorkshopInfo;
-
     const apiKey = workshopInfo.facturapiBillingMode === 'live'
       ? workshopInfo.facturapiLiveApiKey
       : workshopInfo.facturapiTestApiKey || process.env.FACTURAPI_TEST_API_KEY;
-
     if (!apiKey) throw new Error('La API Key de FacturAPI no está configurada.');
-
     return new Facturapi(apiKey);
 };
 
-
-/* -------------------------------------
- * ✅ Crear factura CFDI
- * ------------------------------------- */
-
+// --- Zod Schemas ---
 const CreateInvoiceInputSchema = z.object({
-  customer: billingFormSchema.extend({
-    paymentForm: z.string().optional(), // "01" = efectivo, etc.
-  }),
-  ticket: z.any(), // SaleReceipt o ServiceRecord
+  customer: billingFormSchema,
+  ticket: z.any(),
 });
 
-// --- Catálogos para validación en backend ---
-const regimesFisica = ["605", "606", "607", "608", "611", "612", "614", "615", "621", "625", "626", "616"];
-const regimesMoral = ["601", "603", "620", "622", "623", "624", "628", "610", "616"];
+const CreateInvoiceOutputSchema = z.object({
+  success: z.boolean(),
+  invoiceId: z.string().optional(),
+  invoiceUrl: z.string().optional(),
+  status: z.string().optional(),
+  error: z.string().optional(),
+});
 
-
+/**
+ * Main function to create a CFDI invoice.
+ */
 export async function createInvoice(
   input: z.infer<typeof CreateInvoiceInputSchema>
-): Promise<{
-  success: boolean;
-  invoiceId?: string;
-  invoiceUrl?: string;
-  status?: string;
-  error?: string;
-}> {
+): Promise<z.infer<typeof CreateInvoiceOutputSchema>> {
   return createInvoiceFlow(input);
 }
 
+/**
+ * Genkit flow to create an invoice.
+ */
 const createInvoiceFlow = ai.defineFlow(
   {
     name: 'createInvoiceFlow',
     inputSchema: CreateInvoiceInputSchema,
-    outputSchema: z.any(),
+    outputSchema: z.any(), // Step 1: Relax output schema for debugging
   },
   async (input) => {
-    const facturapi = await getFacturapiInstance();
-    const ticket = input.ticket as SaleReceipt | ServiceRecord;
-
-    // --- RFC & Tax Regime Validation ---
-    const rfc = input.customer.rfc.trim().toUpperCase();
-    const taxSystem = input.customer.taxSystem.trim();
-    const isMoral = rfc.length === 12;
-    const isFisica = rfc.length === 13;
-
-    if (!isFisica && !isMoral) {
-      throw new Error('El RFC proporcionado no parece ser válido (debe tener 12 o 13 caracteres).');
-    }
-    
-    if (isFisica && !regimesFisica.includes(taxSystem)) {
-      throw new Error(`El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona física.`);
-    }
-
-    if (isMoral && !regimesMoral.includes(taxSystem)) {
-      throw new Error(`El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona moral.`);
-    }
-
-    let customer;
     try {
-      const existing = await facturapi.customers.list({ q: rfc });
-      customer = existing.data.length > 0 ? existing.data[0] : await facturapi.customers.create({
-        legal_name: input.customer.name,
-        tax_id: rfc,
-        email: input.customer.email,
-        address: {
-          zip: input.customer.address.zip,
-        },
-        tax_system: taxSystem,
-      });
-    } catch (e: any) {
-      console.error('FacturAPI customer error:', e.data || e.message);
-      throw new Error(`Error con cliente en FacturAPI: ${e.data?.message || e.message}`);
-    }
+      // 1. Get FacturAPI instance
+      const facturapi = await getFacturapiInstance();
 
-    if (!('items' in ticket) && !('serviceItems' in ticket)) {
-      throw new Error('El ticket no contiene artículos válidos para facturar.');
-    }
-    
-    const items = ('items' in ticket && Array.isArray(ticket.items) ? ticket.items : ('serviceItems' in ticket && Array.isArray(ticket.serviceItems) ? ticket.serviceItems : [])).map(item => {
-      let unitPriceWithTax: number;
-      let description: string;
-      let quantity: number;
-    
-      if ('totalPrice' in item && 'quantity' in item && item.quantity > 0) {
-        unitPriceWithTax = item.totalPrice / item.quantity;
-        description = item.itemName;
-        quantity = item.quantity;
-      } else if ('price' in item) {
-        unitPriceWithTax = item.price || 0;
-        description = item.name;
-        quantity = 1; 
-      } else {
-        unitPriceWithTax = 0;
-        description = 'Artículo sin descripción';
-        quantity = 1;
+      // 2. Validate RFC and Tax Regime from input
+      const { rfc: rawRfc, taxSystem: rawTaxSystem, name, email, address, cfdiUse, paymentForm } = input.customer;
+      const rfc = rawRfc.trim().toUpperCase();
+      const taxSystem = rawTaxSystem.trim();
+      
+      const tipoPersona = detectarTipoPersona(rfc);
+      if (tipoPersona === 'invalido') {
+        return { success: false, error: 'El RFC proporcionado no tiene un formato válido según el SAT.' };
       }
       
-      const unitPriceBeforeTax = unitPriceWithTax / 1.16;
-    
-      return {
-        quantity: quantity,
-        product: {
-          description,
-          product_key: '81111500', 
-          price: unitPriceBeforeTax,
-          taxes: [{
-            type: 'IVA',
-            rate: 0.16,
-            withholding: false
-          }]
-        }
+      const isFisica = tipoPersona === 'fisica';
+      const isMoral = tipoPersona === 'moral';
+
+      if (isFisica && !regimesFisica.includes(taxSystem)) {
+        return { success: false, error: `El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona física.` };
+      }
+      if (isMoral && !regimesMoral.includes(taxSystem)) {
+        return { success: false, error: `El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona moral.` };
+      }
+
+      // 3. Construct customer object
+      const customerData = {
+        legal_name: name,
+        tax_id: rfc,
+        email: email,
+        address: { zip: address.zip },
+        tax_system: taxSystem,
       };
-    }).filter(item => item.product.price > 0 && item.quantity > 0); 
 
-    if (items.length === 0) {
-        throw new Error("No se encontraron artículos con costo para facturar en este ticket.");
-    }
+      // 4. Process ticket items
+      const ticket = input.ticket as SaleReceipt | ServiceRecord;
+      if (!('items' in ticket || 'serviceItems' in ticket)) {
+        return { success: false, error: 'El ticket no contiene artículos válidos para facturar.' };
+      }
+      
+      const items = ('items' in ticket && Array.isArray(ticket.items) ? ticket.items : ('serviceItems' in ticket && Array.isArray(ticket.serviceItems) ? ticket.serviceItems : []))
+        .map(item => {
+          const unitPriceWithTax = ('totalPrice' in item && item.quantity > 0) ? (item.totalPrice / item.quantity) : ('price' in item ? item.price || 0 : 0);
+          const description = 'itemName' in item ? item.itemName : 'name' in item ? item.name : 'Artículo sin descripción';
+          const quantity = 'quantity' in item ? item.quantity : 1;
+          
+          if (unitPriceWithTax <= 0 || quantity <= 0) return null;
 
-    try {
+          return {
+            quantity,
+            product: {
+              description,
+              product_key: '81111500', 
+              price: unitPriceWithTax / 1.16,
+              taxes: [{ type: 'IVA', rate: 0.16, withholding: false }],
+            }
+          };
+        })
+        .filter(Boolean);
+
+      if (items.length === 0) {
+        return { success: false, error: "No se encontraron artículos con costo para facturar en este ticket." };
+      }
+
+      // 5. DEBUG LOGGING
+      console.log('🚨 Sending data to FacturAPI:');
+      console.log('  - RFC:', `"${rfc}"`);
+      console.log('✔ Tipo detectado por regex:', tipoPersona);
+      console.log('  - Régimen fiscal:', `"${taxSystem}"`);
+
+      // 6. Create Invoice
       const invoice = await facturapi.invoices.create({
-        customer: customer.id,
-        use: input.customer.cfdiUse,
-        payment_form: input.customer.paymentForm ?? '01',
-        items,
+        customer: customerData,
+        use: cfdiUse,
+        payment_form: paymentForm ?? '01',
+        items: items as any, 
         folio_number: `RAN-${ticket.id?.slice(-6) || Date.now()}`
       });
-
+      
+      // 7. Send by email
       await facturapi.invoices.sendByEmail(invoice.id);
-
       return {
         success: true,
         invoiceId: invoice.id,
         invoiceUrl: invoice.pdf_url,
         status: invoice.status
       };
+
     } catch (e: any) {
-      console.error('FacturAPI invoice error:', e.data || e.message);
-      return {
-        success: false,
-        error: `Error al crear factura: ${e.data?.message || e.message}`
-      };
+        // Step 1 (cont.): Ensure catch block returns a simple, serializable object.
+        console.error('❌ Error general en createInvoiceFlow:', e);
+        return {
+            success: false,
+            error: e?.data?.message || e?.message || 'Error inesperado al crear la factura'
+        };
     }
   }
 );
 
+// ... (resto del archivo sin cambios)
 /* -------------------------------------
  * ❌ Cancelar factura CFDI
  * ------------------------------------- */
@@ -187,7 +172,7 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
   try {
     const facturapi = await getFacturapiInstance();
     await facturapi.invoices.cancel(invoiceId, {
-      motive: '02', // 01: Comprobante emitido con errores con relación. 02: Comprobante emitido con errores sin relación. 
+      motive: '02',
     });
     return { success: true };
   } catch (e: any) {
@@ -256,7 +241,6 @@ const getInvoicesFlow = ai.defineFlow(
   async () => {
     try {
       const facturapi = await getFacturapiInstance();
-      // Fetch all invoices, sorted by date descending.
       const response = await facturapi.invoices.list({ limit: 100, page: 1, 'date[gte]': '2023-01-01' });
       return response;
     } catch (e: any) {

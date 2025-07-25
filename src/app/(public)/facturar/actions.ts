@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createInvoice } from '@/ai/flows/billing-flow';
@@ -14,7 +15,7 @@ export async function createInvoiceAction(
   ticketData: SaleReceipt | ServiceRecord
 ) {
   try {
-    const result = await createInvoice({
+    const response = await createInvoice({
       customer: {
         ...customerData,
         paymentForm: '01', // Default to 'Efectivo' for now
@@ -22,10 +23,15 @@ export async function createInvoiceAction(
       ticket: ticketData,
     });
     
+    // Step 2: Ensure proper handling of the flow's response
+    if (!response?.success) {
+        throw new Error(response?.error || 'Error inesperado desde el flujo de creación.');
+    }
+
     // Optional: revalidate paths if invoice creation should update some cached data
     // revalidatePath('/facturacion-admin/historial'); 
 
-    return result;
+    return response;
   } catch (error) {
     console.error("Error in createInvoiceAction:", error);
     // Return a serializable error object

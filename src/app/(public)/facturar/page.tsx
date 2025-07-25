@@ -80,16 +80,15 @@ export default function FacturarPage() {
     setIsSubmitting(true);
     try {
       const result = await createInvoiceAction(data, searchResult);
-      if (result.success) {
-        toast({ title: "¡Factura Creada!", description: "La factura ha sido creada y enviada a su correo.", duration: 7000 });
-        setSearchResult(null); // Reset form
-        searchForm.reset();
-      } else {
-        throw new Error(result.error);
+      if (!result.success) {
+        throw new Error(result.error || 'Error al crear factura');
       }
-    } catch (e: any) {
-      console.error("Error creating invoice", e);
-      toast({ title: "Error al Facturar", description: e.message, variant: "destructive", duration: 7000 });
+      toast({ title: "¡Factura Creada!", description: "La factura ha sido creada y enviada a su correo.", duration: 7000 });
+      setSearchResult(null); // Reset form
+      searchForm.reset();
+    } catch (err: any) {
+      console.error('❌ Error al crear factura:', err);
+      toast({ title: "Error al Facturar", description: err.message, variant: "destructive", duration: 7000 });
     } finally {
       setIsSubmitting(false);
     }
