@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Loader2, Search, FileText, FileJson } from 'lucide-react';
+import { Loader2, Search, FileText, FileJson, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { billingService } from '@/lib/services/billing.service';
@@ -24,6 +24,7 @@ import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Progress } from '@/components/ui/progress';
 
 const searchSchema = z.object({
   folio: z.string().min(5, "El folio debe tener al menos 5 caracteres.").trim(),
@@ -33,6 +34,16 @@ const searchSchema = z.object({
 type SearchFormValues = z.infer<typeof searchSchema>;
 type TicketType = SaleReceipt | ServiceRecord;
 
+const LoadingOverlay = ({ message }: { message: string }) => (
+    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 transition-opacity duration-300">
+        <div className="text-center p-8 space-y-4">
+            <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
+            <h3 className="text-xl font-semibold tracking-tight">Procesando Solicitud</h3>
+            <p className="text-muted-foreground">{message}</p>
+        </div>
+    </div>
+);
+
 export default function FacturarPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +51,8 @@ export default function FacturarPage() {
   const [searchResult, setSearchResult] = useState<TicketType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>({});
+  const [submissionSuccess, setSubmissionSuccess] = useState(false);
+
 
   useEffect(() => {
     const stored = localStorage.getItem('workshopTicketInfo');
@@ -84,13 +97,10 @@ export default function FacturarPage() {
       if (!result.success) {
         throw new Error(result.error || 'Error al crear factura');
       }
-      toast({ title: "¡Factura Creada!", description: "La factura ha sido creada y enviada a su correo.", duration: 7000 });
-      setSearchResult(null); // Reset form
-      searchForm.reset();
+      setSubmissionSuccess(true);
     } catch (err: any) {
       console.error('❌ Error al crear factura:', err);
       toast({ title: "Error al Facturar", description: err.message, variant: "destructive", duration: 7000 });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -100,10 +110,8 @@ export default function FacturarPage() {
     let dateField: any;
   
     if ('saleDate' in ticket) {
-      // It's a SaleReceipt
       dateField = ticket.saleDate;
     } else {
-      // It's a ServiceRecord, prioritize delivery date
       dateField = ticket.deliveryDateTime || ticket.serviceDate;
     }
     
@@ -112,6 +120,25 @@ export default function FacturarPage() {
   
   const ticketDate = getTicketDate(searchResult);
   const ticketTotal = searchResult ? ('totalAmount' in searchResult ? searchResult.totalAmount : (searchResult.totalCost || 0)) : 0;
+  
+  if (submissionSuccess) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+             <Card className="max-w-md w-full text-center shadow-lg animate-in fade-in zoom-in-95">
+                <CardContent className="p-8">
+                    <CheckCircle className="mx-auto h-20 w-20 text-green-500 mb-6" />
+                    <CardTitle className="text-2xl mb-2">¡Factura Generada!</CardTitle>
+                    <CardDescription className="mb-8">
+                        Tu factura ha sido creada exitosamente. En breve la recibirás en tu correo electrónico.
+                    </CardDescription>
+                    <Button onClick={() => window.location.reload()} className="w-full">
+                        Facturar otro ticket
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
@@ -136,7 +163,8 @@ export default function FacturarPage() {
       </header>
       <main className="flex-1 py-8 md:py-12 lg:py-16">
         <div className="container mx-auto max-w-xl px-4 md:px-6">
-          <Card>
+          <Card className="relative overflow-hidden">
+             {isSubmitting && <LoadingOverlay message="Estamos timbrando tu factura, por favor espera un momento..." />}
             <CardHeader>
               <CardTitle className="text-2xl">Portal de Auto-Facturación</CardTitle>
               <CardDescription>
