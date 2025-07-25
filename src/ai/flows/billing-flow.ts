@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { regimesFisica, regimesMoral, detectarTipoPersona } from '@/lib/sat-catalogs';
 
 
-const FDC_API_BASE_URL = 'https://api.factura.com/v1';
+const FDC_API_BASE_URL = 'https://api.factura.com/v4';
 
 // --- Utility to get Factura.com API credentials ---
 const getFacturaComInstance = async () => {

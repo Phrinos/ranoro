@@ -21,7 +21,7 @@ import { BillingForm } from './components/billing-form';
 import { billingFormSchema, type BillingFormValues } from './components/billing-schema';
 import { createInvoiceAction } from './actions';
 import { formatCurrency } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const searchSchema = z.object({
@@ -94,7 +94,23 @@ export default function FacturarPage() {
     }
   };
 
-  const ticketDate = searchResult ? ('saleDate' in searchResult ? searchResult.saleDate : searchResult.serviceDate) : null;
+  const getTicketDate = (ticket: TicketType | null): Date | null => {
+    if (!ticket) return null;
+    const dateField = 'saleDate' in ticket ? ticket.saleDate : ticket.serviceDate;
+    if (dateField && typeof dateField.toDate === 'function') {
+      return dateField.toDate(); // Handle Firestore Timestamp
+    }
+    if (dateField instanceof Date) {
+      return dateField;
+    }
+    if (typeof dateField === 'string') {
+        const parsed = new Date(dateField);
+        if (!isNaN(parsed.getTime())) return parsed;
+    }
+    return null;
+  };
+  
+  const ticketDate = getTicketDate(searchResult);
   const ticketTotal = searchResult ? ('totalAmount' in searchResult ? searchResult.totalAmount : (searchResult.totalCost || 0)) : 0;
 
   return (
@@ -173,7 +189,7 @@ export default function FacturarPage() {
                       <AlertTitle className="text-green-700">Ticket Encontrado</AlertTitle>
                       <AlertDescription>
                         <p><strong>Folio:</strong> {searchResult.id}</p>
-                        <p><strong>Fecha:</strong> {ticketDate ? format(parseISO(ticketDate), "dd MMMM, yyyy", {locale: es}) : 'N/A'}</p>
+                        <p><strong>Fecha:</strong> {ticketDate ? format(ticketDate, "dd MMMM, yyyy", {locale: es}) : 'N/A'}</p>
                         <p><strong>Total:</strong> {formatCurrency(ticketTotal)}</p>
                       </AlertDescription>
                   </Alert>
