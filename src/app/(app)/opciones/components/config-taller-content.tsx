@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Save, Upload, Loader2, Building, User, Crop, FileJson } from 'lucide-react';
+import { Save, Upload, Loader2, Building, User, Crop } from 'lucide-react';
 import type { WorkshopInfo } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { storage, db } from '@/lib/firebaseClient.js';
@@ -23,7 +23,14 @@ import ReactCrop, { centerCrop, makeAspectCrop, type Crop as ReactCropType } fro
 import 'react-image-crop/dist/ReactCrop.css';
 
 const TIMEZONE_OPTIONS = [
-  // ... (timezone options remain the same)
+    'America/Mexico_City',
+    'America/Cancun',
+    'America/Tijuana',
+    'America/Hermosillo',
+    'America/Mazatlan',
+    'America/Chihuahua',
+    'America/Monterrey',
+    'America/Merida',
 ];
 
 const LOCALSTORAGE_KEY = 'workshopTicketInfo';
@@ -39,10 +46,6 @@ const tallerSchema = z.object({
   contactPersonName: z.string().optional(),
   contactPersonPhone: z.string().optional(),
   contactPersonRole: z.string().optional(),
-  // Corrected field names
-  facturaComApiKey: z.string().optional(),
-  facturaComApiSecret: z.string().optional(),
-  facturaComBillingMode: z.enum(['live', 'test']).optional(),
 });
 
 type TallerFormValues = z.infer<typeof tallerSchema>;
@@ -60,10 +63,7 @@ export function ConfigTallerPageContent() {
 
   const form = useForm<TallerFormValues>({
     resolver: zodResolver(tallerSchema),
-    defaultValues: {
-        name: 'RANORO', phone: '', addressLine1: '', logoUrl: '/ranoro-logo.png', timezone: 'America/Mexico_City',
-        facturaComBillingMode: 'test',
-    },
+    defaultValues: { name: 'RANORO', phone: '', addressLine1: '', logoUrl: '/ranoro-logo.png', timezone: 'America/Mexico_City'},
   });
 
   const watchedLogoUrl = form.watch('logoUrl');
@@ -98,7 +98,71 @@ export function ConfigTallerPageContent() {
     }
   };
   
-  // ... (image upload and crop logic remains the same)
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => setImgSrc(String(reader.result)));
+      reader.readAsDataURL(e.target.files[0]);
+      setIsCropping(true);
+    }
+  };
+
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    const aspect = 16 / 6;
+    const newCrop = centerCrop(
+      makeAspectCrop({ unit: '%', width: 90 }, aspect, width, height),
+      width, height
+    );
+    setCrop(newCrop);
+  };
+
+  const handleCropComplete = async () => {
+    if (!previewCanvasRef.current || !imgRef.current) return;
+    const canvas = previewCanvasRef.current;
+    const image = imgRef.current;
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    const pixelCrop = completedCrop;
+
+    if (!pixelCrop) return;
+
+    canvas.width = pixelCrop.width * scaleX;
+    canvas.height = pixelCrop.height * scaleY;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x * scaleX,
+      pixelCrop.y * scaleY,
+      pixelCrop.width * scaleX,
+      pixelCrop.height * scaleY,
+      0, 0,
+      pixelCrop.width * scaleX,
+      pixelCrop.height * scaleY
+    );
+
+    const base64Image = canvas.toDataURL('image/png');
+    
+    setIsUploading(true);
+    toast({ title: 'Subiendo logo...', description: 'Por favor, espere.' });
+
+    try {
+      const optimizedUrl = await optimizeImage(base64Image, 400);
+      const storageRef = ref(storage, `workshop-logos/logo-${Date.now()}.png`);
+      await uploadString(storageRef, optimizedUrl, 'data_url');
+      const downloadURL = await getDownloadURL(storageRef);
+      form.setValue('logoUrl', downloadURL, { shouldDirty: true });
+      toast({ title: '¡Logo actualizado!', description: 'La nueva imagen se ha cargado correctamente.' });
+    } catch(e) {
+      console.error(e);
+      toast({ title: "Error al subir", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      setIsCropping(false);
+    }
+  };
 
   return (
     <>
@@ -111,30 +175,32 @@ export function ConfigTallerPageContent() {
           </CardHeader>
           <CardContent className="space-y-6">
             
-            {/* ... (Logo and General Info cards remain the same) ... */}
-
             <Card>
-              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><FileJson />Configuración de Facturación (Factura.com)</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Building/>Información General y Logo</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                  <FormField
-                      control={form.control}
-                      name="facturaComBillingMode"
-                      render={({ field }) => (
-                          <FormItem>
-                              <FormLabel>Modo de Facturación</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value ?? 'test'}>
-                                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                  <SelectContent>
-                                      <SelectItem value="test">Pruebas (Sandbox)</SelectItem>
-                                      <SelectItem value="live">Producción (Live)</SelectItem>
-                                  </SelectContent>
-                              </Select>
-                              <FormMessage />
-                          </FormItem>
-                      )}
-                  />
-                  <FormField control={form.control} name="facturaComApiKey" render={({ field }) => (<FormItem><FormLabel>API Key</FormLabel><FormControl><Input placeholder="Tu API Key de Factura.com" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="facturaComApiSecret" render={({ field }) => (<FormItem><FormLabel>API Secret</FormLabel><FormControl><Input type="password" placeholder="Tu API Secret de Factura.com" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                  <div className="flex flex-col sm:flex-row gap-4 items-center">
+                    <div className="w-48 h-16 flex-shrink-0 bg-muted/50 rounded-md flex items-center justify-center border relative">
+                        {watchedLogoUrl ? <Image src={watchedLogoUrl} alt="Logo del Taller" fill style={{objectFit:"contain"}} sizes="192px" data-ai-hint="workshop logo"/> : <p className="text-xs text-muted-foreground">Sin logo</p>}
+                    </div>
+                    <div className="w-full">
+                      <FormLabel>Subir/Cambiar Logo</FormLabel>
+                      <Button type="button" variant="outline" className="w-full mt-2" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>{isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}{isUploading ? "Subiendo..." : "Seleccionar Imagen"}</Button>
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/png, image/jpeg, image/webp" onChange={onFileChange} />
+                    </div>
+                  </div>
+                  <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Taller</FormLabel><FormControl><Input {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono de Contacto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                  <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Calle, Número, Colonia, C.P." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                   <FormField control={form.control} name="googleMapsUrl" render={({ field }) => (<FormItem><FormLabel>URL de Google Maps (Opcional)</FormLabel><FormControl><Input type="url" placeholder="https://maps.app.goo.gl/..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><User/>Contacto Adicional (Opcional)</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="contactPersonName" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl></FormItem> )}/>
+                  <FormField control={form.control} name="contactPersonPhone" render={({ field }) => ( <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input {...field} value={field.value ?? ''}/></FormControl></FormItem> )}/>
+                  <FormField control={form.control} name="contactPersonRole" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Puesto</FormLabel><FormControl><Input placeholder="Gerente, Jefe de Taller, etc." {...field} value={field.value ?? ''}/></FormControl></FormItem> )}/>
               </CardContent>
             </Card>
 
@@ -146,7 +212,28 @@ export function ConfigTallerPageContent() {
       </Form>
     </Card>
 
-    {/* ... (Dialog for cropping remains the same) ... */}
+    <Dialog open={isCropping} onOpenChange={setIsCropping}>
+      <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Recortar Logo</DialogTitle></DialogHeader>
+          <div className="my-4" style={{ display: 'flex', justifyContent: 'center' }}>
+              {imgSrc && (
+                  <ReactCrop
+                      crop={crop}
+                      onChange={c => setCrop(c)}
+                      onComplete={(c) => setCompletedCrop(c)}
+                      aspect={16 / 6}
+                      minWidth={100}
+                  >
+                      <Image ref={imgRef} src={imgSrc} alt="Imagen para recortar" onLoad={onImageLoad} width={600} height={400} style={{maxHeight: "70vh"}}/>
+                  </ReactCrop>
+              )}
+          </div>
+          <canvas ref={previewCanvasRef} style={{ display: 'none' }} />
+          <DialogFooter>
+            <Button onClick={handleCropComplete} disabled={isUploading}><Crop className="mr-2 h-4 w-4" />Recortar y Subir</Button>
+          </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
