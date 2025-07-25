@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { billingFormSchema } from '@/app/(public)/facturar/components/billing-schema';
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebasePublic';
+import { db } from '@/lib/firebaseClient.js';
 import { format } from 'date-fns';
 import { regimesFisica, regimesMoral, detectarTipoPersona } from '@/lib/sat-catalogs';
 
@@ -79,34 +79,36 @@ const createInvoiceFlow = ai.defineFlow(
           throw new Error(`El régimen fiscal (${taxSystem}) no es válido para persona moral.`);
       }
 
-      const ticketItems = ('items' in ticket && Array.isArray(ticket.items) 
-        ? ticket.items 
-        : ('serviceItems' in ticket && Array.isArray(ticket.serviceItems) 
-            ? ticket.serviceItems 
-            : [])
-      ).map(item => {
-          const quantity = 'quantity' in item ? item.quantity : 1;
-          const name = 'itemName' in item ? item.itemName : 'name' in item ? item.name : 'Artículo';
-          const price = ('totalPrice' in item && item.quantity > 0) 
-              ? (item.totalPrice / quantity) 
-              : ('price' in item ? item.price || 0 : 0);
-              
-          return {
-            quantity: quantity,
-            product: {
-              description: name,
-              price: price,
-              tax_included: true,
-              product_key: '81111500', // Servicios de Mantenimiento y Reparación de Vehículos
-              unit_key: 'E48', // Unidad de servicio
-            }
-          };
-      });
+      const IVA_RATE = 0.16;
+
+      // Unify item processing
+      let ticketItems;
+      if ('items' in ticket && Array.isArray(ticket.items)) { // This is a SaleReceipt
+          ticketItems = ticket.items.map((item: any) => ({
+              quantity: item.quantity,
+              product: {
+                  description: item.itemName,
+                  price: item.unitPrice / (1 + IVA_RATE), // Calculate pre-tax price
+                  tax_included: false, // Price is now pre-tax
+                  product_key: '01010101', // Generic product key
+                  unit_key: 'H87', // Pieza
+              }
+          }));
+      } else { // This is a ServiceRecord
+          ticketItems = (ticket.serviceItems || []).map((item: any) => ({
+              quantity: 1, // Service items are usually a single unit
+              product: {
+                  description: item.name,
+                  price: item.price / (1 + IVA_RATE), // Calculate pre-tax price
+                  tax_included: false,
+                  product_key: '81111500', // Maintenance and Repair Services
+                  unit_key: 'E48', // Unit of service
+              }
+          }));
+      }
 
       const invoiceData = {
-        series: 'RAN',
         use: customer.cfdiUse,
-        payment_form: customer.paymentForm || '01',
         customer: {
           legal_name: customer.name,
           tax_id: customer.rfc,
@@ -117,6 +119,8 @@ const createInvoiceFlow = ai.defineFlow(
           }
         },
         items: ticketItems,
+        payment_form: customer.paymentForm || '01',
+        series: 'RAN',
       };
 
       const url = `${FDC_API_BASE_URL}/invoices`;
@@ -132,7 +136,8 @@ const createInvoiceFlow = ai.defineFlow(
       const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(responseData.message || 'Error desconocido de Factura.com');
+        const errorMessage = responseData.message || (Array.isArray(responseData.errors) ? responseData.errors.map((e: any) => e.message).join(', ') : 'Error desconocido de Factura.com');
+        throw new Error(errorMessage);
       }
 
       return {
