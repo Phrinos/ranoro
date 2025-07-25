@@ -48,7 +48,15 @@ const CreateInvoiceOutputSchema = z.object({
 export async function createInvoice(
   input: z.infer<typeof CreateInvoiceInputSchema>
 ): Promise<z.infer<typeof CreateInvoiceOutputSchema>> {
-  return createInvoiceFlow(input);
+  try {
+    return await createInvoiceFlow(input);
+  } catch (e: any) {
+    console.error('❌ Error en createInvoice wrapper:', e);
+    return {
+      success: false,
+      error: e.message || 'Error inesperado en el wrapper de facturación',
+    };
+  }
 }
 
 const createInvoiceFlow = ai.defineFlow(
