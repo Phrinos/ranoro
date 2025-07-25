@@ -20,8 +20,8 @@ import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { BillingForm } from './components/billing-form';
 import { billingFormSchema, type BillingFormValues } from './components/billing-schema';
 import { createInvoiceAction } from './actions';
-import { formatCurrency } from '@/lib/utils';
-import { format } from 'date-fns';
+import { formatCurrency, parseDate } from '@/lib/utils';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const searchSchema = z.object({
@@ -96,18 +96,17 @@ export default function FacturarPage() {
 
   const getTicketDate = (ticket: TicketType | null): Date | null => {
     if (!ticket) return null;
-    const dateField = 'saleDate' in ticket ? ticket.saleDate : ticket.serviceDate;
-    if (dateField && typeof dateField.toDate === 'function') {
-      return dateField.toDate(); // Handle Firestore Timestamp
+    let dateField: any;
+  
+    if ('saleDate' in ticket) {
+      // It's a SaleReceipt
+      dateField = ticket.saleDate;
+    } else {
+      // It's a ServiceRecord, prioritize delivery date
+      dateField = ticket.deliveryDateTime || ticket.serviceDate;
     }
-    if (dateField instanceof Date) {
-      return dateField;
-    }
-    if (typeof dateField === 'string') {
-        const parsed = new Date(dateField);
-        if (!isNaN(parsed.getTime())) return parsed;
-    }
-    return null;
+    
+    return parseDate(dateField);
   };
   
   const ticketDate = getTicketDate(searchResult);
@@ -189,7 +188,7 @@ export default function FacturarPage() {
                       <AlertTitle className="text-green-700">Ticket Encontrado</AlertTitle>
                       <AlertDescription>
                         <p><strong>Folio:</strong> {searchResult.id}</p>
-                        <p><strong>Fecha:</strong> {ticketDate ? format(ticketDate, "dd MMMM, yyyy", {locale: es}) : 'N/A'}</p>
+                        <p><strong>Fecha:</strong> {ticketDate && isValid(ticketDate) ? format(ticketDate, "dd MMMM, yyyy", {locale: es}) : 'N/A'}</p>
                         <p><strong>Total:</strong> {formatCurrency(ticketTotal)}</p>
                       </AlertDescription>
                   </Alert>
