@@ -74,14 +74,14 @@ const createInvoiceFlow = ai.defineFlow(
     const isMoral = rfc.length === 12;
     const isFisica = rfc.length === 13;
 
-    if (isFisica && taxSystem.startsWith('60')) {
-        // Valid for physical person
-    } else if (isMoral && (taxSystem.startsWith('60') || taxSystem === '626')) {
-        // Valid for moral person
-    } else if (!isFisica && !isMoral) {
+    if (isFisica && !taxSystem.startsWith('6')) {
+        throw new Error(`El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona física.`);
+    }
+    if (isMoral && taxSystem !== '601' && taxSystem !== '603' && taxSystem !== '626') {
+         throw new Error(`El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona moral.`);
+    }
+    if (!isFisica && !isMoral) {
         throw new Error('El RFC proporcionado no parece ser válido (debe tener 12 o 13 caracteres).');
-    } else {
-        throw new Error(`El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona ${isFisica ? 'física' : 'moral'}.`);
     }
 
     let customer;
