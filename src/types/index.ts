@@ -31,10 +31,10 @@ export interface WorkshopInfo {
   contactPersonPhone?: string;
   contactPersonRole?: string;
   timezone?: string;
-  // FacturAPI fields
-  facturapiLiveApiKey?: string;
-  facturapiTestApiKey?: string;
-  facturapiBillingMode?: 'live' | 'test';
+  // Factura.com fields
+  facturaComApiKey?: string;
+  facturaComApiSecret?: string;
+  facturaComBillingMode?: 'live' | 'test';
 }
 
 export interface Area {
@@ -149,7 +149,7 @@ export interface OwnerWithdrawal {
 export interface VehicleExpense {
   id: string;
   vehicleId: string;
-  vehicleLicensePlate: string;
+  vehicleLicensePlate:. string;
   date: string; // ISO String
   amount: number;
   description: string;
@@ -493,7 +493,7 @@ export interface PricedService {
 }
 
 export interface VehiclePriceList {
-  id: string;
+  id:string;
   make: string;
   model: string;
   years: number[];

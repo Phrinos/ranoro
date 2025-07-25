@@ -22,9 +22,9 @@ import { HistorialContent } from './historial-content';
 const FIRESTORE_DOC_ID = 'main';
 
 const facturapiSchema = z.object({
-  facturapiLiveApiKey: z.string().optional().or(z.literal('')),
-  facturapiTestApiKey: z.string().optional().or(z.literal('')),
-  facturapiBillingMode: z.enum(['live', 'test']).default('test'),
+  facturaComApiKey: z.string().optional().or(z.literal('')),
+  facturaComApiSecret: z.string().optional().or(z.literal('')),
+  facturaComBillingMode: z.enum(['live', 'test']).default('test'),
 });
 
 type FacturapiFormValues = z.infer<typeof facturapiSchema>;
@@ -35,9 +35,9 @@ function ConfiguracionContent() {
   const form = useForm<FacturapiFormValues>({
     resolver: zodResolver(facturapiSchema),
     defaultValues: {
-        facturapiLiveApiKey: '',
-        facturapiTestApiKey: '',
-        facturapiBillingMode: 'test'
+        facturaComApiKey: '',
+        facturaComApiSecret: '',
+        facturaComBillingMode: 'test'
     },
   });
   
@@ -59,7 +59,7 @@ function ConfiguracionContent() {
         const configRef = doc(db, 'workshopConfig', FIRESTORE_DOC_ID);
         await setDoc(configRef, data, { merge: true });
       }
-      toast({ title: 'Configuración guardada', description: 'Se actualizó la configuración de FacturAPI.', duration: 3000 });
+      toast({ title: 'Configuración guardada', description: 'Se actualizó la configuración de Factura.com.', duration: 3000 });
     } catch {
       toast({ title: 'Error al guardar', variant: 'destructive', duration: 3000 });
     }
@@ -69,23 +69,23 @@ function ConfiguracionContent() {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Configuración de FacturAPI</CardTitle>
+            <CardTitle>Configuración de Factura.com</CardTitle>
             <CardDescription>
-              Ingresa tus credenciales de FacturAPI para habilitar la facturación.
+              Ingresa tus credenciales de Factura.com para habilitar la facturación.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField control={form.control} name="facturapiLiveApiKey" render={({ field }) => (<FormItem><FormLabel>Live API Key</FormLabel><FormControl><Input type="password" placeholder="sk_live_..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="facturapiTestApiKey" render={({ field }) => (<FormItem><FormLabel>Test API Key</FormLabel><FormControl><Input type="password" placeholder="sk_test_..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="facturapiBillingMode" render={({ field }) => (
+                <FormField control={form.control} name="facturaComApiKey" render={({ field }) => (<FormItem><FormLabel>API Key</FormLabel><FormControl><Input type="password" placeholder="Tu API Key de Factura.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="facturaComApiSecret" render={({ field }) => (<FormItem><FormLabel>API Secret</FormLabel><FormControl><Input type="password" placeholder="Tu API Secret de Factura.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="facturaComBillingMode" render={({ field }) => (
                     <FormItem>
                     <FormLabel>Modo de Facturación</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
-                        <SelectItem value="test">Pruebas (Test)</SelectItem>
+                        <SelectItem value="test">Pruebas (Sandbox)</SelectItem>
                         <SelectItem value="live">Producción (Live)</SelectItem>
                         </SelectContent>
                     </Select>
@@ -131,7 +131,7 @@ export function FacturacionAdminPageComponent() {
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Facturación</h1>
-        <p className="text-primary-foreground/80 mt-1">Configura tu conexión con FacturAPI y gestiona tu portal de cliente.</p>
+        <p className="text-primary-foreground/80 mt-1">Configura tu conexión con Factura.com y gestiona tu portal de cliente.</p>
       </div>
       
       <Button asChild size="lg" className="w-full mb-6">

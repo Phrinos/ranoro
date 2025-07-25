@@ -39,6 +39,8 @@ const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() =>
             services.push({ id: doc.id, ...doc.data() } as ServiceRecord);
         });
         callback(services);
+    }, (error) => {
+        console.error("Error in onServicesUpdate listener:", error);
     });
     return unsubscribe;
 };
@@ -342,6 +344,8 @@ const onSalesUpdate = (callback: (sales: SaleReceipt[]) => void): (() => void) =
             sales.push({ id: doc.id, ...doc.data() } as SaleReceipt);
         });
         callback(sales);
+    }, (error) => {
+        console.error("Error in onSalesUpdate listener:", error);
     });
     return unsubscribe;
 };
@@ -395,6 +399,8 @@ const onCashTransactionsUpdate = (callback: (transactions: CashDrawerTransaction
     const q = query(collection(db, "cashDrawerTransactions"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         callback(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CashDrawerTransaction)));
+    }, (error) => {
+        console.error("Error in onCashTransactionsUpdate listener:", error);
     });
     return unsubscribe;
 };
@@ -436,6 +442,8 @@ const onInitialCashBalanceUpdate = (callback: (balance: InitialCashBalance | nul
     const docRef = doc(db, "initialCashBalances", todayStr);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
         callback(docSnap.exists() ? docSnap.data() as InitialCashBalance : null);
+    }, (error) => {
+        console.error("Error in onInitialCashBalanceUpdate listener:", error);
     });
     return unsubscribe;
 };
@@ -454,6 +462,8 @@ const onRentalPaymentsUpdate = (callback: (payments: RentalPayment[]) => void): 
     const q = query(collection(db, "rentalPayments"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         callback(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RentalPayment)));
+    }, (error) => {
+        console.error("Error in onRentalPaymentsUpdate listener:", error);
     });
     return unsubscribe;
 };
@@ -510,6 +520,8 @@ const onVehicleExpensesUpdate = (callback: (expenses: VehicleExpense[]) => void)
     const q = query(collection(db, "vehicleExpenses"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehicleExpense)));
+    }, (error) => {
+        console.error("Error in onVehicleExpensesUpdate listener:", error);
     });
     return unsubscribe;
 };
@@ -540,6 +552,8 @@ const onOwnerWithdrawalsUpdate = (callback: (withdrawals: OwnerWithdrawal[]) => 
   const q = query(collection(db, "ownerWithdrawals"));
   const unsubscribe = onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as OwnerWithdrawal)));
+  }, (error) => {
+      console.error("Error in onOwnerWithdrawalsUpdate listener:", error);
   });
   return unsubscribe;
 };
