@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import Link from "next/link";
@@ -34,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import type { User, NavigationEntry } from "@/types";
+import { SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 
 export function AppSidebar({
@@ -79,6 +79,12 @@ export function AppSidebar({
 
   return (
     <Sidebar collapsible="icon" side="left" variant="sidebar" className="app-sidebar">
+      {/* This is a visually hidden title and description for mobile screen readers */}
+      <SheetTitle className="sr-only">Navegación Principal</SheetTitle>
+      <SheetDescription className="sr-only">
+        Un menú con enlaces a las principales secciones de la aplicación.
+      </SheetDescription>
+      
       <SidebarHeader className="border-b border-sidebar-border h-16 flex items-center justify-center">
         <Link
           href="/dashboard"
