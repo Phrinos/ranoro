@@ -106,7 +106,7 @@ const createInvoiceFlow = ai.defineFlow(
             ClaveProducto: '81111500', 
             ClaveUnidad: 'E48', 
             Cantidad: 1, 
-            Precio: item.price / (1 + IVA_RATE),
+            Precio: (item.price || 0) / (1 + IVA_RATE),
         }));
     }
 
@@ -115,7 +115,7 @@ const createInvoiceFlow = ai.defineFlow(
             Rfc: customer.rfc,
             Nombre: customer.name,
             UsoCFDI: customer.cfdiUse,
-            RegimenFiscal: customer.taxSystem,
+            RegimenFiscalReceptor: customer.taxSystem, // Campo correcto para v4
             DomicilioFiscalReceptor: {
                 CodigoPostal: customer.address.zip
             },
@@ -148,8 +148,12 @@ const createInvoiceFlow = ai.defineFlow(
 
     if (!response.ok) {
         console.error(`❌ Factura.com API Error (${response.status}):`, responseData);
-        const errorMessage = responseData.message || 'Error desconocido de Factura.com';
-        throw new Error(errorMessage);
+        const errorMessage = responseData.message || (Array.isArray(responseData.errors) ? responseData.errors.map((e: any) => e.message).join(', ') : 'Error desconocido de Factura.com');
+        throw new Error(`Error de comunicación con el servicio de facturación (código: ${response.status}). Intente de nuevo más tarde.`);
+    }
+    
+    if (responseData.Status !== 'valid') {
+        throw new Error(`La factura fue recibida pero no pudo ser validada (Estado: ${responseData.Status}). Revise los datos e intente de nuevo. Detalles: ${responseData.message || 'Sin detalles'}`);
     }
 
     return {
@@ -186,7 +190,7 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
     const response = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ Motivo: '02' })
+      body: JSON.stringify({ Motivo: '02' }) // 02 = Comprobante emitido con errores sin relación.
     });
 
     if (!response.ok) {
@@ -238,7 +242,7 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
  * 🧾 Obtener historial de facturas
  * ------------------------------------- */
 
-export async function getInvoices(): Promise<any> {
+export async function getInvoices(): Promise<{ data: any[], error?: string, page?: number, total_pages?: number, total_results?: number }> {
   const facturaCom = await getFacturaComInstance();
   if (facturaCom === null) {
     return { data: [], error: "No se han configurado las credenciales de Factura.com." };
