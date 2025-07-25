@@ -5,18 +5,11 @@ import { z } from 'zod';
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient.js';
-import { format } from 'date-fns';
-import { regimesFisica, regimesMoral, detectarTipoPersona } from '@/lib/sat-catalogs';
-
+import Facturapi from 'facturapi';
 
 // --- Zod Schemas ---
-// Define a local schema that includes all necessary fields for the backend flow.
-// This avoids module boundary issues with client-side schemas.
 const billingFormSchema = z.object({
-  rfc: z.string()
-    .trim()
-    .min(12, { message: 'El RFC debe tener entre 12 y 13 caracteres.' })
-    .max(13, { message: 'El RFC debe tener entre 12 y 13 caracteres.' }),
+  rfc: z.string().trim().min(12, { message: 'El RFC debe tener entre 12 y 13 caracteres.' }).max(13, { message: 'El RFC debe tener entre 12 y 13 caracteres.' }),
   name: z.string().min(1, { message: 'El nombre o razón social es requerido.' }),
   email: z.string().email({ message: 'Correo inválido.' }),
   address: z.object({
@@ -24,7 +17,6 @@ const billingFormSchema = z.object({
   }),
   taxSystem: z.string().trim().min(1, { message: 'Debe seleccionar un régimen fiscal.'}),
   cfdiUse: z.string().min(1, { message: 'El Uso de CFDI es requerido en el backend.' }),
-  paymentForm: z.string().optional(),
 });
 
 
@@ -51,12 +43,11 @@ const getFacturaComInstance = async () => {
   const workshopInfo = configSnap.data() as WorkshopInfo;
   
   const apiKey = (workshopInfo.facturaComApiKey || '').trim();
-  const apiSecret = (workshopInfo.facturaComApiSecret || '').trim();
   if (!apiKey) return null;
 
   const isLiveMode = workshopInfo.facturaComBillingMode === 'live';
   
-  return { apiKey, apiSecret, isLiveMode };
+  return { apiKey, isLiveMode };
 };
 
 
@@ -70,9 +61,11 @@ export async function createInvoice(
     return await createInvoiceFlow(input);
   } catch (e: any) {
     console.error('❌ Error en createInvoice wrapper:', e);
+    // Attempt to extract a meaningful message from Facturapi's error object
+    const errorMessage = e?.message || (e?.data?.message ? `${e.data.message} (${e.data.code})` : 'Error inesperado en el wrapper de facturación.');
     return {
       success: false,
-      error: e.message || 'Error inesperado en el wrapper de facturación',
+      error: errorMessage,
     };
   }
 }
@@ -84,26 +77,28 @@ const createInvoiceFlow = ai.defineFlow(
     outputSchema: CreateInvoiceOutputSchema,
   },
   async (input) => {
-    const facturaCom = await getFacturaComInstance();
-    if (!facturaCom) {
+    const facturaComCredentials = await getFacturaComInstance();
+    if (!facturaComCredentials) {
       throw new Error('La configuración de facturación no ha sido establecida. Contacte al administrador del taller.');
     }
-    const { apiKey, apiSecret, isLiveMode } = facturaCom;
+    const { apiKey, isLiveMode } = facturaComCredentials;
+
+    const facturapi = new Facturapi(apiKey, { live: isLiveMode });
     
     const { customer, ticket } = input;
-    const rfc = (customer.rfc || '').trim();
-    const taxSystem = (customer.taxSystem || '').trim();
-    
-    const rfcType = detectarTipoPersona(rfc);
-    if (rfcType === 'invalido') throw new Error('El RFC proporcionado no tiene un formato válido.');
 
-    if (rfcType === 'fisica' && !regimesFisica.includes(taxSystem)) {
-      throw new Error(`El régimen fiscal (${taxSystem}) no es válido para persona física.`);
-    }
-    if (rfcType === 'moral' && !regimesMoral.includes(taxSystem)) {
-        throw new Error(`El régimen fiscal (${taxSystem}) no es válido para persona moral.`);
-    }
+    // STEP 1: Create or find the client to get their UID
+    const client = await facturapi.client.create({
+      rfc: customer.rfc,
+      legal_name: customer.name,
+      email: customer.email,
+      tax_system: customer.taxSystem,
+      address: {
+        zip: customer.address.zip
+      }
+    });
 
+    // STEP 2: Prepare invoice concepts
     const IVA_RATE = 0.16;
     let ticketItems;
 
@@ -131,87 +126,36 @@ const createInvoiceFlow = ai.defineFlow(
         const ivaTrasladado = parseFloat((importe * IVA_RATE).toFixed(2));
 
         return {
-            ClaveProdServ: item.claveProdServ,
-            Descripcion: item.description,
-            Cantidad: item.quantity,
-            ClaveUnidad: item.claveUnidad,
-            ValorUnitario: valorUnitario,
-            Importe: importe,
-            ObjetoImp: '02', // Yes, object of tax
-            Impuestos: {
-                Traslados: [{
-                    Base: importe,
-                    Impuesto: '002', // IVA
-                    TipoFactor: 'Tasa',
-                    TasaOCuota: '0.160000',
-                    Importe: ivaTrasladado
-                }]
-            }
+            product: {
+                description: item.description,
+                product_key: item.claveProdServ,
+                unit_key: item.claveUnidad,
+                price: valorUnitario,
+            },
+            quantity: item.quantity,
+            tax_included: false,
+            taxes: [{
+                type: 'IVA',
+                rate: IVA_RATE,
+            }]
         };
     });
-    
-    const receptorData: any = {
-        Rfc: customer.rfc,
-        Nombre: customer.name,
-        UsoCFDI: customer.cfdiUse.trim(), // Use the value passed from the client
-        RegimenFiscalReceptor: customer.taxSystem,
-        DomicilioFiscalReceptor: customer.address.zip,
-        Email: customer.email,
-    };
-    
-    // Add Uid if RFC is generic
-    if (customer.rfc === 'XAXX010101000' || customer.rfc === 'XEXX010101000') {
-      receptorData.Uid = `PG-${Date.now()}`;
-    }
 
-    const invoiceData = {
-        Serie: 'RAN',
-        Folio: ticket.id.slice(-10),
-        TipoDocumento: 'ingreso',
-        Moneda: 'MXN',
-        FormaPago: customer.paymentForm || '01',
-        MetodoPago: 'PUE',
-        LugarExpedicion: '20267', // Workshop's Zip Code
-
-        Receptor: receptorData,
-        Conceptos: conceptos,
-    };
-    
-    const host = isLiveMode ? 'https://api.factura.com' : 'https://sandbox.factura.com/api';
-    const url = `${host}/v4/cfdi40/create`;
-    
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      'F-Api-Key': apiKey,
-    };
-    if (apiSecret) {
-      headers['F-Secret-Key'] = apiSecret;
-    }
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(invoiceData)
+    // STEP 3: Create the invoice using the client UID
+    const invoice = await facturapi.invoice.create({
+      customer: client.id,
+      use: customer.cfdiUse.trim(),
+      payment_form: Facturapi.PaymentForm.Efectivo, // Asuming cash as per user's last request.
+      payment_method: Facturapi.PaymentMethod.PagoEnUnaSolaExhibicion,
+      series: 'RAN',
+      items: conceptos,
     });
     
-    const responseData = await response.json();
-
-    if (!response.ok) {
-        console.error(`❌ Factura.com API Error (${response.status}):`, responseData);
-        const errorMessage = responseData.message || (Array.isArray(responseData.errors) ? responseData.errors.map((e: any) => e.message).join(', ') : 'Error desconocido de Factura.com');
-        throw new Error(`Error de comunicación con el servicio de facturación (código: ${response.status}). Detalles: ${errorMessage}`);
-    }
-    
-    if (responseData.Status !== 'valid') {
-        const errorDetail = responseData.message || (Array.isArray(responseData.errors) ? responseData.errors.map((e: any) => e.message).join(', ') : 'Sin detalles del proveedor.');
-        throw new Error(`La factura fue recibida pero no pudo ser validada (Estado: ${responseData.Status || 'inválido'}). Revise los datos e intente de nuevo. Detalles: ${errorDetail}`);
-    }
-
     return {
       success: true,
-      invoiceId: responseData.UID,
-      invoiceUrl: responseData.PDF,
-      status: responseData.Status,
+      invoiceId: invoice.id,
+      invoiceUrl: invoice.pdf_url,
+      status: invoice.status,
     };
   }
 );
@@ -223,37 +167,20 @@ const createInvoiceFlow = ai.defineFlow(
 
 export async function cancelInvoice(invoiceId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const facturaCom = await getFacturaComInstance();
-    if (!facturaCom) throw new Error('Credenciales de facturación no configuradas.');
-    const { apiKey, apiSecret, isLiveMode } = facturaCom;
+    const facturaComCredentials = await getFacturaComInstance();
+    if (!facturaComCredentials) throw new Error('Credenciales de facturación no configuradas.');
+    const { apiKey, isLiveMode } = facturaComCredentials;
+
+    const facturapi = new Facturapi(apiKey, { live: isLiveMode });
     
-    const host = isLiveMode ? 'https://api.factura.com' : 'https://sandbox.factura.com/api';
-    const url = `${host}/v4/cfdi40/${invoiceId}/cancel`;
-
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      'F-Api-Key': apiKey,
-    };
-    if (apiSecret) {
-      headers['F-Secret-Key'] = apiSecret;
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ Motivo: '02' }) // 02 = Comprobante emitido con errores sin relación.
+    await facturapi.invoice.cancel(invoiceId, {
+      motive: Facturapi.Motive.ComprobanteEmitidoConErroresSinRelacion,
     });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.message || (Array.isArray(errorData.errors) ? errorData.errors.map((e: any) => e.message).join(', ') : 'Error al cancelar la factura.');
-        throw new Error(errorMessage);
-    }
 
     return { success: true };
   } catch (e: any) {
     console.error('Cancelación de factura fallida:', e.message);
-    return { success: false, error: e.message };
+    return { success: false, error: e?.data?.message || e.message || 'Error desconocido' };
   }
 }
 
@@ -263,29 +190,24 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
  * ------------------------------------- */
 
 export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: boolean; url?: string; error?: string }> {
+  // This function is less common with the library, as the URL is returned on creation.
+  // We'll keep it for fetching old invoices if needed, but it's not a primary flow.
   try {
-    const facturaCom = await getFacturaComInstance();
-    if (!facturaCom) throw new Error('Credenciales de facturación no configuradas.');
-    const { apiKey, apiSecret } = facturaCom;
+    const facturaComCredentials = await getFacturaComInstance();
+    if (!facturaComCredentials) throw new Error('Credenciales de facturación no configuradas.');
+    const { apiKey, isLiveMode } = facturaComCredentials;
 
-    const host = facturaCom.isLiveMode ? 'https://api.factura.com' : 'https://sandbox.factura.com/api';
-    const url = `${host}/v4/cfdi40/${invoiceId}/pdf`;
-    
-    const headers: HeadersInit = { 'F-Api-Key': apiKey };
-    if (apiSecret) {
-      headers['F-Secret-Key'] = apiSecret;
+    const facturapi = new Facturapi(apiKey, { live: isLiveMode });
+    const invoice = await facturapi.invoice.retrieve(invoiceId);
+
+    if (!invoice) {
+        throw new Error('Factura no encontrada.');
     }
 
-    const response = await fetch(url, { headers });
-    
-    const responseData = await response.json();
-    if (!response.ok) {
-      throw new Error(responseData.message || 'Error al obtener la factura.');
-    }
-    return { success: true, url: responseData.PDF };
+    return { success: true, url: invoice.pdf_url };
   } catch (e: any) {
      console.error('Get PDF URL error:', e.message);
-     return { success: false, error: e.message };
+     return { success: false, error: e?.data?.message || e.message || 'Error desconocido' };
   }
 }
 
@@ -294,38 +216,25 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
  * ------------------------------------- */
 
 export async function getInvoices(): Promise<{ data: any[], error?: string, page?: number, total_pages?: number, total_results?: number }> {
-  const facturaCom = await getFacturaComInstance();
-  if (facturaCom === null) {
-    return { data: [], error: "No se han configurado las credenciales de Factura.com." };
-  }
-  const { apiKey, apiSecret, isLiveMode } = facturaCom;
-  
-  const host = isLiveMode ? 'https://api.factura.com' : 'https://sandbox.factura.com/api';
-  const url = `${host}/v4/cfdi40/list?limit=100`;
-
   try {
-     const headers: HeadersInit = { 'F-Api-Key': apiKey };
-    if (apiSecret) {
-      headers['F-Secret-Key'] = apiSecret;
+    const facturaComCredentials = await getFacturaComInstance();
+    if (facturaComCredentials === null) {
+      return { data: [], error: "No se han configurado las credenciales de Factura.com." };
     }
-
-    const response = await fetch(url, { headers });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Error del servidor: ${response.status}`);
-    }
-
-    const responseData = await response.json();
+    const { apiKey, isLiveMode } = facturaComCredentials;
+    
+    const facturapi = new Facturapi(apiKey, { live: isLiveMode });
+    const result = await facturapi.invoice.list();
 
     return {
-      data: responseData.data || [], 
-      page: responseData.page,
-      total_pages: responseData.total_pages,
-      total_results: responseData.total_results,
+      data: result.data || [], 
+      page: result.page,
+      total_pages: result.total_pages,
+      total_results: result.total_results,
     };
   } catch (e: any) {
-    console.error('Factura.com list invoices error:', e.message);
-    return { data: [], error: `Error al obtener facturas: ${e.message}` };
+    console.error('Factura.com list invoices error:', e);
+    return { data: [], error: e?.data?.message || e.message || 'Error al obtener facturas' };
   }
 }
+

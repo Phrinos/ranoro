@@ -20,8 +20,7 @@ export const billingFormSchema = z.object({
     .min(1, { message: 'Debe seleccionar un régimen fiscal.'}),
 
   cfdiUse: z.string().min(1, { message: 'Seleccione un uso de CFDI.' }),
-
-  paymentForm: z.string().optional(),
+  
 }).superRefine((data, ctx) => {
     const { rfc, taxSystem } = data;
 
@@ -58,3 +57,4 @@ export const billingFormSchema = z.object({
 });
 
 export type BillingFormValues = z.infer<typeof billingFormSchema>;
+

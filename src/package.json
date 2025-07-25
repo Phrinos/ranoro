@@ -46,7 +46,7 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.5.0",
     "escpos": "^3.0.0-alpha.6",
-    "facturapi": "^2.1.1",
+    "facturapi": "^2.2.0",
     "firebase": "^11.9.1",
     "firebase-admin": "^12.7.0",
     "genkit": "1.13.0",
@@ -86,3 +86,4 @@
     }
   }
 }
+
