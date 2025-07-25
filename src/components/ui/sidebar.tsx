@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -203,7 +203,11 @@ const Sidebar = React.forwardRef<
             className="w-[--sidebar-width-mobile] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
             side={side}
           >
-            <SheetTitle className="sr-only">Menú Principal</SheetTitle>
+            {/* This is a visually hidden title and description for mobile screen readers */}
+            <SheetTitle className="sr-only">Navegación Principal</SheetTitle>
+            <SheetDescription className="sr-only">
+                Un menú con enlaces a las principales secciones de la aplicación.
+            </SheetDescription>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
