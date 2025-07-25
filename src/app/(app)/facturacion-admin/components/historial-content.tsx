@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -22,49 +23,39 @@ export function HistorialContent() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasCredentials, setHasCredentials] = useState(false);
   const { toast } = useToast();
 
-  const fetchCredentialsAndInvoices = useCallback(async () => {
+  const fetchInvoices = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    if (!db) {
-        setError("La base de datos no está disponible.");
-        setIsLoading(false);
-        return;
-    }
-
     try {
-      const configSnap = await getDoc(doc(db, 'workshopConfig', 'main'));
-      const configData = configSnap.data() as WorkshopInfo;
-      
-      if (configData && configData.facturaComApiKey) {
-        setHasCredentials(true);
         const result = await getInvoices();
-        setInvoices(result.data);
-      } else {
-        setHasCredentials(false);
-        setError("No se han configurado las credenciales de Factura.com. Por favor, vaya a la pestaña de 'Configuración'.");
-      }
+        if (result.error) {
+            setError(result.error);
+            setInvoices([]);
+        } else {
+            setInvoices(result.data);
+        }
     } catch (e: any) {
-      setError(e.message || 'Error al cargar las facturas.');
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+        setError(e.message || 'Error al cargar las facturas.');
+        setInvoices([]);
+        toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   }, [toast]);
 
 
   useEffect(() => {
-    fetchCredentialsAndInvoices();
-  }, [fetchCredentialsAndInvoices]);
+    fetchInvoices();
+  }, [fetchInvoices]);
 
   const handleCancelInvoice = async (invoiceId: string) => {
     try {
         const result = await cancelInvoiceFlow(invoiceId);
         if(result.success) {
             toast({ title: "Factura Cancelada", description: "La factura ha sido cancelada exitosamente." });
-            fetchCredentialsAndInvoices(); // Refresh the list
+            fetchInvoices(); // Refresh the list
         } else {
             throw new Error(result.error || 'Error desconocido al cancelar');
         }
@@ -109,7 +100,7 @@ export function HistorialContent() {
                 <AlertCircle className="h-12 w-12 mb-4" />
                 <h3 className="text-lg font-semibold">Ocurrió un Error</h3>
                 <p className="text-sm mt-1">{error}</p>
-                <Button onClick={fetchCredentialsAndInvoices} className="mt-4">
+                <Button onClick={fetchInvoices} className="mt-4">
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Reintentar
                 </Button>
@@ -125,7 +116,7 @@ export function HistorialContent() {
             <CardTitle>Historial de Facturas Emitidas</CardTitle>
             <CardDescription>Consulta todas las facturas que han sido generadas a través del sistema.</CardDescription>
         </div>
-        <Button onClick={fetchCredentialsAndInvoices} variant="outline" size="sm" disabled={isLoading}>
+        <Button onClick={fetchInvoices} variant="outline" size="sm" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCw className="mr-2 h-4 w-4"/>}
             Actualizar
         </Button>

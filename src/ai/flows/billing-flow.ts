@@ -231,8 +231,7 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
 export async function getInvoices(): Promise<any> {
   const facturaCom = await getFacturaComInstance();
   if (facturaCom === null) {
-    // Intentionally return null to indicate missing credentials, which the frontend will handle.
-    return null;
+    return { data: [], error: "No se han configurado las credenciales de Factura.com." };
   }
   const { apiKey } = facturaCom;
 
@@ -251,14 +250,13 @@ export async function getInvoices(): Promise<any> {
     const responseData = await response.json();
 
     return {
-      data: responseData.data,
+      data: responseData.data || [], // Ensure data is always an array
       page: responseData.page,
       total_pages: responseData.total_pages,
       total_results: responseData.total_results,
     };
   } catch (e: any) {
     console.error('Factura.com list invoices error:', e.message);
-    // Re-throw the error to be handled by the caller, ensuring a consistent error handling flow.
-    throw new Error(`Error al obtener facturas: ${e.message}`);
+    return { data: [], error: `Error al obtener facturas: ${e.message}` };
   }
 }
