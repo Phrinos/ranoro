@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { regimesFisica, regimesMoral, detectarTipoPersona } from '@/lib/sat-catalogs';
 
 
-const FDC_API_BASE_URL = 'https://www.facturapi.io/v2';
+const FDC_API_BASE_URL = 'https://api.factura.com/v1';
 
 // --- Utility to get Factura.com API credentials ---
 const getFacturaComInstance = async () => {
@@ -20,10 +20,15 @@ const getFacturaComInstance = async () => {
   
   const workshopInfo = configSnap.data() as WorkshopInfo;
   
-  const apiKey = workshopInfo.facturaComApiKey;
+  const apiKey = (workshopInfo.facturaComApiKey || '').trim();
   if (!apiKey) return null; // Explicitly return null if API key is not set.
 
   const isLiveMode = workshopInfo.facturaComBillingMode === 'live';
+  
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🔑 Factura.com credentials in use. Mode:', isLiveMode ? 'Live' : 'Test');
+    console.log('🔑 Token (cortado):', apiKey.slice(0, 8) + '…');
+  }
   
   return { apiKey, isLiveMode };
 };
@@ -128,17 +133,16 @@ const createInvoiceFlow = ai.defineFlow(
         },
         items: ticketItems,
         payment_form: customer.paymentForm || '01',
-        series: 'RAN',
       };
 
       const url = `${FDC_API_BASE_URL}/invoices`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${isLiveMode ? apiKey : apiKey}`, // Use appropriate key based on mode
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(invoiceData)
+        body: JSON.stringify({ ...invoiceData, mode: isLiveMode ? 'live' : 'test' })
       });
       
       const responseData = await response.json();
