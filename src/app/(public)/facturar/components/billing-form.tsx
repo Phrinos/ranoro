@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -72,7 +72,7 @@ const normalizeText = (text: string) => {
 };
 
 export function BillingForm() {
-  const { control, watch } = useFormContext<BillingFormValues>();
+  const { control, watch, setValue } = useFormContext<BillingFormValues>();
   const rfcValue = watch('rfc');
 
   const availableRegimes = useMemo(() => {
@@ -87,6 +87,11 @@ export function BillingForm() {
     ].sort((a,b) => a.label.localeCompare(b.label));
 
   }, [rfcValue]);
+  
+  // Effect to reset taxSystem when rfc changes.
+  useEffect(() => {
+    setValue('taxSystem', '');
+  }, [rfcValue, setValue]);
 
   return (
     <div className="space-y-4">
@@ -158,7 +163,7 @@ export function BillingForm() {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Régimen Fiscal</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value ?? ''} disabled={availableRegimes.length === 0}>
+            <Select onValueChange={field.onChange} value={field.value ?? ''} disabled={availableRegimes.length === 0}>
                 <FormControl>
                     <SelectTrigger>
                     <SelectValue placeholder="Seleccione su régimen fiscal..." />
