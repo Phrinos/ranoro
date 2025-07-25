@@ -46,6 +46,11 @@ const CreateInvoiceInputSchema = z.object({
   ticket: z.any(), // SaleReceipt o ServiceRecord
 });
 
+// --- Catálogos para validación en backend ---
+const regimesFisica = ["605", "606", "607", "608", "611", "612", "614", "615", "621", "625", "626", "616"];
+const regimesMoral = ["601", "603", "620", "622", "623", "624", "628", "610", "616"];
+
+
 export async function createInvoice(
   input: z.infer<typeof CreateInvoiceInputSchema>
 ): Promise<{
@@ -74,14 +79,16 @@ const createInvoiceFlow = ai.defineFlow(
     const isMoral = rfc.length === 12;
     const isFisica = rfc.length === 13;
 
-    if (isFisica && !taxSystem.startsWith('6')) {
-        throw new Error(`El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona física.`);
-    }
-    if (isMoral && taxSystem !== '601' && taxSystem !== '603' && taxSystem !== '626') {
-         throw new Error(`El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona moral.`);
-    }
     if (!isFisica && !isMoral) {
-        throw new Error('El RFC proporcionado no parece ser válido (debe tener 12 o 13 caracteres).');
+      throw new Error('El RFC proporcionado no parece ser válido (debe tener 12 o 13 caracteres).');
+    }
+    
+    if (isFisica && !regimesFisica.includes(taxSystem)) {
+      throw new Error(`El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona física.`);
+    }
+
+    if (isMoral && !regimesMoral.includes(taxSystem)) {
+      throw new Error(`El régimen fiscal seleccionado (${taxSystem}) no es válido para una persona moral.`);
     }
 
     let customer;
