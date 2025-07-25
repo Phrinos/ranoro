@@ -149,11 +149,12 @@ const createInvoiceFlow = ai.defineFlow(
     if (!response.ok) {
         console.error(`❌ Factura.com API Error (${response.status}):`, responseData);
         const errorMessage = responseData.message || (Array.isArray(responseData.errors) ? responseData.errors.map((e: any) => e.message).join(', ') : 'Error desconocido de Factura.com');
-        throw new Error(`Error de comunicación con el servicio de facturación (código: ${response.status}). Intente de nuevo más tarde.`);
+        throw new Error(`Error de comunicación con el servicio de facturación (código: ${response.status}). Detalles: ${errorMessage}`);
     }
     
     if (responseData.Status !== 'valid') {
-        throw new Error(`La factura fue recibida pero no pudo ser validada (Estado: ${responseData.Status}). Revise los datos e intente de nuevo. Detalles: ${responseData.message || 'Sin detalles'}`);
+        const errorDetail = responseData.message || (Array.isArray(responseData.errors) ? responseData.errors.map((e: any) => e.message).join(', ') : 'Sin detalles del proveedor.');
+        throw new Error(`La factura fue recibida pero no pudo ser validada (Estado: ${responseData.Status || 'inválido'}). Revise los datos e intente de nuevo. Detalles: ${errorDetail}`);
     }
 
     return {
