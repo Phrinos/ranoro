@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,7 +29,7 @@ const facturapiSchema = z.object({
 
 type FacturapiFormValues = z.infer<typeof facturapiSchema>;
 
-function ConfiguracionContent() {
+function ConfiguracionContent({ onConfigSave }: { onConfigSave: () => void }) {
   const { toast } = useToast();
   
   const form = useForm<FacturapiFormValues>({
@@ -60,6 +60,7 @@ function ConfiguracionContent() {
         await setDoc(configRef, data, { merge: true });
       }
       toast({ title: 'Configuración guardada', description: 'Se actualizó la configuración de Factura.com.', duration: 3000 });
+      onConfigSave(); // Callback to notify parent of save
     } catch {
       toast({ title: 'Error al guardar', variant: 'destructive', duration: 3000 });
     }
@@ -105,6 +106,12 @@ function ConfiguracionContent() {
 
 
 export function FacturacionAdminPageComponent() {
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prevKey => prevKey + 1);
+  }, []);
+
   return (
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
@@ -125,10 +132,10 @@ export function FacturacionAdminPageComponent() {
               <TabsTrigger value="configuracion">Configuración</TabsTrigger>
           </TabsList>
           <TabsContent value="historial">
-              <HistorialContent />
+              <HistorialContent key={refreshKey} onRefresh={handleRefresh} />
           </TabsContent>
           <TabsContent value="configuracion">
-              <ConfiguracionContent />
+              <ConfiguracionContent onConfigSave={handleRefresh} />
           </TabsContent>
       </Tabs>
     </>

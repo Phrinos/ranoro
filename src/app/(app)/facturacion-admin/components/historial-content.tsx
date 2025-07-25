@@ -14,12 +14,12 @@ import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import Link from 'next/link';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient';
-import type { WorkshopInfo } from '@/types';
 
-export function HistorialContent() {
+interface HistorialContentProps {
+  onRefresh?: () => void;
+}
+
+export function HistorialContent({ onRefresh }: HistorialContentProps) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
