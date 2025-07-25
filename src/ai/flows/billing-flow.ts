@@ -94,37 +94,65 @@ const createInvoiceFlow = ai.defineFlow(
 
     if ('items' in ticket && Array.isArray(ticket.items)) { // This is a SaleReceipt
         ticketItems = ticket.items.map((item: any) => ({
-            Producto: item.itemName,
-            ClaveProducto: '01010101', 
-            ClaveUnidad: 'H87', 
-            Cantidad: item.quantity,
-            Precio: item.totalPrice / item.quantity / (1 + IVA_RATE),
+            description: item.itemName,
+            quantity: item.quantity,
+            price: item.totalPrice, // total price per line item (with tax)
+            claveProdServ: '01010101', // Generic product key
+            claveUnidad: 'H87', // Piece
         }));
     } else { // This is a ServiceRecord
         ticketItems = (ticket.serviceItems || []).map((item: any) => ({
-            Producto: item.name,
-            ClaveProducto: '81111500', 
-            ClaveUnidad: 'E48', 
-            Cantidad: 1, 
-            Precio: (item.price || 0) / (1 + IVA_RATE),
+            description: item.name,
+            quantity: 1, 
+            price: item.price || 0, // total price per line item (with tax)
+            claveProdServ: '81111500', // Generic service key
+            claveUnidad: 'E48', // Service Unit
         }));
     }
 
+    const conceptos = ticketItems.map(item => {
+        const valorUnitario = parseFloat((item.price / (1 + IVA_RATE)).toFixed(2));
+        const importe = valorUnitario * item.quantity;
+        const ivaTrasladado = parseFloat((importe * IVA_RATE).toFixed(2));
+
+        return {
+            ClaveProdServ: item.claveProdServ,
+            Descripcion: item.description,
+            Cantidad: item.quantity,
+            ClaveUnidad: item.claveUnidad,
+            ValorUnitario: valorUnitario,
+            Importe: importe,
+            ObjetoImp: '02', // Yes, object of tax
+            Impuestos: {
+                Traslados: [{
+                    Base: importe,
+                    Impuesto: '002', // IVA
+                    TipoFactor: 'Tasa',
+                    TasaOCuota: '0.160000',
+                    Importe: ivaTrasladado
+                }]
+            }
+        };
+    });
+
     const invoiceData = {
+        Serie: 'RAN',
+        Folio: ticket.id.slice(-10), // Optional folio
+        TipoDocumento: 'ingreso',
+        Moneda: 'MXN',
+        FormaPago: customer.paymentForm || '01',
+        MetodoPago: 'PUE',
+        LugarExpedicion: '20267', // Workshop's Zip Code
+
         Receptor: {
             Rfc: customer.rfc,
             Nombre: customer.name,
             UsoCFDI: customer.cfdiUse,
-            RegimenFiscalReceptor: customer.taxSystem, // Campo correcto para v4
-            DomicilioFiscalReceptor: {
-                CodigoPostal: customer.address.zip
-            },
+            RegimenFiscalReceptor: customer.taxSystem,
+            DomicilioFiscalReceptor: customer.address.zip,
             Email: customer.email,
         },
-        Conceptos: ticketItems,
-        TipoDocumento: 'factura',
-        FormaPago: customer.paymentForm || '01',
-        MetodoPago: 'PUE',
+        Conceptos: conceptos,
     };
     
     const host = isLiveMode ? 'https://api.factura.com' : 'https://sandbox.factura.com/api';

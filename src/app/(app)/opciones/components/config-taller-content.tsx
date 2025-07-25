@@ -216,6 +216,27 @@ export function ConfigTallerPageContent() {
                   <FormField control={form.control} name="contactPersonRole" render={({ field }) => ( <FormItem className="md:col-span-2"><FormLabel>Puesto</FormLabel><FormControl><Input placeholder="Gerente, Jefe de Taller, etc." {...field} value={field.value ?? ''}/></FormControl></FormItem> )}/>
               </CardContent>
             </Card>
+            
+            <Card>
+              <CardHeader><CardTitle className="text-lg flex items-center gap-2">Configuración de Facturación (Factura.com)</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <FormField control={form.control} name="facturaComApiKey" render={({ field }) => (<FormItem><FormLabel>API Key</FormLabel><FormControl><Input type="password" placeholder="Tu API Key de Factura.com" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="facturaComApiSecret" render={({ field }) => (<FormItem><FormLabel>API Secret (Opcional)</FormLabel><FormControl><Input type="password" placeholder="Tu API Secret" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="facturaComBillingMode" render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Modo de Facturación</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                        <SelectItem value="test">Pruebas (Sandbox)</SelectItem>
+                        <SelectItem value="live">Producción (Live)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    </FormItem>
+                )} />
+              </CardContent>
+            </Card>
+
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={form.formState.isSubmitting}><Save className="mr-2 h-4 w-4" />{form.formState.isSubmitting ? 'Guardando...' : 'Guardar Información'}</Button>
