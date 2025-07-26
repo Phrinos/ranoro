@@ -36,7 +36,6 @@ import {
   DialogFooter as UiDialogFooter,
   DialogHeader as UiDialogHeader,
   DialogTitle as UiDialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog'
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -452,7 +451,7 @@ export function ServiceForm(props:Props){
                                   </CardTitle>
                               </CardHeader>
                               <CardContent className="space-y-4">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div className="space-y-4">
                                       <FormField
                                           control={control}
                                           name="nextServiceInfo.date"
@@ -474,6 +473,7 @@ export function ServiceForm(props:Props){
                                               <FormItem>
                                                   <div className="flex gap-2 mb-2">
                                                       <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
+                                                      <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
                                                       <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
                                                   </div>
                                                   <FormLabel>Kilometraje Próximo Servicio</FormLabel>
