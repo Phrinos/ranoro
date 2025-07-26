@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -10,7 +11,7 @@ import type { ServiceRecord, Vehicle, Technician, PaymentMethod, ServiceSubStatu
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Edit, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench, Eye, Printer } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -41,18 +42,6 @@ const getAppointmentStatus = (service: ServiceRecord): { label: string; variant:
         return { label: 'Confirmada', variant: 'success' };
     }
     return { label: 'Sin confirmar', variant: 'lightRed' };
-};
-
-const getPaymentMethodVariant = (method?: PaymentMethod): 'success' | 'purple' | 'blue' | 'lightGreen' | 'lightPurple' | 'outline' | 'teal' => {
-  switch (method) {
-    case 'Efectivo': return 'success';
-    case 'Tarjeta': return 'purple';
-    case 'Efectivo/Tarjeta': return 'teal';
-    case 'Transferencia': return 'blue';
-    case 'Efectivo+Transferencia': return 'lightGreen';
-    case 'Tarjeta+Transferencia': return 'lightPurple';
-    default: return 'outline';
-  }
 };
 
 const getSubStatusVariant = (subStatus?: ServiceSubStatus): 'destructive' | 'waiting' | 'success' | 'purple' => {

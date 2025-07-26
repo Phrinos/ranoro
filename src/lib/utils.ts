@@ -3,7 +3,7 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { differenceInCalendarDays, startOfToday, parseISO, isAfter, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import type { Driver, RentalPayment, Vehicle } from '@/types';
+import type { Driver, RentalPayment, Vehicle, PaymentMethod } from '@/types';
 
 const STANDARD_DEPOSIT_AMOUNT = 3500;
 
@@ -186,3 +186,15 @@ export function calculateDriverDebt(driver: Driver, allPayments: RentalPayment[]
 
     return { totalDebt, rentalDebt, depositDebt, manualDebt };
 }
+
+export const getPaymentMethodVariant = (method?: PaymentMethod): 'success' | 'purple' | 'blue' | 'lightGreen' | 'lightPurple' | 'outline' | 'teal' => {
+  switch (method) {
+    case 'Efectivo': return 'success';
+    case 'Tarjeta': return 'purple';
+    case 'Efectivo/Tarjeta': return 'teal';
+    case 'Transferencia': return 'blue';
+    case 'Efectivo+Transferencia': return 'lightGreen';
+    case 'Tarjeta+Transferencia': return 'lightPurple';
+    default: return 'outline';
+  }
+};

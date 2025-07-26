@@ -23,10 +23,9 @@ import { Button } from '@/components/ui/button';
 import { Ban, Loader2, DollarSign } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks';
 import { Badge } from '@/components/ui/badge';
-import { getPaymentMethodVariant } from '@/lib/utils';
 
 
 interface ServiceDialogProps {

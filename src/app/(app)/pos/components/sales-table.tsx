@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from "react";
@@ -17,7 +18,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Printer, Edit, Ban, Receipt } from "lucide-react";
 import { calculateSaleProfit } from "@/lib/placeholder-data";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 
 interface SalesTableProps {
   sales: SaleReceipt[];
@@ -25,17 +26,6 @@ interface SalesTableProps {
   inventoryItems: InventoryItem[];
   onEditSale: (sale: SaleReceipt) => void;
 }
-
-type BadgeVariantType =
-  | "default"
-  | "secondary"
-  | "destructive"
-  | "outline"
-  | "success"
-  | "purple"
-  | "blue"
-  | "lightGreen"
-  | "lightPurple";
 
 export const SalesTable = React.memo(({ sales, onReprintTicket, inventoryItems, onEditSale }: SalesTableProps) => {
   if (!sales.length) {
@@ -47,17 +37,6 @@ export const SalesTable = React.memo(({ sales, onReprintTicket, inventoryItems, 
         </div>
     );
   }
-
-  const getPaymentMethodVariant = (method?: SaleReceipt['paymentMethod']): BadgeVariantType => {
-    switch (method) {
-      case "Efectivo": return "success";
-      case "Tarjeta": return "purple";
-      case "Transferencia": return "blue";
-      case "Efectivo+Transferencia": return "lightGreen";
-      case "Tarjeta+Transferencia": return "lightPurple";
-      default: return "outline";
-    }
-  };
 
   return (
     <div className="rounded-lg border shadow-sm overflow-x-auto">

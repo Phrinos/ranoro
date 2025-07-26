@@ -21,7 +21,7 @@ import {
 } from "date-fns";
 import { es } from 'date-fns/locale';
 import { CalendarIcon, LineChart, ListFilter, Filter, Search } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from '@/components/ui/input';
@@ -222,7 +222,11 @@ export function ReporteOperacionesContent({ allSales, allServices, allInventory,
                       <TableCell className="max-w-xs truncate">{op.description}</TableCell>
                       <TableCell className="text-right font-semibold">{formatCurrency(op.totalAmount)}</TableCell>
                       <TableCell className="text-right font-semibold text-green-600">{formatCurrency(op.profit)}</TableCell>
-                      <TableCell className="text-right font-semibold">{(op.originalObject as any).paymentMethod || 'Efectivo'}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={getPaymentMethodVariant((op.originalObject as any).paymentMethod)}>
+                            {(op.originalObject as any).paymentMethod || 'Efectivo'}
+                        </Badge>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
