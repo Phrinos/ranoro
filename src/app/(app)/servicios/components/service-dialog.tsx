@@ -212,7 +212,7 @@ export function ServiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-2 flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <DialogHeader className="p-6 pb-2 flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div className="md:col-span-1">
               <DialogTitle>{dialogTitle}</DialogTitle>
               <DialogDescription>{dialogDescription}</DialogDescription>
@@ -222,8 +222,10 @@ export function ServiceDialog({
                     <p className="text-sm text-muted-foreground">Método de Pago</p>
                     <div className="flex items-center gap-2 mt-1">
                         <Badge variant={getPaymentMethodVariant(service.paymentMethod)} className="text-base">{service.paymentMethod}</Badge>
-                        {service.cardFolio && <p className="text-xs text-muted-foreground">Tarjeta: {service.cardFolio}</p>}
-                        {service.transferFolio && <p className="text-xs text-muted-foreground">Transf: {service.transferFolio}</p>}
+                        <div className="text-xs text-muted-foreground">
+                            {service.cardFolio && <p>Tarjeta: {service.cardFolio}</p>}
+                            {service.transferFolio && <p>Transf: {service.transferFolio}</p>}
+                        </div>
                     </div>
                 </div>
             )}
