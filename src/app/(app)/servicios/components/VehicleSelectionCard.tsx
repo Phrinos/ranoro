@@ -262,10 +262,14 @@ export function VehicleSelectionCard({
                         <div className="text-xs pt-2 mt-auto border-t space-y-1">
                             <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Último Servicio:</p>
                             <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}>{formatServiceInfo(lastService)}</p>
-                             <div className="font-semibold flex items-center gap-1 mt-1 justify-between">
-                                <span className="flex items-center gap-1"><CalendarCheck className="h-3 w-3 text-blue-500" /> Próximo Servicio Recomendado:</span>
-                            </div>
-                            <p className="text-muted-foreground truncate" title={formatNextServiceInfo(selectedVehicle.nextServiceInfo)}>{formatNextServiceInfo(selectedVehicle.nextServiceInfo)}</p>
+                            {selectedVehicle.nextServiceInfo?.date && (
+                                <>
+                                    <div className="font-semibold flex items-center gap-1 mt-1 justify-between">
+                                        <span className="flex items-center gap-1"><CalendarCheck className="h-3 w-3 text-blue-500" /> Próximo Servicio:</span>
+                                    </div>
+                                    <p className="text-muted-foreground truncate" title={formatNextServiceInfo(selectedVehicle.nextServiceInfo)}>{formatNextServiceInfo(selectedVehicle.nextServiceInfo)}</p>
+                                </>
+                            )}
                         </div>
                     </div>
                 )}
