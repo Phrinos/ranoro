@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -189,7 +188,7 @@ export default function VehicleDetailPage() {
                 </Card>
             </div>
             <div className="lg:col-span-1">
-                {vehicle.nextServiceInfo && vehicle.nextServiceInfo.date && isValid(parseDate(vehicle.nextServiceInfo.date)) && (
+                {vehicle.nextServiceInfo && vehicle.nextServiceInfo.date && isValid(parseDate(vehicle.nextServiceInfo.date)!) && (
                     <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
