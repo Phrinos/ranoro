@@ -1,5 +1,3 @@
-
-
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -36,6 +34,7 @@ import {
   DialogFooter as UiDialogFooter,
   DialogHeader as UiDialogHeader,
   DialogTitle as UiDialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -435,57 +434,57 @@ export function ServiceForm(props:Props){
         <FormProvider {...form}>
             <form id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
                 <div className="flex-grow overflow-y-auto pt-4 space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                        <VehicleSelectionCard
-                            isReadOnly={props.isReadOnly}
-                            localVehicles={parentVehicles}
-                            onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
-                            onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
-                        />
-                        {showNextServiceCard && (
-                          <Card>
-                              <CardHeader>
-                                  <CardTitle className="text-lg flex items-center gap-2">
-                                      <CalendarCheck className="h-5 w-5 text-blue-600" />
-                                      Próximo Servicio Recomendado
-                                  </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
+                    <VehicleSelectionCard
+                        isReadOnly={props.isReadOnly}
+                        localVehicles={parentVehicles}
+                        onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
+                        onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+                    />
+                    {showNextServiceCard && (
+                        <div className="space-y-6 mt-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <CalendarCheck className="h-5 w-5 text-blue-600" />
+                                        Próximo Servicio Recomendado
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
                                   <div className="space-y-4">
-                                      <FormField
-                                          control={control}
-                                          name="nextServiceInfo.date"
-                                          render={({ field }) => (
-                                              <FormItem>
-                                                  <div className="flex gap-2 mb-2">
-                                                      <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
-                                                      <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
-                                                  </div>
-                                                  <FormLabel>Fecha Próximo Servicio</FormLabel>
-                                                  <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
-                                              </FormItem>
-                                          )}
-                                      />
-                                      <FormField
-                                          control={control}
-                                          name="nextServiceInfo.mileage"
-                                          render={({ field }) => (
-                                              <FormItem>
-                                                  <div className="flex gap-2 mb-2">
-                                                      <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
-                                                      <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
-                                                      <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
-                                                  </div>
-                                                  <FormLabel>Kilometraje Próximo Servicio</FormLabel>
-                                                  <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
-                                              </FormItem>
-                                          )}
-                                      />
+                                    <FormField
+                                      control={control}
+                                      name="nextServiceInfo.date"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <div className="flex gap-2 mb-2">
+                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
+                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
+                                          </div>
+                                          <FormLabel>Fecha Próximo Servicio</FormLabel>
+                                          <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
+                                        </FormItem>
+                                      )}
+                                    />
+                                    <FormField
+                                      control={control}
+                                      name="nextServiceInfo.mileage"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <div className="flex gap-2 mb-2">
+                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
+                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
+                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
+                                          </div>
+                                          <FormLabel>Kilometraje Próximo Servicio</FormLabel>
+                                          <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
+                                        </FormItem>
+                                      )}
+                                    />
                                   </div>
-                              </CardContent>
-                          </Card>
-                        )}
-                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b flex justify-between items-center">
