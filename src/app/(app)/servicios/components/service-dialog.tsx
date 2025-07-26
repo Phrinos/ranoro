@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -18,7 +19,7 @@ import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { operationsService } from '@/lib/services';
 import { CompleteServiceDialog } from './CompleteServiceDialog';
 import { Button } from '@/components/ui/button';
-import { Ban, Loader2 } from 'lucide-react';
+import { Ban, Loader2, DollarSign } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils';
@@ -68,6 +69,8 @@ export function ServiceDialog({
   const { toast } = useToast();
 
   const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>(service?.status || quote?.status);
+  const [formSubStatus, setFormSubStatus] = useState<ServiceRecord['subStatus'] | undefined>(service?.subStatus || quote?.subStatus);
+
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
@@ -82,6 +85,7 @@ export function ServiceDialog({
   useEffect(() => {
     if(open) {
       setFormStatus(service?.status);
+      setFormSubStatus(service?.subStatus);
     }
   }, [open, service]);
 
@@ -146,13 +150,9 @@ export function ServiceDialog({
       onOpenChange(false);
       return;
     }
-
-    if ('status' in formData && formData.status === 'Entregado' && service?.status !== 'Entregado') {
-        setServiceToComplete(formData as ServiceRecord);
-        setIsCompleteDialogOpen(true);
-        return;
-    }
-
+    
+    // The CompleteServiceDialog now handles its own save.
+    // This function will now only handle standard saves.
     try {
         const savedRecord = await operationsService.saveService(formData);
         toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
@@ -202,6 +202,8 @@ export function ServiceDialog({
 
   const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
   const showCancelButton = !isReadOnly && service?.id && service.status !== 'Entregado' && service.status !== 'Cancelado';
+  const showCompleteButton = !isReadOnly && formStatus === 'En Taller' && formSubStatus === 'Completado';
+
       
   return (
     <>
@@ -230,6 +232,7 @@ export function ServiceDialog({
           isReadOnly={isReadOnly}
           mode={mode}
           onStatusChange={setFormStatus}
+          onSubStatusChange={setFormSubStatus}
           onVehicleCreated={onVehicleCreated}
           onTotalCostChange={setTotalCost}
         />
@@ -269,11 +272,16 @@ export function ServiceDialog({
             </div>
             <div className="flex flex-row gap-2 items-center">
                <Button variant="outline" type="button" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-initial">Cerrar</Button>
-               {!isReadOnly && (
+               {!isReadOnly && showCompleteButton && (
+                  <Button onClick={() => setServiceToComplete(service)} className="bg-green-600 hover:bg-green-700">
+                    <DollarSign className="mr-2 h-4 w-4"/> Completar y Cobrar
+                  </Button>
+                )}
+               {!isReadOnly && !showCompleteButton && (
                    <Button 
                        type="submit" 
                        form="service-form" 
-                       className="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700"
+                       className="flex-1 sm:flex-initial"
                    >
                        {service?.id ? 'Guardar' : 'Crear Registro'}
                    </Button>

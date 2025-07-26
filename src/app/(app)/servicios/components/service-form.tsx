@@ -82,6 +82,7 @@ interface Props {
   isReadOnly?:boolean
   mode?:'service'|'quote'
   onStatusChange?: (status: ServiceRecord['status']) => void;
+  onSubStatusChange?: (status: ServiceRecord['subStatus']) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
   onTotalCostChange: (cost: number) => void;
 }
@@ -99,6 +100,7 @@ export function ServiceForm(props:Props){
     isReadOnly = false,
     mode = 'service',
     onStatusChange,
+    onSubStatusChange,
     onVehicleCreated,
     onTotalCostChange,
   } = props;
@@ -223,6 +225,9 @@ export function ServiceForm(props:Props){
         if (name === 'status' && onStatusChange) {
             onStatusChange(value.status as ServiceRecord['status']);
         }
+        if (name === 'subStatus' && onSubStatusChange) {
+            onSubStatusChange(value.subStatus as ServiceRecord['subStatus']);
+        }
         
         if(name === 'status') {
           const currentStatus = value.status;
@@ -236,7 +241,7 @@ export function ServiceForm(props:Props){
         }
     });
     return () => subscription.unsubscribe();
-  }, [watch, onStatusChange, setValue]);
+  }, [watch, onStatusChange, onSubStatusChange, setValue]);
 
   
   useEffect(() => {
@@ -569,7 +574,10 @@ export function ServiceForm(props:Props){
 
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <UiDialogContent className="max-w-4xl p-2">
-            <UiDialogHeader className="print:hidden"><UiDialogTitle>Vista Previa de Imagen</UiDialogTitle></UiDialogHeader>
+            <UiDialogHeader className="print:hidden">
+                <UiDialogTitle>Vista Previa de Imagen</UiDialogTitle>
+                <DialogDescription>Visualización de la imagen adjunta.</DialogDescription>
+            </UiDialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada" fill style={{objectFit:"contain"}} sizes="(max-width: 768px) 100vw, 1024px" />)}
             </div>
