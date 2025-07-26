@@ -162,7 +162,8 @@ export default function VehicleDetailPage() {
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 lg:w-1/3 mb-6"><TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger><TabsTrigger value="services" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Servicios</TabsTrigger></TabsList>
         <TabsContent value="details">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Datos del Vehículo</CardTitle>
@@ -178,14 +179,24 @@ export default function VehicleDetailPage() {
                         {vehicle.notes && (<div className="pt-2"><p className="font-semibold">Notas del Vehículo:</p><p className="text-sm text-muted-foreground whitespace-pre-wrap">{vehicle.notes}</p></div>)}
                     </CardContent>
                 </Card>
-                 {vehicle.nextServiceInfo && vehicle.nextServiceInfo.date && isValid(parseDate(vehicle.nextServiceInfo.date)) && (
+                <Card className="bg-amber-50 dark:bg-amber-950/50">
+                    <CardHeader><CardTitle>Datos del Propietario</CardTitle></CardHeader>
+                    <CardContent className="space-y-2">
+                        <p><strong>Nombre:</strong> {vehicle.ownerName}</p>
+                        <p><strong>Teléfono:</strong> {vehicle.ownerPhone || "N/A"}</p>
+                        <p><strong>Email:</strong> {vehicle.ownerEmail || "N/A"}</p>
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="lg:col-span-1">
+                {vehicle.nextServiceInfo && vehicle.nextServiceInfo.date && isValid(parseDate(vehicle.nextServiceInfo.date)) && (
                     <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
-                                <CalendarCheck className="h-5 w-5" />Próximo Servicio Recomendado
+                                <CalendarCheck className="h-5 w-5" />Próximo Servicio
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <CardContent className="space-y-2">
                             <div>
                                 <p className="font-semibold">Fecha:</p>
                                 <p>{format(parseDate(vehicle.nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
@@ -199,15 +210,8 @@ export default function VehicleDetailPage() {
                         </CardContent>
                     </Card>
                 )}
-                <Card className="bg-amber-50 dark:bg-amber-950/50">
-                    <CardHeader><CardTitle>Datos del Propietario</CardTitle></CardHeader>
-                    <CardContent className="space-y-2">
-                        <p><strong>Nombre:</strong> {vehicle.ownerName}</p>
-                        <p><strong>Teléfono:</strong> {vehicle.ownerPhone || "N/A"}</p>
-                        <p><strong>Email:</strong> {vehicle.ownerEmail || "N/A"}</p>
-                    </CardContent>
-                </Card>
             </div>
+          </div>
         </TabsContent>
         <TabsContent value="services">
           <Card><CardHeader><CardTitle>Historial de Servicios</CardTitle><CardDescription>Servicios realizados a este vehículo. Haz clic en una fila para ver/editar.</CardDescription></CardHeader><CardContent>{services.length > 0 ? (<div className="rounded-md border"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Kilometraje</TableHead><TableHead className="text-white">Descripción</TableHead><TableHead className="text-white">Técnico</TableHead><TableHead className="text-right text-white">Costo Total</TableHead><TableHead className="text-white">Estado</TableHead></TableRow></TableHeader><TableBody>
