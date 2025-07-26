@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState } from 'react';
@@ -74,14 +75,6 @@ export function VehicleDialog({
                     <DialogTitle>{dialogTitle}</DialogTitle>
                     <DialogDescription>{dialogDescription}</DialogDescription>
                 </div>
-                <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button type="submit" form="vehicle-form">
-                        {vehicle && 'id' in vehicle && vehicle.id ? "Actualizar Vehículo" : "Crear Vehículo"}
-                    </Button>
-                </div>
             </DialogHeader>
             <div className="flex-grow overflow-y-auto px-6">
                 <VehicleForm
@@ -90,6 +83,14 @@ export function VehicleDialog({
                     onSubmit={handleSubmit}
                 />
             </div>
+             <DialogFooter className="p-6 pt-4 border-t bg-background flex-shrink-0 flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancelar
+                </Button>
+                <Button type="submit" form="vehicle-form">
+                    {vehicle && 'id' in vehicle && vehicle.id ? "Actualizar Vehículo" : "Crear Vehículo"}
+                </Button>
+            </DialogFooter>
         </DialogContent>
       )}
     </Dialog>

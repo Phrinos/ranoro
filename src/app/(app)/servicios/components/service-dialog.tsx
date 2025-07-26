@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord, Personnel } from "@/types";
-import { useToast } from "@/hooks/use-toast"; 
+import { useToast } from '@/hooks/use-toast'; 
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { operationsService } from '@/lib/services';
@@ -23,7 +24,9 @@ import { Ban, Loader2, DollarSign } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils';
-import { useServiceTotals } from '@/hooks/use-service-form-hooks'
+import { useServiceTotals } from '@/hooks/use-service-form-hooks';
+import { Badge } from '@/components/ui/badge';
+import { getPaymentMethodVariant } from '@/lib/utils';
 
 
 interface ServiceDialogProps {
@@ -210,12 +213,22 @@ export function ServiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-2 flex-shrink-0 grid grid-cols-2">
-            <div>
+        <DialogHeader className="p-6 pb-2 flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
               <DialogTitle>{dialogTitle}</DialogTitle>
               <DialogDescription>{dialogDescription}</DialogDescription>
             </div>
-            <div className="text-right">
+            {service?.status === 'Entregado' && (
+                <div className="text-left md:text-center">
+                    <p className="text-sm text-muted-foreground">Método de Pago</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <Badge variant={getPaymentMethodVariant(service.paymentMethod)} className="text-base">{service.paymentMethod}</Badge>
+                        {service.cardFolio && <p className="text-xs text-muted-foreground">Tarjeta: {service.cardFolio}</p>}
+                        {service.transferFolio && <p className="text-xs text-muted-foreground">Transf: {service.transferFolio}</p>}
+                    </div>
+                </div>
+            )}
+            <div className="text-left md:text-right md:col-start-3">
               <p className="text-sm text-muted-foreground">Costo Total del Servicio</p>
               <p className="text-3xl font-bold text-primary">{formatCurrency(totalCost)}</p>
             </div>
