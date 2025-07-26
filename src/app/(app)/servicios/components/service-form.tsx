@@ -1,3 +1,4 @@
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -469,7 +470,7 @@ export function ServiceForm(props:Props){
                                                 name="nextServiceInfo.mileage"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Kilometraje Próximo Servicio</FormLabel>
+                                                        <FormLabel>Kilometraje Próximo</FormLabel>
                                                         <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
                                                     </FormItem>
                                                 )}
