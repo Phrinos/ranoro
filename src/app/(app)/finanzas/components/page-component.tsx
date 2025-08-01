@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import {
   calculateSaleProfit,
 } from '@/lib/placeholder-data';
-import type { MonthlyFixedExpense, InventoryItem, FinancialOperation, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord, Technician, AdministrativeStaff, InventoryMovement } from '@/types';
+import type { MonthlyFixedExpense, InventoryItem, FinancialOperation, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord, Technician, AdministrativeStaff, InventoryMovement, Personnel } from '@/types';
 import {
   format,
   parseISO,
@@ -47,8 +47,7 @@ export function FinanzasPageComponent({
     const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
     const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
     const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
-    const [allTechnicians, setAllTechnicians] = useState<Technician[]>([]);
-    const [allAdminStaff, setAllAdminStaff] = useState<AdministrativeStaff[]>([]);
+    const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
     const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
     const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
     
@@ -62,8 +61,7 @@ export function FinanzasPageComponent({
             operationsService.onServicesUpdate(setAllServices),
             inventoryService.onItemsUpdate(setAllInventory),
             inventoryService.onServiceTypesUpdate(setServiceTypes),
-            personnelService.onTechniciansUpdate(setAllTechnicians),
-            personnelService.onAdminStaffUpdate(setAllAdminStaff),
+            personnelService.onPersonnelUpdate(setAllPersonnel),
             inventoryService.onFixedExpensesUpdate((expenses) => {
                 setFixedExpenses(expenses);
                 setIsLoading(false);
@@ -77,6 +75,9 @@ export function FinanzasPageComponent({
 
         return () => unsubs.forEach(unsub => unsub());
     }, []);
+
+    const allTechnicians = useMemo(() => allPersonnel.filter(p => p.roles.includes('Técnico')), [allPersonnel]);
+    const allAdminStaff = useMemo(() => allPersonnel.filter(p => p.roles.some(r => r !== 'Técnico')), [allPersonnel]);
 
     const financialSummary = useMemo(() => {
         const emptyState = { 
