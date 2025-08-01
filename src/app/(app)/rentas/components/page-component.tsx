@@ -103,34 +103,34 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
   
   const monthlyBalances = useMemo((): MonthlyBalance[] => {
     if (isLoading) return [];
-    
+
     const today = new Date();
     const monthStart = startOfMonth(today);
-    
-    const balances = drivers.filter(d => !d.isArchived).map(driver => {
+
+    return drivers.filter(d => !d.isArchived).map(driver => {
         const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
         const dailyRate = vehicle?.dailyRentalCost || 0;
-        
+
         const paymentsThisMonth = payments
-            .filter(p => p.driverId === driver.id && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: today }))
+            .filter(p => p.driverId === driver.id && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: today }))
             .reduce((sum, p) => sum + p.amount, 0);
-            
+
         const daysPaidThisMonth = dailyRate > 0 ? paymentsThisMonth / dailyRate : 0;
         
         const contractStartDate = driver.contractDate ? parseISO(driver.contractDate) : today;
         const calculationStartDate = isAfter(contractStartDate, monthStart) ? contractStartDate : monthStart;
-        
+
         const daysToChargeThisMonth = !isAfter(calculationStartDate, today) ? differenceInCalendarDays(today, calculationStartDate) + 1 : 0;
         const chargesThisMonth = dailyRate * daysToChargeThisMonth;
+
+        const monthlyBalance = paymentsThisMonth - chargesThisMonth;
         
-        const balance = paymentsThisMonth - chargesThisMonth;
-        
-        const { totalDebt } = calculateDriverDebt(driver, payments, vehicles);
-        const realBalance = balance + (driver.depositAmount || 0) - (driver.requiredDepositAmount || 0) - (driver.manualDebts || []).reduce((sum,d) => sum + d.amount, 0);
-        
-        const rentalDebtThisMonth = Math.max(0, -balance);
+        const debtInfo = calculateDriverDebt(driver, payments, vehicle ? [vehicle] : []);
+        const realBalance = monthlyBalance + (driver.depositAmount || 0) - debtInfo.depositDebt - debtInfo.manualDebt;
+
+        const rentalDebtThisMonth = Math.max(0, -monthlyBalance);
         const daysOwed = dailyRate > 0 ? rentalDebtThisMonth / dailyRate : 0;
-        
+
         return {
             driverId: driver.id,
             driverName: driver.name,
@@ -139,12 +139,10 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
             charges: chargesThisMonth,
             daysPaid: daysPaidThisMonth,
             daysOwed,
-            balance,
+            balance: monthlyBalance,
             realBalance,
         };
-    });
-
-    return balances.sort((a, b) => {
+    }).sort((a, b) => {
         switch (balanceSortOption) {
             case 'driverName_asc': return a.driverName.localeCompare(b.driverName);
             case 'driverName_desc': return b.driverName.localeCompare(a.driverName);
@@ -155,8 +153,8 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
             default: return b.daysOwed - a.daysOwed;
         }
     });
-
   }, [isLoading, drivers, vehicles, payments, balanceSortOption]);
+
 
   const handleSavePayment = async (driverId: string, amount: number, note: string | undefined, mileage?: number) => {
     try {
@@ -270,11 +268,11 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
     const interval = { start: startOfDay(from), end: endOfDay(to || from) };
 
     const totalCollectedThisPeriod = payments
-        .filter(p => isWithinInterval(parseDate(p.paymentDate)!, interval))
+        .filter(p => isValid(parseDate(p.paymentDate)!) && isWithinInterval(parseDate(p.paymentDate)!, interval))
         .reduce((sum, p) => sum + p.amount, 0);
 
     const totalExpensesThisPeriod = expenses
-        .filter(e => isWithinInterval(parseDate(e.date)!, interval))
+        .filter(e => isValid(parseDate(e.date)!) && isWithinInterval(parseDate(e.date)!, interval))
         .reduce((sum, e) => sum + e.amount, 0);
 
     const { totalDebt, totalMonthlyBalance } = monthlyBalances.reduce((acc, curr) => {
@@ -303,15 +301,15 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
     const interval = { start: startOfDay(from), end: endOfDay(to || from) };
 
     const totalIncome = payments
-      .filter(p => isWithinInterval(parseDate(p.paymentDate)!, interval))
+      .filter(p => isValid(parseDate(p.paymentDate)!) && isWithinInterval(parseDate(p.paymentDate)!, interval))
       .reduce((sum, p) => sum + p.amount, 0);
       
     const totalWithdrawals = withdrawals
-      .filter(w => isWithinInterval(parseDate(w.date)!, interval))
+      .filter(w => isValid(parseDate(w.date)!) && isWithinInterval(parseDate(w.date)!, interval))
       .reduce((sum, w) => sum + w.amount, 0);
       
     const totalVehicleExpenses = expenses
-      .filter(e => isWithinInterval(parseDate(e.date)!, interval))
+      .filter(e => isValid(parseDate(e.date)!) && isWithinInterval(parseDate(e.date)!, interval))
       .reduce((sum, e) => sum + e.amount, 0);
       
     return totalIncome - totalWithdrawals - totalVehicleExpenses;
