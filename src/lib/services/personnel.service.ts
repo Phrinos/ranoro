@@ -16,14 +16,13 @@ import {
 import { db } from '../firebaseClient';
 import type { Technician, AdministrativeStaff, Driver, Personnel, Area } from "@/types";
 import type { PersonnelFormValues } from '@/app/(app)/personal/components/personnel-form';
+import type { DriverFormValues } from '@/app/(app)/conductores/components/driver-form';
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
 
 // --- Unified Personnel ---
 const onPersonnelUpdate = (callback: (personnel: Personnel[]) => void): (() => void) => {
     if (!db) return () => {};
-    // This now ONLY listens to the new, unified 'personnel' collection.
-    // The logic to combine old collections has been removed to fix the bug.
     const personnelUnsubscribe = onSnapshot(query(collection(db, "personnel")), (snapshot) => {
         const personnelList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel));
         callback(personnelList);

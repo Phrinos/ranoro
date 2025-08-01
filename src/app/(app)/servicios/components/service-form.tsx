@@ -66,7 +66,6 @@ import { parseDate } from '@/lib/forms';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
-import { PaymentSection } from '../../pos/components/payment-section';
 import Link from 'next/link';
 import { Input } from "@/components/ui/input";
 

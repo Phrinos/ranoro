@@ -23,10 +23,9 @@ import { Button } from '@/components/ui/button';
 import { Ban, Loader2, DollarSign } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks';
 import { Badge } from '@/components/ui/badge';
-import { getPaymentMethodVariant } from '@/lib/utils';
 
 
 interface ServiceDialogProps {
@@ -220,9 +219,9 @@ export function ServiceDialog({
             </div>
             {service?.status === 'Entregado' && (
                 <div className="text-left md:text-center md:col-span-1">
-                    <p className="text-sm"><span className="text-muted-foreground">Método de pago:</span> <span className="font-semibold">{service.paymentMethod}</span></p>
-                    {service.cardFolio && <p className="text-sm"><span className="text-muted-foreground">Folio Tarjeta:</span> <span className="font-semibold">{service.cardFolio}</span></p>}
-                    {service.transferFolio && <p className="text-sm"><span className="text-muted-foreground">Folio Transf:</span> <span className="font-semibold">{service.transferFolio}</span></p>}
+                    <p className="text-sm"><span className="text-muted-foreground">Método de pago:</span><br/><span className="font-semibold">{service.paymentMethod}</span></p>
+                    {service.cardFolio && <p className="text-sm"><span className="text-muted-foreground">Folio Tarjeta:</span><br/><span className="font-semibold">{service.cardFolio}</span></p>}
+                    {service.transferFolio && <p className="text-sm"><span className="text-muted-foreground">Folio Transf:</span><br/><span className="font-semibold">{service.transferFolio}</span></p>}
                 </div>
             )}
             <div className="text-left md:text-right md:col-start-3">

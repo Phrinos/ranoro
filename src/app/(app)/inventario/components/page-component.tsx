@@ -192,8 +192,8 @@ export function InventarioPageComponent({
                     'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
                     'break-words whitespace-normal leading-snug',
                     activeTab === tabInfo.value
-                      ? 'bg-red-700 text-white shadow'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-primary text-primary-foreground shadow'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   )}
                 >
                   {tabInfo.label}
@@ -247,8 +247,8 @@ export function InventarioPageComponent({
       />
 
        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
-                <div className="flex-grow overflow-y-auto px-6 bg-muted/30 print:bg-white print:p-0">
+            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 print-content">
+                <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
                     <InventoryReportContent ref={printContentRef} items={itemsToPrint} />
                 </div>
                  <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
