@@ -433,8 +433,6 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
                                 categories={allCategories}
                                 suppliers={allSuppliers}
                             />
-                            {watchedStatus === 'Entregado' && <PaymentSection isReadOnly={true} />}
-                           
                         </TabsContent>
                         <TabsContent value="reception" className="mt-0">
                            <ReceptionAndDelivery 
