@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -105,6 +104,8 @@ export function PersonalPageComponent({
     }
   };
 
+  const validAreaNames = useMemo(() => new Set(areas.map(a => a.name.toLowerCase())), [areas]);
+
   const performanceData = useMemo(() => {
     if (!dateRange?.from) return [];
     
@@ -129,10 +130,14 @@ export function PersonalPageComponent({
         const commission = netProfitForCommissions * (person.commissionRate || 0);
         const totalSalary = (person.monthlySalary || 0) + commission;
 
+        const activeRoles = (person.roles || [])
+          .filter(role => !!role?.trim()) // Ensure role is not empty
+          .filter(role => validAreaNames.has(role.toLowerCase())); // Check against normalized valid names
+
         return {
           id: person.id,
           name: person.name,
-          roles: person.roles,
+          roles: activeRoles,
           baseSalary: person.monthlySalary || 0,
           generatedRevenue,
           commission,
@@ -140,7 +145,7 @@ export function PersonalPageComponent({
         };
       })
       .sort((a,b) => b.totalSalary - a.totalSalary);
-  }, [dateRange, allPersonnel, allSales, allServices, allInventory, fixedExpenses]);
+  }, [dateRange, allPersonnel, allSales, allServices, allInventory, fixedExpenses, validAreaNames]);
 
   const filteredPersonnel = useMemo(() => {
     let items = allPersonnel.filter(p => showArchived ? !!p.isArchived : !p.isArchived);
@@ -153,9 +158,6 @@ export function PersonalPageComponent({
     }
     return items.sort((a,b) => a.name.localeCompare(b.name));
   }, [allPersonnel, showArchived, searchTerm]);
-  
-  const validAreaNames = useMemo(() => new Set(areas.map(a => a.name)), [areas]);
-
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
   
@@ -187,27 +189,24 @@ export function PersonalPageComponent({
                     </div>
                 </CardHeader>
                 <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {performanceData.map(person => {
-                        const activeRoles = (person.roles || []).filter(role => validAreaNames.has(role));
-                        return (
-                            <Card key={person.id} className="shadow-sm">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-lg">{person.name}</CardTitle>
-                                    {activeRoles.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 pt-1">
-                                            {activeRoles.map(role => <Badge key={role} variant={getRoleBadgeVariant(role)}>{role}</Badge>)}
-                                        </div>
-                                    )}
-                                </CardHeader>
-                                <CardContent className="space-y-2 text-sm">
-                                    <div className="flex justify-between items-center"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(person.generatedRevenue)}</span></div>
-                                    <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(person.baseSalary)}</span></div>
-                                    <div className="flex justify-between items-center"><span className="text-muted-foreground">Comisiones {dateRange?.from ? format(dateRange.from, 'MMM', { locale: es }) : ''}:</span><span className="font-semibold text-green-600">{formatCurrency(person.commission)}</span></div>
-                                    <div className="flex justify-between items-center border-t pt-2 mt-2 font-bold"><span className="text-foreground">Sueldo total:</span><span className="text-lg">{formatCurrency(person.totalSalary)}</span></div>
-                                </CardContent>
-                            </Card>
-                        )
-                    })}
+                    {performanceData.map(person => (
+                        <Card key={person.id} className="shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-lg">{person.name}</CardTitle>
+                                {person.roles.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 pt-1">
+                                        {person.roles.map(role => <Badge key={role} variant={getRoleBadgeVariant(role)}>{role}</Badge>)}
+                                    </div>
+                                )}
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm">
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(person.generatedRevenue)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(person.baseSalary)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Comisiones {dateRange?.from ? format(dateRange.from, 'MMM', { locale: es }) : ''}:</span><span className="font-semibold text-green-600">{formatCurrency(person.commission)}</span></div>
+                                <div className="flex justify-between items-center border-t pt-2 mt-2 font-bold"><span className="text-foreground">Sueldo total:</span><span className="text-lg">{formatCurrency(person.totalSalary)}</span></div>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </CardContent>
             </Card>
         </TabsContent>
@@ -246,3 +245,5 @@ export function PersonalPageComponent({
     </>
   );
 }
+
+    
