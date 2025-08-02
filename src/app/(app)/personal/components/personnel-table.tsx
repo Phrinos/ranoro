@@ -19,24 +19,21 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-interface PersonnelTableProps {
-  personnel: Personnel[];
-  onEdit: (person: Personnel) => void;
-  onArchive: (person: Personnel) => void;
-}
-
-const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-        case 'Admin':
-        case 'Superadministrador':
-            return 'destructive';
-        case 'Técnico':
-            return 'secondary';
-        case 'Recepcionista':
-            return 'blue';
-        default:
-            return 'outline';
+const getRoleBadgeVariant = (role: string): "black" | "white" | "lightGray" | "blue" | "outline" => {
+    const lowerCaseRole = role.toLowerCase();
+    if (lowerCaseRole.includes('admin')) {
+        return 'black';
     }
+    if (lowerCaseRole.includes('administrativo')) {
+        return 'white';
+    }
+     if (lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico')) {
+        return 'lightGray';
+    }
+    if (lowerCaseRole.includes('recepcionista')) {
+        return 'blue';
+    }
+    return 'outline';
 }
 
 export const PersonnelTable = React.memo(({ personnel, onEdit, onArchive }: PersonnelTableProps) => {
