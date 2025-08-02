@@ -152,18 +152,11 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['dashboard:view'] // All users can see options
   },
   {
-    label: 'Mensajería',
-    path: '/mensajeria',
-    icon: MessageSquare,
-    groupTag: 'Opciones',
-    permissions: ['messaging:manage']
-  },
-  {
     label: 'Administración',
     path: '/administracion',
     icon: Shield,
     groupTag: 'Opciones',
-    permissions: ['audits:view']
+    permissions: ['audits:view', 'messaging:manage']
   }
 ];
 
@@ -240,7 +233,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/vehiculos' && (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios'))) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
     if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
-    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/admin/configuracion-ticket') || pathname.startsWith('/mensajeria'))) isActive = true;
+    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/admin/configuracion-ticket'))) isActive = true;
     if (entry.path === '/finanzas' && (pathname.startsWith('/finanzas') || pathname.startsWith('/facturacion-admin'))) isActive = true;
     if (entry.path === '/administracion' && (pathname.startsWith('/administracion') || pathname.startsWith('/admin'))) isActive = true;
     if (entry.path === '/rentas' && (pathname.startsWith('/rentas') || pathname.startsWith('/flotilla'))) isActive = true; // Group /flotilla under /rentas (Ingresos)

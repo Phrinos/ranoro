@@ -11,8 +11,9 @@ import { AuditoriaPageContent } from "./auditoria-content";
 import { MigracionPageContent } from "./migracion-content";
 import { RegistroIndividualContent } from './registro-individual-content';
 import { Loader2 } from "lucide-react";
-import { Shield, Users, BookOpen, DatabaseZap } from 'lucide-react';
+import { Shield, Users, BookOpen, DatabaseZap, MessageSquare } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { MensajeriaPageContent } from "./mensajeria-content";
 
 
 export function AdministracionPageComponent({
@@ -20,7 +21,7 @@ export function AdministracionPageComponent({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-    const defaultSubTab = (searchParams?.tab as string) || 'auditoria';
+    const defaultSubTab = (searchParams?.tab as string) || 'mensajeria';
     const [activeTab, setAdminTab] = useState(defaultSubTab);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -51,6 +52,9 @@ export function AdministracionPageComponent({
             <Tabs value={activeTab} onValueChange={setAdminTab} className="w-full">
                 <div className="w-full">
                     <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
+                        <TabsTrigger value="mensajeria" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                             <MessageSquare className="h-5 w-5 mr-2"/>Mensajería
+                        </TabsTrigger>
                         <TabsTrigger value="auditoria" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
                              <BookOpen className="h-5 w-5 mr-2"/>Auditoría
                         </TabsTrigger>
@@ -59,6 +63,9 @@ export function AdministracionPageComponent({
                         </TabsTrigger>
                     </TabsList>
                 </div>
+                <TabsContent value="mensajeria" className="mt-6">
+                    <MensajeriaPageContent />
+                </TabsContent>
                  <TabsContent value="auditoria" className="mt-6">
                     <AuditoriaPageContent initialLogs={auditLogs} />
                 </TabsContent>
