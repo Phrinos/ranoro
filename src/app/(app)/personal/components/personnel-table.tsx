@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from "react";
@@ -19,15 +20,17 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const getRoleBadgeVariant = (role: string): "black" | "white" | "lightGray" | "blue" | "outline" => {
+const getRoleBadgeVariant = (role: string): "black" | "white" | "lightGray" | "outline" => {
     const lowerCaseRole = role.toLowerCase();
-    if (lowerCaseRole.includes('admin')) { // Refers to 'Administrativo' area now
+    if (lowerCaseRole === 'admin' || lowerCaseRole === 'superadministrador') {
+        return 'black';
+    }
+    if (lowerCaseRole === 'administrativo') {
         return 'white';
     }
     if (lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico')) {
         return 'lightGray';
     }
-    // You can add more role-to-color mappings here
     return 'outline';
 }
 
