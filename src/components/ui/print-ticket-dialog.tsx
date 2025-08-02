@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -57,7 +58,7 @@ export function PrintTicketDialog({
         
         {/* Scrollable Content Area */}
         <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 print:p-0 print:bg-white flex justify-center">
-            <div className="printable-content print-format-receipt">
+            <div className="printable-content print:!bg-white print-format-receipt">
                  {children}
             </div>
         </div>

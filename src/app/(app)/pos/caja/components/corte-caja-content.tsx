@@ -36,7 +36,7 @@ interface CorteCajaContentProps {
   previewWorkshopInfo?: WorkshopInfo;
 }
 
-export function CorteDiaContent({ reportData, date, transactions, previewWorkshopInfo }: CorteCajaContentProps) {
+export const CorteDiaContent = React.forwardRef<HTMLDivElement, CorteCajaContentProps>(({ reportData, date, transactions, previewWorkshopInfo }, ref) => {
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo>(initialWorkshopInfo);
 
   useEffect(() => {
@@ -73,6 +73,7 @@ export function CorteDiaContent({ reportData, date, transactions, previewWorksho
 
   return (
     <div 
+      ref={ref}
       data-format="receipt"
       className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0"
     >
@@ -134,4 +135,5 @@ export function CorteDiaContent({ reportData, date, transactions, previewWorksho
       <p className="text-center text-xs mt-2">Fin del Reporte</p>
     </div>
   );
-}
+});
+CorteDiaContent.displayName = "CorteDiaContent";

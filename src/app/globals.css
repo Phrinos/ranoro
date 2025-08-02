@@ -142,46 +142,28 @@
     REGLAS DE IMPRESIÓN GENERALES
    ========================================= */
   @media print {
-    body {
-      background-color: white !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
+    body.printing {
+        background-color: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
-
-    .printable-content, .printable-content * {
-      visibility: visible !important;
-    }
-
-    body > *:not(.printable-content) {
+    .no-print {
       display: none !important;
     }
-    
     .printable-content {
       position: absolute !important;
       left: 0 !important;
       top: 0 !important;
       width: 100% !important;
-      height: auto !important;
+      height: 100% !important;
       margin: 0 !important;
       padding: 0 !important;
       box-shadow: none !important;
       border: none !important;
+      visibility: visible !important;
     }
-    
-    .report-header {
-      page-break-after: avoid;
-    }
-    
-    .inventory-table {
-      page-break-inside: auto;
-    }
-    
-    .inventory-table tr {
-      page-break-inside: avoid;
-    }
-
-    .no-print {
-      display: none !important;
+    body.printing > *:not(.printable-content) {
+      visibility: hidden !important;
     }
   }
 
@@ -192,7 +174,7 @@
     .print-format-letter {
         @page {
             size: letter portrait;
-            margin: 1cm;
+            margin: 0;
         }
     }
   }

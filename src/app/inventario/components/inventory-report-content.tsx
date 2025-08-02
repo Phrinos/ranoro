@@ -63,7 +63,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
         id="printable-report"
         className="font-sans bg-white text-black text-sm p-4 print-format-letter"
       >
-        <header className="report-header no-page-break">
+        <header className="no-page-break">
             <div className="mb-8 border-b-2 border-black pb-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 {workshopInfo?.logoUrl ? (
@@ -127,7 +127,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
         </header>
 
         <main>
-          <Table className="inventory-table">
+          <Table>
             <TableHeader>
               <TableRow className="bg-gray-100 print:bg-gray-100">
                 <TableHead className="w-[15%]">Categoría</TableHead>

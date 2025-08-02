@@ -155,7 +155,7 @@ export function ServiceDialog({
     }
     
     // NEW LOGIC: Check if trying to complete the service
-    if (formData.status === 'Entregado') {
+    if ('status' in formData && formData.status === 'Entregado') {
         const serviceDataForCompletion = {
             ...(service || {}), // Base with existing service data if available
             ...formData,      // Override with current form data
@@ -218,8 +218,8 @@ export function ServiceDialog({
 
   const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
   const showCancelButton = !isReadOnly && service?.id && service.status !== 'Entregado' && service.status !== 'Cancelado';
-  const showCompleteButton = !isReadOnly && formStatus === 'En Taller' && formSubStatus === 'Completado';
-
+  
+  const showCompleteButton = !isReadOnly && formStatus === 'En Taller' && formSubStatus === 'Completado' && service?.id != null;
       
   return (
     <>
@@ -299,7 +299,7 @@ export function ServiceDialog({
             </div>
             <div className="flex flex-row gap-2 items-center">
                <Button variant="outline" type="button" onClick={() => handleOpenChange(false)} className="flex-1 sm:flex-initial">Cerrar</Button>
-               {!isReadOnly && showCompleteButton && (
+               {!isReadOnly && showCompleteButton && service && (
                   <Button onClick={() => { setServiceToComplete(service); setIsPaymentDialogOpen(true); }} className="bg-green-600 hover:bg-green-700">
                     <DollarSign className="mr-2 h-4 w-4"/> Completar y Cobrar
                   </Button>

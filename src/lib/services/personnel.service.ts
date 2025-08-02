@@ -23,7 +23,7 @@ import type { UserFormValues } from '@/app/(app)/administracion/components/user-
 // --- Unified Personnel ---
 const onPersonnelUpdate = (callback: (personnel: Personnel[]) => void): (() => void) => {
     if (!db) return () => {};
-    const personnelUnsubscribe = onSnapshot(query(collection(db, "personnel")), (snapshot) => {
+    const personnelUnsubscribe = onSnapshot(query(collection(db, "users")), (snapshot) => {
         const personnelList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel));
         callback(personnelList);
     });
@@ -35,7 +35,7 @@ const onPersonnelUpdate = (callback: (personnel: Personnel[]) => void): (() => v
 
 const onPersonnelUpdatePromise = async (): Promise<Personnel[]> => {
     if (!db) return [];
-    const personnelSnapshot = await getDocs(collection(db, "personnel"));
+    const personnelSnapshot = await getDocs(collection(db, "users"));
     return personnelSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel));
 };
 
