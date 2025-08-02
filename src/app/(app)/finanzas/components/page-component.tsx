@@ -133,16 +133,16 @@ export function FinanzasPageComponent({
         const { totalTechnicianSalaries, totalAdministrativeSalaries } = allPersonnel
           .filter(p => !p.isArchived)
           .reduce((totals, person) => {
-            const roles = (person.roles || [person.role] || []).map(r => r.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-            const isTechnician = roles.includes('tecnico');
-            const isAdvisorOrAdmin = !isTechnician;
+            const normalizedRole = (person.role || '')
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
 
-            if (isTechnician) {
+            if (normalizedRole === 'tecnico') {
                 totals.totalTechnicianSalaries += person.monthlySalary || 0;
-            } else if (isAdvisorOrAdmin) {
+            } else {
                 totals.totalAdministrativeSalaries += person.monthlySalary || 0;
             }
-
             return totals;
           }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
 
