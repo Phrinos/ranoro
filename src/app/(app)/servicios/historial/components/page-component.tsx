@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { ServiceDialog } from "../../components/service-dialog";
+import { ServiceDialog } from "../../components/dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { CompleteServiceDialog } from "../../components/CompleteServiceDialog";
 import { TableToolbar } from '@/components/shared/table-toolbar';

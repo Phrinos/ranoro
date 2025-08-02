@@ -73,15 +73,13 @@ import { Input } from "@/components/ui/input";
 interface Props {
   initialDataService?: ServiceRecord|null
   vehicles:Vehicle[]; 
-  technicians: Personnel[];
+  technicians: User[];
   inventoryItems:InventoryItem[]
   serviceTypes:ServiceTypeRecord[]
   onSubmit:(d:ServiceRecord|QuoteRecord)=>Promise<void>
   onClose:()=>void
-  onCancelService?: (serviceId: string, reason: string) => void;
   isReadOnly?:boolean
   mode?:'service'|'quote'
-  onStatusChange?: (status: ServiceRecord['status']) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
   onTotalCostChange: (cost: number) => void;
 }
@@ -94,11 +92,8 @@ export function ServiceForm(props:Props){
     technicians,
     inventoryItems:invItems,
     onSubmit,
-    onClose,
-    onCancelService,
     isReadOnly = false,
     mode = 'service',
-    onStatusChange,
     onVehicleCreated,
     onTotalCostChange,
   } = props;
@@ -218,37 +213,6 @@ export function ServiceForm(props:Props){
     reset(defaultValues);
   }, [initialDataService, reset, defaultValues]);
   
-  useEffect(() => {
-    const subscription = watch((value, { name }) => {
-        if (name === 'status' && onStatusChange) {
-            onStatusChange(value.status as ServiceRecord['status']);
-        }
-        
-        if(name === 'status') {
-          const currentStatus = value.status;
-          if (currentStatus === 'Agendado' && !watch('serviceDate')) {
-              setValue('serviceDate', new Date());
-              setValue('appointmentStatus', 'Creada');
-          }
-          if (currentStatus === 'En Taller' && !watch('receptionDateTime')) {
-              setValue('receptionDateTime', new Date());
-          }
-        }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, onStatusChange, setValue]);
-
-  
-  useEffect(() => {
-    if (watchedVehicleId) {
-      const selectedVehicle = parentVehicles.find(v => v.id === watchedVehicleId);
-      if (selectedVehicle) {
-        setValue('customerName', selectedVehicle.ownerName);
-        setValue('allVehiclesForDialog' as any, parentVehicles);
-      }
-    }
-  }, [watchedVehicleId, parentVehicles, setValue]);
-  
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
@@ -358,7 +322,7 @@ export function ServiceForm(props:Props){
   
   const handlePhotoUploaded = useCallback((reportIndex: number, url: string) => {
     const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
-    setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url]);
+    setValue(`photoReports.${index}.photos`, [...currentPhotos, url]);
   }, [getValues, setValue]);
 
   const handleChecklistPhotoUploaded = useCallback((itemName: string, url: string) => {
@@ -429,7 +393,7 @@ export function ServiceForm(props:Props){
     <>
         <FormProvider {...form}>
             <form id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
-                <div className="flex-grow overflow-y-auto pt-4 space-y-6">
+                <div className="flex-grow overflow-y-auto px-6 pt-4 space-y-6">
                     <VehicleSelectionCard
                         isReadOnly={props.isReadOnly}
                         localVehicles={parentVehicles}
