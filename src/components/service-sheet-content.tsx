@@ -431,7 +431,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
                         <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
-                        <p className="text-[7px] text-gray-600">Recibo de conformidad. Garantía de 90 días o 10,000 km en el servicio realizado.</p>
+                        <p className="text-[7px] text-gray-600">Recibo de conformidad. El servicio realizado cuenta con una garantía de 90 días o 1,000 km, lo que ocurra primero.</p>
                     </div>
                 </div>
            </section>

@@ -1,4 +1,5 @@
 
+
 export default function TerminosPage() {
   return (
     <>
@@ -132,7 +133,7 @@ export default function TerminosPage() {
       
       <h4 className="font-bold mt-6">3. Garantía</h4>
       <p className="text-justify">
-        Se otorga una garantía por un plazo de 90 días naturales en mano de obra, contados a partir de la fecha de entrega del vehículo. Para la garantía en partes, piezas, y refacciones, el Taller transmitirá la garantía otorgada por el fabricante o proveedor. La garantía deberá hacerse válida en las instalaciones del Taller, siempre y cuando el vehículo no haya sido intervenido por un tercero. El tiempo que dure la reparación bajo garantía no será computable dentro del plazo de la misma. Los gastos en que incurra el Cliente para hacer válida la garantía fuera de las instalaciones del Taller deberán ser cubiertos por el Cliente.
+        Se otorga una garantía por un plazo de 90 días naturales o 1,000 kilómetros, lo que ocurra primero, en mano de obra, contados a partir de la fecha de entrega del vehículo. Para la garantía en partes, piezas, y refacciones, el Taller transmitirá la garantía otorgada por el fabricante o proveedor. La garantía deberá hacerse válida en las instalaciones del Taller, siempre y cuando el vehículo no haya sido intervenido por un tercero. El tiempo que dure la reparación bajo garantía no será computable dentro del plazo de la misma. Los gastos en que incurra el Cliente para hacer válida la garantía fuera de las instalaciones del Taller deberán ser cubiertos por el Cliente.
       </p>
       
       <h4 className="font-bold mt-6">4. Responsabilidad y Autorización</h4>
