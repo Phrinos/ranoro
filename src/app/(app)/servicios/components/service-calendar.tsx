@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { ServiceRecord, Vehicle, Technician } from '@/types';
+import type { ServiceRecord, Vehicle, Technician, User } from '@/types';
 import { isSameDay, parseISO, format, isValid, compareAsc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Wrench, Clock, CheckCircle, CalendarCheck } from 'lucide-react';
@@ -25,7 +25,7 @@ const safeParseISO = (date: string | Date | undefined): Date => {
 interface ServiceCalendarProps {
   services: ServiceRecord[];
   vehicles: Vehicle[];
-  technicians: Technician[];
+  technicians: User[];
   onServiceClick: (service: ServiceRecord) => void;
 }
 

@@ -7,14 +7,14 @@ import { ServiceDialog } from "../../components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { CompleteServiceDialog } from "../../components/CompleteServiceDialog";
 import { TableToolbar } from '@/components/shared/table-toolbar';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, Personnel } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
 import { isToday } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceAppointmentCard } from "../../components/ServiceAppointmentCard";
 import { Loader2 } from "lucide-react";
-import { operationsService, inventoryService, personnelService } from '@/lib/services';
+import { operationsService, inventoryService, personnelService, adminService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
 import { parseDate } from '@/lib/forms';
 import { writeBatch } from 'firebase/firestore';
@@ -49,7 +49,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
 
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [personnel, setPersonnel] = useState<User[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,7 +79,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         setAllServices(services.filter(s => s.status !== 'Cotizacion'));
       }),
       inventoryService.onVehiclesUpdate(setVehicles),
-      personnelService.onPersonnelUpdate(setPersonnel),
+      adminService.onUsersUpdate(setPersonnel),
       inventoryService.onItemsUpdate(setInventoryItems),
       inventoryService.onServiceTypesUpdate((data) => {
           setServiceTypes(data);
@@ -297,7 +297,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       key={record.id}
       service={record}
       vehicles={vehicles}
-      technicians={personnel as Technician[]}
+      technicians={personnel}
       onEdit={() => handleOpenFormDialog(record)}
       onView={() => handleShowPreview(record)}
       onComplete={() => handleOpenCompleteDialog(record)}
@@ -406,7 +406,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
               ref={ticketContentRef}
               service={recordForTicket}
               vehicle={vehicles.find(v => v.id === recordForTicket.vehicleId)}
-              technician={personnel.find(t => t.id === recordForTicket.technicianId) as Technician}
+              technician={personnel.find(t => t.id === recordForTicket.technicianId)}
               previewWorkshopInfo={workshopInfo || undefined}
             />
           </div>

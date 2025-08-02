@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -17,7 +18,7 @@ import type {
   QuoteRecord,
   InventoryItem,
   ServiceTypeRecord,
-  Personnel,
+  User,
 } from "@/types";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -57,7 +58,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ServiceDialog } from "../../servicios/components/service-dialog";
 import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
 import { TicketContent } from "@/components/ticket-content";
-import { inventoryService, operationsService, personnelService } from "@/lib/services";
+import { inventoryService, operationsService, adminService } from "@/lib/services";
 import { parseDate } from "@/lib/forms";
 
 export default function VehicleDetailPage() {
@@ -69,7 +70,7 @@ export default function VehicleDetailPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
-  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [personnel, setPersonnel] = useState<User[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
@@ -80,7 +81,7 @@ export default function VehicleDetailPage() {
 
   const [showPrintTicketDialog, setShowPrintTicketDialog] = useState(false);
   const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
-  const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Personnel | null>(null);
+  const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<User | null>(null);
 
   const fetchVehicleAndServices = useCallback(async () => {
     const fetchedVehicle = await inventoryService.getVehicleById(vehicleId);
@@ -93,7 +94,7 @@ export default function VehicleDetailPage() {
 
   useEffect(() => {
     fetchVehicleAndServices();
-    personnelService.onPersonnelUpdate(setPersonnel);
+    adminService.onUsersUpdate(setPersonnel);
     inventoryService.onItemsUpdate(setInventory);
     inventoryService.onServiceTypesUpdate(setServiceTypes);
     inventoryService.onVehiclesUpdate(setAllVehicles); // to pass to dialog
