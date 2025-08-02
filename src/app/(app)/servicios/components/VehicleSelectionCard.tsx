@@ -283,18 +283,18 @@ export function VehicleSelectionCard({
                                 <CalendarCheck className="h-5 w-5" />Próximo Servicio Recomendado
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-3 pt-0 space-y-2">
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
-                                <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
-                            </div>
+                        <CardContent className="p-3 pt-0 space-y-4">
                             <FormField
                                 control={control}
                                 name="nextServiceInfo.date"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Fecha</FormLabel>
-                                        <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
+                                        <div className="flex gap-2">
+                                          <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly} className="flex-grow"/></FormControl>
+                                          <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6m</Button>
+                                          <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1a</Button>
+                                        </div>
                                     </FormItem>
                                 )}
                             />
@@ -304,7 +304,11 @@ export function VehicleSelectionCard({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Kilometraje</FormLabel>
-                                        <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
+                                        <div className="flex gap-2">
+                                            <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} className="flex-grow" /></FormControl>
+                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10k</Button>
+                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15k</Button>
+                                        </div>
                                     </FormItem>
                                 )}
                             />
