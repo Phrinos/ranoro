@@ -108,7 +108,7 @@ export default function NuevoServicioPage() {
       await operationsService.completeService(savedService, paymentDetails, batch);
       await batch.commit();
 
-      const finalServiceRecord = await operationsService.getQuoteById(savedService.id) as ServiceRecord;
+      const finalServiceRecord = { ...savedService, ...paymentDetails, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
 
       toast({ title: 'Servicio Completado', description: `El servicio #${finalServiceRecord.id} ha sido creado y completado.` });
       setServiceForPreview(finalServiceRecord);
