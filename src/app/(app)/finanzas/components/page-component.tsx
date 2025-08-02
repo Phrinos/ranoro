@@ -133,19 +133,14 @@ export function FinanzasPageComponent({
         const { totalTechnicianSalaries, totalAdministrativeSalaries } = allPersonnel
           .filter(p => !p.isArchived)
           .reduce((totals, person) => {
-            const roles = (person.roles || []).map(r =>
-              r.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            );
-        
-            const technicianLabels = ["tecnico", "técnico"];
-            const isTechnician = roles.some(role => technicianLabels.includes(role));
-        
-            if (isTechnician) {
+            const role = (person.role || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            if (role === 'tecnico') {
               totals.totalTechnicianSalaries += person.monthlySalary || 0;
-            } else {
+            } else if (role === 'asesor') {
               totals.totalAdministrativeSalaries += person.monthlySalary || 0;
-            }
-        
+            } 
+            // Nota: superadministrador no se suma a ningún grupo
             return totals;
           }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
 
