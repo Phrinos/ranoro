@@ -21,7 +21,7 @@ import {
 import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
-import { FixedExpensesDialog } from './fixed-expenses-dialog'; 
+import { FixedExpensesDialog } from './fixed-expense-form'; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { DateRange } from 'react-day-picker';
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
@@ -76,8 +76,21 @@ export function FinanzasPageComponent({
         return () => unsubs.forEach(unsub => unsub());
     }, []);
 
-    const allTechnicians = useMemo(() => allPersonnel.filter(p => p.roles.includes('Técnico')), [allPersonnel]);
-    const allAdminStaff = useMemo(() => allPersonnel.filter(p => p.roles.some(r => r !== 'Técnico')), [allPersonnel]);
+    const { technicians, advisors } = useMemo(() => {
+        const techs: Personnel[] = [];
+        const ad_visors: Personnel[] = [];
+        allPersonnel.forEach(p => {
+            // A person can be both, but for salary calculation, we separate them.
+            // Assuming 'Técnico' is an exclusive primary role for this calculation.
+            if (p.roles.includes('Técnico')) {
+                techs.push(p);
+            } else {
+                ad_visors.push(p);
+            }
+        });
+        return { technicians: techs, advisors: ad_visors };
+    }, [allPersonnel]);
+
 
     const financialSummary = useMemo(() => {
         const emptyState = { 
@@ -133,8 +146,8 @@ export function FinanzasPageComponent({
         
         const totalUnitsSold = salesInRange.reduce((sum, s) => sum + s.items.reduce((count, item) => count + item.quantity, 0), 0) + servicesInRange.reduce((sum, s) => sum + (s.serviceItems || []).flatMap(si => si.suppliesUsed || []).reduce((count, supply) => count + supply.quantity, 0), 0);
 
-        const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
-        const totalAdministrativeSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
+        const totalTechnicianSalaries = technicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
+        const totalAdministrativeSalaries = advisors.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
         const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         const totalBaseExpenses = totalTechnicianSalaries + totalAdministrativeSalaries + totalFixedExpenses;
         
@@ -143,11 +156,11 @@ export function FinanzasPageComponent({
         
         let totalVariableCommissions = 0;
         if (isProfitableForCommissions) {
-          const techCommissions = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => {
+          const techCommissions = technicians.filter(t => !t.isArchived).reduce((sum, tech) => {
             return sum + (netProfitBeforeCommissions * (tech.commissionRate || 0));
           }, 0);
           
-          const adminCommissions = allAdminStaff.filter(s => !s.isArchived).reduce((sum, admin) => {
+          const adminCommissions = advisors.filter(s => !s.isArchived).reduce((sum, admin) => {
             return sum + (netProfitBeforeCommissions * (admin.commissionRate || 0));
           }, 0);
           totalVariableCommissions = techCommissions + adminCommissions;
@@ -170,7 +183,7 @@ export function FinanzasPageComponent({
             totalVariableCommissions, netProfit, isProfitableForCommissions, serviceIncomeBreakdown,
             totalInventoryValue, totalUnitsSold
         };
-    }, [dateRange, isLoading, allSales, allServices, allInventory, allTechnicians, allAdminStaff, fixedExpenses]);
+    }, [dateRange, isLoading, allSales, allServices, allInventory, technicians, advisors, fixedExpenses]);
 
     const inventoryMovements = useMemo((): InventoryMovement[] => {
       if (isLoading) return [];
@@ -337,8 +350,8 @@ export function FinanzasPageComponent({
                           <CardHeader><div className="flex items-center justify-between"><CardTitle className="text-xl flex items-center gap-2"><TrendingDown className="h-6 w-6 text-red-500" />Egresos Fijos y Variables</CardTitle><Button variant="outline" size="sm" onClick={() => setIsExpensesDialogOpen(true)}><Pencil className="mr-2 h-4 w-4" />Editar Gastos Fijos</Button></div><CardDescription>Detalle de gastos fijos y variables del periodo.</CardDescription></CardHeader>
                           <CardContent className="space-y-3 text-base">
                               <h3 className="font-semibold text-lg">Nómina y Comisiones</h3>
-                              <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldos Base (Técnicos):</span><span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianSalaries)}</span></div>
-                              <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldos Base (Admin.):</span><span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeSalaries)}</span></div>
+                              <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldos (Técnicos):</span><span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianSalaries)}</span></div>
+                              <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldos (Asesores/Admin):</span><span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeSalaries)}</span></div>
                               <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones Variables:</span><span className="font-semibold">{formatCurrency(financialSummary.totalVariableCommissions)}</span></div>
                               
                               <h3 className="font-semibold text-lg pt-4">Servicios y Gastos Fijos</h3>
