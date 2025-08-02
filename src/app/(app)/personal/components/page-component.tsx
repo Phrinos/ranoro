@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'rea
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, UserCheck, UserX, Search, TrendingUp, Users, ChevronsRight, ListFilter, Badge, DollarSign } from "lucide-react";
+import { PlusCircle, UserCheck, UserX, Search, TrendingUp, Users, ChevronsRight, ListFilter, DollarSign } from "lucide-react";
 import { PersonnelTable } from "./personnel-table";
 import { PersonnelDialog } from "./personnel-dialog";
 import type { User, Technician, ServiceRecord, AdministrativeStaff, SaleReceipt, MonthlyFixedExpense, Personnel, AppRole, Area } from '@/types';
@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { calculateSaleProfit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { parseDate } from '@/lib/forms';
 import { AreasContent } from './areas-content';
+import { Badge } from '@/components/ui/badge';
 
 const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | "black" => {
     const lowerCaseRole = role.toLowerCase();
@@ -131,8 +132,7 @@ export function PersonalPageComponent({
         const totalSalary = (person.monthlySalary || 0) + commission;
 
         const activeRoles = (person.roles || [])
-          .filter(role => !!role?.trim()) // Ensure role is not empty
-          .filter(role => validAreaNames.has(role.toLowerCase())); // Check against normalized valid names
+          .filter(role => !!role?.trim() && validAreaNames.has(role.toLowerCase()));
 
         return {
           id: person.id,
