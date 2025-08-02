@@ -131,20 +131,21 @@ export function FinanzasPageComponent({
         const totalUnitsSold = salesInRange.reduce((sum, s) => sum + s.items.reduce((count, item) => count + item.quantity, 0), 0) + servicesInRange.reduce((sum, s) => sum + (s.serviceItems || []).flatMap(si => si.suppliesUsed || []).reduce((count, supply) => count + supply.quantity, 0), 0);
         
         const { totalTechnicianSalaries, totalAdministrativeSalaries } = allPersonnel
-          .filter(p => !p.isArchived)
-          .reduce((totals, person) => {
-            const normalizedRole = (person.role || '')
-                .toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "");
+            .filter(p => !p.isArchived)
+            .reduce((totals, person) => {
+                const normalizedRole = (person.role || '')
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "");
 
-            if (normalizedRole === 'tecnico') {
-                totals.totalTechnicianSalaries += person.monthlySalary || 0;
-            } else {
-                totals.totalAdministrativeSalaries += person.monthlySalary || 0;
-            }
-            return totals;
-          }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
+                if (normalizedRole.includes('tecnico')) {
+                    totals.totalTechnicianSalaries += person.monthlySalary || 0;
+                } else {
+                    totals.totalAdministrativeSalaries += person.monthlySalary || 0;
+                }
+                return totals;
+            }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
+
 
         const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         const totalBaseExpenses = totalTechnicianSalaries + totalAdministrativeSalaries + totalFixedExpenses;
