@@ -43,7 +43,6 @@ export function PersonalPageComponent({
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
-  const [appRoles, setAppRoles] = useState<AppRole[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -66,9 +65,8 @@ export function PersonalPageComponent({
       operationsService.onSalesUpdate(setAllSales),
       operationsService.onServicesUpdate(setAllServices),
       inventoryService.onItemsUpdate(setAllInventory),
-      inventoryService.onFixedExpensesUpdate(setFixedExpenses),
-      adminService.onRolesUpdate((roles) => {
-          setAppRoles(roles);
+      inventoryService.onFixedExpensesUpdate((expenses) => {
+          setFixedExpenses(expenses);
           setIsLoading(false);
       })
     ];

@@ -5,7 +5,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { PersonnelForm, type PersonnelFormValues } from "./personnel-form";
-import type { Personnel, Area } from "@/types"; // Changed AppRole to Area
+import type { Personnel, Area } from "@/types";
 import { Button } from '@/components/ui/button';
 
 interface PersonnelDialogProps {
@@ -13,7 +13,7 @@ interface PersonnelDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   personnel?: Personnel | null;
   onSave: (data: PersonnelFormValues, id?: string) => void;
-  appRoles: Area[]; // Changed AppRole to Area
+  appRoles: Area[];
 }
 
 export function PersonnelDialog({ open, onOpenChange, personnel, onSave, appRoles }: PersonnelDialogProps) {

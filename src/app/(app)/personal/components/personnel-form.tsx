@@ -32,7 +32,7 @@ interface PersonnelFormProps {
   id: string;
   initialData?: Personnel | null;
   onSubmit: (values: PersonnelFormValues) => void;
-  appRoles: Area[]; // Changed from AppRole to Area
+  appRoles: Area[];
 }
 
 export function PersonnelForm({ id, initialData, onSubmit, appRoles }: PersonnelFormProps) {
@@ -95,7 +95,7 @@ export function PersonnelForm({ id, initialData, onSubmit, appRoles }: Personnel
                                         checked={field.value?.includes(role.name)}
                                         onCheckedChange={(checked) => {
                                             return checked
-                                            ? field.onChange([...field.value, role.name])
+                                            ? field.onChange([...(field.value || []), role.name])
                                             : field.onChange(field.value?.filter((value) => value !== role.name))
                                         }}
                                     />

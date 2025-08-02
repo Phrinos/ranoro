@@ -275,6 +275,7 @@ export interface ServiceRecord {
   customerName?: string;
 }
 
+// Deprecated
 export interface Technician {
   id: string;
   name: string;
@@ -289,6 +290,7 @@ export interface Technician {
   isArchived?: boolean;
 }
 
+// Deprecated
 export interface AdministrativeStaff {
   id: string;
   name: string;
