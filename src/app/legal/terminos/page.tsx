@@ -110,13 +110,62 @@ export default function TerminosPage() {
       
       <h3 className="font-bold mt-6">12. Contacto y Asistencia</h3>
       <p className="text-justify">
-        Si tiene alguna duda sobre estos Términos y Condiciones, sobre el funcionamiento de la plataforma, o desea reportar cualquier problema, puede contactar al equipo de Ranoro a través del correo electrónico contacto@ranoro.com o llamando al teléfono de atención proporcionado en nuestro sitio web. Estaremos atentos para brindarle soporte y resolver sus inquietudes a la brevedad posible. Última actualización de los TyC: 11 de julio de 2025.
+        Si tiene alguna duda sobre estos Términos y Condiciones, sobre el funcionamiento de la plataforma, o desea reportar cualquier problema, puede contactar al equipo de Ranoro a través del correo electrónico contacto@ranoro.com o llamando al teléfono de atención proporcionado en nuestro sitio web. Estaremos atentos para brindarle soporte y resolver sus inquietudes a la brevedad posible.
+      </p>
+      
+      <div className="my-8 border-t-2 border-dashed"></div>
+
+      <h2 className="text-2xl font-bold mt-8">Anexo A: Términos Modelo para la Prestación de Servicios del Taller</h2>
+      <p className="text-justify mt-4">
+        <strong>Nota Aclaratoria:</strong> Las siguientes cláusulas son un modelo de los términos y condiciones que un "Usuario Taller" puede establecer con su "Usuario Cliente" para la prestación de servicios de reparación y mantenimiento vehicular. Ranoro, como proveedor de la plataforma, no es parte de este contrato. La responsabilidad del servicio recae exclusivamente en el taller.
+      </p>
+
+      <h4 className="font-bold mt-6">1. Aceptación del Servicio</h4>
+      <p className="text-justify">
+        En virtud de este contrato, el Taller presta el servicio de reparación y/o mantenimiento al Cliente (Consumidor), del vehículo cuyas características se detallan en el presente contrato u orden de servicio digital. El Cliente expresa ser el dueño del vehículo o estar facultado para autorizar los trabajos, aceptando los términos aquí descritos y siendo conocedor de las posibles consecuencias que la reparación puede implicar, responsabilizándose de las mismas.
+      </p>
+      
+      <h4 className="font-bold mt-6">2. Precios y Refacciones</h4>
+      <p className="text-justify">
+        El Cliente acepta haber tenido a la vista los precios por mano de obra, partes y refacciones a emplear en las operaciones a efectuar. El Taller se compromete a que las refacciones utilizadas son nuevas y apropiadas para el funcionamiento del vehículo, salvo que se acuerde lo contrario por escrito.
+      </p>
+      
+      <h4 className="font-bold mt-6">3. Garantía</h4>
+      <p className="text-justify">
+        Se otorga una garantía por un plazo de 90 días naturales en mano de obra, contados a partir de la fecha de entrega del vehículo. Para la garantía en partes, piezas, y refacciones, el Taller transmitirá la garantía otorgada por el fabricante o proveedor. La garantía deberá hacerse válida en las instalaciones del Taller, siempre y cuando el vehículo no haya sido intervenido por un tercero. El tiempo que dure la reparación bajo garantía no será computable dentro del plazo de la misma. Los gastos en que incurra el Cliente para hacer válida la garantía fuera de las instalaciones del Taller deberán ser cubiertos por el Cliente.
+      </p>
+      
+      <h4 className="font-bold mt-6">4. Responsabilidad y Autorización</h4>
+      <p className="text-justify">
+        El Taller será responsable por las descomposturas, daños o pérdidas, parciales o totales, imputables a él mientras el vehículo se encuentre bajo su resguardo. El Cliente autoriza al Taller a usar el vehículo para pruebas o verificación de las reparaciones realizadas. El Cliente libera al Taller de cualquier responsabilidad relacionada con el origen, propiedad, o posesión del vehículo.
+      </p>
+
+      <h4 className="font-bold mt-6">5. Cancelación y Abandono</h4>
+      <p className="text-justify">
+        En caso de que el Cliente cancele la operación, estará obligado a pagar el importe de los trabajos efectuados y las refacciones adquiridas o colocadas hasta el momento de la cancelación, como condición para la entrega del vehículo.
       </p>
       <p className="text-justify">
-        Muchas gracias por confiar en Ranoro: Sistema para Administración Inteligente de Talleres para la gestión de su negocio. ¡Estamos comprometidos con su éxito y el de su taller!
+        El Cliente deberá recoger su vehículo dentro de las 24 horas posteriores a la notificación de que está listo. En caso contrario, se obliga a pagar a el Taller una cuota de $300.00 (Trescientos pesos 00/100 M.N.) por día por concepto de almacenaje. Si transcurren 15 días naturales sin que el Cliente recoja el vehículo, el Taller podrá ponerlo a disposición de la autoridad competente, sin perjuicio del cobro por los servicios y el almacenaje adeudados.
       </p>
-      <p className="text-justify italic">
+
+      <h4 className="font-bold mt-6">6. Documentación y Comunicación</h4>
+      <p className="text-justify">
+        El Taller se obliga a expedir la factura o comprobante de pago correspondiente, especificando precios, materiales y garantía, conforme al artículo 62 de la Ley Federal de Protección al Consumidor de México o legislación local equivalente.
+      </p>
+      <p className="text-justify">
+        El Cliente y el Taller aceptan el uso de medios electrónicos (aplicaciones móviles, correo electrónico, etc.) para enviar, recibir y aceptar información sobre trabajos adicionales, así como para autorizar dichos trabajos.
+      </p>
+
+      <h4 className="font-bold mt-6">7. Jurisdicción</h4>
+      <p className="text-justify">
+        Para la interpretación y cumplimiento de este contrato de servicio, las partes acuerdan someterse a la competencia de la Procuraduría Federal del Consumidor (PROFECO) en la vía administrativa, sin perjuicio de su derecho a acudir a los tribunales competentes de la localidad donde se encuentra el Taller.
+      </p>
+
+      <p className="text-justify italic mt-8">
         (Aviso: Estos TyC, junto con el Aviso de Privacidad asociado, constituyen el acuerdo completo entre el usuario y Ranoro en relación con el uso de la plataforma. Cualquier otro acuerdo o comunicación previa queda sustituido por lo aquí pactado).
+      </p>
+      <p className="text-justify italic mt-2">
+        <strong>Última actualización de los TyC:</strong> 11 de julio de 2025.
       </p>
     </>
   );
