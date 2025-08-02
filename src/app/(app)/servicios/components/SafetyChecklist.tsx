@@ -1,5 +1,4 @@
-
-
+// src/app/(app)/servicios/components/SafetyChecklist.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -80,35 +79,9 @@ const ChecklistItemPhotoUploader = ({
     isReadOnly?: boolean,
     onViewImage: (url: string) => void 
 }) => {
-    const { toast } = useToast();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [isUploading, setIsUploading] = useState(false);
 
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        if (!file) return;
-
-        if (photos.length >= 2) {
-          toast({ title: 'Límite de Fotos Excedido', description: 'Solo puede subir un máximo de 2 fotos por punto de revisión.', variant: 'destructive' });
-          return;
-        }
-
-        setIsUploading(true);
-        toast({ title: `Subiendo foto...` });
-        
-        try {
-            const optimizedUrl = await optimizeImage(file, 800);
-            const storageRef = ref(storage, `service-photos/${serviceId}/checklist/${itemName}/${Date.now()}.jpg`);
-            await uploadString(storageRef, optimizedUrl, 'data_url');
-            const downloadURL = await getDownloadURL(storageRef);
-            onUpload(itemName, downloadURL);
-        } catch (error) {
-            console.error("Error uploading photo:", error);
-            toast({ title: 'Error al subir foto', variant: 'destructive' });
-        }
-        
-        setIsUploading(false);
+    const handleUploadComplete = (reportIndex: number, url: string) => {
+        onUpload(itemName, url);
     };
 
     return (
@@ -121,7 +94,7 @@ const ChecklistItemPhotoUploader = ({
                         key={index}
                         className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group"
                     >
-                        <Image src={url} alt={`Foto ${index + 1}`} fill style={{objectFit:"cover"}} sizes="150px" className="transition-transform duration-300 group-hover:scale-105"/>
+                        <Image src={url} alt={`Foto ${index + 1}`} fill style={{objectFit:"cover"}} sizes="150px" className="transition-transform duration-300 group-hover:scale-105" crossOrigin="anonymous"/>
                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                             <Eye className="h-6 w-6 text-white" />
                         </div>
@@ -129,20 +102,14 @@ const ChecklistItemPhotoUploader = ({
                 ))}
             </div>
             {!isReadOnly && photos.length < 2 && (
-                 <>
-                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
-                        Añadir Foto ({photos.length}/2)
-                    </Button>
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleFileChange} 
-                      accept="image/*" 
-                      capture="environment" 
-                      className="hidden" 
-                    />
-                 </>
+                 <PhotoUploader
+                    reportIndex={0} // Not strictly needed here, but required by component prop
+                    serviceId={serviceId}
+                    onUploadComplete={handleUploadComplete}
+                    photosLength={photos.length}
+                    maxPhotos={2}
+                    disabled={isReadOnly}
+                 />
             )}
         </div>
     );
@@ -357,9 +324,9 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
 
     <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
         <DialogContent className="sm:max-w-2xl">
-            <DialogHeader className="p-4 pb-0 text-center">
-              <DialogTitle className="sr-only">Asistente de Revisión de Seguridad</DialogTitle>
-              <DialogDescription className="sr-only">Complete cada punto de la inspección de manera secuencial.</DialogDescription>
+            <DialogHeader className="p-4 pb-0 sr-only">
+              <DialogTitle>Asistente de Revisión de Seguridad</DialogTitle>
+              <DialogDescription>Complete cada punto de la inspección de manera secuencial.</DialogDescription>
             </DialogHeader>
               <GuidedInspectionWizard 
                   inspectionItems={inspectionGroups.flatMap(g => g.items)}
