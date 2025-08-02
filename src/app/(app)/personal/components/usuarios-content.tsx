@@ -119,6 +119,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                           <TableHead className="text-white">Rol</TableHead>
                           <TableHead className="text-white">Fecha Contratación</TableHead>
                           <TableHead className="text-white">Sueldo Base</TableHead>
+                          <TableHead className="text-white">% Comisión</TableHead>
                           <TableHead className="text-right text-white">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -131,6 +132,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                             <TableCell><span className={`px-2 py-1 text-xs rounded-full font-medium ${ user.role === 'Superadministrador' ? 'bg-red-100 text-red-700' : user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }`}>{user.role}</span></TableCell>
                             <TableCell>{hireDate ? format(hireDate, "dd MMM, yyyy", { locale: es }) : 'N/A'}</TableCell>
                             <TableCell>{formatCurrency(user.monthlySalary)}</TableCell>
+                            <TableCell>{user.commissionRate || 0}%</TableCell>
                             <TableCell className="text-right">
                               {canEditOrDelete(user) && ( <> <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Usuario?</AlertDialogTitle><AlertDialogDescription>¿Seguro que quieres eliminar a "{user.name}"? Esta acción es permanente.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></>)}
                             </TableCell>
@@ -160,4 +162,3 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     </div>
   );
 }
-

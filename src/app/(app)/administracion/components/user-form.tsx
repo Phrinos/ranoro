@@ -114,9 +114,13 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                     selected={field.value}
                     onSelect={field.onChange}
                     disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
+                      date > new Date() || date < new Date("1980-01-01")
                     }
                     initialFocus
+                    locale={es}
+                    captionLayout="dropdown-buttons"
+                    fromYear={1980}
+                    toYear={new Date().getFullYear()}
                   />
                 </PopoverContent>
               </Popover>
