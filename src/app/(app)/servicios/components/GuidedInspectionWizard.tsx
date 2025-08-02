@@ -12,6 +12,8 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { PhotoUploader } from './PhotoUploader'; // Assuming it's adapted or a new one is made
+import { Card, CardContent } from '@/components/ui/card';
+
 
 interface GuidedInspectionWizardProps {
     inspectionItems: { name: string; label: string }[];
@@ -41,11 +43,11 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
 
     const handleStatusChange = (newStatus: 'ok' | 'atencion' | 'inmediata') => {
         const currentValue = getValues(currentItem.name) || { photos: [], notes: '' };
-        setValue(currentItem.name, { ...currentValue, status: newStatus });
+        setValue(currentItem.name, { ...currentValue, status: newStatus }, { shouldDirty: true });
     };
 
     return (
-        <div className="flex flex-col h-full p-4">
+        <div className="flex flex-col h-full p-1">
             <Progress value={progress} className="w-full mb-4" />
             <div className="text-center mb-4">
                 <p className="text-sm text-muted-foreground">Punto {currentIndex + 1} de {inspectionItems.length}</p>
@@ -83,7 +85,8 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
                                 ))}
                             </div>
                             
-                            <div className="bg-card rounded-md p-4 border space-y-4">
+                            <Card className="bg-white">
+                              <CardContent className="p-4 space-y-4">
                                  <FormField
                                     control={control}
                                     name={`${currentItem.name}.notes` as any}
@@ -113,7 +116,8 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
                                           </Button>
                                        </div>
                                    </div>
-                            </div>
+                                </CardContent>
+                            </Card>
 
                         </div>
                     )}
