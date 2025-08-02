@@ -6,30 +6,14 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import type { User, AppRole } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, Users } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { capitalizeWords } from '@/lib/utils';
 import { adminService } from '@/lib/services/admin.service';
 import { UserDialog } from './user-dialog';
-
-const userFormSchema = z.object({
-  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
-  email: z.string().email("Ingrese un correo electrónico válido."),
-  phone: z.string().optional(),
-  role: z.string({ required_error: "Seleccione un rol." }).min(1, "Debe seleccionar un rol."),
-  monthlySalary: z.coerce.number().optional(),
-  commissionRate: z.coerce.number().optional(),
-});
-
-export type UserFormValues = z.infer<typeof userFormSchema>;
+import type { UserFormValues } from './user-form';
 
 export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: User | null, initialUsers: User[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
