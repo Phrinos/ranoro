@@ -80,9 +80,7 @@ export function FinanzasPageComponent({
         const techs: Personnel[] = [];
         const ad_visors: Personnel[] = [];
         allPersonnel.forEach(p => {
-            // A person can be both, but for salary calculation, we separate them.
-            // Assuming 'Técnico' is an exclusive primary role for this calculation.
-            if (p.roles.includes('Técnico')) {
+            if (p.role === 'Tecnico') {
                 techs.push(p);
             } else {
                 ad_visors.push(p);
@@ -248,7 +246,7 @@ export function FinanzasPageComponent({
                 <PopoverTrigger asChild>
                     <Button variant={'outline'} className={cn('w-full sm:w-[240px] justify-start text-left font-normal bg-card', !dateRange && 'text-muted-foreground')}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(dateRange.to, 'LLL dd, y', { locale: es })}`) : format(dateRange.from, 'LLL dd, y', { locale: es })) : (<span>Seleccione rango</span>)}
+                        {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(dateRange.to, 'LLL dd, y', { locale: es })}`) : format(dateRange.from, 'dd \'de\' MMMM, yyyy', { locale: es })) : (<span>Seleccione rango</span>)}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
