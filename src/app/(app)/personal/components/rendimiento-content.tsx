@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import type { MonthlyFixedExpense, InventoryItem, SaleReceipt, ServiceRecord, User } from '@/types';
-import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, isValid } from "date-fns";
+import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, isValid, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { CalendarIcon as CalendarDateIcon, Wallet } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
@@ -65,28 +64,30 @@ export function RendimientoPersonalContent() {
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
     const interval = { start: from, end: to };
 
-    const getRelevantDate = (s: ServiceRecord): Date | null => {
-      return parseDate(s.quoteDate) || parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
+    const getAdvisorRelevantDate = (s: ServiceRecord): Date | null => {
+      // Prioritize the earliest date as the "creation" or "management" date
+      const dates = [
+        parseDate(s.quoteDate),
+        parseDate(s.receptionDateTime),
+        parseDate(s.serviceDate)
+      ].filter((d): d is Date => d !== null && isValid(d));
+      
+      if (dates.length === 0) return null;
+      
+      return new Date(Math.min(...dates.map(d => d.getTime())));
     };
+    
+    const advisorServicesInRange = allServices.filter(s => {
+      const relevantDate = getAdvisorRelevantDate(s);
+      return relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval);
+    });
 
     const completedServicesInRange = allServices.filter(s => {
         const deliveryDate = parseDate(s.deliveryDateTime);
         return s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, interval);
     });
-    
-    const advisorServicesInRange = allServices.filter(s => {
-      const relevantDate = getRelevantDate(s);
-      return relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval);
-    });
 
-    const salesInRange = allSales.filter(s => 
-        s.status !== 'Cancelado' && 
-        isValid(parseDate(s.saleDate)!) && 
-        isWithinInterval(parseDate(s.saleDate)!, interval)
-    );
-    
-    const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + 
-                        completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    const grossProfit = completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
     
     const activeUsers = allUsers.filter(u => !u.isArchived);
     const fixedSalaries = activeUsers.reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
@@ -168,4 +169,3 @@ export function RendimientoPersonalContent() {
     </Card>
   );
 }
-
