@@ -184,7 +184,7 @@ export function VehicleSelectionCard({
         <CardTitle className="text-lg">Información del Vehículo</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             <div className="md:col-span-1 space-y-4">
                 <FormField
                     control={control}
@@ -206,7 +206,7 @@ export function VehicleSelectionCard({
                                 value={vehicleLicensePlateSearch}
                                 disabled={isReadOnly}
                                 onKeyDown={handleVehiclePlateKeyDown}
-                                className={cn(errors.vehicleId && "border-destructive focus-visible:ring-destructive")}
+                                className={cn(errors.vehicleId && "border-destructive focus-visible:ring-destructive", "w-full")}
                             />
                             </FormControl>
                             {vehicleSearchResults.length > 0 && (
