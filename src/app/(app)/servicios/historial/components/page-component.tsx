@@ -10,7 +10,7 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
-import { isToday, startOfMonth, endOfMonth } from "date-fns";
+import { isToday, startOfMonth, endOfMonth, compareDesc } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceAppointmentCard } from "../../components/ServiceAppointmentCard";
 import { Loader2 } from "lucide-react";
@@ -123,9 +123,10 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         if (priorityA !== priorityB) {
             return priorityA - priorityB;
         }
-        const dateA = parseDate(a.serviceDate)?.getTime() ?? 0;
-        const dateB = parseDate(b.serviceDate)?.getTime() ?? 0;
-        return dateA - dateB;
+        // Use reception date for sorting, fallback to service date
+        const dateA = parseDate(a.receptionDateTime || a.serviceDate)?.getTime() ?? 0;
+        const dateB = parseDate(b.receptionDateTime || b.serviceDate)?.getTime() ?? 0;
+        return dateB - dateA; // Sort descending
     });
 
     return { activeServices: sortedActiveServices, historicalServices: allServices };
