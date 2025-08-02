@@ -133,15 +133,16 @@ export function FinanzasPageComponent({
         const { totalTechnicianSalaries, totalAdministrativeSalaries } = allPersonnel
           .filter(p => !p.isArchived)
           .reduce((totals, person) => {
-            const roles = (person.roles || []).map(r => r.toLowerCase());
-            const isTechnician = roles.some(role => role.includes("tecnico"));
-            
-            if (isTechnician) {
-              totals.totalTechnicianSalaries += person.monthlySalary || 0;
+            const normalizedRole = (person.role || '')
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+
+            if (normalizedRole.includes('tecnico')) {
+                totals.totalTechnicianSalaries += person.monthlySalary || 0;
             } else {
-              totals.totalAdministrativeSalaries += person.monthlySalary || 0;
+                totals.totalAdministrativeSalaries += person.monthlySalary || 0;
             }
-        
             return totals;
           }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
 
@@ -244,7 +245,7 @@ export function FinanzasPageComponent({
                 <PopoverTrigger asChild>
                     <Button variant={'outline'} className={cn('w-full sm:w-[240px] justify-start text-left font-normal bg-card', !dateRange && 'text-muted-foreground')}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(to, 'dd MMM, yyyy', { locale: es })}`) : format(from, 'dd \'de\' MMMM, yyyy', { locale: es })) : (<span>Seleccione rango</span>)}
+                        {dateRange?.from ? (dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(dateRange.to, 'dd MMM, yyyy', { locale: es })}`) : format(dateRange.from, 'dd \'de\' MMMM, yyyy', { locale: es })) : (<span>Seleccione rango</span>)}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
