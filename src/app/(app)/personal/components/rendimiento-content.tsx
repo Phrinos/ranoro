@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import type { MonthlyFixedExpense, InventoryItem, SaleReceipt, ServiceRecord, User } from '@/types';
-import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, isValid, isSameDay } from "date-fns";
+import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, isValid } from "date-fns";
 import { es } from 'date-fns/locale';
 import { CalendarIcon as CalendarDateIcon, Wallet } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
@@ -64,24 +64,6 @@ export function RendimientoPersonalContent() {
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
     const interval = { start: from, end: to };
 
-    const getAdvisorRelevantDate = (s: ServiceRecord): Date | null => {
-      // Prioritize the earliest date as the "creation" or "management" date
-      const dates = [
-        parseDate(s.quoteDate),
-        parseDate(s.receptionDateTime),
-        parseDate(s.serviceDate)
-      ].filter((d): d is Date => d !== null && isValid(d));
-      
-      if (dates.length === 0) return null;
-      
-      return new Date(Math.min(...dates.map(d => d.getTime())));
-    };
-    
-    const advisorServicesInRange = allServices.filter(s => {
-      const relevantDate = getAdvisorRelevantDate(s);
-      return relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval);
-    });
-
     const completedServicesInRange = allServices.filter(s => {
         const deliveryDate = parseDate(s.deliveryDateTime);
         return s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, interval);
@@ -102,14 +84,16 @@ export function RendimientoPersonalContent() {
 
         let generatedRevenue = 0;
         
+        // Revenue for Technicians: Based on completed services assigned to them.
         if (isTechnician) {
             generatedRevenue += completedServicesInRange
                 .filter(s => s.technicianId === user.id)
                 .reduce((sum, s) => sum + (s.totalCost || 0), 0);
         }
 
+        // Revenue for Advisors: Based on completed services they managed.
         if (isAdvisor) {
-             generatedRevenue += advisorServicesInRange
+             generatedRevenue += completedServicesInRange
                 .filter(s => s.serviceAdvisorId === user.id)
                 .reduce((sum, s) => sum + (s.totalCost || 0), 0);
         }
@@ -128,7 +112,7 @@ export function RendimientoPersonalContent() {
         };
       })
       .sort((a,b) => b.totalSalary - a.totalSalary);
-  }, [dateRange, allUsers, allSales, allServices, allInventory, fixedExpenses]);
+  }, [dateRange, allUsers, allServices, allInventory, fixedExpenses]);
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
   
@@ -142,7 +126,7 @@ export function RendimientoPersonalContent() {
               </div>
               <Popover>
                 <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? `${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}` : format(dateRange.from, "MMMM yyyy", { locale: es })) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end"><Calendar mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} /></PopoverContent>
+                <PopoverContent className="w-auto p-0" align="end"><Calendar mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent>
               </Popover>
           </div>
       </CardHeader>
