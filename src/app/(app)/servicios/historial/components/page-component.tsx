@@ -10,7 +10,7 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
-import { isToday } from "date-fns";
+import { isToday, startOfMonth, endOfMonth } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceAppointmentCard } from "../../components/ServiceAppointmentCard";
 import { Loader2 } from "lucide-react";
@@ -138,6 +138,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     searchKeys: ["id", "vehicleIdentifier", "description"],
     dateFilterKey: "deliveryDateTime",
     initialSortOption: "deliveryDateTime_desc",
+    initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
   });
   
   const handleSaveRecord = useCallback(async (data: QuoteRecord | ServiceRecord) => {

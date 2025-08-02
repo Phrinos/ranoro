@@ -10,6 +10,7 @@ import { parseDate } from '@/lib/forms'; // Import the robust date parser
 interface UseTableManagerOptions<T> {
   initialData: T[];
   initialSortOption?: string;
+  initialDateRange?: DateRange;
   searchKeys: (keyof T)[];
   dateFilterKey: keyof T;
 }
@@ -17,13 +18,20 @@ interface UseTableManagerOptions<T> {
 export function useTableManager<T extends { [key: string]: any }>({
   initialData,
   initialSortOption = 'date_desc',
+  initialDateRange,
   searchKeys,
   dateFilterKey,
 }: UseTableManagerOptions<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<string>(initialSortOption);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(initialDateRange);
   const [otherFilters, setOtherFilters] = useState<Record<string, string | 'all'>>({});
+
+  useEffect(() => {
+    if (initialDateRange) {
+        setDateRange(initialDateRange);
+    }
+  }, [initialDateRange]);
 
   const filteredData = useMemo(() => {
     let data = [...initialData];
