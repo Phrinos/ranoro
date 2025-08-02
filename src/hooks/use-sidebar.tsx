@@ -1,3 +1,4 @@
+
 // src/hooks/use-sidebar.tsx
 "use client"
 
@@ -6,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import type { SidebarContext as SidebarContextType } from '@/types/sidebar.types'
 import { SIDEBAR_COOKIE_NAME, SIDEBAR_COOKIE_MAX_AGE, SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON, SIDEBAR_WIDTH_MOBILE, SIDEBAR_KEYBOARD_SHORTCUT } from '@/types/sidebar.types';
+import { cn } from "@/lib/utils";
 
 const SidebarContext = React.createContext<SidebarContextType | null>(null)
 
