@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone, CalendarCheck, ArrowRight, Edit } from 'lucide-react';
 import type { Vehicle, ServiceRecord } from '@/types';
-import { format, isValid, parseISO } from 'date-fns';
+import { format, isValid, parseISO, addMonths, addYears } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { operationsService } from '@/lib/services';
@@ -41,6 +41,14 @@ export function VehicleSelectionCard({
   const [lastService, setLastService] = useState<ServiceRecord | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
+  
+  const watchedStatus = watch('status');
+  const watchedSubStatus = watch('subStatus');
+  
+  const showNextServiceCard = useMemo(() => {
+    return (watchedStatus === 'En Taller' && watchedSubStatus === 'Completado') || watchedStatus === 'Entregado';
+  }, [watchedStatus, watchedSubStatus]);
+
 
   const vehicleId = watch('vehicleId');
 
@@ -178,53 +186,55 @@ export function VehicleSelectionCard({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             <div className="md:col-span-1 space-y-4">
-              <div className="relative">
                 <FormField
                     control={control}
                     name="vehicleId"
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel className={cn(errors.vehicleId && "text-destructive")}>Placa del Vehículo</FormLabel>
-                        <FormControl>
-                        <Input
-                            placeholder="Buscar / Ingresar Placas"
-                            onChange={(e) => {
-                                const upperCaseValue = e.target.value.toUpperCase();
-                                setVehicleLicensePlateSearch(upperCaseValue);
-                                field.onChange(undefined);
-                                setSelectedVehicle(null);
-                                setVehicleNotFound(false);
-                            }}
-                            value={vehicleLicensePlateSearch}
-                            disabled={isReadOnly}
-                            onKeyDown={handleVehiclePlateKeyDown}
-                            className={cn(errors.vehicleId && "border-destructive focus-visible:ring-destructive")}
-                        />
-                        </FormControl>
+                        <div className="relative">
+                            <FormControl>
+                            <Input
+                                placeholder="Buscar / Ingresar Placas"
+                                onChange={(e) => {
+                                    const upperCaseValue = e.target.value.toUpperCase();
+                                    setVehicleLicensePlateSearch(upperCaseValue);
+                                    field.onChange(undefined);
+                                    setSelectedVehicle(null);
+                                    setVehicleNotFound(false);
+                                }}
+                                value={vehicleLicensePlateSearch}
+                                disabled={isReadOnly}
+                                onKeyDown={handleVehiclePlateKeyDown}
+                                className={cn(errors.vehicleId && "border-destructive focus-visible:ring-destructive")}
+                            />
+                            </FormControl>
+                            {vehicleSearchResults.length > 0 && (
+                            <div className="absolute top-full mt-1 w-full md:w-full z-10">
+                                <ScrollArea className="h-auto max-h-[150px] rounded-md border bg-background shadow-lg">
+                                <div className="p-2">
+                                    {vehicleSearchResults.map(v => (
+                                    <button
+                                        type="button"
+                                        key={v.id}
+                                        onClick={() => handleSelectVehicleFromSearch(v)}
+                                        className="w-full text-left p-2 rounded-md hover:bg-muted"
+                                    >
+                                        <p className="font-semibold">{v.licensePlate}</p>
+                                        <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
+                                    </button>
+                                    ))}
+                                </div>
+                                </ScrollArea>
+                            </div>
+                            )}
+                        </div>
                     </FormItem>
                     )}
                 />
-                {vehicleSearchResults.length > 0 && (
-                  <div className="absolute top-full mt-1 w-full md:w-full z-10">
-                    <ScrollArea className="h-auto max-h-[150px] rounded-md border bg-background shadow-lg">
-                      <div className="p-2">
-                        {vehicleSearchResults.map(v => (
-                          <button
-                            type="button"
-                            key={v.id}
-                            onClick={() => handleSelectVehicleFromSearch(v)}
-                            className="w-full text-left p-2 rounded-md hover:bg-muted"
-                          >
-                            <p className="font-semibold">{v.licensePlate}</p>
-                            <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                )}
-              </div>
-              <FormField
+            </div>
+            <div className="md:col-span-1">
+                <FormField
                   control={control}
                   name="mileage"
                   render={({ field }) => (
@@ -243,36 +253,66 @@ export function VehicleSelectionCard({
                   )}
               />
             </div>
-            
-            <div className="md:col-span-2">
-                {selectedVehicle && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-2 h-full flex flex-col justify-center relative">
-                            <Button asChild variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7">
-                                <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil del vehículo">
-                                    <Edit className="h-4 w-4" />
-                                </Link>
-                            </Button>
-                            <div>
-                                <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
-                            </div>
-                            <div className="space-y-1 pt-1">
-                                <p className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerName}</p>
-                                <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerPhone || 'Tel. no registrado'}</p>
-                            </div>
-                            <div className="text-xs pt-2 mt-auto border-t space-y-1">
-                                <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Último Servicio:</p>
-                                <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}>{formatServiceInfo(lastService)}</p>
-                            </div>
-                        </div>
-                        <div className="p-3 border rounded-md bg-blue-50 dark:bg-blue-950/50 text-sm space-y-2 h-full flex flex-col justify-center">
-                            <p className="font-semibold flex items-center gap-2 text-blue-800 dark:text-blue-300"><CalendarCheck className="h-4 w-4" /> Próximo Servicio:</p>
-                            <p className="text-blue-700 dark:text-blue-300 truncate" title={formatNextServiceInfo(selectedVehicle.nextServiceInfo)}>{formatNextServiceInfo(selectedVehicle.nextServiceInfo)}</p>
-                        </div>
+        </div>
+        
+        {selectedVehicle && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-2 h-full flex flex-col justify-center relative">
+                    <Button asChild variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7">
+                        <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil del vehículo">
+                            <Edit className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <div>
+                        <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
                     </div>
+                    <div className="space-y-1 pt-1">
+                        <p className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerName}</p>
+                        <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerPhone || 'Tel. no registrado'}</p>
+                    </div>
+                    <div className="text-xs pt-2 mt-auto border-t space-y-1">
+                        <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Último Servicio:</p>
+                        <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}>{formatServiceInfo(lastService)}</p>
+                    </div>
+                </div>
+                
+                 {showNextServiceCard && (
+                    <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
+                        <CardHeader className="p-3">
+                            <CardTitle className="text-base flex items-center gap-2 text-blue-800 dark:text-blue-300">
+                                <CalendarCheck className="h-5 w-5" />Próximo Servicio Recomendado
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0 space-y-2">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
+                                <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
+                            </div>
+                            <FormField
+                                control={control}
+                                name="nextServiceInfo.date"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Fecha</FormLabel>
+                                        <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={control}
+                                name="nextServiceInfo.mileage"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Kilometraje</FormLabel>
+                                        <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </CardContent>
+                    </Card>
                 )}
             </div>
-        </div>
+        )}
 
         {vehicleNotFound && !selectedVehicle && !isReadOnly && (
           <div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -295,4 +335,3 @@ export function VehicleSelectionCard({
     </Card>
   );
 }
-
