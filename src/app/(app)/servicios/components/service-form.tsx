@@ -66,6 +66,7 @@ import { parseDate } from '@/lib/forms';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
+import { PaymentSection } from '../../pos/components/payment-section';
 import Link from 'next/link';
 import { Input } from "@/components/ui/input";
 
@@ -457,7 +458,7 @@ export function ServiceForm(props:Props){
                         <TabsContent value="details" className="mt-0 space-y-4">
                             <ServiceDetailsCard
                                 isReadOnly={props.isReadOnly}
-                                technicians={technicians}
+                                technicians={technicians as User[]}
                                 inventoryItems={invItems}
                                 serviceTypes={serviceTypes}
                                 mode={props.mode || 'service'}

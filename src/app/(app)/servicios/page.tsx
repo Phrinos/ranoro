@@ -5,10 +5,8 @@
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
-// This page is now obsolete.
-// The main entry point is /servicios/historial
 function Redirector() {
-    redirect('/servicios/historial');
+    redirect('/servicios/agenda');
     return null;
 }
 

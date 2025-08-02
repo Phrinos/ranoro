@@ -1,4 +1,5 @@
 
+
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { HistorialServiciosPageComponent } from './components/page-component';
