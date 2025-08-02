@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useFormContext, type Control } from "react-hook-form";
+import { useFormContext, type Control, useFieldArray } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
