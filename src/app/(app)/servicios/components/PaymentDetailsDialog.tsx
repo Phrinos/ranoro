@@ -170,7 +170,7 @@ export function PaymentDetailsDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-6">
+      <DialogContent className="sm:max-w-lg p-6">
         <DialogHeader>
           <DialogTitle>Editar Detalles de Pago</DialogTitle>
           <DialogDescription>Modifique el método de pago o los folios para el servicio {service.id}.</DialogDescription>
@@ -213,7 +213,7 @@ export function PaymentDetailsDialog({
               {isMixedPayment && (
                 <Card className="p-4 bg-white dark:bg-card">
                   <p className="text-sm font-medium mb-4">Desglose de Pago</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                       {selectedPaymentMethod.includes('Efectivo') && (
                         <FormField control={form.control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8 bg-white dark:bg-card"/></FormControl></div><FormMessage /></FormItem>)} />
                       )}
@@ -221,7 +221,7 @@ export function PaymentDetailsDialog({
                         <FormField control={form.control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8 bg-white dark:bg-card"/></FormControl></div><FormMessage /></FormItem>)} />
                       )}
                       {selectedPaymentMethod.includes('Transferencia') && (
-                        <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem className="sm:col-span-2"><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8 bg-white dark:bg-card"/></FormControl></div><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8 bg-white dark:bg-card"/></FormControl></div><FormMessage /></FormItem>)} />
                       )}
                   </div>
                 </Card>
