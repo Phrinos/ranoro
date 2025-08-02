@@ -101,8 +101,7 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
 ReportContent.displayName = "ReportContent";
 
 
-export default function OwnerIncomeDetailPage() {
-  const params = useParams();
+export default function OwnerIncomeDetailPage({ params }: { params: { ownerName: string } }) {
   const router = useRouter();
   const { toast } = useToast();
   const ownerName = decodeURIComponent(params.ownerName as string);
@@ -267,4 +266,6 @@ export default function OwnerIncomeDetailPage() {
     </>
   );
 }
+
+
 
