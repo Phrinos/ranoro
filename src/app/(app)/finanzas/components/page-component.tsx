@@ -21,7 +21,7 @@ import {
 import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
-import { FixedExpensesDialog } from './fixed-expenses-dialog'; 
+import { FixedExpenseDialog } from './fixed-expenses-dialog'; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { DateRange } from 'react-day-picker';
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
@@ -76,20 +76,6 @@ export function FinanzasPageComponent({
         return () => unsubs.forEach(unsub => unsub());
     }, []);
 
-    const { technicians, advisors } = useMemo(() => {
-        const techs: Personnel[] = [];
-        const ad_visors: Personnel[] = [];
-        allPersonnel.forEach(p => {
-            if (p.role === 'Tecnico') {
-                techs.push(p);
-            } else {
-                ad_visors.push(p);
-            }
-        });
-        return { technicians: techs, advisors: ad_visors };
-    }, [allPersonnel]);
-
-
     const financialSummary = useMemo(() => {
         const emptyState = { 
             monthYearLabel: 'Cargando...', totalOperationalIncome: 0, totalIncomeFromSales: 0, totalIncomeFromServices: 0,
@@ -143,9 +129,18 @@ export function FinanzasPageComponent({
         const totalCostOfGoods = salesInRange.reduce((cost, s) => cost + s.items.reduce((c, i) => c + ((allInventory.find(inv => inv.id === i.inventoryItemId)?.unitPrice || 0) * i.quantity), 0), 0) + servicesInRange.reduce((cost, s) => cost + (s.totalSuppliesWorkshopCost || 0), 0);
         
         const totalUnitsSold = salesInRange.reduce((sum, s) => sum + s.items.reduce((count, item) => count + item.quantity, 0), 0) + servicesInRange.reduce((sum, s) => sum + (s.serviceItems || []).flatMap(si => si.suppliesUsed || []).reduce((count, supply) => count + supply.quantity, 0), 0);
+        
+        const { totalTechnicianSalaries, totalAdministrativeSalaries } = allPersonnel
+          .filter(p => !p.isArchived)
+          .reduce((totals, person) => {
+            if (person.role === 'Tecnico') {
+              totals.totalTechnicianSalaries += person.monthlySalary || 0;
+            } else {
+              totals.totalAdministrativeSalaries += person.monthlySalary || 0;
+            }
+            return totals;
+          }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
 
-        const totalTechnicianSalaries = technicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
-        const totalAdministrativeSalaries = advisors.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
         const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         const totalBaseExpenses = totalTechnicianSalaries + totalAdministrativeSalaries + totalFixedExpenses;
         
@@ -154,14 +149,12 @@ export function FinanzasPageComponent({
         
         let totalVariableCommissions = 0;
         if (isProfitableForCommissions) {
-          const techCommissions = technicians.filter(t => !t.isArchived).reduce((sum, tech) => {
-            return sum + (netProfitBeforeCommissions * (tech.commissionRate || 0));
-          }, 0);
-          
-          const adminCommissions = advisors.filter(s => !s.isArchived).reduce((sum, admin) => {
-            return sum + (netProfitBeforeCommissions * (admin.commissionRate || 0));
-          }, 0);
-          totalVariableCommissions = techCommissions + adminCommissions;
+          totalVariableCommissions = allPersonnel
+            .filter(p => !p.isArchived)
+            .reduce((sum, person) => {
+                const commission = netProfitBeforeCommissions * ((person.commissionRate || 0) / 100);
+                return sum + commission;
+            }, 0);
         }
         
         const netProfit = netProfitBeforeCommissions - totalVariableCommissions;
@@ -181,7 +174,7 @@ export function FinanzasPageComponent({
             totalVariableCommissions, netProfit, isProfitableForCommissions, serviceIncomeBreakdown,
             totalInventoryValue, totalUnitsSold
         };
-    }, [dateRange, isLoading, allSales, allServices, allInventory, technicians, advisors, fixedExpenses]);
+    }, [dateRange, isLoading, allSales, allServices, allInventory, allPersonnel, fixedExpenses]);
 
     const inventoryMovements = useMemo((): InventoryMovement[] => {
       if (isLoading) return [];
@@ -374,7 +367,7 @@ export function FinanzasPageComponent({
 
             </Tabs>
             
-            <FixedExpensesDialog
+            <FixedExpenseDialog
                 open={isExpensesDialogOpen}
                 onOpenChange={setIsExpensesDialogOpen}
                 initialExpenses={fixedExpenses}
