@@ -1,5 +1,3 @@
-
-
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -396,124 +394,124 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
 
   return (
     <>
-      <FormProvider {...form}>
-        <form ref={ref} id="service-form" className="flex flex-col flex-grow overflow-hidden">
-            <div className="flex-grow overflow-y-auto px-6 pt-4 space-y-6">
-                <VehicleSelectionCard
-                    isReadOnly={props.isReadOnly}
-                    localVehicles={parentVehicles}
-                    onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
-                    onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
-                />
+        <FormProvider {...form}>
+            <form ref={ref} id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
+                <div className="flex-grow overflow-y-auto px-6 pt-4 space-y-6">
+                    <VehicleSelectionCard
+                        isReadOnly={props.isReadOnly}
+                        localVehicles={parentVehicles}
+                        onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
+                        onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+                    />
 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b flex justify-between items-center">
-                        <TabsList className={cn("grid w-full", "grid-cols-4")}>
-                            <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
-                            <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
-                            <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
-                            <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
-                        </TabsList>
-                         <Button type="button" variant="ghost" size="icon" onClick={() => setIsPreviewOpen(true)} title="Vista Previa" className="ml-2">
-                            <Eye className="h-5 w-5"/>
-                        </Button>
-                    </div>
-                    <TabsContent value="details" className="mt-0 space-y-4">
-                        <ServiceDetailsCard
-                            isReadOnly={props.isReadOnly}
-                            technicians={technicians}
-                            inventoryItems={invItems}
-                            serviceTypes={serviceTypes}
-                            mode={props.mode || 'service'}
-                            onGenerateQuoteWithAI={handleGenerateQuote}
-                            isGeneratingQuote={isGeneratingQuote}
-                            isEnhancingText={isEnhancingText}
-                            handleEnhanceText={handleEnhanceText as any}
-                            onNewInventoryItemCreated={handleNewInventoryItemCreated}
-                            categories={allCategories}
-                            suppliers={allSuppliers}
-                        />
-                        {watchedStatus === 'Entregado' && <PaymentSection isReadOnly={true} />}
-                    </TabsContent>
-                    <TabsContent value="reception" className="mt-0">
-                       <ReceptionAndDelivery 
-                         onOpenSignature={(kind) => { setSignatureType(kind); setIsSignatureDialogOpen(true); }}
-                         isReadOnly={props.isReadOnly}
-                         isEnhancingText={isEnhancingText}
-                         handleEnhanceText={handleEnhanceText as any}
-                       />
-                    </TabsContent>
-                    <TabsContent value="photoreport" className="mt-0">
-                         <PhotoReportTab
-                            control={control}
-                            isReadOnly={props.isReadOnly}
-                            serviceId={initialDataService?.id || 'new'}
-                            onPhotoUploaded={handlePhotoUploaded}
-                            onViewImage={handleViewImage}
-                         />
-                    </TabsContent>
-                    <TabsContent value="checklist" className="mt-0">
-                        <SafetyChecklist
-                            serviceId={initialDataService?.id || 'new'}
-                            isReadOnly={props.isReadOnly}
-                            onSignatureClick={() => { setSignatureType('advisor'); setIsSignatureDialogOpen(true); }}
-                            signatureDataUrl={watch('serviceAdvisorSignatureDataUrl')}
-                            isEnhancingText={isEnhancingText}
-                            handleEnhanceText={handleEnhanceText as any}
-                            onPhotoUploaded={handleChecklistPhotoUploaded}
-                            onViewImage={handleViewImage}
-                        />
-                    </TabsContent>
-                </Tabs>
-                
-                {showNextServiceCard && (
-                    <div className="space-y-6 mt-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <CalendarCheck className="h-5 w-5 text-blue-600" />
-                                    Próximo Servicio Recomendado
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <FormField
-                                        control={control}
-                                        name="nextServiceInfo.date"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <div className="flex gap-2 mb-2">
-                                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
-                                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
-                                                </div>
-                                                <FormLabel>Fecha Próximo Servicio</FormLabel>
-                                                <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={control}
-                                        name="nextServiceInfo.mileage"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <div className="flex gap-2 mb-2">
-                                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
-                                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
-                                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
-                                                </div>
-                                                <FormLabel>Kilometraje Próximo Servicio</FormLabel>
-                                                <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                )}
-            </div>
-        </form>
-      </FormProvider>
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b flex justify-between items-center">
+                            <TabsList className={cn("grid w-full", "grid-cols-4")}>
+                                <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
+                                <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
+                                <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
+                                <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
+                            </TabsList>
+                             <Button type="button" variant="ghost" size="icon" onClick={() => setIsPreviewOpen(true)} title="Vista Previa" className="ml-2">
+                                <Eye className="h-5 w-5"/>
+                            </Button>
+                        </div>
+                        <TabsContent value="details" className="mt-0 space-y-4">
+                            <ServiceDetailsCard
+                                isReadOnly={props.isReadOnly}
+                                technicians={technicians}
+                                inventoryItems={invItems}
+                                serviceTypes={serviceTypes}
+                                mode={props.mode || 'service'}
+                                onGenerateQuoteWithAI={handleGenerateQuote}
+                                isGeneratingQuote={isGeneratingQuote}
+                                isEnhancingText={isEnhancingText}
+                                handleEnhanceText={handleEnhanceText as any}
+                                onNewInventoryItemCreated={handleNewInventoryItemCreated}
+                                categories={allCategories}
+                                suppliers={allSuppliers}
+                            />
+                            {watchedStatus === 'Entregado' && <PaymentSection isReadOnly={true} />}
+                        </TabsContent>
+                        <TabsContent value="reception" className="mt-0">
+                           <ReceptionAndDelivery 
+                             onOpenSignature={(kind) => { setSignatureType(kind); setIsSignatureDialogOpen(true); }}
+                             isReadOnly={props.isReadOnly}
+                             isEnhancingText={isEnhancingText}
+                             handleEnhanceText={handleEnhanceText as any}
+                           />
+                        </TabsContent>
+                        <TabsContent value="photoreport" className="mt-0">
+                             <PhotoReportTab
+                                control={control}
+                                isReadOnly={props.isReadOnly}
+                                serviceId={initialDataService?.id || 'new'}
+                                onPhotoUploaded={handlePhotoUploaded}
+                                onViewImage={handleViewImage}
+                             />
+                        </TabsContent>
+                        <TabsContent value="checklist" className="mt-0">
+                            <SafetyChecklist
+                                serviceId={initialDataService?.id || 'new'}
+                                isReadOnly={props.isReadOnly}
+                                onSignatureClick={() => { setSignatureType('advisor'); setIsSignatureDialogOpen(true); }}
+                                signatureDataUrl={watch('serviceAdvisorSignatureDataUrl')}
+                                isEnhancingText={isEnhancingText}
+                                handleEnhanceText={handleEnhanceText as any}
+                                onPhotoUploaded={handleChecklistPhotoUploaded}
+                                onViewImage={handleViewImage}
+                            />
+                        </TabsContent>
+                    </Tabs>
+                    
+                    {showNextServiceCard && (
+                        <div className="space-y-6 mt-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <CalendarCheck className="h-5 w-5 text-blue-600" />
+                                        Próximo Servicio Recomendado
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={control}
+                                            name="nextServiceInfo.date"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <div className="flex gap-2 mb-2">
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
+                                                    </div>
+                                                    <FormLabel>Fecha Próximo Servicio</FormLabel>
+                                                    <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={control}
+                                            name="nextServiceInfo.mileage"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <div className="flex gap-2 mb-2">
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
+                                                    </div>
+                                                    <FormLabel>Kilometraje Próximo Servicio</FormLabel>
+                                                    <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+                </div>
+            </form>
+        </FormProvider>
 
       <VehicleDialog
         open={isNewVehicleDialogOpen}
