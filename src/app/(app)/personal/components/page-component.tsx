@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/utils";
-import { Loader2, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User as UserIcon, TrendingDown, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight } from 'lucide-react';
+import { Loader2, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User as UserIcon, TrendingDown, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import type { DateRange } from 'react-day-picker';
 import { personnelService, operationsService, inventoryService, adminService } from '@/lib/services';
@@ -215,7 +215,7 @@ export function PersonalPageComponent({
                     {showArchived ? "Ver Activos" : "Ver Archivados"}
                 </Button>
             </div>
-            <Card className="mt-4"><CardContent className="p-0"><PersonnelTable personnel={filteredPersonnel} onEdit={handleOpenDialog} onArchive={handleArchivePersonnel} /></CardContent></Card>
+            <Card className="mt-4"><CardContent className="p-0"><PersonnelTable personnel={filteredPersonnel} appRoles={areas} onEdit={handleOpenDialog} onArchive={handleArchivePersonnel} /></CardContent></Card>
         </TabsContent>
          <TabsContent value="areas" className="mt-6 space-y-6">
             <AreasContent areas={areas} />
