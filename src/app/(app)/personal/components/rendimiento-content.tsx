@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import type { MonthlyFixedExpense, InventoryItem, SaleReceipt, ServiceRecord, User } from '@/types';
-import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, isValid } from "date-fns";
+import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, isValid, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { CalendarIcon as CalendarDateIcon, Wallet } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
