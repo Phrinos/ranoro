@@ -20,7 +20,7 @@ import type { DateRange } from 'react-day-picker';
 import { personnelService, operationsService, inventoryService, adminService } from '@/lib/services';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, startOfDay, endOfDay, isSameDay, startOfMonth, endOfMonth, subMonths, isWithinInterval, isValid } from 'date-fns';
+import { format, startOfDay, endOfDay, isSameDay, startOfMonth, endOfMonth, subMonths, isWithinInterval, isValid, compareDesc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { calculateSaleProfit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -30,8 +30,12 @@ import { Badge } from '@/components/ui/badge';
 
 const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | "black" => {
     const lowerCaseRole = role.toLowerCase();
-    if (lowerCaseRole === 'administrativo') return 'white';
-    if (lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico')) return 'lightGray';
+    if (lowerCaseRole === 'administrativo') {
+        return 'white';
+    }
+    if (lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico')) {
+        return 'lightGray';
+    }
     return 'outline';
 };
 
@@ -114,14 +118,25 @@ export function PersonalPageComponent({
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    const servicesInRange = allServices.filter(s => {
-        const dateToUse = parseDate(s.receptionDateTime) || parseDate(s.serviceDate) || parseDate(s.quoteDate);
-        return dateToUse && isValid(dateToUse) && isWithinInterval(dateToUse, interval);
-    });
-    
-    const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, interval));
+    // --- Start of new logic for revenue calculation ---
+    const getRelevantDate = (s: ServiceRecord): Date | null => {
+        if (s.status === 'Cotizacion') return parseDate(s.quoteDate);
+        if (s.status === 'Agendado') return parseDate(s.serviceDate);
+        if (s.status === 'En Taller') return parseDate(s.receptionDateTime);
+        // For 'Entregado' and 'Cancelado', we consider when it was created/received for revenue generation purposes
+        return parseDate(s.receptionDateTime) || parseDate(s.serviceDate) || parseDate(s.quoteDate);
+    };
 
-    const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    const servicesRelevantForPeriod = allServices.filter(s => {
+        const relevantDate = getRelevantDate(s);
+        return relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval) && s.status !== 'Cancelado';
+    });
+    // --- End of new logic for revenue calculation ---
+
+    const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, interval));
+    const deliveredServicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, interval));
+
+    const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + deliveredServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
     
     const activePersonnel = allPersonnel.filter(p => !p.isArchived);
     const fixedSalaries = activePersonnel.reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
@@ -135,31 +150,26 @@ export function PersonalPageComponent({
         const isTechnician = personRoles.has('técnico') || personRoles.has('tecnico');
         const isAdministrative = personRoles.has('administrativo');
 
-        const technicalRevenue = isTechnician
-            ? servicesInRange.filter(s => s.technicianId === person.id).reduce((sum, s) => sum + (s.totalCost || 0), 0)
+        const technicalWorkValue = isTechnician
+            ? servicesRelevantForPeriod
+                .filter(s => s.technicianId === person.id)
+                .reduce((sum, s) => sum + (s.totalCost || 0), 0)
             : 0;
 
-        const administrativeRevenue = isAdministrative
-            ? servicesInRange.filter(s => s.serviceAdvisorId === person.id).reduce((sum, s) => sum + (s.totalCost || 0), 0)
+        const administrativeWorkValue = isAdministrative
+            ? servicesRelevantForPeriod
+                .filter(s => s.serviceAdvisorId === person.id)
+                .reduce((sum, s) => sum + (s.totalCost || 0), 0)
             : 0;
-
-        // Combine revenues avoiding double counting
-        const uniqueServiceIds = new Set([
-          ...servicesInRange.filter(s => s.technicianId === person.id).map(s => s.id),
-          ...servicesInRange.filter(s => s.serviceAdvisorId === person.id).map(s => s.id),
-        ]);
-
-        const generatedRevenue = Array.from(uniqueServiceIds).reduce((sum, id) => {
-            const service = servicesInRange.find(s => s.id === id);
-            return sum + (service?.totalCost || 0);
-        }, 0);
-
-
+        
+        // This is a simplified sum. If a person is both, they get credit for both actions.
+        // A more complex logic could avoid double-counting if they were both advisor and tech on the same service.
+        const generatedRevenue = technicalWorkValue + administrativeWorkValue;
+        
         const commission = netProfitForCommissions * (person.commissionRate || 0);
         const totalSalary = (person.monthlySalary || 0) + commission;
 
-        const activeRoles = (person.roles || [])
-          .filter(role => !!role?.trim() && validAreaNames.has(role.toLowerCase()));
+        const activeRoles = (person.roles || []).filter(role => !!role?.trim() && validAreaNames.has(role.toLowerCase()));
 
         return {
           id: person.id,
@@ -273,5 +283,3 @@ export function PersonalPageComponent({
     </>
   );
 }
-
-    
