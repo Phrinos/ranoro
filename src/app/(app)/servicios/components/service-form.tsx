@@ -88,7 +88,7 @@ interface Props {
   onTotalCostChange: (cost: number) => void;
 }
 
-export function ServiceForm(props:Props){
+export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref) => {
   const {
     initialDataService,
     serviceTypes,
@@ -216,10 +216,6 @@ export function ServiceForm(props:Props){
   const watchedSubStatus = watch('subStatus');
   const watchedVehicleId = watch('vehicleId');
   const watchedNextServiceInfo = watch('nextServiceInfo');
-  
-  useEffect(() => {
-    reset(defaultValues);
-  }, [initialDataService, reset, defaultValues]);
   
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
@@ -400,7 +396,7 @@ export function ServiceForm(props:Props){
   return (
     <>
         <FormProvider {...form}>
-            <form id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
+            <form ref={ref} onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
                 <div className="flex-grow overflow-y-auto px-6 pt-4 space-y-6">
                     <VehicleSelectionCard
                         isReadOnly={props.isReadOnly}
@@ -417,7 +413,7 @@ export function ServiceForm(props:Props){
                                 <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
                                 <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
                             </TabsList>
-                             <Button variant="ghost" size="icon" onClick={() => setIsPreviewOpen(true)} title="Vista Previa" className="ml-2">
+                             <Button type="button" variant="ghost" size="icon" onClick={() => setIsPreviewOpen(true)} title="Vista Previa" className="ml-2">
                                 <Eye className="h-5 w-5"/>
                             </Button>
                         </div>
@@ -552,7 +548,8 @@ export function ServiceForm(props:Props){
       </Dialog>
     </>
   );
-}
+});
+ServiceForm.displayName = "ServiceForm";
 
 const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onViewImage }: any) => {
     const { fields, append, remove } = useFieldArray({ control, name: 'photoReports' });
