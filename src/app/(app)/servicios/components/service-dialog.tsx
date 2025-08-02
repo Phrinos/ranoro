@@ -83,14 +83,6 @@ export function ServiceDialog({
   const [cancellationReason, setCancellationReason] = useState("");
   const [totalCost, setTotalCost] = useState(0);
 
-
-  useEffect(() => {
-    if(open) {
-      setFormStatus(service?.status);
-      setFormSubStatus(service?.subStatus);
-    }
-  }, [open, service]);
-
   useEffect(() => {
     if (!open || !service?.id || mode !== 'service' || !db) return;
 
