@@ -45,6 +45,13 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
         const currentValue = getValues(currentItem.name) || { photos: [], notes: '' };
         setValue(currentItem.name, { ...currentValue, status: newStatus }, { shouldDirty: true });
     };
+    
+    const statusOptions = [
+        { value: 'ok', label: 'Bien', color: 'bg-green-500 hover:bg-green-600', ringColor: 'ring-green-500' },
+        { value: 'atencion', label: 'Atención', color: 'bg-yellow-400 hover:bg-yellow-500', ringColor: 'ring-yellow-400' },
+        { value: 'inmediata', label: 'Inmediata', color: 'bg-red-500 hover:bg-red-600', ringColor: 'ring-red-500' },
+    ];
+
 
     return (
         <div className="flex flex-col h-full p-1">
@@ -54,19 +61,15 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
                 <h3 className="text-lg font-semibold">{currentItem.label}</h3>
             </div>
 
-            <div className="flex-grow space-y-4">
+            <div className="flex-grow space-y-4" key={currentItem.name}>
                 <Controller
                     name={currentItem.name as any}
                     control={control}
                     defaultValue={{ status: 'na', photos: [], notes: '' }}
                     render={({ field }) => (
-                        <div className="space-y-4" key={currentItem.name}>
+                        <div className="space-y-4">
                             <div className="grid grid-cols-3 gap-2">
-                                {[
-                                    { value: 'ok', label: 'Bien', color: 'bg-green-500 hover:bg-green-600' },
-                                    { value: 'atencion', label: 'Atención', color: 'bg-yellow-400 hover:bg-yellow-500' },
-                                    { value: 'inmediata', label: 'Inmediata', color: 'bg-red-500 hover:bg-red-600' },
-                                ].map(status => (
+                                {statusOptions.map(status => (
                                     <Button
                                         key={status.value}
                                         type="button"
@@ -76,7 +79,7 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
                                             "h-16 text-white text-xs sm:text-sm transition-all",
                                             status.color,
                                             field.value?.status === status.value 
-                                                ? 'ring-2 ring-offset-2 ring-black dark:ring-white opacity-100'
+                                                ? `ring-2 ring-offset-2 opacity-100 ${status.ringColor}`
                                                 : 'opacity-60 hover:opacity-100'
                                         )}
                                     >
