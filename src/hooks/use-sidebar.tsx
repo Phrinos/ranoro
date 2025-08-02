@@ -1,4 +1,4 @@
-// src/hooks/use-sidebar.ts
+// src/hooks/use-sidebar.tsx
 "use client"
 
 import * as React from "react"
