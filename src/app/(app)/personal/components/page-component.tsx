@@ -14,7 +14,7 @@ import type { PersonnelFormValues } from "./personnel-form";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 import { Loader2, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User as UserIcon, TrendingDown, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import type { DateRange } from 'react-day-picker';
@@ -24,10 +24,16 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, startOfDay, endOfDay, isSameDay, startOfMonth, endOfMonth, subMonths, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { calculateSaleProfit } from '@/lib/placeholder-data';
+import { calculateSaleProfit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { parseDate } from '@/lib/forms';
 import { AreasContent } from './areas-content';
 
+const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | "black" => {
+    const lowerCaseRole = role.toLowerCase();
+    if (lowerCaseRole === 'administrativo') return 'white';
+    if (lowerCaseRole === 'tecnico') return 'lightGray';
+    return 'outline';
+};
 
 export function PersonalPageComponent({
   searchParams,
@@ -180,8 +186,13 @@ export function PersonalPageComponent({
                 <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {performanceData.map(person => (
                         <Card key={person.id} className="shadow-sm">
-                            <CardHeader className="pb-2 flex-row justify-between items-start">
+                            <CardHeader className="pb-2">
                                 <CardTitle className="text-lg">{person.name}</CardTitle>
+                                {person.roles && person.roles.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 pt-1">
+                                        {person.roles.map(role => <Badge key={role} variant={getRoleBadgeVariant(role)}>{role}</Badge>)}
+                                    </div>
+                                )}
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm">
                                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(person.generatedRevenue)}</span></div>
