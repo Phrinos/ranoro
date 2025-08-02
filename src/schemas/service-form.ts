@@ -1,3 +1,4 @@
+
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -104,6 +105,7 @@ export const serviceFormSchema = z.object({
     photoReports: z.array(photoReportSchema).optional(),
     customerName: z.string().optional(),
     totalCost: z.number().optional(),
+    allVehiclesForDialog: z.array(z.any()).optional(), // Add this line
 }).refine(
     (d) => !(d.status === 'Agendado' && !d.serviceDate),
     {

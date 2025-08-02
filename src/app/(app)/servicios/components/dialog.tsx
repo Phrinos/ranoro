@@ -219,7 +219,7 @@ export function ServiceDialog({
             </div>
             {service?.status === 'Entregado' && (
                 <div className="text-left md:text-center md:col-span-1">
-                    <p className="text-sm"><span className="text-muted-foreground">Método de pago:</span><br/><span className="font-semibold">{service.paymentMethod}</span></p>
+                    <p className="text-sm"><span className="text-muted-foreground">Método de pago:</span><br/><Badge variant={getPaymentMethodVariant(service.paymentMethod)}>{service.paymentMethod}</Badge></p>
                     {service.cardFolio && <p className="text-sm"><span className="text-muted-foreground">Folio Tarjeta:</span><br/><span className="font-semibold">{service.cardFolio}</span></p>}
                     {service.transferFolio && <p className="text-sm"><span className="text-muted-foreground">Folio Transf:</span><br/><span className="font-semibold">{service.transferFolio}</span></p>}
                 </div>

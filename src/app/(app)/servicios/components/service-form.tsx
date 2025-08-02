@@ -1,3 +1,4 @@
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -115,6 +116,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     if (initialDataService) {
       return {
         ...initialDataService,
+        allVehiclesForDialog: parentVehicles,
         status: status,
         serviceType: initialDataService.serviceType ?? firstType,
         serviceDate: initialDataService.serviceDate ? parseDate(initialDataService.serviceDate) : undefined,
@@ -161,6 +163,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     })();
 
     return {
+      allVehiclesForDialog: parentVehicles,
       status: status,
       serviceType: firstType,
       quoteDate: status === 'Cotizacion' ? now : undefined,
@@ -197,7 +200,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
       serviceAdvisorId: authUser?.id,
       serviceAdvisorName: authUser?.name,
     } as ServiceFormValues;
-  }, [initialDataService, serviceTypes, mode]);
+  }, [initialDataService, serviceTypes, mode, parentVehicles]);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -210,6 +213,14 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   useEffect(() => {
     onTotalCostChange(totalCost);
   }, [totalCost, onTotalCostChange]);
+
+  const watchedStatus = watch('status');
+  const watchedSubStatus = watch('subStatus');
+  
+  useEffect(() => {
+    if (onStatusChange) onStatusChange(watchedStatus);
+    if (onSubStatusChange) onSubStatusChange(watchedSubStatus);
+  }, [watchedStatus, watchedSubStatus, onStatusChange, onSubStatusChange]);
   
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
@@ -422,7 +433,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
                                 categories={allCategories}
                                 suppliers={allSuppliers}
                             />
-                            {watch('status') === 'Entregado' && <PaymentSection isReadOnly={true} />}
+                            {watchedStatus === 'Entregado' && <PaymentSection isReadOnly={true} />}
                            
                         </TabsContent>
                         <TabsContent value="reception" className="mt-0">

@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ServiceRecord, PaymentMethod, InventoryItem } from "@/types";
-import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, CalendarCheck } from "lucide-react";
+import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, CalendarCheck, DollarSign } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { addYears, isValid, format } from "date-fns";
 import type { ServiceFormValues } from "@/schemas/service-form";
@@ -58,6 +58,9 @@ const completeServiceSchema = z.object({
   paymentMethod: z.enum(paymentMethods, { required_error: "Debe seleccionar un método de pago." }),
   cardFolio: z.string().optional(),
   transferFolio: z.string().optional(),
+  amountInCash: z.coerce.number().optional(),
+  amountInCard: z.coerce.number().optional(),
+  amountInTransfer: z.coerce.number().optional(),
 }).refine(data => {
   if ((data.paymentMethod?.includes('Tarjeta')) && !data.cardFolio) {
     return false;
@@ -101,6 +104,9 @@ export function CompleteServiceDialog({
       paymentMethod: service.paymentMethod || 'Efectivo',
       cardFolio: service.cardFolio || '',
       transferFolio: service.transferFolio || '',
+      amountInCash: service.amountInCash,
+      amountInCard: service.amountInCard,
+      amountInTransfer: service.amountInTransfer,
     }
   });
 
@@ -118,6 +124,8 @@ export function CompleteServiceDialog({
     onConfirm(service, values, nextServiceInfo);
   };
   
+  const isMixedPayment = selectedPaymentMethod?.includes('+') || selectedPaymentMethod?.includes('/');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0">
@@ -165,6 +173,20 @@ export function CompleteServiceDialog({
                             </FormItem>
                         )}
                     />
+                    {isMixedPayment && (
+                      <div className="space-y-2 rounded-md border p-4">
+                        <p className="text-sm font-medium">Desglose de Pago</p>
+                        {selectedPaymentMethod.includes('Efectivo') && (
+                          <FormField control={form.control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                        )}
+                        {selectedPaymentMethod.includes('Tarjeta') && (
+                          <FormField control={form.control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                        )}
+                        {selectedPaymentMethod.includes('Transferencia') && (
+                          <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                        )}
+                      </div>
+                    )}
                     {(selectedPaymentMethod?.includes("Tarjeta")) && (
                         <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     )}
