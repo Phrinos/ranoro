@@ -89,67 +89,73 @@ export function FixedExpensesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle>Gestionar Gastos Fijos Mensuales</DialogTitle>
           <DialogDescription>
             Añade, edita o elimina los gastos fijos recurrentes de tu taller.
           </DialogDescription>
         </DialogHeader>
         
-        {isSubFormOpen ? (
-          <FixedExpenseForm
-            initialData={editingExpense}
-            onSubmit={handleSaveExpense}
-            onClose={() => {
-              setIsSubFormOpen(false);
-              setEditingExpense(null);
-            }}
-          />
-        ) : (
-          <>
-            <Button onClick={() => handleOpenSubForm()} className="mb-4 self-start">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Añadir Gasto
-            </Button>
-            {expenses.length > 0 ? (
-              <ScrollArea className="flex-grow border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre del Gasto</TableHead>
-                      <TableHead className="text-right">Monto Mensual</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {expenses.map((expense) => (
-                      <TableRow key={expense.id}>
-                        <TableCell className="font-medium">
-                          <p>{expense.name}</p>
-                          {expense.notes && <p className="text-xs text-muted-foreground">{expense.notes}</p>}
-                        </TableCell>
-                        <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenSubForm(expense)} className="mr-1">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
+        <div className="flex-grow overflow-y-auto px-6">
+          {isSubFormOpen ? (
+            <div className="py-4">
+              <FixedExpenseForm
+                initialData={editingExpense}
+                onSubmit={handleSaveExpense}
+                onClose={() => {
+                  setIsSubFormOpen(false);
+                  setEditingExpense(null);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="py-4 space-y-4">
+              <Button onClick={() => handleOpenSubForm()} className="w-full sm:w-auto">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Gasto
+              </Button>
+              {expenses.length > 0 ? (
+                <ScrollArea className="h-[400px] border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nombre del Gasto</TableHead>
+                        <TableHead className="text-right">Monto Mensual</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            ) : (
-              <p className="text-muted-foreground text-center py-4 flex-grow">No hay gastos fijos registrados.</p>
-            )}
-            <DialogFooter className="mt-4">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
-            </DialogFooter>
-          </>
+                    </TableHeader>
+                    <TableBody>
+                      {expenses.map((expense) => (
+                        <TableRow key={expense.id}>
+                          <TableCell className="font-medium">
+                            <p>{expense.name}</p>
+                            {expense.notes && <p className="text-xs text-muted-foreground">{expense.notes}</p>}
+                          </TableCell>
+                          <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenSubForm(expense)} className="mr-1">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">No hay gastos fijos registrados.</p>
+              )}
+            </div>
+          )}
+        </div>
+        {!isSubFormOpen && (
+           <DialogFooter className="p-6 pt-4 border-t flex-shrink-0">
+             <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
+           </DialogFooter>
         )}
       </DialogContent>
     </Dialog>
