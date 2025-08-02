@@ -221,40 +221,6 @@ export function ServiceForm(props:Props){
     reset(defaultValues);
   }, [initialDataService, reset, defaultValues]);
   
-  useEffect(() => {
-    const subscription = watch((value, { name }) => {
-        if (name === 'status' && onStatusChange) {
-            onStatusChange(value.status as ServiceRecord['status']);
-        }
-        if (name === 'subStatus' && onSubStatusChange) {
-            onSubStatusChange(value.subStatus as ServiceRecord['subStatus']);
-        }
-        
-        if(name === 'status') {
-          const currentStatus = value.status;
-          if (currentStatus === 'Agendado' && !watch('serviceDate')) {
-              setValue('serviceDate', new Date());
-              setValue('appointmentStatus', 'Creada');
-          }
-          if (currentStatus === 'En Taller' && !watch('receptionDateTime')) {
-              setValue('receptionDateTime', new Date());
-          }
-        }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, onStatusChange, onSubStatusChange, setValue]);
-
-  
-  useEffect(() => {
-    if (watchedVehicleId) {
-      const selectedVehicle = parentVehicles.find(v => v.id === watchedVehicleId);
-      if (selectedVehicle) {
-        setValue('customerName', selectedVehicle.ownerName);
-        setValue('allVehiclesForDialog' as any, parentVehicles);
-      }
-    }
-  }, [watchedVehicleId, parentVehicles, setValue]);
-  
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
@@ -458,7 +424,7 @@ export function ServiceForm(props:Props){
                         <TabsContent value="details" className="mt-0 space-y-4">
                             <ServiceDetailsCard
                                 isReadOnly={props.isReadOnly}
-                                technicians={technicians as User[]}
+                                technicians={technicians}
                                 inventoryItems={invItems}
                                 serviceTypes={serviceTypes}
                                 mode={props.mode || 'service'}

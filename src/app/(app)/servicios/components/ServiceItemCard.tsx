@@ -80,12 +80,11 @@ export function ServiceItemCard({
         const supplyPath = `serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}`;
         const currentSupply = getValues(supplyPath);
         if (!currentSupply) return;
-
-        const newQuantity = currentSupply.quantity + delta;
+        
+        const newQuantity = (Number(currentSupply.quantity) || 0) + delta;
         if (newQuantity <= 0) return;
 
         const inventoryItem = inventoryItems.find(item => item.id === currentSupply.supplyId);
-
         if (inventoryItem && !inventoryItem.isService && newQuantity > inventoryItem.quantity) {
             toast({
                 title: 'Stock Insuficiente',
@@ -94,8 +93,24 @@ export function ServiceItemCard({
             });
             return;
         }
-
+        
         setValue(`${supplyPath}.quantity`, newQuantity, { shouldDirty: true });
+    };
+    
+    const handleManualQuantitySet = (index: number, value: string) => {
+        const itemInSale = getValues(`serviceItems.${serviceIndex}.suppliesUsed.${index}`);
+        if (!itemInSale) return;
+        
+        const newQuantity = Number(value);
+        if (isNaN(newQuantity) || newQuantity < 0) return;
+
+        const itemDetails = inventoryItems.find(inv => inv.id === itemInSale.supplyId);
+        if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
+            toast({ title: 'Stock Insuficiente', description: `Solo hay ${itemDetails.quantity} de ${itemDetails.name}.`, variant: 'destructive' });
+            return;
+        }
+        
+        setValue(`serviceItems.${serviceIndex}.suppliesUsed.${index}.quantity`, newQuantity, { shouldDirty: true });
     };
 
     const handleNewItemRequest = (searchTerm: string) => {
@@ -185,8 +200,8 @@ export function ServiceItemCard({
                                     type="number"
                                     placeholder="0.00"
                                     {...field}
-                                    value={field.value === 0 ? '' : field.value}
-                                    onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                    value={field.value ?? ''}
+                                    onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
                                     disabled={isReadOnly}
                                 />
                             </FormControl>
@@ -222,6 +237,8 @@ export function ServiceItemCard({
                                                 step="any"
                                                 min="0.001"
                                                 {...field}
+                                                value={field.value ?? ''}
+                                                onChange={(e) => handleManualQuantitySet(supplyIndex, e.target.value)}
                                                 className="w-16 text-center h-7 text-sm"
                                                 disabled={isReadOnly}
                                             />

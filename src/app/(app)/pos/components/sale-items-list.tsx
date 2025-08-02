@@ -53,7 +53,8 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
       return;
     }
     
-    update(index, { ...itemInSale, quantity: newQuantity, totalPrice: newQuantity * itemInSale.unitPrice });
+    setValue(`items.${index}.quantity`, newQuantity, { shouldDirty: true });
+    setValue(`items.${index}.totalPrice`, newQuantity * itemInSale.unitPrice, { shouldDirty: true });
   };
 
   return (
@@ -63,7 +64,7 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
         <ScrollArea className="flex-grow pr-4">
           {fields.length > 0 ? (
             <div className="space-y-4">
-              {fields.map((field, index) => (
+              {fields.map((field: any, index) => (
                 <div key={field.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
                   <div className="flex-1 w-full sm:w-auto">
                     <FormLabel className="text-xs">Artículo</FormLabel>
