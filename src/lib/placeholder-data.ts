@@ -111,7 +111,7 @@ export const placeholderAppRoles: AppRole[] = [
   },
   {
     id: "recepcion_role",
-    name: "Recepcionista",
+    name: "Asesor",
     permissions: [
       "dashboard:view",
       "services:create",

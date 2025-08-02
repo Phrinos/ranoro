@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -119,21 +118,14 @@ export function PersonalPageComponent({
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    // Use a relevant date for advisors: quote, service, or reception date.
-    const getAdvisorRelevantDate = (s: ServiceRecord): Date | null => {
+    const getRelevantDate = (s: ServiceRecord): Date | null => {
         return parseDate(s.quoteDate) || parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
     };
 
-    const advisorServicesInRange = allServices.filter(s => {
-        const relevantDate = getAdvisorRelevantDate(s);
-        return relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval) && s.status !== 'Cancelado';
-    });
-    
-    // Use the delivery date for technicians, as this marks completion of their work.
     const technicianServicesInRange = allServices.filter(s => 
         s.status === 'Entregado' && s.deliveryDateTime && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, interval)
     );
-
+    
     const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, interval));
     
     // Gross profit calculation remains the same, based on delivered/completed work in the period
@@ -151,22 +143,36 @@ export function PersonalPageComponent({
         const isTechnician = personRoles.has('técnico') || personRoles.has('tecnico');
         const isAdvisor = personRoles.has('asesor');
 
-        // Technicians get credit for delivered work
-        const technicalWorkValue = isTechnician
-            ? technicianServicesInRange
-                .filter(s => s.technicianId === person.id)
-                .reduce((sum, s) => sum + (s.totalCost || 0), 0)
-            : 0;
+        // Advisors get credit for all services they created/managed in the period, regardless of status (except cancelled)
+        const administrativeServices = isAdvisor ? allServices.filter(s => {
+            const relevantDate = getRelevantDate(s);
+            return s.serviceAdvisorId === person.id &&
+                   s.status !== 'Cancelado' &&
+                   relevantDate &&
+                   isValid(relevantDate) &&
+                   isWithinInterval(relevantDate, interval);
+        }) : [];
+
+        // Technicians get credit for delivered work they were assigned to
+        const technicalServices = isTechnician
+            ? technicianServicesInRange.filter(s => s.technicianId === person.id)
+            : [];
             
-        // Advisors get credit for services they manage (quoted, scheduled, in workshop)
-        const administrativeWorkValue = isAdvisor
-            ? advisorServicesInRange
-                .filter(s => s.serviceAdvisorId === person.id)
-                .reduce((sum, s) => sum + (s.totalCost || 0), 0)
-            : 0;
+        const administrativeWorkValue = administrativeServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+        const technicalWorkValue = technicalServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
         
-        const generatedRevenue = technicalWorkValue + administrativeWorkValue;
-        
+        let generatedRevenue = 0;
+        if (isAdvisor && isTechnician) {
+            // If user has both roles, sum up unique services to avoid double counting
+            const uniqueServiceIds = new Set([...administrativeServices.map(s => s.id), ...technicalServices.map(s => s.id)]);
+            generatedRevenue = Array.from(uniqueServiceIds).reduce((sum, id) => {
+                const service = allServices.find(s => s.id === id);
+                return sum + (service?.totalCost || 0);
+            }, 0);
+        } else {
+            generatedRevenue = administrativeWorkValue + technicalWorkValue;
+        }
+
         const commission = netProfitForCommissions * (person.commissionRate || 0);
         const totalSalary = (person.monthlySalary || 0) + commission;
 
