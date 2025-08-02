@@ -18,6 +18,8 @@ import { optimizeImage } from "@/lib/utils";
 import { storage } from "@/lib/firebaseClient";
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { PhotoUploader } from './PhotoUploader';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { GuidedInspectionWizard } from './GuidedInspectionWizard';
 
 
 const inspectionGroups = [
@@ -256,7 +258,10 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
   onViewImage: (url: string) => void;
 }) => {
   const { control, getValues } = useFormContext();
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
@@ -275,7 +280,7 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
       </CardHeader>
       
        <div className="px-6 pb-6">
-          <Button type="button" className="w-full" size="lg" variant="outline" disabled={isReadOnly}>
+          <Button type="button" className="w-full" size="lg" variant="outline" disabled={isReadOnly} onClick={() => setIsWizardOpen(true)}>
               <PlayCircle className="mr-2 h-5 w-5"/>
               Iniciar Revisión Guiada
           </Button>
@@ -349,5 +354,21 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
         </div>
       </CardContent>
     </Card>
+
+    <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
+        <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>Asistente de Revisión de Seguridad</DialogTitle>
+                <DialogDescription>
+                    Complete cada punto de la inspección de manera secuencial.
+                </DialogDescription>
+            </DialogHeader>
+            <GuidedInspectionWizard 
+                inspectionItems={inspectionGroups.flatMap(g => g.items)}
+                onClose={() => setIsWizardOpen(false)}
+            />
+        </DialogContent>
+    </Dialog>
+    </>
   );
 };
