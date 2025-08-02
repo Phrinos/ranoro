@@ -116,6 +116,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     if (initialDataService) {
       return {
         ...initialDataService,
+        initialStatus: initialDataService.status, // Store initial status
         allVehiclesForDialog: parentVehicles,
         status: status,
         serviceType: initialDataService.serviceType ?? firstType,
@@ -164,6 +165,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
 
     return {
       allVehiclesForDialog: parentVehicles,
+      initialStatus: status, // Store initial status for new records
       status: status,
       serviceType: firstType,
       quoteDate: status === 'Cotizacion' ? now : undefined,

@@ -67,6 +67,7 @@ export const safetyInspectionSchema = z.object({
 export const serviceFormSchema = z.object({
     id: z.string().optional(),
     publicId: z.string().optional(),
+    initialStatus: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado']).optional(),
     vehicleId: z.string().min(1, 'Debe seleccionar un vehículo.'),
     vehicleIdentifier: z.string().optional(),
     vehicleLicensePlateSearch: z.string().optional(),
