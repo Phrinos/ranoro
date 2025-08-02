@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, Suspense, useRef } from 'react';
@@ -133,19 +132,16 @@ export function FinanzasPageComponent({
         const { totalTechnicianSalaries, totalAdministrativeSalaries } = allPersonnel
             .filter(p => !p.isArchived)
             .reduce((totals, person) => {
-                const roles = (person.roles || []).map(r =>
-                  r.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                );
+                const normalizedRole = (person.role || '')
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "");
 
-                const technicianLabels = ["tecnico", "técnico"];
-                const isTechnician = roles.some(role => technicianLabels.includes(role));
-
-                if (isTechnician) {
-                  totals.totalTechnicianSalaries += person.monthlySalary || 0;
+                if (normalizedRole.includes('tecnico')) {
+                    totals.totalTechnicianSalaries += person.monthlySalary || 0;
                 } else {
-                  totals.totalAdministrativeSalaries += person.monthlySalary || 0;
+                    totals.totalAdministrativeSalaries += person.monthlySalary || 0;
                 }
-
                 return totals;
             }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
 
@@ -387,3 +383,5 @@ export function FinanzasPageComponent({
 
     
 }
+
+    
