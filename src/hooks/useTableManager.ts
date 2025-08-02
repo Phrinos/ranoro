@@ -31,7 +31,8 @@ export function useTableManager<T extends { [key: string]: any }>({
     if (initialDateRange) {
         setDateRange(initialDateRange);
     }
-  }, [initialDateRange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   const filteredData = useMemo(() => {
     let data = [...initialData];
