@@ -416,6 +416,7 @@ export interface User {
   commissionRate?: number;
   standardHoursPerDay?: number;
   isArchived?: boolean;
+  hireDate?: string; // ISO String (e.g., "2023-10-26")
 }
 
 export interface AppRole {

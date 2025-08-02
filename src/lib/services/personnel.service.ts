@@ -14,11 +14,11 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { Technician, AdministrativeStaff, Driver, Personnel, Area } from "@/types";
-import type { PersonnelFormValues } from '@/app/(app)/personal/components/personnel-form';
+import type { Technician, AdministrativeStaff, Driver, Personnel, Area, User } from "@/types";
 import type { DriverFormValues } from '@/app/(app)/conductores/components/driver-form';
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
+import type { UserFormValues } from '@/app/(app)/administracion/components/user-form';
 
 // --- Unified Personnel ---
 const onPersonnelUpdate = (callback: (personnel: Personnel[]) => void): (() => void) => {
@@ -40,21 +40,21 @@ const onPersonnelUpdatePromise = async (): Promise<Personnel[]> => {
 };
 
 
-const savePersonnel = async (data: PersonnelFormValues, id?: string): Promise<Personnel> => {
+const savePersonnel = async (data: UserFormValues, id?: string): Promise<User> => {
     if (!db) throw new Error("Database not initialized.");
     const dataToSave = {
         ...data,
-        hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
+        hireDate: data.hireDate ? new Date(data.hireDate).toISOString() : undefined,
     };
     const cleanedData = cleanObjectForFirestore(dataToSave);
     
     if (id) {
-        await updateDoc(doc(db, 'personnel', id), cleanedData);
-        return { id, ...dataToSave };
+        await updateDoc(doc(db, 'users', id), cleanedData);
+        return { id, ...dataToSave } as User;
     } else {
-        const fullData = { ...cleanedData, isArchived: false };
-        const docRef = await addDoc(collection(db, 'personnel'), fullData);
-        return { id: docRef.id, ...fullData };
+        const fullData = { ...cleanedData, isArchived: false, createdAt: new Date().toISOString() };
+        const docRef = await addDoc(collection(db, 'users'), fullData);
+        return { id: docRef.id, ...fullData } as User;
     }
 };
 

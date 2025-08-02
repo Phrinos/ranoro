@@ -17,6 +17,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { User, AppRole } from "@/types";
 import { capitalizeWords } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { es } from 'date-fns/locale';
+import { parseDate } from "@/lib/forms";
+
 
 const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -25,6 +34,7 @@ const userFormSchema = z.object({
   role: z.string({ required_error: "Seleccione un rol." }).min(1, "Debe seleccionar un rol."),
   monthlySalary: z.coerce.number().optional(),
   commissionRate: z.coerce.number().optional(),
+  hireDate: z.date().optional(),
 });
 
 export type UserFormValues = z.infer<typeof userFormSchema>;
@@ -46,6 +56,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         role: initialData.role || '',
         monthlySalary: initialData.monthlySalary || 0,
         commissionRate: initialData.commissionRate || 0,
+        hireDate: initialData.hireDate ? parseDate(initialData.hireDate) : undefined,
     } : {
       name: "",
       email: "",
@@ -53,6 +64,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
       role: "",
       monthlySalary: 0,
       commissionRate: 0,
+      hireDate: new Date(),
     },
   });
 
@@ -71,6 +83,47 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         <FormField control={form.control} name="role" render={({ field }) => (
           <FormItem><FormLabel>Rol del Usuario</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
         )}/>
+         <FormField
+          control={form.control}
+          name="hireDate"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Fecha de Contratación</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP", { locale: es })
+                      ) : (
+                        <span>Seleccione una fecha</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <div className="grid grid-cols-2 gap-4">
             <FormField control={form.control} name="monthlySalary" render={({ field }) => (
                 <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
