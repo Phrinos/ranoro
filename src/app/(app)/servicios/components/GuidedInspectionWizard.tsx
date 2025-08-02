@@ -44,14 +44,14 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
     };
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full p-4">
             <Progress value={progress} className="w-full mb-4" />
             <div className="text-center mb-4">
                 <p className="text-sm text-muted-foreground">Punto {currentIndex + 1} de {inspectionItems.length}</p>
                 <h3 className="text-lg font-semibold">{currentItem.label}</h3>
             </div>
 
-            <div className="flex-grow space-y-4 p-1">
+            <div className="flex-grow space-y-4">
                 <Controller
                     name={currentItem.name as any}
                     control={control}
@@ -70,9 +70,11 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
                                         variant="default"
                                         onClick={() => handleStatusChange(status.value as any)}
                                         className={cn(
-                                            "h-16 text-white text-xs sm:text-sm",
+                                            "h-16 text-white text-xs sm:text-sm transition-all",
                                             status.color,
-                                            field.value?.status === status.value && 'ring-2 ring-offset-2 ring-black dark:ring-white'
+                                            field.value?.status === status.value 
+                                                ? 'ring-2 ring-offset-2 ring-black dark:ring-white opacity-100'
+                                                : 'opacity-60 hover:opacity-100'
                                         )}
                                     >
                                         {status.label}
@@ -132,4 +134,3 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
         </div>
     );
 }
-
