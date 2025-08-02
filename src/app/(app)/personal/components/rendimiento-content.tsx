@@ -12,7 +12,7 @@ import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterva
 import { es } from 'date-fns/locale';
 import { CalendarIcon as CalendarDateIcon, Wallet } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
-import type { DateRange } from 'react-day-picker';
+import type { DateRange } from "react-day-picker";
 import { operationsService, inventoryService, adminService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
@@ -79,8 +79,9 @@ export function RendimientoPersonalContent() {
     const netProfitForCommissions = Math.max(0, grossProfit - totalFixedExpenses);
     
     return activeUsers.map(user => {
-        const isAdvisor = user.role === 'Asesor' || user.role === 'Admin' || user.role === 'Superadministrador';
-        const isTechnician = user.role === 'Tecnico';
+        const lowerCaseRole = user.role.toLowerCase();
+        const isAdvisor = lowerCaseRole.includes('asesor') || lowerCaseRole === 'admin' || lowerCaseRole === 'superadministrador';
+        const isTechnician = lowerCaseRole.includes('tecnico');
 
         let generatedRevenue = 0;
         
