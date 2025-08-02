@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
 import { ServiceDialog } from "../components/service-dialog";
-import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo, Personnel } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo, Personnel, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, isTomorrow, compareAsc, isSameDay, addDays, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -18,7 +18,7 @@ import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Badge } from "@/components/ui/badge";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { ServiceAppointmentCard } from '../components/ServiceAppointmentCard';
-import { inventoryService, personnelService, operationsService } from '@/lib/services';
+import { inventoryService, personnelService, operationsService, adminService } from '@/lib/services';
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
 import { parseDate } from '@/lib/forms';
@@ -41,7 +41,7 @@ function AgendaPageComponent() {
   
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]); 
-  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [personnel, setPersonnel] = useState<User[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]); 
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,7 +67,7 @@ function AgendaPageComponent() {
 
     unsubs.push(operationsService.onServicesUpdate(setAllServices));
     unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
-    unsubs.push(personnelService.onPersonnelUpdate(setPersonnel));
+    unsubs.push(adminService.onUsersUpdate(setPersonnel));
     unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
     unsubs.push(inventoryService.onServiceTypesUpdate((data) => {
         setServiceTypes(data);

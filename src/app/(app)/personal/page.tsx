@@ -1,17 +1,20 @@
 
 
-import { Suspense } from 'react';
-import { Loader2 } from 'lucide-react';
-import { PersonalPageComponent } from './components/page-component';
+"use client";
 
-export default function PersonalPageWrapper({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+
+function Redirector() {
+    // Redirect to the new unified page with the correct tab and subtab selected
+    redirect('/administracion?tab=usuarios');
+    return null;
+}
+
+export default function PersonalRedirectPage() {
     return (
-        <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-            <PersonalPageComponent searchParams={searchParams} />
+        <Suspense fallback={<div>Redireccionando...</div>}>
+            <Redirector />
         </Suspense>
-    )
+    );
 }

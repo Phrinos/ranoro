@@ -18,15 +18,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { capitalizeWords } from '@/lib/utils';
 import { adminService } from '@/lib/services/admin.service';
+import { UserDialog } from './user-dialog';
 
 const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Ingrese un correo electrónico válido."),
   phone: z.string().optional(),
   role: z.string({ required_error: "Seleccione un rol." }).min(1, "Debe seleccionar un rol."),
+  monthlySalary: z.coerce.number().optional(),
+  commissionRate: z.coerce.number().optional(),
 });
 
-type UserFormValues = z.infer<typeof userFormSchema>;
+export type UserFormValues = z.infer<typeof userFormSchema>;
 
 export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: User | null, initialUsers: User[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
@@ -35,18 +38,6 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const formCardRef = useRef<HTMLDivElement>(null);
-
-  const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
-    defaultValues: { name: '', email: '', phone: '', role: 'Tecnico' },
-  });
-  
-  useEffect(() => {
-    if (isFormOpen && formCardRef.current) {
-        formCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [isFormOpen]);
   
   const filteredUsers = useMemo(() => {
     return users.filter(user => 
@@ -71,18 +62,11 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
   const handleOpenForm = useCallback((userToEdit?: User) => {
     if (userToEdit) {
       setEditingUser(userToEdit);
-      form.reset({
-        name: userToEdit.name,
-        email: userToEdit.email,
-        phone: userToEdit.phone || '',
-        role: userToEdit.role,
-      });
     } else {
       setEditingUser(null);
-      form.reset({ name: '', email: '', phone: '', role: 'Tecnico' });
     }
     setIsFormOpen(true);
-  }, [form]);
+  }, []);
 
   const onSubmit = async (data: UserFormValues) => {
     if (!currentUser) return;
@@ -118,7 +102,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div>
                 <h2 className="text-2xl font-bold tracking-tight">Lista de Usuarios</h2>
-                <p className="text-muted-foreground">Usuarios registrados en el sistema.</p>
+                <p className="text-muted-foreground">Usuarios registrados en el sistema. Los sueldos y comisiones se configuran aquí.</p>
             </div>
             <Button onClick={() => handleOpenForm()}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Usuario
@@ -168,26 +152,13 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
         </Card>
 
         {isFormOpen && (
-            <Card className="mt-8" ref={formCardRef}>
-                <CardHeader>
-                    <CardTitle>{editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</CardTitle>
-                    <CardDescription>{editingUser ? `Para cambiar la contraseña, debe hacerse directamente en Firebase Authentication por seguridad.` : 'La contraseña se establecerá en la consola de Firebase después de crear el usuario.'}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Nombre completo" {...field} onChange={e => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
-                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={!!editingUser} /></FormControl><FormDescription>El email se usará para iniciar sesión y no se puede cambiar después de la creación.</FormDescription><FormMessage /></FormItem> )}/>
-                            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input placeholder="4491234567" {...field} /></FormControl><FormMessage /></FormItem> )}/>
-                            <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Rol</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{assignableRoles.map(role => ( <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
-                            <div className="flex justify-end gap-2">
-                                <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
-                                <Button type="submit">{editingUser ? 'Guardar Cambios' : 'Crear Usuario'}</Button>
-                            </div>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
+            <UserDialog
+                open={isFormOpen}
+                onOpenChange={setIsFormOpen}
+                user={editingUser}
+                roles={assignableRoles}
+                onSave={onSubmit}
+            />
         )}
     </div>
   );

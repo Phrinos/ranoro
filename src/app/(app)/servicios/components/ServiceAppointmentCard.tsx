@@ -7,10 +7,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusTracker } from "./StatusTracker";
-import type { ServiceRecord, Vehicle, Technician, PaymentMethod, ServiceSubStatus } from '@/types';
+import type { ServiceRecord, Vehicle, Technician, PaymentMethod, ServiceSubStatus, User } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench, Eye, Printer } from 'lucide-react';
+import { Edit, CheckCircle, Ban, DollarSign, User as UserIcon, Phone, TrendingUp, Clock, Wrench, Eye, Printer } from 'lucide-react';
 import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
@@ -19,7 +19,7 @@ import Link from 'next/link';
 interface ServiceAppointmentCardProps {
     service: ServiceRecord;
     vehicles: Vehicle[];
-    technicians: Technician[];
+    technicians: User[];
     onEdit: () => void;
     onView: () => void;
     onConfirm?: () => void;
@@ -122,7 +122,7 @@ export const ServiceAppointmentCard = React.memo(({
                     <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
                         {vehicle && (
                             <div className="flex items-center gap-4 text-sm text-muted-foreground mb-1">
-                                <div className="flex items-center gap-1.5"><User className="h-4 w-4" /> <span className="font-medium">{vehicle.ownerName}</span></div>
+                                <div className="flex items-center gap-1.5"><UserIcon className="h-4 w-4" /> <span className="font-medium">{vehicle.ownerName}</span></div>
                                 <div className="flex items-center gap-1.5"><Phone className="h-4 w-4" /> <span>{vehicle.ownerPhone}</span></div>
                             </div>
                         )}

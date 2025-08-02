@@ -42,19 +42,7 @@ export interface Area {
   name: string;
 }
 
-export interface Personnel {
-  id: string;
-  name: string;
-  roles: string[]; // This will now store names of Areas
-  contactInfo?: string;
-  hireDate?: string;
-  monthlySalary?: number;
-  commissionRate?: number;
-  standardHoursPerDay?: number;
-  notes?: string;
-  specialty?: string;
-  isArchived?: boolean;
-}
+export type Personnel = User;
 
 export interface VehiclePaperwork {
   id: string;
@@ -424,6 +412,10 @@ export interface User {
   password?: string; // Only for creation/update, not stored in localStorage directly
   phone?: string;
   signatureDataUrl?: string;
+  monthlySalary?: number;
+  commissionRate?: number;
+  standardHoursPerDay?: number;
+  isArchived?: boolean;
 }
 
 export interface AppRole {

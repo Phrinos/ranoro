@@ -7,10 +7,9 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, UserCheck, UserX, Search, TrendingUp, Users, ChevronsRight, ListFilter, DollarSign } from "lucide-react";
-import { PersonnelTable } from "./personnel-table";
-import { PersonnelDialog } from "./personnel-dialog";
-import type { User, Technician, ServiceRecord, AdministrativeStaff, SaleReceipt, MonthlyFixedExpense, Personnel, AppRole, Area } from '@/types';
-import type { PersonnelFormValues } from "./personnel-form";
+import { UserDialog } from '../../administracion/components/user-dialog';
+import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense, AppRole, Area } from '@/types';
+import type { UserFormValues } from '../../administracion/components/user-form';
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +17,7 @@ import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 import { Loader2, CalendarIcon as CalendarDateIcon, BadgeCent, Edit, User as UserIcon, TrendingDown, AlertCircle, ArrowUpCircle, ArrowDownCircle, Coins, BarChart2, Wallet, Wrench, Landmark, LayoutGrid, CalendarDays, FileText, Receipt, Package, Truck, Settings, Shield, LineChart, Printer, Copy, MessageSquare, ChevronRight, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import type { DateRange } from 'react-day-picker';
-import { personnelService, operationsService, inventoryService, adminService } from '@/lib/services';
+import { adminService, operationsService, inventoryService } from '@/lib/services';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfDay, endOfDay, isSameDay, startOfMonth, endOfMonth, subMonths, isWithinInterval, isValid, compareDesc } from 'date-fns';
@@ -26,7 +25,6 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { calculateSaleProfit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { parseDate } from '@/lib/forms';
-import { AreasContent } from './areas-content';
 import { Badge } from "@/components/ui/badge";
 
 const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | "black" => {
@@ -49,19 +47,13 @@ export function PersonalPageComponent({
   const defaultTab = searchParams?.tab as string || 'resumen';
   const [activeTab, setActiveTab] = useState(defaultTab);
   
-  const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
+  const [allInventory, setAllInventory] = useState<any[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
-  const [areas, setAreas] = useState<Area[]>([]);
+  const [roles, setRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showArchived, setShowArchived] = useState(false);
-  
-  const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
-  const [editingPersonnel, setEditingPersonnel] = useState<Personnel | null>(null);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
@@ -71,8 +63,8 @@ export function PersonalPageComponent({
   useEffect(() => {
     setIsLoading(true);
     const unsubs: (() => void)[] = [
-      personnelService.onPersonnelUpdate((data) => setAllPersonnel(data)),
-      personnelService.onAreasUpdate(setAreas),
+      adminService.onUsersUpdate(setAllUsers),
+      adminService.onRolesUpdate(setRoles),
       operationsService.onSalesUpdate(setAllSales),
       operationsService.onServicesUpdate(setAllServices),
       inventoryService.onItemsUpdate(setAllInventory),
@@ -84,31 +76,6 @@ export function PersonalPageComponent({
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
-
-  const handleOpenDialog = (personnel?: Personnel | null) => {
-    setEditingPersonnel(personnel || null);
-    setIsPersonnelDialogOpen(true);
-  };
-  
-  const handleSavePersonnel = async (data: PersonnelFormValues, id?: string) => {
-    try {
-      await personnelService.savePersonnel(data, id);
-      toast({ title: `Personal ${id ? 'actualizado' : 'creado'} con éxito.` });
-      setIsPersonnelDialogOpen(false);
-    } catch (e) {
-      console.error(e);
-      toast({ title: "Error al guardar", variant: "destructive" });
-    }
-  };
-  
-  const handleArchivePersonnel = async (personnel: Personnel) => {
-    try {
-        await personnelService.archivePersonnel(personnel.id, !personnel.isArchived);
-        toast({ title: `Personal ${!personnel.isArchived ? 'archivado' : 'restaurado'}.` });
-    } catch(e) {
-        toast({title: "Error al archivar", variant: "destructive"});
-    }
-  };
   
   const performanceData = useMemo(() => {
     if (!dateRange?.from) return [];
@@ -117,8 +84,12 @@ export function PersonalPageComponent({
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    const getRelevantDate = (s: ServiceRecord): Date | null => {
+    const getAdvisorRelevantDate = (s: ServiceRecord): Date | null => {
         return parseDate(s.quoteDate) || parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
+    };
+
+    const getTechnicianRelevantDate = (s: ServiceRecord): Date | null => {
+        return parseDate(s.deliveryDateTime);
     };
 
     const completedServicesInRange = allServices.filter(s => {
@@ -135,149 +106,92 @@ export function PersonalPageComponent({
     const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + 
                         completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
     
-    const activePersonnel = allPersonnel.filter(p => !p.isArchived);
-    const fixedSalaries = activePersonnel.reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
+    const activeUsers = allUsers;
+    const fixedSalaries = activeUsers.reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
     const otherFixedExpenses = fixedExpenses.reduce((sum, e) => sum + e.amount, 0);
     const totalFixedExpenses = fixedSalaries + otherFixedExpenses;
 
     const netProfitForCommissions = Math.max(0, grossProfit - totalFixedExpenses);
     
-    return activePersonnel.map(person => {
-        const personRoles = new Set((person.roles || []).map(r => r.toLowerCase()));
-        const isTechnician = personRoles.has('técnico') || personRoles.has('tecnico');
-        const isAdvisor = personRoles.has('asesor');
-
-        const technicalServices = isTechnician 
-            ? completedServicesInRange.filter(s => s.technicianId === person.id) 
-            : [];
+    return activeUsers.map(user => {
+        const userRoles = new Set((user.role ? [user.role] : []).map(r => r.toLowerCase()));
         
-        const advisorServices = isAdvisor
-            ? completedServicesInRange.filter(s => s.serviceAdvisorId === person.id)
-            : [];
-            
-        const uniqueServices = new Set([...advisorServices, ...technicalServices]);
-        const generatedRevenue = Array.from(uniqueServices).reduce((sum, s) => sum + (s.totalCost || 0), 0);
-        
-        const commission = netProfitForCommissions * (person.commissionRate || 0);
-        const totalSalary = (person.monthlySalary || 0) + commission;
+        let generatedRevenue = 0;
 
-        let allValidRoles = (person.roles || []).filter(role => !!role?.trim());
-
-        // Remove "Administrativo" if "Admin" is also present
-        const hasAdmin = allValidRoles.some(r => r.toLowerCase() === 'admin');
-        if (hasAdmin) {
-            allValidRoles = allValidRoles.filter(r => r.toLowerCase() !== 'administrativo');
+        if (userRoles.has('técnico') || userRoles.has('tecnico')) {
+            generatedRevenue += completedServicesInRange
+                .filter(s => s.technicianId === user.id)
+                .reduce((sum, s) => sum + (s.totalCost || 0), 0);
         }
 
+        if (userRoles.has('asesor') || userRoles.has('admin') || userRoles.has('superadministrador')) {
+             const advisorServices = allServices
+                .filter(s => {
+                    const relevantDate = getAdvisorRelevantDate(s);
+                    return s.serviceAdvisorId === user.id && relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval);
+                });
+             generatedRevenue += advisorServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+        }
+        
+        const commission = netProfitForCommissions * (user.commissionRate || 0);
+        const totalSalary = (user.monthlySalary || 0) + commission;
+
         return {
-          id: person.id,
-          name: person.name,
-          roles: allValidRoles,
-          baseSalary: person.monthlySalary || 0,
+          id: user.id,
+          name: user.name,
+          roles: [user.role],
+          baseSalary: user.monthlySalary || 0,
           generatedRevenue,
           commission,
           totalSalary
         };
       })
       .sort((a,b) => b.totalSalary - a.totalSalary);
-  }, [dateRange, allPersonnel, allSales, allServices, allInventory, fixedExpenses]);
-
-
-  const filteredPersonnel = useMemo(() => {
-    let items = allPersonnel.filter(p => showArchived ? !!p.isArchived : !p.isArchived);
-    if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
-      items = items.filter(p => 
-          p.name.toLowerCase().includes(lowerSearch) || 
-          p.roles.some(r => r.toLowerCase().includes(lowerSearch))
-      );
-    }
-    return items.sort((a,b) => a.name.localeCompare(b.name));
-  }, [allPersonnel, showArchived, searchTerm]);
+  }, [dateRange, allUsers, allSales, allServices, allInventory, fixedExpenses]);
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
   
   return (
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Personal</h1>
-          <p className="text-primary-foreground/80 mt-1">Administra la información, roles y rendimiento de todo tu personal.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Rendimiento del Personal</h1>
+          <p className="text-primary-foreground/80 mt-1">Analiza los ingresos, comisiones y salarios de tu equipo.</p>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen de Rendimiento</TabsTrigger>
-          <TabsTrigger value="personal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Lista de Personal</TabsTrigger>
-          <TabsTrigger value="areas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Áreas de Trabajo</TabsTrigger>
-        </TabsList>
-        <TabsContent value="resumen" className="mt-6 space-y-6">
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <CardTitle>Rendimiento Individual</CardTitle>
-                            <CardDescription>Resumen de ingresos, ganancias y comisiones del personal en el mes.</CardDescription>
-                        </div>
-                        <Popover>
-                          <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? `${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}` : format(dateRange.from, "MMMM yyyy", { locale: es })) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="end"><Calendar mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} /></PopoverContent>
-                        </Popover>
-                    </div>
-                </CardHeader>
-                <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {performanceData.map(person => (
-                        <Card key={person.id} className="shadow-sm">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-lg">{person.name}</CardTitle>
-                                {person.roles.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 pt-1">
-                                        {person.roles.map(role => <Badge key={role} variant={getRoleBadgeVariant(role)}>{role}</Badge>)}
-                                    </div>
-                                )}
-                            </CardHeader>
-                            <CardContent className="space-y-2 text-sm">
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(person.generatedRevenue)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(person.baseSalary)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Comisiones {dateRange?.from ? format(dateRange.from, 'MMM', { locale: es }) : ''}:</span><span className="font-semibold text-green-600">{formatCurrency(person.commission)}</span></div>
-                                <div className="flex justify-between items-center border-t pt-2 mt-2 font-bold"><span className="text-foreground">Sueldo total:</span><span className="text-lg">{formatCurrency(person.totalSalary)}</span></div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </CardContent>
-            </Card>
-        </TabsContent>
-        <TabsContent value="personal" className="mt-6 space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-semibold tracking-tight">Lista de Personal</h2>
-                  <p className="text-muted-foreground">Gestiona los perfiles de todo el personal del taller.</p>
-                </div>
-                <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Personal</Button>
-            </div>
-            <div className="flex items-center gap-2 mt-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input type="search" placeholder="Buscar por nombre o rol..." className="w-full pl-8 bg-card" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                </div>
-                <Button variant="outline" className="bg-card" onClick={() => setShowArchived(!showArchived)}>
-                    {showArchived ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}
-                    {showArchived ? "Ver Activos" : "Ver Archivados"}
-                </Button>
-            </div>
-            <Card className="mt-4"><CardContent className="p-0"><PersonnelTable personnel={filteredPersonnel} appRoles={areas} onEdit={handleOpenDialog} onArchive={handleArchivePersonnel} /></CardContent></Card>
-        </TabsContent>
-         <TabsContent value="areas" className="mt-6 space-y-6">
-            <AreasContent areas={areas} />
-        </TabsContent>
-      </Tabs>
       
-      <PersonnelDialog
-        open={isPersonnelDialogOpen}
-        onOpenChange={setIsPersonnelDialogOpen}
-        personnel={editingPersonnel}
-        onSave={handleSavePersonnel}
-        appRoles={areas}
-      />
+      <Card>
+          <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                      <CardTitle>Rendimiento Individual</CardTitle>
+                      <CardDescription>Resumen de ingresos, ganancias y comisiones del personal en el mes.</CardDescription>
+                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? `${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}` : format(dateRange.from, "MMMM yyyy", { locale: es })) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end"><Calendar mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} /></PopoverContent>
+                  </Popover>
+              </div>
+          </CardHeader>
+          <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {performanceData.map(person => (
+                  <Card key={person.id} className="shadow-sm">
+                      <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">{person.name}</CardTitle>
+                          {person.roles.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pt-1">
+                                  {person.roles.map(role => <Badge key={role} variant={getRoleBadgeVariant(role)}>{role}</Badge>)}
+                              </div>
+                          )}
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(person.generatedRevenue)}</span></div>
+                          <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(person.baseSalary)}</span></div>
+                          <div className="flex justify-between items-center"><span className="text-muted-foreground">Comisiones {dateRange?.from ? format(dateRange.from, 'MMM', { locale: es }) : ''}:</span><span className="font-semibold text-green-600">{formatCurrency(person.commission)}</span></div>
+                          <div className="flex justify-between items-center border-t pt-2 mt-2 font-bold"><span className="text-foreground">Sueldo total:</span><span className="text-lg">{formatCurrency(person.totalSalary)}</span></div>
+                      </CardContent>
+                  </Card>
+              ))}
+          </CardContent>
+      </Card>
     </>
   );
 }

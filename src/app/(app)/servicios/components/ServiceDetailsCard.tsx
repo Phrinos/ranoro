@@ -3,7 +3,7 @@
 "use client";
 
 import { useFieldArray, useFormContext, type Control } from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import { CalendarIcon, PlusCircle, BrainCircuit, Loader2 } from "lucide-react";
 import { ServiceItemCard } from './ServiceItemCard';
 import { Separator } from "@/components/ui/separator";
 import type { ServiceFormValues } from "@/schemas/service-form";
-import type { Technician, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Personnel } from "@/types";
+import type { Technician, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Personnel, User } from "@/types";
 import { cn } from "@/lib/utils";
 import { format, setHours, setMinutes, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -26,7 +26,7 @@ import type { InventoryItemFormValues } from "../../inventario/components/invent
 
 interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
-  technicians: Personnel[];
+  technicians: User[];
   inventoryItems: InventoryItem[];
   serviceTypes: ServiceTypeRecord[];
   mode: 'service' | 'quote';
@@ -108,7 +108,7 @@ export function ServiceDetailsCard({
             </FormItem> 
           )}/>
           {showTechnicianField && (
-            <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name} - {technician.specialty}</SelectItem> ))}</SelectContent></Select></FormItem> )}/>
+            <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem> ))}</SelectContent></Select></FormItem> )}/>
           )}
         </div>
         

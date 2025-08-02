@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -7,10 +8,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PageHeader } from "@/components/page-header";
 import { ServiceForm } from "../components/service-form";
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, Personnel, User } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, User } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { inventoryService, operationsService, personnelService } from '@/lib/services';
+import { inventoryService, operationsService, adminService } from '@/lib/services';
 import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
@@ -37,7 +38,7 @@ export default function NuevoServicioPage() {
   const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -55,7 +56,7 @@ export default function NuevoServicioPage() {
       inventoryService.onCategoriesUpdate(setAllCategories),
       inventoryService.onSuppliersUpdate(setAllSuppliers),
       inventoryService.onVehiclesUpdate(setVehicles),
-      personnelService.onPersonnelUpdate(setPersonnel),
+      adminService.onUsersUpdate(setUsers),
       inventoryService.onServiceTypesUpdate((data) => {
         setServiceTypes(data);
         setIsLoading(false);
@@ -187,7 +188,7 @@ Total: ${formatCurrency(serviceForPreview.totalCost)}
       <FormProvider {...methods}>
         <ServiceForm
           vehicles={vehicles}
-          technicians={personnel}
+          technicians={users}
           inventoryItems={currentInventoryItems}
           serviceTypes={serviceTypes}
           onSubmit={handleSaleCompletion}
@@ -229,7 +230,7 @@ Total: ${formatCurrency(serviceForPreview.totalCost)}
                 <TicketContent
                     service={serviceForPreview}
                     vehicle={vehicles.find(v => v.id === serviceForPreview.vehicleId)}
-                    technician={personnel.find(t => t.id === serviceForPreview.technicianId) as Technician | undefined}
+                    technician={users.find(t => t.id === serviceForPreview.technicianId)}
                     previewWorkshopInfo={workshopInfo || undefined}
                 />
               </div>

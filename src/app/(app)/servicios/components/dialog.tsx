@@ -29,7 +29,7 @@ interface ServiceDialogProps {
   service?: ServiceRecord | null; 
   quote?: Partial<QuoteRecord> | null; // For quote mode initialization
   vehicles: Vehicle[]; 
-  technicians: Personnel[]; 
+  technicians: User[]; 
   inventoryItems: InventoryItem[]; 
   serviceTypes: ServiceTypeRecord[];
   onSave?: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
