@@ -36,6 +36,7 @@ import {
   DialogFooter as UiDialogFooter,
   DialogHeader as UiDialogHeader,
   DialogTitle as UiDialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -78,8 +79,11 @@ interface Props {
   serviceTypes:ServiceTypeRecord[]
   onSubmit:(d:ServiceRecord|QuoteRecord)=>Promise<void>
   onClose:()=>void
+  onCancelService?: (serviceId: string, reason: string) => void;
   isReadOnly?:boolean
   mode?:'service'|'quote'
+  onStatusChange?: (status: ServiceRecord['status']) => void;
+  onSubStatusChange?: (status: ServiceRecord['subStatus']) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
   onTotalCostChange: (cost: number) => void;
 }
@@ -92,8 +96,12 @@ export function ServiceForm(props:Props){
     technicians,
     inventoryItems:invItems,
     onSubmit,
+    onClose,
+    onCancelService,
     isReadOnly = false,
     mode = 'service',
+    onStatusChange,
+    onSubStatusChange,
     onVehicleCreated,
     onTotalCostChange,
   } = props;
@@ -409,7 +417,7 @@ export function ServiceForm(props:Props){
                                 <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
                                 <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
                             </TabsList>
-                             <Button variant="ghost" size="icon" onClick={() => setIsPreviewOpen(true)} title="Vista Previa" className="ml-2">
+                             <Button type="button" variant="ghost" size="icon" onClick={() => setIsPreviewOpen(true)} title="Vista Previa" className="ml-2">
                                 <Eye className="h-5 w-5"/>
                             </Button>
                         </div>
