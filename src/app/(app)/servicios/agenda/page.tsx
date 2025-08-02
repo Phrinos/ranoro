@@ -9,7 +9,7 @@ import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Ed
 import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { format, isTomorrow, compareAsc, isSameDay, addDays, parseISO, isValid } from 'date-fns';
+import { format, isTomorrow, compareAsc, compareDesc, isSameDay, addDays, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -93,6 +93,14 @@ function AgendaPageComponent() {
       if (!dateB) return -1;
       return compareAsc(dateA, dateB);
     };
+
+    const byDateDesc = (a: ServiceRecord, b: ServiceRecord) => {
+      const dateA = parseDate(a.serviceDate);
+      const dateB = parseDate(b.serviceDate);
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      return compareDesc(dateA, dateB);
+    };
   
     const isSame = (d: Date | null, ref: Date) => d && isValid(d) && isSameDay(d, ref);
   
@@ -114,7 +122,7 @@ function AgendaPageComponent() {
         return true;
       }
       return false;
-    }).sort(byDateAsc);
+    }).sort(byDateDesc);
   
     // Tomorrow's services are only those explicitly scheduled for tomorrow.
     const tomorrowS = activeServices
