@@ -20,6 +20,7 @@ import { es } from 'date-fns/locale';
 import { CalendarIcon as CalendarDateIcon, ShoppingCart, DollarSign, TrendingUp, BarChart2 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface InformePosContentProps {
   allSales: SaleReceipt[];
