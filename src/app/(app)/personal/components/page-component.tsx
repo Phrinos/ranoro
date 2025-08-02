@@ -121,12 +121,10 @@ export function PersonalPageComponent({
         return parseDate(s.quoteDate) || parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
     };
 
-    const completedServicesInRange = allServices.filter(s => 
-        s.status === 'Entregado' && 
-        s.deliveryDateTime && 
-        isValid(parseDate(s.deliveryDateTime)!) && 
-        isWithinInterval(parseDate(s.deliveryDateTime)!, interval)
-    );
+    const completedServicesInRange = allServices.filter(s => {
+        const deliveryDate = parseDate(s.deliveryDateTime);
+        return s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, interval);
+    });
 
     const salesInRange = allSales.filter(s => 
         s.status !== 'Cancelado' && 
@@ -149,24 +147,27 @@ export function PersonalPageComponent({
         const isTechnician = personRoles.has('técnico') || personRoles.has('tecnico');
         const isAdvisor = personRoles.has('asesor');
 
-        const technicalServices = isTechnician ? completedServicesInRange.filter(s => s.technicianId === person.id) : [];
-
-        // For advisors, count any service they created within the date range, regardless of status.
+        const technicalServices = isTechnician 
+            ? completedServicesInRange.filter(s => s.technicianId === person.id) 
+            : [];
+        
         const advisorServices = isAdvisor
-            ? allServices.filter(s => {
-                const relevantDate = getRelevantDate(s);
-                return s.serviceAdvisorId === person.id && relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval);
-            })
+            ? completedServicesInRange.filter(s => s.serviceAdvisorId === person.id)
             : [];
             
-        // Use a Set to avoid double-counting revenue if a person is both advisor and tech on the same service
         const uniqueServices = new Set([...advisorServices, ...technicalServices]);
         const generatedRevenue = Array.from(uniqueServices).reduce((sum, s) => sum + (s.totalCost || 0), 0);
         
         const commission = netProfitForCommissions * (person.commissionRate || 0);
         const totalSalary = (person.monthlySalary || 0) + commission;
 
-        const allValidRoles = (person.roles || []).filter(role => !!role?.trim());
+        let allValidRoles = (person.roles || []).filter(role => !!role?.trim());
+
+        // Remove "Administrativo" if "Admin" is also present
+        const hasAdmin = allValidRoles.some(r => r.toLowerCase() === 'admin');
+        if (hasAdmin) {
+            allValidRoles = allValidRoles.filter(r => r.toLowerCase() !== 'administrativo');
+        }
 
         return {
           id: person.id,
