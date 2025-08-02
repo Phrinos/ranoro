@@ -21,19 +21,21 @@ import { es } from 'date-fns/locale';
 
 const getRoleBadgeVariant = (role: string): "black" | "white" | "lightGray" | "blue" | "outline" => {
     const lowerCaseRole = role.toLowerCase();
-    if (lowerCaseRole.includes('admin')) {
-        return 'black';
-    }
-    if (lowerCaseRole.includes('administrativo')) {
+    if (lowerCaseRole.includes('admin')) { // Refers to 'Administrativo' area now
         return 'white';
     }
-     if (lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico')) {
+    if (lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico')) {
         return 'lightGray';
     }
-    if (lowerCaseRole.includes('recepcionista')) {
-        return 'blue';
-    }
+    // You can add more role-to-color mappings here
     return 'outline';
+}
+
+
+interface PersonnelTableProps {
+  personnel: Personnel[];
+  onEdit: (personnel: Personnel) => void;
+  onArchive: (personnel: Personnel) => void;
 }
 
 export const PersonnelTable = React.memo(({ personnel, onEdit, onArchive }: PersonnelTableProps) => {
@@ -54,7 +56,7 @@ export const PersonnelTable = React.memo(({ personnel, onEdit, onArchive }: Pers
         <TableHeader className="bg-black">
           <TableRow>
             <TableHead className="font-bold text-white">Nombre</TableHead>
-            <TableHead className="font-bold text-white">Roles</TableHead>
+            <TableHead className="font-bold text-white">Áreas / Funciones</TableHead>
             <TableHead className="font-bold text-white">Contacto</TableHead>
             <TableHead className="font-bold text-white">Contratación</TableHead>
             <TableHead className="text-right font-bold text-white">Sueldo Base</TableHead>
@@ -67,7 +69,7 @@ export const PersonnelTable = React.memo(({ personnel, onEdit, onArchive }: Pers
               <TableCell className="font-medium">{person.name}</TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                    {person.roles.map(role => <Badge key={role} variant={getRoleBadgeVariant(role)}>{role}</Badge>)}
+                    {(person.roles || []).map(role => <Badge key={role} variant={getRoleBadgeVariant(role)}>{role}</Badge>)}
                 </div>
               </TableCell>
               <TableCell>{person.contactInfo || 'N/A'}</TableCell>
