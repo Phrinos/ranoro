@@ -241,7 +241,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const shouldShowNextService = service.nextServiceInfo && service.status === 'Entregado';
 
     const ServiceOrderContent = (
-      <div className="flex flex-col min-h-full relative">
+      <div className="flex flex-col min-h-full relative print:p-0">
         {service.status === 'Cancelado' && (
           <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
             <span className="text-red-500 text-7xl md:text-9xl font-black opacity-20 transform -rotate-12 select-none">
@@ -274,7 +274,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </header>
 
         <main className="flex-grow">
-           <section className="grid grid-cols-3 gap-2 mb-2 text-xs">
+           <section className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2 text-xs">
               <div className="border-2 border-black rounded-md overflow-hidden flex-1">
                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
                 <div className="space-y-0.5 p-2 text-sm">
@@ -283,7 +283,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
                 </div>
               </div>
-              <div className={cn("border-2 border-black rounded-md overflow-hidden flex-1", shouldShowNextService ? "col-span-1" : "col-span-2")}>
+              <div className={cn("border-2 border-black rounded-md overflow-hidden flex-1", shouldShowNextService ? "md:col-span-1" : "md:col-span-2")}>
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
                   <div className="space-y-0.5 p-2 text-sm">
                       <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
@@ -346,16 +346,16 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               </div>
           </section>
           
-          <section className="grid grid-cols-5 gap-2 mb-2 text-xs">
-              <div className="border-2 border-black rounded-md overflow-hidden col-span-3 flex flex-col">
+          <section className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-2 text-xs">
+              <div className="border-2 border-black rounded-md overflow-hidden md:col-span-3 flex flex-col">
                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">CONDICIONES DEL VEHÍCULO</h3>
                  <p className="whitespace-pre-wrap p-2 text-base flex-grow">{service.vehicleConditions || 'No especificado.'}</p>
               </div>
-              <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col">
+              <div className="border-2 border-black rounded-md overflow-hidden md:col-span-1 flex flex-col">
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">PERTENENCIAS</h3>
                   <p className="whitespace-pre-wrap p-2 text-base flex-grow">{service.customerItems || 'No especificado.'}</p>
               </div>
-              <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col justify-center min-h-[60px]">
+              <div className="border-2 border-black rounded-md overflow-hidden md:col-span-1 flex flex-col justify-center min-h-[60px]">
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-center text-xs">COMBUSTIBLE</h3>
                   <div className="flex-grow flex flex-col items-center justify-center p-2">
                     <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300">
@@ -369,7 +369,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   </div>
               </div>
           </section>
-           <section className="mt-auto pt-2 grid grid-cols-3 gap-2 text-xs">
+           <section className="mt-auto pt-2 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
                 <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px] col-span-1">
                     <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ASESOR</h3>
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">

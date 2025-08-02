@@ -141,7 +141,7 @@ export default function PublicServicePage() {
   return (
      <>
         <div className="container mx-auto px-2 sm:px-4">
-            <div className="bg-white mx-auto my-4 shadow-lg printable-content print-format-letter">
+            <div className="bg-white md:mx-auto my-4 md:shadow-lg printable-content print-format-letter">
               <div className="p-4 print:hidden">
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                       <div>
@@ -162,7 +162,7 @@ export default function PublicServicePage() {
                       )}
                   </div>
               </div>
-              <div id="printable-area-public" className="bg-white p-8">
+              <div id="printable-area-public" className="bg-white p-4 md:p-8">
                   <ServiceSheetContent
                       service={service}
                       vehicle={vehicle || undefined}
