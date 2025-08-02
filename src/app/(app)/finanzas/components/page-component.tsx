@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, Suspense, useRef } from 'react';
@@ -132,12 +133,7 @@ export function FinanzasPageComponent({
         const { totalTechnicianSalaries, totalAdministrativeSalaries } = allPersonnel
             .filter(p => !p.isArchived)
             .reduce((totals, person) => {
-                const normalizedRole = (person.role || '')
-                    .toLowerCase()
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "");
-
-                if (normalizedRole.includes('tecnico')) {
+                if (person.role === 'Tecnico') {
                     totals.totalTechnicianSalaries += person.monthlySalary || 0;
                 } else {
                     totals.totalAdministrativeSalaries += person.monthlySalary || 0;
