@@ -75,7 +75,14 @@ export function ServiceDialog({
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
-  const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
+  
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isControlled) {
+      setControlledOpen(isOpen);
+    } else {
+      setUncontrolledOpen(isOpen);
+    }
+  };
   
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
@@ -83,7 +90,7 @@ export function ServiceDialog({
   const [totalCost, setTotalCost] = useState(0);
 
   useEffect(() => {
-    if (!open || !service?.id || mode !== 'service' || !db) return;
+    if (!open || !service?.id || mode !== 'service' || !db || isReadOnly) return;
 
     // Listen for real-time signature updates from the public document
     const publicDocRef = doc(db, 'publicServices', service.publicId || service.id);
@@ -126,21 +133,21 @@ export function ServiceDialog({
     });
 
     return () => unsubscribe(); // Cleanup the listener when the dialog closes or dependencies change
-  }, [open, service, mode]);
+  }, [open, service, mode, isReadOnly]);
 
   
   const handleInternalCompletion = async (paymentDetails: any, nextServiceInfo?: any) => {
     if (onComplete && serviceToComplete) {
       await onComplete(serviceToComplete, paymentDetails, nextServiceInfo);
     }
-    onOpenChange(false);
+    handleOpenChange(false);
     setIsCompleteDialogOpen(false);
   };
 
 
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
     if (isReadOnly) {
-      onOpenChange(false);
+      handleOpenChange(false);
       return;
     }
     
@@ -152,7 +159,7 @@ export function ServiceDialog({
         if (onSave) {
             await onSave(savedRecord);
         }
-        onOpenChange(false);
+        handleOpenChange(false);
     } catch (error) {
         console.error(`Error saving ${mode} from dialog:`, error);
         toast({
@@ -200,8 +207,8 @@ export function ServiceDialog({
       
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {trigger && !isControlled && <DialogTrigger asChild onClick={() => handleOpenChange(true)}>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-2 flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div className="md:col-span-1">
@@ -227,7 +234,7 @@ export function ServiceDialog({
           inventoryItems={inventoryItems}
           serviceTypes={serviceTypes}
           onSubmit={internalOnSave}
-          onClose={() => onOpenChange(false)}
+          onClose={() => handleOpenChange(false)}
           onCancelService={onCancelService}
           isReadOnly={isReadOnly}
           mode={mode}
