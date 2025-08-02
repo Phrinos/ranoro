@@ -217,7 +217,7 @@ export function ServiceDialog({
               <DialogTitle>{dialogTitle}</DialogTitle>
               <DialogDescription>{dialogDescription}</DialogDescription>
             </div>
-            {service?.status === 'Entregado' && (
+            {service?.status === 'Entregado' && service.paymentMethod && (
                 <div className="text-left md:text-center md:col-span-1">
                     <p className="text-sm"><span className="text-muted-foreground">Método de pago:</span><br/><Badge variant={getPaymentMethodVariant(service.paymentMethod)}>{service.paymentMethod}</Badge></p>
                     {service.cardFolio && <p className="text-sm"><span className="text-muted-foreground">Folio Tarjeta:</span><br/><span className="font-semibold">{service.cardFolio}</span></p>}

@@ -57,12 +57,30 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
 const completeServiceSchema = z.object({
   paymentMethod: z.enum(paymentMethods, { required_error: "Debe seleccionar un método de pago." }),
   cardFolio: z.string().optional(),
+  confirmCardFolio: z.string().optional(),
   transferFolio: z.string().optional(),
+  confirmTransferFolio: z.string().optional(),
   amountInCash: z.coerce.number().optional(),
   amountInCard: z.coerce.number().optional(),
   amountInTransfer: z.coerce.number().optional(),
 }).refine(data => {
-  if ((data.paymentMethod?.includes('Tarjeta')) && !data.cardFolio) {
+  if (data.paymentMethod?.includes('Tarjeta')) {
+    return data.cardFolio === data.confirmCardFolio;
+  }
+  return true;
+}, {
+  message: "Los folios no coinciden.",
+  path: ["confirmCardFolio"],
+}).refine(data => {
+    if (data.paymentMethod?.includes('Transferencia')) {
+        return data.transferFolio === data.confirmTransferFolio;
+    }
+    return true;
+}, {
+    message: "Los folios de transferencia no coinciden.",
+    path: ["confirmTransferFolio"],
+}).refine(data => {
+  if (data.paymentMethod?.includes('Tarjeta') && !data.cardFolio) {
     return false;
   }
   return true;
@@ -70,7 +88,7 @@ const completeServiceSchema = z.object({
   message: "El folio de la tarjeta es obligatorio.",
   path: ["cardFolio"],
 }).refine(data => {
-  if ((data.paymentMethod?.includes('Transferencia')) && !data.transferFolio) {
+  if (data.paymentMethod?.includes('Transferencia') && !data.transferFolio) {
     return false;
   }
   return true;
@@ -103,14 +121,16 @@ export function CompleteServiceDialog({
     defaultValues: {
       paymentMethod: service.paymentMethod || 'Efectivo',
       cardFolio: service.cardFolio || '',
+      confirmCardFolio: service.cardFolio || '',
       transferFolio: service.transferFolio || '',
+      confirmTransferFolio: service.transferFolio || '',
       amountInCash: service.amountInCash,
       amountInCard: service.amountInCard,
       amountInTransfer: service.amountInTransfer,
     }
   });
 
-  const { watch, formState } = form;
+  const { watch, trigger, setValue } = form;
   const selectedPaymentMethod = watch("paymentMethod");
 
   const nextServiceInfo = useMemo(() => {
@@ -174,24 +194,32 @@ export function CompleteServiceDialog({
                         )}
                     />
                     {isMixedPayment && (
-                      <div className="space-y-2 rounded-md border p-4">
-                        <p className="text-sm font-medium">Desglose de Pago</p>
-                        {selectedPaymentMethod.includes('Efectivo') && (
-                          <FormField control={form.control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
-                        )}
-                        {selectedPaymentMethod.includes('Tarjeta') && (
-                          <FormField control={form.control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
-                        )}
-                        {selectedPaymentMethod.includes('Transferencia') && (
-                          <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
-                        )}
-                      </div>
+                      <Card className="p-4">
+                        <p className="text-sm font-medium mb-4">Desglose de Pago</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            {selectedPaymentMethod.includes('Efectivo') && (
+                              <FormField control={form.control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                            )}
+                            {selectedPaymentMethod.includes('Tarjeta') && (
+                              <FormField control={form.control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                            )}
+                            {selectedPaymentMethod.includes('Transferencia') && (
+                              <FormField control={form.control} name="amountInTransfer" render={({ field }) => (<FormItem><FormLabel>Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+                            )}
+                        </div>
+                      </Card>
                     )}
                     {(selectedPaymentMethod?.includes("Tarjeta")) && (
-                        <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} value={field.value ?? ''} onChange={(e) => { field.onChange(e); setValue('confirmCardFolio', ''); }}/></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="confirmCardFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => trigger('confirmCardFolio')}/></FormControl><FormMessage /></FormItem>)}/>
+                        </div>
                     )}
                     {(selectedPaymentMethod?.includes("Transferencia")) && (
-                        <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia" {...field} value={field.value ?? ''} onChange={(e) => { field.onChange(e); setValue('confirmTransferFolio', ''); }}/></FormControl><FormMessage /></FormItem>)}/>
+                             <FormField control={form.control} name="confirmTransferFolio" render={({ field }) => (<FormItem><FormLabel>Confirmar Folio</FormLabel><FormControl><Input placeholder="Vuelva a ingresar el folio" {...field} value={field.value ?? ''} onBlur={() => trigger('confirmTransferFolio')}/></FormControl><FormMessage /></FormItem>)}/>
+                        </div>
                     )}
                 </form>
             </Form>

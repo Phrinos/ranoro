@@ -1,4 +1,5 @@
 
+
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -79,7 +80,7 @@ export const serviceFormSchema = z.object({
     technicianName: z.string().nullable().optional(),
     serviceItems: z.array(serviceItemSchema).min(1, 'Debe agregar al menos un ítem de servicio.'),
     status: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado']),
-    subStatus: z.enum(['En Espera de Refacciones', 'Reparando', 'Completado']).optional(),
+    subStatus: z.enum(['En Espera de Refacciones', 'Reparando', 'Completado', 'Proveedor Externo']).optional(),
     serviceType: z.string().optional(),
     vehicleConditions: z.string().optional(),
     fuelLevel: z.string().optional(),
@@ -94,7 +95,9 @@ export const serviceFormSchema = z.object({
     serviceAdvisorSignatureDataUrl: z.string().optional(),
     paymentMethod: z.string().optional(),
     cardFolio: z.string().optional(),
+    confirmCardFolio: z.string().optional(),
     transferFolio: z.string().optional(),
+    confirmTransferFolio: z.string().optional(),
     amountInCash: z.coerce.number().optional(),
     amountInCard: z.coerce.number().optional(),
     amountInTransfer: z.coerce.number().optional(),

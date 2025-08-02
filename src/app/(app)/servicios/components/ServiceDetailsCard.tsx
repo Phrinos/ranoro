@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useFieldArray, useFormContext, type Control } from "react-hook-form";
+import { useFormContext, type Control } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -87,29 +87,33 @@ export function ServiceDetailsCard({
         <CardTitle className="text-lg">Detalles del Servicio</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel className={cn(errors.status && "text-destructive")}>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Taller", "Entregado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
-          {watchedStatus === 'En Taller' && (
-              <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado Taller</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl><SelectContent>{["Proveedor Externo", "En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
-          )}
-          <FormField control={control} name="serviceType" render={({ field }) => (
-            <FormItem><FormLabel className={cn(errors.serviceType && "text-destructive")}>Tipo de Servicio</FormLabel>
-              <Select onValueChange={handleServiceTypeChange} value={field.value} disabled={isReadOnly}>
-                <FormControl><SelectTrigger className={cn(errors.serviceType && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
-                <SelectContent>
-                  {serviceTypes
-                    .slice() 
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((type) => (
-                      <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormItem> 
-          )}/>
-          {showTechnicianField && (
-            <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem> ))}</SelectContent></Select></FormItem> )}/>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <div className="space-y-4">
+             <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel className={cn(errors.status && "text-destructive")}>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Taller", "Entregado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
+            {watchedStatus === 'En Taller' && (
+                <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado Taller</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl><SelectContent>{["Proveedor Externo", "En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
+            )}
+          </div>
+          <div className="space-y-4">
+            <FormField control={control} name="serviceType" render={({ field }) => (
+              <FormItem><FormLabel className={cn(errors.serviceType && "text-destructive")}>Tipo de Servicio</FormLabel>
+                <Select onValueChange={handleServiceTypeChange} value={field.value} disabled={isReadOnly}>
+                  <FormControl><SelectTrigger className={cn(errors.serviceType && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {serviceTypes
+                      .slice() 
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((type) => (
+                        <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem> 
+            )}/>
+            {showTechnicianField && (
+              <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem> ))}</SelectContent></Select></FormItem> )}/>
+            )}
+          </div>
         </div>
         
         {showAppointmentFields && (
