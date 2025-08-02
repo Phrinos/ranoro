@@ -109,7 +109,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         if (service.status === 'En Taller' && service.subStatus === 'Proveedor Externo') return 2;
         if (service.status === 'Agendado' && service.appointmentStatus === 'Confirmada') return 3;
         if (service.status === 'En Taller' && service.subStatus === 'Reparando') return 4;
-        if (service.status === 'En Taller' && !service.subStatus) return 4;
+        if (service.status === 'En Taller' && !service.subStatus) return 4; // Default for 'En Taller'
         if (service.status === 'Agendado' && service.appointmentStatus !== 'Confirmada') return 5;
         if (service.status === 'En Taller' && service.subStatus === 'Completado') return 6;
         if (service.status === 'Entregado') return 7;
@@ -124,9 +124,13 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
             return priorityA - priorityB;
         }
         // Use reception date for sorting, fallback to service date
-        const dateA = parseDate(a.receptionDateTime || a.serviceDate)?.getTime() ?? 0;
-        const dateB = parseDate(b.receptionDateTime || b.serviceDate)?.getTime() ?? 0;
-        return dateB - dateA; // Sort descending
+        const dateA = parseDate(a.receptionDateTime || a.serviceDate);
+        const dateB = parseDate(b.receptionDateTime || b.serviceDate);
+
+        if (!dateA) return 1; // Put services without a date at the end
+        if (!dateB) return -1;
+        
+        return compareDesc(dateA, dateB);
     });
 
     return { activeServices: sortedActiveServices, historicalServices: allServices };
