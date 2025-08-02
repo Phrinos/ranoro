@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { ServiceDialog } from "../../components/dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import { CompleteServiceDialog } from "../../components/CompleteServiceDialog";
+import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../../components/PaymentDetailsDialog';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +23,6 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
 import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../../components/PaymentDetailsDialog';
 
 const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
     { value: 'all', label: 'Todos los Estados' },
@@ -59,9 +58,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
-
-  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
-  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [recordForTicket, setRecordForTicket] = useState<ServiceRecord | null>(null);
@@ -146,12 +142,9 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   
   const handleSaveRecord = useCallback(async (data: QuoteRecord | ServiceRecord) => {
     if ('status' in data && data.status === 'Entregado' && data.id) {
-      const serviceToUpdate = allServices.find(s => s.id === data.id);
-      if (serviceToUpdate && serviceToUpdate.status !== 'Entregado') {
-        setServiceToComplete({ ...serviceToUpdate, ...data });
-        setIsCompleteDialogOpen(true);
+        setIsPaymentDialogOpen(true);
+        setServiceToEditPayment(data as ServiceRecord);
         return;
-      }
     }
     
     try {
@@ -182,11 +175,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     setEditingRecord(record);
     setIsFormDialogOpen(true);
   }, []);
-
-  const handleOpenCompleteDialog = useCallback((service: ServiceRecord) => {
-    setServiceToComplete(service);
-    setIsCompleteDialogOpen(true);
-  }, []);
   
   const handleOpenPaymentDialog = useCallback((service: ServiceRecord) => {
     setServiceToEditPayment(service);
@@ -213,7 +201,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     } catch (e) {
       toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
     } finally {
-      setIsCompleteDialogOpen(false);
+      setIsPaymentDialogOpen(false);
       setIsFormDialogOpen(false);
     }
   }, [toast]);
@@ -304,7 +292,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       technicians={personnel}
       onEdit={() => handleOpenFormDialog(record)}
       onView={() => handleShowPreview(record)}
-      onComplete={() => handleOpenCompleteDialog(record)}
+      onComplete={() => handleOpenPaymentDialog(record)}
       onPrintTicket={() => handlePrintTicket(record)}
       onConfirm={() => handleConfirmAppointment(record)}
       onEditPayment={() => handleOpenPaymentDialog(record)}
@@ -373,22 +361,13 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         />
       )}
       
-      {serviceToComplete && (
-        <CompleteServiceDialog 
-          open={isCompleteDialogOpen}
-          onOpenChange={setIsCompleteDialogOpen}
-          service={serviceToComplete}
-          onConfirm={handleConfirmCompletion}
-          inventoryItems={inventoryItems}
-        />
-      )}
-      
       {serviceToEditPayment && (
         <PaymentDetailsDialog
           open={isPaymentDialogOpen}
           onOpenChange={setIsPaymentDialogOpen}
           service={serviceToEditPayment}
           onConfirm={handleUpdatePaymentDetails}
+          isCompletionFlow={serviceToEditPayment.status !== 'Entregado'}
         />
       )}
 

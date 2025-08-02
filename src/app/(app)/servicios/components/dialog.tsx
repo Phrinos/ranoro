@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { operationsService } from '@/lib/services';
-import { CompleteServiceDialog } from './CompleteServiceDialog';
+import { PaymentDetailsDialog, type PaymentDetailsFormValues } from './PaymentDetailsDialog';
 import { Button } from '@/components/ui/button';
 import { Ban, Loader2, DollarSign } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -74,6 +74,9 @@ export function ServiceDialog({
   const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>(service?.status || quote?.status);
   const [formSubStatus, setFormSubStatus] = useState<ServiceRecord['subStatus'] | undefined>(service?.subStatus || quote?.subStatus);
 
+  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
@@ -86,15 +89,12 @@ export function ServiceDialog({
     }
   };
   
-  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
-  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
   const [totalCost, setTotalCost] = useState(0);
 
   useEffect(() => {
     if (!open || !service?.id || mode !== 'service' || !db || isReadOnly) return;
 
-    // Listen for real-time signature updates from the public document
     const publicDocRef = doc(db, 'publicServices', service.publicId || service.id);
     const unsubscribe = onSnapshot(publicDocRef, async (publicDocSnap) => {
         if (!publicDocSnap.exists()) return;
@@ -134,16 +134,17 @@ export function ServiceDialog({
         console.error("Error listening to public service document:", error);
     });
 
-    return () => unsubscribe(); // Cleanup the listener when the dialog closes or dependencies change
+    return () => unsubscribe();
   }, [open, service, mode, isReadOnly]);
 
   
-  const handleInternalCompletion = async (paymentDetails: any, nextServiceInfo?: any) => {
+  const handleConfirmCompletion = async (serviceId: string, paymentDetails: PaymentDetailsFormValues) => {
     if (onComplete && serviceToComplete) {
-      await onComplete(serviceToComplete, paymentDetails, nextServiceInfo);
+      // Pass the *original* service to complete, but with the new payment details
+      await onComplete(serviceToComplete, paymentDetails, serviceToComplete.nextServiceInfo);
     }
+    setIsPaymentDialogOpen(false);
     handleOpenChange(false);
-    setIsCompleteDialogOpen(false);
   };
 
 
@@ -152,9 +153,7 @@ export function ServiceDialog({
       handleOpenChange(false);
       return;
     }
-    
-    // The CompleteServiceDialog now handles its own save.
-    // This function will now only handle standard saves.
+
     try {
         const savedRecord = await operationsService.saveService(formData);
         toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
@@ -217,11 +216,14 @@ export function ServiceDialog({
               <DialogTitle>{dialogTitle}</DialogTitle>
               <DialogDescription>{dialogDescription}</DialogDescription>
             </div>
-            {service?.status === 'Entregado' && service.paymentMethod && (
+            {service?.status === 'Entregado' && (
                 <div className="text-left md:text-center md:col-span-1">
-                    <div className="text-sm"><span className="text-muted-foreground">Método de pago:</span><br/><Badge variant={getPaymentMethodVariant(service.paymentMethod)}>{service.paymentMethod}</Badge></div>
-                    {service.cardFolio && <div className="text-sm"><span className="text-muted-foreground">Folio Tarjeta:</span><br/><span className="font-semibold">{service.cardFolio}</span></div>}
-                    {service.transferFolio && <div className="text-sm"><span className="text-muted-foreground">Folio Transf:</span><br/><span className="font-semibold">{service.transferFolio}</span></div>}
+                    <div>
+                      <span className="text-muted-foreground text-sm">Método de pago:</span><br/>
+                      <Badge variant={getPaymentMethodVariant(service.paymentMethod)}>{service.paymentMethod}</Badge>
+                    </div>
+                    {service.cardFolio && <div><span className="text-muted-foreground text-sm">Folio Tarjeta:</span><br/><span className="font-semibold text-sm">{service.cardFolio}</span></div>}
+                    {service.transferFolio && <div><span className="text-muted-foreground text-sm">Folio Transf:</span><br/><span className="font-semibold text-sm">{service.transferFolio}</span></div>}
                 </div>
             )}
             <div className="text-left md:text-right md:col-start-3">
@@ -283,7 +285,7 @@ export function ServiceDialog({
             <div className="flex flex-row gap-2 items-center">
                <Button variant="outline" type="button" onClick={() => handleOpenChange(false)} className="flex-1 sm:flex-initial">Cerrar</Button>
                {!isReadOnly && showCompleteButton && (
-                  <Button onClick={() => setServiceToComplete(service)} className="bg-green-600 hover:bg-green-700">
+                  <Button onClick={() => { setServiceToComplete(service); setIsPaymentDialogOpen(true); }} className="bg-green-600 hover:bg-green-700">
                     <DollarSign className="mr-2 h-4 w-4"/> Completar y Cobrar
                   </Button>
                 )}
@@ -302,14 +304,14 @@ export function ServiceDialog({
     </Dialog>
 
     {serviceToComplete && (
-        <CompleteServiceDialog
-            open={isCompleteDialogOpen}
-            onOpenChange={setIsCompleteDialogOpen}
+        <PaymentDetailsDialog
+            open={isPaymentDialogOpen}
+            onOpenChange={setIsPaymentDialogOpen}
             service={serviceToComplete}
-            onConfirm={handleInternalCompletion}
-            inventoryItems={inventoryItems}
+            onConfirm={handleConfirmCompletion}
+            isCompletionFlow={true}
         />
-      )}
+    )}
     </>
   );
 }

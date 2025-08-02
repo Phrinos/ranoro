@@ -101,6 +101,7 @@ interface PaymentDetailsDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
   onConfirm: (serviceId: string, paymentDetails: PaymentDetailsFormValues) => void;
+  isCompletionFlow?: boolean; // New prop to differentiate flows
 }
 
 export function PaymentDetailsDialog({
@@ -108,12 +109,13 @@ export function PaymentDetailsDialog({
   onOpenChange,
   service,
   onConfirm,
+  isCompletionFlow = false,
 }: PaymentDetailsDialogProps) {
   const { toast } = useToast();
   const form = useForm<PaymentDetailsFormValues>({
     resolver: zodResolver(paymentDetailsSchema),
     defaultValues: {
-      paymentMethod: service.paymentMethod,
+      paymentMethod: service.paymentMethod || 'Efectivo',
       cardFolio: service.cardFolio || '',
       confirmCardFolio: service.cardFolio || '',
       transferFolio: service.transferFolio || '',
@@ -132,7 +134,7 @@ export function PaymentDetailsDialog({
   useEffect(() => {
     if (open) {
       reset({
-        paymentMethod: service.paymentMethod,
+        paymentMethod: service.paymentMethod || 'Efectivo',
         cardFolio: service.cardFolio || '',
         confirmCardFolio: service.cardFolio || '',
         transferFolio: service.transferFolio || '',
@@ -172,13 +174,13 @@ export function PaymentDetailsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg p-6">
         <DialogHeader>
-          <DialogTitle>Editar Detalles de Pago</DialogTitle>
-          <DialogDescription>Modifique el método de pago o los folios para el servicio {service.id}.</DialogDescription>
+          <DialogTitle>{isCompletionFlow ? "Completar y Cobrar Servicio" : "Editar Detalles de Pago"}</DialogTitle>
+          <DialogDescription>{isCompletionFlow ? "Confirme el método de pago para completar el servicio." : `Modifique los detalles de pago para el servicio ${service.id}`}</DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
           <Card>
             <CardContent className="p-4 text-center">
-              <p className="text-sm text-muted-foreground">Total Pagado</p>
+              <p className="text-sm text-muted-foreground">Total a Pagar</p>
               <p className="text-4xl font-bold text-primary">{formatCurrency(service.totalCost)}</p>
             </CardContent>
           </Card>
@@ -249,7 +251,7 @@ export function PaymentDetailsDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button type="submit" form="payment-details-form">Guardar Cambios</Button>
+          <Button type="submit" form="payment-details-form">{isCompletionFlow ? 'Completar y Cobrar' : 'Guardar Cambios'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -20,7 +20,7 @@ import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog
 import { ServiceAppointmentCard } from '../components/ServiceAppointmentCard';
 import { inventoryService, personnelService, operationsService, adminService } from '@/lib/services';
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
+import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../components/PaymentDetailsDialog';
 import { parseDate } from '@/lib/forms';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch } from 'firebase/firestore';
@@ -58,7 +58,7 @@ function AgendaPageComponent() {
   const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
   
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
-  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
 
   useEffect(() => {
@@ -228,27 +228,29 @@ function AgendaPageComponent() {
 
   const handleOpenCompleteDialog = useCallback((service: ServiceRecord) => {
     setServiceToComplete(service);
-    setIsCompleteDialogOpen(true);
+    setIsPaymentDialogOpen(true);
   }, []);
   
-  const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: { date: string, mileage?: number }) => {
-    if (!db) return toast({ title: "Error de base de datos", variant: "destructive"});
+  const handleConfirmCompletion = useCallback(async (serviceId: string, paymentDetails: PaymentDetailsFormValues) => {
+    const serviceToUpdate = allServices.find(s => s.id === serviceId);
+    if (!serviceToUpdate) return;
+    
+    if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
     try {
         const batch = writeBatch(db);
-        const dataToUpdate = { ...paymentDetails, nextServiceInfo };
-        await operationsService.completeService(service, dataToUpdate, batch);
+        await operationsService.completeService(serviceToUpdate, { ...paymentDetails, nextServiceInfo: serviceToUpdate.nextServiceInfo }, batch);
         await batch.commit();
-        setIsCompleteDialogOpen(false);
+        setIsPaymentDialogOpen(false);
         toast({
             title: "Servicio Completado",
-            description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
+            description: `El servicio para ${serviceToUpdate.vehicleIdentifier} ha sido marcado como entregado.`,
         });
     } catch (e) {
         console.error(e);
-        setIsCompleteDialogOpen(false);
+        setIsPaymentDialogOpen(false);
         toast({ title: "Error al Completar", description: `No se pudo completar el servicio.`, variant: "destructive" });
     }
-  }, [toast]);
+  }, [toast, allServices]);
 
   const renderCapacityBadge = () => {
     if (isCapacityLoading) return <Loader2 className="h-5 w-5 animate-spin" />;
@@ -353,12 +355,12 @@ function AgendaPageComponent() {
       )}
       
       {serviceToComplete && (
-        <CompleteServiceDialog
-            open={isCompleteDialogOpen}
-            onOpenChange={setIsCompleteDialogOpen}
+        <PaymentDetailsDialog
+            open={isPaymentDialogOpen}
+            onOpenChange={setIsPaymentDialogOpen}
             service={serviceToComplete}
             onConfirm={handleConfirmCompletion}
-            inventoryItems={inventoryItems}
+            isCompletionFlow={true}
         />
       )}
     </>
