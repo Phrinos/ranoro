@@ -217,10 +217,6 @@ export function ServiceForm(props:Props){
   const watchedVehicleId = watch('vehicleId');
   const watchedNextServiceInfo = watch('nextServiceInfo');
   
-  useEffect(() => {
-    reset(defaultValues);
-  }, [initialDataService, reset, defaultValues]);
-  
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
@@ -400,7 +396,7 @@ export function ServiceForm(props:Props){
   return (
     <>
         <FormProvider {...form}>
-            <form id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
+            <div id="service-form" className="flex flex-col flex-grow overflow-hidden">
                 <div className="flex-grow overflow-y-auto px-6 pt-4 space-y-6">
                     <VehicleSelectionCard
                         isReadOnly={props.isReadOnly}
@@ -515,7 +511,54 @@ export function ServiceForm(props:Props){
                         </div>
                     )}
                 </div>
-            </form>
+                 <div className="p-6 pt-4 mt-auto border-t flex-shrink-0 bg-background flex flex-row justify-between items-center w-full gap-2">
+                    <div>
+                        {onCancelService && initialDataService?.id && initialDataService.status !== 'Entregado' && initialDataService.status !== 'Cancelado' && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Cancelar Servicio">
+                                        <Ban className="h-4 w-4" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Estás seguro de cancelar este servicio?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta acción es permanente. Por favor, especifica un motivo para la cancelación.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <Textarea 
+                                        placeholder="Motivo de la cancelación..."
+                                        value={cancellationReason}
+                                        onChange={(e) => setCancellationReason(e.target.value)}
+                                    />
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            disabled={!cancellationReason.trim()}
+                                            onClick={() => onCancelService?.(initialDataService!.id, cancellationReason)}
+                                        >
+                                            Confirmar Cancelación
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </div>
+                     <div className="flex flex-row gap-2 items-center">
+                        <Button variant="outline" type="button" onClick={onClose} className="flex-1 sm:flex-initial">Cerrar</Button>
+                        {!isReadOnly && (
+                            <Button 
+                                type="button" 
+                                onClick={handleSubmit(formSubmitWrapper)}
+                                className="flex-1 sm:flex-initial"
+                            >
+                                {initialDataService?.id ? 'Guardar Cambios' : 'Crear Registro'}
+                            </Button>
+                        )}
+                    </div>
+                 </div>
+            </div>
         </FormProvider>
 
       <VehicleDialog

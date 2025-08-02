@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -82,14 +81,6 @@ export function ServiceDialog({
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
   const [totalCost, setTotalCost] = useState(0);
-
-
-  useEffect(() => {
-    if(open) {
-      setFormStatus(service?.status);
-      setFormSubStatus(service?.subStatus);
-    }
-  }, [open, service]);
 
   useEffect(() => {
     if (!open || !service?.id || mode !== 'service' || !db) return;
@@ -245,58 +236,6 @@ export function ServiceDialog({
           onVehicleCreated={onVehicleCreated}
           onTotalCostChange={setTotalCost}
         />
-        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-row justify-between items-center w-full gap-2">
-            <div>
-                {showCancelButton && onCancelService && (
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Cancelar Servicio">
-                                <Ban className="h-4 w-4" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>¿Estás seguro de cancelar este servicio?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Esta acción es permanente. Por favor, especifica un motivo para la cancelación.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <Textarea 
-                                placeholder="Motivo de la cancelación..."
-                                value={cancellationReason}
-                                onChange={(e) => setCancellationReason(e.target.value)}
-                            />
-                            <AlertDialogFooter>
-                                <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
-                                <AlertDialogAction
-                                    disabled={!cancellationReason.trim()}
-                                    onClick={() => onCancelService?.(service!.id, cancellationReason)}
-                                >
-                                    Confirmar Cancelación
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                )}
-            </div>
-            <div className="flex flex-row gap-2 items-center">
-               <Button variant="outline" type="button" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-initial">Cerrar</Button>
-               {!isReadOnly && showCompleteButton && (
-                  <Button onClick={() => setServiceToComplete(service)} className="bg-green-600 hover:bg-green-700">
-                    <DollarSign className="mr-2 h-4 w-4"/> Completar y Cobrar
-                  </Button>
-                )}
-               {!isReadOnly && !showCompleteButton && (
-                   <Button 
-                       type="submit" 
-                       form="service-form" 
-                       className="flex-1 sm:flex-initial"
-                   >
-                       {service?.id ? 'Guardar' : 'Crear Registro'}
-                   </Button>
-               )}
-            </div>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
 
