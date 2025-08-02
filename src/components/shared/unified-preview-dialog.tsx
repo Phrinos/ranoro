@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Printer, MessageSquare, Download, Loader2, Eye, Wrench, ShieldCheck, Camera } from 'lucide-react';
+import { Printer, MessageSquare, Download, Loader2, Eye, Wrench, ShieldCheck, Camera, Copy, Share2 } from 'lucide-react';
 import type { ServiceRecord, Vehicle, WorkshopInfo, InventoryItem } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from "next/image";
 import { inventoryService } from '@/lib/services';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
+import html2canvas from 'html2canvas';
 
 
 interface UnifiedPreviewDialogProps {
@@ -112,35 +113,71 @@ export function UnifiedPreviewDialog({
     }
   }, [open, initialService, initialVehicle, defaultTabValue, documentType]);
 
-  const handleShareService = useCallback(() => {
-    if (!service || !service.publicId) {
-      toast({ title: "Enlace no disponible", description: 'Asegúrese de que el servicio se haya guardado para generar un enlace.', variant: "default" });
-      return;
+  const handleCopyAsImage = useCallback(async (isForSharing: boolean = false) => {
+    if (!contentRef.current || !service) return null;
+    try {
+      const canvas = await html2canvas(contentRef.current, { scale: 2.5, backgroundColor: null, useCORS: true });
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error("Could not create blob from canvas.");
+      
+      if (isForSharing) {
+        return new File([blob], `servicio_${service.id}.png`, { type: 'image/png' });
+      } else {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        toast({ title: "Copiado", description: "La imagen del documento ha sido copiada." });
+        return null;
+      }
+    } catch (e) {
+      console.error('Error handling image:', e);
+      toast({ title: "Error", description: "No se pudo procesar la imagen del documento.", variant: "destructive" });
+      return null;
     }
+  }, [service, toast]);
+
+  const handleCopyServiceForWhatsapp = useCallback(() => {
+    if (!service) return;
     if (!vehicle) {
         toast({ title: "Faltan Datos", description: "No se encontró el vehículo asociado.", variant: "destructive" });
         return;
     }
-    const shareUrl = `${window.location.origin}/s/${service.publicId}`;
+    const workshopName = (workshopInfo as WorkshopInfo)?.name || 'nuestro taller';
+    let message = `Hola ${vehicle.ownerName || 'Cliente'}, aquí tienes los detalles de tu servicio en ${workshopName}.`;
     
-    const message = `Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en ${(workshopInfo as WorkshopInfo).name || 'nuestro taller'}. 
-Te compartimos los detalles del servicio para tu vehículo ${vehicle.make} ${vehicle.model} (${vehicle.licensePlate}).
-
-➡️ Haz clic aquí para ver y firmar: ${shareUrl}
-
-En el enlace podrás:
-✅ Revisar y aprobar la cotización.
-✅ Ver la orden de servicio.
-✅ Consultar el reporte fotográfico.
-✅ Firmar de recibido y de conformidad.
-
-¡Cualquier duda, estamos a tus órdenes!`;
+    if (service.publicId) {
+        const shareUrl = `${window.location.origin}/s/${service.publicId}`;
+        message += `\n\nPuedes ver los detalles y firmar de conformidad en el siguiente enlace:\n${shareUrl}`;
+    } else {
+        message += `\n\nFolio de Servicio: ${service.id}\nTotal: ${formatCurrency(service.totalCost)}`;
+    }
+    
+    message += `\n\n¡Agradecemos tu preferencia!`;
 
     navigator.clipboard.writeText(message).then(() => {
       toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
     });
   }, [service, vehicle, toast, workshopInfo]);
   
+  const handleShare = async () => {
+    const imageFile = await handleCopyAsImage(true);
+    if (imageFile && navigator.share) {
+      try {
+        await navigator.share({
+          files: [imageFile],
+          title: `Servicio #${service?.id}`,
+          text: `Detalles del servicio para ${vehicle?.licensePlate} en ${(workshopInfo as WorkshopInfo)?.name || 'nuestro taller'}.`,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        if(!String(error).includes('AbortError')) {
+           toast({ title: 'Error al compartir', variant: 'destructive' });
+        }
+      }
+    } else if (imageFile) {
+        handleCopyServiceForWhatsapp();
+    }
+  };
+
+
   const handleViewImage = (url: string) => {
     setViewingImageUrl(url);
     setIsImageViewerOpen(true);
@@ -152,7 +189,7 @@ En el enlace podrás:
   };
   
   const handlePrint = () => {
-    const printableArea = document.getElementById('printable-area-dialog');
+    const printableArea = contentRef.current;
     if (printableArea) {
       const printWindow = window.open('', '_blank');
       if (printWindow) {
@@ -199,8 +236,8 @@ En el enlace podrás:
             )}
           </DialogHeader>
           
-          <div className="flex-grow overflow-y-auto px-6 bg-muted/30 relative pb-[80px]"> {/* Add padding-bottom */}
-             <div id="printable-area-dialog" className="w-[8.5in] h-[11in] bg-white mx-auto my-4 shadow-lg p-8">
+          <div className="flex-grow overflow-y-auto px-6 bg-muted/30 relative pb-[80px]">
+             <div id="printable-area-dialog" className="w-[8.5in] h-auto bg-white mx-auto my-4 shadow-lg p-8">
                 {isLoading ? (
                     <div className="flex justify-center items-center h-full"><Loader2 className="mr-2 h-8 w-8 animate-spin" /> Cargando...</div>
                 ) : documentType === 'service' && service ? (
@@ -221,7 +258,11 @@ En el enlace podrás:
           <DialogFooter className="p-4 border-t flex-shrink-0 bg-background sm:justify-end absolute bottom-0 left-0 right-0">
             <div className="flex flex-col sm:flex-row gap-2">
               {documentType === 'service' && (
-                <Button onClick={handleShareService} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
+                <>
+                    <Button onClick={() => handleCopyAsImage()} variant="outline"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+                    <Button onClick={handleCopyServiceForWhatsapp} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
+                    <Button onClick={handleShare} variant="outline"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
+                </>
               )}
                 <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button>
             </div>
