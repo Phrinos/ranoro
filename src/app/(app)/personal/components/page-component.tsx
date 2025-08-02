@@ -109,8 +109,6 @@ export function PersonalPageComponent({
         toast({title: "Error al archivar", variant: "destructive"});
     }
   };
-
-  const validAreaNames = useMemo(() => new Set(areas.map(a => a.name.toLowerCase())), [areas]);
   
   const performanceData = useMemo(() => {
     if (!dateRange?.from) return [];
@@ -119,17 +117,22 @@ export function PersonalPageComponent({
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    const getAdvisorRelevantDate = (s: ServiceRecord): Date | null => {
-        return parseDate(s.quoteDate) || parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
-    };
-
-    const technicianServicesInRange = allServices.filter(s => 
-        s.status === 'Entregado' && s.deliveryDateTime && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, interval)
+    // Common filter for completed services within the date range
+    const completedServicesInRange = allServices.filter(s => 
+        s.status === 'Entregado' && 
+        s.deliveryDateTime && 
+        isValid(parseDate(s.deliveryDateTime)!) && 
+        isWithinInterval(parseDate(s.deliveryDateTime)!, interval)
     );
     
-    const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, interval));
+    const salesInRange = allSales.filter(s => 
+        s.status !== 'Cancelado' && 
+        isValid(parseDate(s.saleDate)!) && 
+        isWithinInterval(parseDate(s.saleDate)!, interval)
+    );
     
-    const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + technicianServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + 
+                        completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
     
     const activePersonnel = allPersonnel.filter(p => !p.isArchived);
     const fixedSalaries = activePersonnel.reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
@@ -143,28 +146,28 @@ export function PersonalPageComponent({
         const isTechnician = personRoles.has('técnico') || personRoles.has('tecnico');
         const isAdvisor = personRoles.has('asesor');
 
-        const administrativeServices = isAdvisor ? allServices.filter(s => {
-            const relevantDate = getAdvisorRelevantDate(s);
-            return s.serviceAdvisorId === person.id &&
-                   s.status !== 'Cancelado' &&
-                   relevantDate &&
-                   isValid(relevantDate) &&
-                   isWithinInterval(relevantDate, interval);
-        }) : [];
-
-        const technicalServices = isTechnician ? technicianServicesInRange.filter(s => s.technicianId === person.id) : [];
+        const advisorServices = isAdvisor 
+            ? completedServicesInRange.filter(s => s.serviceAdvisorId === person.id) 
+            : [];
             
-        const generatedRevenue = administrativeServices.reduce((sum, s) => sum + (s.totalCost || 0), 0) + technicalServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+        const technicalServices = isTechnician 
+            ? completedServicesInRange.filter(s => s.technicianId === person.id)
+            : [];
+            
+        // Use a Set to avoid double-counting revenue if a person is both advisor and tech on the same service
+        const uniqueServices = new Set([...advisorServices, ...technicalServices]);
+        const generatedRevenue = Array.from(uniqueServices).reduce((sum, s) => sum + (s.totalCost || 0), 0);
         
         const commission = netProfitForCommissions * (person.commissionRate || 0);
         const totalSalary = (person.monthlySalary || 0) + commission;
 
-        const activeRoles = (person.roles || []).filter(role => !!role?.trim() && validAreaNames.has(role.toLowerCase()));
+        // Display all valid roles, not just those matching 'areas'
+        const allValidRoles = (person.roles || []).filter(role => !!role?.trim());
 
         return {
           id: person.id,
           name: person.name,
-          roles: activeRoles,
+          roles: allValidRoles,
           baseSalary: person.monthlySalary || 0,
           generatedRevenue,
           commission,
@@ -172,7 +175,7 @@ export function PersonalPageComponent({
         };
       })
       .sort((a,b) => b.totalSalary - a.totalSalary);
-  }, [dateRange, allPersonnel, allSales, allServices, allInventory, fixedExpenses, validAreaNames]);
+  }, [dateRange, allPersonnel, allSales, allServices, allInventory, fixedExpenses]);
 
 
   const filteredPersonnel = useMemo(() => {
