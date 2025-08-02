@@ -106,16 +106,20 @@ export function PersonalPageComponent({
   };
 
   const validAreaNames = useMemo(() => new Set(areas.map(a => a.name.toLowerCase())), [areas]);
-
+  
   const performanceData = useMemo(() => {
     if (!dateRange?.from) return [];
     
     const from = startOfDay(dateRange.from);
-    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
+    const servicesInRange = allServices.filter(s => {
+        const dateToUse = parseDate(s.receptionDateTime) || parseDate(s.serviceDate) || parseDate(s.quoteDate);
+        return dateToUse && isValid(dateToUse) && isWithinInterval(dateToUse, interval);
+    });
+    
     const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, interval));
-    const servicesInRange = allServices.filter(s => s.status === 'Entregado' && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, interval));
 
     const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
     
@@ -127,7 +131,30 @@ export function PersonalPageComponent({
     const netProfitForCommissions = Math.max(0, grossProfit - totalFixedExpenses);
     
     return activePersonnel.map(person => {
-        const generatedRevenue = servicesInRange.filter(s => s.technicianId === person.id).reduce((sum, s) => sum + (s.totalCost || 0), 0);
+        const personRoles = new Set((person.roles || []).map(r => r.toLowerCase()));
+        const isTechnician = personRoles.has('técnico') || personRoles.has('tecnico');
+        const isAdministrative = personRoles.has('administrativo');
+
+        const technicalRevenue = isTechnician
+            ? servicesInRange.filter(s => s.technicianId === person.id).reduce((sum, s) => sum + (s.totalCost || 0), 0)
+            : 0;
+
+        const administrativeRevenue = isAdministrative
+            ? servicesInRange.filter(s => s.serviceAdvisorId === person.id).reduce((sum, s) => sum + (s.totalCost || 0), 0)
+            : 0;
+
+        // Combine revenues avoiding double counting
+        const uniqueServiceIds = new Set([
+          ...servicesInRange.filter(s => s.technicianId === person.id).map(s => s.id),
+          ...servicesInRange.filter(s => s.serviceAdvisorId === person.id).map(s => s.id),
+        ]);
+
+        const generatedRevenue = Array.from(uniqueServiceIds).reduce((sum, id) => {
+            const service = servicesInRange.find(s => s.id === id);
+            return sum + (service?.totalCost || 0);
+        }, 0);
+
+
         const commission = netProfitForCommissions * (person.commissionRate || 0);
         const totalSalary = (person.monthlySalary || 0) + commission;
 
@@ -146,6 +173,7 @@ export function PersonalPageComponent({
       })
       .sort((a,b) => b.totalSalary - a.totalSalary);
   }, [dateRange, allPersonnel, allSales, allServices, allInventory, fixedExpenses, validAreaNames]);
+
 
   const filteredPersonnel = useMemo(() => {
     let items = allPersonnel.filter(p => showArchived ? !!p.isArchived : !p.isArchived);
