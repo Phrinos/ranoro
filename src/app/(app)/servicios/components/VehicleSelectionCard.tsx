@@ -176,8 +176,8 @@ export function VehicleSelectionCard({
         <CardTitle className="text-lg">Información del Vehículo</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="md:col-span-1 space-y-4">
               <div className="relative">
                 <FormField
                     control={control}
@@ -244,32 +244,30 @@ export function VehicleSelectionCard({
               />
             </div>
             
-            <div>
+            <div className="md:col-span-2">
                 {selectedVehicle && (
-                    <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-2 h-full flex flex-col justify-center relative">
-                        <Button asChild variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7">
-                            <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil del vehículo">
-                                <Edit className="h-4 w-4" />
-                            </Link>
-                        </Button>
-                        <div>
-                            <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-2 h-full flex flex-col justify-center relative">
+                            <Button asChild variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7">
+                                <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil del vehículo">
+                                    <Edit className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                            <div>
+                                <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
+                            </div>
+                            <div className="space-y-1 pt-1">
+                                <p className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerName}</p>
+                                <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerPhone || 'Tel. no registrado'}</p>
+                            </div>
+                            <div className="text-xs pt-2 mt-auto border-t space-y-1">
+                                <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Último Servicio:</p>
+                                <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}>{formatServiceInfo(lastService)}</p>
+                            </div>
                         </div>
-                        <div className="space-y-1 pt-1">
-                            <p className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerName}</p>
-                            <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerPhone || 'Tel. no registrado'}</p>
-                        </div>
-                        <div className="text-xs pt-2 mt-auto border-t space-y-1">
-                            <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Último Servicio:</p>
-                            <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}>{formatServiceInfo(lastService)}</p>
-                            {selectedVehicle.nextServiceInfo?.date && (
-                                <>
-                                    <div className="font-semibold flex items-center gap-1 mt-1 justify-between">
-                                        <span className="flex items-center gap-1"><CalendarCheck className="h-3 w-3 text-blue-500" /> Próximo Servicio:</span>
-                                    </div>
-                                    <p className="text-muted-foreground truncate" title={formatNextServiceInfo(selectedVehicle.nextServiceInfo)}>{formatNextServiceInfo(selectedVehicle.nextServiceInfo)}</p>
-                                </>
-                            )}
+                        <div className="p-3 border rounded-md bg-blue-50 dark:bg-blue-950/50 text-sm space-y-2 h-full flex flex-col justify-center">
+                            <p className="font-semibold flex items-center gap-2 text-blue-800 dark:text-blue-300"><CalendarCheck className="h-4 w-4" /> Próximo Servicio:</p>
+                            <p className="text-blue-700 dark:text-blue-300 truncate" title={formatNextServiceInfo(selectedVehicle.nextServiceInfo)}>{formatNextServiceInfo(selectedVehicle.nextServiceInfo)}</p>
                         </div>
                     </div>
                 )}
@@ -297,3 +295,4 @@ export function VehicleSelectionCard({
     </Card>
   );
 }
+
