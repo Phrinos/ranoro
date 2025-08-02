@@ -185,73 +185,71 @@ export function VehicleSelectionCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            <div className="md:col-span-1 space-y-4">
-                <FormField
-                    control={control}
-                    name="vehicleId"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className={cn(errors.vehicleId && "text-destructive")}>Placa del Vehículo</FormLabel>
-                        <div className="relative">
-                            <FormControl>
-                            <Input
-                                placeholder="Buscar / Ingresar Placas"
-                                onChange={(e) => {
-                                    const upperCaseValue = e.target.value.toUpperCase();
-                                    setVehicleLicensePlateSearch(upperCaseValue);
-                                    field.onChange(undefined);
-                                    setSelectedVehicle(null);
-                                    setVehicleNotFound(false);
-                                }}
-                                value={vehicleLicensePlateSearch}
-                                disabled={isReadOnly}
-                                onKeyDown={handleVehiclePlateKeyDown}
-                                className={cn(errors.vehicleId && "border-destructive focus-visible:ring-destructive", "w-full")}
-                            />
-                            </FormControl>
-                            {vehicleSearchResults.length > 0 && (
-                            <div className="absolute top-full mt-1 w-full md:w-full z-20">
-                                <ScrollArea className="h-auto max-h-[150px] rounded-md border bg-background shadow-lg">
-                                <div className="p-2">
-                                    {vehicleSearchResults.map(v => (
-                                    <button
-                                        type="button"
-                                        key={v.id}
-                                        onClick={() => handleSelectVehicleFromSearch(v)}
-                                        className="w-full text-left p-2 rounded-md hover:bg-muted"
-                                    >
-                                        <p className="font-semibold">{v.licensePlate}</p>
-                                        <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
-                                    </button>
-                                    ))}
-                                </div>
-                                </ScrollArea>
-                            </div>
-                            )}
-                        </div>
-                    </FormItem>
-                    )}
-                />
-            </div>
-            <div className="md:col-span-1">
-                <FormField
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              <FormField
                   control={control}
-                  name="mileage"
+                  name="vehicleId"
                   render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Kilometraje (Opcional)</FormLabel>
+                  <FormItem>
+                      <FormLabel className={cn(errors.vehicleId && "text-destructive")}>Placa del Vehículo</FormLabel>
+                      <div className="relative">
                           <FormControl>
-                              <Input
-                              type="number"
-                              placeholder="Ej: 55000 km"
-                              {...field}
-                              value={field.value ?? ''}
+                          <Input
+                              placeholder="Buscar / Ingresar Placas"
+                              onChange={(e) => {
+                                  const upperCaseValue = e.target.value.toUpperCase();
+                                  setVehicleLicensePlateSearch(upperCaseValue);
+                                  field.onChange(undefined);
+                                  setSelectedVehicle(null);
+                                  setVehicleNotFound(false);
+                              }}
+                              value={vehicleLicensePlateSearch}
                               disabled={isReadOnly}
-                              />
+                              onKeyDown={handleVehiclePlateKeyDown}
+                              className={cn(errors.vehicleId && "border-destructive focus-visible:ring-destructive", "w-full")}
+                          />
                           </FormControl>
-                      </FormItem>
+                          {vehicleSearchResults.length > 0 && (
+                          <div className="absolute top-full mt-1 w-full md:w-full z-20">
+                              <ScrollArea className="h-auto max-h-[150px] rounded-md border bg-background shadow-lg">
+                              <div className="p-2">
+                                  {vehicleSearchResults.map(v => (
+                                  <button
+                                      type="button"
+                                      key={v.id}
+                                      onClick={() => handleSelectVehicleFromSearch(v)}
+                                      className="w-full text-left p-2 rounded-md hover:bg-muted"
+                                  >
+                                      <p className="font-semibold">{v.licensePlate}</p>
+                                      <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
+                                  </button>
+                                  ))}
+                              </div>
+                              </ScrollArea>
+                          </div>
+                          )}
+                      </div>
+                  </FormItem>
                   )}
               />
+              <FormField
+                control={control}
+                name="mileage"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Kilometraje (Opcional)</FormLabel>
+                        <FormControl>
+                            <Input
+                            type="number"
+                            placeholder="Ej: 55000 km"
+                            {...field}
+                            value={field.value ?? ''}
+                            disabled={isReadOnly}
+                            />
+                        </FormControl>
+                    </FormItem>
+                )}
+            />
             </div>
         </div>
         
@@ -296,8 +294,8 @@ export function VehicleSelectionCard({
                                             </FormControl>
                                         )}
                                     />
-                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6m</Button>
-                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1a</Button>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())} className="bg-white hover:bg-gray-100 text-black">6m</Button>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())} className="bg-white hover:bg-gray-100 text-black">1a</Button>
                                 </div>
                             </div>
 
@@ -313,8 +311,8 @@ export function VehicleSelectionCard({
                                             </FormControl>
                                         )}
                                     />
-                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10k</Button>
-                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15k</Button>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)} className="bg-white hover:bg-gray-100 text-black">+10k</Button>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)} className="bg-white hover:bg-gray-100 text-black">+15k</Button>
                                 </div>
                             </div>
                         </CardContent>

@@ -1,4 +1,5 @@
 
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -409,7 +410,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
                     />
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b flex justify-between items-center">
+                        <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b flex justify-between items-center">
                             <TabsList className={cn("grid w-full", "grid-cols-4")}>
                                 <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
                                 <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
