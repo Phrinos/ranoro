@@ -77,7 +77,7 @@ export const placeholderAppRoles: AppRole[] = [
   },
   {
     id: "admin_role",
-    name: "Admin",
+    name: "Asesor",
     permissions: [
       "dashboard:view",
       "services:create",
