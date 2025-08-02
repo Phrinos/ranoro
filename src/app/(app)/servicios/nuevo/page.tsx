@@ -16,15 +16,12 @@ import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-r
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { nanoid } from 'nanoid';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import html2canvas from 'html2canvas';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
@@ -125,50 +122,6 @@ Total: ${formatCurrency(serviceForPreview.totalCost)}
     router.push(targetPath);
   };
   
-  const handleCopyAsImage = useCallback(async (isForSharing: boolean = false) => {
-    const ticketElement = document.getElementById('printable-ticket-dialog');
-    if (!ticketElement || !serviceForPreview) return null;
-    try {
-      const canvas = await html2canvas(ticketElement, { scale: 2.5, backgroundColor: null });
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error("Could not create blob from canvas.");
-      
-      if (isForSharing) {
-        return new File([blob], `ticket_servicio_${serviceForPreview.id}.png`, { type: 'image/png' });
-      } else {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        toast({ title: "Copiado", description: "La imagen ha sido copiada." });
-        return null;
-      }
-    } catch (e) {
-      console.error('Error handling image:', e);
-      toast({ title: "Error", description: "No se pudo procesar la imagen del ticket.", variant: "destructive" });
-      return null;
-    }
-  }, [serviceForPreview, toast]);
-  
-  const handleShare = async () => {
-    const imageFile = await handleCopyAsImage(true);
-    if (imageFile && navigator.share) {
-      try {
-        await navigator.share({
-          files: [imageFile],
-          title: 'Ticket de Servicio',
-          text: `Ticket de tu servicio en ${workshopInfo?.name || 'nuestro taller'}.`,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-        toast({ title: 'Error al compartir', variant: 'destructive' });
-      }
-    } else {
-      handleCopySaleForWhatsapp();
-    }
-  };
-
-  const handlePrint = () => {
-    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
-  };
-  
   const handleVehicleCreated = async (newVehicleData: VehicleFormValues) => {
       await inventoryService.addVehicle(newVehicleData);
       toast({ title: "Vehículo Creado" });
@@ -218,29 +171,13 @@ Total: ${formatCurrency(serviceForPreview.totalCost)}
       </FormProvider>
       
       {serviceForPreview && (
-        <Dialog open={isPreviewOpen} onOpenChange={handleDialogClose}>
-            <DialogContent className="sm:max-w-2xl">
-              <DialogHeader>
-                  <DialogTitle>Registro Creado con Éxito</DialogTitle>
-                  <DialogDescription>
-                      El registro #{serviceForPreview.id} ha sido creado. Puedes compartirlo o imprimirlo.
-                  </DialogDescription>
-              </DialogHeader>
-              <div id="printable-ticket-dialog" className="p-4 bg-muted/50 rounded-md">
-                <TicketContent
-                    service={serviceForPreview}
-                    vehicle={vehicles.find(v => v.id === serviceForPreview.vehicleId)}
-                    technician={users.find(t => t.id === serviceForPreview.technicianId)}
-                    previewWorkshopInfo={workshopInfo || undefined}
-                />
-              </div>
-              <DialogFooter>
-                  <Button onClick={() => handleCopyAsImage(false)} variant="outline"><Copy className="mr-2 h-4 w-4"/>Copiar</Button>
-                  <Button onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
-                  <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
-              </DialogFooter>
-            </DialogContent>
-        </Dialog>
+         <UnifiedPreviewDialog
+            open={isPreviewOpen}
+            onOpenChange={handleDialogClose}
+            service={serviceForPreview}
+            vehicle={vehicles.find(v => v.id === serviceForPreview.vehicleId)}
+            title="Registro Creado con Éxito"
+          />
       )}
     </>
   );

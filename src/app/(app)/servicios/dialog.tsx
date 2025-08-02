@@ -99,11 +99,14 @@ export function ServiceDialog({
       return;
     }
     
+    // Check if the status is being changed to 'Entregado'
     const isNowCompleting = 'status' in formData && formData.status === 'Entregado' && service?.status !== 'Entregado';
-    if(isNowCompleting) {
-        setFormDataForCompletion(formData);
-        setIsCompleteDialogOpen(true);
-        return;
+    
+    if (isNowCompleting && service) {
+      // Instead of submitting, open the completion dialog
+      setFormDataForCompletion(formData);
+      setIsCompleteDialogOpen(true);
+      return; 
     }
 
     try {

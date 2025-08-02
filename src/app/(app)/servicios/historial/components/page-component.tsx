@@ -73,18 +73,16 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
 
 
   useEffect(() => {
+    setIsLoading(true);
     const unsubs = [
       operationsService.onServicesUpdate((services) => {
-        // Exclude quotes from this page
         setAllServices(services.filter(s => s.status !== 'Cotizacion'));
+        setIsLoading(false); 
       }),
       inventoryService.onVehiclesUpdate(setVehicles),
       adminService.onUsersUpdate(setPersonnel),
       inventoryService.onItemsUpdate(setInventoryItems),
-      inventoryService.onServiceTypesUpdate((data) => {
-          setServiceTypes(data);
-          setIsLoading(false);
-      }),
+      inventoryService.onServiceTypesUpdate(setServiceTypes),
     ];
 
     const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
@@ -154,7 +152,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     try {
       await operationsService.saveService(data);
       setIsFormDialogOpen(false);
-      toast({ title: 'Servicio actualizado.' });
+      // toast({ title: 'Servicio actualizado.' });
     } catch (e) {
       toast({ title: "Error", description: `No se pudo guardar el registro.`, variant: "destructive"});
     }
