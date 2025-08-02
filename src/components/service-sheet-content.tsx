@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -15,6 +16,7 @@ import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder
 import Image from 'next/image';
 import { parseDate } from '@/lib/forms';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -406,7 +408,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
                         <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
-                        <p className="text-[7px] text-gray-600">Autorizo que se realicen estos servicios</p>
+                        <p className="text-[7px] text-gray-600">
+                          Al firmar, acepto los <Link href="/legal/terminos" target="_blank" className="underline">Términos y Condiciones</Link> y el <Link href="/legal/privacidad" target="_blank" className="underline">Aviso de Privacidad</Link> para la realización del servicio.
+                        </p>
                     </div>
                 </div>
                 <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px]">
@@ -427,7 +431,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
                         <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
-                        <p className="text-[7px] text-gray-600">Recibo de conformidad</p>
+                        <p className="text-[7px] text-gray-600">Recibo de conformidad. Garantía de 90 días o 10,000 km en el servicio realizado.</p>
                     </div>
                 </div>
            </section>
