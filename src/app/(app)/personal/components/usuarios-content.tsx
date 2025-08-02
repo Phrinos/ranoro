@@ -89,11 +89,11 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">Lista de Usuarios</h2>
-                <p className="text-muted-foreground">Usuarios registrados en el sistema. Los sueldos y comisiones se configuran aquí.</p>
+                <h2 className="text-2xl font-bold tracking-tight">Lista de Personal</h2>
+                <p className="text-muted-foreground">Gestiona los perfiles, roles y salarios de todo tu equipo.</p>
             </div>
             <Button onClick={() => handleOpenForm()}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Usuario
+                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Integrante
             </Button>
         </div>
         
@@ -116,24 +116,27 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                     <TableHeader className="bg-black">
                       <TableRow>
                           <TableHead className="text-white">Nombre</TableHead>
-                          <TableHead className="text-white">Email</TableHead>
                           <TableHead className="text-white">Rol</TableHead>
+                          <TableHead className="text-white">Fecha Contratación</TableHead>
                           <TableHead className="text-white">Sueldo Base</TableHead>
                           <TableHead className="text-right text-white">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredUsers.map(user => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell><span className={`px-2 py-1 text-xs rounded-full font-medium ${ user.role === 'Superadministrador' ? 'bg-red-100 text-red-700' : user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }`}>{user.role}</span></TableCell>
-                          <TableCell>{formatCurrency(user.monthlySalary)}</TableCell>
-                          <TableCell className="text-right">
-                            {canEditOrDelete(user) && ( <> <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Usuario?</AlertDialogTitle><AlertDialogDescription>¿Seguro que quieres eliminar a "{user.name}"? Esta acción es permanente.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></>)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {filteredUsers.map(user => {
+                        const hireDate = user.hireDate ? parseDate(user.hireDate) : null;
+                        return (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.name}</TableCell>
+                            <TableCell><span className={`px-2 py-1 text-xs rounded-full font-medium ${ user.role === 'Superadministrador' ? 'bg-red-100 text-red-700' : user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }`}>{user.role}</span></TableCell>
+                            <TableCell>{hireDate ? format(hireDate, "dd MMM, yyyy", { locale: es }) : 'N/A'}</TableCell>
+                            <TableCell>{formatCurrency(user.monthlySalary)}</TableCell>
+                            <TableCell className="text-right">
+                              {canEditOrDelete(user) && ( <> <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Usuario?</AlertDialogTitle><AlertDialogDescription>¿Seguro que quieres eliminar a "{user.name}"? Esta acción es permanente.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></>)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
                     </TableBody>
                   </Table>
                   </div>
@@ -157,3 +160,4 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     </div>
   );
 }
+
