@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 
 const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | "black" => {
     const lowerCaseRole = role.toLowerCase();
-    if (lowerCaseRole === 'asesor') {
+    if (lowerCaseRole.includes('asesor')) {
         return 'white';
     }
     if (lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico')) {
@@ -81,7 +81,7 @@ export function RendimientoPersonalContent() {
     return activeUsers.map(user => {
         const lowerCaseRole = user.role.toLowerCase();
         const isAdvisor = lowerCaseRole.includes('asesor') || lowerCaseRole === 'admin' || lowerCaseRole === 'superadministrador';
-        const isTechnician = lowerCaseRole.includes('tecnico');
+        const isTechnician = lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico');
 
         let generatedRevenue = 0;
         
@@ -93,6 +93,7 @@ export function RendimientoPersonalContent() {
         }
 
         // Revenue for Advisors: Based on completed services they managed.
+        // This is intentionally cumulative. If a user is both a tech and advisor, their revenue from both roles is added.
         if (isAdvisor) {
              generatedRevenue += completedServicesInRange
                 .filter(s => s.serviceAdvisorId === user.id)
