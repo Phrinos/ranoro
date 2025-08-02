@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } fr
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
-import { ServiceDialog } from "../components/dialog";
+import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, isTomorrow, compareAsc, compareDesc, isSameDay, addDays, parseISO, isValid } from 'date-fns';
@@ -46,7 +46,6 @@ function AgendaPageComponent() {
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [agendaView, setAgendaView] = useState('lista');
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
@@ -270,6 +269,7 @@ function AgendaPageComponent() {
         <Badge variant={isOverloaded ? "destructive" : "secondary"}>{text}</Badge>
     );
 };
+  const [activeView, setActiveView] = useState('lista');
 
   if (isLoading) {
     return (
@@ -287,7 +287,7 @@ function AgendaPageComponent() {
         <p className="text-primary-foreground/80 mt-1">Planifica y visualiza todas las citas y servicios programados.</p>
       </div>
       
-      <Tabs value={agendaView} onValueChange={setAgendaView} className="w-full">
+      <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="lista" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <List className="mr-2 h-4 w-4" />
@@ -343,6 +343,7 @@ function AgendaPageComponent() {
           serviceTypes={serviceTypes}
           onSave={handleSaveService}
           onCancelService={handleCancelService}
+          onComplete={handleConfirmCompletion}
         />
       )}
       

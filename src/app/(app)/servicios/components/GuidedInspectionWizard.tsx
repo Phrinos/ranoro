@@ -54,7 +54,7 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
 
 
     return (
-        <div className="flex flex-col h-full p-1">
+        <div className="flex flex-col h-full p-4">
             <Progress value={progress} className="w-full mb-4" />
             <div className="text-center mb-4">
                 <p className="text-sm text-muted-foreground">Punto {currentIndex + 1} de {inspectionItems.length}</p>
