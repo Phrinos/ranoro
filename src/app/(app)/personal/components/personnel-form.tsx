@@ -80,7 +80,7 @@ export function PersonnelForm({ id, initialData, onSubmit, appRoles }: Personnel
             name="roles"
             render={() => (
                 <FormItem>
-                    <FormLabel>Áreas / Roles Asignados</FormLabel>
+                    <FormLabel>Áreas o Funciones Asignados</FormLabel>
                     <div className="space-y-2 rounded-md border p-4">
                         {appRoles.map((role) => (
                         <FormField
