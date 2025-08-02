@@ -131,22 +131,23 @@ export function FinanzasPageComponent({
         const totalUnitsSold = salesInRange.reduce((sum, s) => sum + s.items.reduce((count, item) => count + item.quantity, 0), 0) + servicesInRange.reduce((sum, s) => sum + (s.serviceItems || []).flatMap(si => si.suppliesUsed || []).reduce((count, supply) => count + supply.quantity, 0), 0);
         
         const { totalTechnicianSalaries, totalAdministrativeSalaries } = allPersonnel
-          .filter(p => !p.isArchived)
-          .reduce((totals, person) => {
-            const roles = (person.roles || []).map(r =>
-              r.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            );
-        
-            const isTechnician = roles.some(role => role.includes("tecnico"));
-        
-            if (isTechnician) {
-              totals.totalTechnicianSalaries += person.monthlySalary || 0;
-            } else {
-              totals.totalAdministrativeSalaries += person.monthlySalary || 0;
-            }
-        
-            return totals;
-          }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
+            .filter(p => !p.isArchived)
+            .reduce((totals, person) => {
+                const roles = (person.roles || []).map(r =>
+                  r.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                );
+
+                const technicianLabels = ["tecnico", "técnico"];
+                const isTechnician = roles.some(role => technicianLabels.includes(role));
+
+                if (isTechnician) {
+                  totals.totalTechnicianSalaries += person.monthlySalary || 0;
+                } else {
+                  totals.totalAdministrativeSalaries += person.monthlySalary || 0;
+                }
+
+                return totals;
+            }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
 
 
         const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -168,8 +169,8 @@ export function FinanzasPageComponent({
         const netProfit = netProfitBeforeCommissions - totalVariableCommissions;
 
         const dateLabel = dateRange.to && !isSameDay(dateRange.from, dateRange.to)
-            ? `${format(from, 'dd MMM', { locale: es })} - ${format(to, 'dd MMM, yyyy', { locale: es })}`
-            : format(from, 'dd \'de\' MMMM, yyyy', { locale: es });
+            ? `${format(dateRange.from, 'dd MMM', { locale: es })} - ${format(dateRange.to, 'dd MMM, yyyy', { locale: es })}`
+            : format(dateRange.from, 'dd \'de\' MMMM, yyyy', { locale: es });
 
         const totalInventoryValue = allInventory
             .filter(item => !item.isService)
