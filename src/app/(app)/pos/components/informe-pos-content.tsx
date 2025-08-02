@@ -1,19 +1,25 @@
 
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Receipt, ShoppingCart, DollarSign, CalendarIcon as CalendarDateIcon, TrendingUp, BarChart2 } from "lucide-react";
-import type { SaleReceipt, InventoryItem, ServiceRecord } from "@/types";
-import { calculateSaleProfit } from '@/lib/placeholder-data';
-import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, startOfWeek, subDays, startOfMonth } from 'date-fns';
+import {
+  calculateSaleProfit,
+} from "@/lib/placeholder-data";
+import type { InventoryItem, SaleReceipt, ServiceRecord } from "@/types";
+import {
+  format,
+  parseISO,
+  isWithinInterval,
+  isValid,
+  startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, subDays, startOfMonth, endOfMonth
+} from "date-fns";
 import { es } from 'date-fns/locale';
-import type { DateRange } from "react-day-picker";
+import { CalendarIcon as CalendarDateIcon, ShoppingCart, DollarSign, TrendingUp, BarChart2 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 interface InformePosContentProps {
   allSales: SaleReceipt[];
