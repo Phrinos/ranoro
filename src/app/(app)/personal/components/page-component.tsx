@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -30,7 +31,7 @@ import { Badge } from "@/components/ui/badge";
 
 const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | "black" => {
     const lowerCaseRole = role.toLowerCase();
-    if (lowerCaseRole === 'administrativo') {
+    if (lowerCaseRole === 'asesor') {
         return 'white';
     }
     if (lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico')) {
@@ -118,27 +119,14 @@ export function PersonalPageComponent({
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    // --- Start of new logic for revenue calculation ---
-    const getAdminRelevantDate = (s: ServiceRecord): Date | null => {
-        // For admin work, the creation date is what matters.
+    const getRelevantDate = (s: ServiceRecord): Date | null => {
         return parseDate(s.quoteDate) || parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
     };
 
-    const getTechnicianRelevantDate = (s: ServiceRecord): Date | null => {
-        // For technical work, the date it was *in the workshop* matters.
-        return parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
-    };
-
-    const servicesRelevantForAdmin = allServices.filter(s => {
-        const relevantDate = getAdminRelevantDate(s);
+    const servicesInRange = allServices.filter(s => {
+        const relevantDate = getRelevantDate(s);
         return relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval) && s.status !== 'Cancelado';
     });
-
-    const servicesRelevantForTechnician = allServices.filter(s => {
-        const relevantDate = getTechnicianRelevantDate(s);
-        return relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval) && s.status !== 'Cancelado' && s.status !== 'Cotizacion';
-    });
-    // --- End of new logic for revenue calculation ---
 
     const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, interval));
     const deliveredServicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, interval));
@@ -155,16 +143,16 @@ export function PersonalPageComponent({
     return activePersonnel.map(person => {
         const personRoles = new Set((person.roles || []).map(r => r.toLowerCase()));
         const isTechnician = personRoles.has('técnico') || personRoles.has('tecnico');
-        const isAdministrative = personRoles.has('administrativo');
+        const isAdministrative = personRoles.has('asesor');
 
         const technicalWorkValue = isTechnician
-            ? servicesRelevantForTechnician
+            ? servicesInRange
                 .filter(s => s.technicianId === person.id)
                 .reduce((sum, s) => sum + (s.totalCost || 0), 0)
             : 0;
 
         const administrativeWorkValue = isAdministrative
-            ? servicesRelevantForAdmin
+            ? servicesInRange
                 .filter(s => s.serviceAdvisorId === person.id)
                 .reduce((sum, s) => sum + (s.totalCost || 0), 0)
             : 0;

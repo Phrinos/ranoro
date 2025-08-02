@@ -24,7 +24,7 @@ import { useMemo } from 'react';
 
 const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | "black" => {
     const lowerCaseRole = role.toLowerCase();
-    if (lowerCaseRole === 'administrativo') {
+    if (lowerCaseRole === 'asesor') {
         return 'white';
     }
     if (lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico')) {
