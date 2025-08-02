@@ -29,6 +29,14 @@ const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | 
     return 'outline';
 };
 
+const normalizeRole = (role: string) => {
+    return role
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, ""); // Remove accents
+};
+
+
 export function RendimientoPersonalContent() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
@@ -79,9 +87,9 @@ export function RendimientoPersonalContent() {
     const netProfitForCommissions = Math.max(0, grossProfit - totalFixedExpenses);
     
     return activeUsers.map(user => {
-        const lowerCaseRole = user.role.toLowerCase();
-        const isAdvisor = lowerCaseRole.includes('asesor') || lowerCaseRole === 'admin' || lowerCaseRole === 'superadministrador';
-        const isTechnician = lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico');
+        const normalizedUserRole = normalizeRole(user.role);
+        const isAdvisor = normalizedUserRole.includes('asesor') || normalizedUserRole === 'admin' || normalizedUserRole === 'superadministrador';
+        const isTechnician = normalizedUserRole.includes('tecnico');
 
         let generatedRevenue = 0;
         
@@ -91,9 +99,8 @@ export function RendimientoPersonalContent() {
                 .filter(s => s.technicianId === user.id)
                 .reduce((sum, s) => sum + (s.totalCost || 0), 0);
         }
-
+        
         // Revenue for Advisors: Based on completed services they managed.
-        // This is intentionally cumulative. If a user is both a tech and advisor, their revenue from both roles is added.
         if (isAdvisor) {
              generatedRevenue += completedServicesInRange
                 .filter(s => s.serviceAdvisorId === user.id)
