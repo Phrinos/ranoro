@@ -150,10 +150,24 @@ export function ServiceDialog({
 
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
     if (isReadOnly) {
-      handleOpenChange(false);
-      return;
+        handleOpenChange(false);
+        return;
+    }
+    
+    // NEW LOGIC: Check if trying to complete the service
+    if (formData.status === 'Entregado') {
+        const serviceDataForCompletion = {
+            ...(service || {}), // Base with existing service data if available
+            ...formData,      // Override with current form data
+            id: service?.id || 'new_service' // Use existing ID or a placeholder
+        } as ServiceRecord;
+        
+        setServiceToComplete(serviceDataForCompletion);
+        setIsPaymentDialogOpen(true);
+        return; // Stop here, completion dialog will handle the final save
     }
 
+    // Standard save logic for other statuses
     try {
         const savedRecord = await operationsService.saveService(formData);
         toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
@@ -169,7 +183,8 @@ export function ServiceDialog({
             variant: "destructive",
         });
     }
-  };
+};
+
   
   const getDynamicTitles = () => {
     const currentRecord = service || quote;
@@ -219,11 +234,11 @@ export function ServiceDialog({
             {service?.status === 'Entregado' && (
                 <div className="text-left md:text-center md:col-span-1">
                     <div>
-                      <span className="text-muted-foreground text-sm">Método de pago:</span><br/>
+                      <span className="text-muted-foreground text-sm">Método de pago:</span>
                       <Badge variant={getPaymentMethodVariant(service.paymentMethod)}>{service.paymentMethod}</Badge>
                     </div>
-                    {service.cardFolio && <div><span className="text-muted-foreground text-sm">Folio Tarjeta:</span><br/><span className="font-semibold text-sm">{service.cardFolio}</span></div>}
-                    {service.transferFolio && <div><span className="text-muted-foreground text-sm">Folio Transf:</span><br/><span className="font-semibold text-sm">{service.transferFolio}</span></div>}
+                    {service.cardFolio && <div><span className="text-muted-foreground text-sm">Folio Tarjeta:</span><span className="font-semibold text-sm">{service.cardFolio}</span></div>}
+                    {service.transferFolio && <div><span className="text-muted-foreground text-sm">Folio Transf:</span><span className="font-semibold text-sm">{service.transferFolio}</span></div>}
                 </div>
             )}
             <div className="text-left md:text-right md:col-start-3">

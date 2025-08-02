@@ -24,6 +24,7 @@ import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import html2canvas from 'html2canvas';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../components/PaymentDetailsDialog';
 
 type POSFormValues = z.infer<typeof serviceFormSchema>;
 
@@ -42,6 +43,9 @@ export default function NuevoServicioPage() {
   const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+
+  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -67,43 +71,55 @@ export default function NuevoServicioPage() {
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
-  
-  const handleCopySaleForWhatsapp = useCallback(() => {
-    if (!serviceForPreview) return;
-    const workshopName = workshopInfo?.name || 'nuestro taller';
-    const message = `Hola ${serviceForPreview.customerName || 'Cliente'}, aquí tienes los detalles de tu compra en ${workshopName}.
-Folio de Venta: ${serviceForPreview.id}
-Total: ${formatCurrency(serviceForPreview.totalCost)}
-¡Gracias por tu preferencia!`;
-
-    navigator.clipboard.writeText(message).then(() => {
-      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado.' });
-    });
-  }, [serviceForPreview, workshopInfo, toast]);
 
   const handleSaleCompletion = async (values: POSFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
     
+    // If creating a service directly as "Entregado", open the payment dialog first.
+    if (values.status === 'Entregado') {
+        const tempService = { ...values, id: 'new_service_temp' } as ServiceRecord;
+        setServiceToComplete(tempService);
+        setIsPaymentDialogOpen(true);
+        return;
+    }
+
+    // Standard save for other statuses
     try {
-        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-        const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
-
-        const dataWithAdvisor = {
-            ...values,
-            serviceAdvisorId: currentUser?.id,
-            serviceAdvisorName: currentUser?.name
-        };
-
-        const savedRecord = await operationsService.saveService(dataWithAdvisor as ServiceRecord);
-        
+        const savedRecord = await operationsService.saveService(values);
         toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
-        
         setServiceForPreview(savedRecord);
         setIsPreviewOpen(true);
-      
     } catch(e) {
       console.error(e);
       toast({ title: 'Error al Registrar', variant: 'destructive'});
+    }
+  };
+
+  const handleCompleteNewService = async (paymentDetails: PaymentDetailsFormValues) => {
+    if (!serviceToComplete) return;
+
+    try {
+      // First, save the service to get an ID
+      const { id: _, ...serviceData } = serviceToComplete; // Remove temp ID
+      const savedService = await operationsService.saveService(serviceData as ServiceRecord);
+
+      // Now, complete the just-saved service
+      const batch = writeBatch(db);
+      await operationsService.completeService(savedService, paymentDetails, batch);
+      await batch.commit();
+
+      const finalServiceRecord = await operationsService.getQuoteById(savedService.id) as ServiceRecord;
+
+      toast({ title: 'Servicio Completado', description: `El servicio #${finalServiceRecord.id} ha sido creado y completado.` });
+      setServiceForPreview(finalServiceRecord);
+      setIsPreviewOpen(true);
+
+    } catch(e) {
+       console.error(e);
+       toast({ title: 'Error al Completar', variant: 'destructive'});
+    } finally {
+        setIsPaymentDialogOpen(false);
+        setServiceToComplete(null);
     }
   };
   
@@ -115,7 +131,7 @@ Total: ${formatCurrency(serviceForPreview.totalCost)}
   const handleDialogClose = () => {
     setIsPreviewOpen(false);
     setServiceForPreview(null);
-    methods.reset();
+    methods.reset(); // Reset the form for a new sale
     const targetPath = serviceForPreview?.status === 'Cotizacion' 
                       ? '/cotizaciones/historial' 
                       : '/servicios/historial';
@@ -178,6 +194,16 @@ Total: ${formatCurrency(serviceForPreview.totalCost)}
             vehicle={vehicles.find(v => v.id === serviceForPreview.vehicleId)}
             title="Registro Creado con Éxito"
           />
+      )}
+
+      {serviceToComplete && (
+        <PaymentDetailsDialog
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+          service={serviceToComplete}
+          onConfirm={(serviceId, paymentDetails) => handleCompleteNewService(paymentDetails)}
+          isCompletionFlow={true}
+        />
       )}
     </>
   );
