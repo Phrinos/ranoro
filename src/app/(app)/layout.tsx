@@ -1,16 +1,13 @@
-
+// src/app/(app)/layout.tsx
 "use client";
 
-import {
-  onSnapshot,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import { onSnapshot, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebaseClient";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/hooks/use-sidebar"; // Updated import
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import type { User } from "@/types";

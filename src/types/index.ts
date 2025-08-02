@@ -1,4 +1,6 @@
-
+// src/types/index.ts
+import { type VariantProps } from "class-variance-authority"
+import { sidebarMenuButtonVariants } from './sidebar.types';
 
 export interface WorkshopInfo {
   name: string;
@@ -31,7 +33,6 @@ export interface WorkshopInfo {
   contactPersonPhone?: string;
   contactPersonRole?: string;
   timezone?: string;
-  // Factura.com fields
   facturaComApiKey?: string;
   facturaComApiSecret?: string;
   facturaComBillingMode?: 'live' | 'test';
@@ -47,7 +48,7 @@ export type Personnel = User;
 export interface VehiclePaperwork {
   id: string;
   name: string;
-  dueDate: string; // ISO string
+  dueDate: string; 
   status: 'Pendiente' | 'Completado';
   notes?: string;
 }
@@ -73,8 +74,8 @@ export interface Vehicle {
   insuranceMonthlyCost?: number | null;
   fineCheckHistory?: {
     date: string; // ISO String
-    checkedBy: string; // User name
-    checkedById: string; // User ID
+    checkedBy: string;
+    checkedById: string;
   }[];
   paperwork?: VehiclePaperwork[];
   currentMileage?: number;
@@ -123,7 +124,7 @@ export interface RentalPayment {
   amount: number;
   daysCovered: number;
   note?: string;
-  registeredBy?: string; // User's name
+  registeredBy?: string;
 }
 
 export interface OwnerWithdrawal {
@@ -148,8 +149,8 @@ export interface ServiceSupply {
   supplyId: string; 
   supplyName: string; 
   quantity: number;
-  unitPrice: number; // Costo para el taller
-  sellingPrice?: number; // Precio de venta al cliente (opcional)
+  unitPrice: number;
+  sellingPrice?: number;
   unitType?: 'units' | 'ml' | 'liters';
   isService?: boolean;
 }
@@ -157,7 +158,7 @@ export interface ServiceSupply {
 export interface ServiceItem {
   id: string;
   name: string;
-  price: number; // Costo de la mano de obra
+  price: number;
   suppliesUsed: ServiceSupply[];
 }
 
@@ -205,7 +206,7 @@ export interface PhotoReportGroup {
   id: string;
   date: string; // ISO string
   description: string;
-  photos: string[]; // Array of data URLs or storage URLs
+  photos: string[];
 }
 
 export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado';
@@ -213,18 +214,18 @@ export type ServiceSubStatus = 'En Espera de Refacciones' | 'Reparando' | 'Compl
 
 export interface ServiceRecord {
   id: string;
-  publicId?: string; // Unique, random ID for public sharing
+  publicId?: string;
   vehicleId: string;
   vehicleIdentifier?: string;
-  serviceDate: string; // Date of service or quote
-  serviceType?: string; // Changed from enum to string
+  serviceDate: string;
+  serviceType?: string;
   description?: string;
   technicianId: string;
   technicianName?: string;
   serviceItems: ServiceItem[];
   subTotal: number; 
   taxAmount: number;
-  totalCost: number; // Final, tax-inclusive price for services OR estimated price for quotes
+  totalCost: number;
   totalSuppliesWorkshopCost: number; 
   serviceProfit: number; 
   status: ServiceStatus;
@@ -233,8 +234,8 @@ export interface ServiceRecord {
   cancelledBy?: string;
   notes?: string;
   mileage?: number;
-  receptionDateTime?: string; // Automatically set when status becomes 'En Taller'
-  deliveryDateTime?: string; // Automatically set when status becomes 'Entregado'
+  receptionDateTime?: string;
+  deliveryDateTime?: string;
   vehicleConditions?: string;
   fuelLevel?: string;
   customerItems?: string;
@@ -263,7 +264,6 @@ export interface ServiceRecord {
   customerName?: string;
 }
 
-// Deprecated
 export interface Technician {
   id: string;
   name: string;
@@ -273,12 +273,11 @@ export interface Technician {
   hireDate?: string; 
   monthlySalary?: number; 
   notes?: string; 
-  commissionRate?: number; // Example: 0.05 for 5%
+  commissionRate?: number;
   standardHoursPerDay?: number;
   isArchived?: boolean;
 }
 
-// Deprecated
 export interface AdministrativeStaff {
   id: string;
   name: string;
@@ -287,7 +286,7 @@ export interface AdministrativeStaff {
   hireDate?: string;
   monthlySalary?: number;
   notes?: string;
-  commissionRate?: number; // Example: 0.01 for 1%
+  commissionRate?: number;
   isArchived?: boolean;
 }
 
@@ -309,8 +308,8 @@ export interface InventoryItem {
   sku: string; 
   description?: string;
   quantity: number;
-  unitPrice: number; // Cost to the workshop (pre-tax)
-  sellingPrice: number; // Final selling price to customer (tax-inclusive)
+  unitPrice: number;
+  sellingPrice: number;
   supplier: string; 
   lowStockThreshold: number;
   category: string;
@@ -353,8 +352,8 @@ export interface SaleItem {
   inventoryItemId: string;
   itemName:string;
   quantity: number;
-  unitPrice: number; // Final selling price per unit (tax-inclusive)
-  totalPrice: number; // quantity * unitPrice (final total for this line item, tax-inclusive)
+  unitPrice: number;
+  totalPrice: number;
   isService?: boolean;
   unitType?: 'units' | 'ml' | 'liters';
 }
@@ -365,9 +364,9 @@ export interface SaleReceipt {
   id: string;
   saleDate: string; 
   items: SaleItem[];
-  subTotal: number; // Pre-tax subtotal of the sale
-  tax: number; // Calculated IVA amount
-  totalAmount: number; // Final, tax-inclusive total amount of the sale (subTotal + tax)
+  subTotal: number;
+  tax: number;
+  totalAmount: number;
   paymentMethod?: PaymentMethod;
   customerName?: string;
   cardFolio?: string;
@@ -380,8 +379,6 @@ export interface SaleReceipt {
   amountInTransfer?: number;
 }
 
-// QuoteRecord is now deprecated and merged into ServiceRecord.
-// A ServiceRecord with status: 'Cotizacion' is a quote.
 export type QuoteRecord = ServiceRecord;
 
 
@@ -397,7 +394,7 @@ export interface FinancialOperation {
   date: string;
   type: string;
   description: string; 
-  totalAmount: number; // This is the final, tax-inclusive amount
+  totalAmount: number;
   profit: number;
   originalObject: SaleReceipt | ServiceRecord; 
 }
@@ -409,21 +406,21 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
-  password?: string; // Only for creation/update, not stored in localStorage directly
+  password?: string;
   phone?: string;
   signatureDataUrl?: string;
   monthlySalary?: number;
   commissionRate?: number;
   standardHoursPerDay?: number;
   isArchived?: boolean;
-  hireDate?: string; // ISO String (e.g., "2023-10-26")
+  hireDate?: string;
   roles: string[];
 }
 
 export interface AppRole {
   id: string;
   name: string;
-  permissions: string[]; // Array of permission strings/keys
+  permissions: string[];
 }
 
 export interface MonthlyFixedExpense {
@@ -446,7 +443,7 @@ export interface CashDrawerTransaction {
 }
 
 export interface InitialCashBalance {
-  date: string; // ISO String for when it was set
+  date: string; // ISO String
   amount: number;
   userId: string;
   userName:string;
@@ -472,20 +469,13 @@ export interface NavigationEntry {
   permissions?: string[];
 }
 
-export interface PriceListSupply {
-  name: string;
-  cost: number;
-  quantity: number;
-  supplier: string;
-}
-
 export interface PricedService {
     id: string;
     serviceName: string;
     description?: string;
     customerPrice: number;
     estimatedTimeHours?: number;
-    supplies: PriceListSupply[];
+    supplies: ServiceSupply[];
 }
 
 export interface VehiclePriceList {
@@ -511,7 +501,7 @@ export interface PublicOwnerReport {
   publicId: string;
   ownerName: string;
   generatedDate: string; // ISO String
-  reportMonth: string; // e.g., "septiembre 2024"
+  reportMonth: string;
   detailedReport: VehicleMonthlyReport[];
   totalRentalIncome: number;
   totalDeductions: number;
@@ -555,9 +545,16 @@ export interface InventoryMovement {
   id: string;
   date: string; // ISO String
   type: 'Venta' | 'Servicio';
-  relatedId: string; // ID of the sale or service
+  relatedId: string;
   itemName: string;
   quantity: number;
   unitCost: number;
   totalCost: number;
 }
+
+export type SidebarMenuButtonProps = React.ComponentProps<"button"> & {
+  asChild?: boolean;
+  isActive?: boolean;
+  tooltipLabel?: string;
+  tooltipClassName?: string;
+} & VariantProps<typeof sidebarMenuButtonVariants>;

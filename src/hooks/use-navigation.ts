@@ -1,29 +1,12 @@
-
-
+// src/hooks/use-navigation.ts
 "use client";
 
 import { usePathname } from 'next/navigation';
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
-  LayoutDashboard,
-  Wrench,
-  FileText,
-  Receipt,
-  Package,
-  DollarSign,
-  Users,
-  Settings,
-  Truck,
-  LineChart,
-  Shield,
-  PlusCircle,
-  Landmark,
-  LayoutGrid,
-  CalendarDays,
-  MessageSquare,
-  Car,
-  ShoppingCart,
-  FileJson, // Ícono añadido
+  LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, 
+  Truck, LineChart, Shield, PlusCircle, Landmark, LayoutGrid, CalendarDays, 
+  MessageSquare, Car, ShoppingCart, FileJson
 } from 'lucide-react';
 import type { User, AppRole, NavigationEntry } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
@@ -32,136 +15,84 @@ import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } fr
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Mi Taller
   { 
-    label: 'Nuevo Servicio', 
-    path: '/servicios/nuevo', 
-    icon: PlusCircle, 
-    groupTag: 'Mi Taller',
+    label: 'Nuevo Servicio', path: '/servicios/nuevo', icon: PlusCircle, groupTag: 'Mi Taller',
     permissions: ['services:create']
   },
   { 
-    label: 'Tablero', 
-    path: '/tablero', 
-    icon: LayoutGrid, 
-    groupTag: 'Mi Taller',
+    label: 'Tablero', path: '/tablero', icon: LayoutGrid, groupTag: 'Mi Taller',
     permissions: ['dashboard:view']
   },
   { 
-    label: 'Cotizaciones', 
-    path: '/cotizaciones/historial', 
-    icon: FileText, 
-    groupTag: 'Mi Taller',
+    label: 'Cotizaciones', path: '/cotizaciones/historial', icon: FileText, groupTag: 'Mi Taller',
     permissions: ['services:create'] 
   },
   { 
-    label: 'Agenda', 
-    path: '/servicios/agenda', 
-    icon: CalendarDays, 
-    groupTag: 'Mi Taller',
+    label: 'Agenda', path: '/servicios/agenda', icon: CalendarDays, groupTag: 'Mi Taller',
     permissions: ['services:create']
   },
   { 
-    label: 'Servicios', 
-    path: '/servicios/historial', 
-    icon: Wrench, 
-    groupTag: 'Mi Taller',
+    label: 'Servicios', path: '/servicios/historial', icon: Wrench, groupTag: 'Mi Taller',
     permissions: ['services:view_history']
   },
   { 
-    label: 'Vehículos', 
-    path: '/vehiculos', 
-    icon: Car, 
-    groupTag: 'Mi Taller',
+    label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: 'Mi Taller',
     permissions: ['vehicles:manage']
   },
   
   // Operaciones
   {
-    label: 'Nueva Venta',
-    path: '/pos/nuevo',
-    icon: ShoppingCart,
-    groupTag: 'Operaciones',
+    label: 'Nueva Venta', path: '/pos/nuevo', icon: ShoppingCart, groupTag: 'Operaciones',
     permissions: ['pos:create_sale']
   },
   {
-    label: 'Punto de Venta',
-    path: '/pos',
-    icon: Receipt,
-    groupTag: 'Operaciones',
+    label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones',
     permissions: ['pos:create_sale', 'pos:view_sales']
   },
   { 
-    label: 'Inventario', 
-    path: '/inventario', 
-    icon: Package, 
-    groupTag: 'Operaciones', 
+    label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', 
     permissions: ['inventory:view'] 
   },
   
   // Mi Flotilla
   {
-    label: 'Registrar Pago',
-    path: '/rentas?action=registrar',
-    icon: DollarSign,
-    groupTag: 'Mi Flotilla',
+    label: 'Registrar Pago', path: '/rentas?action=registrar', icon: DollarSign, groupTag: 'Mi Flotilla',
     permissions: ['fleet:manage']
   },
   {
-    label: 'Ingresos',
-    path: '/rentas',
-    icon: Landmark,
-    groupTag: 'Mi Flotilla',
+    label: 'Ingresos', path: '/rentas', icon: Landmark, groupTag: 'Mi Flotilla',
     permissions: ['fleet:manage']
   },
   {
-    label: 'Flotilla',
-    path: '/flotilla',
-    icon: Truck,
-    groupTag: 'Mi Flotilla',
+    label: 'Flotilla', path: '/flotilla', icon: Truck, groupTag: 'Mi Flotilla',
     permissions: ['fleet:manage']
   },
   
   // Análisis
   {
-    label: 'Finanzas',
-    path: '/finanzas',
-    icon: LineChart,
-    groupTag: 'Análisis',
+    label: 'Finanzas', path: '/finanzas', icon: LineChart, groupTag: 'Análisis',
     permissions: ['finances:view_report']
   },
   {
-    label: 'Facturación',
-    path: '/facturacion-admin',
-    icon: FileJson,
-    groupTag: 'Análisis',
+    label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Análisis',
     permissions: ['finances:view_report'] // Assuming same permission for now
   },
 
   // Opciones
   {
-    label: 'Personal', 
-    path: '/personal', 
-    icon: Users, 
-    groupTag: 'Opciones',
+    label: 'Personal', path: '/personal', icon: Users, groupTag: 'Opciones',
     permissions: ['technicians:manage', 'users:manage', 'roles:manage']
   },
   {
-    label: 'Opciones',
-    path: '/opciones',
-    icon: Settings,
-    groupTag: 'Opciones',
+    label: 'Opciones', path: '/opciones', icon: Settings, groupTag: 'Opciones',
     permissions: ['dashboard:view'] // All users can see options
   },
   {
-    label: 'Administración',
-    path: '/administracion',
-    icon: Shield,
-    groupTag: 'Opciones',
+    label: 'Administración', path: '/administracion', icon: Shield, groupTag: 'Opciones',
     permissions: ['audits:view', 'messaging:manage']
   }
 ];
 
 const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Mi Flotilla', 'Análisis', 'Opciones'];
-
 
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
@@ -169,53 +100,34 @@ const useNavigation = (): NavigationEntry[] => {
   const roles: AppRole[] = placeholderAppRoles;
 
   React.useEffect(() => {
-    // This effect ensures the hook re-evaluates when the user logs in/out,
-    // but now uses a more reliable direct import for roles.
     if (typeof window !== 'undefined') {
         const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
         if (authUserString) {
-            try {
-                setCurrentUser(JSON.parse(authUserString));
-            } catch (e) {
-                console.error('Failed to parse authUser, defaulting.', e);
-                setCurrentUser(defaultSuperAdmin);
-            }
+            try { setCurrentUser(JSON.parse(authUserString)); } 
+            catch (e) { setCurrentUser(defaultSuperAdmin); }
         } else {
-            // No user in local storage, might be loading or logged out.
-            // DefaultSuperAdmin can be a placeholder.
             setCurrentUser(defaultSuperAdmin);
         }
     }
-  }, [pathname]); // Re-run on path change
+  }, [pathname]);
 
   const userPermissions = React.useMemo(() => {
     if (!currentUser) return new Set<string>();
-    
-    // Use the directly imported roles array.
     const userRole = roles.find(r => r && r.name === currentUser.role);
-    
     if (!userRole) {
-      // If the user's role doesn't exist (e.g., typo, data inconsistency), default to no permissions.
-      console.warn(`Role "${currentUser.role}" not found for user "${currentUser.name}".`);
+      console.warn(`Role "${currentUser.role}" not found.`);
       return new Set<string>();
     }
-    
     return new Set(userRole.permissions || []);
   }, [currentUser, roles]);
 
-
   const filteredNavStructure = React.useMemo(() => {
     if (!currentUser) return []; 
-    
-    return BASE_NAV_STRUCTURE.filter(item => 
-      item.permissions?.some(p => userPermissions.has(p))
-    );
+    return BASE_NAV_STRUCTURE.filter(item => item.permissions?.some(p => userPermissions.has(p)));
   }, [currentUser, userPermissions]);
 
   const entriesWithActiveState = filteredNavStructure.map(entry => {
     let isActive = pathname === entry.path.split('?')[0];
-    
-    // Handle parent route matching for nested pages
     const isParentRoute = pathname.startsWith(`${entry.path.split('?')[0]}/`);
     if (isParentRoute) {
         const isMoreSpecificActive = filteredNavStructure.some(otherEntry => 
@@ -226,35 +138,27 @@ const useNavigation = (): NavigationEntry[] => {
         }
     }
     
-    // Specific overrides to group related pages under one active nav item
-    if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/'))) isActive = true;
-    if (entry.path === '/cotizaciones/historial' && pathname.startsWith('/cotizaciones')) isActive = true;
-
-    if (entry.path === '/vehiculos' && (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios'))) isActive = true;
-    if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
-    if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
-    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/admin/configuracion-ticket'))) isActive = true;
-    if (entry.path === '/finanzas' && (pathname.startsWith('/finanzas') || pathname.startsWith('/facturacion-admin'))) isActive = true;
-    if (entry.path === '/administracion' && (pathname.startsWith('/administracion') || pathname.startsWith('/admin'))) isActive = true;
-    if (entry.path === '/rentas' && (pathname.startsWith('/rentas') || pathname.startsWith('/flotilla'))) isActive = true; // Group /flotilla under /rentas (Ingresos)
+    // Path-specific grouping logic
+    if (pathname.startsWith('/servicios/')) isActive = entry.path === '/servicios/historial';
+    if (pathname.startsWith('/cotizaciones')) isActive = entry.path === '/cotizaciones/historial';
+    if (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios')) isActive = entry.path === '/vehiculos';
+    if (pathname.startsWith('/pos')) isActive = entry.path === '/pos';
+    if (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos')) isActive = entry.path === '/personal';
+    if (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual')) isActive = entry.path === '/opciones';
+    if (pathname.startsWith('/finanzas') || pathname.startsWith('/facturacion-admin')) isActive = entry.path === '/finanzas';
+    if (pathname.startsWith('/administracion') || pathname.startsWith('/admin')) isActive = entry.path === '/administracion';
+    if (pathname.startsWith('/flotilla') || pathname.startsWith('/rentas')) isActive = entry.path === '/rentas';
     
-    // Deactivations for clarity
+    // Specific deactivations for clarity
     if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/agenda') || pathname.startsWith('/servicios/nuevo'))) isActive = false;
-    if (entry.path === '/finanzas' && pathname.startsWith('/finanzas/reporte')) isActive = false;
-    if (entry.path === '/flotilla') isActive = false; // Deactivate the old /flotilla link as it's now grouped under /rentas
     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
-    if (entry.path === '/opciones' && pathname.startsWith('/mensajeria')) isActive = false;
-    if (entry.path === '/rentas' && pathname.startsWith('/rentas?action=registrar')) isActive = true;
-    if (entry.path === '/finanzas' && pathname.startsWith('/facturacion-admin')) isActive = false;
 
     return { ...entry, isActive };
   });
   
   const groupedByTag = entriesWithActiveState.reduce((acc, item) => {
       const tag = item.groupTag;
-      if (!acc[tag]) {
-        acc[tag] = [];
-      }
+      if (!acc[tag]) acc[tag] = [];
       acc[tag].push(item);
       return acc;
     }, {} as Record<string, NavigationEntry[]>);
@@ -272,7 +176,6 @@ const useNavigation = (): NavigationEntry[] => {
   }, [] as NavigationEntry[]);
   
   return sortedGroupEntries;
-
 };
 
 export default useNavigation;

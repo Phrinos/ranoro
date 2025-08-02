@@ -1,4 +1,4 @@
-
+// src/components/layout/app-sidebar.tsx
 "use client";
 
 import Link from "next/link";
@@ -15,8 +15,8 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
-  useSidebar, // Import useSidebar hook
 } from "@/components/ui/sidebar";
+import { useSidebar } from "@/hooks/use-sidebar"; // Updated import
 import useNavigation from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,7 +44,7 @@ export function AppSidebar({
 }) {
   const navItems = useNavigation();
   const router = useRouter();
-  const { isMobile, setOpenMobile } = useSidebar(); // Get sidebar context
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const handleLogout = async () => {
     onLogout();
