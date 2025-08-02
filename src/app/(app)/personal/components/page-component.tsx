@@ -119,19 +119,25 @@ export function PersonalPageComponent({
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    const getRelevantDate = (s: ServiceRecord): Date | null => {
+    // Use a relevant date for advisors: quote, service, or reception date.
+    const getAdvisorRelevantDate = (s: ServiceRecord): Date | null => {
         return parseDate(s.quoteDate) || parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
     };
 
-    const servicesInRange = allServices.filter(s => {
-        const relevantDate = getRelevantDate(s);
+    const advisorServicesInRange = allServices.filter(s => {
+        const relevantDate = getAdvisorRelevantDate(s);
         return relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval) && s.status !== 'Cancelado';
     });
+    
+    // Use the delivery date for technicians, as this marks completion of their work.
+    const technicianServicesInRange = allServices.filter(s => 
+        s.status === 'Entregado' && s.deliveryDateTime && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, interval)
+    );
 
     const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, interval));
-    const deliveredServicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, interval));
-
-    const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + deliveredServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    
+    // Gross profit calculation remains the same, based on delivered/completed work in the period
+    const grossProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0) + technicianServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
     
     const activePersonnel = allPersonnel.filter(p => !p.isArchived);
     const fixedSalaries = activePersonnel.reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
@@ -143,16 +149,18 @@ export function PersonalPageComponent({
     return activePersonnel.map(person => {
         const personRoles = new Set((person.roles || []).map(r => r.toLowerCase()));
         const isTechnician = personRoles.has('técnico') || personRoles.has('tecnico');
-        const isAdministrative = personRoles.has('asesor');
+        const isAdvisor = personRoles.has('asesor');
 
+        // Technicians get credit for delivered work
         const technicalWorkValue = isTechnician
-            ? servicesInRange
+            ? technicianServicesInRange
                 .filter(s => s.technicianId === person.id)
                 .reduce((sum, s) => sum + (s.totalCost || 0), 0)
             : 0;
-
-        const administrativeWorkValue = isAdministrative
-            ? servicesInRange
+            
+        // Advisors get credit for services they manage (quoted, scheduled, in workshop)
+        const administrativeWorkValue = isAdvisor
+            ? advisorServicesInRange
                 .filter(s => s.serviceAdvisorId === person.id)
                 .reduce((sum, s) => sum + (s.totalCost || 0), 0)
             : 0;
@@ -201,9 +209,9 @@ export function PersonalPageComponent({
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="resumen" className="data-[state=active]:bg-red-700 data-[state=active]:text-primary-foreground">Resumen de Rendimiento</TabsTrigger>
-          <TabsTrigger value="personal" className="data-[state=active]:bg-red-700 data-[state=active]:text-primary-foreground">Lista de Personal</TabsTrigger>
-          <TabsTrigger value="areas" className="data-[state=active]:bg-red-700 data-[state=active]:text-primary-foreground">Áreas de Trabajo</TabsTrigger>
+          <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen de Rendimiento</TabsTrigger>
+          <TabsTrigger value="personal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Lista de Personal</TabsTrigger>
+          <TabsTrigger value="areas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Áreas de Trabajo</TabsTrigger>
         </TabsList>
         <TabsContent value="resumen" className="mt-6 space-y-6">
             <Card>
