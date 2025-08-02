@@ -1,7 +1,6 @@
 
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
@@ -18,7 +17,7 @@ const badgeVariants = cva(
         outline: "text-foreground",
         success:
           "border-transparent bg-green-600 text-primary-foreground hover:bg-green-600/80",
-        waiting: 
+        waiting:
           "border-transparent bg-orange-500 text-white hover:bg-orange-500/80",
         delivered:
           "border-transparent bg-gray-500 text-white hover:bg-gray-500/80 dark:bg-gray-600",
@@ -34,7 +33,7 @@ const badgeVariants = cva(
           "border-transparent bg-red-100 text-red-800 hover:bg-red-100/80 dark:bg-red-900/50 dark:text-red-300",
         teal:
           "border-transparent bg-teal-500 text-white hover:bg-teal-500/80",
-        black: 
+        black:
           "border-transparent bg-black text-white hover:bg-black/80",
         white:
           "border-gray-400/50 bg-gray-100 text-gray-800 hover:bg-gray-200",
@@ -50,11 +49,19 @@ const badgeVariants = cva(
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+    VariantProps<typeof badgeVariants> {
+  children?: React.ReactNode
+}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, variant, children, ...props }: BadgeProps) {
+  if (!children) {
+    console.warn("Badge sin contenido:", { variant })
+  }
+
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div className={cn(badgeVariants({ variant }), className)} {...props}>
+      {children}
+    </div>
   )
 }
 
