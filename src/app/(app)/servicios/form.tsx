@@ -1,8 +1,8 @@
 
-
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
+import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch, Controller, useFieldArray, FormProvider, useFormContext } from "react-hook-form"
 import * as z from 'zod'
@@ -88,7 +88,7 @@ interface Props {
   onTotalCostChange: (cost: number) => void;
 }
 
-export function ServiceForm(props:Props){
+export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref) => {
   const {
     initialDataService,
     serviceTypes,
@@ -396,7 +396,7 @@ export function ServiceForm(props:Props){
   return (
     <>
         <FormProvider {...form}>
-            <div id="service-form" className="flex flex-col flex-grow overflow-hidden">
+            <form ref={ref} id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
                 <div className="flex-grow overflow-y-auto px-6 pt-4 space-y-6">
                     <VehicleSelectionCard
                         isReadOnly={props.isReadOnly}
@@ -433,6 +433,49 @@ export function ServiceForm(props:Props){
                                 suppliers={allSuppliers}
                             />
                             {watchedStatus === 'Entregado' && <PaymentSection isReadOnly={true} />}
+                            {showNextServiceCard && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <CalendarCheck className="h-5 w-5 text-blue-600" />
+                                            Próximo Servicio Recomendado
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <FormField
+                                                control={control}
+                                                name="nextServiceInfo.date"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <div className="flex gap-2 mb-2">
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
+                                                        </div>
+                                                        <FormLabel>Fecha Próximo Servicio</FormLabel>
+                                                        <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={control}
+                                                name="nextServiceInfo.mileage"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <div className="flex gap-2 mb-2">
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
+                                                            <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
+                                                        </div>
+                                                        <FormLabel>Kilometraje Próximo Servicio</FormLabel>
+                                                        <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </TabsContent>
                         <TabsContent value="reception" className="mt-0">
                            <ReceptionAndDelivery 
@@ -464,101 +507,8 @@ export function ServiceForm(props:Props){
                             />
                         </TabsContent>
                     </Tabs>
-                    
-                    {showNextServiceCard && (
-                        <div className="space-y-6 mt-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg flex items-center gap-2">
-                                        <CalendarCheck className="h-5 w-5 text-blue-600" />
-                                        Próximo Servicio Recomendado
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <FormField
-                                            control={control}
-                                            name="nextServiceInfo.date"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <div className="flex gap-2 mb-2">
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
-                                                    </div>
-                                                    <FormLabel>Fecha Próximo Servicio</FormLabel>
-                                                    <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={control}
-                                            name="nextServiceInfo.mileage"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <div className="flex gap-2 mb-2">
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
-                                                    </div>
-                                                    <FormLabel>Kilometraje Próximo Servicio</FormLabel>
-                                                    <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
                 </div>
-                 <div className="p-6 pt-4 mt-auto border-t flex-shrink-0 bg-background flex flex-row justify-between items-center w-full gap-2">
-                    <div>
-                        {onCancelService && initialDataService?.id && initialDataService.status !== 'Entregado' && initialDataService.status !== 'Cancelado' && (
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button type="button" variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" title="Cancelar Servicio">
-                                        <Ban className="h-4 w-4" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Estás seguro de cancelar este servicio?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Esta acción es permanente. Por favor, especifica un motivo para la cancelación.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <Textarea 
-                                        placeholder="Motivo de la cancelación..."
-                                        value={cancellationReason}
-                                        onChange={(e) => setCancellationReason(e.target.value)}
-                                    />
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
-                                        <AlertDialogAction
-                                            disabled={!cancellationReason.trim()}
-                                            onClick={() => onCancelService?.(initialDataService!.id, cancellationReason)}
-                                        >
-                                            Confirmar Cancelación
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
-                    </div>
-                     <div className="flex flex-row gap-2 items-center">
-                        <Button variant="outline" type="button" onClick={onClose} className="flex-1 sm:flex-initial">Cerrar</Button>
-                        {!isReadOnly && (
-                            <Button 
-                                type="button" 
-                                onClick={handleSubmit(formSubmitWrapper)}
-                                className="flex-1 sm:flex-initial"
-                            >
-                                {initialDataService?.id ? 'Guardar Cambios' : 'Crear Registro'}
-                            </Button>
-                        )}
-                    </div>
-                 </div>
-            </div>
+            </form>
         </FormProvider>
 
       <VehicleDialog
@@ -595,7 +545,8 @@ export function ServiceForm(props:Props){
       </Dialog>
     </>
   );
-}
+});
+ServiceForm.displayName = "ServiceForm";
 
 const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onViewImage }: any) => {
     const { fields, append, remove } = useFieldArray({ control, name: 'photoReports' });
