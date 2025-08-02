@@ -55,7 +55,8 @@ export interface BadgeProps
 
 function Badge({ className, variant, children, ...props }: BadgeProps) {
   if (!children) {
-    console.warn("Badge sin contenido:", { variant })
+    // console.warn("Badge sin contenido:", { variant }) // Dev-only warning
+    return null
   }
 
   return (
