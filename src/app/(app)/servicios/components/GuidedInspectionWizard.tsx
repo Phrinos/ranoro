@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState } from 'react';
@@ -8,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Camera, Check, ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { PhotoUploader } from './PhotoUploader'; // Assuming it's adapted or a new one is made
 
@@ -44,7 +45,7 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
     };
 
     return (
-        <div className="flex flex-col h-full p-1">
+        <div className="flex flex-col h-full p-4">
             <Progress value={progress} className="w-full mb-4" />
             <div className="text-center mb-4">
                 <p className="text-sm text-muted-foreground">Punto {currentIndex + 1} de {inspectionItems.length}</p>
@@ -57,7 +58,7 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
                     control={control}
                     defaultValue={{ status: 'na', photos: [], notes: '' }}
                     render={({ field }) => (
-                        <div className="space-y-4">
+                        <div className="space-y-4" key={currentItem.name}>
                             <div className="grid grid-cols-3 gap-2">
                                 {[
                                     { value: 'ok', label: 'Bien', color: 'bg-green-500 hover:bg-green-600' },
