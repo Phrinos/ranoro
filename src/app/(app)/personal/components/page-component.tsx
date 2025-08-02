@@ -182,14 +182,11 @@ export function PersonalPageComponent({
                         <Card key={person.id} className="shadow-sm">
                             <CardHeader className="pb-2 flex-row justify-between items-start">
                                 <CardTitle className="text-lg">{person.name}</CardTitle>
-                                <div className="flex flex-wrap gap-1 justify-end shrink-0">
-                                  {person.roles?.map(r => <Badge key={r} variant="secondary">{r}</Badge>)}
-                                </div>
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm">
                                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Trabajo ingresado:</span><span className="font-semibold">{formatCurrency(person.generatedRevenue)}</span></div>
                                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldo base:</span><span className="font-semibold">{formatCurrency(person.baseSalary)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Comisiones {format(dateRange!.from!, 'MMM', { locale: es })}:</span><span className="font-semibold text-green-600">{formatCurrency(person.commission)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Comisiones {dateRange?.from ? format(dateRange.from, 'MMM', { locale: es }) : ''}:</span><span className="font-semibold text-green-600">{formatCurrency(person.commission)}</span></div>
                                 <div className="flex justify-between items-center border-t pt-2 mt-2 font-bold"><span className="text-foreground">Sueldo total:</span><span className="text-lg">{formatCurrency(person.totalSalary)}</span></div>
                             </CardContent>
                         </Card>
