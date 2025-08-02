@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: User | null, initialUsers: User[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
@@ -134,7 +135,15 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                             <TableCell>{formatCurrency(user.monthlySalary)}</TableCell>
                             <TableCell>{user.commissionRate || 0}%</TableCell>
                             <TableCell className="text-right">
-                              {canEditOrDelete(user) && ( <> <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Usuario?</AlertDialogTitle><AlertDialogDescription>¿Seguro que quieres eliminar a "{user.name}"? Esta acción es permanente.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></>)}
+                              {canEditOrDelete(user) && ( <> 
+                                  <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2"><Edit className="h-4 w-4" /></Button>
+                                  <ConfirmDialog
+                                    triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                                    title="¿Eliminar Usuario?"
+                                    description={`¿Seguro que quieres eliminar a "${user.name}"? Esta acción es permanente.`}
+                                    onConfirm={() => handleDeleteUser(user.id)}
+                                  />
+                              </>)}
                             </TableCell>
                           </TableRow>
                         )

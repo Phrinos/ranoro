@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -12,6 +11,7 @@ import { adminService, operationsService, inventoryService } from '@/lib/service
 import { RendimientoPersonalContent } from './rendimiento-content';
 import { UsuariosPageContent } from './usuarios-content';
 import { RolesPageContent } from '../../administracion/components/roles-content';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 export function PersonalPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
@@ -21,9 +21,19 @@ export function PersonalPageComponent({ tab }: { tab?: string }) {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allRoles, setAllRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    if (authUserString) {
+      try {
+        setCurrentUser(JSON.parse(authUserString));
+      } catch (e) {
+        console.error("Error parsing auth user from localStorage", e);
+      }
+    }
+
     const unsubs: (() => void)[] = [
       adminService.onUsersUpdate(setAllUsers),
       adminService.onRolesUpdate((roles) => {
@@ -61,10 +71,10 @@ export function PersonalPageComponent({ tab }: { tab?: string }) {
             <RendimientoPersonalContent />
         </TabsContent>
         <TabsContent value="usuarios" className="mt-6">
-            <UsuariosPageContent currentUser={allUsers.find(u => u.role === 'Superadministrador') || null} initialUsers={allUsers} initialRoles={allRoles} />
+            <UsuariosPageContent currentUser={currentUser} initialUsers={allUsers} initialRoles={allRoles} />
         </TabsContent>
         <TabsContent value="roles" className="mt-6">
-            <RolesPageContent currentUser={allUsers.find(u => u.role === 'Superadministrador') || null} initialRoles={allRoles} />
+            <RolesPageContent currentUser={currentUser} initialRoles={allRoles} />
         </TabsContent>
       </Tabs>
     </>
