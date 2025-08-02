@@ -332,7 +332,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   
   const handlePhotoUploaded = useCallback((reportIndex: number, url: string) => {
     const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
-    setValue(`photoReports.${index}.photos`, [...currentPhotos, url]);
+    setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url], { shouldDirty: true });
   }, [getValues, setValue]);
 
   const handleChecklistPhotoUploaded = useCallback((itemName: string, url: string) => {
@@ -374,6 +374,12 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     const IVA = 0.16;
     dataToSubmit.subTotal = totalCost / (1 + IVA);
     dataToSubmit.taxAmount = totalCost - (totalCost / (1 + IVA));
+
+    // Get technician name from ID to save it
+    if (dataToSubmit.technicianId) {
+        const technician = technicians.find(t => t.id === dataToSubmit.technicianId);
+        dataToSubmit.technicianName = technician?.name || null;
+    }
 
     // Ensure advisor signature is a data URL if it's a new service
     if (!initialDataService?.id && dataToSubmit.serviceAdvisorSignatureDataUrl && !dataToSubmit.serviceAdvisorSignatureDataUrl.startsWith('data:')) {
