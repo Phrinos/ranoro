@@ -25,6 +25,20 @@ interface PersonnelTableProps {
   onArchive: (person: Personnel) => void;
 }
 
+const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+        case 'Admin':
+        case 'Superadministrador':
+            return 'destructive';
+        case 'Técnico':
+            return 'secondary';
+        case 'Recepcionista':
+            return 'blue';
+        default:
+            return 'outline';
+    }
+}
+
 export const PersonnelTable = React.memo(({ personnel, onEdit, onArchive }: PersonnelTableProps) => {
 
   if (!personnel.length) {
@@ -56,7 +70,7 @@ export const PersonnelTable = React.memo(({ personnel, onEdit, onArchive }: Pers
               <TableCell className="font-medium">{person.name}</TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                    {person.roles.map(role => <Badge key={role} variant="secondary">{role}</Badge>)}
+                    {person.roles.map(role => <Badge key={role} variant={getRoleBadgeVariant(role)}>{role}</Badge>)}
                 </div>
               </TableCell>
               <TableCell>{person.contactInfo || 'N/A'}</TableCell>
