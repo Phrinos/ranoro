@@ -59,7 +59,7 @@ export const PersonnelTable = React.memo(({ personnel, onEdit, onArchive }: Pers
         <TableHeader className="bg-black">
           <TableRow>
             <TableHead className="font-bold text-white">Nombre</TableHead>
-            <TableHead className="font-bold text-white">Áreas / Funciones</TableHead>
+            <TableHead className="font-bold text-white">Función</TableHead>
             <TableHead className="font-bold text-white">Contacto</TableHead>
             <TableHead className="font-bold text-white">Contratación</TableHead>
             <TableHead className="text-right font-bold text-white">Sueldo Base</TableHead>
