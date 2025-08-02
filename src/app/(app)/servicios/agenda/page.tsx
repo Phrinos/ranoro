@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } fr
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
-import { ServiceDialog } from "../components/service-dialog";
+import { ServiceDialog } from "../components/dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, isTomorrow, compareAsc, compareDesc, isSameDay, addDays, parseISO, isValid } from 'date-fns';
@@ -58,6 +58,7 @@ function AgendaPageComponent() {
   
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [activeView, setActiveView] = useState('lista');
 
 
   useEffect(() => {
@@ -145,7 +146,7 @@ function AgendaPageComponent() {
   }, [allServices, isLoading]);
 
   useEffect(() => {
-    if (agendaView === 'lista' && !isLoading) {
+    if (activeView === 'lista' && !isLoading) {
       const runCapacityAnalysis = async () => {
         setIsCapacityLoading(true);
         setCapacityError(null);
@@ -178,7 +179,7 @@ function AgendaPageComponent() {
       };
       runCapacityAnalysis();
     }
-  }, [agendaView, toast, isLoading, allServices, personnel, todayServices]);
+  }, [activeView, toast, isLoading, allServices, personnel, todayServices]);
 
   const totalEarningsToday = useMemo(() => {
     return todayServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
@@ -269,7 +270,6 @@ function AgendaPageComponent() {
         <Badge variant={isOverloaded ? "destructive" : "secondary"}>{text}</Badge>
     );
 };
-  const [activeView, setActiveView] = useState('lista');
 
   if (isLoading) {
     return (
