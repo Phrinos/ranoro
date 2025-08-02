@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -8,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PageHeader } from "@/components/page-header";
 import { ServiceForm } from "../components/service-form";
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, Personnel } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, Personnel, User } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService, personnelService } from '@/lib/services';
@@ -26,45 +25,7 @@ import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import html2canvas from 'html2canvas';
-
-// --- Schema Definitions ---
-const saleItemSchema = z.object({
-  inventoryItemId: z.string().min(1, 'Seleccione un artículo.'),
-  itemName: z.string(),
-  quantity: z.coerce.number().min(0.001, 'La cantidad debe ser mayor a 0.'),
-  unitPrice: z.coerce.number(),
-  totalPrice: z.coerce.number(),
-  isService: z.boolean().optional(),
-  unitType: z.enum(['units', 'ml', 'liters']).optional(),
-});
-
-const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
-  'Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia', 'Efectivo/Tarjeta'
-];
-
-const posFormSchema = z.object({
-  items: z.array(saleItemSchema).min(1, 'Debe agregar al menos un artículo a la venta.'),
-  customerName: z.string().optional(),
-  whatsappNumber: z.string().optional(),
-  paymentMethod: z.enum(paymentMethods).default('Efectivo'),
-  cardFolio: z.string().optional(),
-  transferFolio: z.string().optional(),
-}).superRefine((data, ctx) => {
-    if (data.paymentMethod?.includes('Tarjeta') && !data.cardFolio) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'El folio de la tarjeta es obligatorio.',
-            path: ['cardFolio'],
-        });
-    }
-    if (data.paymentMethod?.includes('Transferencia') && !data.transferFolio) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'El folio de la transferencia es obligatorio.',
-            path: ['transferFolio'],
-        });
-    }
-});
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 type POSFormValues = z.infer<typeof serviceFormSchema>;
 
@@ -83,7 +44,6 @@ export default function NuevoServicioPage() {
   const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
-
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -123,17 +83,25 @@ Total: ${formatCurrency(serviceForPreview.totalCost)}
     });
   }, [serviceForPreview, workshopInfo, toast]);
 
-
   const handleSaleCompletion = async (values: POSFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
     
     try {
-      const savedRecord = await operationsService.saveService(values as ServiceRecord);
-      
-      toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
-      
-      setServiceForPreview(savedRecord);
-      setIsPreviewOpen(true);
+        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+
+        const dataWithAdvisor = {
+            ...values,
+            serviceAdvisorId: currentUser?.id,
+            serviceAdvisorName: currentUser?.name
+        };
+
+        const savedRecord = await operationsService.saveService(dataWithAdvisor as ServiceRecord);
+        
+        toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
+        
+        setServiceForPreview(savedRecord);
+        setIsPreviewOpen(true);
       
     } catch(e) {
       console.error(e);
@@ -205,7 +173,6 @@ Total: ${formatCurrency(serviceForPreview.totalCost)}
       toast({ title: "Vehículo Creado" });
   };
 
-
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
   }
@@ -262,7 +229,7 @@ Total: ${formatCurrency(serviceForPreview.totalCost)}
                 <TicketContent
                     service={serviceForPreview}
                     vehicle={vehicles.find(v => v.id === serviceForPreview.vehicleId)}
-                    technician={personnel.find(t => t.id === serviceForPreview.technicianId)}
+                    technician={personnel.find(t => t.id === serviceForPreview.technicianId) as Technician | undefined}
                     previewWorkshopInfo={workshopInfo || undefined}
                 />
               </div>

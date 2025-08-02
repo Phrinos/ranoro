@@ -117,14 +117,17 @@ export function PersonalPageComponent({
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    // Common filter for completed services within the date range
+    const getRelevantDate = (s: ServiceRecord): Date | null => {
+        return parseDate(s.quoteDate) || parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
+    };
+
     const completedServicesInRange = allServices.filter(s => 
         s.status === 'Entregado' && 
         s.deliveryDateTime && 
         isValid(parseDate(s.deliveryDateTime)!) && 
         isWithinInterval(parseDate(s.deliveryDateTime)!, interval)
     );
-    
+
     const salesInRange = allSales.filter(s => 
         s.status !== 'Cancelado' && 
         isValid(parseDate(s.saleDate)!) && 
@@ -146,12 +149,14 @@ export function PersonalPageComponent({
         const isTechnician = personRoles.has('técnico') || personRoles.has('tecnico');
         const isAdvisor = personRoles.has('asesor');
 
-        const advisorServices = isAdvisor 
-            ? completedServicesInRange.filter(s => s.serviceAdvisorId === person.id) 
-            : [];
-            
-        const technicalServices = isTechnician 
-            ? completedServicesInRange.filter(s => s.technicianId === person.id)
+        const technicalServices = isTechnician ? completedServicesInRange.filter(s => s.technicianId === person.id) : [];
+
+        // For advisors, count any service they created within the date range, regardless of status.
+        const advisorServices = isAdvisor
+            ? allServices.filter(s => {
+                const relevantDate = getRelevantDate(s);
+                return s.serviceAdvisorId === person.id && relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval);
+            })
             : [];
             
         // Use a Set to avoid double-counting revenue if a person is both advisor and tech on the same service
@@ -161,7 +166,6 @@ export function PersonalPageComponent({
         const commission = netProfitForCommissions * (person.commissionRate || 0);
         const totalSalary = (person.monthlySalary || 0) + commission;
 
-        // Display all valid roles, not just those matching 'areas'
         const allValidRoles = (person.roles || []).filter(role => !!role?.trim());
 
         return {

@@ -13,7 +13,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { ServiceForm } from './form';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from '@/types';
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord, Personnel } from '@/types';
 import { useToast } from '@/hooks/use-toast'; 
 import { operationsService } from '@/lib/services';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { Ban } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 
 interface ServiceDialogProps {
@@ -28,7 +29,7 @@ interface ServiceDialogProps {
   service?: ServiceRecord | null; 
   quote?: Partial<QuoteRecord> | null; // For quote mode initialization
   vehicles: Vehicle[]; 
-  technicians: Technician[]; 
+  technicians: Personnel[]; 
   inventoryItems: InventoryItem[]; 
   serviceTypes: ServiceTypeRecord[];
   onSave?: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
@@ -106,7 +107,19 @@ export function ServiceDialog({
     }
 
     try {
-        const savedRecord = await operationsService.saveService(formData);
+        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+        
+        const dataWithAdvisor = {
+          ...formData,
+          // Only add advisor info if it's not already there (for new records)
+          ...(!formData.id && currentUser && {
+            serviceAdvisorId: currentUser.id,
+            serviceAdvisorName: currentUser.name,
+          }),
+        };
+
+        const savedRecord = await operationsService.saveService(dataWithAdvisor);
         toast({ title: `Registro ${formData.id ? 'actualizado' : 'creado'} con éxito.` });
         if (onSave) {
             await onSave(savedRecord);
