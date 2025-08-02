@@ -357,12 +357,6 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
 
     <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
         <DialogContent className="sm:max-w-2xl">
-            <DialogHeader className="text-center pb-4">
-                <DialogTitle>Asistente de Revisión de Seguridad</DialogTitle>
-                <DialogDescription>
-                    Complete cada punto de la inspección de manera secuencial.
-                </DialogDescription>
-            </DialogHeader>
             <div className="p-4">
               <GuidedInspectionWizard 
                   inspectionItems={inspectionGroups.flatMap(g => g.items)}
