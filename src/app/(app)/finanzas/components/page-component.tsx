@@ -138,7 +138,7 @@ export function FinanzasPageComponent({
                 .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "");
 
-            if (normalizedRole.includes('tecnico')) {
+            if (normalizedRole === 'tecnico') {
                 totals.totalTechnicianSalaries += person.monthlySalary || 0;
             } else {
                 totals.totalAdministrativeSalaries += person.monthlySalary || 0;
