@@ -44,7 +44,7 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
     };
 
     return (
-        <div className="flex flex-col h-full p-4">
+        <div className="flex flex-col h-full p-1">
             <Progress value={progress} className="w-full mb-4" />
             <div className="text-center mb-4">
                 <p className="text-sm text-muted-foreground">Punto {currentIndex + 1} de {inspectionItems.length}</p>
@@ -81,36 +81,38 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
                                     </Button>
                                 ))}
                             </div>
-
-                             <FormField
-                                control={control}
-                                name={`${currentItem.name}.notes` as any}
-                                render={({ field: notesField }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Notas</FormLabel>
-                                    <FormControl>
-                                      <Textarea
-                                        placeholder="Detalles sobre este punto..."
-                                        rows={2}
-                                        className="text-sm"
-                                        {...notesField}
-                                      />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                              
-                               <div>
-                                  <FormLabel className="text-xs">Fotos</FormLabel>
-                                   <p className="text-xs text-muted-foreground">Sube hasta 2 fotos como evidencia.</p>
-                                   {/* Placeholder for PhotoUploader functionality */}
-                                   <div className="mt-2 p-4 border-2 border-dashed rounded-md flex items-center justify-center h-24">
-                                      <Button type="button" variant="ghost">
-                                          <Camera className="mr-2 h-5 w-5"/>
-                                          Añadir Foto
-                                      </Button>
+                            
+                            <div className="bg-card rounded-md p-4 border space-y-4">
+                                 <FormField
+                                    control={control}
+                                    name={`${currentItem.name}.notes` as any}
+                                    render={({ field: notesField }) => (
+                                      <FormItem>
+                                        <FormLabel className="text-xs">Notas</FormLabel>
+                                        <FormControl>
+                                          <Textarea
+                                            placeholder="Detalles sobre este punto..."
+                                            rows={2}
+                                            className="text-sm bg-white"
+                                            {...notesField}
+                                          />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                  
+                                   <div>
+                                      <FormLabel className="text-xs">Fotos</FormLabel>
+                                       <p className="text-xs text-muted-foreground">Sube hasta 2 fotos como evidencia.</p>
+                                       {/* Placeholder for PhotoUploader functionality */}
+                                       <div className="mt-2 p-4 border-2 border-dashed rounded-md flex items-center justify-center h-24 bg-white">
+                                          <Button type="button" variant="ghost">
+                                              <Camera className="mr-2 h-5 w-5"/>
+                                              Añadir Foto
+                                          </Button>
+                                       </div>
                                    </div>
-                               </div>
+                            </div>
 
                         </div>
                     )}
@@ -118,7 +120,7 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
             </div>
 
             <div className="flex justify-between items-center pt-4 mt-auto">
-                <Button type="button" variant="outline" onClick={goToPrev} disabled={currentIndex === 0}>
+                <Button type="button" variant="outline" onClick={goToPrev} disabled={currentIndex === 0} className="bg-white">
                     <ArrowLeft className="mr-2 h-4 w-4"/>
                     Anterior
                 </Button>
