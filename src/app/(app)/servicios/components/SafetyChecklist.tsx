@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Signature, BrainCircuit, Loader2, Camera, Trash2, Eye } from "lucide-react";
+import { Check, Signature, BrainCircuit, Loader2, Camera, Trash2, Eye, PlayCircle } from "lucide-react";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import type { SafetyInspection, SafetyCheckStatus, SafetyCheckValue } from '@/types';
 import { cn } from "@/lib/utils";
@@ -273,7 +273,15 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      
+       <div className="px-6 pb-6">
+          <Button type="button" className="w-full" size="lg" variant="outline" disabled={isReadOnly}>
+              <PlayCircle className="mr-2 h-5 w-5"/>
+              Iniciar Revisión Guiada
+          </Button>
+      </div>
+
+      <CardContent className="space-y-6 pt-0">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           {inspectionGroups.map(group => (
             <div key={group.title}>
