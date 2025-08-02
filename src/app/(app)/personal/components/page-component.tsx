@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 import { calculateSaleProfit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { parseDate } from '@/lib/forms';
 import { AreasContent } from './areas-content';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 
 const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | "black" => {
     const lowerCaseRole = role.toLowerCase();
@@ -119,17 +119,24 @@ export function PersonalPageComponent({
     const interval = { start: from, end: to };
 
     // --- Start of new logic for revenue calculation ---
-    const getRelevantDate = (s: ServiceRecord): Date | null => {
-        if (s.status === 'Cotizacion') return parseDate(s.quoteDate);
-        if (s.status === 'Agendado') return parseDate(s.serviceDate);
-        if (s.status === 'En Taller') return parseDate(s.receptionDateTime);
-        // For 'Entregado' and 'Cancelado', we consider when it was created/received for revenue generation purposes
-        return parseDate(s.receptionDateTime) || parseDate(s.serviceDate) || parseDate(s.quoteDate);
+    const getAdminRelevantDate = (s: ServiceRecord): Date | null => {
+        // For admin work, the creation date is what matters.
+        return parseDate(s.quoteDate) || parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
     };
 
-    const servicesRelevantForPeriod = allServices.filter(s => {
-        const relevantDate = getRelevantDate(s);
+    const getTechnicianRelevantDate = (s: ServiceRecord): Date | null => {
+        // For technical work, the date it was *in the workshop* matters.
+        return parseDate(s.receptionDateTime) || parseDate(s.serviceDate);
+    };
+
+    const servicesRelevantForAdmin = allServices.filter(s => {
+        const relevantDate = getAdminRelevantDate(s);
         return relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval) && s.status !== 'Cancelado';
+    });
+
+    const servicesRelevantForTechnician = allServices.filter(s => {
+        const relevantDate = getTechnicianRelevantDate(s);
+        return relevantDate && isValid(relevantDate) && isWithinInterval(relevantDate, interval) && s.status !== 'Cancelado' && s.status !== 'Cotizacion';
     });
     // --- End of new logic for revenue calculation ---
 
@@ -151,19 +158,17 @@ export function PersonalPageComponent({
         const isAdministrative = personRoles.has('administrativo');
 
         const technicalWorkValue = isTechnician
-            ? servicesRelevantForPeriod
+            ? servicesRelevantForTechnician
                 .filter(s => s.technicianId === person.id)
                 .reduce((sum, s) => sum + (s.totalCost || 0), 0)
             : 0;
 
         const administrativeWorkValue = isAdministrative
-            ? servicesRelevantForPeriod
+            ? servicesRelevantForAdmin
                 .filter(s => s.serviceAdvisorId === person.id)
                 .reduce((sum, s) => sum + (s.totalCost || 0), 0)
             : 0;
         
-        // This is a simplified sum. If a person is both, they get credit for both actions.
-        // A more complex logic could avoid double-counting if they were both advisor and tech on the same service.
         const generatedRevenue = technicalWorkValue + administrativeWorkValue;
         
         const commission = netProfitForCommissions * (person.commissionRate || 0);
