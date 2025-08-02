@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 const personnelFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
-  roles: z.array(z.string()).min(1, "Debe seleccionar al menos un área/rol."),
+  roles: z.array(z.string()).min(1, "Debe seleccionar al menos un área/función."),
   contactInfo: z.string().min(7, "El teléfono debe tener al menos 7 caracteres.").optional().or(z.literal('')),
   hireDate: z.string().optional(),
   monthlySalary: z.coerce.number().min(0, "El sueldo no puede ser negativo.").optional(),
@@ -82,25 +82,25 @@ export function PersonnelForm({ id, initialData, onSubmit, appRoles }: Personnel
                 <FormItem>
                     <FormLabel>Áreas o Funciones Asignados</FormLabel>
                     <div className="space-y-2 rounded-md border p-4">
-                        {appRoles.map((role) => (
+                        {appRoles.map((area) => (
                         <FormField
-                            key={role.id}
+                            key={area.id}
                             control={form.control}
                             name="roles"
                             render={({ field }) => {
                             return (
-                                <FormItem key={role.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormItem key={area.id} className="flex flex-row items-start space-x-3 space-y-0">
                                 <FormControl>
                                     <Checkbox
-                                        checked={field.value?.includes(role.name)}
+                                        checked={field.value?.includes(area.name)}
                                         onCheckedChange={(checked) => {
                                             return checked
-                                            ? field.onChange([...(field.value || []), role.name])
-                                            : field.onChange(field.value?.filter((value) => value !== role.name))
+                                            ? field.onChange([...(field.value || []), area.name])
+                                            : field.onChange(field.value?.filter((value) => value !== area.name))
                                         }}
                                     />
                                 </FormControl>
-                                <FormLabel className="font-normal">{role.name}</FormLabel>
+                                <FormLabel className="font-normal">{area.name}</FormLabel>
                                 </FormItem>
                             )
                             }}

@@ -20,11 +20,8 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const getRoleBadgeVariant = (role: string): "black" | "white" | "lightGray" | "outline" => {
+const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" => {
     const lowerCaseRole = role.toLowerCase();
-    if (lowerCaseRole === 'admin' || lowerCaseRole === 'superadministrador') {
-        return 'black';
-    }
     if (lowerCaseRole === 'administrativo') {
         return 'white';
     }
