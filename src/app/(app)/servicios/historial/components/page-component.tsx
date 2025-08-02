@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
 import { isToday, startOfMonth, endOfMonth, compareDesc } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ServiceAppointmentCard } from "../../components/ServiceAppointmentCard";
+import { ServiceAppointmentCard } from '../../components/ServiceAppointmentCard';
 import { Loader2 } from "lucide-react";
 import { operationsService, inventoryService, personnelService, adminService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
@@ -124,10 +124,10 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
             return priorityA - priorityB;
         }
         // Use reception date for sorting, fallback to service date
-        const dateA = parseDate(a.receptionDateTime || a.serviceDate);
-        const dateB = parseDate(b.receptionDateTime || b.serviceDate);
+        const dateA = parseDate(a.receptionDateTime) || parseDate(a.serviceDate);
+        const dateB = parseDate(b.receptionDateTime) || parseDate(b.serviceDate);
 
-        if (!dateA) return 1; // Put services without a date at the end
+        if (!dateA) return 1;
         if (!dateB) return -1;
         
         return compareDesc(dateA, dateB);
@@ -410,7 +410,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
               ref={ticketContentRef}
               service={recordForTicket}
               vehicle={vehicles.find(v => v.id === recordForTicket.vehicleId)}
-              technician={personnel.find(t => t.id === recordForTicket.technicianId)}
               previewWorkshopInfo={workshopInfo || undefined}
             />
           </div>
