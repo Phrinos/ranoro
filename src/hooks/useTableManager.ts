@@ -13,6 +13,7 @@ interface UseTableManagerOptions<T> {
   initialDateRange?: DateRange;
   searchKeys: (keyof T | string)[]; // Allow string for nested keys
   dateFilterKey: keyof T | string; // Allow string for nested keys
+  itemsPerPage?: number;
 }
 
 // Helper to get nested property value
@@ -26,11 +27,13 @@ export function useTableManager<T extends { [key: string]: any }>({
   initialDateRange,
   searchKeys,
   dateFilterKey,
+  itemsPerPage = 20,
 }: UseTableManagerOptions<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<string>(initialSortOption);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(initialDateRange);
   const [otherFilters, setOtherFilters] = useState<Record<string, string | 'all'>>({});
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (initialDateRange) {
@@ -39,7 +42,7 @@ export function useTableManager<T extends { [key: string]: any }>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array ensures this runs only once on mount
 
-  const filteredData = useMemo(() => {
+  const processedAndSortedData = useMemo(() => {
     let data = [...initialData];
 
     if (searchTerm) {
@@ -106,9 +109,30 @@ export function useTableManager<T extends { [key: string]: any }>({
 
     return data;
   }, [initialData, searchTerm, sortOption, dateRange, otherFilters, searchKeys, dateFilterKey]);
+  
+  // Reset to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortOption, dateRange, otherFilters]);
+  
+  const totalItems = processedAndSortedData.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return processedAndSortedData.slice(startIndex, startIndex + itemsPerPage);
+  }, [processedAndSortedData, currentPage, itemsPerPage]);
+
+  const goToNextPage = () => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  };
+  
+  const goToPreviousPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
 
   return {
-    filteredData,
+    // Original state and setters
     searchTerm,
     setSearchTerm,
     sortOption,
@@ -117,5 +141,16 @@ export function useTableManager<T extends { [key: string]: any }>({
     setDateRange,
     otherFilters,
     setOtherFilters,
+    // Derived/Paginated data
+    filteredData: paginatedData,
+    // Pagination state and handlers
+    currentPage,
+    totalPages,
+    totalItems,
+    goToNextPage,
+    goToPreviousPage,
+    canGoNext: currentPage < totalPages,
+    canGoPrevious: currentPage > 1,
+    paginationSummary: `Mostrando ${paginatedData.length > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0} a ${Math.min(currentPage * itemsPerPage, totalItems)} de ${totalItems} resultados`,
   };
 }

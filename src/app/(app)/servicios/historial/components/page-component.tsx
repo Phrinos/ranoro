@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { ServiceDialog } from "../../components/dialog";
+import { ServiceDialog } from "../../components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../../components/PaymentDetailsDialog';
 import { TableToolbar } from '@/components/shared/table-toolbar';
@@ -21,7 +21,7 @@ import { writeBatch } from 'firebase/firestore';
 import { TicketContent } from '@/components/ticket-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
-import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
+import { Printer, Copy, MessageSquare, Share2, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
@@ -132,12 +132,16 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     return { activeServices: sortedActiveServices, historicalServices: allServices };
   }, [allServices]);
 
-  const { filteredData: filteredHistorical, ...historicalTableManager } = useTableManager<ServiceRecord>({
+  const { 
+    filteredData: filteredHistorical,
+    ...historicalTableManager
+  } = useTableManager<ServiceRecord>({
     initialData: historicalServices,
-    searchKeys: ["id", "vehicleIdentifier", "description"],
+    searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
     dateFilterKey: "deliveryDateTime",
     initialSortOption: "deliveryDateTime_desc",
     initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
+    itemsPerPage: 10,
   });
   
   const handleSaveRecord = useCallback(async (data: QuoteRecord | ServiceRecord) => {
@@ -324,18 +328,8 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
 
         <TabsContent value="historial" className="mt-0 space-y-4">
           <TableToolbar 
-            searchTerm={historicalTableManager.searchTerm}
-            onSearchTermChange={historicalTableManager.setSearchTerm}
+            {...historicalTableManager}
             searchPlaceholder="Buscar por folio, placa..."
-            dateRange={historicalTableManager.dateRange}
-            onDateRangeChange={historicalTableManager.setDateRange}
-            sortOption={historicalTableManager.sortOption}
-            onSortOptionChange={historicalTableManager.setSortOption}
-            otherFilters={{
-                status: historicalTableManager.otherFilters['status'] || 'all',
-                paymentMethod: historicalTableManager.otherFilters['paymentMethod'] || 'all',
-            }}
-            onFilterChange={historicalTableManager.setOtherFilters}
             filterOptions={[
                 { value: 'status', label: 'Estado', options: serviceStatusOptions },
                 { value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions },

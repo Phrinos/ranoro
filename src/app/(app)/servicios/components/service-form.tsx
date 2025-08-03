@@ -375,6 +375,12 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     dataToSubmit.subTotal = totalCost / (1 + IVA);
     dataToSubmit.taxAmount = totalCost - (totalCost / (1 + IVA));
 
+    // Get technician name from ID to save it
+    if (dataToSubmit.technicianId) {
+        const technician = technicians.find(t => t.id === dataToSubmit.technicianId);
+        dataToSubmit.technicianName = technician?.name || null;
+    }
+
     // Ensure advisor signature is a data URL if it's a new service
     if (!initialDataService?.id && dataToSubmit.serviceAdvisorSignatureDataUrl && !dataToSubmit.serviceAdvisorSignatureDataUrl.startsWith('data:')) {
         const authUser = JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) || 'null');

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Filter } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -36,6 +37,11 @@ interface TableToolbarProps {
   onFilterChange: (filters: Record<string, string | 'all'>) => void;
   filterOptions?: FilterGroup[];
   searchPlaceholder?: string;
+  paginationSummary?: string;
+  canGoPrevious?: boolean;
+  canGoNext?: boolean;
+  onPreviousPage?: () => void;
+  onNextPage?: () => void;
 }
 
 export const TableToolbar: React.FC<TableToolbarProps> = ({
@@ -53,6 +59,11 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   onFilterChange,
   filterOptions = [],
   searchPlaceholder = 'Buscar...',
+  paginationSummary,
+  canGoPrevious,
+  canGoNext,
+  onPreviousPage,
+  onNextPage,
 }) => {
     
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -86,8 +97,8 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     
     
   return (
-    <div className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
+    <div className="space-y-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
           <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -165,6 +176,21 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
             </DropdownMenu>
           </div>
         </div>
+         {paginationSummary !== undefined && (
+            <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">{paginationSummary}</p>
+                <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm" onClick={onPreviousPage} disabled={!canGoPrevious}>
+                        <ChevronLeft className="h-4 w-4" />
+                        Anterior
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={onNextPage} disabled={!canGoNext}>
+                        Siguiente
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+        )}
     </div>
   );
 };
