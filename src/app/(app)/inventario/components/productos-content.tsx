@@ -3,18 +3,19 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { InventoryItem } from '@/types';
-import { Search, ListFilter, PlusCircle, Printer } from 'lucide-react';
+import type { InventoryItem, Supplier } from '@/types';
+import { Search, ListFilter, PlusCircle, Printer, DollarSign, AlertTriangle, Package } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 
 interface ProductosContentProps {
   inventoryItems: InventoryItem[];
+  suppliers: Supplier[];
   onNewItem: () => void;
   onPrint: (items: InventoryItem[]) => void;
 }
@@ -28,7 +29,7 @@ const getSortPriority = (item: InventoryItem): number => {
 };
 
 
-export function ProductosContent({ inventoryItems, onNewItem, onPrint }: ProductosContentProps) {
+export function ProductosContent({ inventoryItems, suppliers, onNewItem, onPrint }: ProductosContentProps) {
   
   const { filteredData: filteredAndSortedItems, ...tableManager } = useTableManager<InventoryItem>({
     initialData: inventoryItems,
@@ -37,6 +38,26 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
     initialSortOption: 'default_order',
     itemsPerPage: 100,
   });
+
+  const summary = React.useMemo(() => {
+    let cost = 0, sellingPriceValue = 0, lowStock = 0, products = 0, services = 0;
+    inventoryItems.forEach(item => {
+      if (item.isService) services++;
+      else {
+        products++;
+        cost += item.quantity * item.unitPrice;
+        sellingPriceValue += item.quantity * item.sellingPrice;
+        if (item.quantity <= item.lowStockThreshold) lowStock++;
+      }
+    });
+    return { 
+        totalInventoryCost: cost, 
+        totalInventorySellingPrice: sellingPriceValue, 
+        lowStockItemsCount: lowStock, 
+        productsCount: products, 
+        servicesCount: services, 
+    };
+  }, [inventoryItems]);
 
   // Override the default sorting logic with our custom function
   const customSortedItems = React.useMemo(() => {
@@ -78,6 +99,11 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
 
   return (
     <div className="space-y-4">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Costo Total del Inventario</CardTitle><DollarSign className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">${summary.totalInventoryCost.toLocaleString('es-ES')}</div><p className="text-xs text-muted-foreground">Valor de venta: ${summary.totalInventorySellingPrice.toLocaleString('es-ES')}</p></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summary.lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summary.productsCount + summary.servicesCount}</div><p className="text-xs text-muted-foreground">{summary.productsCount} Productos y {summary.servicesCount} Servicios.</p></CardContent></Card>
+        </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>

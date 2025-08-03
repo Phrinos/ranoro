@@ -15,6 +15,7 @@ import type { PurchaseFormValues } from './register-purchase-dialog';
 import { InformeContent } from './informe-content';
 import { ProductosContent } from './productos-content';
 import { CategoriasContent } from './categorias-content';
+import { ProveedoresPageComponent } from '../../proveedores/components/page-component';
 import { AnalisisIaContent } from './analisis-ia-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
@@ -204,8 +205,6 @@ export function InventarioPageComponent({
         
         <TabsContent value="informe" className="mt-6">
             <InformeContent 
-                inventoryItems={inventoryItems} 
-                suppliers={suppliers}
                 onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
                 movements={inventoryMovements}
             />
@@ -213,6 +212,7 @@ export function InventarioPageComponent({
         <TabsContent value="productos" className="mt-6">
             <ProductosContent 
                 inventoryItems={inventoryItems} 
+                suppliers={suppliers}
                 onNewItem={handleOpenItemDialog}
                 onPrint={handlePrint}
             />
