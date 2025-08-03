@@ -1,36 +1,52 @@
 
-
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { InventoryItem } from '@/types';
-import { Search, ListFilter, PlusCircle, Printer, DollarSign, AlertTriangle, Package } from 'lucide-react';
+import { PlusCircle, Printer, DollarSign, AlertTriangle, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
+import type { InventoryItem } from '@/types';
 
 const getSortPriority = (item: InventoryItem): number => {
-    if (item.isService) return 0; // Highest priority
-    if (item.quantity > item.lowStockThreshold) return 1; // Normal stock
-    if (item.quantity > 0 && item.quantity <= item.lowStockThreshold) return 2; // Low stock
-    if (item.quantity === 0) return 3; // Out of stock
-    return 4; // Should not happen
+    // Services have the lowest priority to appear at the end unless specifically sorted.
+    if (item.isService) return 4; 
+    if (item.quantity === 0) return 1; // Out of stock
+    if (item.quantity <= item.lowStockThreshold) return 2; // Low stock
+    return 3; // Normal stock
 };
 
 
 export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inventoryItems: InventoryItem[], onNewItem: () => void, onPrint: (items: InventoryItem[]) => void }) {
   
-  const { filteredData: filteredAndSortedItems, ...tableManager } = useTableManager<InventoryItem>({
+  const { 
+    filteredData, 
+    ...tableManager 
+  } = useTableManager<InventoryItem>({
     initialData: inventoryItems,
     searchKeys: ['name', 'sku', 'brand', 'category'],
-    dateFilterKey: '', // No date filter needed for this table
+    dateFilterKey: '', // Not used here
     initialSortOption: 'default_order',
     itemsPerPage: 100,
   });
+
+  const customSortedItems = React.useMemo(() => {
+    const items = [...filteredData]; // Use the already filtered data
+    if (tableManager.sortOption === 'default_order') {
+        return items.sort((a, b) => {
+            const priorityA = getSortPriority(a);
+            const priorityB = getSortPriority(b);
+            if (priorityA !== priorityB) {
+                return priorityA - priorityB;
+            }
+            return a.name.localeCompare(b.name);
+        });
+    }
+    // For any other sort option, the useTableManager hook has already sorted it.
+    return items; 
+  }, [filteredData, tableManager.sortOption]);
 
   const summary = React.useMemo(() => {
     let cost = 0, sellingPriceValue = 0, lowStock = 0, products = 0, services = 0;
@@ -38,9 +54,9 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
       if (item.isService) services++;
       else {
         products++;
-        cost += item.quantity * item.unitPrice;
-        sellingPriceValue += item.quantity * item.sellingPrice;
-        if (item.quantity <= item.lowStockThreshold) lowStock++;
+        cost += (item.quantity || 0) * (item.unitPrice || 0);
+        sellingPriceValue += (item.quantity || 0) * (item.sellingPrice || 0);
+        if ((item.quantity || 0) <= (item.lowStockThreshold || 0)) lowStock++;
       }
     });
     return { 
@@ -51,30 +67,6 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
         servicesCount: services, 
     };
   }, [inventoryItems]);
-
-  // Override the default sorting logic with our custom function
-  const customSortedItems = React.useMemo(() => {
-    const items = [...filteredAndSortedItems]; // Use the already filtered data
-    if (tableManager.sortOption === 'default_order') {
-        return items.sort((a, b) => {
-            const priorityA = getSortPriority(a);
-            const priorityB = getSortPriority(b);
-
-            if (priorityA !== priorityB) {
-                return priorityA - priorityB;
-            }
-
-            // If priorities are the same, apply secondary sorting
-            if (a.isService) { // Both are services, sort by name
-                return a.name.localeCompare(b.name);
-            }
-            // All other product groups, sort by quantity descending
-            return (b.quantity || 0) - (a.quantity || 0);
-        });
-    }
-    return items; // Return the data sorted by the tableManager for other options
-  }, [filteredAndSortedItems, tableManager.sortOption]);
-
 
   const handlePrint = () => {
     onPrint(customSortedItems);
@@ -97,6 +89,7 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summary.lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summary.productsCount + summary.servicesCount}</div><p className="text-xs text-muted-foreground">{summary.productsCount} Productos y {summary.servicesCount} Servicios.</p></CardContent></Card>
         </div>
+        
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
@@ -109,18 +102,27 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
                 </Button>
             </div>
         </div>
+
         <TableToolbar
             {...tableManager}
-            sortOption={tableManager.sortOption}
-            onSortOptionChange={(value) => tableManager.setSortOption(value)}
-            searchPlaceholder="Buscar por nombre, SKU, marca..."
+            onDateRangeChange={tableManager.setDateRange}
             sortOptions={sortOptions}
-            paginationSummary={tableManager.paginationSummary}
-            onPreviousPage={tableManager.goToPreviousPage}
-            onNextPage={tableManager.goToNextPage}
-            canGoPrevious={tableManager.canGoPrevious}
-            canGoNext={tableManager.canGoNext}
+            searchPlaceholder="Buscar por nombre, SKU, marca..."
         />
+
+        <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
+            <div className="flex items-center space-x-2">
+                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                </Button>
+                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
+                    Siguiente
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
       
       <Card>
         <CardContent className="pt-0">
