@@ -44,22 +44,10 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
 
   return (
     <div className="space-y-4">
-        <div className="space-y-2">
-            <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
-            <p className="text-muted-foreground">Administra productos, servicios y niveles de stock.</p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex-1 w-full sm:w-auto">
-                 <TableToolbar
-                    {...tableManager}
-                    searchPlaceholder="Buscar por nombre, SKU, marca..."
-                    sortOptions={sortOptions}
-                    paginationSummary={tableManager.paginationSummary}
-                    onPreviousPage={tableManager.goToPreviousPage}
-                    onNextPage={tableManager.goToNextPage}
-                    canGoPrevious={tableManager.canGoPrevious}
-                    canGoNext={tableManager.canGoNext}
-                />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
+                <p className="text-muted-foreground">Administra productos, servicios y niveles de stock.</p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
                 <Button onClick={handlePrint} variant="outline" className="w-full sm:w-auto bg-card"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>
@@ -68,6 +56,16 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
                 </Button>
             </div>
         </div>
+        <TableToolbar
+            {...tableManager}
+            searchPlaceholder="Buscar por nombre, SKU, marca..."
+            sortOptions={sortOptions}
+            paginationSummary={tableManager.paginationSummary}
+            onPreviousPage={tableManager.goToPreviousPage}
+            onNextPage={tableManager.goToNextPage}
+            canGoPrevious={tableManager.canGoPrevious}
+            canGoNext={tableManager.canGoNext}
+        />
       
       <Card>
         <CardContent className="pt-0">
@@ -77,3 +75,4 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
     </div>
   );
 }
+
