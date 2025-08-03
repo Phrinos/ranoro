@@ -1,19 +1,11 @@
 
 "use client";
 
-import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from "@/components/ui/dialog";
+import React, { useState } from 'react';
+import { FormDialog } from '@/components/shared/form-dialog';
 import { UserForm, type UserFormValues } from "./user-form";
 import type { User, AppRole } from "@/types";
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserDialogProps {
   open: boolean;
@@ -24,32 +16,38 @@ interface UserDialogProps {
 }
 
 export function UserDialog({ open, onOpenChange, user, roles, onSave }: UserDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (values: UserFormValues) => {
+    setIsSubmitting(true);
+    try {
+      await onSave(values);
+      onOpenChange(false);
+    } catch (error) {
+      toast({ title: "Error al guardar", description: "No se pudo guardar el usuario.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b">
-          <DialogTitle>{user ? "Editar Usuario" : "Nuevo Usuario"}</DialogTitle>
-          <DialogDescription>
-            {user ? "Actualiza los detalles del usuario." : "Completa la información para un nuevo miembro del equipo."}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex-grow overflow-y-auto px-6 py-4">
-            <UserForm
-              id="user-form"
-              initialData={user}
-              roles={roles}
-              onSubmit={onSave}
-            />
-        </div>
-        <DialogFooter className="p-6 pt-4 border-t bg-background flex-shrink-0">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-            </Button>
-            <Button type="submit" form="user-form">
-                {user ? "Actualizar Usuario" : "Crear Usuario"}
-            </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={user ? "Editar Usuario" : "Nuevo Usuario"}
+      description={user ? "Actualiza los detalles del usuario." : "Completa la información para un nuevo miembro del equipo."}
+      formId="user-form"
+      isSubmitting={isSubmitting}
+      submitButtonText={user ? "Actualizar Usuario" : "Crear Usuario"}
+      dialogContentClassName="sm:max-w-lg"
+    >
+      <UserForm
+        id="user-form"
+        initialData={user}
+        roles={roles}
+        onSubmit={handleSubmit}
+      />
+    </FormDialog>
   );
 }

@@ -18,12 +18,12 @@ const debtFormSchema = z.object({
 export type DebtFormValues = z.infer<typeof debtFormSchema>;
 
 interface DebtFormProps {
+  id: string;
   onSubmit: (values: DebtFormValues) => Promise<void>;
-  onClose: () => void;
   initialData?: Partial<DebtFormValues>;
 }
 
-export function DebtForm({ onSubmit, onClose, initialData }: DebtFormProps) {
+export function DebtForm({ id, onSubmit, initialData }: DebtFormProps) {
   const form = useForm<DebtFormValues>({
     resolver: zodResolver(debtFormSchema),
     defaultValues: initialData || {
@@ -34,7 +34,7 @@ export function DebtForm({ onSubmit, onClose, initialData }: DebtFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form id={id} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="amount"
@@ -64,12 +64,6 @@ export function DebtForm({ onSubmit, onClose, initialData }: DebtFormProps) {
             </FormItem>
           )}
         />
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : "Registrar Adeudo"}
-          </Button>
-        </div>
       </form>
     </Form>
   );

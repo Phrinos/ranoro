@@ -25,12 +25,12 @@ const paperworkSchema = z.object({
 export type PaperworkFormValues = z.infer<typeof paperworkSchema>;
 
 interface PaperworkFormProps {
+  id: string;
   initialData?: VehiclePaperwork | null;
   onSubmit: (values: PaperworkFormValues) => void;
-  onClose: () => void;
 }
 
-export function PaperworkForm({ initialData, onSubmit, onClose }: PaperworkFormProps) {
+export function PaperworkForm({ id, initialData, onSubmit }: PaperworkFormProps) {
   const form = useForm<PaperworkFormValues>({
     resolver: zodResolver(paperworkSchema),
     defaultValues: initialData ? {
@@ -45,7 +45,7 @@ export function PaperworkForm({ initialData, onSubmit, onClose }: PaperworkFormP
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form id={id} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem><FormLabel>Nombre del Trámite</FormLabel><FormControl><Input placeholder="Ej: Verificación Vehicular" {...field} /></FormControl><FormMessage /></FormItem>
         )}/>
@@ -64,10 +64,6 @@ export function PaperworkForm({ initialData, onSubmit, onClose }: PaperworkFormP
         <FormField control={form.control} name="notes" render={({ field }) => (
           <FormItem><FormLabel>Notas (Opcional)</FormLabel><FormControl><Textarea placeholder="Detalles adicionales sobre el trámite..." {...field} /></FormControl><FormMessage /></FormItem>
         )}/>
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button type="submit">Guardar Trámite</Button>
-        </div>
       </form>
     </Form>
   );

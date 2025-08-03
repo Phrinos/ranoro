@@ -1,18 +1,11 @@
 
 "use client";
 
-import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from "@/components/ui/dialog";
+import React, { useState } from 'react';
+import { FormDialog } from '@/components/shared/form-dialog';
 import { DriverForm, type DriverFormValues } from "./driver-form";
 import type { Driver } from "@/types";
-import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface DriverDialogProps {
   open: boolean;
@@ -22,31 +15,36 @@ interface DriverDialogProps {
 }
 
 export function DriverDialog({ open, onOpenChange, driver, onSave }: DriverDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (values: DriverFormValues) => {
+    setIsSubmitting(true);
+    try {
+      await onSave(values);
+      onOpenChange(false);
+    } catch (error) {
+      toast({ title: "Error al guardar", description: "No se pudo guardar el conductor.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b">
-          <DialogTitle>{driver ? "Editar Conductor" : "Nuevo Conductor"}</DialogTitle>
-          <DialogDescription>
-            {driver ? "Actualiza los detalles del conductor." : "Completa la información para registrar un nuevo conductor."}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex-grow overflow-y-auto px-6 py-4">
-            <DriverForm
-              id="driver-form"
-              initialData={driver}
-              onSubmit={onSave}
-            />
-        </div>
-        <DialogFooter className="p-6 pt-4 border-t bg-background flex-shrink-0">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
-            </Button>
-            <Button type="submit" form="driver-form">
-                {driver ? "Actualizar Conductor" : "Crear Conductor"}
-            </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={driver ? "Editar Conductor" : "Nuevo Conductor"}
+      description={driver ? "Actualiza los detalles del conductor." : "Completa la información para registrar un nuevo conductor."}
+      formId="driver-form"
+      isSubmitting={isSubmitting}
+      submitButtonText={driver ? "Actualizar Conductor" : "Crear Conductor"}
+    >
+      <DriverForm
+        id="driver-form"
+        initialData={driver}
+        onSubmit={handleSubmit}
+      />
+    </FormDialog>
   );
 }

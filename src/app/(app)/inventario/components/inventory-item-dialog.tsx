@@ -2,15 +2,7 @@
 "use client";
 
 import React, { useState, useCallback } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { FormDialog } from '@/components/shared/form-dialog';
 import { InventoryItemForm, type InventoryItemFormValues } from "./inventory-item-form";
 import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +10,6 @@ import { SupplierDialog } from "../../proveedores/components/supplier-dialog";
 import { CategoryDialog } from './category-dialog';
 import { inventoryService } from '@/lib/services';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
-import { Button } from '@/components/ui/button';
 
 interface InventoryItemDialogProps {
   trigger?: React.ReactNode;
@@ -40,6 +31,7 @@ export function InventoryItemDialog({
   suppliers,
 }: InventoryItemDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
@@ -59,6 +51,7 @@ export function InventoryItemDialog({
   const isEditing = item && 'id' in item && item.id; 
 
   const handleSubmit = async (values: InventoryItemFormValues) => {
+    setIsSubmitting(true);
     try {
       if (onSave) {
         await onSave(values);
@@ -71,6 +64,8 @@ export function InventoryItemDialog({
         description: "No se pudo guardar el producto. Intente de nuevo.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -79,7 +74,6 @@ export function InventoryItemDialog({
       const newSupplier = await inventoryService.saveSupplier(formData);
       toast({ title: `Proveedor Creado: ${newSupplier.name}` });
       setIsSupplierDialogOpen(false);
-      // The main page listener will update the suppliers list automatically.
     } catch (error) {
       toast({ title: "Error", description: "No se pudo crear el proveedor.", variant: "destructive" });
     }
@@ -90,7 +84,6 @@ export function InventoryItemDialog({
       await inventoryService.saveCategory({ name });
       toast({ title: `Categoría Creada: ${name}` });
       setIsCategoryDialogOpen(false);
-      // The main page listener will update the categories list automatically.
     } catch (error) {
       toast({ title: "Error", description: "No se pudo crear la categoría.", variant: "destructive" });
     }
@@ -102,50 +95,41 @@ export function InventoryItemDialog({
     name: item.name || '',
     sku: item.sku || '',
     description: item.description || '',
-    quantity: item.quantity ?? 0, // Ensure defined value
-    unitPrice: item.unitPrice ?? 0, // Ensure defined value
-    sellingPrice: item.sellingPrice ?? 0, // Ensure defined value
+    quantity: item.quantity ?? 0,
+    unitPrice: item.unitPrice ?? 0,
+    sellingPrice: item.sellingPrice ?? 0,
     lowStockThreshold: item.lowStockThreshold ?? 5,
     unitType: item.unitType || 'units',
     category: item.category || (categories.length > 0 ? categories[0].name : ''),
     supplier: item.supplier || (suppliers.length > 0 ? suppliers[0].name : ''),
-    rendimiento: item.rendimiento ?? 0, // Ensure defined value
+    rendimiento: item.rendimiento ?? 0,
     ...(isEditing && 'id' in item && {id: item.id})
   } : null;
 
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-         {trigger && !isControlled && <DialogTrigger asChild onClick={() => handleOpenChange(true)}>{trigger}</DialogTrigger>}
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0">
-          <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b">
-            <DialogTitle>{isEditing ? "Editar Producto de Inventario" : "Nuevo Producto de Inventario"}</DialogTitle>
-            <DialogDescription>
-              {isEditing ? "Actualiza los detalles del producto." : "Completa la información para un nuevo producto en el inventario."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-grow overflow-y-auto px-6 py-4">
-            <InventoryItemForm
-              id="inventory-item-form"
-              initialData={initialFormData as InventoryItem | null} 
-              onSubmit={handleSubmit}
-              categories={categories}
-              suppliers={suppliers}
-              onNewSupplier={() => setIsSupplierDialogOpen(true)}
-              onNewCategory={() => setIsCategoryDialogOpen(true)}
-            />
-          </div>
-           <DialogFooter className="p-6 pt-4 border-t bg-background flex-shrink-0 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-                Cancelar
-            </Button>
-            <Button type="submit" form="inventory-item-form">
-                 {isEditing ? "Actualizar Ítem" : "Crear Ítem"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FormDialog
+        trigger={trigger && !isControlled ? <div onClick={() => handleOpenChange(true)}>{trigger}</div> : undefined}
+        open={open}
+        onOpenChange={handleOpenChange}
+        title={isEditing ? "Editar Producto de Inventario" : "Nuevo Producto de Inventario"}
+        description={isEditing ? "Actualiza los detalles del producto." : "Completa la información para un nuevo producto en el inventario."}
+        formId="inventory-item-form"
+        isSubmitting={isSubmitting}
+        submitButtonText={isEditing ? "Actualizar Ítem" : "Crear Ítem"}
+        dialogContentClassName="sm:max-w-3xl"
+      >
+        <InventoryItemForm
+          id="inventory-item-form"
+          initialData={initialFormData as InventoryItem | null} 
+          onSubmit={handleSubmit}
+          categories={categories}
+          suppliers={suppliers}
+          onNewSupplier={() => setIsSupplierDialogOpen(true)}
+          onNewCategory={() => setIsCategoryDialogOpen(true)}
+        />
+      </FormDialog>
       
       <SupplierDialog
         open={isSupplierDialogOpen}
