@@ -255,7 +255,7 @@ export default function DashboardPage() {
     }
   };
   
-  const handleRunAnalysis = async () => {
+const handleRunAnalysis = async () => {
     setIsAnalysisLoading(true);
     setAnalysisError(null);
     setAnalysisResult(null);
@@ -263,43 +263,49 @@ export default function DashboardPage() {
     const inventoryMap = new Map(allInventory.map(item => [item.id, item]));
 
     try {
-      const inventoryForAI = allInventory.map(item => ({
-        id: item.id,
-        name: item.name,
-        sku: item.sku,
-        quantity: item.quantity,
-        lowStockThreshold: item.lowStockThreshold,
-      }));
-
-      const servicesForAI = allServices
-        .filter(service => service.serviceDate && (service.status === 'Entregado' || service.status === 'Completado'))
-        .map(service => ({
-            serviceDate: parseDate(service.serviceDate)?.toISOString(),
-            suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
-                supplyId: supply.supplyId,
-                quantity: supply.quantity,
-                supplyName: inventoryMap.get(supply.supplyId)?.name || supply.supplyName || 'Unknown',
-            })),
+        const inventoryForAI = allInventory.map(item => ({
+            id: item.id,
+            name: item.name,
+            sku: item.sku,
+            quantity: item.quantity,
+            lowStockThreshold: item.lowStockThreshold,
         }));
 
-      const result = await analyzeInventory({
-        inventoryItems: inventoryForAI,
-        serviceRecords: servicesForAI,
-      });
+        const servicesForAI = allServices
+            .map(service => {
+                const serviceDate = parseDate(service.serviceDate);
+                if (!serviceDate || !isValid(serviceDate) || (service.status !== 'Entregado' && service.status !== 'Completado')) {
+                    return null;
+                }
+                return {
+                    serviceDate: serviceDate.toISOString(),
+                    suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
+                        supplyId: supply.supplyId,
+                        quantity: supply.quantity,
+                        supplyName: inventoryMap.get(supply.supplyId)?.name || supply.supplyName || 'Unknown',
+                    })),
+                };
+            })
+            .filter((item): item is NonNullable<typeof item> => item !== null);
 
-      setAnalysisResult(result.recommendations);
-      toast({
-        title: 'Análisis Completado',
-        description: `La IA ha generado ${result.recommendations.length} recomendaciones.`,
-        variant: 'default'
-      });
+        const result = await analyzeInventory({
+            inventoryItems: inventoryForAI,
+            serviceRecords: servicesForAI,
+        });
+
+        setAnalysisResult(result.recommendations);
+        toast({
+            title: 'Análisis Completado',
+            description: `La IA ha generado ${result.recommendations.length} recomendaciones.`,
+            variant: 'default'
+        });
 
     } catch (e) {
-      setAnalysisError(handleAiError(e, toast, 'análisis de inventario'));
+        setAnalysisError(handleAiError(e, toast, 'análisis de inventario'));
     } finally {
-      setIsAnalysisLoading(false);
+        setIsAnalysisLoading(false);
     }
-  };
+};
   
   const chartData = useMemo(() => {
     const today = new Date();
