@@ -3,62 +3,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Reglas de Acceso General para Usuarios Autenticados
-    // Permite la lectura de colecciones clave para el funcionamiento de la app.
-    match /{collection}/{docId} 
-    where collection in ['vehicles', 'inventory', 'inventoryCategories', 'suppliers', 'serviceTypes', 'appRoles', 'users', 'fixedMonthlyExpenses', 'workAreas', 'drivers', 'rentalPayments', 'vehicleExpenses', 'ownerWithdrawals', 'payableAccounts'] {
-      allow read: if request.auth != null;
-    }
-    
-    // Permite a los usuarios autenticados leer y escribir en las colecciones operativas.
-    // Esto es necesario para que los flujos de IA y las funciones del lado del cliente funcionen.
-    match /{collection}/{docId}
-    where collection in ['serviceRecords', 'sales', 'cashDrawerTransactions', 'initialCashBalances', 'auditLogs', 'vehiclePriceLists'] {
-        allow read, create, update: if request.auth != null;
+    // Default-deny all reads and writes
+    // match /{document=**} {
+    //   allow read, write: if false;
+    // }
+
+    // Allow logged-in users to read/write all collections
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
 
-    // El borrado de registros de servicio y ventas debe manejarse con lógica de negocio (ej. 'cancelar').
-    // Por seguridad, se deshabilita la eliminación directa desde el cliente.
-    match /serviceRecords/{serviceId} {
-      allow delete: if false;
-    }
-    
-    match /sales/{saleId} {
-      allow delete: if false;
-    }
-    
-    // Reglas para la colección 'users'
-    match /users/{userId} {
-      // Un usuario puede leer su propia información.
-      allow read: if request.auth.uid == userId;
-      // La creación de usuarios se maneja desde el backend (funciones de admin).
-      // La actualización del perfil (nombre, teléfono) la puede hacer el propio usuario.
-      allow create: if request.auth != null; // Permitir creación por funciones de admin
-      allow update: if request.auth.uid == userId;
-      // Solo los administradores pueden eliminar usuarios (controlado en el backend).
-      allow delete: if false; 
-    }
-
-    // Reglas para Documentos Públicos
-    // Cualquiera puede leer documentos públicos, pero solo el sistema (backend autenticado) puede escribir.
+    // Public service sheets can be read by anyone, but written only by auth users
     match /publicServices/{serviceId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
     
+    // Public owner reports can be read by anyone
     match /publicOwnerReports/{reportId} {
       allow read: if true;
       allow write: if request.auth != null;
-    }
-
-    // Configuración del Taller: Solo usuarios autenticados (admins) pueden leer y escribir.
-    match /workshopConfig/{configId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Por defecto, se niega el acceso a cualquier otra colección.
-    match /{path=**} {
-      allow read, write: if false;
     }
   }
 }
