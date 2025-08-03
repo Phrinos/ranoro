@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -84,6 +83,11 @@ export function ProveedoresPageComponent() {
 
   return (
     <>
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Gestión de Proveedores</h1>
+        <p className="text-primary-foreground/80 mt-1">Administra la información, deudas y pagos de tus proveedores.</p>
+      </div>
+
       <div className="space-y-4">
         <div className="flex justify-end">
             <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Proveedor</Button>
