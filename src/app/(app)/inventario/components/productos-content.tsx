@@ -5,8 +5,10 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { InventoryItem } from '@/types';
-import { PlusCircle, Printer } from 'lucide-react';
+import { Search, ListFilter, PlusCircle, Printer } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
@@ -17,29 +19,61 @@ interface ProductosContentProps {
   onPrint: (items: InventoryItem[]) => void;
 }
 
+const getSortPriority = (item: InventoryItem): number => {
+    if (item.isService) return 0; // Highest priority
+    if (item.quantity > item.lowStockThreshold) return 1; // Normal stock
+    if (item.quantity > 0 && item.quantity <= item.lowStockThreshold) return 2; // Low stock
+    if (item.quantity === 0) return 3; // Out of stock
+    return 4; // Should not happen
+};
+
+
 export function ProductosContent({ inventoryItems, onNewItem, onPrint }: ProductosContentProps) {
   
   const { filteredData: filteredAndSortedItems, ...tableManager } = useTableManager<InventoryItem>({
     initialData: inventoryItems,
     searchKeys: ['name', 'sku', 'brand', 'category'],
     dateFilterKey: '', // No date filter needed for this table
-    initialSortOption: 'stock_status_name_asc',
+    initialSortOption: 'default_order',
     itemsPerPage: 100,
   });
 
+  // Override the default sorting logic with our custom function
+  const customSortedItems = React.useMemo(() => {
+    const items = [...filteredAndSortedItems]; // Use the already filtered data
+    if (tableManager.sortOption === 'default_order') {
+        return items.sort((a, b) => {
+            const priorityA = getSortPriority(a);
+            const priorityB = getSortPriority(b);
+
+            if (priorityA !== priorityB) {
+                return priorityA - priorityB;
+            }
+
+            // If priorities are the same, apply secondary sorting
+            if (a.isService) { // Both are services, sort by name
+                return a.name.localeCompare(b.name);
+            }
+            // All other product groups, sort by quantity descending
+            return (b.quantity || 0) - (a.quantity || 0);
+        });
+    }
+    return items; // Return the data sorted by the tableManager for other options
+  }, [filteredAndSortedItems, tableManager.sortOption]);
+
+
   const handlePrint = () => {
-    onPrint(filteredAndSortedItems);
+    onPrint(customSortedItems);
   };
 
   const sortOptions = [
-    { value: 'stock_status_name_asc', label: 'Estado de Stock' },
+    { value: 'default_order', label: 'Orden Inteligente (Recomendado)' },
     { value: 'name_asc', label: 'Nombre (A-Z)' },
     { value: 'name_desc', label: 'Nombre (Z-A)' },
     { value: 'quantity_desc', label: 'Cantidad (Mayor a Menor)' },
     { value: 'quantity_asc', label: 'Cantidad (Menor a Mayor)' },
     { value: 'price_desc', label: 'Precio (Mayor a Menor)' },
     { value: 'price_asc', label: 'Precio (Menor a Mayor)' },
-    { value: 'type_asc', label: 'Tipo (Producto/Servicio)' },
   ];
 
   return (
@@ -58,6 +92,8 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
         </div>
         <TableToolbar
             {...tableManager}
+            sortOption={tableManager.sortOption}
+            onSortOptionChange={(value) => tableManager.setSortOption(value)}
             searchPlaceholder="Buscar por nombre, SKU, marca..."
             sortOptions={sortOptions}
             paginationSummary={tableManager.paginationSummary}
@@ -69,10 +105,9 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
       
       <Card>
         <CardContent className="pt-0">
-          <InventoryTable items={filteredAndSortedItems} />
+          <InventoryTable items={customSortedItems} />
         </CardContent>
       </Card>
     </div>
   );
 }
-
