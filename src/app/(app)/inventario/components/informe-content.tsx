@@ -1,35 +1,24 @@
 
+
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import type { InventoryMovement } from '@/types';
 import {
-  calculateSaleProfit,
-} from "@/lib/placeholder-data";
-import type { InventoryItem, Supplier, InventoryMovement } from '@/types';
-import {
-  format,
-  parseISO,
-  isWithinInterval,
-  isValid,
-  startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc
+  format
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon, LineChart, ListFilter, Filter, Search, ChevronLeft, ChevronRight, ArrowUpCircle, ArrowDownCircle, ShoppingCart } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpCircle, ArrowDownCircle, ShoppingCart } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
-import type { DateRange } from "react-day-picker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { parseDate } from '@/lib/forms';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { useTableManager } from '@/hooks/useTableManager';
 import { PackageSearch } from 'lucide-react';
+import { parseDate } from '@/lib/forms';
 
 
 interface InformeContentProps {
@@ -99,9 +88,23 @@ export function InformeContent({ onRegisterPurchaseClick, movements }: InformeCo
             sortOptions={sortOptions}
             filterOptions={[{ value: 'type', label: 'Tipo de Movimiento', options: movementTypeOptions }]}
         />
+
+        <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
+            <div className="flex items-center space-x-2">
+                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                </Button>
+                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
+                    Siguiente
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
         
         <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-0">
             <div className="rounded-md border overflow-x-auto">
                 <Table>
                 <TableHeader className="bg-black">
@@ -152,20 +155,6 @@ export function InformeContent({ onRegisterPurchaseClick, movements }: InformeCo
             </div>
             </CardContent>
         </Card>
-        
-        <div className="flex items-center justify-between pt-2">
-            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
-            <div className="flex items-center space-x-2">
-                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
-                    <ChevronLeft className="h-4 w-4" />
-                    Anterior
-                </Button>
-                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
-                    Siguiente
-                    <ChevronRight className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
       </div>
     </div>
   );
