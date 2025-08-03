@@ -5,10 +5,9 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 function Redirector() {
-    // We redirect to the main inventory page, which now contains this content in a tab.
-    // The tab will be selected automatically.
-    redirect('/inventario?tab=proveedores');
-    return null; // This component will not render anything.
+    // This page is now the main entry point for suppliers
+    redirect('/proveedores');
+    return null; 
 }
 
 export default function ProveedoresRedirectPage() {

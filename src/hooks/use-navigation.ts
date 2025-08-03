@@ -1,3 +1,4 @@
+
 // src/hooks/use-navigation.ts
 "use client";
 
@@ -54,7 +55,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['inventory:view'] 
   },
   { 
-    label: 'Proveedores', path: '/inventario?tab=proveedores', icon: Building, groupTag: 'Operaciones', 
+    label: 'Proveedores', path: '/proveedores', icon: Building, groupTag: 'Operaciones', 
     permissions: ['inventory:manage'] 
   },
   
@@ -160,25 +161,13 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
     if (entry.path === '/rentas' && pathname.startsWith('/flotilla')) isActive = false;
     if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
+    if (pathname.startsWith('/inventario')) isActive = entry.path === '/inventario';
+    if (pathname.startsWith('/proveedores')) isActive = entry.path === '/proveedores';
     
     // Combined flotilla/rentas logic
     if (pathname.startsWith('/flotilla') || pathname.startsWith('/rentas')) {
         isActive = entry.path === '/flotilla';
     }
-
-    // Inventory and Suppliers logic
-    if (pathname.startsWith('/inventario')) {
-      if (entry.path === '/inventario?tab=proveedores') {
-        // This is only active if the tab is explicitly suppliers
-        const searchParams = new URLSearchParams(window.location.search);
-        isActive = searchParams.get('tab') === 'proveedores';
-      } else {
-        // The main inventory link is active if no specific tab is selected or a different tab is
-        const searchParams = new URLSearchParams(window.location.search);
-        isActive = !searchParams.has('tab') || searchParams.get('tab') !== 'proveedores';
-      }
-    }
-
 
     return { ...entry, isActive };
   });
