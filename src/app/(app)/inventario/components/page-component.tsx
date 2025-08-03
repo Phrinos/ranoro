@@ -9,12 +9,12 @@ import { InventoryItemDialog } from "./inventory-item-dialog";
 import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo } from "@/types";
 import type { InventoryItemFormValues } from "./inventory-item-form";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RegisterPurchaseDialog } from './register-purchase-dialog';
 import type { PurchaseFormValues } from './register-purchase-dialog';
 import { InformeContent } from './informe-content';
 import { ProductosContent } from './productos-content';
 import { CategoriasContent } from './categorias-content';
-import { ProveedoresContent } from '../../proveedores/components/page-component';
 import { AnalisisIaContent } from './analisis-ia-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
@@ -170,7 +170,6 @@ export function InventarioPageComponent({
     { value: "informe", label: "Informe", content: <InformeContent inventoryItems={inventoryItems} suppliers={suppliers} onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)} /> },
     { value: "productos", label: "Productos y Servicios", content: <ProductosContent inventoryItems={inventoryItems} onNewItem={handleOpenItemDialog} onPrint={handlePrint} /> },
     { value: "categorias", label: "Categorías", content: <CategoriasContent categories={categories} inventoryItems={inventoryItems} /> },
-    { value: "proveedores", label: "Proveedores", content: <ProveedoresContent /> },
     { value: "analisis", label: "Análisis IA", content: <AnalisisIaContent inventoryItems={inventoryItems} /> },
   ];
 
