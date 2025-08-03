@@ -4,20 +4,24 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { CashDrawerTransaction } from '@/types';
-import { format, parseISO, compareDesc } from "date-fns";
+import type { CashDrawerTransaction, SaleReceipt, ServiceRecord, InitialCashBalance } from '@/types';
+import { format, parseISO, compareDesc, startOfDay, endOfDay, isWithinInterval, isValid, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { formatCurrency, cn } from "@/lib/utils";
 import { Badge } from '@/components/ui/badge';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
-import { FileText } from 'lucide-react';
+import { FileText, Wallet } from 'lucide-react';
+import { parseDate } from '@/lib/forms';
 
 interface MovimientosPosContentProps {
   allCashTransactions: CashDrawerTransaction[];
+  allSales: SaleReceipt[];
+  allServices: ServiceRecord[];
+  initialCashBalance: InitialCashBalance | null;
 }
 
-export function MovimientosPosContent({ allCashTransactions }: MovimientosPosContentProps) {
+export function MovimientosPosContent({ allCashTransactions, allSales, allServices, initialCashBalance }: MovimientosPosContentProps) {
   
   const getBadgeVariant = (type: string) => {
     switch (type) {
@@ -62,9 +66,45 @@ export function MovimientosPosContent({ allCashTransactions }: MovimientosPosCon
   const filterOptions = [
     { value: 'type', label: 'Tipo de Movimiento', options: transactionTypes },
   ];
+  
+  const totalCashBalanceToday = useMemo(() => {
+    const todayStart = startOfDay(new Date());
+    const todayEnd = endOfDay(new Date());
+    const interval = { start: todayStart, end: todayEnd };
+
+    const balanceDoc = (initialCashBalance && isSameDay(parseISO(initialCashBalance.date), todayStart)) ? initialCashBalance : null;
+    const initialBalance = balanceDoc?.amount || 0;
+    
+    const salesToday = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), interval));
+    const servicesToday = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), interval));
+    
+    const cashFromSales = salesToday
+        .filter(s => s.paymentMethod?.includes('Efectivo'))
+        .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
+    const cashFromServices = servicesToday
+        .filter(s => s.paymentMethod?.includes('Efectivo'))
+        .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
+    const totalCashOperations = cashFromSales + cashFromServices;
+    
+    const cashInManual = allCashTransactions.filter(t => t.type === 'Entrada' && isWithinInterval(parseISO(t.date), interval)).reduce((sum, t) => sum + t.amount, 0);
+    const cashOutManual = allCashTransactions.filter(t => t.type === 'Salida' && isWithinInterval(parseISO(t.date), interval)).reduce((sum, t) => sum + t.amount, 0);
+
+    return initialBalance + totalCashOperations + cashInManual - cashOutManual;
+  }, [allSales, allServices, allCashTransactions, initialCashBalance]);
 
   return (
     <div className="space-y-4">
+      <Card className="bg-secondary/50 border-secondary">
+        <CardHeader>
+            <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center gap-2 text-primary">
+                    <Wallet className="h-6 w-6"/>
+                    Caja (Hoy)
+                </CardTitle>
+                <span className="text-2xl font-bold text-primary">{formatCurrency(totalCashBalanceToday)}</span>
+            </div>
+        </CardHeader>
+      </Card>
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold tracking-tight">Historial de Movimientos de Caja</h2>
         <p className="text-muted-foreground">Consulta todas las entradas y salidas de efectivo registradas.</p>
