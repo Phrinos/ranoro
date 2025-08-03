@@ -12,7 +12,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ServiceForm } from "./service-form";
+import { ServiceForm } from "../form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord, Personnel } from "@/types";
 import { useToast } from '@/hooks/use-toast'; 
 import { db } from '@/lib/firebaseClient.js';
@@ -72,8 +72,8 @@ export function ServiceDialog({
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>(service?.status || quote?.status);
-  const [formSubStatus, setFormSubStatus] = useState<ServiceRecord['subStatus'] | undefined>(service?.subStatus || quote?.subStatus);
+  const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>();
+  const [formSubStatus, setFormSubStatus] = useState<ServiceRecord['subStatus'] | undefined>();
 
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -92,6 +92,15 @@ export function ServiceDialog({
   
   const [cancellationReason, setCancellationReason] = useState("");
   const [totalCost, setTotalCost] = useState(0);
+
+  useEffect(() => {
+    if (open) {
+      const currentStatus = service?.status || quote?.status;
+      setFormStatus(currentStatus);
+      const currentSubStatus = service?.subStatus || quote?.subStatus;
+      setFormSubStatus(currentSubStatus);
+    }
+  }, [open, service, quote]);
 
   useEffect(() => {
     if (!open || !service?.id || mode !== 'service' || !db || isReadOnly) return;

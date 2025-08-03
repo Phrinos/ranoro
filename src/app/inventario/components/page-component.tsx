@@ -6,7 +6,7 @@ import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'rea
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer } from "lucide-react";
 import { InventoryItemDialog } from "./inventory-item-dialog";
-import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo } from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo, SaleReceipt, ServiceRecord, PayableAccount } from '@/types'; 
 import type { InventoryItemFormValues } from "./inventory-item-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +15,6 @@ import type { PurchaseFormValues } from './register-purchase-dialog';
 import { InformeContent } from './informe-content';
 import { ProductosContent } from './productos-content';
 import { CategoriasContent } from './categorias-content';
-import { ProveedoresContent } from './proveedores-content';
 import { AnalisisIaContent } from './analisis-ia-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
@@ -29,6 +28,7 @@ import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { InventoryReportContent } from './inventory-report-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
+import type { InventoryMovement } from '@/types';
 
 
 export function InventarioPageComponent({
@@ -43,15 +43,16 @@ export function InventarioPageComponent({
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [sales, setSales] = useState<SaleReceipt[]>([]);
+  const [services, setServices] = useState<ServiceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [payableAccounts, setPayableAccounts] = useState<PayableAccount[]>([]); 
 
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
-  const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   const printContentRef = useRef<HTMLDivElement>(null);
 
 
@@ -61,26 +62,63 @@ export function InventarioPageComponent({
     
     unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
     unsubs.push(inventoryService.onCategoriesUpdate(setCategories));
+    unsubs.push(operationsService.onSalesUpdate(setSales));
+    unsubs.push(operationsService.onServicesUpdate(setServices));
+    unsubs.push(inventoryService.onPayableAccountsUpdate(setPayableAccounts));
     unsubs.push(inventoryService.onSuppliersUpdate((data) => {
       setSuppliers(data);
       setIsLoading(false); // Mark loading as false after the last required dataset is fetched
     }));
-    
-    const storedInfo = localStorage.getItem('workshopTicketInfo');
-    if (storedInfo) {
-      try { setWorkshopInfo(JSON.parse(storedInfo)); } catch {}
-    }
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
-  
-  const handlePrint = useCallback((items: InventoryItem[]) => {
-      const itemsToPrintWithCategory = items.map(item => ({
-        ...item,
-        category: item.category || 'Sin Categoría'
-      })).sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+
+  const inventoryMovements = useMemo((): InventoryMovement[] => {
+      if (isLoading) return [];
       
-      setItemsToPrint(itemsToPrintWithCategory);
+      const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
+
+      const saleMovements: InventoryMovement[] = sales.flatMap(sale => 
+        sale.items.map(item => {
+          const invItem = inventoryMap.get(item.inventoryItemId);
+          return {
+            id: `${sale.id}-${item.inventoryItemId}`, date: sale.saleDate, type: 'Venta',
+            relatedId: sale.id, itemName: item.itemName, quantity: item.quantity,
+            unitCost: invItem?.unitPrice || 0, totalCost: item.quantity * (invItem?.unitPrice || 0),
+          };
+        })
+      );
+      
+      const serviceMovements: InventoryMovement[] = services
+        .filter(s => s.status === 'Completado' || s.status === 'Entregado')
+        .flatMap(service => {
+          const date = service.deliveryDateTime || service.serviceDate;
+          if (!date) return [];
+          return (service.serviceItems || []).flatMap(sItem => 
+            (sItem.suppliesUsed || []).map(supply => {
+              const invItem = inventoryMap.get(supply.supplyId);
+              if (!invItem || invItem.isService) return null;
+              return {
+                id: `${service.id}-${supply.supplyId}-${sItem.id}`, date: date, type: 'Servicio',
+                relatedId: service.id, itemName: supply.supplyName, quantity: supply.quantity,
+                unitCost: invItem.unitPrice, totalCost: supply.quantity * invItem.unitPrice
+              };
+            }).filter(Boolean) as InventoryMovement[]
+          );
+      });
+      
+      const purchaseMovements: InventoryMovement[] = payableAccounts
+        .filter(pa => pa.invoiceDate)
+        .map(pa => ({
+        id: pa.id, date: pa.invoiceDate, type: 'Compra',
+        relatedId: pa.supplierName, itemName: `Factura ${pa.invoiceId}`, quantity: 1, // Simplified view for now
+        unitCost: pa.totalAmount, totalCost: pa.totalAmount,
+      }));
+
+      return [...saleMovements, ...serviceMovements, ...purchaseMovements];
+    }, [isLoading, sales, services, inventoryItems, payableAccounts]);
+  
+  const handlePrint = useCallback(() => {
       setIsPrintDialogOpen(true);
   }, []);
 
@@ -91,62 +129,10 @@ export function InventarioPageComponent({
   }, []);
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
-    if (!db) return;
-    const batch = writeBatch(db);
-
-    // 1. Update supplier debt if payment method is 'Credito'
-    if (data.paymentMethod === 'Crédito') {
-      const supplierRef = doc(db, "suppliers", data.supplierId);
-      const supplier = suppliers.find(s => s.id === data.supplierId);
-      if (supplier) {
-        batch.update(supplierRef, { debtAmount: (supplier.debtAmount || 0) + data.invoiceTotal });
-      }
-    } else if (data.paymentMethod === 'Efectivo') {
-        const supplierName = suppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
-        const newTransaction = {
-          date: new Date().toISOString(),
-          type: 'Salida',
-          amount: data.invoiceTotal,
-          concept: `Compra a ${supplierName} (Factura)`,
-          userId: 'system', // TODO: Get current user
-          userName: 'Sistema',
-        };
-        batch.set(doc(collection(db, "cashDrawerTransactions")), newTransaction);
-    }
-    
-    // 2. Update inventory items stock and cost
-    data.items.forEach(purchasedItem => {
-      const itemRef = doc(db, "inventory", purchasedItem.inventoryItemId);
-      const inventoryItem = inventoryItems.find(i => i.id === purchasedItem.inventoryItemId);
-      if (inventoryItem) {
-        batch.update(itemRef, {
-          quantity: inventoryItem.quantity + purchasedItem.quantity,
-          unitPrice: purchasedItem.unitPrice
-        });
-      }
-    });
-    
-    // 3. Log audit
-    const supplierName = suppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
-    const userString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-    const user = userString ? JSON.parse(userString) : { id: 'system', name: 'Sistema' };
-    const auditLog = {
-      actionType: 'Registrar',
-      description: `Registró una compra al proveedor "${supplierName}" por ${formatCurrency(data.invoiceTotal)}.`,
-      entityType: 'Compra',
-      entityId: data.supplierId,
-      userId: user.id,
-      userName: user.name,
-      date: new Date().toISOString(),
-    };
-    batch.set(doc(collection(db, 'auditLogs')), auditLog);
-    
-    // 4. Commit batch
-    await batch.commit();
-    
+    await operationsService.registerPurchase(data);
     toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
     setIsRegisterPurchaseOpen(false);
-  }, [toast, suppliers, inventoryItems]);
+  }, [toast]);
   
   const handleSaveItem = useCallback(async (itemData: InventoryItemFormValues) => {
     // This is for new items from the "Productos" tab
@@ -167,7 +153,7 @@ export function InventarioPageComponent({
   }
 
   const tabsConfig = [
-    { value: "informe", label: "Informe" },
+    { value: "informe", label: "Entradas y Salidas" },
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
     { value: "proveedores", label: "Proveedores" },
@@ -204,9 +190,8 @@ export function InventarioPageComponent({
         
         <TabsContent value="informe" className="mt-6">
             <InformeContent 
-                inventoryItems={inventoryItems} 
-                suppliers={suppliers}
                 onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
+                movements={inventoryMovements}
             />
         </TabsContent>
         <TabsContent value="productos" className="mt-6">
@@ -249,9 +234,7 @@ export function InventarioPageComponent({
        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
                 <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
-                    <div id="printable-report" className="print-format-letter">
-                        <InventoryReportContent ref={printContentRef} items={itemsToPrint} />
-                    </div>
+                    <InventoryReportContent ref={printContentRef} items={inventoryItems} />
                 </div>
                  <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
                     <Button onClick={() => window.print()}>

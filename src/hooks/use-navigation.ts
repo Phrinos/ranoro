@@ -1,4 +1,3 @@
-
 // src/hooks/use-navigation.ts
 "use client";
 
@@ -46,10 +45,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones',
     permissions: ['pos:view_sales']
   },
-   {
-    label: 'Caja', path: '/caja', icon: Wallet, groupTag: 'Operaciones',
-    permissions: ['pos:create_sale']
-  },
   { 
     label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', 
     permissions: ['inventory:view'] 
@@ -57,6 +52,10 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { 
     label: 'Proveedores', path: '/proveedores', icon: Building, groupTag: 'Operaciones', 
     permissions: ['inventory:manage'] 
+  },
+  {
+    label: 'Caja', path: '/caja', icon: Wallet, groupTag: 'Operaciones',
+    permissions: ['pos:create_sale']
   },
   
   // Mi Flotilla

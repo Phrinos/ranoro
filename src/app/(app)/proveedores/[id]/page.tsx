@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, onSnapshot, collection, query, where, getDocs, writeBatch, addDoc, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, getDocs, writeBatch, addDoc, deleteDoc, getDoc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -38,19 +39,17 @@ export default function SupplierDetailPage() {
 
   useEffect(() => {
     if (!supplierId || !db) return;
+    
+    setIsLoading(true);
 
     const unsubSupplier = onSnapshot(doc(db, "suppliers", supplierId), (doc) => {
-      if (doc.exists()) {
-        setSupplier({ id: doc.id, ...doc.data() } as Supplier);
-      } else {
-        setSupplier(null);
-      }
+      setSupplier(doc.exists() ? { id: doc.id, ...doc.data() } as Supplier : null);
       setIsLoading(false);
     });
 
-    const q = query(collection(db, "payableAccounts"), where("supplierId", "==", supplierId));
+    const q = query(collection(db, "payableAccounts"), where("supplierId", "==", supplierId), orderBy("invoiceDate", "desc"));
     const unsubAccounts = onSnapshot(q, (snapshot) => {
-        setAccountsPayable(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PayableAccount)).sort((a, b) => parseISO(b.invoiceDate).getTime() - parseISO(a.invoiceDate).getTime()));
+        setAccountsPayable(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PayableAccount)));
     });
 
     return () => {
