@@ -337,20 +337,20 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
                 { value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions },
             ]}
           />
-          {filteredHistorical.length > 0 ? filteredHistorical.map(renderServiceCard) : <p className="text-center text-muted-foreground py-10">No hay servicios que coincidan.</p>}
-           <div className="flex items-center justify-between pt-2">
-              <p className="text-sm text-muted-foreground">{historicalTableManager.paginationSummary}</p>
-              <div className="flex items-center space-x-2">
-                  <Button size="sm" onClick={historicalTableManager.goToPreviousPage} disabled={!historicalTableManager.canGoPrevious} variant="outline" className="bg-card">
-                      <ChevronLeft className="h-4 w-4" />
-                      Anterior
-                  </Button>
-                  <Button size="sm" onClick={historicalTableManager.goToNextPage} disabled={!historicalTableManager.canGoNext} variant="outline" className="bg-card">
-                      Siguiente
-                      <ChevronRight className="h-4 w-4" />
-                  </Button>
-              </div>
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">{historicalTableManager.paginationSummary}</p>
+            <div className="flex items-center space-x-2">
+              <Button size="sm" onClick={historicalTableManager.goToPreviousPage} disabled={!historicalTableManager.canGoPrevious} variant="outline" className="bg-card">
+                <ChevronLeft className="h-4 w-4" />
+                Anterior
+              </Button>
+              <Button size="sm" onClick={historicalTableManager.goToNextPage} disabled={!historicalTableManager.canGoNext} variant="outline" className="bg-card">
+                Siguiente
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+          {filteredHistorical.length > 0 ? filteredHistorical.map(renderServiceCard) : <p className="text-center text-muted-foreground py-10">No hay servicios que coincidan.</p>}
         </TabsContent>
       </Tabs>
 
