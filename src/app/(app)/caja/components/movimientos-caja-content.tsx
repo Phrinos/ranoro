@@ -13,6 +13,7 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { FileText, Wallet, ArrowUpCircle, ArrowDownCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
+import { Button } from "@/components/ui/button";
 
 interface MovimientosCajaContentProps {
   allCashTransactions: CashDrawerTransaction[];
@@ -134,7 +135,7 @@ export function MovimientosCajaContent({ allCashTransactions, allSales, allServi
                 {filteredTransactions.length > 0 ? (
                   filteredTransactions.map(t => (
                     <TableRow key={t.id + t.date}>
-                      <TableCell>{format(parseDate(t.date)!, 'dd/MM/yy, HH:mm', { locale: es })}</TableCell>
+                      <TableCell>{t.date ? format(parseDate(t.date)!, 'dd/MM/yy, HH:mm', { locale: es }) : 'N/A'}</TableCell>
                       <TableCell>
                         <Badge variant={getBadgeVariant(t.type)} className="flex items-center gap-1 w-fit">
                           {t.type === 'Entrada' ? <ArrowUpCircle className="h-3 w-3" /> : <ArrowDownCircle className="h-3 w-3" />}
