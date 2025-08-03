@@ -4,7 +4,7 @@
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, Copy, MessageSquare, Share2 } from "lucide-react";
+import { PlusCircle, Printer, Copy, MessageSquare, Share2, Wallet } from "lucide-react";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance } from "@/types";
@@ -21,6 +21,8 @@ import { InformePosContent } from './informe-pos-content';
 import { VentasPosContent } from './ventas-pos-content';
 import { CajaPosContent } from './caja-pos-content';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+import { isToday, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 
 export function PosPageComponent({ tab }: { tab?: string }) {
@@ -64,6 +66,31 @@ export function PosPageComponent({ tab }: { tab?: string }) {
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
+  
+  const totalCashBalanceToday = useMemo(() => {
+    const todayStart = startOfDay(new Date());
+    const todayEnd = endOfDay(new Date());
+    const interval = { start: todayStart, end: todayEnd };
+
+    const balanceDoc = (initialCashBalance && isSameDay(parseISO(initialCashBalance.date), todayStart)) ? initialCashBalance : null;
+    const initialBalance = balanceDoc?.amount || 0;
+    
+    const salesToday = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), interval));
+    const servicesToday = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), interval));
+    
+    const cashFromSales = salesToday
+        .filter(s => s.paymentMethod?.includes('Efectivo'))
+        .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
+    const cashFromServices = servicesToday
+        .filter(s => s.paymentMethod?.includes('Efectivo'))
+        .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
+    const totalCashOperations = cashFromSales + cashFromServices;
+    
+    const cashInManual = allCashTransactions.filter(t => t.type === 'Entrada' && isWithinInterval(parseISO(t.date), interval)).reduce((sum, t) => sum + t.amount, 0);
+    const cashOutManual = allCashTransactions.filter(t => t.type === 'Salida' && isWithinInterval(parseISO(t.date), interval)).reduce((sum, t) => sum + t.amount, 0);
+
+    return initialBalance + totalCashOperations + cashInManual - cashOutManual;
+  }, [allSales, allServices, allCashTransactions, initialCashBalance]);
 
   const handleCancelSale = useCallback(async (saleId: string, reason: string) => {
     if (!db) return;
@@ -155,13 +182,25 @@ Total: ${formatCurrency(sale.totalAmount)}
   const posTabs = [
     { value: "informe", label: "Informe", content: <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory} /> },
     { value: "ventas", label: "Ventas", content: <VentasPosContent allSales={allSales} allInventory={allInventory} onReprintTicket={handleReprintSale} onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }} /> },
-    { value: "caja", label: "Caja", content: <CajaPosContent allSales={allSales} allServices={allServices} allCashTransactions={allCashTransactions} initialCashBalance={initialCashBalance} /> },
+    { value: "movimientos", label: "Movimientos", content: <CajaPosContent allSales={allSales} allServices={allServices} allCashTransactions={allCashTransactions} initialCashBalance={initialCashBalance} /> },
   ];
 
   if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
   
   return (
     <>
+      <Card className="mb-6 bg-secondary/50 border-secondary">
+        <CardHeader>
+            <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center gap-2 text-primary">
+                    <Wallet className="h-6 w-6"/>
+                    Caja (Hoy)
+                </CardTitle>
+                <span className="text-2xl font-bold text-primary">{formatCurrency(totalCashBalanceToday)}</span>
+            </div>
+        </CardHeader>
+      </Card>
+    
       <TabbedPageLayout
         title="Punto de Venta"
         description="Registra ventas, gestiona tu caja y analiza el rendimiento de tus operaciones."
