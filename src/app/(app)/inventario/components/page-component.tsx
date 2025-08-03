@@ -26,7 +26,7 @@ import { adminService } from '@/lib/services/admin.service';
 import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
-import { InventoryReportContent } from '../../inventario/components/inventory-report-content';
+import { InventoryReportContent } from './inventory-report-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
 import type { InventoryMovement } from '@/types';
@@ -39,7 +39,7 @@ export function InventarioPageComponent({
 }) {
   const tab = searchParams?.tab as string | undefined;
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState(tab || 'informe');
+  const [activeTab, setActiveTab] = useState(tab || 'productos');
   
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
@@ -154,7 +154,6 @@ export function InventarioPageComponent({
   }
 
   const tabsConfig = [
-    { value: "informe", label: "Entradas y Salidas" },
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
     { value: "analisis", label: "Análisis IA" },
@@ -188,12 +187,6 @@ export function InventarioPageComponent({
             </div>
         </div>
         
-        <TabsContent value="informe" className="mt-6">
-            <InformeContent 
-                onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
-                movements={inventoryMovements}
-            />
-        </TabsContent>
         <TabsContent value="productos" className="mt-6">
             <ProductosContent 
                 inventoryItems={inventoryItems} 
