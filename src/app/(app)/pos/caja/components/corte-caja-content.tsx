@@ -113,6 +113,11 @@ export const CorteDiaContent = React.forwardRef<HTMLDivElement, CorteCajaContent
       {renderLine("SALDO FINAL ESPERADO:", formatCurrency(reportData.finalCashBalance), true, true)}
       
       {renderDashedLine()}
+      <div className="font-semibold my-1">RESUMEN DE OPERACIONES</div>
+      {renderLine("Total Ventas POS:", reportData.totalSales.toString())}
+      {renderLine("Total Servicios:", reportData.totalServices.toString())}
+      {renderDashedLine()}
+
       <div className="font-semibold my-1">DESGLOSE DE VENTAS</div>
       {Object.entries(reportData.salesByPaymentMethod).map(([method, total]) => (
         <div key={method} className="flex justify-between text-xs py-0.5">

@@ -231,7 +231,13 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Wallet className="text-primary"/>Cajón de Dinero</CardTitle>
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2"><Wallet className="text-primary"/>Cajón de Dinero</CardTitle>
+                <CardDescription>Resumen del día</CardDescription>
+              </div>
+              <Button onClick={() => setIsCorteDialogOpen(true)}><Printer className="mr-2 h-4 w-4"/> Corte</Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-4 rounded-lg bg-muted border text-center">
@@ -253,26 +259,18 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <CardTitle>Transacciones Manuales</CardTitle>
-                <CardDescription>Entradas y salidas de efectivo no relacionadas a ventas.</CardDescription>
-              </div>
-              <Button onClick={() => setIsCorteDialogOpen(true)}><Printer className="mr-2 h-4 w-4"/> Corte de Caja</Button>
+        <div className="lg:col-span-2 space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+                <Card><CardHeader><CardTitle className="flex items-center gap-2 text-green-600"><ArrowUpCircle/>Registrar Entrada</CardTitle></CardHeader><CardContent><CashTransactionForm type="Entrada" onSubmit={handleAddTransaction} /></CardContent></Card>
+                <Card><CardHeader><CardTitle className="flex items-center gap-2 text-red-600"><ArrowDownCircle/>Registrar Salida</CardTitle></CardHeader><CardContent><CashTransactionForm type="Salida" onSubmit={handleAddTransaction} /></CardContent></Card>
             </div>
-          </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-6">
-            <Card><CardHeader><CardTitle className="flex items-center gap-2 text-green-600"><ArrowUpCircle/>Registrar Entrada</CardTitle></CardHeader><CardContent><CashTransactionForm type="Entrada" onSubmit={handleAddTransaction} /></CardContent></Card>
-            <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2 text-red-600"><ArrowDownCircle/>Registrar Salida</CardTitle></CardHeader>
+             <Card>
+              <CardHeader><CardTitle>Transacciones Manuales del Día</CardTitle></CardHeader>
               <CardContent>
                 <TransactionsList transactions={manualCashMovements} onDelete={handleDeleteTransaction} />
               </CardContent>
             </Card>
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
       <Dialog open={isInitialBalanceDialogOpen} onOpenChange={setIsInitialBalanceDialogOpen}>
@@ -299,7 +297,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       </Dialog>
       
       <PrintTicketDialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen} title="Corte de Caja">
-         <CorteDiaContent reportData={cajaSummaryData} date={date} transactions={manualCashMovements}/>
+         <CorteDiaContent reportData={cajaSummaryData} date={date} transactions={allCashTransactions.filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start: startOfDay(date), end: endOfDay(date) }))} />
       </PrintTicketDialog>
     </>
   );
