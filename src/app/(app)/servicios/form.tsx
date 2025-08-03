@@ -51,15 +51,15 @@ import type {
 
 import { VehicleDialog } from '../vehiculos/components/vehicle-dialog'
 import type { VehicleFormValues } from '../vehiculos/components/vehicle-form'
-import { ServiceDetailsCard } from './ServiceDetailsCard'
-import { VehicleSelectionCard } from './VehicleSelectionCard'
-import { ReceptionAndDelivery } from './ReceptionAndDelivery'
-import { SafetyChecklist } from './SafetyChecklist'
-import { SignatureDialog } from './signature-dialog'
+import { ServiceDetailsCard } from './components/ServiceDetailsCard'
+import { VehicleSelectionCard } from './components/VehicleSelectionCard'
+import { ReceptionAndDelivery } from './components/ReceptionAndDelivery'
+import { SafetyChecklist } from './components/SafetyChecklist'
+import { SignatureDialog } from './components/signature-dialog'
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog'
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow'
 import { enhanceText } from '@/ai/flows/text-enhancement-flow'
-import { PhotoReportTab } from './PhotoReportTab';
+import { PhotoReportTab } from './components/PhotoReportTab';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { parseDate } from '@/lib/forms';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
