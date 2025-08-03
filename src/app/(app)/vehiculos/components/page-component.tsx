@@ -204,26 +204,26 @@ export function VehiculosPageComponent({ isFleet }: { isFleet?: boolean }) {
 
                 <TabsContent value="vehiculos" className="mt-6">
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <TableToolbar 
-                                searchTerm={tableManager.searchTerm}
-                                onSearchTermChange={tableManager.setSearchTerm}
-                                searchPlaceholder="Buscar por placa, marca, modelo, propietario..."
-                                dateRange={tableManager.dateRange}
-                                onDateRangeChange={tableManager.setDateRange}
-                                sortOption={tableManager.sortOption}
-                                onSortOptionChange={tableManager.setSortOption}
-                                sortOptions={vehicleSortOptions}
-                                paginationSummary={tableManager.paginationSummary}
-                                canGoPrevious={tableManager.canGoPrevious}
-                                canGoNext={tableManager.canGoNext}
-                                onPreviousPage={tableManager.goToPreviousPage}
-                                onNextPage={tableManager.goToNextPage}
-                            />
-                            <Button onClick={() => handleOpenVehicleDialog()} className="ml-4">
-                                <PlusCircle className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
-                            </Button>
-                        </div>
+                        <TableToolbar 
+                            searchTerm={tableManager.searchTerm}
+                            onSearchTermChange={tableManager.setSearchTerm}
+                            searchPlaceholder="Buscar por placa, marca, modelo, propietario..."
+                            dateRange={tableManager.dateRange}
+                            onDateRangeChange={tableManager.setDateRange}
+                            sortOption={tableManager.sortOption}
+                            onSortOptionChange={tableManager.setSortOption}
+                            sortOptions={vehicleSortOptions}
+                            paginationSummary={tableManager.paginationSummary}
+                            canGoPrevious={tableManager.canGoPrevious}
+                            canGoNext={tableManager.canGoNext}
+                            onPreviousPage={tableManager.goToPreviousPage}
+                            onNextPage={tableManager.goToNextPage}
+                            primaryAction={
+                                <Button onClick={() => handleOpenVehicleDialog()} className="w-full sm:w-auto">
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Registrar Vehículo
+                                </Button>
+                            }
+                        />
                         <Card>
                             <CardContent className="pt-6">
                                 <VehiclesTable vehicles={filteredVehicles} />

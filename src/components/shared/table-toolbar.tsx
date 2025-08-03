@@ -34,9 +34,10 @@ interface TableToolbarProps {
   onSortOptionChange: (value: string) => void;
   sortOptions?: Option[];
   otherFilters?: Record<string, string | 'all'>;
-  onFilterChange: (filters: Record<string, string | 'all'>) => void;
+  onFilterChange?: (filters: Record<string, string | 'all'>) => void;
   filterOptions?: FilterGroup[];
   searchPlaceholder?: string;
+  primaryAction?: React.ReactNode;
   paginationSummary?: string;
   canGoPrevious?: boolean;
   canGoNext?: boolean;
@@ -59,6 +60,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   onFilterChange,
   filterOptions = [],
   searchPlaceholder = 'Buscar...',
+  primaryAction,
   paginationSummary,
   canGoPrevious,
   canGoNext,
@@ -97,87 +99,81 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     
     
   return (
-    <div className="space-y-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
-          <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={searchPlaceholder}
-              className="w-full rounded-lg bg-card pl-8"
-              value={searchTerm}
-              onChange={(e) => onSearchTermChange(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                <Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
-                    <CalendarDateIcon className="mr-2 h-4 w-4" />
-                    {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
-                </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                    <div className="flex p-2">
-                        <Button variant="ghost" size="sm" onClick={setDateToToday}>Hoy</Button>
-                        <Button variant="ghost" size="sm" onClick={setDateToYesterday}>Ayer</Button>
-                        <Button variant="ghost" size="sm" onClick={setDateToThisWeek}>Semana</Button>
-                        <Button variant="ghost" size="sm" onClick={setDateToThisMonth}>Mes</Button>
-                    </div>
-                <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={handleCalendarSelect} numberOfMonths={2} locale={es} showOutsideDays={false} />
-                <div className="p-2 border-t flex justify-end">
-                    <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
-                </div>
-                </PopoverContent>
-            </Popover>
-
-            {filterOptions.length > 0 && (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
-                        <Filter className="mr-2 h-4 w-4" />
-                        <span>Filtros</span>
+    <div className="space-y-4">
+        {/* Main Toolbar */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder={searchPlaceholder}
+                    className="w-full rounded-lg bg-card pl-8"
+                    value={searchTerm}
+                    onChange={(e) => onSearchTermChange(e.target.value)}
+                />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap justify-start">
+                {/* Date Picker */}
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                    <Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
+                        <CalendarDateIcon className="mr-2 h-4 w-4" />
+                        {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
                     </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {filterOptions.map((group, index) => (
-                            <React.Fragment key={group.value}>
-                                {index > 0 && <DropdownMenuSeparator />}
-                                <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
-                                <DropdownMenuRadioGroup
-                                    value={otherFilters[group.value] || 'all'}
-                                    onValueChange={(value) => onFilterChange({ ...otherFilters, [group.value]: value })}
-                                >
-                                    {group.options.map(opt => (
-                                        <DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>
-                                    ))}
-                                </DropdownMenuRadioGroup>
-                            </React.Fragment>
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                        <div className="flex p-2">
+                            <Button variant="ghost" size="sm" onClick={setDateToToday}>Hoy</Button>
+                            <Button variant="ghost" size="sm" onClick={setDateToYesterday}>Ayer</Button>
+                            <Button variant="ghost" size="sm" onClick={setDateToThisWeek}>Semana</Button>
+                            <Button variant="ghost" size="sm" onClick={setDateToThisMonth}>Mes</Button>
+                        </div>
+                    <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={handleCalendarSelect} numberOfMonths={2} locale={es} showOutsideDays={false} />
+                    <div className="p-2 border-t flex justify-end">
+                        <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
+                    </div>
+                    </PopoverContent>
+                </Popover>
 
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
-                    <ListFilter className="mr-2 h-4 w-4" />
-                    <span>Ordenar</span>
-                </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sortOption} onValueChange={onSortOptionChange}>
-                    {sortOptions.map(opt => (
-                        <DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>
-                    ))}
-                </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                {/* Filters Dropdown */}
+                {filterOptions && filterOptions.length > 0 && onFilterChange && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><Filter className="mr-2 h-4 w-4" /><span>Filtros</span></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {filterOptions.map((group, index) => (
+                                <React.Fragment key={group.value}>
+                                    {index > 0 && <DropdownMenuSeparator />}
+                                    <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup value={otherFilters[group.value] || 'all'} onValueChange={(value) => onFilterChange({ ...otherFilters, [group.value]: value })}>
+                                        {group.options.map(opt => (<DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>))}
+                                    </DropdownMenuRadioGroup>
+                                </React.Fragment>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+
+                {/* Sort Dropdown */}
+                {sortOptions.length > 0 && (
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" /><span>Ordenar</span></Button></DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                      <DropdownMenuRadioGroup value={sortOption} onValueChange={onSortOptionChange}>
+                          {sortOptions.map(opt => (<DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>))}
+                      </DropdownMenuRadioGroup>
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
+                {/* Primary Action Button */}
+                {primaryAction}
+            </div>
         </div>
-         {paginationSummary !== undefined && (
-            <div className="flex items-center justify-between">
+
+        {/* Pagination Controls */}
+        {paginationSummary !== undefined && (
+            <div className="flex items-center justify-between pt-2">
                 <p className="text-sm text-muted-foreground">{paginationSummary}</p>
                 <div className="flex items-center space-x-2">
                     <Button size="sm" onClick={onPreviousPage} disabled={!canGoPrevious} className="bg-gray-500 hover:bg-gray-600 text-white">
