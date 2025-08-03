@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DollarSign, AlertTriangle, Package, ShoppingCart, Building, TrendingUp, PackageSearch, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { InventoryItem, Supplier, InventoryMovement } from '@/types';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { placeholderServiceRecords } from '@/lib/placeholder-data';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
