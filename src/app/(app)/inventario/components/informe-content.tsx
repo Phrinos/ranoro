@@ -1,8 +1,9 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -93,6 +94,7 @@ export function InformeContent({ onRegisterPurchaseClick, movements }: InformeCo
         
         <TableToolbar
             {...tableManager}
+            onDateRangeChange={tableManager.setDateRange}
             searchPlaceholder="Buscar por producto, tipo o ID..."
             sortOptions={sortOptions}
             filterOptions={[{ value: 'type', label: 'Tipo de Movimiento', options: movementTypeOptions }]}
