@@ -230,6 +230,21 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
             }
         }
     }
+    
+    // Add cash transaction if paid in cash
+    if (dataToUpdate.paymentMethod?.includes('Efectivo')) {
+        const cashTransactionRef = doc(collection(db, "cashDrawerTransactions"));
+        batch.set(cashTransactionRef, {
+            date: new Date().toISOString(),
+            type: 'Entrada',
+            amount: dataToUpdate.amountInCash || service.totalCost, // Use split amount if available
+            concept: `Servicio #${service.id.slice(0, 6)} - ${service.vehicleIdentifier || ''}`,
+            userId: 'system',
+            userName: dataToUpdate.serviceAdvisorName || 'Sistema',
+            relatedType: 'Servicio',
+            relatedId: service.id,
+        });
+    }
 };
 
 const saveMigratedServices = async (services: ExtractedService[], vehicles: ExtractedVehicle[]): Promise<void> => {
@@ -730,3 +745,4 @@ export const operationsService = {
     addOwnerWithdrawal,
     registerPayableAccountPayment,
 };
+
