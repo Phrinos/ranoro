@@ -188,7 +188,10 @@ const onVehiclesUpdatePromise = async (): Promise<Vehicle[]> => {
 
 
 const getVehicleById = async (id: string): Promise<Vehicle | undefined> => {
-    return getDocById('vehicles', id);
+    if (!db) throw new Error("Database not initialized.");
+    const docRef = doc(db, 'vehicles', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Vehicle : undefined;
 };
 
 const addVehicle = async (data: VehicleFormValues): Promise<Vehicle> => {
