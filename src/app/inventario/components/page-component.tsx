@@ -15,6 +15,7 @@ import type { PurchaseFormValues } from './register-purchase-dialog';
 import { InformeContent } from './informe-content';
 import { ProductosContent } from './productos-content';
 import { CategoriasContent } from './categorias-content';
+import { ProveedoresContent } from '../../proveedores/components/proveedores-content';
 import { AnalisisIaContent } from './analisis-ia-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
