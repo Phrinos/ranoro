@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -28,6 +28,8 @@ import { CorteDiaContent } from '../../caja/components/corte-caja-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { db } from '@/lib/firebaseClient.js';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 
 const cashTransactionSchema = z.object({
@@ -121,50 +123,79 @@ interface CajaPosContentProps {
   initialCashBalance: InitialCashBalance | null;
 }
 
-export function CajaPosContent({ allSales, allServices, allCashTransactions, initialCashBalance }: CajaPosContentProps) {
+export function CajaPosContent({ allSales, allServices, allCashTransactions, initialCashBalance: dailyInitialBalance }: CajaPosContentProps) {
   const { toast } = useToast();
   const [date, setDate] = useState(startOfDay(new Date()));
   const [isInitialBalanceDialogOpen, setIsInitialBalanceDialogOpen] = useState(false);
   const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
   const [isCorteDialogOpen, setIsCorteDialogOpen] = useState(false);
   
+  const [latestInitialBalance, setLatestInitialBalance] = useState<InitialCashBalance | null>(null);
+
+   useEffect(() => {
+    const fetchLatestInitialBalance = async () => {
+        if (!db) return;
+        const q = query(collection(db, "initialCashBalances"), orderBy("date", "desc"), limit(1));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            const docData = querySnapshot.docs[0].data() as InitialCashBalance;
+            setLatestInitialBalance(docData);
+        } else {
+            setLatestInitialBalance(null); // No balances found at all
+        }
+    };
+    fetchLatestInitialBalance();
+   }, [dailyInitialBalance]); // Re-fetch if today's balance changes
+
   const cajaSummaryData = useMemo(() => {
-    const start = startOfDay(date);
-    const end = endOfDay(date);
+    const startOfSelectedDate = startOfDay(date);
+    const endOfSelectedDate = endOfDay(date);
     
-    const balanceDoc = (initialCashBalance && isSameDay(parseISO(initialCashBalance.date), start)) ? initialCashBalance : null;
-    const initialBalance = balanceDoc?.amount || 0;
-    
-    const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start, end }));
-    const servicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start, end }));
-    
-    const cashFromSales = salesInRange
-        .filter(s => s.paymentMethod?.includes('Efectivo'))
-        .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
-    const cashFromServices = servicesInRange
-        .filter(s => s.paymentMethod?.includes('Efectivo'))
-        .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
+    // For Corte de Caja of a specific day
+    const dailyBalanceDoc = dailyInitialBalance;
+    const dailyInitial = dailyBalanceDoc?.amount || 0;
 
-    const totalCashOperations = cashFromSales + cashFromServices;
+    const salesInDay = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: startOfSelectedDate, end: endOfSelectedDate }));
+    const servicesInDay = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start: startOfSelectedDate, end: endOfSelectedDate }));
     
-    const cashInManual = allCashTransactions
-      .filter(t => t.type === 'Entrada' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }))
-      .reduce((sum, t) => sum + t.amount, 0);
-    const cashOutManual = allCashTransactions
-      .filter(t => t.type === 'Salida' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }))
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const finalCashBalance = initialBalance + totalCashOperations + cashInManual - cashOutManual;
+    const cashFromSalesInDay = salesInDay.filter(s => s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
+    const cashFromServicesInDay = servicesInDay.filter(s => s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
+    const totalCashOpsInDay = cashFromSalesInDay + cashFromServicesInDay;
     
-    const salesByPaymentMethod: Record<string, number> = {};
-    [...salesInRange, ...servicesInRange].forEach(op => {
+    const manualCashInDay = allCashTransactions.filter(t => t.type === 'Entrada' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start: startOfSelectedDate, end: endOfSelectedDate })).reduce((sum, t) => sum + t.amount, 0);
+    const manualCashOutDay = allCashTransactions.filter(t => t.type === 'Salida' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start: startOfSelectedDate, end: endOfSelectedDate })).reduce((sum, t) => sum + t.amount, 0);
+    
+    const salesByPaymentMethodInDay: Record<string, number> = {};
+    [...salesInDay, ...servicesInDay].forEach(op => {
       const method = op.paymentMethod || 'Efectivo';
       const amount = 'totalAmount' in op ? op.totalAmount : (op.totalCost || 0);
-      salesByPaymentMethod[method] = (salesByPaymentMethod[method] || 0) + amount;
+      salesByPaymentMethodInDay[method] = (salesByPaymentMethodInDay[method] || 0) + amount;
     });
+    
+    // For Running Total Balance
+    const balanceStartDate = latestInitialBalance ? parseISO(latestInitialBalance.date) : new Date(0); // Start from epoch if no balance ever
+    const runningInitialBalance = latestInitialBalance?.amount || 0;
+    
+    const cashFromSalesSince = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: balanceStartDate, end: new Date() }) && s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
+    const cashFromServicesSince = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start: balanceStartDate, end: new Date() }) && s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
+    const manualInSince = allCashTransactions.filter(t => t.type === 'Entrada' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start: balanceStartDate, end: new Date() })).reduce((sum, t) => sum + t.amount, 0);
+    const manualOutSince = allCashTransactions.filter(t => t.type === 'Salida' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start: balanceStartDate, end: new Date() })).reduce((sum, t) => sum + t.amount, 0);
+    
+    const finalCashBalance = runningInitialBalance + cashFromSalesSince + cashFromServicesSince + manualInSince - manualOutSince;
 
-    return { initialBalance, totalCashSales: totalCashOperations, totalCashIn: cashInManual, totalCashOut: cashOutManual, finalCashBalance, salesByPaymentMethod, totalSales: salesInRange.length, totalServices: servicesInRange.length };
-  }, [date, allSales, allServices, allCashTransactions, initialCashBalance]);
+    return { 
+        // Data for the "Corte de Caja" of the selected day
+        initialBalance: dailyInitial, 
+        totalCashSales: totalCashOpsInDay, 
+        totalCashIn: manualCashInDay, 
+        totalCashOut: manualCashOutDay, 
+        salesByPaymentMethod: salesByPaymentMethodInDay, 
+        totalSales: salesInDay.length, 
+        totalServices: servicesInDay.length,
+        // The final running total
+        finalCashBalance,
+    };
+  }, [date, allSales, allServices, allCashTransactions, dailyInitialBalance, latestInitialBalance]);
   
   const manualCashMovements = useMemo(() => {
     const start = startOfDay(date);
@@ -252,7 +283,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Saldo Inicial:</span> 
+                <span className="text-muted-foreground">Saldo Inicial del día:</span> 
                 <div className="flex items-center gap-1">
                   <span className="font-medium">{formatCurrency(cajaSummaryData.initialBalance)}</span>
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsInitialBalanceDialogOpen(true)}><Pencil className="h-3 w-3"/></Button>
