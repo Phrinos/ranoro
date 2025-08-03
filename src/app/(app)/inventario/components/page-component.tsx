@@ -26,7 +26,7 @@ import { adminService } from '@/lib/services/admin.service';
 import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
-import { InventoryReportContent } from './inventory-report-content';
+import { InventoryReportContent } from '../../inventario/components/inventory-report-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
 import type { InventoryMovement } from '@/types';
@@ -157,7 +157,6 @@ export function InventarioPageComponent({
     { value: "informe", label: "Entradas y Salidas" },
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
-    { value: "proveedores", label: "Proveedores" },
     { value: "analisis", label: "Análisis IA" },
   ];
 
@@ -204,9 +203,6 @@ export function InventarioPageComponent({
         </TabsContent>
         <TabsContent value="categorias" className="mt-6">
             <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
-        </TabsContent>
-        <TabsContent value="proveedores" className="mt-6">
-            <ProveedoresContent suppliers={suppliers} />
         </TabsContent>
         <TabsContent value="analisis" className="mt-6">
             <AnalisisIaContent inventoryItems={inventoryItems} />
