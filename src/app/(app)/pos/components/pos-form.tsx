@@ -9,7 +9,7 @@ import { AddItemDialog } from "./add-item-dialog";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { SaleItemsList } from './sale-items-list';
-import { PaymentSection } from './payment-section';
+import { PaymentSection } from '../../servicios/components/PaymentSection';
 import { SaleSummary } from './sale-summary';
 
 interface POSFormProps {

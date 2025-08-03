@@ -5,10 +5,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { PageHeader } from "@/components/page-header";
 import { PosForm } from '../components/pos-form';
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService } from '@/lib/services';
@@ -22,50 +21,8 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { nanoid } from 'nanoid';
 import html2canvas from 'html2canvas';
+import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
 
-// --- Schema Definitions ---
-const saleItemSchema = z.object({
-  inventoryItemId: z.string().min(1, 'Seleccione un artículo.'),
-  itemName: z.string(),
-  quantity: z.coerce.number().min(0.001, 'La cantidad debe ser mayor a 0.'),
-  unitPrice: z.coerce.number(),
-  totalPrice: z.coerce.number(),
-  isService: z.boolean().optional(),
-  unitType: z.enum(['units', 'ml', 'liters']).optional(),
-});
-
-const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
-  'Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia', 'Efectivo/Tarjeta'
-];
-
-const posFormSchema = z.object({
-  items: z.array(saleItemSchema).min(1, 'Debe agregar al menos un artículo a la venta.'),
-  customerName: z.string().optional(),
-  whatsappNumber: z.string().optional(),
-  paymentMethod: z.enum(paymentMethods).default('Efectivo'),
-  cardFolio: z.string().optional(),
-  transferFolio: z.string().optional(),
-  amountInCash: z.coerce.number().optional(),
-  amountInCard: z.coerce.number().optional(),
-  amountInTransfer: z.coerce.number().optional(),
-}).superRefine((data, ctx) => {
-    if (data.paymentMethod?.includes('Tarjeta') && !data.cardFolio) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'El folio de la tarjeta es obligatorio.',
-            path: ['cardFolio'],
-        });
-    }
-    if (data.paymentMethod?.includes('Transferencia') && !data.transferFolio) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'El folio de la transferencia es obligatorio.',
-            path: ['transferFolio'],
-        });
-    }
-});
-
-type POSFormValues = z.infer<typeof posFormSchema>;
 
 export default function NuevaVentaPage() {
   const { toast } = useToast(); 
@@ -232,23 +189,14 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     <>
       <PageHeader
         title="Registrar Nueva Venta"
-        description="Complete los artículos y detalles para la nueva venta."
-      />
-      
-      <FormProvider {...methods}>
-        <PosForm
-          inventoryItems={currentInventoryItems} 
-          onSaleComplete={handleSaleCompletion}
-          onInventoryItemCreated={handleNewInventoryItemCreated}
-          categories={allCategories}
-          suppliers={allSuppliers}
-        />
-        <div className="mt-6 flex justify-end gap-2">
+        description="Añada artículos y finalice la transacción para generar el ticket."
+        actions={
+          <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.push('/pos')}>
                 <X className="mr-2 h-4 w-4" />
                 Cancelar
             </Button>
-            <Button
+             <Button
                 type="submit"
                 form="pos-form"
                 disabled={methods.formState.isSubmitting}
@@ -260,7 +208,18 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
                 )}
                 Completar Venta
             </Button>
-        </div>
+          </div>
+        }
+      />
+      
+      <FormProvider {...methods}>
+        <PosForm
+          inventoryItems={currentInventoryItems} 
+          onSaleComplete={handleSaleCompletion}
+          onInventoryItemCreated={handleNewInventoryItemCreated}
+          categories={allCategories}
+          suppliers={allSuppliers}
+        />
       </FormProvider>
 
       {saleForTicket && (

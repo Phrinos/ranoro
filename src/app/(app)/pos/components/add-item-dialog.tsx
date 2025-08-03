@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, PackagePlus, Plus, Minus, ArrowLeft } from 'lucide-react';
+import { Search, PackagePlus, Plus, Minus, ArrowLeft, DollarSign } from 'lucide-react';
 import type { InventoryItem } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +25,9 @@ export function AddItemDialog({ open, onOpenChange, inventoryItems, onItemSelect
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<number | ''>(1);
+  const [unitPrice, setUnitPrice] = useState<number | ''>('');
+
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) {
@@ -50,15 +53,16 @@ export function AddItemDialog({ open, onOpenChange, inventoryItems, onItemSelect
   const handleSelectItem = (item: InventoryItem) => {
     setSelectedItem(item);
     setSearchTerm(item.name);
+    setUnitPrice(item.sellingPrice);
   };
   
   const handleConfirm = () => {
     if (!selectedItem) return toast({ title: "Seleccione un artículo", variant: "destructive" });
-    if (quantity <= 0) return toast({ title: "Cantidad inválida", variant: "destructive" });
+    if (quantity === '' || quantity <= 0) return toast({ title: "Cantidad inválida", variant: "destructive" });
     if (!selectedItem.isService && selectedItem.quantity < quantity) {
       return toast({ title: "Stock Insuficiente", description: `Solo hay ${selectedItem.quantity} de ${selectedItem.name}.`, variant: "destructive" });
     }
-    onItemSelected(selectedItem, quantity);
+    onItemSelected({ ...selectedItem, sellingPrice: Number(unitPrice) || selectedItem.sellingPrice }, Number(quantity));
     onOpenChange(false);
   };
 
@@ -103,29 +107,26 @@ export function AddItemDialog({ open, onOpenChange, inventoryItems, onItemSelect
             <div className="pt-2 space-y-4">
               <div className="p-3 border rounded-md bg-muted">
                 <p className="font-semibold text-sm">Artículo: {selectedItem.name}</p>
-                <p className="text-xs text-muted-foreground">Precio de Venta: {formatCurrency(selectedItem.sellingPrice)} | Stock: {selectedItem.quantity}</p>
+                <p className="text-xs text-muted-foreground">Stock Disponible: {selectedItem.quantity}</p>
               </div>
-              <div className="flex justify-between items-end pt-2">
-                <Button variant="outline" size="sm" onClick={() => setSelectedItem(null)}>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label htmlFor="inventory-quantity" className="text-xs">Cantidad</Label>
+                   <Input id="inventory-quantity" type="number" step="1" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value === '' ? '' : parseInt(e.target.value))} className="h-10" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="unit-price" className="text-xs">Precio Venta (Unitario)</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input id="unit-price" type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value === '' ? '' : Number(e.target.value))} className="h-10 pl-8" />
+                  </div>
+                </div>
+              </div>
+               <div className="flex justify-end pt-2">
+                 <Button variant="ghost" size="sm" onClick={() => setSelectedItem(null)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Cambiar Artículo
                 </Button>
-                <div className="text-right">
-                  <Label htmlFor="inventory-quantity" className="text-xs">Cantidad ({selectedItem.unitType || 'unidades'})</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
-                    <Input
-                      id="inventory-quantity"
-                      type="number"
-                      step="any"
-                      min="0.001"
-                      value={quantity}
-                      onChange={(e) => setQuantity(parseFloat(e.target.value.replace(',', '.')) || 0)}
-                      className="w-20 text-center h-8"
-                    />
-                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
-                  </div>
-                </div>
               </div>
             </div>
           )}
