@@ -44,7 +44,7 @@ export default function SupplierDetailPage() {
 
     const q = query(collection(db, "payableAccounts"), where("supplierId", "==", supplierId));
     const unsubAccounts = onSnapshot(q, (snapshot) => {
-        setAccountsPayable(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PayableAccount)));
+        setAccountsPayable(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PayableAccount)).sort((a, b) => parseISO(b.invoiceDate).getTime() - parseISO(a.invoiceDate).getTime()));
     });
 
     return () => {

@@ -29,7 +29,7 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
     const router = useRouter();
     
     const handleRowClick = (supplier: Supplier) => {
-        router.push(`/inventario/proveedores/${supplier.id}`);
+        router.push(`/proveedores/${supplier.id}`);
     };
     
   if (!suppliers.length) {
