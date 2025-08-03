@@ -55,13 +55,9 @@ export function ProveedoresPageComponent() {
   }, [suppliers, searchTerm, sortOption]);
 
   const handleOpenDialog = useCallback((supplier: Supplier | null = null) => {
-    if(supplier && supplier.id) {
-        router.push(`/inventario/proveedores/${supplier.id}`);
-    } else {
-        setEditingSupplier(null);
-        setIsDialogOpen(true);
-    }
-  }, [router]);
+    setEditingSupplier(supplier);
+    setIsDialogOpen(true);
+  }, []);
   
   const handleSaveSupplier = useCallback(async (formData: SupplierFormValues) => {
     try {
