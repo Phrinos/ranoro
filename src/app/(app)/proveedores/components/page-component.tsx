@@ -19,7 +19,7 @@ import { Loader2 } from 'lucide-react';
 
 type SupplierSortOption = | "name_asc" | "name_desc" | "debt_asc" | "debt_desc";
 
-export function ProveedoresContent() {
+export function ProveedoresPageComponent() {
   const { toast } = useToast();
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
