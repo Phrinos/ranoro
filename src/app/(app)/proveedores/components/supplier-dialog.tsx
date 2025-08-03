@@ -3,7 +3,8 @@
 
 import React, { useState } from 'react';
 import { FormDialog } from '@/components/shared/form-dialog';
-import { SupplierForm, type SupplierFormValues } from "@/schemas/supplier-form-schema";
+import { SupplierForm } from "./supplier-form";
+import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import type { Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
