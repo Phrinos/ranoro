@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { format, parseISO, isValid } from 'date-fns';
@@ -120,16 +121,18 @@ export const CorteDiaContent = React.forwardRef<HTMLDivElement, CorteCajaContent
         </div>
       ))}
        {renderDashedLine()}
-      <div className="font-semibold my-1">TRANSACCIONES DE CAJA</div>
-      {transactions.map(t => (
-          <div key={t.id} className="text-xs py-0.5">
-              <div className="flex justify-between">
-                <span>{t.type === 'Entrada' ? '(+)' : '(-)'} {t.concept}</span>
-                <span className={cn(t.type === 'Entrada' ? 'text-green-700' : 'text-red-700')}>{formatCurrency(t.amount)}</span>
-              </div>
-              <div className="text-right text-neutral-500">{t.userName}</div>
-          </div>
-      ))}
+      <div className="font-semibold my-1">TRANSACCIONES MANUALES</div>
+      {transactions.length > 0 ? (
+        transactions.map(t => (
+            <div key={t.id} className="text-xs py-0.5">
+                <div className="flex justify-between">
+                  <span>{t.type === 'Entrada' ? '(+)' : '(-)'} {t.concept}</span>
+                  <span className={cn(t.type === 'Entrada' ? 'text-green-700' : 'text-red-700')}>{formatCurrency(t.amount)}</span>
+                </div>
+                <div className="text-right text-neutral-500">{t.userName}</div>
+            </div>
+        ))
+      ) : <p className="text-xs text-center text-neutral-500">Sin movimientos manuales</p>}
       
       {renderDashedLine()}
       <p className="text-center text-xs mt-2">Fin del Reporte</p>
