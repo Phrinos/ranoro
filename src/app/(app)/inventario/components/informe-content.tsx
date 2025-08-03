@@ -2,20 +2,22 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { DollarSign, AlertTriangle, Package, ShoppingCart, Building, TrendingUp } from 'lucide-react';
-import type { InventoryItem, Supplier } from '@/types';
+import type { InventoryItem, Supplier, InventoryMovement } from '@/types';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO, isValid } from 'date-fns';
 import { placeholderServiceRecords } from '@/lib/placeholder-data';
+import { ReporteInventarioContent } from './reporte-inventario-content';
 
 interface InformeContentProps {
   inventoryItems: InventoryItem[];
   suppliers: Supplier[];
   onRegisterPurchaseClick: () => void;
+  movements: InventoryMovement[];
 }
 
-export function InformeContent({ inventoryItems, suppliers, onRegisterPurchaseClick }: InformeContentProps) {
+export function InformeContent({ inventoryItems, suppliers, onRegisterPurchaseClick, movements }: InformeContentProps) {
 
   const summary = React.useMemo(() => {
     let cost = 0, sellingPriceValue = 0, lowStock = 0, products = 0, services = 0;
@@ -86,6 +88,14 @@ export function InformeContent({ inventoryItems, suppliers, onRegisterPurchaseCl
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Deuda Total con Proveedores</CardTitle><DollarSign className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold">${summary.totalDebtWithSuppliers.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div><p className="text-xs text-muted-foreground">Suma de todas las deudas pendientes.</p></CardContent></Card>
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Top Compras (Mes Pasado)</CardTitle><TrendingUp className="h-4 w-4 text-blue-500" /></CardHeader><CardContent>{summary.topSupplierLastMonth ? (<><div className="text-xl font-bold">{summary.topSupplierLastMonth.name}</div><p className="text-xs text-muted-foreground">{summary.topSupplierLastMonth.quantity} unidades suministradas.</p></>) : (<p className="text-muted-foreground">No se registraron compras.</p>)}</CardContent></Card>
+      </div>
+
+       <div className="space-y-4 pt-6">
+        <div className="space-y-2">
+            <h2 className="text-2xl font-semibold tracking-tight">Salidas de Inventario</h2>
+            <p className="text-muted-foreground">Registro de todas las salidas de productos, ya sea por ventas en mostrador o uso en servicios.</p>
+        </div>
+        <ReporteInventarioContent movements={movements} />
       </div>
     </div>
   );

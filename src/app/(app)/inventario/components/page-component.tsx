@@ -29,7 +29,6 @@ import { InventoryReportContent } from './inventory-report-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
 import type { InventoryMovement } from '@/types';
-import { ReporteInventarioContent } from './reporte-inventario-content';
 
 
 export function InventarioPageComponent({
@@ -169,10 +168,9 @@ export function InventarioPageComponent({
   }
 
   const tabsConfig = [
-    { value: "informe", label: "Informe" },
+    { value: "informe", label: "Informe y Salidas" },
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
-    { value: "salidas", label: "Salidas" },
     { value: "analisis", label: "Análisis IA" },
   ];
 
@@ -209,6 +207,7 @@ export function InventarioPageComponent({
                 inventoryItems={inventoryItems} 
                 suppliers={suppliers}
                 onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
+                movements={inventoryMovements}
             />
         </TabsContent>
         <TabsContent value="productos" className="mt-6">
@@ -220,9 +219,6 @@ export function InventarioPageComponent({
         </TabsContent>
         <TabsContent value="categorias" className="mt-6">
             <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
-        </TabsContent>
-         <TabsContent value="salidas" className="mt-6">
-             <ReporteInventarioContent movements={inventoryMovements} />
         </TabsContent>
         <TabsContent value="analisis" className="mt-6">
             <AnalisisIaContent inventoryItems={inventoryItems} />

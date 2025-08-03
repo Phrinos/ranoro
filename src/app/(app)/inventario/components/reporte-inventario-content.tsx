@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -48,7 +47,7 @@ export function ReporteInventarioContent({ movements }: ReporteInventarioContent
   ];
 
   return (
-    <div className="space-y-4 mt-6">
+    <div className="space-y-4">
       <TableToolbar
         searchTerm={tableManager.searchTerm}
         onSearchTermChange={tableManager.setSearchTerm}
