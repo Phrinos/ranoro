@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import { Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { PersonalPageComponent } from './components/page-component';
 import { useSearchParams } from 'next/navigation';
@@ -11,7 +10,7 @@ function PersonalPage() {
     const searchParams = useSearchParams();
     const tab = searchParams.get('tab');
     
-    return <PersonalPageComponent tab={tab || undefined} />;
+    return <PersonalPageComponent tab={tab || "rendimiento"} />;
 }
 
 export default function PersonalPageWrapper() {

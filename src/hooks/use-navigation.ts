@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { User, AppRole, NavigationEntry } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
+import { adminService } from '@/lib/services';
 
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
@@ -96,27 +97,29 @@ const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Mi Flotilla', 'Anális
 
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
-  const [currentUser, setCurrentUser] = React.useState<User | null>(defaultSuperAdmin);
-  const roles: AppRole[] = placeholderAppRoles;
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [roles, setRoles] = React.useState<AppRole[]>([]);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
         const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
         if (authUserString) {
             try { setCurrentUser(JSON.parse(authUserString)); } 
-            catch (e) { setCurrentUser(defaultSuperAdmin); }
-        } else {
-            setCurrentUser(defaultSuperAdmin);
+            catch (e) { console.error("Could not parse user from localStorage", e); }
         }
     }
-  }, [pathname]);
+    const unsub = adminService.onRolesUpdate(setRoles);
+    return () => unsub();
+  }, []);
 
   const userPermissions = React.useMemo(() => {
-    if (!currentUser) return new Set<string>();
+    if (!currentUser || roles.length === 0) return new Set<string>();
     const userRole = roles.find(r => r && r.name === currentUser.role);
     if (!userRole) {
-      console.warn(`Role "${currentUser.role}" not found.`);
-      return new Set<string>();
+      console.warn(`Role "${currentUser.role}" not found in fetched roles.`);
+      // Fallback to placeholder if roles haven't loaded
+      const placeholderRole = placeholderAppRoles.find(r => r.name === currentUser.role);
+      return new Set(placeholderRole?.permissions || []);
     }
     return new Set(userRole.permissions || []);
   }, [currentUser, roles]);
@@ -147,11 +150,18 @@ const useNavigation = (): NavigationEntry[] => {
     if (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual')) isActive = entry.path === '/opciones';
     if (pathname.startsWith('/finanzas') || pathname.startsWith('/facturacion-admin')) isActive = entry.path === '/finanzas';
     if (pathname.startsWith('/administracion') || pathname.startsWith('/admin')) isActive = entry.path === '/administracion';
-    if (pathname.startsWith('/flotilla') || pathname.startsWith('/rentas')) isActive = entry.path === '/rentas';
     
     // Specific deactivations for clarity
     if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/agenda') || pathname.startsWith('/servicios/nuevo'))) isActive = false;
     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
+    if (entry.path === '/rentas' && pathname.startsWith('/flotilla')) isActive = false;
+    if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
+    
+    // Combined flotilla/rentas logic
+    if (pathname.startsWith('/flotilla') || pathname.startsWith('/rentas')) {
+        isActive = entry.path === '/flotilla';
+    }
+
 
     return { ...entry, isActive };
   });

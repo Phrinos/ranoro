@@ -11,9 +11,14 @@ interface UseTableManagerOptions<T> {
   initialData: T[];
   initialSortOption?: string;
   initialDateRange?: DateRange;
-  searchKeys: (keyof T)[];
-  dateFilterKey: keyof T;
+  searchKeys: (keyof T | string)[]; // Allow string for nested keys
+  dateFilterKey: keyof T | string; // Allow string for nested keys
 }
+
+// Helper to get nested property value
+const getNestedValue = (obj: any, path: string) => {
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+};
 
 export function useTableManager<T extends { [key: string]: any }>({
   initialData,
@@ -41,16 +46,16 @@ export function useTableManager<T extends { [key: string]: any }>({
       const lowercasedTerm = searchTerm.toLowerCase();
       data = data.filter(item => 
         searchKeys.some(key => 
-          String(item[key] ?? '').toLowerCase().includes(lowercasedTerm)
+          String(getNestedValue(item, key as string) ?? '').toLowerCase().includes(lowercasedTerm)
         )
       );
     }
 
     if (dateRange?.from) { 
       const from = startOfDay(dateRange.from);
-      const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+      const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
       data = data.filter(item => {
-        const dateValue = item[dateFilterKey];
+        const dateValue = getNestedValue(item, dateFilterKey as string);
         if (!dateValue) return false;
         const parsedDate = parseDate(dateValue); // Use robust parser
         return parsedDate && isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
@@ -59,7 +64,7 @@ export function useTableManager<T extends { [key: string]: any }>({
 
     Object.entries(otherFilters).forEach(([key, value]) => {
       if (value !== 'all' && value !== undefined) {
-        data = data.filter(item => item[key] === value);
+        data = data.filter(item => getNestedValue(item, key) === value);
       }
     });
     
@@ -68,8 +73,8 @@ export function useTableManager<T extends { [key: string]: any }>({
       const [sortKey, sortDirection] = sortOption.split('_');
       const isAsc = sortDirection === 'asc';
 
-      const valA = a[sortKey];
-      const valB = b[sortKey];
+      const valA = getNestedValue(a, sortKey);
+      const valB = getNestedValue(b, sortKey);
 
       // Date sorting
       if (sortKey.toLowerCase().includes('date')) {

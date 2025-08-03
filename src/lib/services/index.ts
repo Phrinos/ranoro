@@ -4,3 +4,4 @@ export * from './operations.service';
 export * from './inventory.service';
 export * from './personnel.service';
 export * from './messaging.service';
+export * from './billing.service';

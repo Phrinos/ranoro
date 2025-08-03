@@ -1,8 +1,10 @@
 
-
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-import { FinanzasPageComponent } from './components/page-component';
+
+const FinanzasPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.FinanzasPageComponent }))
+);
 
 export default function FinanzasPageWrapper({
   searchParams,

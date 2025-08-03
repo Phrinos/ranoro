@@ -148,7 +148,7 @@ export function calculateDriverDebt(driver: Driver, allPayments: RentalPayment[]
     if (!driver) return { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
     
     // 1. Calculate Deposit Debt
-    const depositDebt = Math.max(0, STANDARD_DEPOSIT_AMOUNT - (driver.depositAmount || 0));
+    const depositDebt = Math.max(0, (driver.requiredDepositAmount || 0) - (driver.depositAmount || 0));
     
     // 2. Calculate Manual Debt
     const manualDebt = (driver.manualDebts || []).reduce((sum, debt) => sum + debt.amount, 0);

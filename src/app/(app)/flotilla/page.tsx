@@ -1,9 +1,13 @@
 
+
 "use client";
 
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-import { FlotillaPageComponent } from './components/page-component';
+
+const FlotillaPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.FlotillaPageComponent }))
+);
 
 export default function FlotillaPageWrapper() {
     return (

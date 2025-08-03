@@ -65,7 +65,7 @@ const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => 
     let userId = user.id;
 
     // Destructure to separate id and password from the data to be saved
-    const { id, password, ...userData } = user;
+    const { password, ...userData } = user;
     
     const description = `Se ${isEditing ? 'actualizó el perfil del' : 'creó el'} usuario "${user.name}" (Email: ${user.email}).`;
 

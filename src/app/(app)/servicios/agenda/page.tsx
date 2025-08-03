@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } fr
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
-import { ServiceDialog } from "../components/dialog";
+import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, isTomorrow, compareAsc, compareDesc, isSameDay, addDays, parseISO, isValid } from 'date-fns';
@@ -328,7 +328,7 @@ function AgendaPageComponent() {
           </Card>
         </TabsContent>
         <TabsContent value="calendario">
-          <ServiceCalendar services={scheduledServices} vehicles={vehicles} technicians={personnel as Technician[]} onServiceClick={(s) => handleOpenServiceDialog(s)} />
+          <ServiceCalendar services={scheduledServices} vehicles={vehicles} technicians={personnel} onServiceClick={(s) => handleOpenServiceDialog(s)} />
         </TabsContent>
       </Tabs>
 

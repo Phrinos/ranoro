@@ -84,6 +84,7 @@ export interface Vehicle {
     date: string; // ISO String
     mileage?: number;
   };
+  assignedVehicleId?: string; // New field to link to a driver
 }
 
 export interface ManualDebtEntry {
@@ -125,6 +126,7 @@ export interface RentalPayment {
   daysCovered: number;
   note?: string;
   registeredBy?: string;
+  paymentMethod?: 'Efectivo' | 'Tarjeta' | 'Transferencia';
 }
 
 export interface OwnerWithdrawal {
@@ -138,7 +140,7 @@ export interface OwnerWithdrawal {
 export interface VehicleExpense {
   id: string;
   vehicleId: string;
-  vehicleLicensePlate:. string;
+  vehicleLicensePlate: string;
   date: string; // ISO String
   amount: number;
   description: string;
@@ -414,7 +416,6 @@ export interface User {
   standardHoursPerDay?: number;
   isArchived?: boolean;
   hireDate?: string;
-  roles: string[];
 }
 
 export interface AppRole {
@@ -553,8 +554,8 @@ export interface InventoryMovement {
 }
 
 export type SidebarMenuButtonProps = React.ComponentProps<"button"> & {
-  asChild?: boolean;
-  isActive?: boolean;
+  asChild?: boolean
+  isActive?: boolean
   tooltipLabel?: string;
   tooltipClassName?: string;
-} & VariantProps<typeof sidebarMenuButtonVariants>;
+} & VariantProps<typeof sidebarMenuButtonVariants>

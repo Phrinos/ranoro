@@ -143,6 +143,8 @@ const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => 
         const driverDoc = await getDoc(driverRef);
         const driverData = driverDoc.data() as Driver;
         if (driverData?.assignedVehicleId) {
+            const vehicleRef = doc(db, 'vehicles', driverData.assignedVehicleId);
+            batch.update(vehicleRef, { assignedVehicleId: null });
             batch.update(driverRef, { assignedVehicleId: null });
         }
     }
