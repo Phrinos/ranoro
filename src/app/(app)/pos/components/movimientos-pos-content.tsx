@@ -99,7 +99,7 @@ export function MovimientosPosContent({ allCashTransactions, allSales, allServic
             <div className="flex justify-between items-center">
                 <CardTitle className="flex items-center gap-2 text-primary">
                     <Wallet className="h-6 w-6"/>
-                    Caja (Hoy)
+                    Saldo en Caja (Hoy)
                 </CardTitle>
                 <span className="text-2xl font-bold text-primary">{formatCurrency(totalCashBalanceToday)}</span>
             </div>
