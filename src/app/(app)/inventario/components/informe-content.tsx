@@ -4,18 +4,31 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, AlertTriangle, Package, ShoppingCart, Building, TrendingUp, PackageSearch, ChevronLeft, ChevronRight, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  calculateSaleProfit,
+} from "@/lib/placeholder-data";
 import type { InventoryItem, Supplier, InventoryMovement } from '@/types';
-import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO, isValid } from 'date-fns';
+import {
+  format,
+  parseISO,
+  isWithinInterval,
+  isValid,
+  startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc
+} from "date-fns";
 import { es } from 'date-fns/locale';
-import { placeholderServiceRecords } from '@/lib/placeholder-data';
-import { useTableManager } from '@/hooks/useTableManager';
-import { TableToolbar } from '@/components/shared/table-toolbar';
+import { CalendarIcon, LineChart, ListFilter, Filter, Search, ChevronLeft, ChevronRight, ArrowUpCircle, ArrowDownCircle, ShoppingCart } from "lucide-react";
+import { cn, formatCurrency } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { cn, formatCurrency } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { parseDate } from '@/lib/forms';
-import { LineChart } from 'lucide-react';
+import { TableToolbar } from '@/components/shared/table-toolbar';
+import { useTableManager } from '@/hooks/useTableManager';
+import { PackageSearch } from 'lucide-react';
 
 
 interface InformeContentProps {
@@ -33,6 +46,7 @@ export function InformeContent({ onRegisterPurchaseClick, movements }: InformeCo
     searchKeys: ['itemName', 'relatedId', 'type'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
+    itemsPerPage: 20,
   });
 
   const getMovementTypeVariant = (type: string): "success" | "destructive" | "outline" => {
