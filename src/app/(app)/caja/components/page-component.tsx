@@ -8,7 +8,8 @@ import { operationsService, inventoryService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { CajaPosContent } from '../../pos/caja/components/caja-pos-content';
-import { MovimientosPosContent } from '../../pos/components/movimientos-pos-content';
+import { MovimientosCajaContent } from './movimientos-caja-content';
+
 
 export function CajaPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
@@ -45,7 +46,7 @@ export function CajaPageComponent({ tab }: { tab?: string }) {
 
   const posTabs = [
     { value: "caja", label: "Caja", content: <CajaPosContent allSales={allSales} allServices={allServices} allCashTransactions={allCashTransactions} initialCashBalance={initialCashBalance} /> },
-    { value: "movimientos", label: "Movimientos", content: <MovimientosPosContent allCashTransactions={allCashTransactions} allSales={allSales} allServices={allServices} initialCashBalance={initialCashBalance} /> },
+    { value: "movimientos", label: "Movimientos", content: <MovimientosCajaContent allCashTransactions={allCashTransactions} allSales={allSales} allServices={allServices} /> },
   ];
 
   if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
