@@ -339,7 +339,7 @@ export default function DashboardPage() {
         totalVariableCommissions = allPersonnel
           .filter(p => !p.isArchived)
           .reduce((sum, person) => {
-            return sum + (netProfitBeforeCommissions * (person.commissionRate || 0));
+            return sum + (netProfitBeforeCommissions * ((person.commissionRate || 0) / 100));
           }, 0);
       }
 
@@ -405,7 +405,7 @@ export default function DashboardPage() {
         if (utilidadNeta > 0) {
            const totalCommissions = allPersonnel
             .filter(p => !p.isArchived)
-            .reduce((sum, person) => sum + (utilidadNeta * (person.commissionRate || 0)), 0);
+            .reduce((sum, person) => sum + (utilidadNeta * ((person.commissionRate || 0) / 100)), 0);
            utilidadNeta -= totalCommissions;
         }
 
