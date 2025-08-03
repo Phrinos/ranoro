@@ -187,30 +187,33 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
 
   return (
     <>
-      <PageHeader
-        title="Registrar Nueva Venta"
-        description="Añada artículos y finalice la transacción para generar el ticket."
-        actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push('/pos')}>
-                <X className="mr-2 h-4 w-4" />
-                Cancelar
-            </Button>
-             <Button
-                type="submit"
-                form="pos-form"
-                disabled={methods.formState.isSubmitting}
-            >
-                {methods.formState.isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                )}
-                Completar Venta
-            </Button>
-          </div>
-        }
-      />
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight">Registrar Nueva Venta</h1>
+                <p className="text-primary-foreground/80 mt-1">Añada artículos y finalice la transacción para generar el ticket.</p>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+                <Button variant="outline" className="text-primary-foreground border-primary-foreground/50 hover:bg-primary/80 w-full sm:w-auto" onClick={() => router.push('/pos')}>
+                    <X className="mr-2 h-4 w-4" />
+                    Cancelar
+                </Button>
+                 <Button
+                    type="submit"
+                    form="pos-form"
+                    disabled={methods.formState.isSubmitting}
+                    className="bg-white text-primary hover:bg-gray-200 w-full sm:w-auto"
+                >
+                    {methods.formState.isSubmitting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Completar Venta
+                </Button>
+            </div>
+        </div>
+      </div>
       
       <FormProvider {...methods}>
         <PosForm
