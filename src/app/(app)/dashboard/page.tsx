@@ -272,7 +272,7 @@ export default function DashboardPage() {
       }));
 
       const servicesForAI = allServices
-        .filter(service => service.serviceDate)
+        .filter(service => service.serviceDate && (service.status === 'Entregado' || service.status === 'Completado'))
         .map(service => ({
             serviceDate: parseDate(service.serviceDate)?.toISOString(),
             suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
@@ -301,7 +301,7 @@ export default function DashboardPage() {
     }
   };
   
-  const { financialChartData, operationalChartData, serviceTypeDistribution, monthlyComparisonData } = useMemo(() => {
+  const chartData = useMemo(() => {
     const today = new Date();
     const monthsToProcess = 6;
     const months = Array.from({ length: monthsToProcess }, (_, i) => subMonths(today, i)).reverse();
@@ -329,7 +329,6 @@ export default function DashboardPage() {
       
       const totalOperationalProfit = serviceProfit + salesProfit;
       
-      // Corrected logic: Use allPersonnel for salaries
       const totalBaseSalaries = allPersonnel
         .filter(p => !p.isArchived)
         .reduce((sum, person) => sum + (person.monthlySalary || 0), 0);
@@ -337,7 +336,6 @@ export default function DashboardPage() {
       const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
       const totalMonthlyFixedExpenses = totalBaseSalaries + totalFixedExp;
       
-      // Base for commissions is profit after fixed expenses
       const netProfitBeforeCommissions = totalOperationalProfit - totalMonthlyFixedExpenses;
       
       let totalVariableCommissions = 0;
@@ -399,7 +397,6 @@ export default function DashboardPage() {
         const ingresos = services.reduce((sum, s) => sum + (s.totalCost || 0), 0) + sales.reduce((sum, s) => sum + s.totalAmount, 0);
         const utilidadBruta = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
         
-        // Corrected: use allPersonnel
         const totalBaseSalaries = allPersonnel
             .filter(p => !p.isArchived)
             .reduce((sum, person) => sum + (person.monthlySalary || 0), 0);
@@ -407,7 +404,6 @@ export default function DashboardPage() {
         const gastosFijos = totalBaseSalaries + fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
         let utilidadNeta = utilidadBruta - gastosFijos;
-        // Do not add commissions if there is no profit after fixed expenses
         if (utilidadNeta > 0) {
            const totalCommissions = allPersonnel
             .filter(p => !p.isArchived)
@@ -423,7 +419,7 @@ export default function DashboardPage() {
     
     const monthlyComparisonDataResult = [
         { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos, 'Utilidad Neta': 0 },
-        { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta, 'Utilidad Neta': 0 },
+        { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta, 'Utilidad Neta': currentMonthMetrics.utilidadNeta },
     ];
 
     return {
@@ -505,7 +501,7 @@ export default function DashboardPage() {
         </Card>
       </div>
       
-      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts financialChartData={financialChartData} operationalChartData={operationalChartData} serviceTypeDistribution={serviceTypeDistribution} monthlyComparisonData={monthlyComparisonData} allServiceTypes={allServiceTypes.map(st => st as ServiceTypeRecord)} />}
+      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts financialChartData={chartData.financialChartData} operationalChartData={chartData.operationalChartData} serviceTypeDistribution={chartData.serviceTypeDistribution} monthlyComparisonData={chartData.monthlyComparisonData} allServiceTypes={allServiceTypes.map(st => st as ServiceTypeRecord)} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <Card className="shadow-lg">
