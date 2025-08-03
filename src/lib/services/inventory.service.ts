@@ -13,9 +13,9 @@ import {
   query,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList, ServiceTypeRecord, MonthlyFixedExpense } from "@/types";
-import type { InventoryItemFormValues } from "@/app/(app)/inventario/components/inventory-item-form";
-import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle-form";
+import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList, ServiceTypeRecord, MonthlyFixedExpense, PayableAccount } from "@/types";
+import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
+import type { VehicleFormValues } from "@/schemas/vehicle-form-schema";
 import type { PriceListFormValues } from "@/app/(app)/precios/components/price-list-form";
 import type { SupplierFormValues } from '@/app/(app)/inventario/proveedores/components/supplier-form';
 import { logAudit } from '../placeholder-data';
@@ -265,6 +265,29 @@ const onFixedExpensesUpdatePromise = async (): Promise<MonthlyFixedExpense[]> =>
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MonthlyFixedExpense));
 };
 
+// --- Payable Accounts ---
+const onPayableAccountsUpdate = (callback: (accounts: PayableAccount[]) => void): (() => void) => {
+  if (!db) return () => {};
+  const q = query(collection(db, "payableAccounts"));
+  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    callback(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PayableAccount)));
+  });
+  return unsubscribe;
+};
+
+const savePayableAccount = async (data: Partial<PayableAccount>, id?: string): Promise<PayableAccount> => {
+  if (!db) throw new Error("Database not initialized.");
+  const cleanedData = cleanObjectForFirestore(data);
+  if (id) {
+    const docRef = doc(db, 'payableAccounts', id);
+    await updateDoc(docRef, cleanedData);
+    const updatedDoc = await getDoc(docRef);
+    return { id, ...(updatedDoc.data() as Omit<PayableAccount, 'id'>) };
+  } else {
+    const docRef = await addDoc(collection(db, 'payableAccounts'), cleanedData);
+    return { id: docRef.id, ...data } as PayableAccount;
+  }
+};
 
 
 export const inventoryService = {
@@ -300,4 +323,6 @@ export const inventoryService = {
     deletePriceList,
     onFixedExpensesUpdate,
     onFixedExpensesUpdatePromise,
+    onPayableAccountsUpdate,
+    savePayableAccount
 };

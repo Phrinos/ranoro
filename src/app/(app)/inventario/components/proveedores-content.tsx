@@ -14,6 +14,7 @@ import { SuppliersTable } from '../proveedores/components/suppliers-table';
 import { SupplierDialog } from '../proveedores/components/supplier-dialog';
 import type { SupplierFormValues } from '../proveedores/components/supplier-form';
 import { inventoryService } from '@/lib/services';
+import { useRouter } from 'next/navigation';
 
 type SupplierSortOption = | "name_asc" | "name_desc" | "debt_asc" | "debt_desc";
 
@@ -23,6 +24,7 @@ interface ProveedoresContentProps {
 
 export function ProveedoresContent({ suppliers: initialSuppliers }: ProveedoresContentProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<SupplierSortOption>("name_asc");
@@ -51,9 +53,14 @@ export function ProveedoresContent({ suppliers: initialSuppliers }: ProveedoresC
   }, [suppliers, searchTerm, sortOption]);
 
   const handleOpenDialog = useCallback((supplier: Supplier | null = null) => {
-    setEditingSupplier(supplier);
-    setIsDialogOpen(true);
-  }, []);
+    if(supplier) {
+        router.push(`/inventario/proveedores/${supplier.id}`);
+    } else {
+        setEditingSupplier(null);
+        setIsDialogOpen(true);
+    }
+  }, [router]);
+  
 
   const handleSaveSupplier = useCallback(async (formData: SupplierFormValues) => {
     try {

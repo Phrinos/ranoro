@@ -59,7 +59,6 @@ const supplierFormSchema = z.object({
   rfc: z.string().optional(),
   taxRegime: z.string().optional(),
   debtAmount: z.coerce.number().optional(),
-  debtNote: z.string().optional(),
 });
 
 export type SupplierFormValues = z.infer<typeof supplierFormSchema>;
@@ -83,7 +82,6 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
       rfc: "",
       taxRegime: "",
       debtAmount: undefined,
-      debtNote: "",
     },
   });
 
@@ -214,13 +212,12 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             )}
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
+        <FormField
             control={form.control}
             name="debtAmount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Monto de Deuda (Opcional)</FormLabel>
+                <FormLabel>Monto de Deuda Inicial (Opcional)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="Ej: 1500.50" {...field} value={field.value ?? ''} />
                 </FormControl>
@@ -228,20 +225,6 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="debtNote"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nota de Deuda (Opcional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: Factura #123 pendiente" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))}/>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
       </form>
     </Form>
   );

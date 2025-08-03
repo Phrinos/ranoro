@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState } from 'react';
@@ -9,12 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { SupplierForm, type SupplierFormValues } from "./supplier-form";
+import { SupplierForm } from "./supplier-form";
 import type { Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
+import { type SupplierFormValues } from '@/schemas/supplier-form-schema';
+
 
 interface SupplierDialogProps {
   trigger?: React.ReactNode;

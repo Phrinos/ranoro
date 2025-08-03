@@ -5,3 +5,4 @@ export * from './inventory.service';
 export * from './personnel.service';
 export * from './messaging.service';
 export * from './billing.service';
+export * from './quote.service';
