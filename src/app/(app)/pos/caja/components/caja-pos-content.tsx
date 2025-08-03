@@ -24,7 +24,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from "zod";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { CorteDiaContent } from './corte-caja-content';
+import { CorteDiaContent } from '../../caja/components/corte-caja-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -308,3 +308,5 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     </>
   );
 }
+
+    
