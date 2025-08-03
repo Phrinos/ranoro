@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/fixed-expense-form.tsx
 
 "use client";
@@ -18,10 +19,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { MonthlyFixedExpense } from "@/types";
 import { DollarSign } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const expenseCategories = ['Renta', 'Servicios', 'Otros'] as const;
 
 const fixedExpenseFormSchema = z.object({
   name: z.string().min(2, "El nombre del gasto debe tener al menos 2 caracteres."),
   amount: z.coerce.number().min(0, "El monto no puede ser negativo."),
+  category: z.enum(expenseCategories, { required_error: "Debe seleccionar una categoría." }),
   notes: z.string().optional(),
 });
 
@@ -39,6 +44,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
     defaultValues: initialData || {
       name: "",
       amount: undefined,
+      category: 'Otros',
       notes: "",
     },
   });
@@ -59,6 +65,28 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
               <FormControl>
                 <Input placeholder="Ej: Renta del Local" {...field} value={field.value ?? ''} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Categoría</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una categoría" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {expenseCategories.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

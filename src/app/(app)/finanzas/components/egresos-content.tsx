@@ -1,10 +1,11 @@
+
 // src/app/(app)/finanzas/components/egresos-content.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, BadgeCent, TrendingDown } from 'lucide-react';
+import { Pencil, BadgeCent, TrendingDown, Building, Wrench } from 'lucide-react';
 import { formatCurrency } from "@/lib/utils";
 import type { MonthlyFixedExpense, Personnel } from '@/types';
 import { FixedExpensesDialog } from './fixed-expenses-dialog';
@@ -23,6 +24,23 @@ interface EgresosContentProps {
 
 export function EgresosContent({ financialSummary, fixedExpenses, onExpensesUpdated }: EgresosContentProps) {
   const [isExpensesDialogOpen, setIsExpensesDialogOpen] = useState(false);
+  
+  const groupedExpenses = useMemo(() => {
+    const groups: { [key: string]: MonthlyFixedExpense[] } = {
+      'Renta': [],
+      'Servicios': [],
+      'Otros': [],
+    };
+    fixedExpenses.forEach(expense => {
+      const category = expense.category || 'Otros';
+      if (groups[category]) {
+        groups[category].push(expense);
+      } else {
+        groups['Otros'].push(expense);
+      }
+    });
+    return groups;
+  }, [fixedExpenses]);
 
   return (
     <>
@@ -63,21 +81,28 @@ export function EgresosContent({ financialSummary, fixedExpenses, onExpensesUpda
               </div>
             </div>
           </div>
-          <div className="border-t pt-6">
-            <h3 className="font-semibold text-lg mb-2">Servicios y Gastos Operativos Fijos</h3>
-            <div className="space-y-2">
-              {fixedExpenses.length > 0 ? (
-                fixedExpenses.map(expense => (
-                  <div key={expense.id} className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">{expense.name}:</span>
-                    <span className="font-semibold">{formatCurrency(expense.amount)}</span>
+          
+          <div className="border-t pt-6 space-y-4">
+            {Object.entries(groupedExpenses).map(([category, expenses]) => (
+              expenses.length > 0 && (
+                <div key={category}>
+                  <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                    {category === 'Renta' ? <Building className="h-5 w-5" /> : category === 'Servicios' ? <Wrench className="h-5 w-5" /> : null}
+                    {category}
+                  </h3>
+                  <div className="space-y-2">
+                    {expenses.map(expense => (
+                      <div key={expense.id} className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">{expense.name}:</span>
+                        <span className="font-semibold">{formatCurrency(expense.amount)}</span>
+                      </div>
+                    ))}
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground text-center">No hay gastos fijos registrados.</p>
-              )}
-            </div>
+                </div>
+              )
+            ))}
           </div>
+
         </CardContent>
       </Card>
       

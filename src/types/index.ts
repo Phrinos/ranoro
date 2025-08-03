@@ -1,3 +1,4 @@
+
 // src/types/index.ts
 import { type VariantProps } from "class-variance-authority"
 import { sidebarMenuButtonVariants } from './sidebar.types';
@@ -429,6 +430,7 @@ export interface MonthlyFixedExpense {
   name: string;
   amount: number;
   notes?: string;
+  category?: 'Renta' | 'Servicios' | 'Otros';
 }
 
 export interface CashDrawerTransaction {
@@ -559,3 +561,15 @@ export type SidebarMenuButtonProps = React.ComponentProps<"button"> & {
   tooltipLabel?: string;
   tooltipClassName?: string;
 } & VariantProps<typeof sidebarMenuButtonVariants>
+
+export interface PayableAccount {
+    id: string;
+    supplierId: string;
+    supplierName: string;
+    invoiceId: string;
+    invoiceDate: string; // ISO String
+    dueDate: string; // ISO String
+    totalAmount: number;
+    paidAmount: number;
+    status: 'Pendiente' | 'Pagado Parcialmente' | 'Pagado';
+}

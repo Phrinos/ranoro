@@ -1,8 +1,7 @@
+
 // src/app/(app)/finanzas/components/fixed-expenses-dialog.tsx
 
-"use client";
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +28,7 @@ import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'fireb
 import { db } from '@/lib/firebaseClient';
 import { formatCurrency } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { Badge } from '@/components/ui/badge';
 
 interface FixedExpensesDialogProps {
   open: boolean;
@@ -36,6 +36,12 @@ interface FixedExpensesDialogProps {
   onExpensesUpdated: (updatedExpenses: MonthlyFixedExpense[]) => void;
   initialExpenses: MonthlyFixedExpense[];
 }
+
+const categoryOrder: Record<string, number> = {
+  'Renta': 1,
+  'Servicios': 2,
+  'Otros': 3,
+};
 
 export function FixedExpensesDialog({ 
   open, 
@@ -52,6 +58,18 @@ export function FixedExpensesDialog({
     setExpenses(initialExpenses);
   }, [initialExpenses]);
 
+  const sortedExpenses = useMemo(() => {
+    return [...expenses].sort((a, b) => {
+      const orderA = categoryOrder[a.category || 'Otros'] || 99;
+      const orderB = categoryOrder[b.category || 'Otros'] || 99;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [expenses]);
+
+
   const handleOpenSubForm = (expense?: MonthlyFixedExpense) => {
     setEditingExpense(expense || null);
     setIsSubFormOpen(true);
@@ -59,7 +77,12 @@ export function FixedExpensesDialog({
 
   const handleSaveExpense = async (values: FixedExpenseFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive' });
-    const dataToSave = { name: values.name, amount: Number(values.amount), notes: values.notes || '' };
+    const dataToSave = { 
+        name: values.name, 
+        amount: Number(values.amount), 
+        notes: values.notes || '',
+        category: values.category,
+    };
     try {
       if (editingExpense) {
         await updateDoc(doc(db, 'fixedMonthlyExpenses', editingExpense.id), dataToSave);
@@ -116,7 +139,7 @@ export function FixedExpensesDialog({
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Añadir Gasto
               </Button>
-              {expenses.length > 0 ? (
+              {sortedExpenses.length > 0 ? (
                 <ScrollArea className="h-[400px] border rounded-md">
                   <Table>
                     <TableHeader>
@@ -127,11 +150,12 @@ export function FixedExpensesDialog({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {expenses.map((expense) => (
+                      {sortedExpenses.map((expense) => (
                         <TableRow key={expense.id}>
                           <TableCell className="font-medium">
                             <p>{expense.name}</p>
-                            {expense.notes && <p className="text-xs text-muted-foreground">{expense.notes}</p>}
+                            <Badge variant="outline" className="mt-1">{expense.category || 'Otros'}</Badge>
+                            {expense.notes && <p className="text-xs text-muted-foreground mt-1">{expense.notes}</p>}
                           </TableCell>
                           <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                           <TableCell className="text-right">
