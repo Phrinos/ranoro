@@ -39,43 +39,6 @@ export function MovimientosCajaContent({ allCashTransactions, allSales, allServi
       default: return 'secondary';
     }
   };
-
-  const unifiedTransactions = useMemo(() => {
-    // Start with all manually registered cash transactions.
-    const manualTransactions: CashDrawerTransaction[] = allCashTransactions.filter(t => !t.relatedType);
-
-    // Process sales to create cash entries.
-    const saleTransactions: CashDrawerTransaction[] = allSales
-      .filter(s => s.paymentMethod?.includes('Efectivo') && s.status !== 'Cancelado')
-      .map(s => ({
-        id: `sale-${s.id}`,
-        date: s.saleDate,
-        type: 'Entrada',
-        amount: s.paymentMethod === 'Efectivo' ? s.totalAmount : (s.amountInCash || 0),
-        concept: `Venta POS #${s.id.slice(0, 6)}`,
-        userName: 'Sistema',
-        userId: 'system',
-        relatedType: 'Venta',
-        relatedId: s.id,
-      }));
-
-    // Process services to create cash entries.
-    const serviceTransactions: CashDrawerTransaction[] = allServices
-      .filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo'))
-      .map(s => ({
-        id: `service-${s.id}`,
-        date: s.deliveryDateTime || s.serviceDate,
-        type: 'Entrada',
-        amount: s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : (s.amountInCash || 0),
-        concept: `Servicio #${s.id.slice(0, 6)} - ${s.vehicleIdentifier || ''}`,
-        userName: s.serviceAdvisorName || 'Sistema',
-        userId: s.serviceAdvisorId || 'system',
-        relatedType: 'Servicio',
-        relatedId: s.id,
-      }));
-
-    return [...manualTransactions, ...saleTransactions, ...serviceTransactions];
-  }, [allSales, allServices, allCashTransactions]);
   
 
   const {
@@ -87,7 +50,7 @@ export function MovimientosCajaContent({ allCashTransactions, allSales, allServi
     goToPreviousPage,
     ...tableManager
   } = useTableManager<CashDrawerTransaction>({
-    initialData: unifiedTransactions,
+    initialData: allCashTransactions,
     searchKeys: ['concept', 'userName', 'relatedId'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc'

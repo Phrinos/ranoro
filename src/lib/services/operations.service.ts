@@ -562,7 +562,7 @@ const addRentalPayment = async (driverId: string, amount: number, note: string |
     if (!vehicle) throw new Error("Assigned vehicle not found.");
     
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-    const user = authUserString ? JSON.parse(authUseString) as User : null;
+    const user = authUserString ? JSON.parse(authUserString) as User : null;
     
     const newPayment: Omit<RentalPayment, 'id'> = {
         driverId: driver.id,
