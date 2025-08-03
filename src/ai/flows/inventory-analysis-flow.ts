@@ -80,10 +80,10 @@ const analyzeInventoryPrompt = ai.definePrompt({
 6.  **Justificación Clara:** Proporciona un razonamiento claro y conciso para cada recomendación, siempre en español.
 7.  **Incluir SKU:** Asegúrate de que el campo \`itemSku\` esté presente en cada recomendación si el artículo tiene uno.
 
-**Datos de Inventario:**
+**Datos de Inventario Actual:**
 {{json inventoryItems}}
 
-**Historial de Uso en Servicios:**
+**Historial de Uso (para análisis de consumo):**
 {{json serviceRecords}}
 
 Ahora, devuelve tus recomendaciones en el formato JSON especificado. Recuerda, solo los artículos que necesiten atención y responde todo en español.

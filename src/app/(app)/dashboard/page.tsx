@@ -260,8 +260,6 @@ const handleRunAnalysis = async () => {
     setAnalysisError(null);
     setAnalysisResult(null);
 
-    const inventoryMap = new Map(allInventory.map(item => [item.id, item]));
-
     try {
         const inventoryForAI = allInventory.map(item => ({
             id: item.id,
@@ -270,27 +268,13 @@ const handleRunAnalysis = async () => {
             quantity: item.quantity,
             lowStockThreshold: item.lowStockThreshold,
         }));
-
-        const servicesForAI = allServices
-            .map(service => {
-                const serviceDate = parseDate(service.serviceDate);
-                if (!serviceDate || !isValid(serviceDate) || (service.status !== 'Entregado' && service.status !== 'Completado')) {
-                    return null;
-                }
-                return {
-                    serviceDate: serviceDate.toISOString(),
-                    suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
-                        supplyId: supply.supplyId,
-                        quantity: supply.quantity,
-                        supplyName: inventoryMap.get(supply.supplyId)?.name || supply.supplyName || 'Unknown',
-                    })),
-                };
-            })
-            .filter((item): item is NonNullable<typeof item> => item !== null);
-
+        
+        // This is now an empty array. The AI flow should fetch this data itself.
+        const serviceHistoryForAI: any[] = [];
+        
         const result = await analyzeInventory({
             inventoryItems: inventoryForAI,
-            serviceRecords: servicesForAI,
+            serviceRecords: serviceHistoryForAI,
         });
 
         setAnalysisResult(result.recommendations);
