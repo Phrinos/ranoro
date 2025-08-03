@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, collection, query, where, getDocs, writeBatch, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
@@ -15,9 +15,12 @@ import { SupplierDialog } from '../components/supplier-dialog';
 import { formatCurrency } from '@/lib/utils';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { inventoryService } from '@/lib/services';
-import type { Supplier, PayableAccount } from '@/types';
+import { inventoryService, operationsService } from '@/lib/services';
+import type { Supplier, PayableAccount, User } from '@/types';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
+import { PayableAccountDialog } from '../components/payable-account-dialog';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+
 
 export default function SupplierDetailPage() {
   const params = useParams();
@@ -29,9 +32,11 @@ export default function SupplierDetailPage() {
   const [accountsPayable, setAccountsPayable] = useState<PayableAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<PayableAccount | null>(null);
 
   useEffect(() => {
-    if (!supplierId) return;
+    if (!supplierId || !db) return;
 
     const unsubSupplier = onSnapshot(doc(db, "suppliers", supplierId), (doc) => {
       if (doc.exists()) {
@@ -57,6 +62,23 @@ export default function SupplierDetailPage() {
     await inventoryService.saveSupplier(data, supplierId);
     toast({ title: 'Proveedor actualizado' });
     setIsEditDialogOpen(false);
+  };
+  
+  const handleRegisterPayment = async (accountId: string, amount: number, paymentMethod: string, note?: string) => {
+    try {
+        const userString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        const user: User | null = userString ? JSON.parse(userString) : null;
+        await operationsService.registerPayableAccountPayment(accountId, amount, paymentMethod, note, user);
+        toast({ title: "Pago Registrado", description: "El pago se ha registrado correctamente." });
+        setIsPaymentDialogOpen(false);
+    } catch(e) {
+        toast({ title: "Error", description: `No se pudo registrar el pago. ${e instanceof Error ? e.message : ''}`, variant: "destructive" });
+    }
+  };
+  
+  const handleOpenPaymentDialog = (account: PayableAccount) => {
+    setSelectedAccount(account);
+    setIsPaymentDialogOpen(true);
   };
   
   if (isLoading) return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -118,7 +140,11 @@ export default function SupplierDetailPage() {
                             <TableCell className="text-right text-green-600">{formatCurrency(acc.paidAmount)}</TableCell>
                             <TableCell className="text-right font-bold">{formatCurrency(acc.totalAmount - acc.paidAmount)}</TableCell>
                             <TableCell className="text-center"><Badge variant={acc.status === 'Pagado' ? 'success' : acc.status === 'Pagado Parcialmente' ? 'secondary' : 'destructive'}>{acc.status}</Badge></TableCell>
-                            <TableCell className="text-right"><Button variant="outline" size="sm">Registrar Pago</Button></TableCell>
+                            <TableCell className="text-right">
+                                {acc.status !== 'Pagado' && (
+                                    <Button variant="outline" size="sm" onClick={() => handleOpenPaymentDialog(acc)}>Registrar Pago</Button>
+                                )}
+                            </TableCell>
                         </TableRow>
                       )) : (
                         <TableRow><TableCell colSpan={8} className="h-24 text-center">No hay cuentas por pagar para este proveedor.</TableCell></TableRow>
@@ -135,6 +161,15 @@ export default function SupplierDetailPage() {
         supplier={supplier}
         onSave={handleSaveSupplier}
       />
+      
+      {selectedAccount && (
+        <PayableAccountDialog
+            open={isPaymentDialogOpen}
+            onOpenChange={setIsPaymentDialogOpen}
+            account={selectedAccount}
+            onSave={handleRegisterPayment}
+        />
+      )}
     </div>
   );
 }

@@ -567,23 +567,25 @@ const getServicesForVehicle = async (vehicleId: string): Promise<ServiceRecord[]
 const registerPayableAccountPayment = async (
   accountId: string, 
   paymentAmount: number, 
-  paymentMethod: PayableAccount['status'] extends 'Pagado' ? never : string, 
+  paymentMethod: string, 
   paymentNote?: string,
   user?: User | null
 ): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
 
   const accountRef = doc(db, 'payableAccounts', accountId);
-  const supplierRef = doc(db, 'suppliers', (await getDoc(accountRef)).data()?.supplierId);
+  const accountDoc = await getDoc(accountRef);
+  if (!accountDoc.exists()) throw new Error("Account payable not found");
+  const accountData = accountDoc.data() as PayableAccount;
+  
+  const supplierRef = doc(db, 'suppliers', accountData.supplierId);
   const supplierDoc = await getDoc(supplierRef);
+  if (!supplierDoc.exists()) throw new Error("Supplier not found");
   const supplierData = supplierDoc.data() as Supplier;
 
   const batch = writeBatch(db);
 
   // Update account payable
-  const accountDoc = await getDoc(accountRef);
-  if (!accountDoc.exists()) throw new Error("Account payable not found");
-  const accountData = accountDoc.data() as PayableAccount;
   const newPaidAmount = accountData.paidAmount + paymentAmount;
   const newStatus: PayableAccount['status'] = newPaidAmount >= accountData.totalAmount ? 'Pagado' : 'Pagado Parcialmente';
   batch.update(accountRef, { paidAmount: newPaidAmount, status: newStatus });

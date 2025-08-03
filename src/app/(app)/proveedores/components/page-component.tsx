@@ -6,26 +6,32 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { Supplier } from '@/types';
 import { PlusCircle, Search, ListFilter } from 'lucide-react';
+import type { Supplier } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { SuppliersTable } from './suppliers-table';
 import { SupplierDialog } from './supplier-dialog';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { inventoryService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
+import { useTableManager } from '@/hooks/useTableManager';
+import { TableToolbar } from '@/components/shared/table-toolbar';
 
 type SupplierSortOption = | "name_asc" | "name_desc" | "debt_asc" | "debt_desc";
+
+const sortOptions = [
+    { value: 'name_asc', label: 'Nombre (A-Z)' },
+    { value: 'name_desc', label: 'Nombre (Z-A)' },
+    { value: 'debt_desc', label: 'Deuda (Mayor a Menor)' },
+    { value: 'debt_asc', label: 'Deuda (Menor a Mayor)' },
+];
 
 export function ProveedoresPageComponent() {
   const { toast } = useToast();
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortOption, setSortOption] = useState<SupplierSortOption>('name_asc');
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
 
@@ -38,22 +44,13 @@ export function ProveedoresPageComponent() {
     return () => unsubscribe();
   }, []);
   
-  const filteredAndSortedSuppliers = useMemo(() => {
-    let items = [...suppliers];
-    if (searchTerm) {
-        items = items.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase()));
-    }
-    items.sort((a,b) => {
-        switch(sortOption) {
-            case 'debt_asc': return (a.debtAmount || 0) - (b.debtAmount || 0);
-            case 'debt_desc': return (b.debtAmount || 0) - (a.debtAmount || 0);
-            case 'name_desc': return b.name.localeCompare(a.name);
-            case 'name_asc':
-            default: return a.name.localeCompare(b.name);
-        }
-    });
-    return items;
-  }, [suppliers, searchTerm, sortOption]);
+  const { filteredData: filteredAndSortedSuppliers, ...tableManager } = useTableManager<Supplier>({
+      initialData: suppliers,
+      searchKeys: ['name', 'contactPerson'],
+      dateFilterKey: '',
+      initialSortOption: 'name_asc',
+      itemsPerPage: 100,
+  });
 
   const handleOpenDialog = useCallback((supplier: Supplier | null = null) => {
     setEditingSupplier(supplier);
@@ -91,13 +88,11 @@ export function ProveedoresPageComponent() {
         <div className="flex justify-end">
             <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Proveedor</Button>
         </div>
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="relative flex-1 w-full sm:w-auto"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por nombre o contacto..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar por</Button></DropdownMenuTrigger>
-                <DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as SupplierSortOption)}><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="debt_desc">Deuda (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="debt_asc">Deuda (Menor a Mayor)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent>
-            </DropdownMenu>
-        </div>
+        <TableToolbar 
+            {...tableManager}
+            sortOptions={sortOptions}
+            searchPlaceholder="Buscar por nombre o contacto..."
+        />
         <Card>
             <CardContent className="p-0">
                 <SuppliersTable suppliers={filteredAndSortedSuppliers} onEdit={handleOpenDialog} onDelete={handleDeleteSupplier} />
