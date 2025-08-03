@@ -37,12 +37,6 @@ interface TableToolbarProps {
   onFilterChange?: (filters: Record<string, string | 'all'>) => void;
   filterOptions?: FilterGroup[];
   searchPlaceholder?: string;
-  primaryAction?: React.ReactNode;
-  paginationSummary?: string;
-  canGoPrevious?: boolean;
-  canGoNext?: boolean;
-  onPreviousPage?: () => void;
-  onNextPage?: () => void;
 }
 
 export const TableToolbar: React.FC<TableToolbarProps> = ({
@@ -60,12 +54,6 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   onFilterChange,
   filterOptions = [],
   searchPlaceholder = 'Buscar...',
-  primaryAction,
-  paginationSummary,
-  canGoPrevious,
-  canGoNext,
-  onPreviousPage,
-  onNextPage,
 }) => {
     
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -112,28 +100,6 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                 />
             </div>
             <div className="flex items-center gap-2 flex-wrap justify-start">
-                {/* Date Picker */}
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                    <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
-                        <CalendarDateIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
-                    </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                        <div className="flex p-2">
-                            <Button variant="ghost" size="sm" onClick={setDateToToday}>Hoy</Button>
-                            <Button variant="ghost" size="sm" onClick={setDateToYesterday}>Ayer</Button>
-                            <Button variant="ghost" size="sm" onClick={setDateToThisWeek}>Semana</Button>
-                            <Button variant="ghost" size="sm" onClick={setDateToThisMonth}>Mes</Button>
-                        </div>
-                    <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={handleCalendarSelect} numberOfMonths={2} locale={es} showOutsideDays={false} />
-                    <div className="p-2 border-t flex justify-end">
-                        <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
-                    </div>
-                    </PopoverContent>
-                </Popover>
-
                 {/* Filters Dropdown */}
                 {filterOptions && filterOptions.length > 0 && onFilterChange && (
                     <DropdownMenu>
@@ -164,25 +130,32 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                       </DropdownMenuContent>
                   </DropdownMenu>
                 )}
-
             </div>
         </div>
-
-        {paginationSummary !== undefined && (
-            <div className="flex items-center justify-between pt-2 border-t">
-                <p className="text-sm text-muted-foreground">{paginationSummary}</p>
-                <div className="flex items-center space-x-2">
-                    <Button size="sm" onClick={onPreviousPage} disabled={!canGoPrevious} className="bg-gray-500 hover:bg-gray-600 text-white">
-                        <ChevronLeft className="h-4 w-4" />
-                        Anterior
-                    </Button>
-                    <Button size="sm" onClick={onNextPage} disabled={!canGoNext} className="bg-gray-500 hover:bg-gray-600 text-white">
-                        Siguiente
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
+        
+        {/* Date Picker on its own line */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
+                    <CalendarDateIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
+                </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                    <div className="flex p-2">
+                        <Button variant="ghost" size="sm" onClick={setDateToToday}>Hoy</Button>
+                        <Button variant="ghost" size="sm" onClick={setDateToYesterday}>Ayer</Button>
+                        <Button variant="ghost" size="sm" onClick={setDateToThisWeek}>Semana</Button>
+                        <Button variant="ghost" size="sm" onClick={setDateToThisMonth}>Mes</Button>
+                    </div>
+                <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={handleCalendarSelect} numberOfMonths={2} locale={es} showOutsideDays={false} />
+                <div className="p-2 border-t flex justify-end">
+                    <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
                 </div>
-            </div>
-        )}
+                </PopoverContent>
+            </Popover>
+        </div>
     </div>
   );
 };

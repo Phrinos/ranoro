@@ -66,6 +66,7 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
                 <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
             </Button>
         </div>
+        
         <TableToolbar
             {...tableManager}
             searchPlaceholder="Buscar por ID, cliente, artículo..."
@@ -73,12 +74,8 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
             otherFilters={{ paymentMethod: tableManager.otherFilters['paymentMethod'] || 'all' }}
             onFilterChange={tableManager.setOtherFilters}
             filterOptions={[{ value: 'paymentMethod', label: 'Método de Pago', options: paymentMethods }]}
-            onPreviousPage={tableManager.goToPreviousPage}
-            onNextPage={tableManager.goToNextPage}
-            canGoPrevious={tableManager.canGoPrevious}
-            canGoNext={tableManager.canGoNext}
-            paginationSummary={tableManager.paginationSummary}
         />
+
         <Card>
             <CardContent className="pt-6">
                 <SalesTable
@@ -89,6 +86,20 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
                 />
             </CardContent>
         </Card>
+        
+        <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
+            <div className="flex items-center space-x-2">
+                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                </Button>
+                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
+                    Siguiente
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
     </div>
   );
 }

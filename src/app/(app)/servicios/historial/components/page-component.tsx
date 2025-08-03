@@ -13,7 +13,7 @@ import { useTableManager } from "@/hooks/useTableManager";
 import { isToday, startOfMonth, endOfMonth, compareDesc } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceAppointmentCard } from '../../components/ServiceAppointmentCard';
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { operationsService, inventoryService, personnelService, adminService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
 import { parseDate } from '@/lib/forms';
@@ -21,7 +21,7 @@ import { writeBatch } from 'firebase/firestore';
 import { TicketContent } from '@/components/ticket-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
-import { Printer, Copy, MessageSquare, Share2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
@@ -338,6 +338,19 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
             ]}
           />
           {filteredHistorical.length > 0 ? filteredHistorical.map(renderServiceCard) : <p className="text-center text-muted-foreground py-10">No hay servicios que coincidan.</p>}
+           <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-muted-foreground">{historicalTableManager.paginationSummary}</p>
+              <div className="flex items-center space-x-2">
+                  <Button size="sm" onClick={historicalTableManager.goToPreviousPage} disabled={!historicalTableManager.canGoPrevious} variant="outline" className="bg-card">
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                  </Button>
+                  <Button size="sm" onClick={historicalTableManager.goToNextPage} disabled={!historicalTableManager.canGoNext} variant="outline" className="bg-card">
+                      Siguiente
+                      <ChevronRight className="h-4 w-4" />
+                  </Button>
+              </div>
+          </div>
         </TabsContent>
       </Tabs>
 
