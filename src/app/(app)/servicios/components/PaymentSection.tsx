@@ -95,52 +95,54 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
             </FormItem>
           )}
         />
-        <FormField
-          control={control}
-          name="whatsappNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Número de WhatsApp (Opcional)</FormLabel>
-               <div className="relative">
-                 <MessageSquare className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <FormControl>
-                    <Input 
-                      type="tel"
-                      placeholder="Ej: 4491234567" 
-                      {...field}
-                      value={field.value || ''}
-                      disabled={isReadOnly} 
-                      className="pl-8"
-                    />
-                  </FormControl>
-               </div>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={control}
-          name="paymentMethod"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Método de Pago</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                <FormControl>
-                  <SelectTrigger><SelectValue placeholder="Seleccione método de pago" /></SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {paymentMethods.map(method => {
-                    const Icon = paymentMethodIcons[method];
-                    return (
-                      <SelectItem key={method} value={method}>
-                        <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+            control={control}
+            name="whatsappNumber"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Número de WhatsApp (Opcional)</FormLabel>
+                <div className="relative">
+                    <MessageSquare className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <FormControl>
+                        <Input 
+                        type="tel"
+                        placeholder="Ej: 4491234567" 
+                        {...field}
+                        value={field.value || ''}
+                        disabled={isReadOnly} 
+                        className="pl-8"
+                        />
+                    </FormControl>
+                </div>
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={control}
+            name="paymentMethod"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Método de Pago</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                    <FormControl>
+                    <SelectTrigger><SelectValue placeholder="Seleccione método de pago" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                    {paymentMethods.map(method => {
+                        const Icon = paymentMethodIcons[method];
+                        return (
+                        <SelectItem key={method} value={method}>
+                            <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
+                        </SelectItem>
+                        );
+                    })}
+                    </SelectContent>
+                </Select>
+                </FormItem>
+            )}
+            />
+        </div>
         {isMixedPayment && (
           <div className="space-y-2 rounded-md border p-4">
             <p className="text-sm font-medium">Desglose de Pago</p>
