@@ -260,6 +260,8 @@ export default function DashboardPage() {
     setAnalysisError(null);
     setAnalysisResult(null);
 
+    const inventoryMap = new Map(allInventory.map(item => [item.id, item]));
+
     try {
       const inventoryForAI = allInventory.map(item => ({
         id: item.id,
@@ -268,13 +270,16 @@ export default function DashboardPage() {
         lowStockThreshold: item.lowStockThreshold,
       }));
 
-      const servicesForAI = allServices.map(service => ({
-        serviceDate: parseDate(service.serviceDate)?.toISOString(),
-        suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
-          supplyId: supply.supplyId,
-          quantity: supply.quantity,
-        })),
-      }));
+      const servicesForAI = allServices
+        .filter(service => service.serviceDate)
+        .map(service => ({
+            serviceDate: parseDate(service.serviceDate)?.toISOString(),
+            suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
+                supplyId: supply.supplyId,
+                quantity: supply.quantity,
+                supplyName: inventoryMap.get(supply.supplyId)?.name || supply.supplyName || 'Unknown',
+            })),
+        }));
 
       const result = await analyzeInventory({
         inventoryItems: inventoryForAI,
