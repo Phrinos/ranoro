@@ -6,7 +6,7 @@ import React from 'react';
 import {
   LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, 
   Truck, LineChart, Shield, PlusCircle, Landmark, LayoutGrid, CalendarDays, 
-  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3
+  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3, Wallet
 } from 'lucide-react';
 import type { User, AppRole, NavigationEntry } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
@@ -47,7 +47,11 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
   {
     label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones',
-    permissions: ['pos:create_sale', 'pos:view_sales']
+    permissions: ['pos:view_sales']
+  },
+   {
+    label: 'Caja', path: '/caja', icon: Wallet, groupTag: 'Operaciones',
+    permissions: ['pos:create_sale']
   },
   { 
     label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', 
@@ -154,6 +158,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (pathname.startsWith('/cotizaciones')) isActive = entry.path === '/cotizaciones/historial';
     if (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios')) isActive = entry.path === '/vehiculos';
     if (pathname.startsWith('/pos')) isActive = entry.path === '/pos';
+    if (pathname.startsWith('/caja')) isActive = entry.path === '/caja';
     if (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos')) isActive = entry.path === '/personal';
     if (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual')) isActive = entry.path === '/opciones';
     if (pathname.startsWith('/finanzas') || pathname.startsWith('/facturacion-admin')) isActive = entry.path === '/finanzas';

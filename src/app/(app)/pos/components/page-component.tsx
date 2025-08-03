@@ -18,12 +18,9 @@ import { writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { VentasPosContent } from './ventas-pos-content';
-import { CajaPosContent } from './caja-pos-content';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { isToday, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MovimientosPosContent } from './movimientos-pos-content';
-
 
 export function PosPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
@@ -33,9 +30,6 @@ export function PosPageComponent({ tab }: { tab?: string }) {
   // States for data from Firestore
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
-  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  const [allCashTransactions, setAllCashTransactions] = useState<CashDrawerTransaction[]>([]);
-  const [initialCashBalance, setInitialCashBalance] = useState<InitialCashBalance | null>(null);
   
   // States for UI control
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -51,11 +45,8 @@ export function PosPageComponent({ tab }: { tab?: string }) {
     setIsLoading(true);
 
     unsubs.push(operationsService.onSalesUpdate(setAllSales));
-    unsubs.push(inventoryService.onItemsUpdate(setAllInventory));
-    unsubs.push(operationsService.onServicesUpdate(setAllServices));
-    unsubs.push(operationsService.onCashTransactionsUpdate(setAllCashTransactions));
-    unsubs.push(operationsService.onInitialCashBalanceUpdate((data) => {
-        setInitialCashBalance(data);
+    unsubs.push(inventoryService.onItemsUpdate((items) => {
+        setAllInventory(items);
         setIsLoading(false);
     }));
 
@@ -154,24 +145,17 @@ Total: ${formatCurrency(sale.totalAmount)}
     });
   }, [toast, workshopInfo]);
   
-  const posTabs = [
-    { value: "ventas", label: "Ventas", content: <VentasPosContent allSales={allSales} allInventory={allInventory} onReprintTicket={handleReprintSale} onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }} /> },
-    { value: "caja", label: "Caja", content: <CajaPosContent allSales={allSales} allServices={allServices} allCashTransactions={allCashTransactions} initialCashBalance={initialCashBalance} /> },
-    { value: "movimientos", label: "Movimientos", content: <MovimientosPosContent allCashTransactions={allCashTransactions} allSales={allSales} allServices={allServices} initialCashBalance={initialCashBalance} /> },
-  ];
 
   if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
   
   return (
     <>
-      <TabbedPageLayout
-        title="Punto de Venta"
-        description="Registra ventas, gestiona tu caja y analiza el rendimiento de tus operaciones."
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        tabs={posTabs}
-      />
-      
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Punto de Venta</h1>
+        <p className="text-primary-foreground/80 mt-1">Registra ventas y gestiona las transacciones de mostrador.</p>
+      </div>
+      <VentasPosContent allSales={allSales} allInventory={allInventory} onReprintTicket={handleReprintSale} onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }} />
+
       <PrintTicketDialog
         open={isReprintDialogOpen && !!selectedSaleForReprint}
         onOpenChange={setIsReprintDialogOpen}
