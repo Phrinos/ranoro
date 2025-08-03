@@ -6,7 +6,7 @@ import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'rea
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer } from "lucide-react";
 import { InventoryItemDialog } from "./inventory-item-dialog";
-import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo, SaleReceipt, ServiceRecord } from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo, SaleReceipt, ServiceRecord } from '@/types'; 
 import type { InventoryItemFormValues } from "./inventory-item-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +15,6 @@ import type { PurchaseFormValues } from './register-purchase-dialog';
 import { InformeContent } from './informe-content';
 import { ProductosContent } from './productos-content';
 import { CategoriasContent } from './categorias-content';
-import { ProveedoresPageComponent as ProveedoresContent } from '../../proveedores/components/page-component';
 import { AnalisisIaContent } from './analisis-ia-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
@@ -175,7 +174,6 @@ export function InventarioPageComponent({
     { value: "categorias", label: "Categorías" },
     { value: "salidas", label: "Salidas" },
     { value: "analisis", label: "Análisis IA" },
-    { value: "proveedores", label: "Proveedores" },
   ];
 
   return (
@@ -228,9 +226,6 @@ export function InventarioPageComponent({
         </TabsContent>
         <TabsContent value="analisis" className="mt-6">
             <AnalisisIaContent inventoryItems={inventoryItems} />
-        </TabsContent>
-        <TabsContent value="proveedores" className="mt-6">
-            <ProveedoresContent />
         </TabsContent>
       </Tabs>
       
