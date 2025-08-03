@@ -2,6 +2,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -14,17 +15,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Building } from "lucide-react";
 import type { Supplier } from "@/types";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { formatCurrency } from "@/lib/utils";
+
 
 interface SuppliersTableProps {
   suppliers: Supplier[];
@@ -33,6 +26,12 @@ interface SuppliersTableProps {
 }
 
 export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: SuppliersTableProps) => {
+    const router = useRouter();
+    
+    const handleRowClick = (supplier: Supplier) => {
+        router.push(`/inventario/proveedores/${supplier.id}`);
+    };
+    
   if (!suppliers.length) {
     return (
         <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
@@ -52,12 +51,12 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
             <TableHead className="font-bold text-white">Contacto</TableHead>
             <TableHead className="font-bold text-white">Teléfono</TableHead>
             <TableHead className="text-right font-bold text-white">Deuda</TableHead>
-            <TableHead className="text-right font-bold text-white">Acciones</TableHead>
+            <TableHead className="text-right font-bold text-white print:hidden">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {suppliers.map((supplier) => (
-            <TableRow key={supplier.id}>
+            <TableRow key={supplier.id} onClick={() => handleRowClick(supplier)} className="cursor-pointer hover:bg-muted/50">
               <TableCell className="font-medium">
                   <p>{supplier.name}</p>
                   {supplier.description && <p className="text-xs text-muted-foreground">{supplier.description}</p>}
@@ -66,39 +65,21 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
               <TableCell>{supplier.phone || 'N/A'}</TableCell>
               <TableCell className="text-right">
                 {supplier.debtAmount && supplier.debtAmount > 0 ? (
-                  <Badge variant="destructive">${supplier.debtAmount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Badge>
+                  <Badge variant="destructive">{formatCurrency(supplier.debtAmount)}</Badge>
                 ) : (
                   <span className="text-muted-foreground">N/A</span>
                 )}
               </TableCell>
-              <TableCell className="text-right">
-                <Button variant="ghost" size="icon" onClick={() => onEdit(supplier)} className="mr-2">
+              <TableCell className="text-right print:hidden">
+                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEdit(supplier); }} className="mr-2">
                   <Edit className="h-4 w-4" />
                 </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>¿Eliminar Proveedor?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        ¿Estás seguro de que quieres eliminar al proveedor &quot;{supplier.name}&quot;? Esta acción no se puede deshacer.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => onDelete(supplier.id)}
-                        className="bg-destructive hover:bg-destructive/90"
-                      >
-                        Sí, Eliminar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <ConfirmDialog
+                    triggerButton={<Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                    title={`¿Eliminar a ${supplier.name}?`}
+                    description="Esta acción no se puede deshacer. Se eliminará el proveedor y su historial asociado."
+                    onConfirm={() => onDelete(supplier.id)}
+                />
               </TableCell>
             </TableRow>
           ))}

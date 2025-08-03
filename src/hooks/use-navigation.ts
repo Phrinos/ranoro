@@ -6,7 +6,7 @@ import React from 'react';
 import {
   LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, 
   Truck, LineChart, Shield, PlusCircle, Landmark, LayoutGrid, CalendarDays, 
-  MessageSquare, Car, ShoppingCart, FileJson
+  MessageSquare, Car, ShoppingCart, FileJson, Building
 } from 'lucide-react';
 import type { User, AppRole, NavigationEntry } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
@@ -52,6 +52,10 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { 
     label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', 
     permissions: ['inventory:view'] 
+  },
+  { 
+    label: 'Proveedores', path: '/inventario?tab=proveedores', icon: Building, groupTag: 'Operaciones', 
+    permissions: ['inventory:manage'] 
   },
   
   // Mi Flotilla
@@ -160,6 +164,19 @@ const useNavigation = (): NavigationEntry[] => {
     // Combined flotilla/rentas logic
     if (pathname.startsWith('/flotilla') || pathname.startsWith('/rentas')) {
         isActive = entry.path === '/flotilla';
+    }
+
+    // Inventory and Suppliers logic
+    if (pathname.startsWith('/inventario')) {
+      if (entry.path === '/inventario?tab=proveedores') {
+        // This is only active if the tab is explicitly suppliers
+        const searchParams = new URLSearchParams(window.location.search);
+        isActive = searchParams.get('tab') === 'proveedores';
+      } else {
+        // The main inventory link is active if no specific tab is selected or a different tab is
+        const searchParams = new URLSearchParams(window.location.search);
+        isActive = !searchParams.has('tab') || searchParams.get('tab') !== 'proveedores';
+      }
     }
 
 
