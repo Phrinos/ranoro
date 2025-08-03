@@ -83,6 +83,7 @@ export function VehiculosPageComponent({ isFleet }: { isFleet?: boolean }) {
       searchKeys: ['licensePlate', 'make', 'model', 'ownerName'],
       dateFilterKey: 'lastServiceDate',
       initialSortOption: 'lastServiceDate_desc', // Default sort
+      itemsPerPage: 100,
     });
 
     const vehicleSummary = useMemo(() => {
@@ -213,6 +214,11 @@ export function VehiculosPageComponent({ isFleet }: { isFleet?: boolean }) {
                                 sortOption={tableManager.sortOption}
                                 onSortOptionChange={tableManager.setSortOption}
                                 sortOptions={vehicleSortOptions}
+                                paginationSummary={tableManager.paginationSummary}
+                                canGoPrevious={tableManager.canGoPrevious}
+                                canGoNext={tableManager.canGoNext}
+                                onPreviousPage={tableManager.goToPreviousPage}
+                                onNextPage={tableManager.goToNextPage}
                             />
                             <Button onClick={() => handleOpenVehicleDialog()} className="ml-4">
                                 <PlusCircle className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
