@@ -43,10 +43,10 @@ const inspectionGroups = [
     { name: "safetyInspection.carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
   ]},
   { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
-    { name: "safetyInspection.suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
-    { name: "safetyInspection.suspension_amortiguadores", label: "16. AMORTIGUADORES" },
-    { name: "safetyInspection.suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
-    { name: "safetyInspection.suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
+    { name: "suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
+    { name: "suspension_amortiguadores", label: "16. AMORTIGUADORES" },
+    { name: "suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
+    { name: "suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
   ]},
   { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
     { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
@@ -337,3 +337,5 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
     </>
   );
 };
+
+    

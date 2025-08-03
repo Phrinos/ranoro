@@ -144,3 +144,5 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
         </div>
     );
 }
+
+    

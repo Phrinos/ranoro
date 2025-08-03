@@ -57,3 +57,5 @@ export function PhotoReportTab({ isReadOnly, serviceId, onPhotoUploaded, onViewI
         </Card>
     );
 };
+
+    
