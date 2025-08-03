@@ -42,7 +42,7 @@ export function SupplierDialog({
     setIsSubmitting(true);
     try {
       await onSave(values);
-      onOpenChange(false);
+      handleOpenChange(false);
     } catch (error) {
       console.error("Error saving supplier:", error);
       toast({
@@ -58,7 +58,7 @@ export function SupplierDialog({
   return (
     <FormDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       trigger={trigger && !isControlled ? <div onClick={() => handleOpenChange(true)}>{trigger}</div> : undefined}
       title={supplier ? "Editar Proveedor" : "Nuevo Proveedor"}
       description={supplier ? "Actualiza los detalles del proveedor." : "Completa la información para un nuevo proveedor."}
