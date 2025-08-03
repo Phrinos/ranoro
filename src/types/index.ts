@@ -342,7 +342,6 @@ export interface Supplier {
   rfc?: string;
   taxRegime?: string;
   debtAmount?: number;
-  debtNote?: string;
 }
 
 export interface PurchaseEntryFormValues {
@@ -441,7 +440,7 @@ export interface CashDrawerTransaction {
   concept: string;
   userId: string;
   userName: string;
-  relatedType?: 'Venta' | 'Servicio';
+  relatedType?: 'Venta' | 'Servicio' | 'Compra';
   relatedId?: string;
 }
 
@@ -527,7 +526,7 @@ export interface AuditLog {
   userName: string;
   actionType: 'Crear' | 'Editar' | 'Eliminar' | 'Cancelar' | 'Archivar' | 'Pagar' | 'Registrar' | 'Acceso' | 'Otro';
   description: string;
-  entityType?: 'Usuario' | 'Rol' | 'Servicio' | 'Cotización' | 'Producto' | 'Categoría' | 'Proveedor' | 'Venta' | 'Vehículo' | 'Conductor' | 'Pago' | 'Gasto' | 'Compra' | 'Personal' | 'Cuentas Por Pagar';
+  entityType?: 'Usuario' | 'Rol' | 'Servicio' | 'Cotización' | 'Producto' | 'Categoría' | 'Proveedor' | 'Venta' | 'Vehículo' | 'Conductor' | 'Pago' | 'Gasto' | 'Compra' | 'Personal' | 'Cuentas Por Pagar' | 'Transacción de Caja';
   entityId?: string;
 }
 

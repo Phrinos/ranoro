@@ -1,20 +1,16 @@
+
 // src/schemas/supplier-form-schema.ts
 import * as z from "zod";
 
 const taxRegimeOptions = [
-  "601 REGIMEN GENERAL DE LEY PERSONAS MORALES", "602 RÉGIMEN SIMPLIFICADO DE LEY PERSONAS MORALES",
-  "603 PERSONAS MORALES CON FINES NO LUCRATIVOS", "604 RÉGIMEN DE PEQUEÑOS CONTRIBUYENTES",
-  "605 RÉGIMEN DE SUELDOS Y SALARIOS E INGRESOS ASIMILADOS A SALARIOS", "606 RÉGIMEN DE ARRENDAMIENTO",
-  "607 RÉGIMEN DE ENAJENACIÓN O ADQUISICIÓN DE BIENES", "608 RÉGIMEN DE LOS DEMÁS INGRESOS",
-  "609 RÉGIMEN DE CONSOLIDACIÓN", "610 RÉGIMEN RESIDENTES EN EL EXTRANJERO SIN ESTABLECIMIENTO PERMANENTE EN MÉXICO",
-  "611 RÉGIMEN DE INGRESOS POR DIVIDENDOS (SOCIOS Y ACCIONISTAS)", "612 RÉGIMEN DE LAS PERSONAS FÍSICAS CON ACTIVIDADES EMPRESARIALES Y PROFESIONALES",
-  "613 RÉGIMEN INTERMEDIO DE LAS PERSONAS FÍSICAS CON ACTIVIDADES EMPRESARIALES", "614 RÉGIMEN DE LOS INGRESOS POR INTERESES",
-  "615 RÉGIMEN DE LOS INGRESOS POR OBTENCIÓN DE PREMIOS", "616 SIN OBLIGACIONES FISCALES", "617 PEMEX",
-  "618 RÉGIMEN SIMPLIFICADO DE LEY PERSONAS FÍSICAS", "619 INGRESOS POR LA OBTENCIÓN DE PRÉSTAMOS",
-  "620 SOCIEDADES COOPERATIVAS DE PRODUCCIÓN QUE OPTAN POR DIFERIR SUS INGRESOS.", "621 RÉGIMEN DE INCORPORACIÓN FISCAL",
-  "622 RÉGIMEN DE ACTIVIDADES AGRÍCOLAS, GANADERAS, SILVÍCOLAS Y PESQUERAS PM", "623 RÉGIMEN DE OPCIONAL PARA GRUPOS DE SOCIEDADES",
-  "624 RÉGIMEN DE LOS COORDINADOS", "625 RÉGIMEN DE LAS ACTIVIDADES EMPRESARIALES CON INGRESOS A TRAVÉS DE PLATAFORMAS TECNOLÓGICAS.",
-  "626 RÉGIMEN SIMPLIFICADO DE CONFIANZA",
+  "601 - General de Ley Personas Morales", "603 - Personas Morales con Fines no Lucrativos",
+  "605 - Sueldos y Salarios e Ingresos Asimilados a Salarios", "606 - Arrendamiento",
+  "608 - Demás Ingresos", "610 - Residentes en el Extranjero sin Establecimiento Permanente en México",
+  "611 - Ingresos por Dividendos (socios y accionistas)", "612 - Personas Físicas con Actividades Empresariales y Profesionales",
+  "616 - Sin Obligaciones Fiscales", "621 - Incorporación Fiscal",
+  "622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras",
+  "624 - Coordinados", "625 - Régimen de las Actividades Empresariales con Ingresos a través de Plataformas Tecnológicas",
+  "626 - Régimen Simplificado de Confianza",
 ];
 
 export const supplierFormSchema = z.object({
@@ -26,7 +22,6 @@ export const supplierFormSchema = z.object({
   address: z.string().optional(),
   rfc: z.string().optional(),
   taxRegime: z.string().optional(),
-  debtAmount: z.coerce.number().optional(),
 });
 
 export type SupplierFormValues = z.infer<typeof supplierFormSchema>;

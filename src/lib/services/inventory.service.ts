@@ -17,7 +17,7 @@ import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceL
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import type { VehicleFormValues } from "@/schemas/vehicle-form-schema";
 import type { PriceListFormValues } from "@/app/(app)/precios/components/price-list-form";
-import type { SupplierFormValues } from '@/app/(app)/proveedores/components/supplier-form';
+import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { logAudit } from '../placeholder-data';
 import { cleanObjectForFirestore } from '../forms';
 
@@ -151,14 +151,16 @@ const onSuppliersUpdatePromise = async (): Promise<Supplier[]> => {
 
 const saveSupplier = async (data: SupplierFormValues, id?: string): Promise<Supplier> => {
     if (!db) throw new Error("Database not initialized.");
-    const dataToSave = { ...data, debtAmount: Number(data.debtAmount) || 0 };
+    const dataToSave = { ...data };
 
     if (id) {
         await updateDoc(doc(db, 'suppliers', id), cleanObjectForFirestore(dataToSave));
-        return { id, ...dataToSave };
+        const updatedDoc = await getDoc(doc(db, 'suppliers', id));
+        return { id, ...(updatedDoc.data() as Omit<Supplier, 'id'>) };
     } else {
-        const docRef = await addDoc(collection(db, 'suppliers'), cleanObjectForFirestore(dataToSave));
-        return { id: docRef.id, ...dataToSave };
+        const newSupplierData = { ...dataToSave, debtAmount: 0 };
+        const docRef = await addDoc(collection(db, 'suppliers'), cleanObjectForFirestore(newSupplierData));
+        return { id: docRef.id, ...newSupplierData };
     }
 };
 

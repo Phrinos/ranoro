@@ -16,7 +16,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply, User } from "@/types";
+import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply, User, PayableAccount } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
@@ -26,6 +26,7 @@ import { personnelService } from './personnel.service';
 import { cleanObjectForFirestore } from '@/lib/forms';
 import { logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '../placeholder-data';
 import { parseDate } from '@/lib/forms';
+import { formatCurrency } from '../utils';
 
 
 // --- Services ---
@@ -94,14 +95,15 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
                     }
                 }
             }
-
             if (inventoryUpdated) {
-                await logAudit('Editar', `Se añadieron insumos a un servicio ya entregado. Vehículo: ${data.vehicleIdentifier || 'N/A'} (Folio: ${docId}).`, {
-                    entityType: 'Servicio',
-                    entityId: docId,
-                    userId: 'system', // Replace with actual user ID
-                    userName: 'Sistema',
-                });
+                const userString = typeof window !== "undefined" ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+                const user = userString ? JSON.parse(userString) : { id: "system", name: "Sistema" };
+                await logAudit( "Editar", `Se añadieron insumos a un servicio ya entregado. Vehículo: ${data.vehicleIdentifier || "N/A"} (Folio: ${docId}).`, {
+                  entityType: "Servicio",
+                  entityId: docId,
+                  userId: user.id, // Replace with actual user ID
+                  userName: user.name
+                } );
                 await batch.commit();
             }
         }
@@ -377,6 +379,8 @@ const registerSale = async (saleId: string, saleData: Omit<SaleReceipt, 'id' | '
             concept: `Venta POS #${saleId.slice(0, 6)}`,
             userId: 'system',
             userName: 'Sistema',
+            relatedType: 'Venta',
+            relatedId: saleId,
         });
     }
 };
@@ -413,7 +417,7 @@ const deleteCashTransaction = async (transactionId: string): Promise<void> => {
       const user = userString ? JSON.parse(userString) : { id: 'system', name: 'Sistema' };
       
       await logAudit('Eliminar', `Se eliminó la transacción de caja manual: "${data.concept}" por ${formatCurrency(data.amount)}.`, {
-        entityType: 'Otro', // Or a new one like 'Transacción de Caja'
+        entityType: 'Transacción de Caja', 
         entityId: transactionId,
         userId: user.id,
         userName: user.name,
@@ -560,6 +564,65 @@ const getServicesForVehicle = async (vehicleId: string): Promise<ServiceRecord[]
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
 };
 
+const registerPayableAccountPayment = async (
+  accountId: string, 
+  paymentAmount: number, 
+  paymentMethod: PayableAccount['status'] extends 'Pagado' ? never : string, 
+  paymentNote?: string,
+  user?: User | null
+): Promise<void> => {
+  if (!db) throw new Error("Database not initialized.");
+
+  const accountRef = doc(db, 'payableAccounts', accountId);
+  const supplierRef = doc(db, 'suppliers', (await getDoc(accountRef)).data()?.supplierId);
+  const supplierDoc = await getDoc(supplierRef);
+  const supplierData = supplierDoc.data() as Supplier;
+
+  const batch = writeBatch(db);
+
+  // Update account payable
+  const accountDoc = await getDoc(accountRef);
+  if (!accountDoc.exists()) throw new Error("Account payable not found");
+  const accountData = accountDoc.data() as PayableAccount;
+  const newPaidAmount = accountData.paidAmount + paymentAmount;
+  const newStatus: PayableAccount['status'] = newPaidAmount >= accountData.totalAmount ? 'Pagado' : 'Pagado Parcialmente';
+  batch.update(accountRef, { paidAmount: newPaidAmount, status: newStatus });
+
+  // Update supplier total debt
+  const newDebt = (supplierData.debtAmount || 0) - paymentAmount;
+  batch.update(supplierRef, { debtAmount: Math.max(0, newDebt) });
+  
+  // Log cash transaction if paid in cash
+  if (paymentMethod === 'Efectivo') {
+      const cashTransactionRef = doc(collection(db, "cashDrawerTransactions"));
+      batch.set(cashTransactionRef, {
+        date: new Date().toISOString(),
+        type: 'Salida',
+        amount: paymentAmount,
+        concept: `Pago a proveedor ${supplierData.name} (Fact: ${accountData.invoiceId})`,
+        userId: user?.id || 'system',
+        userName: user?.name || 'Sistema',
+        relatedType: 'Compra',
+        relatedId: accountId,
+      });
+  }
+  
+  // Log audit
+  const auditLogRef = doc(collection(db, "auditLogs"));
+  batch.set(auditLogRef, {
+      actionType: 'Pagar',
+      description: `Se registró un pago de ${formatCurrency(paymentAmount)} a la factura ${accountData.invoiceId} del proveedor ${supplierData.name}.`,
+      entityType: 'Cuentas Por Pagar',
+      entityId: accountId,
+      userId: user?.id || 'system',
+      userName: user?.name || 'Sistema',
+      date: new Date().toISOString(),
+  });
+
+  await batch.commit();
+};
+
+
 export const operationsService = {
     onServicesUpdate,
     onServicesUpdatePromise,
@@ -589,4 +652,5 @@ export const operationsService = {
     addVehicleExpense,
     onOwnerWithdrawalsUpdate,
     addOwnerWithdrawal,
+    registerPayableAccountPayment,
 };
