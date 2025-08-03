@@ -2,9 +2,9 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, AlertTriangle, Package, ShoppingCart, Building, TrendingUp, PackageSearch, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DollarSign, AlertTriangle, Package, ShoppingCart, Building, TrendingUp, PackageSearch, ChevronLeft, ChevronRight, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import type { InventoryItem, Supplier, InventoryMovement } from '@/types';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -30,15 +30,18 @@ export function InformeContent({ onRegisterPurchaseClick, movements }: InformeCo
     ...tableManager 
   } = useTableManager<InventoryMovement>({
     initialData: movements,
-    searchKeys: ['itemName', 'relatedId'],
+    searchKeys: ['itemName', 'relatedId', 'type'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
   });
 
-  const getMovementTypeVariant = (type: string) => {
+  const getMovementTypeVariant = (type: string): "success" | "destructive" | "outline" => {
     switch (type) {
-        case 'Venta': return 'default';
-        case 'Servicio': return 'secondary';
+        case 'Venta':
+        case 'Servicio': 
+          return 'destructive';
+        case 'Compra': 
+          return 'success';
         default: return 'outline';
     }
   };
@@ -52,10 +55,17 @@ export function InformeContent({ onRegisterPurchaseClick, movements }: InformeCo
     { value: 'quantity_asc', label: 'Cantidad (Menor a Mayor)' },
   ];
 
+  const movementTypeOptions = [
+    { value: 'all', label: 'Todos los Movimientos' },
+    { value: 'Compra', label: 'Entradas (Compras)' },
+    { value: 'Venta', label: 'Salidas (Ventas)' },
+    { value: 'Servicio', label: 'Salidas (Servicios)' },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">Acciones Rápidas</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Acciones Rápidas de Inventario</h2>
       </div>
       <Button className="w-full h-12 text-base" onClick={onRegisterPurchaseClick}>
         <ShoppingCart className="mr-2 h-5 w-5" /> Ingresar Compra de Mercancía
@@ -63,14 +73,15 @@ export function InformeContent({ onRegisterPurchaseClick, movements }: InformeCo
       
        <div className="space-y-4 pt-6">
         <div className="space-y-2">
-            <h2 className="text-2xl font-semibold tracking-tight">Salidas de Inventario</h2>
-            <p className="text-muted-foreground">Registro de todas las salidas de productos, ya sea por ventas en mostrador o uso en servicios.</p>
+            <h2 className="text-2xl font-semibold tracking-tight">Movimientos de Inventario</h2>
+            <p className="text-muted-foreground">Registro de todas las entradas y salidas de productos.</p>
         </div>
         
         <TableToolbar
             {...tableManager}
-            searchPlaceholder="Buscar por producto o ID relacionado..."
+            searchPlaceholder="Buscar por producto, tipo o ID..."
             sortOptions={sortOptions}
+            filterOptions={[{ value: 'type', label: 'Tipo de Movimiento', options: movementTypeOptions }]}
         />
         
         <Card>
@@ -94,11 +105,18 @@ export function InformeContent({ onRegisterPurchaseClick, movements }: InformeCo
                         return (
                             <TableRow key={movement.id}>
                             <TableCell>{movementDate ? format(movementDate, "dd MMM yy, HH:mm", { locale: es }) : "Fecha no disponible"}</TableCell>
-                            <TableCell><Badge variant={getMovementTypeVariant(movement.type)}>{movement.type}</Badge></TableCell>
+                            <TableCell>
+                                <Badge variant={getMovementTypeVariant(movement.type)} className="flex items-center gap-1 w-fit">
+                                    {movement.type === 'Compra' ? <ArrowUpCircle className="h-3 w-3" /> : <ArrowDownCircle className="h-3 w-3" />}
+                                    {movement.type}
+                                </Badge>
+                            </TableCell>
                             <TableCell>{movement.relatedId}</TableCell>
                             <TableCell>{movement.itemName}</TableCell>
                             <TableCell className="text-right font-medium">{movement.quantity}</TableCell>
-                            <TableCell className="text-right font-semibold text-red-600">{formatCurrency(movement.totalCost)}</TableCell>
+                            <TableCell className={cn("text-right font-semibold", movement.type === 'Compra' ? 'text-green-600' : 'text-red-600')}>
+                                {movement.type === 'Compra' ? '+' : '-'} {formatCurrency(movement.totalCost)}
+                            </TableCell>
                             </TableRow>
                         );
                     })
@@ -107,7 +125,7 @@ export function InformeContent({ onRegisterPurchaseClick, movements }: InformeCo
                         <TableCell colSpan={6}>
                         <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
                             <PackageSearch className="h-12 w-12 mb-2" />
-                            <h3 className="text-lg font-semibold text-foreground">Sin Salidas de Inventario</h3>
+                            <h3 className="text-lg font-semibold text-foreground">Sin Movimientos</h3>
                             <p className="text-sm">No se encontraron movimientos de inventario en el período seleccionado.</p>
                         </div>
                         </TableCell>

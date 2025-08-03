@@ -47,6 +47,7 @@ export function InventarioPageComponent({
   const [sales, setSales] = useState<SaleReceipt[]>([]);
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [payableAccounts, setPayableAccounts] = useState<any[]>([]); // Assuming a type for payable accounts
 
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
@@ -66,6 +67,7 @@ export function InventarioPageComponent({
     unsubs.push(inventoryService.onCategoriesUpdate(setCategories));
     unsubs.push(operationsService.onSalesUpdate(setSales));
     unsubs.push(operationsService.onServicesUpdate(setServices));
+    unsubs.push(inventoryService.onPayableAccountsUpdate(setPayableAccounts));
     unsubs.push(inventoryService.onSuppliersUpdate((data) => {
       setSuppliers(data);
       setIsLoading(false); // Mark loading as false after the last required dataset is fetched
@@ -81,52 +83,46 @@ export function InventarioPageComponent({
 
   const inventoryMovements = useMemo((): InventoryMovement[] => {
       if (isLoading) return [];
-      const movements: InventoryMovement[] = [];
+      
       const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
 
-      sales.forEach(sale => {
-        sale.items.forEach(item => {
+      const saleMovements: InventoryMovement[] = sales.flatMap(sale => 
+        sale.items.map(item => {
           const invItem = inventoryMap.get(item.inventoryItemId);
-          if (invItem && !invItem.isService) {
-            movements.push({
-              id: `${sale.id}-${item.inventoryItemId}`,
-              date: sale.saleDate,
-              type: 'Venta',
-              relatedId: sale.id,
-              itemName: item.itemName,
-              quantity: item.quantity,
-              unitCost: invItem.unitPrice,
-              totalCost: item.quantity * invItem.unitPrice,
-            });
-          }
-        });
-      });
-
-      services.forEach(service => {
-        if(service.status === 'Completado' || service.status === 'Entregado') {
+          return {
+            id: `${sale.id}-${item.inventoryItemId}`, date: sale.saleDate, type: 'Venta',
+            relatedId: sale.id, itemName: item.itemName, quantity: item.quantity,
+            unitCost: invItem?.unitPrice || 0, totalCost: item.quantity * (invItem?.unitPrice || 0),
+          };
+        })
+      );
+      
+      const serviceMovements: InventoryMovement[] = services
+        .filter(s => s.status === 'Completado' || s.status === 'Entregado')
+        .flatMap(service => {
           const date = service.deliveryDateTime || service.serviceDate;
-          if(!date) return;
-          (service.serviceItems || []).forEach(sItem => {
-            (sItem.suppliesUsed || []).forEach(supply => {
+          if (!date) return [];
+          return (service.serviceItems || []).flatMap(sItem => 
+            (sItem.suppliesUsed || []).map(supply => {
               const invItem = inventoryMap.get(supply.supplyId);
-              if (invItem && !invItem.isService) {
-                movements.push({
-                  id: `${service.id}-${supply.supplyId}-${sItem.id}`,
-                  date: date,
-                  type: 'Servicio',
-                  relatedId: service.id,
-                  itemName: supply.supplyName,
-                  quantity: supply.quantity,
-                  unitCost: invItem.unitPrice,
-                  totalCost: supply.quantity * invItem.unitPrice
-                });
-              }
-            });
-          });
-        }
+              if (!invItem || invItem.isService) return null;
+              return {
+                id: `${service.id}-${supply.supplyId}-${sItem.id}`, date: date, type: 'Servicio',
+                relatedId: service.id, itemName: supply.supplyName, quantity: supply.quantity,
+                unitCost: invItem.unitPrice, totalCost: supply.quantity * invItem.unitPrice
+              };
+            }).filter(Boolean) as InventoryMovement[]
+          );
       });
-      return movements;
-    }, [isLoading, sales, services, inventoryItems]);
+      
+      const purchaseMovements: InventoryMovement[] = payableAccounts.map(pa => ({
+        id: pa.id, date: pa.invoiceDate, type: 'Compra',
+        relatedId: pa.supplierName, itemName: `Factura ${pa.invoiceId}`, quantity: 1, // Simplified view for now
+        unitCost: pa.totalAmount, totalCost: pa.totalAmount,
+      }));
+
+      return [...saleMovements, ...serviceMovements, ...purchaseMovements];
+    }, [isLoading, sales, services, inventoryItems, payableAccounts]);
   
   const handlePrint = useCallback((items: InventoryItem[]) => {
       const itemsToPrintWithCategory = items.map(item => ({
@@ -169,9 +165,10 @@ export function InventarioPageComponent({
   }
 
   const tabsConfig = [
-    { value: "informe", label: "Informe y Salidas" },
+    { value: "informe", label: "Entradas y Salidas" },
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
+    { value: "proveedores", label: "Proveedores" },
     { value: "analisis", label: "Análisis IA" },
   ];
 
@@ -212,13 +209,15 @@ export function InventarioPageComponent({
         <TabsContent value="productos" className="mt-6">
             <ProductosContent 
                 inventoryItems={inventoryItems} 
-                suppliers={suppliers}
                 onNewItem={handleOpenItemDialog}
                 onPrint={handlePrint}
             />
         </TabsContent>
         <TabsContent value="categorias" className="mt-6">
             <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
+        </TabsContent>
+        <TabsContent value="proveedores" className="mt-6">
+            <ProveedoresPageComponent />
         </TabsContent>
         <TabsContent value="analisis" className="mt-6">
             <AnalisisIaContent inventoryItems={inventoryItems} />
