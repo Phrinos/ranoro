@@ -11,12 +11,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Filter, PlusCircle } from "lucide-react";
 import { SalesTable } from "./sales-table";
 import type { SaleReceipt, InventoryItem, PaymentMethod } from "@/types";
-import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, compareDesc, startOfWeek, subDays, startOfMonth, isSameDay } from "date-fns";
+import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, compareDesc, startOfWeek, subDays, startOfMonth, isSameDay, endOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
+import { Input } from '@/components/ui/input';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 
