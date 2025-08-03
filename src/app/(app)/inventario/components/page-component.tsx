@@ -15,7 +15,7 @@ import type { PurchaseFormValues } from './register-purchase-dialog';
 import { InformeContent } from './informe-content';
 import { ProductosContent } from './productos-content';
 import { CategoriasContent } from './categorias-content';
-import { ProveedoresContent } from '../../proveedores/components/page-component';
+import { ProveedoresPageComponent as ProveedoresContent } from '../../proveedores/components/page-component';
 import { AnalisisIaContent } from './analisis-ia-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
@@ -230,7 +230,7 @@ export function InventarioPageComponent({
             <AnalisisIaContent inventoryItems={inventoryItems} />
         </TabsContent>
         <TabsContent value="proveedores" className="mt-6">
-            <ProveedoresContent suppliers={suppliers} />
+            <ProveedoresContent />
         </TabsContent>
       </Tabs>
       
