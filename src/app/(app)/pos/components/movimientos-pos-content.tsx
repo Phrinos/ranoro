@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -105,10 +106,6 @@ export function MovimientosPosContent({ allCashTransactions, allSales, allServic
             </div>
         </CardHeader>
       </Card>
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">Historial de Movimientos de Caja</h2>
-        <p className="text-muted-foreground">Consulta todas las entradas y salidas de efectivo registradas.</p>
-      </div>
       
       <TableToolbar
         {...tableManager}

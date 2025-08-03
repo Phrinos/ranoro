@@ -27,7 +27,6 @@ import { operationsService, inventoryService, personnelService } from '@/lib/ser
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { ReporteOperacionesContent } from './reporte-operaciones-content';
-import { ReporteInventarioContent } from './reporte-inventario-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { EgresosContent } from './egresos-content';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
@@ -180,55 +179,6 @@ export function FinanzasPageComponent({
         };
     }, [dateRange, isLoading, allSales, allServices, allInventory, allPersonnel, fixedExpenses]);
 
-    const inventoryMovements = useMemo((): InventoryMovement[] => {
-      if (isLoading) return [];
-      const movements: InventoryMovement[] = [];
-      const inventoryMap = new Map(allInventory.map(item => [item.id, item]));
-
-      allSales.forEach(sale => {
-        sale.items.forEach(item => {
-          const invItem = inventoryMap.get(item.inventoryItemId);
-          if (invItem && !invItem.isService) {
-            movements.push({
-              id: `${sale.id}-${item.inventoryItemId}`,
-              date: sale.saleDate,
-              type: 'Venta',
-              relatedId: sale.id,
-              itemName: item.itemName,
-              quantity: item.quantity,
-              unitCost: invItem.unitPrice,
-              totalCost: item.quantity * invItem.unitPrice,
-            });
-          }
-        });
-      });
-
-      allServices.forEach(service => {
-        if(service.status === 'Completado' || service.status === 'Entregado') {
-          const date = service.deliveryDateTime || service.serviceDate;
-          if(!date) return;
-          (service.serviceItems || []).forEach(sItem => {
-            (sItem.suppliesUsed || []).forEach(supply => {
-              const invItem = inventoryMap.get(supply.supplyId);
-              if (invItem && !invItem.isService) {
-                movements.push({
-                  id: `${service.id}-${supply.supplyId}-${sItem.id}`,
-                  date: date,
-                  type: 'Servicio',
-                  relatedId: service.id,
-                  itemName: supply.supplyName,
-                  quantity: supply.quantity,
-                  unitCost: invItem.unitPrice,
-                  totalCost: supply.quantity * invItem.unitPrice
-                });
-              }
-            });
-          });
-        }
-      });
-      return movements;
-    }, [isLoading, allSales, allServices, allInventory]);
-
     const handleApplyDateFilter = () => {
         setDateRange(tempDateRange);
         setIsCalendarOpen(false);
@@ -323,7 +273,6 @@ export function FinanzasPageComponent({
         },
         { value: "egresos", label: "Egresos", content:  <div className="space-y-6"><div className="mb-6">{dateFilterComponent}</div><EgresosContent financialSummary={financialSummary} fixedExpenses={fixedExpenses} onExpensesUpdated={(updated) => setFixedExpenses([...updated])} /></div> },
         { value: "operaciones", label: "Operaciones", content: <ReporteOperacionesContent allSales={allSales} allServices={allServices} allInventory={allInventory} serviceTypes={serviceTypes} /> },
-        { value: "inventario", label: "Inventario", content: <ReporteInventarioContent movements={inventoryMovements} /> },
     ];
     
     return (
@@ -336,4 +285,3 @@ export function FinanzasPageComponent({
         />
     );
 }
-

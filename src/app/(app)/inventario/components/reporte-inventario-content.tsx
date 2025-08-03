@@ -48,11 +48,7 @@ export function ReporteInventarioContent({ movements }: ReporteInventarioContent
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">Reporte de Salidas de Inventario</h2>
-        <p className="text-muted-foreground">Salidas de inventario por ventas y servicios en el período seleccionado.</p>
-      </div>
+    <div className="space-y-4 mt-6">
       <TableToolbar
         searchTerm={tableManager.searchTerm}
         onSearchTermChange={tableManager.setSearchTerm}
