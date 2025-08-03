@@ -17,7 +17,6 @@ import { ViewSaleDialog } from "./view-sale-dialog";
 import { writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { InformePosContent } from './informe-pos-content';
 import { VentasPosContent } from './ventas-pos-content';
 import { CajaPosContent } from './caja-pos-content';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
@@ -28,7 +27,7 @@ import { MovimientosPosContent } from './movimientos-pos-content';
 
 export function PosPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState(tab || 'informe');
+  const [activeTab, setActiveTab] = useState(tab || 'ventas');
   const [isLoading, setIsLoading] = useState(true);
 
   // States for data from Firestore
@@ -181,7 +180,6 @@ Total: ${formatCurrency(sale.totalAmount)}
   }, [toast, workshopInfo]);
   
   const posTabs = [
-    { value: "informe", label: "Informe", content: <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory} /> },
     { value: "ventas", label: "Ventas", content: <VentasPosContent allSales={allSales} allInventory={allInventory} onReprintTicket={handleReprintSale} onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }} /> },
     { value: "caja", label: "Caja", content: <CajaPosContent allSales={allSales} allServices={allServices} allCashTransactions={allCashTransactions} initialCashBalance={initialCashBalance} /> },
     { value: "movimientos", label: "Movimientos", content: <MovimientosPosContent allCashTransactions={allCashTransactions} /> },

@@ -1,5 +1,3 @@
-
-
 // src/hooks/use-navigation.ts
 "use client";
 
@@ -8,7 +6,7 @@ import React from 'react';
 import {
   LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, 
   Truck, LineChart, Shield, PlusCircle, Landmark, LayoutGrid, CalendarDays, 
-  MessageSquare, Car, ShoppingCart, FileJson, Building
+  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3
 } from 'lucide-react';
 import type { User, AppRole, NavigationEntry } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
@@ -82,6 +80,10 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   {
     label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Análisis',
     permissions: ['finances:view_report'] // Assuming same permission for now
+  },
+  {
+    label: 'Informes', path: '/informes', icon: BarChart3, groupTag: 'Análisis',
+    permissions: ['pos:view_sales']
   },
 
   // Opciones
