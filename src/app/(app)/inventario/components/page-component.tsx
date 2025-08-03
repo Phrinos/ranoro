@@ -6,7 +6,7 @@ import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'rea
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer } from "lucide-react";
 import { InventoryItemDialog } from "./inventory-item-dialog";
-import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo, SaleReceipt, ServiceRecord } from '@/types'; 
+import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo, SaleReceipt, ServiceRecord, PayableAccount } from '@/types'; 
 import type { InventoryItemFormValues } from "./inventory-item-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +15,7 @@ import type { PurchaseFormValues } from './register-purchase-dialog';
 import { InformeContent } from './informe-content';
 import { ProductosContent } from './productos-content';
 import { CategoriasContent } from './categorias-content';
+import { ProveedoresContent } from './proveedores-content';
 import { AnalisisIaContent } from './analisis-ia-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
@@ -46,15 +47,13 @@ export function InventarioPageComponent({
   const [sales, setSales] = useState<SaleReceipt[]>([]);
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [payableAccounts, setPayableAccounts] = useState<any[]>([]); // Assuming a type for payable accounts
+  const [payableAccounts, setPayableAccounts] = useState<PayableAccount[]>([]); 
 
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
-  const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   const printContentRef = useRef<HTMLDivElement>(null);
 
 
@@ -71,11 +70,6 @@ export function InventarioPageComponent({
       setSuppliers(data);
       setIsLoading(false); // Mark loading as false after the last required dataset is fetched
     }));
-    
-    const storedInfo = localStorage.getItem('workshopTicketInfo');
-    if (storedInfo) {
-      try { setWorkshopInfo(JSON.parse(storedInfo)); } catch {}
-    }
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
@@ -125,13 +119,7 @@ export function InventarioPageComponent({
       return [...saleMovements, ...serviceMovements, ...purchaseMovements];
     }, [isLoading, sales, services, inventoryItems, payableAccounts]);
   
-  const handlePrint = useCallback((items: InventoryItem[]) => {
-      const itemsToPrintWithCategory = items.map(item => ({
-        ...item,
-        category: item.category || 'Sin Categoría'
-      })).sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
-      
-      setItemsToPrint(itemsToPrintWithCategory);
+  const handlePrint = useCallback(() => {
       setIsPrintDialogOpen(true);
   }, []);
 
@@ -169,6 +157,7 @@ export function InventarioPageComponent({
     { value: "informe", label: "Entradas y Salidas" },
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
+    { value: "proveedores", label: "Proveedores" },
     { value: "analisis", label: "Análisis IA" },
   ];
 
@@ -216,6 +205,9 @@ export function InventarioPageComponent({
         <TabsContent value="categorias" className="mt-6">
             <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
         </TabsContent>
+        <TabsContent value="proveedores" className="mt-6">
+            <ProveedoresContent suppliers={suppliers} />
+        </TabsContent>
         <TabsContent value="analisis" className="mt-6">
             <AnalisisIaContent inventoryItems={inventoryItems} />
         </TabsContent>
@@ -243,9 +235,7 @@ export function InventarioPageComponent({
        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
                 <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
-                    <div id="printable-report" className="print-format-letter">
-                        <InventoryReportContent ref={printContentRef} items={itemsToPrint} />
-                    </div>
+                    <InventoryReportContent ref={printContentRef} items={inventoryItems} />
                 </div>
                  <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
                     <Button onClick={() => window.print()}>

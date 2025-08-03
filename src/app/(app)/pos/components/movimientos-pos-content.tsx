@@ -24,7 +24,7 @@ interface MovimientosPosContentProps {
 
 export function MovimientosPosContent({ allCashTransactions, allSales, allServices, initialCashBalance }: MovimientosPosContentProps) {
   
-  const getBadgeVariant = (type: string) => {
+  const getBadgeVariant = (type: string): "success" | "destructive" | "outline" => {
     switch (type) {
       case 'Entrada': return 'success';
       case 'Salida': return 'destructive';
