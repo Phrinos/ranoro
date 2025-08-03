@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, DollarSign, AlertTriangle, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
@@ -109,7 +110,7 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
             sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre, SKU, marca..."
         />
-
+        
         <div className="flex items-center justify-between pt-2">
             <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
             <div className="flex items-center space-x-2">
