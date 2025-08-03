@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -15,7 +14,7 @@ import {
 import { InventoryItemForm, type InventoryItemFormValues } from "./inventory-item-form";
 import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { SupplierDialog } from '../../proveedores/components/supplier-dialog';
+import { SupplierDialog } from "../../proveedores/components/supplier-dialog";
 import { CategoryDialog } from './category-dialog';
 import { inventoryService } from '@/lib/services';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
@@ -48,7 +47,14 @@ export function InventoryItemDialog({
   
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
-  const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
+  
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isControlled) {
+      setControlledOpen(isOpen);
+    } else {
+      setUncontrolledOpen(isOpen);
+    }
+  };
 
   const isEditing = item && 'id' in item && item.id; 
 
@@ -57,7 +63,7 @@ export function InventoryItemDialog({
       if (onSave) {
         await onSave(values);
       }
-      onOpenChange(false);
+      handleOpenChange(false);
     } catch (error) {
       console.error("Error saving inventory item:", error);
       toast({
@@ -110,8 +116,8 @@ export function InventoryItemDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-         {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+         {trigger && !isControlled && <DialogTrigger asChild onClick={() => handleOpenChange(true)}>{trigger}</DialogTrigger>}
         <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b">
             <DialogTitle>{isEditing ? "Editar Producto de Inventario" : "Nuevo Producto de Inventario"}</DialogTitle>
@@ -131,7 +137,7 @@ export function InventoryItemDialog({
             />
           </div>
            <DialogFooter className="p-6 pt-4 border-t bg-background flex-shrink-0 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancelar
             </Button>
             <Button type="submit" form="inventory-item-form">

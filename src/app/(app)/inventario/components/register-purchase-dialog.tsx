@@ -247,8 +247,8 @@ export function RegisterPurchaseDialog({
       <InventoryItemDialog
         open={isNewItemDialogOpen}
         onOpenChange={setIsNewItemDialogOpen}
-        item={{ name: newItemSearchTerm, sku: newItemSearchTerm, isService: false }}
         onSave={handleNewItemSaved}
+        item={{ name: newItemSearchTerm, isService: false }}
         categories={categories}
         suppliers={suppliers}
       />
