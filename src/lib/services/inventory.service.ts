@@ -17,7 +17,7 @@ import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceL
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import type { VehicleFormValues } from "@/schemas/vehicle-form-schema";
 import type { PriceListFormValues } from "@/app/(app)/precios/components/price-list-form";
-import type { SupplierFormValues } from '@/app/(app)/inventario/proveedores/components/supplier-form';
+import type { SupplierFormValues } from '@/app/(app)/proveedores/components/supplier-form';
 import { logAudit } from '../placeholder-data';
 import { cleanObjectForFirestore } from '../forms';
 

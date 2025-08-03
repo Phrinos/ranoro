@@ -527,7 +527,7 @@ export interface AuditLog {
   userName: string;
   actionType: 'Crear' | 'Editar' | 'Eliminar' | 'Cancelar' | 'Archivar' | 'Pagar' | 'Registrar' | 'Acceso' | 'Otro';
   description: string;
-  entityType?: 'Usuario' | 'Rol' | 'Servicio' | 'Cotización' | 'Producto' | 'Categoría' | 'Proveedor' | 'Venta' | 'Vehículo' | 'Conductor' | 'Pago' | 'Gasto' | 'Compra' | 'Personal';
+  entityType?: 'Usuario' | 'Rol' | 'Servicio' | 'Cotización' | 'Producto' | 'Categoría' | 'Proveedor' | 'Venta' | 'Vehículo' | 'Conductor' | 'Pago' | 'Gasto' | 'Compra' | 'Personal' | 'Cuentas Por Pagar';
   entityId?: string;
 }
 
@@ -566,7 +566,7 @@ export interface PayableAccount {
     id: string;
     supplierId: string;
     supplierName: string;
-    invoiceId: string;
+    invoiceId: string; // The supplier's invoice number
     invoiceDate: string; // ISO String
     dueDate: string; // ISO String
     totalAmount: number;

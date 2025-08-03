@@ -25,8 +25,12 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { PurchaseItemSelectionDialog } from "./purchase-item-selection-dialog";
 import { InventoryItemDialog } from "./inventory-item-dialog";
-import { PlusCircle, Trash2, DollarSign } from "lucide-react";
+import { PlusCircle, Trash2, DollarSign, CalendarIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { es } from 'date-fns/locale';
 
 const purchaseItemSchema = z.object({
   inventoryItemId: z.string(),
@@ -44,9 +48,18 @@ const purchasePaymentMethods: ['Efectivo', 'Tarjeta', 'Transferencia', 'Crédito
 
 const purchaseFormSchema = z.object({
   supplierId: z.string().min(1, "Debe seleccionar un proveedor."),
+  invoiceId: z.string().optional(),
   invoiceTotal: z.coerce.number().min(0.01, "El total de la factura debe ser mayor a cero."),
   paymentMethod: z.enum(purchasePaymentMethods, { required_error: "Debe seleccionar un método de pago." }),
+  dueDate: z.date().optional(),
   items: z.array(purchaseItemSchema).min(1, "Debe agregar al menos un artículo a la compra."),
+}).superRefine((data, ctx) => {
+    if (data.paymentMethod === 'Crédito' && !data.invoiceId) {
+        ctx.addIssue({ code: 'custom', message: 'El folio de factura es obligatorio para pagos a crédito.', path: ['invoiceId'] });
+    }
+    if (data.paymentMethod === 'Crédito' && !data.dueDate) {
+        ctx.addIssue({ code: 'custom', message: 'La fecha de vencimiento es obligatoria para pagos a crédito.', path: ['dueDate'] });
+    }
 });
 
 export type PurchaseFormValues = z.infer<typeof purchaseFormSchema>;
@@ -77,7 +90,7 @@ export function RegisterPurchaseDialog({
 
   const form = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseFormSchema),
-    defaultValues: { items: [] },
+    defaultValues: { items: [], paymentMethod: 'Efectivo' },
   });
 
   const { control, handleSubmit, watch, getValues, setValue } = form;
@@ -88,6 +101,7 @@ export function RegisterPurchaseDialog({
   });
 
   const watchedItems = watch("items");
+  const paymentMethod = watch("paymentMethod");
 
   const subtotal = useMemo(() => {
     return watchedItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
@@ -137,56 +151,17 @@ export function RegisterPurchaseDialog({
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={handleSubmit(onSave)} className="flex-grow overflow-hidden flex flex-col gap-4 px-6 pb-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                        control={control}
-                        name="supplierId"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Proveedor</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un proveedor"/></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={control}
-                        name="invoiceTotal"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Total de Factura</FormLabel>
-                                <FormControl>
-                                    <div className="relative">
-                                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input type="number" placeholder="Monto total de la factura" {...field} value={field.value ?? ''} className="pl-8"/>
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={control}
-                        name="paymentMethod"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Método de Pago</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un método"/></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {purchasePaymentMethods.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <FormField control={control} name="supplierId" render={({ field }) => ( <FormItem><FormLabel>Proveedor</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un proveedor"/></SelectTrigger></FormControl><SelectContent>{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                    <FormField control={control} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un método"/></SelectTrigger></FormControl><SelectContent>{purchasePaymentMethods.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                    <FormField control={control} name="invoiceTotal" render={({ field }) => ( <FormItem><FormLabel>Total de Factura</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="number" placeholder="Monto total de la factura" {...field} value={field.value ?? ''} className="pl-8"/></div></FormControl><FormMessage /></FormItem> )}/>
                 </div>
+                 {paymentMethod === 'Crédito' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <FormField control={control} name="invoiceId" render={({ field }) => ( <FormItem><FormLabel>Folio de Factura (Proveedor)</FormLabel><FormControl><Input placeholder="Folio o número de factura" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )}/>
+                         <FormField control={control} name="dueDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className="pl-3 text-left font-normal"><>{field.value ? (format(field.value, 'PPP', {locale: es})) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                    </div>
+                )}
               
               <div className="flex-grow overflow-hidden border rounded-md relative">
                 <ScrollArea className="h-full">
