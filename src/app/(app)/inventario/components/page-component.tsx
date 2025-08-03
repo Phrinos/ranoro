@@ -15,7 +15,6 @@ import type { PurchaseFormValues } from './register-purchase-dialog';
 import { InformeContent } from './informe-content';
 import { ProductosContent } from './productos-content';
 import { CategoriasContent } from './categorias-content';
-import { ProveedoresPageComponent } from '../../proveedores/components/page-component';
 import { AnalisisIaContent } from './analisis-ia-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
@@ -115,7 +114,9 @@ export function InventarioPageComponent({
           );
       });
       
-      const purchaseMovements: InventoryMovement[] = payableAccounts.map(pa => ({
+      const purchaseMovements: InventoryMovement[] = payableAccounts
+        .filter(pa => pa.invoiceDate)
+        .map(pa => ({
         id: pa.id, date: pa.invoiceDate, type: 'Compra',
         relatedId: pa.supplierName, itemName: `Factura ${pa.invoiceId}`, quantity: 1, // Simplified view for now
         unitCost: pa.totalAmount, totalCost: pa.totalAmount,
