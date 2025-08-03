@@ -339,15 +339,22 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         </TabsContent>
 
         <TabsContent value="historial" className="mt-0 space-y-4">
-          <TableToolbar 
-            {...historicalTableManager}
+          <TableToolbar
+            searchTerm={historicalTableManager.searchTerm}
+            onSearchTermChange={historicalTableManager.setSearchTerm}
+            dateRange={historicalTableManager.dateRange}
+            onDateRangeChange={historicalTableManager.setDateRange}
+            sortOption={historicalTableManager.sortOption}
+            onSortOptionChange={historicalTableManager.setSortOption}
+            otherFilters={historicalTableManager.otherFilters}
+            onFilterChange={historicalTableManager.setOtherFilters}
             searchPlaceholder="Buscar por folio, placa..."
             filterOptions={[
                 { value: 'status', label: 'Estado', options: serviceStatusOptions },
                 { value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions },
             ]}
           />
-          <div className="flex items-center justify-between pt-2">
+           <div className="flex items-center justify-between pt-2">
             <p className="text-sm text-muted-foreground">{historicalTableManager.paginationSummary}</p>
             <div className="flex items-center space-x-2">
               <Button size="sm" onClick={historicalTableManager.goToPreviousPage} disabled={!historicalTableManager.canGoPrevious} variant="outline" className="bg-card">
