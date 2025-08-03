@@ -5,17 +5,19 @@
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { CajaPageComponent } from './components/page-component';
+import { useSearchParams } from 'next/navigation';
 
-export default function CajaPageWrapper({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  const tab = searchParams?.tab as string | undefined;
+function CajaPage() {
+    const searchParams = useSearchParams();
+    const tab = searchParams.get('tab');
+    
+    return <CajaPageComponent tab={tab || "caja"} />;
+}
 
+export default function CajaPageWrapper() {
   return (
     <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <CajaPageComponent tab={tab} />
+      <CajaPage />
     </Suspense>
   );
 }
