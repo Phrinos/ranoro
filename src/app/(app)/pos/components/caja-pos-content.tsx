@@ -166,14 +166,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     return { initialBalance, totalCashSales: totalCashOperations, totalCashIn: cashInManual, totalCashOut: cashOutManual, finalCashBalance, salesByPaymentMethod, totalSales: salesInRange.length, totalServices: servicesInRange.length };
   }, [date, allSales, allServices, allCashTransactions, initialCashBalance]);
   
-  const manualCashMovements = useMemo(() => {
-    const start = startOfDay(date);
-    const end = endOfDay(date);
-    return allCashTransactions
-        .filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }) && !t.relatedType)
-        .sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
-  }, [date, allCashTransactions]);
-
   const handleSetInitialBalance = useCallback(async () => {
     if (initialBalanceAmount === '' || Number(initialBalanceAmount) < 0) return;
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -204,16 +196,12 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     toast({ title: `Se registró una ${type.toLowerCase()} de caja.` });
   }, [toast]);
   
-  const handleDeleteTransaction = useCallback(async (transactionId: string) => {
-    await operationsService.deleteCashTransaction(transactionId);
-    toast({ title: `Transacción eliminada.` });
-  }, [toast]);
 
   return (
     <>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Movimientos de Caja</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2>
           <p className="text-muted-foreground">Controla el flujo de efectivo para la fecha seleccionada.</p>
         </div>
         <Popover>
@@ -266,12 +254,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
                 <Card><CardHeader><CardTitle className="flex items-center gap-2 text-green-600"><ArrowUpCircle/>Registrar Entrada</CardTitle></CardHeader><CardContent><CashTransactionForm type="Entrada" onSubmit={handleAddTransaction} /></CardContent></Card>
                 <Card><CardHeader><CardTitle className="flex items-center gap-2 text-red-600"><ArrowDownCircle/>Registrar Salida</CardTitle></CardHeader><CardContent><CashTransactionForm type="Salida" onSubmit={handleAddTransaction} /></CardContent></Card>
             </div>
-             <Card>
-              <CardHeader><CardTitle>Transacciones Manuales del Día</CardTitle></CardHeader>
-              <CardContent>
-                <TransactionsList transactions={manualCashMovements} onDelete={handleDeleteTransaction} />
-              </CardContent>
-            </Card>
         </div>
       </div>
 

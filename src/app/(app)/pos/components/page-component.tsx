@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, Copy, MessageSquare, Share2, Wallet } from "lucide-react";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance } from "@/types";
+import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { operationsService, inventoryService } from '@/lib/services';
@@ -23,6 +23,7 @@ import { CajaPosContent } from './caja-pos-content';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { isToday, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { MovimientosPosContent } from './movimientos-pos-content';
 
 
 export function PosPageComponent({ tab }: { tab?: string }) {
@@ -182,7 +183,8 @@ Total: ${formatCurrency(sale.totalAmount)}
   const posTabs = [
     { value: "informe", label: "Informe", content: <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory} /> },
     { value: "ventas", label: "Ventas", content: <VentasPosContent allSales={allSales} allInventory={allInventory} onReprintTicket={handleReprintSale} onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }} /> },
-    { value: "movimientos", label: "Movimientos", content: <CajaPosContent allSales={allSales} allServices={allServices} allCashTransactions={allCashTransactions} initialCashBalance={initialCashBalance} /> },
+    { value: "caja", label: "Caja", content: <CajaPosContent allSales={allSales} allServices={allServices} allCashTransactions={allCashTransactions} initialCashBalance={initialCashBalance} /> },
+    { value: "movimientos", label: "Movimientos", content: <MovimientosPosContent allCashTransactions={allCashTransactions} /> },
   ];
 
   if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
