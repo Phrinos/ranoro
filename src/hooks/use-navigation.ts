@@ -1,3 +1,4 @@
+
 // src/hooks/use-navigation.ts
 "use client";
 
@@ -41,10 +42,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
   
   // Operaciones
-  {
-    label: 'Nueva Venta', path: '/pos/nuevo', icon: ShoppingCart, groupTag: 'Operaciones',
-    permissions: ['pos:create_sale']
-  },
   {
     label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones',
     permissions: ['pos:view_sales']
