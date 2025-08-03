@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from 'lucide-react';
 import type { Supplier } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { SuppliersTable } from '../../inventario/proveedores/components/suppliers-table';
+import { SuppliersTable } from './suppliers-table';
 import { SupplierDialog } from './supplier-dialog';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { inventoryService } from '@/lib/services';
