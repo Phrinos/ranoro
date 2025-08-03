@@ -180,11 +180,11 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
             <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">{paginationSummary}</p>
                 <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" onClick={onPreviousPage} disabled={!canGoPrevious}>
+                    <Button size="sm" onClick={onPreviousPage} disabled={!canGoPrevious} className="bg-gray-500 hover:bg-gray-600 text-white">
                         <ChevronLeft className="h-4 w-4" />
                         Anterior
                     </Button>
-                    <Button variant="outline" size="sm" onClick={onNextPage} disabled={!canGoNext}>
+                    <Button size="sm" onClick={onNextPage} disabled={!canGoNext} className="bg-gray-500 hover:bg-gray-600 text-white">
                         Siguiente
                         <ChevronRight className="h-4 w-4" />
                     </Button>
