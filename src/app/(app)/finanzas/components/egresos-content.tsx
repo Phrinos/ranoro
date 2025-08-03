@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Pencil, BadgeCent, TrendingDown } from 'lucide-react';
 import { formatCurrency } from "@/lib/utils";
 import type { MonthlyFixedExpense, Personnel } from '@/types';
-import { FixedExpensesDialog } from './fixed-expense-form'; // Note the name change to match the component export
+import { FixedExpensesDialog } from './fixed-expenses-dialog';
 
 interface FinancialSummary {
     totalTechnicianSalaries: number;
