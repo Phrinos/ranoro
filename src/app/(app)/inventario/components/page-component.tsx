@@ -168,7 +168,6 @@ export function InventarioPageComponent({
     { value: "informe", label: "Entradas y Salidas" },
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
-    { value: "proveedores", label: "Proveedores" },
     { value: "analisis", label: "Análisis IA" },
   ];
 
@@ -215,9 +214,6 @@ export function InventarioPageComponent({
         </TabsContent>
         <TabsContent value="categorias" className="mt-6">
             <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
-        </TabsContent>
-        <TabsContent value="proveedores" className="mt-6">
-            <ProveedoresPageComponent />
         </TabsContent>
         <TabsContent value="analisis" className="mt-6">
             <AnalisisIaContent inventoryItems={inventoryItems} />
