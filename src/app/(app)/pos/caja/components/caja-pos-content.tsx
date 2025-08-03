@@ -30,6 +30,7 @@ import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { db } from '@/lib/firebaseClient.js';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { parseDate } from '@/lib/forms';
 
 
 const cashTransactionSchema = z.object({
@@ -135,7 +136,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     const startOfSelectedDate = startOfDay(date);
     const endOfSelectedDate = endOfDay(date);
     
-    const dailyBalanceDoc = dailyInitialBalance;
+    const dailyBalanceDoc = dailyInitialBalance && isSameDay(parseDate(dailyInitialBalance.date)!, startOfSelectedDate) ? dailyInitialBalance : null;
     const dailyInitial = dailyBalanceDoc?.amount || 0;
 
     const salesInDay = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: startOfSelectedDate, end: endOfSelectedDate }));
