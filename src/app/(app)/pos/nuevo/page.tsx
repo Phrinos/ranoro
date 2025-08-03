@@ -5,7 +5,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PageHeader } from "@/components/page-header";
 import { PosForm } from '../components/pos-form';
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
@@ -192,25 +191,6 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Registrar Nueva Venta</h1>
                 <p className="text-primary-foreground/80 mt-1">Añada artículos y finalice la transacción para generar el ticket.</p>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-                <Button variant="outline" className="text-primary-foreground border-primary-foreground/50 hover:bg-primary/80 w-full sm:w-auto" onClick={() => router.push('/pos')}>
-                    <X className="mr-2 h-4 w-4" />
-                    Cancelar
-                </Button>
-                 <Button
-                    type="submit"
-                    form="pos-form"
-                    disabled={methods.formState.isSubmitting}
-                    className="bg-white text-primary hover:bg-gray-200 w-full sm:w-auto"
-                >
-                    {methods.formState.isSubmitting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                    )}
-                    Completar Venta
-                </Button>
             </div>
         </div>
       </div>
