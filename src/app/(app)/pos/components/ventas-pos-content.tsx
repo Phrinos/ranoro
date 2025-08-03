@@ -67,6 +67,7 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
         
         <TableToolbar
             {...tableManager}
+            onDateRangeChange={tableManager.setDateRange}
             searchPlaceholder="Buscar por ID, cliente, artículo..."
             sortOptions={sortOptions}
             otherFilters={{ paymentMethod: tableManager.otherFilters['paymentMethod'] || 'all' }}
