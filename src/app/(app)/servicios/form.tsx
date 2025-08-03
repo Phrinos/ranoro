@@ -49,8 +49,8 @@ import type {
   QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, SafetyCheckValue, InventoryCategory, Supplier, PaymentMethod, Personnel
 } from '@/types'
 
-import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
-import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
+import { VehicleDialog } from '../vehiculos/components/vehicle-dialog'
+import type { VehicleFormValues } from '../vehiculos/components/vehicle-form'
 import { ServiceDetailsCard } from './ServiceDetailsCard'
 import { VehicleSelectionCard } from './VehicleSelectionCard'
 import { ReceptionAndDelivery } from './ReceptionAndDelivery'
