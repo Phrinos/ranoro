@@ -10,11 +10,9 @@ import { TicketContent } from '@/components/ticket-content';
 import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { operationsService, inventoryService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ViewSaleDialog } from "./view-sale-dialog";
 import { writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
@@ -22,6 +20,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { InformePosContent } from './informe-pos-content';
 import { VentasPosContent } from './ventas-pos-content';
 import { CajaPosContent } from './caja-pos-content';
+import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
 
 export function PosPageComponent({ tab }: { tab?: string }) {
@@ -154,63 +153,22 @@ Total: ${formatCurrency(sale.totalAmount)}
   }, [toast, workshopInfo]);
   
   const posTabs = [
-    { value: "informe", label: "Informe" },
-    { value: "ventas", label: "Ventas" },
-    { value: "caja", label: "Caja" },
+    { value: "informe", label: "Informe", content: <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory} /> },
+    { value: "ventas", label: "Ventas", content: <VentasPosContent allSales={allSales} allInventory={allInventory} onReprintTicket={handleReprintSale} onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }} /> },
+    { value: "caja", label: "Caja", content: <CajaPosContent allSales={allSales} allServices={allServices} allCashTransactions={allCashTransactions} initialCashBalance={initialCashBalance} /> },
   ];
 
   if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
   
   return (
     <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Punto de Venta</h1>
-        <p className="text-primary-foreground/80 mt-1">Registra ventas, gestiona tu caja y analiza el rendimiento de tus operaciones.</p>
-      </div>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full">
-            <div className="flex flex-wrap w-full gap-2 sm:gap-4">
-              {posTabs.map((tabInfo) => (
-                <button
-                  key={tabInfo.value}
-                  onClick={() => setActiveTab(tabInfo.value)}
-                  className={cn(
-                    'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
-                    'break-words whitespace-normal leading-snug',
-                    activeTab === tabInfo.value
-                      ? 'bg-primary text-primary-foreground shadow'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  )}
-                >
-                  {tabInfo.label}
-                </button>
-              ))}
-            </div>
-        </div>
-        <TabsContent value="informe" className="mt-6 space-y-6">
-            <InformePosContent
-              allSales={allSales}
-              allServices={allServices}
-              allInventory={allInventory}
-            />
-        </TabsContent>
-        <TabsContent value="ventas" className="mt-6 space-y-6">
-            <VentasPosContent
-              allSales={allSales}
-              allInventory={allInventory}
-              onReprintTicket={handleReprintSale}
-              onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
-            />
-        </TabsContent>
-        <TabsContent value="caja" className="mt-6 space-y-6">
-             <CajaPosContent
-                allSales={allSales}
-                allServices={allServices}
-                allCashTransactions={allCashTransactions}
-                initialCashBalance={initialCashBalance}
-             />
-        </TabsContent>
-      </Tabs>
+      <TabbedPageLayout
+        title="Punto de Venta"
+        description="Registra ventas, gestiona tu caja y analiza el rendimiento de tus operaciones."
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        tabs={posTabs}
+      />
       
       <PrintTicketDialog
         open={isReprintDialogOpen && !!selectedSaleForReprint}
@@ -231,4 +189,3 @@ Total: ${formatCurrency(sale.totalAmount)}
     </>
   );
 }
-

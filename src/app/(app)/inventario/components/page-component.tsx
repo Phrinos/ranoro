@@ -9,12 +9,12 @@ import { InventoryItemDialog } from "./inventory-item-dialog";
 import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo } from "@/types";
 import type { InventoryItemFormValues } from "./inventory-item-form";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RegisterPurchaseDialog } from './register-purchase-dialog';
 import type { PurchaseFormValues } from './register-purchase-dialog';
 import { InformeContent } from './informe-content';
 import { ProductosContent } from './productos-content';
 import { CategoriasContent } from './categorias-content';
+import { ProveedoresContent } from '../../proveedores/components/page-component';
 import { AnalisisIaContent } from './analisis-ia-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { InventoryReportContent } from './inventory-report-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
+import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
 
 export function InventarioPageComponent({
@@ -166,61 +167,22 @@ export function InventarioPageComponent({
   }
 
   const tabsConfig = [
-    { value: "informe", label: "Informe" },
-    { value: "productos", label: "Productos y Servicios" },
-    { value: "categorias", label: "Categorías" },
-    { value: "analisis", label: "Análisis IA" },
+    { value: "informe", label: "Informe", content: <InformeContent inventoryItems={inventoryItems} suppliers={suppliers} onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)} /> },
+    { value: "productos", label: "Productos y Servicios", content: <ProductosContent inventoryItems={inventoryItems} onNewItem={handleOpenItemDialog} onPrint={handlePrint} /> },
+    { value: "categorias", label: "Categorías", content: <CategoriasContent categories={categories} inventoryItems={inventoryItems} /> },
+    { value: "proveedores", label: "Proveedores", content: <ProveedoresContent /> },
+    { value: "analisis", label: "Análisis IA", content: <AnalisisIaContent inventoryItems={inventoryItems} /> },
   ];
 
   return (
     <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
-        <p className="text-primary-foreground/80 mt-1">Gestiona productos, proveedores, categorías y obtén análisis inteligentes.</p>
-      </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full">
-            <div className="flex flex-wrap w-full gap-2 sm:gap-4">
-              {tabsConfig.map(tabInfo => (
-                <button
-                  key={tabInfo.value}
-                  onClick={() => setActiveTab(tabInfo.value)}
-                  className={cn(
-                    'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
-                    'break-words whitespace-normal leading-snug',
-                    activeTab === tabInfo.value
-                      ? 'bg-primary text-primary-foreground shadow'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  )}
-                >
-                  {tabInfo.label}
-                </button>
-              ))}
-            </div>
-        </div>
-        
-        <TabsContent value="informe" className="mt-6">
-            <InformeContent 
-                inventoryItems={inventoryItems} 
-                suppliers={suppliers}
-                onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
-            />
-        </TabsContent>
-        <TabsContent value="productos" className="mt-6">
-            <ProductosContent 
-                inventoryItems={inventoryItems} 
-                onNewItem={handleOpenItemDialog}
-                onPrint={handlePrint}
-            />
-        </TabsContent>
-        <TabsContent value="categorias" className="mt-6">
-            <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
-        </TabsContent>
-        <TabsContent value="analisis" className="mt-6">
-            <AnalisisIaContent inventoryItems={inventoryItems} />
-        </TabsContent>
-      </Tabs>
+      <TabbedPageLayout
+        title="Mi Inventario"
+        description="Gestiona productos, proveedores, categorías y obtén análisis inteligentes."
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        tabs={tabsConfig}
+      />
       
       <RegisterPurchaseDialog
         open={isRegisterPurchaseOpen}

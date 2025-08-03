@@ -5,19 +5,14 @@
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PlusCircle, Search, ListFilter, ShieldCheck, User, ChevronRight, AlertTriangle, UserCheck, UserX } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AddVehicleToFleetDialog } from "./add-vehicle-to-fleet-dialog";
 import { FineCheckDialog } from "./fine-check-dialog";
-import type { User, Vehicle, Driver, RentalPayment } from '@/types';
+import type { User as AuthUser, Vehicle, Driver, RentalPayment } from '@/types';
 import { useToast } from "@/hooks/use-toast";
-import { subDays, isBefore, parseISO, isValid, differenceInCalendarDays, startOfToday, isAfter, compareAsc, startOfMonth, endOfMonth, getDate, isWithinInterval, format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatCurrency, cn, calculateDriverDebt } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatCurrency, cn } from "@/lib/utils";
 import { DriverDialog } from '../../conductores/components/driver-dialog';
 import type { DriverFormValues } from '../../conductores/components/driver-form';
 import Link from 'next/link';
@@ -25,8 +20,9 @@ import { inventoryService, personnelService, operationsService } from '@/lib/ser
 import { Loader2 } from 'lucide-react';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { TableToolbar } from '@/components/shared/table-toolbar';
+import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
-type FlotillaSortOption = "plate_asc" | "plate_desc" | "owner_asc" | "owner_desc" | "rent_asc" | "rent_desc";
+const FINE_CHECK_STORAGE_KEY = 'lastFineCheckDate';
 type DriverSortOption = 'name_asc' | 'name_desc';
 
 export function FlotillaPageComponent() {
@@ -43,7 +39,7 @@ export function FlotillaPageComponent() {
   
   // States for 'vehiculos' tab
   const [searchTermVehicles, setSearchTermVehicles] = useState("");
-  const [sortOptionVehicles, setSortOptionVehicles] = useState<FlotillaSortOption>("plate_asc");
+  const [sortOptionVehicles, setSortOptionVehicles] = useState<string>("plate_asc");
 
   // States for 'conductores' tab
   const [searchTermDrivers, setSearchTermDrivers] = useState('');
@@ -132,7 +128,7 @@ export function FlotillaPageComponent() {
   const handleConfirmFineCheck = useCallback(async (checkedVehicleIds: string[]) => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     if (!authUserString) return toast({ title: "Error", description: "No se pudo identificar al usuario.", variant: "destructive" });
-    const currentUser: User = JSON.parse(authUserString);
+    const currentUser: AuthUser = JSON.parse(authUserString);
     const now = new Date();
     
     const updates = checkedVehicleIds.map(id => {
@@ -162,43 +158,33 @@ export function FlotillaPageComponent() {
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
 
-  return (
-    <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Gestión de Flotilla</h1>
-        <p className="text-primary-foreground/80 mt-1">Administra vehículos y conductores de tu flotilla.</p>
-      </div>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full">
-            <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
-                <TabsTrigger value="conductores" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Conductores</TabsTrigger>
-                <TabsTrigger value="vehiculos" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Vehículos</TabsTrigger>
-            </TabsList>
+  const tabs = [
+    {
+      value: "conductores",
+      label: "Conductores",
+      content: (
+        <div className="space-y-6">
+          <div className="flex justify-end">
+            <Button onClick={() => handleOpenDriverDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Conductor</Button>
+          </div>
+          <TableToolbar
+            searchTerm={searchTermDrivers}
+            onSearchTermChange={setSearchTermDrivers}
+            searchPlaceholder="Buscar por nombre o teléfono..."
+            sortOption={sortOptionDrivers}
+            onSortOptionChange={(v) => setSortOptionDrivers(v as DriverSortOption)}
+            sortOptions={[{ value: 'name_asc', label: 'Nombre (A-Z)' }, { value: 'name_desc', label: 'Nombre (Z-A)' }]}
+            primaryAction={<Button variant="outline" className="bg-card" onClick={() => setShowArchivedDrivers(!showArchivedDrivers)}>{showArchivedDrivers ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}{showArchivedDrivers ? "Ver Activos" : "Ver Archivados"}</Button>}
+          />
+          <Card className="mt-4"><CardContent className="p-0"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Nombre</TableHead><TableHead className="text-white">Teléfono</TableHead><TableHead className="text-white">Vehículo Asignado</TableHead><TableHead className="text-right text-white">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">{showArchivedDrivers ? "No hay conductores archivados." : "No se encontraron conductores activos."}</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
         </div>
-        <TabsContent value="conductores" className="mt-6 space-y-6">
-            <div className="flex justify-end">
-                <Button onClick={() => handleOpenDriverDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Conductor</Button>
-            </div>
-            <TableToolbar
-                searchTerm={searchTermDrivers}
-                onSearchTermChange={setSearchTermDrivers}
-                searchPlaceholder="Buscar por nombre o teléfono..."
-                sortOption={sortOptionDrivers}
-                onSortOptionChange={(v) => setSortOptionDrivers(v as DriverSortOption)}
-                sortOptions={[
-                    { value: 'name_asc', label: 'Nombre (A-Z)' },
-                    { value: 'name_desc', label: 'Nombre (Z-A)' },
-                ]}
-                primaryAction={
-                    <Button variant="outline" className="bg-card" onClick={() => setShowArchivedDrivers(!showArchivedDrivers)}>
-                        {showArchivedDrivers ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}
-                        {showArchivedDrivers ? "Ver Activos" : "Ver Archivados"}
-                    </Button>
-                }
-            />
-            <Card className="mt-4"><CardContent className="p-0"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Nombre</TableHead><TableHead className="text-white">Teléfono</TableHead><TableHead className="text-white">Vehículo Asignado</TableHead><TableHead className="text-right text-white">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">{showArchivedDrivers ? "No hay conductores archivados." : "No se encontraron conductores activos."}</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
-        </TabsContent>
-        <TabsContent value="vehiculos" className="mt-6 space-y-6">
+      )
+    },
+    {
+      value: "vehiculos",
+      label: "Vehículos",
+      content: (
+         <div className="space-y-6">
           <div className="flex justify-end gap-2">
             <Button variant="outline" className="bg-orange-100 text-orange-800 hover:bg-orange-200" onClick={() => setIsFineCheckDialogOpen(true)}>
                 <ShieldCheck className="mr-2 h-4 w-4" />Revisar Multas
@@ -210,11 +196,8 @@ export function FlotillaPageComponent() {
             onSearchTermChange={setSearchTermVehicles}
             searchPlaceholder="Buscar por placa, marca, modelo o propietario..."
             sortOption={sortOptionVehicles}
-            onSortOptionChange={(v) => setSortOptionVehicles(v as FlotillaSortOption)}
-            sortOptions={[
-                { value: 'plate_asc', label: 'Placa (A-Z)' },
-                { value: 'plate_desc', label: 'Placa (Z-A)' },
-            ]}
+            onSortOptionChange={(v) => setSortOptionVehicles(v as string)}
+            sortOptions={[{ value: 'plate_asc', label: 'Placa (A-Z)' }, { value: 'plate_desc', label: 'Placa (Z-A)' }]}
           />
           <Card className="mt-4"><CardContent><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Placa</TableHead><TableHead className="text-white">Vehículo</TableHead><TableHead className="text-white">Conductor</TableHead><TableHead className="text-white">Propietario</TableHead><TableHead className="text-right text-white">Renta Diaria</TableHead></TableRow></TableHeader><TableBody>{filteredFleetVehicles.length > 0 ? filteredFleetVehicles.map(v => {
             const driver = allDrivers.find(d => d.id === v.assignedVehicleId && !d.isArchived);
@@ -229,8 +212,20 @@ export function FlotillaPageComponent() {
               </TableRow>
             )
           }) : <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay vehículos en la flotilla.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )
+    }
+  ];
+
+  return (
+    <>
+      <TabbedPageLayout
+        title="Gestión de Flotilla"
+        description="Administra vehículos y conductores de tu flotilla."
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        tabs={tabs}
+      />
       <AddVehicleToFleetDialog open={isAddVehicleDialogOpen} onOpenChange={setIsAddVehicleDialogOpen} vehicles={nonFleetVehicles} onAddVehicle={handleAddVehicleToFleet} />
       <FineCheckDialog open={isFineCheckDialogOpen} onOpenChange={setIsFineCheckDialogOpen} fleetVehicles={fleetVehicles} onConfirm={handleConfirmFineCheck} />
       <DriverDialog open={isDriverDialogOpen} onOpenChange={setIsDriverDialogOpen} driver={editingDriver} onSave={handleSaveDriver} />

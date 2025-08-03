@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -18,7 +19,7 @@ import { Loader2 } from 'lucide-react';
 
 type SupplierSortOption = | "name_asc" | "name_desc" | "debt_asc" | "debt_desc";
 
-export function ProveedoresPageComponent() {
+export function ProveedoresContent() {
   const { toast } = useToast();
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -86,11 +87,6 @@ export function ProveedoresPageComponent() {
 
   return (
     <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Proveedores</h1>
-        <p className="text-primary-foreground/80 mt-1">Gestiona tus proveedores y sus cuentas por pagar.</p>
-      </div>
-
       <div className="space-y-4">
         <div className="flex justify-end">
             <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Proveedor</Button>

@@ -30,6 +30,7 @@ import { ReporteOperacionesContent } from './reporte-operaciones-content';
 import { ReporteInventarioContent } from './reporte-inventario-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { EgresosContent } from './egresos-content';
+import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
 
 export function FinanzasPageComponent({
@@ -256,41 +257,12 @@ export function FinanzasPageComponent({
     );
 
     if (isLoading) { return <div className="flex h-64 justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
-    
-    return (
-        <>
-            <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-                <h1 className="text-3xl font-bold tracking-tight">Finanzas</h1>
-                <p className="text-primary-foreground/80 mt-1">Analiza el rendimiento y las operaciones de tu taller.</p>
-            </div>
-            
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="w-full">
-                    <TabsList className="flex w-full gap-2 sm:gap-4 overflow-x-auto scrollbar-hide p-0 bg-transparent">
-                        <TabsTrigger 
-                            value="resumen" 
-                            className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
-                            Resumen
-                        </TabsTrigger>
-                         <TabsTrigger 
-                            value="egresos" 
-                            className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
-                            Egresos
-                        </TabsTrigger>
-                        <TabsTrigger 
-                            value="operaciones" 
-                            className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
-                            Operaciones
-                        </TabsTrigger>
-                        <TabsTrigger 
-                            value="inventario" 
-                            className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
-                            Inventario
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
-                
-                 <TabsContent value="resumen" className="mt-6">
+
+    const tabs = [
+        {
+            value: "resumen", label: "Resumen",
+            content: (
+                 <div className="space-y-6">
                     <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">{dateFilterComponent}</div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <Card className="lg:col-span-2">
@@ -346,33 +318,22 @@ export function FinanzasPageComponent({
                         </CardContent>
                       </Card>
                     </div>
-                </TabsContent>
-
-                <TabsContent value="egresos" className="mt-6">
-                    <div className="mb-6">{dateFilterComponent}</div>
-                    <EgresosContent
-                      financialSummary={financialSummary}
-                      fixedExpenses={fixedExpenses}
-                      onExpensesUpdated={(updated) => setFixedExpenses([...updated])}
-                    />
-                </TabsContent>
-                
-                <TabsContent value="operaciones" className="mt-6">
-                    <ReporteOperacionesContent
-                        allSales={allSales}
-                        allServices={allServices}
-                        allInventory={allInventory}
-                        serviceTypes={serviceTypes}
-                    />
-                </TabsContent>
-
-                <TabsContent value="inventario" className="mt-6">
-                    <ReporteInventarioContent movements={inventoryMovements} />
-                </TabsContent>
-
-            </Tabs>
-        </>
-    );
-
+                </div>
+            )
+        },
+        { value: "egresos", label: "Egresos", content:  <div className="space-y-6"><div className="mb-6">{dateFilterComponent}</div><EgresosContent financialSummary={financialSummary} fixedExpenses={fixedExpenses} onExpensesUpdated={(updated) => setFixedExpenses([...updated])} /></div> },
+        { value: "operaciones", label: "Operaciones", content: <ReporteOperacionesContent allSales={allSales} allServices={allServices} allInventory={allInventory} serviceTypes={serviceTypes} /> },
+        { value: "inventario", label: "Inventario", content: <ReporteInventarioContent movements={inventoryMovements} /> },
+    ];
     
+    return (
+        <TabbedPageLayout
+          title="Finanzas"
+          description="Analiza el rendimiento y las operaciones de tu taller."
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          tabs={tabs}
+        />
+    );
 }
+
