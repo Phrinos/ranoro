@@ -71,8 +71,8 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
 
           {/* Columna Derecha: Pago y Resumen */}
           <div className="lg:col-span-2 space-y-6">
-            <PaymentSection />
             <SaleSummary />
+            <PaymentSection />
           </div>
         </div>
       </form>
