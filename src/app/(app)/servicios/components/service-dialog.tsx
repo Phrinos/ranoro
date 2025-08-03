@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks';
 import { Badge } from '@/components/ui/badge';
+import { quoteService } from '@/lib/services/quote.service';
 
 
 interface ServiceDialogProps {

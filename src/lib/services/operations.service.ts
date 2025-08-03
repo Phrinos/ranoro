@@ -51,19 +51,6 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
 }
 
-const getQuoteById = async (id: string): Promise<QuoteRecord | null> => {
-    if (!db) throw new Error("Database not initialized.");
-    const docRef = doc(db, 'serviceRecords', id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.status === 'Cotizacion') {
-            return { id: docSnap.id, ...data } as QuoteRecord;
-        }
-    }
-    return null;
-};
-
 const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
     
@@ -281,6 +268,7 @@ const saveMigratedServices = async (services: ExtractedService[], vehicles: Extr
             technicianId: 'N/A',
             serviceAdvisorId: 'system',
             serviceAdvisorName: 'Migración',
+            paymentMethod: 'Efectivo',
             serviceItems: [{ id: 'migrated-item', name: service.description, price: service.totalCost, suppliesUsed: [] }],
         };
         batch.set(newServiceRef, cleanObjectForFirestore(serviceRecord));
@@ -482,7 +470,7 @@ const addRentalPayment = async (driverId: string, amount: number, note: string |
     if (!vehicle) throw new Error("Assigned vehicle not found.");
     
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-    const user = authUserString ? JSON.parse(authUserString) as RanoroUser : null;
+    const user = authUserString ? JSON.parse(authUserString) as User : null;
     
     const newPayment: Omit<RentalPayment, 'id'> = {
         driverId: driver.id,
@@ -584,7 +572,6 @@ export const operationsService = {
     saveMigratedServices,
     saveIndividualMigratedService,
     getServicesForVehicle,
-    getQuoteById,
     onSalesUpdate,
     onSalesUpdatePromise,
     registerSale,
