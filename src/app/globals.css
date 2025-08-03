@@ -107,14 +107,14 @@
   .rdp-day_selected,
   .rdp-day_selected:focus-visible,
   .rdp-day_selected:hover {
-    background-color: hsl(240 10% 3.9%) !important;
-    color: hsl(0 0% 98%) !important;
+    background-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
   }
   .dark .rdp-day_selected,
   .dark .rdp-day_selected:focus-visible,
   .dark .rdp-day_selected:hover {
-    background-color: hsl(0 0% 98%) !important;
-    color: hsl(240 10% 3.9%) !important;
+    background-color: hsl(var(--primary-foreground)) !important;
+    color: hsl(var(--primary)) !important;
   }
 }
 

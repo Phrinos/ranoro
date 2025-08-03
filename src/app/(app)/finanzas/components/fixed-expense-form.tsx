@@ -33,7 +33,7 @@ interface FixedExpenseFormProps {
   onClose: () => void;
 }
 
-export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpenseFormProps) {
+export function FixedExpensesDialog({ initialData, onSubmit, onClose }: FixedExpenseFormProps) {
   const form = useForm<FixedExpenseFormValues>({
     resolver: zodResolver(fixedExpenseFormSchema),
     defaultValues: initialData || {
