@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Wallet, ArrowUpCircle, ArrowDownCircle, Printer, Pencil } from "lucide-react";
+import { Wallet, ArrowUpCircle, ArrowDownCircle, Printer, Pencil, Trash2, CalendarIcon as CalendarDateIcon, DollarSign } from "lucide-react";
 import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from "@/types";
 import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, isSameDay, subDays, startOfWeek, startOfMonth, compareDesc } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -28,8 +28,6 @@ import { CorteDiaContent } from '../caja/components/corte-caja-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { Trash2 } from 'lucide-react';
-import { CalendarIcon as CalendarDateIcon } from 'lucide-react';
 
 
 const cashTransactionSchema = z.object({
