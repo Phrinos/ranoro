@@ -54,7 +54,7 @@ export function useTableManager<T extends { [key: string]: any }>({
       );
     }
 
-    if (dateRange?.from) { 
+    if (dateFilterKey && dateRange?.from) { 
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
       data = data.filter(item => {
