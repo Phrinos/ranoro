@@ -24,7 +24,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from "zod";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { CorteDiaContent } from '../caja/components/corte-caja-content';
+import { CorteDiaContent } from './corte-caja-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -216,17 +216,23 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
           <h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2>
           <p className="text-muted-foreground">Controla el flujo de efectivo para la fecha seleccionada.</p>
         </div>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant={"outline"} className="w-full sm:w-auto justify-start text-left font-normal bg-card">
-              <CalendarDateIcon className="mr-2 h-4 w-4" />
-              {format(date, "PPP", { locale: es })}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="end">
-            <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus />
-          </PopoverContent>
-        </Popover>
+        <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={() => setDate(startOfDay(new Date()))} className="bg-card">Hoy</Button>
+            <Button variant="outline" size="sm" onClick={() => setDate(startOfDay(subDays(new Date(), 1)))} className="bg-card">Ayer</Button>
+            <Button variant="outline" size="sm" onClick={() => setDate(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="bg-card">Esta Semana</Button>
+            <Button variant="outline" size="sm" onClick={() => setDate(startOfMonth(new Date()))} className="bg-card">Este Mes</Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant={"outline"} className="w-full sm:w-auto justify-start text-left font-normal bg-card">
+                  <CalendarDateIcon className="mr-2 h-4 w-4" />
+                  {format(date, "PPP", { locale: es })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus />
+              </PopoverContent>
+            </Popover>
+        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1">
