@@ -51,7 +51,6 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
             <TableHead className="font-bold text-white">Contacto</TableHead>
             <TableHead className="font-bold text-white">Teléfono</TableHead>
             <TableHead className="text-right font-bold text-white">Deuda</TableHead>
-            <TableHead className="text-right font-bold text-white print:hidden">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -69,14 +68,6 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
                 ) : (
                   <span className="text-muted-foreground">N/A</span>
                 )}
-              </TableCell>
-              <TableCell className="text-right print:hidden">
-                <ConfirmDialog
-                    triggerButton={<Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
-                    title={`¿Eliminar a ${supplier.name}?`}
-                    description="Esta acción no se puede deshacer. Se eliminará el proveedor y su historial asociado."
-                    onConfirm={() => onDelete(supplier.id)}
-                />
               </TableCell>
             </TableRow>
           ))}

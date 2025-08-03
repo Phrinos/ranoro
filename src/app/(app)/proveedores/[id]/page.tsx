@@ -3,14 +3,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, onSnapshot, collection, query, where, getDocs, writeBatch, addDoc } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, getDocs, writeBatch, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Edit, DollarSign, Calendar as CalendarIcon, FileText, BadgePercent } from 'lucide-react';
+import { Loader2, ArrowLeft, Edit, DollarSign, Calendar as CalendarIcon, FileText, BadgePercent, Trash2 } from 'lucide-react';
 import { SupplierDialog } from '../components/supplier-dialog';
 import { formatCurrency } from '@/lib/utils';
 import { format, isValid, parseISO } from 'date-fns';
@@ -20,6 +20,7 @@ import type { Supplier, PayableAccount, User } from '@/types';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { PayableAccountDialog } from '../components/payable-account-dialog';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 export default function SupplierDetailPage() {
@@ -64,6 +65,17 @@ export default function SupplierDetailPage() {
     setIsEditDialogOpen(false);
   };
   
+  const handleDeleteSupplier = async () => {
+    if (!supplier) return;
+    try {
+        await inventoryService.deleteSupplier(supplier.id);
+        toast({ title: "Proveedor Eliminado", description: `${supplier.name} ha sido eliminado.` });
+        router.push('/proveedores');
+    } catch (e) {
+        toast({ title: "Error", description: "No se pudo eliminar el proveedor.", variant: "destructive" });
+    }
+  };
+
   const handleRegisterPayment = async (accountId: string, amount: number, paymentMethod: string, note?: string) => {
     try {
         const userString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -88,7 +100,21 @@ export default function SupplierDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4"/>Volver</Button>
-        <Button onClick={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4"/>Editar Proveedor</Button>
+        <div className="flex gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/>Eliminar Proveedor</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader><AlertDialogTitle>¿Estás seguro?</AlertDialogTitle><AlertDialogDescription>Esta acción eliminará permanentemente al proveedor "{supplier.name}" y todo su historial de cuentas. No se puede deshacer.</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteSupplier} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button onClick={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4"/>Editar Proveedor</Button>
+        </div>
       </div>
 
       <Card>
