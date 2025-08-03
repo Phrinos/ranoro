@@ -158,7 +158,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     } catch (e) {
       toast({ title: "Error", description: `No se pudo guardar el registro.`, variant: "destructive"});
     }
-  }, [toast, allServices]);
+  }, [toast]);
 
   const handleCancelRecord = useCallback(async (serviceId: string, reason: string) => {
     try {
@@ -253,7 +253,9 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         });
       } catch (error) {
         console.error('Error sharing:', error);
-        toast({ title: 'Error al compartir', variant: 'destructive' });
+        if(!String(error).includes('AbortError')) {
+           toast({ title: 'Error al compartir', variant: 'destructive' });
+        }
       }
     } else {
         handleCopyServiceForWhatsapp(recordForTicket!);
