@@ -87,54 +87,50 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     
     
   return (
-    <div className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder={searchPlaceholder}
-                    className="w-full rounded-lg bg-card pl-8"
-                    value={searchTerm}
-                    onChange={(e) => onSearchTermChange(e.target.value)}
-                />
-            </div>
-            <div className="flex items-center gap-2 flex-wrap justify-start">
-                {/* Filters Dropdown */}
-                {filterOptions && filterOptions.length > 0 && onFilterChange && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><Filter className="mr-2 h-4 w-4" /><span>Filtros</span></Button></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            {filterOptions.map((group, index) => (
-                                <React.Fragment key={group.value}>
-                                    {index > 0 && <DropdownMenuSeparator />}
-                                    <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
-                                    <DropdownMenuRadioGroup value={otherFilters[group.value] || 'all'} onValueChange={(value) => onFilterChange({ ...otherFilters, [group.value]: value })}>
-                                        {group.options.map(opt => (<DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>))}
-                                    </DropdownMenuRadioGroup>
-                                </React.Fragment>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
-
-                {/* Sort Dropdown */}
-                {sortOptions.length > 0 && (
-                  <DropdownMenu>
-                      <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" /><span>Ordenar</span></Button></DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                      <DropdownMenuRadioGroup value={sortOption} onValueChange={onSortOptionChange}>
-                          {sortOptions.map(opt => (<DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>))}
-                      </DropdownMenuRadioGroup>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-            </div>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+                type="search"
+                placeholder={searchPlaceholder}
+                className="w-full rounded-lg bg-card pl-8"
+                value={searchTerm}
+                onChange={(e) => onSearchTermChange(e.target.value)}
+            />
         </div>
-        
-        {/* Date Picker on its own line */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-start">
+            {/* Sort Dropdown */}
+            {sortOptions.length > 0 && (
+              <DropdownMenu>
+                  <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" /><span>Ordenar</span></Button></DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={sortOption} onValueChange={onSortOptionChange}>
+                      {sortOptions.map(opt => (<DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>))}
+                  </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Filters Dropdown */}
+            {filterOptions && filterOptions.length > 0 && onFilterChange && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><Filter className="mr-2 h-4 w-4" /><span>Filtros</span></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        {filterOptions.map((group, index) => (
+                            <React.Fragment key={group.value}>
+                                {index > 0 && <DropdownMenuSeparator />}
+                                <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                                <DropdownMenuRadioGroup value={otherFilters[group.value] || 'all'} onValueChange={(value) => onFilterChange({ ...otherFilters, [group.value]: value })}>
+                                    {group.options.map(opt => (<DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>))}
+                                </DropdownMenuRadioGroup>
+                            </React.Fragment>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+
+            {/* Date Picker */}
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
                 <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
@@ -142,7 +138,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                     {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
                 </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="end">
                     <div className="flex p-2">
                         <Button variant="ghost" size="sm" onClick={setDateToToday}>Hoy</Button>
                         <Button variant="ghost" size="sm" onClick={setDateToYesterday}>Ayer</Button>

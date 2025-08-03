@@ -61,11 +61,9 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
 
   return (
     <div className="space-y-4">
-        <div className="flex justify-end">
-            <Button asChild>
-                <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
-            </Button>
-        </div>
+        <Button asChild className="w-full">
+            <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
+        </Button>
         
         <TableToolbar
             {...tableManager}
