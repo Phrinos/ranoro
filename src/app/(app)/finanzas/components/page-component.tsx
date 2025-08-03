@@ -1,4 +1,4 @@
-
+// src/app/(app)/finanzas/components/page-component.tsx
 
 "use client";
 
@@ -21,7 +21,6 @@ import {
 import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
-import { FixedExpensesDialog } from './fixed-expense-form'; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { DateRange } from 'react-day-picker';
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
@@ -30,6 +29,7 @@ import { parseDate } from '@/lib/forms';
 import { ReporteOperacionesContent } from './reporte-operaciones-content';
 import { ReporteInventarioContent } from './reporte-inventario-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { EgresosContent } from './egresos-content';
 
 
 export function FinanzasPageComponent({
@@ -41,7 +41,6 @@ export function FinanzasPageComponent({
     
     const [activeTab, setActiveTab] = useState(defaultTab);
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [isExpensesDialogOpen, setIsExpensesDialogOpen] = useState(false);
     
     const [isLoading, setIsLoading] = useState(true);
     const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
@@ -145,8 +144,8 @@ export function FinanzasPageComponent({
           }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
 
 
-        const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-        const totalBaseExpenses = totalTechnicianSalaries + totalAdministrativeSalaries + totalFixedExpenses;
+        const totalFixedExpensesValue = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const totalBaseExpenses = totalTechnicianSalaries + totalAdministrativeSalaries + totalFixedExpensesValue;
         
         const netProfitBeforeCommissions = totalOperationalProfit - totalBaseExpenses;
         const isProfitableForCommissions = netProfitBeforeCommissions > 0;
@@ -174,7 +173,7 @@ export function FinanzasPageComponent({
         return { 
             monthYearLabel: dateLabel, totalOperationalIncome, totalIncomeFromSales, totalIncomeFromServices, 
             totalProfitFromSales, totalProfitFromServices, totalCostOfGoods, totalOperationalProfit,
-            totalTechnicianSalaries, totalAdministrativeSalaries, totalFixedExpenses,
+            totalTechnicianSalaries, totalAdministrativeSalaries, totalFixedExpenses: totalFixedExpensesValue,
             totalVariableCommissions, netProfit, isProfitableForCommissions, serviceIncomeBreakdown,
             totalInventoryValue, totalUnitsSold
         };
@@ -273,6 +272,11 @@ export function FinanzasPageComponent({
                             className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
                             Resumen
                         </TabsTrigger>
+                         <TabsTrigger 
+                            value="egresos" 
+                            className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                            Egresos
+                        </TabsTrigger>
                         <TabsTrigger 
                             value="operaciones" 
                             className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
@@ -299,7 +303,7 @@ export function FinanzasPageComponent({
                             <hr className="my-4 border-border"/>
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">(-) Gastos Mensuales Fijos:</span>
+                                    <span className="text-muted-foreground">(-) Gastos Fijos y Nómina:</span>
                                     <span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalTechnicianSalaries + financialSummary.totalAdministrativeSalaries + financialSummary.totalFixedExpenses)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
@@ -341,19 +345,16 @@ export function FinanzasPageComponent({
                             </div>
                         </CardContent>
                       </Card>
-                      <Card>
-                          <CardHeader><div className="flex items-center justify-between"><CardTitle className="text-xl flex items-center gap-2"><TrendingDown className="h-6 w-6 text-red-500" />Egresos Fijos y Variables</CardTitle><Button variant="outline" size="sm" onClick={() => setIsExpensesDialogOpen(true)}><Pencil className="mr-2 h-4 w-4" />Editar Gastos Fijos</Button></div><CardDescription>Detalle de gastos fijos y variables del periodo.</CardDescription></CardHeader>
-                          <CardContent className="space-y-3 text-base">
-                              <h3 className="font-semibold text-lg">Nómina y Comisiones</h3>
-                              <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldos (Técnicos):</span><span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianSalaries)}</span></div>
-                              <div className="flex justify-between items-center"><span className="text-muted-foreground">Sueldos (Asesores/Admin):</span><span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeSalaries)}</span></div>
-                              <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones Variables:</span><span className="font-semibold">{formatCurrency(financialSummary.totalVariableCommissions)}</span></div>
-                              
-                              <h3 className="font-semibold text-lg pt-4">Servicios y Gastos Fijos</h3>
-                              {fixedExpenses.length > 0 ? (fixedExpenses.map(expense => (<div key={expense.id} className="flex justify-between items-center"><span className="text-muted-foreground">{expense.name}:</span><span className="font-semibold">{formatCurrency(expense.amount)}</span></div>))) : (<p className="text-sm text-muted-foreground text-center">No hay gastos fijos registrados.</p>)}
-                          </CardContent>
-                      </Card>
                     </div>
+                </TabsContent>
+
+                <TabsContent value="egresos" className="mt-6">
+                    <div className="mb-6">{dateFilterComponent}</div>
+                    <EgresosContent
+                      financialSummary={financialSummary}
+                      fixedExpenses={fixedExpenses}
+                      onExpensesUpdated={(updated) => setFixedExpenses([...updated])}
+                    />
                 </TabsContent>
                 
                 <TabsContent value="operaciones" className="mt-6">
@@ -370,13 +371,6 @@ export function FinanzasPageComponent({
                 </TabsContent>
 
             </Tabs>
-            
-            <FixedExpensesDialog
-                open={isExpensesDialogOpen}
-                onOpenChange={setIsExpensesDialogOpen}
-                initialExpenses={fixedExpenses}
-                onExpensesUpdated={(updated) => { setFixedExpenses([...updated]); }}
-            />
         </>
     );
 

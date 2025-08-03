@@ -1,4 +1,4 @@
-
+// src/app/(app)/finanzas/components/fixed-expense-form.tsx
 
 "use client";
 
@@ -33,7 +33,7 @@ interface FixedExpenseFormProps {
   onClose: () => void;
 }
 
-export function FixedExpensesDialog({ initialData, onSubmit, onClose }: FixedExpenseFormProps) {
+export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpenseFormProps) {
   const form = useForm<FixedExpenseFormValues>({
     resolver: zodResolver(fixedExpenseFormSchema),
     defaultValues: initialData || {

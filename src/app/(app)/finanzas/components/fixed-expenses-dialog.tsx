@@ -1,3 +1,4 @@
+// src/app/(app)/finanzas/components/fixed-expenses-dialog.tsx
 
 "use client";
 
@@ -26,6 +27,8 @@ import type { MonthlyFixedExpense } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
+import { formatCurrency } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface FixedExpensesDialogProps {
   open: boolean;
@@ -85,8 +88,6 @@ export function FixedExpensesDialog({
     }
   };
   
-  const formatCurrency = (amount: number) => `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
@@ -137,9 +138,12 @@ export function FixedExpensesDialog({
                             <Button variant="ghost" size="icon" onClick={() => handleOpenSubForm(expense)} className="mr-1">
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                             <ConfirmDialog
+                                triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                                title={`¿Eliminar gasto "${expense.name}"?`}
+                                description="Esta acción es permanente y afectará los cálculos financieros."
+                                onConfirm={() => handleDeleteExpense(expense.id)}
+                              />
                           </TableCell>
                         </TableRow>
                       ))}
