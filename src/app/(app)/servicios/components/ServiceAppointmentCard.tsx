@@ -10,11 +10,12 @@ import { StatusTracker } from "./StatusTracker";
 import type { ServiceRecord, Vehicle, Technician, PaymentMethod, ServiceSubStatus, User } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, CheckCircle, Ban, DollarSign, User as UserIcon, Phone, TrendingUp, Clock, Wrench, Eye, Printer } from 'lucide-react';
+import { Edit, CheckCircle, Ban, DollarSign, User as UserIcon, Phone, TrendingUp, Clock, Wrench, Eye, Printer, Trash2 } from 'lucide-react';
 import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface ServiceAppointmentCardProps {
     service: ServiceRecord;
@@ -25,6 +26,7 @@ interface ServiceAppointmentCardProps {
     onConfirm?: () => void;
     onComplete?: () => void;
     onCancel?: () => void;
+    onDelete?: () => void;
     onPrintTicket?: () => void;
     onEditPayment?: () => void;
 }
@@ -64,6 +66,7 @@ export const ServiceAppointmentCard = React.memo(({
     onConfirm,
     onComplete,
     onCancel,
+    onDelete,
     onPrintTicket,
     onEditPayment,
 }: ServiceAppointmentCardProps) => {
@@ -162,7 +165,7 @@ export const ServiceAppointmentCard = React.memo(({
                         <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                         {technicianName && <p className="text-xs text-muted-foreground">Técnico: {technicianName}</p>}
 
-                        <div className="flex justify-center items-center gap-1">
+                        <div className="flex justify-center items-center gap-1 flex-wrap">
                             {onConfirm && service.status === 'Agendado' && service.appointmentStatus !== 'Confirmada' && (
                                 <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirmar Cita">
                                     <CheckCircle className="h-4 w-4 text-green-600" />
@@ -184,6 +187,14 @@ export const ServiceAppointmentCard = React.memo(({
                                 <Button variant="ghost" size="icon" onClick={onPrintTicket} title="Reimprimir Ticket">
                                     <Printer className="h-4 w-4" />
                                 </Button>
+                            )}
+                            {onDelete && (
+                                <ConfirmDialog
+                                    triggerButton={<Button variant="ghost" size="icon" title="Eliminar Servicio"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                                    title="¿Eliminar Servicio?"
+                                    description={`Se eliminará permanentemente el servicio #${service.id}. Esta acción no se puede deshacer.`}
+                                    onConfirm={onDelete}
+                                />
                             )}
                         </div>
                     </div>

@@ -201,6 +201,15 @@ function AgendaPageComponent() {
     setIsServiceDialogOpen(false);
   }, [toast]);
 
+  const handleDeleteService = useCallback(async (serviceId: string) => {
+    try {
+      await operationsService.deleteService(serviceId);
+      toast({ title: "Servicio Eliminado", description: "El registro ha sido eliminado permanentemente." });
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo eliminar el servicio.", variant: "destructive" });
+    }
+  }, [toast]);
+
 
   const handleVehicleCreated = useCallback(async (newVehicle: Omit<Vehicle, 'id'>) => {
       await inventoryService.addVehicle(newVehicle as VehicleFormValues);
@@ -280,6 +289,21 @@ function AgendaPageComponent() {
     );
   }
 
+  const renderServiceCard = (service: ServiceRecord) => (
+    <ServiceAppointmentCard 
+      key={service.id}
+      service={service}
+      vehicles={vehicles}
+      technicians={personnel}
+      onEdit={() => handleOpenServiceDialog(service)}
+      onConfirm={() => handleConfirmAppointment(service.id)}
+      onView={() => handleShowPreview(service)}
+      onComplete={() => handleOpenCompleteDialog(service)}
+      onDelete={() => handleDeleteService(service.id)}
+      onCancel={() => { const reason = prompt('Motivo de cancelación:'); if(reason) handleCancelService(service.id, reason)}}
+    />
+  );
+
   return (
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
@@ -311,19 +335,19 @@ function AgendaPageComponent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={personnel} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} onComplete={() => handleOpenCompleteDialog(service)} onCancel={() => { const reason = prompt('Motivo de cancelación:'); if(reason) handleCancelService(service.id, reason)}}/>)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
+              {todayServices.length > 0 ? todayServices.map(renderServiceCard) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
             </CardContent>
           </Card>
            <Card>
             <CardHeader><CardTitle>Citas para Mañana</CardTitle></CardHeader>
             <CardContent>
-              {tomorrowServices.length > 0 ? tomorrowServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={personnel} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
+              {tomorrowServices.length > 0 ? tomorrowServices.map(renderServiceCard) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
             </CardContent>
           </Card>
            <Card>
             <CardHeader><CardTitle>Próximas Citas</CardTitle></CardHeader>
             <CardContent>
-              {futureServices.length > 0 ? futureServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={personnel} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas futuras agendadas.</p>}
+              {futureServices.length > 0 ? futureServices.map(renderServiceCard) : <p className="text-muted-foreground text-center py-4">No hay citas futuras agendadas.</p>}
             </CardContent>
           </Card>
         </TabsContent>

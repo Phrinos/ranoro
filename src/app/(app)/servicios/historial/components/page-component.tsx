@@ -170,6 +170,15 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     }
   }, [toast]);
 
+  const handleDeleteService = useCallback(async (serviceId: string) => {
+    try {
+      await operationsService.deleteService(serviceId);
+      toast({ title: "Servicio Eliminado", description: "El registro ha sido eliminado permanentemente." });
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo eliminar el servicio.", variant: "destructive" });
+    }
+  }, [toast]);
+
   const handleShowPreview = useCallback((service: ServiceRecord) => {
     setRecordForPreview(service);
     setIsPreviewOpen(true);
@@ -302,6 +311,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       onPrintTicket={() => handlePrintTicket(record)}
       onConfirm={() => handleConfirmAppointment(record)}
       onEditPayment={() => handleOpenPaymentDialog(record)}
+      onDelete={() => handleDeleteService(record.id)}
       onCancel={() => {
         if (record.id) {
           const reason = prompt("Motivo de la cancelación:");
