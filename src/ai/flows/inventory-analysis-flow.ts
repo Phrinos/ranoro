@@ -2,16 +2,15 @@
 'use server';
 /**
  * @fileOverview An AI flow to analyze inventory and suggest reordering actions.
- * This file has been updated to improve the context sent to the AI, ensuring
- * that it can correctly correlate historical usage with current inventory items.
+ * This file has been updated to improve the context sent to the AI and to perform
+ * data fetching on the server-side for better performance and reliability.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { parseISO, differenceInDays } from 'date-fns';
+import { onServicesUpdatePromise } from '@/lib/services/operations.service';
 
 // --- Main Input Schemas (from UI) ---
-
 const InventoryItemInputSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -20,24 +19,25 @@ const InventoryItemInputSchema = z.object({
   lowStockThreshold: z.number(),
 });
 
-const ServiceRecordInputSchema = z.object({
-    serviceDate: z.string().optional().describe("The date the service was performed in ISO format."),
-    suppliesUsed: z.array(z.object({
-        supplyId: z.string(),
-        supplyName: z.string().describe("The name of the supply used. This is crucial for the AI to understand what was used."),
-        quantity: z.number(),
-    })),
-});
-
 const AnalyzeInventoryInputSchema = z.object({
   inventoryItems: z.array(InventoryItemInputSchema).describe("The current list of all inventory items."),
-  serviceRecords: z.array(ServiceRecordInputSchema).describe("A history of all completed service records showing parts usage, including their names."),
 });
 export type AnalyzeInventoryInput = z.infer<typeof AnalyzeInventoryInputSchema>;
 
 
-// --- Output Schemas (for UI) ---
+// --- AI Prompt Input (Internal Processing) ---
+const HistoricalUsageItemSchema = z.object({
+  itemName: z.string(),
+  monthlyConsumptionRate: z.number().describe("The calculated average number of units used per month."),
+});
 
+const PromptInputSchema = z.object({
+    inventoryItems: z.array(InventoryItemInputSchema),
+    historicalUsage: z.array(HistoricalUsageItemSchema),
+});
+
+
+// --- Output Schemas (for UI) ---
 const InventoryRecommendationSchema = z.object({
     itemId: z.string().describe("El ID del artículo de inventario."),
     itemName: z.string().describe("El nombre del artículo de inventario."),
@@ -53,24 +53,23 @@ const AnalyzeInventoryOutputSchema = z.object({
 });
 export type AnalyzeInventoryOutput = z.infer<typeof AnalyzeInventoryOutputSchema>;
 
-// --- Exported Function for UI ---
 
+// --- Main Exported Function for UI ---
 export async function analyzeInventory(input: AnalyzeInventoryInput): Promise<AnalyzeInventoryOutput> {
   return analyzeInventoryFlow(input);
 }
 
 
 // --- AI Prompt and Flow Implementation ---
-
 const analyzeInventoryPrompt = ai.definePrompt({
   name: 'analyzeInventoryPrompt',
-  input: { schema: AnalyzeInventoryInputSchema },
+  input: { schema: PromptInputSchema },
   output: { schema: AnalyzeInventoryOutputSchema },
   prompt: `Eres un experto gestor de inventario para un taller mecánico. Tu tarea es analizar el inventario actual y su uso histórico para proporcionar recomendaciones de reabastecimiento accionables. **TODA tu respuesta y razonamiento debe ser en español.**
 
 **Instrucciones:**
-1.  **Analiza el Consumo:** Revisa la lista de \`serviceRecords\`. Cada registro indica qué artículos se usaron (\`supplyName\`) y cuándo. Calcula la tasa de consumo de cada artículo (ej. unidades por mes). Considera un mes como 30 días.
-2.  **Compara con el Stock Actual:** Para cada artículo en \`inventoryItems\`, compara su \`quantity\` actual con su \`lowStockThreshold\` (umbral de stock bajo) y su tasa de consumo.
+1.  **Analiza los Datos:** Revisa \`inventoryItems\` y \`historicalUsage\`. La tasa de consumo ya ha sido calculada en unidades por mes.
+2.  **Compara con el Stock Actual:** Para cada artículo en \`inventoryItems\`, compara su \`quantity\` actual con su \`lowStockThreshold\` (umbral de stock bajo) y su \`monthlyConsumptionRate\` del historial.
 3.  **Genera Recomendaciones Clave:** Debes generar una recomendación SOLAMENTE para los artículos que cumplan una de estas condiciones:
     *   Su cantidad actual está en o por debajo de su umbral de stock bajo.
     *   Se proyecta que se agotarán en el próximo mes basándote en su consumo histórico.
@@ -83,8 +82,8 @@ const analyzeInventoryPrompt = ai.definePrompt({
 **Datos de Inventario Actual:**
 {{json inventoryItems}}
 
-**Historial de Uso (para análisis de consumo):**
-{{json serviceRecords}}
+**Historial de Uso (calculado):**
+{{json historicalUsage}}
 
 Ahora, devuelve tus recomendaciones en el formato JSON especificado. Recuerda, solo los artículos que necesiten atención y responde todo en español.
 `,
@@ -97,9 +96,50 @@ const analyzeInventoryFlow = ai.defineFlow(
     outputSchema: AnalyzeInventoryOutputSchema,
   },
   async (input) => {
-    // The prompt now receives the full context with item names, so no complex pre-processing is needed.
-    // The AI is tasked with the full analysis.
-    const { output } = await analyzeInventoryPrompt(input, {
+    // Step 1: Fetch service records from Firestore on the server.
+    const serviceRecords = await onServicesUpdatePromise();
+
+    // Step 2: Calculate historical usage on the server.
+    const usageMap: Record<string, { totalUsed: number; dates: Date[] }> = {};
+    const inventoryItemMap = new Map(input.inventoryItems.map(item => [item.id, item.name]));
+
+    serviceRecords.forEach(record => {
+      const recordDate = record.deliveryDateTime ? new Date(record.deliveryDateTime) : null;
+      if (recordDate && record.serviceItems) {
+        record.serviceItems.forEach(item => {
+          if (item.suppliesUsed) {
+            item.suppliesUsed.forEach(supply => {
+              if (supply.supplyId && !supply.isService) {
+                const itemName = inventoryItemMap.get(supply.supplyId);
+                if (itemName) {
+                    if (!usageMap[itemName]) {
+                        usageMap[itemName] = { totalUsed: 0, dates: [] };
+                    }
+                    usageMap[itemName].totalUsed += supply.quantity;
+                    usageMap[itemName].dates.push(recordDate);
+                }
+              }
+            });
+          }
+        });
+      }
+    });
+
+    const historicalUsage: z.infer<typeof HistoricalUsageItemSchema>[] = Object.entries(usageMap).map(([itemName, data]) => {
+        const firstDate = new Date(Math.min(...data.dates.map(d => d.getTime())));
+        const lastDate = new Date(Math.max(...data.dates.map(d => d.getTime())));
+        const monthsDiff = (lastDate.getFullYear() - firstDate.getFullYear()) * 12 + (lastDate.getMonth() - firstDate.getMonth()) + 1;
+        const monthlyConsumptionRate = data.totalUsed / Math.max(1, monthsDiff);
+        return { itemName, monthlyConsumptionRate: parseFloat(monthlyConsumptionRate.toFixed(2)) };
+    });
+
+    // Step 3: Call the AI with the processed data.
+    const promptInput = {
+      inventoryItems: input.inventoryItems,
+      historicalUsage: historicalUsage,
+    };
+    
+    const { output } = await analyzeInventoryPrompt(promptInput, {
         config: { temperature: 0.1 } // Low temperature for more deterministic, rule-based output
     });
     

@@ -255,7 +255,7 @@ export default function DashboardPage() {
     }
   };
   
-const handleRunAnalysis = async () => {
+  const handleRunAnalysis = async () => {
     setIsAnalysisLoading(true);
     setAnalysisError(null);
     setAnalysisResult(null);
@@ -269,12 +269,8 @@ const handleRunAnalysis = async () => {
             lowStockThreshold: item.lowStockThreshold,
         }));
         
-        // This is now an empty array. The AI flow should fetch this data itself.
-        const serviceHistoryForAI: any[] = [];
-        
         const result = await analyzeInventory({
             inventoryItems: inventoryForAI,
-            serviceRecords: serviceHistoryForAI,
         });
 
         setAnalysisResult(result.recommendations);
