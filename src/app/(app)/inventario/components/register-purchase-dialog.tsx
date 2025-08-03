@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
-import { inventoryService } from "@/lib/services";
+import { operationsService } from "@/lib/services";
 
 
 const purchaseItemSchema = z.object({
@@ -81,7 +82,7 @@ export function RegisterPurchaseDialog({
   suppliers,
   inventoryItems,
   categories,
-  onSave: onSaveProp,
+  onSave,
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
   const { toast } = useToast();
@@ -107,24 +108,6 @@ export function RegisterPurchaseDialog({
   const subtotal = useMemo(() => {
     return watchedItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
   }, [watchedItems]);
-  
-  const onSave = async (data: PurchaseFormValues) => {
-    if (data.paymentMethod === 'Crédito' && data.supplierId && data.invoiceId && data.dueDate) {
-        const newPayableAccount: Omit<PayableAccount, 'id'> = {
-            supplierId: data.supplierId,
-            supplierName: suppliers.find(s => s.id === data.supplierId)?.name || 'N/A',
-            invoiceId: data.invoiceId,
-            invoiceDate: new Date().toISOString(),
-            dueDate: data.dueDate.toISOString(),
-            totalAmount: data.invoiceTotal,
-            paidAmount: 0,
-            status: 'Pendiente'
-        };
-        await inventoryService.savePayableAccount(newPayableAccount);
-    }
-    await onSaveProp(data);
-  };
-
 
   const handleAddItem = useCallback((item: InventoryItem) => {
     const existingItem = fields.find(field => field.inventoryItemId === item.id);

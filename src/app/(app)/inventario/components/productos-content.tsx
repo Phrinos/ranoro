@@ -5,21 +5,11 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { InventoryItem } from '@/types';
-import { Search, ListFilter, PlusCircle, Printer } from 'lucide-react';
+import { PlusCircle, Printer } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
-import { TableToolbar } from '@/components/shared/table-toolbar';
 import { useTableManager } from '@/hooks/useTableManager';
-
-type InventorySortOption = 
-  | "stock_status_name_asc" 
-  | "name_asc" | "name_desc"
-  | "sku_asc" | "sku_desc"
-  | "quantity_asc" | "quantity_desc"
-  | "price_asc" | "price_desc"
-  | "type_asc";
+import { TableToolbar } from '@/components/shared/table-toolbar';
 
 interface ProductosContentProps {
   inventoryItems: InventoryItem[];
@@ -53,29 +43,34 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: Product
   ];
 
   return (
-    <div className="mt-6 space-y-4">
-      <div className="flex justify-end gap-2">
-        <Button onClick={handlePrint} variant="outline" className="bg-card">
-            <Printer className="mr-2 h-4 w-4" />Imprimir Lista
-        </Button>
-        <Button onClick={onNewItem}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Ítem
-        </Button>
-      </div>
-      
-      <TableToolbar
-        {...tableManager}
-        searchPlaceholder="Buscar por nombre, SKU, marca..."
-        sortOptions={sortOptions}
-        paginationSummary={tableManager.paginationSummary}
-        onPreviousPage={tableManager.goToPreviousPage}
-        onNextPage={tableManager.goToNextPage}
-        canGoPrevious={tableManager.canGoPrevious}
-        canGoNext={tableManager.canGoNext}
-      />
+    <div className="space-y-4">
+        <div className="space-y-2">
+            <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
+            <p className="text-muted-foreground">Administra productos, servicios y niveles de stock.</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex-1 w-full sm:w-auto">
+                 <TableToolbar
+                    {...tableManager}
+                    searchPlaceholder="Buscar por nombre, SKU, marca..."
+                    sortOptions={sortOptions}
+                    paginationSummary={tableManager.paginationSummary}
+                    onPreviousPage={tableManager.goToPreviousPage}
+                    onNextPage={tableManager.goToNextPage}
+                    canGoPrevious={tableManager.canGoPrevious}
+                    canGoNext={tableManager.canGoNext}
+                />
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+                <Button onClick={handlePrint} variant="outline" className="w-full sm:w-auto bg-card"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>
+                <Button onClick={onNewItem} className="w-full sm:w-auto">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Ítem
+                </Button>
+            </div>
+        </div>
       
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-0">
           <InventoryTable items={filteredAndSortedItems} />
         </CardContent>
       </Card>

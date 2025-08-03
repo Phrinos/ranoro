@@ -16,7 +16,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply, User, PayableAccount } from "@/types";
+import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply, User, PayableAccount, Supplier } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
@@ -385,6 +385,66 @@ const registerSale = async (saleId: string, saleData: Omit<SaleReceipt, 'id' | '
     }
 };
 
+const registerPurchase = async (data: any): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const batch = writeBatch(db);
+    const suppliers = await inventoryService.onSuppliersUpdatePromise();
+    const inventoryItems = await inventoryService.onItemsUpdatePromise();
+    
+    // 1. Update supplier debt if payment method is 'Credito'
+    if (data.paymentMethod === 'Crédito') {
+        const supplierRef = doc(db, "suppliers", data.supplierId);
+        const supplier = suppliers.find(s => s.id === data.supplierId);
+        if (supplier) {
+            batch.update(supplierRef, { debtAmount: (supplier.debtAmount || 0) + data.invoiceTotal });
+        }
+    } else if (data.paymentMethod === 'Efectivo') {
+        const supplierName = suppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
+        const newTransaction = {
+          date: new Date().toISOString(),
+          type: 'Salida',
+          amount: data.invoiceTotal,
+          concept: `Compra a ${supplierName} (Factura: ${data.invoiceId || 'N/A'})`,
+          userId: 'system', // TODO: Get current user
+          userName: 'Sistema',
+          relatedType: 'Compra' as const,
+          relatedId: data.supplierId,
+        };
+        batch.set(doc(collection(db, "cashDrawerTransactions")), cleanObjectForFirestore(newTransaction));
+    }
+    
+    // 2. Update inventory items stock and cost
+    data.items.forEach((purchasedItem: any) => {
+      const itemRef = doc(db, "inventory", purchasedItem.inventoryItemId);
+      const inventoryItem = inventoryItems.find(i => i.id === purchasedItem.inventoryItemId);
+      if (inventoryItem) {
+        batch.update(itemRef, {
+          quantity: inventoryItem.quantity + purchasedItem.quantity,
+          unitPrice: purchasedItem.unitPrice
+        });
+      }
+    });
+    
+    // 3. Log audit
+    const supplierName = suppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
+    const userString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    const user = userString ? JSON.parse(userString) : { id: 'system', name: 'Sistema' };
+    const auditLog = {
+      actionType: 'Registrar',
+      description: `Registró una compra al proveedor "${supplierName}" por ${formatCurrency(data.invoiceTotal)}.`,
+      entityType: 'Compra',
+      entityId: data.supplierId,
+      userId: user.id,
+      userName: user.name,
+      date: new Date().toISOString(),
+    };
+    batch.set(doc(collection(db, 'auditLogs')), auditLog);
+    
+    // 4. Commit batch
+    await batch.commit();
+}
+
+
 // --- Cash Drawer ---
 const onCashTransactionsUpdate = (callback: (transactions: CashDrawerTransaction[]) => void): (() => void) => {
     if(!db) return () => {};
@@ -640,6 +700,7 @@ export const operationsService = {
     onSalesUpdate,
     onSalesUpdatePromise,
     registerSale,
+    registerPurchase,
     onCashTransactionsUpdate,
     addCashTransaction,
     deleteCashTransaction,

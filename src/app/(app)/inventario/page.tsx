@@ -2,10 +2,7 @@
 
 import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-
-const InventarioPageComponent = lazy(() => 
-  import('./components/page-component').then(module => ({ default: module.InventarioPageComponent }))
-);
+import { InventarioPageComponent } from './components/page-component';
 
 
 export default function InventarioPageWrapper({

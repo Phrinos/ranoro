@@ -9,7 +9,6 @@ import { InventoryItemDialog } from "./inventory-item-dialog";
 import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo } from "@/types";
 import type { InventoryItemFormValues } from "./inventory-item-form";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RegisterPurchaseDialog } from './register-purchase-dialog';
 import type { PurchaseFormValues } from './register-purchase-dialog';
 import { InformeContent } from './informe-content';
@@ -18,17 +17,13 @@ import { CategoriasContent } from './categorias-content';
 import { AnalisisIaContent } from './analisis-ia-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
 import { inventoryService } from '@/lib/services/inventory.service';
 import { operationsService } from '@/lib/services/operations.service';
 import { adminService } from '@/lib/services/admin.service';
-import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { InventoryReportContent } from './inventory-report-content';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from "@/lib/utils";
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+import { ProveedoresContent } from '../../proveedores/components/page-component';
 
 
 export function InventarioPageComponent({
@@ -91,62 +86,10 @@ export function InventarioPageComponent({
   }, []);
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
-    if (!db) return;
-    const batch = writeBatch(db);
-
-    // 1. Update supplier debt if payment method is 'Credito'
-    if (data.paymentMethod === 'Crédito') {
-      const supplierRef = doc(db, "suppliers", data.supplierId);
-      const supplier = suppliers.find(s => s.id === data.supplierId);
-      if (supplier) {
-        batch.update(supplierRef, { debtAmount: (supplier.debtAmount || 0) + data.invoiceTotal });
-      }
-    } else if (data.paymentMethod === 'Efectivo') {
-        const supplierName = suppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
-        const newTransaction = {
-          date: new Date().toISOString(),
-          type: 'Salida',
-          amount: data.invoiceTotal,
-          concept: `Compra a ${supplierName} (Factura)`,
-          userId: 'system', // TODO: Get current user
-          userName: 'Sistema',
-        };
-        batch.set(doc(collection(db, "cashDrawerTransactions")), newTransaction);
-    }
-    
-    // 2. Update inventory items stock and cost
-    data.items.forEach(purchasedItem => {
-      const itemRef = doc(db, "inventory", purchasedItem.inventoryItemId);
-      const inventoryItem = inventoryItems.find(i => i.id === purchasedItem.inventoryItemId);
-      if (inventoryItem) {
-        batch.update(itemRef, {
-          quantity: inventoryItem.quantity + purchasedItem.quantity,
-          unitPrice: purchasedItem.unitPrice
-        });
-      }
-    });
-    
-    // 3. Log audit
-    const supplierName = suppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
-    const userString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-    const user = userString ? JSON.parse(userString) : { id: 'system', name: 'Sistema' };
-    const auditLog = {
-      actionType: 'Registrar',
-      description: `Registró una compra al proveedor "${supplierName}" por ${formatCurrency(data.invoiceTotal)}.`,
-      entityType: 'Compra',
-      entityId: data.supplierId,
-      userId: user.id,
-      userName: user.name,
-      date: new Date().toISOString(),
-    };
-    batch.set(doc(collection(db, 'auditLogs')), auditLog);
-    
-    // 4. Commit batch
-    await batch.commit();
-    
+    await operationsService.registerPurchase(data);
     toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
     setIsRegisterPurchaseOpen(false);
-  }, [toast, suppliers, inventoryItems]);
+  }, [toast]);
   
   const handleSaveItem = useCallback(async (itemData: InventoryItemFormValues) => {
     // This is for new items from the "Productos" tab
@@ -205,9 +148,7 @@ export function InventarioPageComponent({
        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
                 <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
-                    <div id="printable-report" className="print-format-letter">
-                        <InventoryReportContent ref={printContentRef} items={itemsToPrint} />
-                    </div>
+                  <InventoryReportContent ref={printContentRef} items={itemsToPrint} />
                 </div>
                  <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
                     <Button onClick={() => window.print()}>
