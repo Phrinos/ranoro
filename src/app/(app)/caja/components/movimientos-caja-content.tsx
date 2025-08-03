@@ -11,7 +11,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { Badge } from '@/components/ui/badge';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
-import { FileText, Wallet, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { FileText, Wallet, ArrowUpCircle, ArrowDownCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 
 interface MovimientosCajaContentProps {
@@ -78,6 +78,11 @@ export function MovimientosCajaContent({ allCashTransactions, allSales, allServi
 
   const {
     filteredData: filteredTransactions,
+    paginationSummary,
+    canGoNext,
+    canGoPrevious,
+    goToNextPage,
+    goToPreviousPage,
     ...tableManager
   } = useTableManager<CashDrawerTransaction>({
     initialData: unifiedTransactions,
@@ -166,7 +171,19 @@ export function MovimientosCajaContent({ allCashTransactions, allSales, allServi
           </div>
         </CardContent>
       </Card>
+      <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">{paginationSummary}</p>
+            <div className="flex items-center space-x-2">
+                <Button size="sm" onClick={goToPreviousPage} disabled={!canGoPrevious} variant="outline" className="bg-card">
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                </Button>
+                <Button size="sm" onClick={goToNextPage} disabled={!canGoNext} variant="outline" className="bg-card">
+                    Siguiente
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
     </div>
   );
 }
-

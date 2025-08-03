@@ -121,37 +121,20 @@ interface CajaPosContentProps {
   allServices: ServiceRecord[];
   allCashTransactions: CashDrawerTransaction[];
   initialCashBalance: InitialCashBalance | null;
+  latestInitialBalance: InitialCashBalance | null;
 }
 
-export function CajaPosContent({ allSales, allServices, allCashTransactions, initialCashBalance: dailyInitialBalance }: CajaPosContentProps) {
+export function CajaPosContent({ allSales, allServices, allCashTransactions, initialCashBalance: dailyInitialBalance, latestInitialBalance }: CajaPosContentProps) {
   const { toast } = useToast();
   const [date, setDate] = useState(startOfDay(new Date()));
   const [isInitialBalanceDialogOpen, setIsInitialBalanceDialogOpen] = useState(false);
   const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
   const [isCorteDialogOpen, setIsCorteDialogOpen] = useState(false);
   
-  const [latestInitialBalance, setLatestInitialBalance] = useState<InitialCashBalance | null>(null);
-
-   useEffect(() => {
-    const fetchLatestInitialBalance = async () => {
-        if (!db) return;
-        const q = query(collection(db, "initialCashBalances"), orderBy("date", "desc"), limit(1));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            const docData = querySnapshot.docs[0].data() as InitialCashBalance;
-            setLatestInitialBalance(docData);
-        } else {
-            setLatestInitialBalance(null); // No balances found at all
-        }
-    };
-    fetchLatestInitialBalance();
-   }, [dailyInitialBalance]); // Re-fetch if today's balance changes
-
   const cajaSummaryData = useMemo(() => {
     const startOfSelectedDate = startOfDay(date);
     const endOfSelectedDate = endOfDay(date);
     
-    // For Corte de Caja of a specific day
     const dailyBalanceDoc = dailyInitialBalance;
     const dailyInitial = dailyBalanceDoc?.amount || 0;
 
@@ -172,8 +155,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       salesByPaymentMethodInDay[method] = (salesByPaymentMethodInDay[method] || 0) + amount;
     });
     
-    // For Running Total Balance
-    const balanceStartDate = latestInitialBalance ? parseISO(latestInitialBalance.date) : new Date(0); // Start from epoch if no balance ever
+    const balanceStartDate = latestInitialBalance ? parseISO(latestInitialBalance.date) : new Date(0);
     const runningInitialBalance = latestInitialBalance?.amount || 0;
     
     const cashFromSalesSince = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: balanceStartDate, end: new Date() }) && s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
@@ -184,7 +166,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     const finalCashBalance = runningInitialBalance + cashFromSalesSince + cashFromServicesSince + manualInSince - manualOutSince;
 
     return { 
-        // Data for the "Corte de Caja" of the selected day
         initialBalance: dailyInitial, 
         totalCashSales: totalCashOpsInDay, 
         totalCashIn: manualCashInDay, 
@@ -192,7 +173,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
         salesByPaymentMethod: salesByPaymentMethodInDay, 
         totalSales: salesInDay.length, 
         totalServices: servicesInDay.length,
-        // The final running total
         finalCashBalance,
     };
   }, [date, allSales, allServices, allCashTransactions, dailyInitialBalance, latestInitialBalance]);

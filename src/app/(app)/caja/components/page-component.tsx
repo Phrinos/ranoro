@@ -9,6 +9,8 @@ import { Loader2 } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { CajaPosContent } from '../../pos/caja/components/caja-pos-content';
 import { MovimientosCajaContent } from './movimientos-caja-content';
+import { db } from '@/lib/firebaseClient';
+import { query, collection, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 
 export function CajaPageComponent({ tab }: { tab?: string }) {
@@ -20,7 +22,8 @@ export function CajaPageComponent({ tab }: { tab?: string }) {
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [allCashTransactions, setAllCashTransactions] = useState<CashDrawerTransaction[]>([]);
-  const [initialCashBalance, setInitialCashBalance] = useState<InitialCashBalance | null>(null);
+  const [initialCashBalance, setInitialCashBalance] = useState<InitialCashBalance | null>(null); // For selected day
+  const [latestInitialBalance, setLatestInitialBalance] = useState<InitialCashBalance | null>(null); // For running total
   
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
 
@@ -33,8 +36,23 @@ export function CajaPageComponent({ tab }: { tab?: string }) {
     unsubs.push(operationsService.onCashTransactionsUpdate(setAllCashTransactions));
     unsubs.push(operationsService.onInitialCashBalanceUpdate((data) => {
         setInitialCashBalance(data);
-        setIsLoading(false);
     }));
+
+    // Fetch the single latest initial balance for the running total calculation
+    if (db) {
+        const q = query(collection(db, "initialCashBalances"), orderBy("date", "desc"), limit(1));
+        unsubs.push(onSnapshot(q, (snapshot) => {
+            if (!snapshot.empty) {
+                setLatestInitialBalance(snapshot.docs[0].data() as InitialCashBalance);
+            } else {
+                setLatestInitialBalance(null);
+            }
+            setIsLoading(false); // Consider loading finished after this crucial piece is fetched
+        }));
+    } else {
+        setIsLoading(false);
+    }
+
 
     const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
     if (storedWorkshopInfo) {
@@ -45,7 +63,7 @@ export function CajaPageComponent({ tab }: { tab?: string }) {
   }, []);
 
   const posTabs = [
-    { value: "caja", label: "Caja", content: <CajaPosContent allSales={allSales} allServices={allServices} allCashTransactions={allCashTransactions} initialCashBalance={initialCashBalance} /> },
+    { value: "caja", label: "Caja", content: <CajaPosContent allSales={allSales} allServices={allServices} allCashTransactions={allCashTransactions} initialCashBalance={initialCashBalance} latestInitialBalance={latestInitialBalance} /> },
     { value: "movimientos", label: "Movimientos", content: <MovimientosCajaContent allCashTransactions={allCashTransactions} allSales={allSales} allServices={allServices} /> },
   ];
 
