@@ -100,7 +100,6 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     
   return (
     <div className="space-y-4">
-        {/* Main Toolbar */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -166,14 +165,11 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                   </DropdownMenu>
                 )}
 
-                {/* Primary Action Button */}
-                {primaryAction}
             </div>
         </div>
 
-        {/* Pagination Controls */}
         {paginationSummary !== undefined && (
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-2 border-t">
                 <p className="text-sm text-muted-foreground">{paginationSummary}</p>
                 <div className="flex items-center space-x-2">
                     <Button size="sm" onClick={onPreviousPage} disabled={!canGoPrevious} className="bg-gray-500 hover:bg-gray-600 text-white">
