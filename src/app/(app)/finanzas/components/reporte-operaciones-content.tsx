@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -29,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { parseDate } from '@/lib/forms';
 import { TableToolbar } from '@/components/shared/table-toolbar';
+import { useTableManager } from '@/hooks/useTableManager';
 
 interface ReporteOperacionesContentProps {
   allSales: SaleReceipt[];
