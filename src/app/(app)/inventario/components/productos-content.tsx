@@ -7,18 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { InventoryItem, Supplier } from '@/types';
+import type { InventoryItem } from '@/types';
 import { Search, ListFilter, PlusCircle, Printer, DollarSign, AlertTriangle, Package } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
-
-interface ProductosContentProps {
-  inventoryItems: InventoryItem[];
-  suppliers: Supplier[];
-  onNewItem: () => void;
-  onPrint: (items: InventoryItem[]) => void;
-}
 
 const getSortPriority = (item: InventoryItem): number => {
     if (item.isService) return 0; // Highest priority
@@ -29,7 +22,7 @@ const getSortPriority = (item: InventoryItem): number => {
 };
 
 
-export function ProductosContent({ inventoryItems, suppliers, onNewItem, onPrint }: ProductosContentProps) {
+export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inventoryItems: InventoryItem[], onNewItem: () => void, onPrint: (items: InventoryItem[]) => void }) {
   
   const { filteredData: filteredAndSortedItems, ...tableManager } = useTableManager<InventoryItem>({
     initialData: inventoryItems,
