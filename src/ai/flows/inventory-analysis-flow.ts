@@ -8,7 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { operationsService } from '@/lib/services/operations.service';
+import { operationsService } from '@/lib/services';
 
 // --- Main Input Schemas (from UI) ---
 const InventoryItemInputSchema = z.object({
@@ -65,19 +65,18 @@ const analyzeInventoryPrompt = ai.definePrompt({
   name: 'analyzeInventoryPrompt',
   input: { schema: PromptInputSchema },
   output: { schema: AnalyzeInventoryOutputSchema },
-  prompt: `Eres un experto gestor de inventario para un taller mecánico. Tu tarea es analizar el inventario actual y su uso histórico para proporcionar recomendaciones de reabastecimiento accionables. **TODA tu respuesta y razonamiento debe ser en español.**
+  prompt: `Eres un experto gestor de inventario para un taller mecánico. Tu tarea es analizar el inventario actual y su uso histórico para proporcionar recomendaciones de reabastecimiento accionables y priorizadas. **TODA tu respuesta y razonamiento debe ser en español.**
 
-**Instrucciones:**
-1.  **Analiza los Datos:** Revisa \`inventoryItems\` y \`historicalUsage\`. La tasa de consumo ya ha sido calculada en unidades por mes.
-2.  **Compara con el Stock Actual:** Para cada artículo en \`inventoryItems\`, compara su \`quantity\` actual con su \`lowStockThreshold\` (umbral de stock bajo) y su \`monthlyConsumptionRate\` del historial.
-3.  **Genera Recomendaciones Clave:** Debes generar una recomendación SOLAMENTE para los artículos que cumplan una de estas condiciones:
-    *   Su cantidad actual está en o por debajo de su umbral de stock bajo.
-    *   Se proyecta que se agotarán en el próximo mes basándote en su consumo histórico.
-    *   Si no hay historial de uso para un artículo pero está por debajo de su umbral, también recomiéndalo.
-4.  **No Incluir Items Saludables:** Para todos los demás artículos con stock saludable y bajo consumo, NO generes una recomendación. El resultado debe estar enfocado en acciones urgentes.
-5.  **Cálculo de Recompra (CRÍTICO):** Para cada recomendación, sugiere una cantidad a reordenar (\`suggestedReorderQuantity\`). Tu regla principal es la siguiente: **calcula la cantidad necesaria para cubrir entre 2 y 3 meses de consumo promedio, y redondea al número entero más cercano y práctico.** Si no hay historial de uso, sugiere una cantidad que lleve el stock al doble de su umbral de stock bajo.
-6.  **Justificación Clara:** Proporciona un razonamiento claro y conciso para cada recomendación, siempre en español.
-7.  **Incluir SKU:** Asegúrate de que el campo \`itemSku\` esté presente en cada recomendación si el artículo tiene uno.
+**Instrucciones CRÍTICAS:**
+1.  **Analiza los Datos:** Revisa \`inventoryItems\` y \`historicalUsage\`. El historial de consumo ya está calculado en unidades promedio por mes.
+2.  **Identifica los 12 Artículos Más Críticos:** Tu objetivo principal es identificar los **12 artículos más importantes** que necesitan atención. La criticidad se define por:
+    *   **Prioridad 1:** Artículos cuya cantidad actual está **en o por debajo** de su \`lowStockThreshold\` (umbral de stock bajo).
+    *   **Prioridad 2:** Artículos con una alta tasa de consumo (\`monthlyConsumptionRate\`) que se proyecta se agotarán en el próximo mes.
+    *   Entre estos, prioriza los que tengan mayor consumo mensual.
+3.  **Genera Recomendaciones (Máximo 12):** Crea una recomendación SOLAMENTE para los artículos que identificaste como más críticos. **NO DEVUELVAS MÁS DE 12 RECOMENDACIONES EN TOTAL.** Si no hay artículos críticos, devuelve una lista vacía.
+4.  **Cálculo de Recompra Inteligente:** Para cada recomendación, sugiere una cantidad a reordenar (\`suggestedReorderQuantity\`). Tu regla principal es: **calcula la cantidad necesaria para cubrir entre 2 y 3 meses de consumo promedio, y redondea al número entero más cercano y práctico.** Si no hay historial de uso, sugiere una cantidad que lleve el stock al doble de su umbral de stock bajo.
+5.  **Justificación Clara:** Proporciona un razonamiento claro y conciso para cada recomendación, siempre en español.
+6.  **Incluir SKU:** Asegúrate de que el campo \`itemSku\` esté presente en cada recomendación si el artículo tiene uno.
 
 **Datos de Inventario Actual:**
 {{json inventoryItems}}
@@ -85,7 +84,7 @@ const analyzeInventoryPrompt = ai.definePrompt({
 **Historial de Uso (calculado):**
 {{json historicalUsage}}
 
-Ahora, devuelve tus recomendaciones en el formato JSON especificado. Recuerda, solo los artículos que necesiten atención y responde todo en español.
+Ahora, devuelve tus **máximo 12 recomendaciones más importantes** en el formato JSON especificado. Responde todo en español.
 `,
 });
 
