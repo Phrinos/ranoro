@@ -15,6 +15,7 @@ import { parseISO, differenceInDays } from 'date-fns';
 const InventoryItemInputSchema = z.object({
   id: z.string(),
   name: z.string(),
+  sku: z.string().optional(),
   quantity: z.number(),
   lowStockThreshold: z.number(),
 });
@@ -40,8 +41,9 @@ export type AnalyzeInventoryInput = z.infer<typeof AnalyzeInventoryInputSchema>;
 const InventoryRecommendationSchema = z.object({
     itemId: z.string().describe("El ID del artículo de inventario."),
     itemName: z.string().describe("El nombre del artículo de inventario."),
-    recommendation: z.string().describe("Una recomendación clara, p. ej., 'Reordenar ahora', 'Stock saludable', 'Nivel de stock crítico'."),
-    reasoning: z.string().describe("Una breve explicación para la recomendación, citando la tasa de uso y el nivel de stock actual."),
+    itemSku: z.string().optional().describe("El SKU o código del artículo de inventario."),
+    recommendation: z.string().describe("Una recomendación clara en español, p. ej., 'Reordenar ahora', 'Stock saludable', 'Nivel de stock crítico'."),
+    reasoning: z.string().describe("Una breve explicación en español para la recomendación, citando la tasa de uso y el nivel de stock actual."),
     suggestedReorderQuantity: z.number().int().describe("Una cantidad de recompra sugerida para mantener niveles de stock saludables."),
 });
 export type InventoryRecommendation = z.infer<typeof InventoryRecommendationSchema>;
@@ -64,7 +66,7 @@ const analyzeInventoryPrompt = ai.definePrompt({
   name: 'analyzeInventoryPrompt',
   input: { schema: AnalyzeInventoryInputSchema },
   output: { schema: AnalyzeInventoryOutputSchema },
-  prompt: `Eres un experto gestor de inventario para un taller mecánico. Tu tarea es analizar el inventario actual y su uso histórico para proporcionar recomendaciones de reabastecimiento accionables.
+  prompt: `Eres un experto gestor de inventario para un taller mecánico. Tu tarea es analizar el inventario actual y su uso histórico para proporcionar recomendaciones de reabastecimiento accionables. **TODA tu respuesta y razonamiento debe ser en español.**
 
 **Instrucciones:**
 1.  **Analiza el Consumo:** Revisa la lista de \`serviceRecords\`. Cada registro indica qué artículos se usaron (\`supplyName\`) y cuándo. Calcula la tasa de consumo de cada artículo (ej. unidades por mes). Considera un mes como 30 días.
@@ -74,8 +76,9 @@ const analyzeInventoryPrompt = ai.definePrompt({
     *   Se proyecta que se agotarán en el próximo mes basándote en su consumo histórico.
     *   Si no hay historial de uso para un artículo pero está por debajo de su umbral, también recomiéndalo.
 4.  **No Incluir Items Saludables:** Para todos los demás artículos con stock saludable y bajo consumo, NO generes una recomendación. El resultado debe estar enfocado en acciones urgentes.
-5.  **Cálculo de Recompra:** Para cada recomendación, sugiere una cantidad a reordenar (\`suggestedReorderQuantity\`). Una buena regla general es pedir lo suficiente para cubrir 2-3 meses de consumo promedio, redondeado a un número entero. Si no hay historial, sugiere una cantidad que lo lleve al doble de su umbral de stock bajo.
-6.  **Justificación Clara:** Proporciona un razonamiento claro y conciso para cada recomendación.
+5.  **Cálculo de Recompra (CRÍTICO):** Para cada recomendación, sugiere una cantidad a reordenar (\`suggestedReorderQuantity\`). Tu regla principal es la siguiente: **calcula la cantidad necesaria para cubrir entre 2 y 3 meses de consumo promedio, y redondea al número entero más cercano y práctico.** Si no hay historial de uso, sugiere una cantidad que lleve el stock al doble de su umbral de stock bajo.
+6.  **Justificación Clara:** Proporciona un razonamiento claro y conciso para cada recomendación, siempre en español.
+7.  **Incluir SKU:** Asegúrate de que el campo \`itemSku\` esté presente en cada recomendación si el artículo tiene uno.
 
 **Datos de Inventario:**
 {{json inventoryItems}}
@@ -83,7 +86,7 @@ const analyzeInventoryPrompt = ai.definePrompt({
 **Historial de Uso en Servicios:**
 {{json serviceRecords}}
 
-Ahora, devuelve tus recomendaciones en el formato JSON especificado. Recuerda, solo los artículos que necesiten atención.
+Ahora, devuelve tus recomendaciones en el formato JSON especificado. Recuerda, solo los artículos que necesiten atención y responde todo en español.
 `,
 });
 

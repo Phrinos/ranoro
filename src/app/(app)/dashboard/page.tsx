@@ -266,6 +266,7 @@ export default function DashboardPage() {
       const inventoryForAI = allInventory.map(item => ({
         id: item.id,
         name: item.name,
+        sku: item.sku,
         quantity: item.quantity,
         lowStockThreshold: item.lowStockThreshold,
       }));
@@ -577,7 +578,7 @@ export default function DashboardPage() {
                                     <CardHeader className="p-3">
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <AlertTriangle className="h-5 w-5 text-orange-500" />
-                                            {rec.itemName}
+                                            {rec.itemName} {rec.itemSku && `(${rec.itemSku})`}
                                         </CardTitle>
                                         <CardDescription className="text-xs">{rec.recommendation}</CardDescription>
                                     </CardHeader>
