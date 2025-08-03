@@ -24,7 +24,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from "zod";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { CorteDiaContent } from '../../caja/components/corte-caja-content';
+import { CorteDiaContent } from '../caja/components/corte-caja-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -270,6 +270,12 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
                 <Card><CardHeader><CardTitle className="flex items-center gap-2 text-green-600"><ArrowUpCircle/>Registrar Entrada</CardTitle></CardHeader><CardContent><CashTransactionForm type="Entrada" onSubmit={handleAddTransaction} /></CardContent></Card>
                 <Card><CardHeader><CardTitle className="flex items-center gap-2 text-red-600"><ArrowDownCircle/>Registrar Salida</CardTitle></CardHeader><CardContent><CashTransactionForm type="Salida" onSubmit={handleAddTransaction} /></CardContent></Card>
             </div>
+             <Card>
+              <CardHeader><CardTitle>Transacciones Manuales del Día</CardTitle></CardHeader>
+              <CardContent>
+                <TransactionsList transactions={manualCashMovements} onDelete={handleDeleteTransaction} />
+              </CardContent>
+            </Card>
         </div>
       </div>
 
@@ -302,3 +308,5 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     </>
   );
 }
+
+    
