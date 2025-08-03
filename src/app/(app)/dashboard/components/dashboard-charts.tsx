@@ -150,7 +150,7 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
                     <Legend />
                     <Bar dataKey="Mes Anterior" fill="hsl(var(--secondary-foreground))" radius={[0, 4, 4, 0]} />
                     <Bar dataKey="Mes Actual" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="Utilidad Neta" fill={(bar) => bar.payload.name === 'Utilidad Neta' ? (bar.payload['Mes Actual'] >= 0 ? '#22c55e' : '#ef4444') : '#8884d8'} radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="Utilidad Neta" fill="#22c55e" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
