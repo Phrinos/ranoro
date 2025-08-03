@@ -15,10 +15,10 @@ import {
 import { InventoryItemForm, type InventoryItemFormValues } from "./inventory-item-form";
 import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { SupplierDialog } from '../proveedores/components/supplier-dialog';
+import { SupplierDialog } from '../../proveedores/components/supplier-dialog';
 import { CategoryDialog } from './category-dialog';
 import { inventoryService } from '@/lib/services';
-import type { SupplierFormValues } from '../proveedores/components/supplier-form';
+import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { Button } from '@/components/ui/button';
 
 interface InventoryItemDialogProps {
