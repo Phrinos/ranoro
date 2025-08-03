@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { InventoryItem, InventoryCategory, Supplier, PaymentMethod } from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier, PaymentMethod, PayableAccount } from "@/types";
 import type { InventoryItemFormValues } from "./inventory-item-form";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +30,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
+import { inventoryService } from "@/lib/services";
+
 
 const purchaseItemSchema = z.object({
   inventoryItemId: z.string(),
@@ -80,7 +81,7 @@ export function RegisterPurchaseDialog({
   suppliers,
   inventoryItems,
   categories,
-  onSave,
+  onSave: onSaveProp,
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
   const { toast } = useToast();
@@ -106,6 +107,24 @@ export function RegisterPurchaseDialog({
   const subtotal = useMemo(() => {
     return watchedItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
   }, [watchedItems]);
+  
+  const onSave = async (data: PurchaseFormValues) => {
+    if (data.paymentMethod === 'Crédito' && data.supplierId && data.invoiceId && data.dueDate) {
+        const newPayableAccount: Omit<PayableAccount, 'id'> = {
+            supplierId: data.supplierId,
+            supplierName: suppliers.find(s => s.id === data.supplierId)?.name || 'N/A',
+            invoiceId: data.invoiceId,
+            invoiceDate: new Date().toISOString(),
+            dueDate: data.dueDate.toISOString(),
+            totalAmount: data.invoiceTotal,
+            paidAmount: 0,
+            status: 'Pendiente'
+        };
+        await inventoryService.savePayableAccount(newPayableAccount);
+    }
+    await onSaveProp(data);
+  };
+
 
   const handleAddItem = useCallback((item: InventoryItem) => {
     const existingItem = fields.find(field => field.inventoryItemId === item.id);
@@ -159,7 +178,7 @@ export function RegisterPurchaseDialog({
                  {paymentMethod === 'Crédito' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <FormField control={control} name="invoiceId" render={({ field }) => ( <FormItem><FormLabel>Folio de Factura (Proveedor)</FormLabel><FormControl><Input placeholder="Folio o número de factura" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )}/>
-                         <FormField control={control} name="dueDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className="pl-3 text-left font-normal"><>{field.value ? (format(field.value, 'PPP', {locale: es})) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                         <FormField control={control} name="dueDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className="pl-3 text-left font-normal">{field.value ? (format(field.value, 'PPP', {locale: es})) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )}/>
                     </div>
                 )}
               
