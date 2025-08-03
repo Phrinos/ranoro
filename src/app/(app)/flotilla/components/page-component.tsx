@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -23,8 +24,7 @@ import Link from 'next/link';
 import { inventoryService, personnelService, operationsService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-
-const FINE_CHECK_STORAGE_KEY = 'lastFineCheckDate';
+import { TableToolbar } from '@/components/shared/table-toolbar';
 
 type FlotillaSortOption = "plate_asc" | "plate_desc" | "owner_asc" | "owner_desc" | "rent_asc" | "rent_desc";
 type DriverSortOption = 'name_asc' | 'name_desc';
@@ -176,69 +176,46 @@ export function FlotillaPageComponent() {
             </TabsList>
         </div>
         <TabsContent value="conductores" className="mt-6 space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Lista de Conductores</h2>
-                    <p className="text-muted-foreground">Gestiona los perfiles de los conductores de la flotilla.</p>
-                </div>
+            <div className="flex justify-end">
                 <Button onClick={() => handleOpenDriverDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Conductor</Button>
             </div>
-            <div className="flex items-center gap-2 mt-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input type="search" placeholder="Buscar por nombre o teléfono..." className="w-full pl-8 bg-card" value={searchTermDrivers} onChange={e => setSearchTermDrivers(e.target.value)} />
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-9 bg-card">
-                          <ListFilter className="mr-2 h-4 w-4" /> Ordenar
-                      </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                      <DropdownMenuRadioGroup value={sortOptionDrivers} onValueChange={(v) => setSortOptionDrivers(v as DriverSortOption)}>
-                          <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
-                      </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button variant="outline" className="bg-card" onClick={() => setShowArchivedDrivers(!showArchivedDrivers)}>
-                    {showArchivedDrivers ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}
-                    {showArchivedDrivers ? "Ver Activos" : "Ver Archivados"}
-                </Button>
-            </div>
+            <TableToolbar
+                searchTerm={searchTermDrivers}
+                onSearchTermChange={setSearchTermDrivers}
+                searchPlaceholder="Buscar por nombre o teléfono..."
+                sortOption={sortOptionDrivers}
+                onSortOptionChange={(v) => setSortOptionDrivers(v as DriverSortOption)}
+                sortOptions={[
+                    { value: 'name_asc', label: 'Nombre (A-Z)' },
+                    { value: 'name_desc', label: 'Nombre (Z-A)' },
+                ]}
+                primaryAction={
+                    <Button variant="outline" className="bg-card" onClick={() => setShowArchivedDrivers(!showArchivedDrivers)}>
+                        {showArchivedDrivers ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}
+                        {showArchivedDrivers ? "Ver Activos" : "Ver Archivados"}
+                    </Button>
+                }
+            />
             <Card className="mt-4"><CardContent className="p-0"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Nombre</TableHead><TableHead className="text-white">Teléfono</TableHead><TableHead className="text-white">Vehículo Asignado</TableHead><TableHead className="text-right text-white">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">{showArchivedDrivers ? "No hay conductores archivados." : "No se encontraron conductores activos."}</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
         </TabsContent>
         <TabsContent value="vehiculos" className="mt-6 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div><h2 className="text-2xl font-semibold tracking-tight">Vehículos de la Flotilla</h2><p className="text-muted-foreground">Gestiona los vehículos que forman parte de tu flotilla.</p></div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" className="bg-orange-100 text-orange-800 hover:bg-orange-200" onClick={() => setIsFineCheckDialogOpen(true)}>
-                    <ShieldCheck className="mr-2 h-4 w-4" />Revisar Multas
-                </Button>
-                <Button onClick={() => setIsAddVehicleDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Añadir Vehículo</Button>
-              </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" className="bg-orange-100 text-orange-800 hover:bg-orange-200" onClick={() => setIsFineCheckDialogOpen(true)}>
+                <ShieldCheck className="mr-2 h-4 w-4" />Revisar Multas
+            </Button>
+            <Button onClick={() => setIsAddVehicleDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Añadir Vehículo</Button>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input type="search" placeholder="Buscar por placa, marca, modelo o propietario..." className="w-full pl-8 bg-card" value={searchTermVehicles} onChange={e => setSearchTermVehicles(e.target.value)} />
-            </div>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 bg-card">
-                        <ListFilter className="mr-2 h-4 w-4" /> Ordenar
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                    <DropdownMenuRadioGroup value={sortOptionVehicles} onValueChange={(v) => setSortOptionVehicles(v as FlotillaSortOption)}>
-                        <DropdownMenuRadioItem value="plate_asc">Placa (A-Z)</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="plate_desc">Placa (Z-A)</DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <TableToolbar
+            searchTerm={searchTermVehicles}
+            onSearchTermChange={setSearchTermVehicles}
+            searchPlaceholder="Buscar por placa, marca, modelo o propietario..."
+            sortOption={sortOptionVehicles}
+            onSortOptionChange={(v) => setSortOptionVehicles(v as FlotillaSortOption)}
+            sortOptions={[
+                { value: 'plate_asc', label: 'Placa (A-Z)' },
+                { value: 'plate_desc', label: 'Placa (Z-A)' },
+            ]}
+          />
           <Card className="mt-4"><CardContent><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Placa</TableHead><TableHead className="text-white">Vehículo</TableHead><TableHead className="text-white">Conductor</TableHead><TableHead className="text-white">Propietario</TableHead><TableHead className="text-right text-white">Renta Diaria</TableHead></TableRow></TableHeader><TableBody>{filteredFleetVehicles.length > 0 ? filteredFleetVehicles.map(v => {
             const driver = allDrivers.find(d => d.id === v.assignedVehicleId && !d.isArchived);
             const isAssigned = !!driver;

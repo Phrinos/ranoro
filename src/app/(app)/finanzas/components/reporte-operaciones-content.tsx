@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { parseDate } from '@/lib/forms';
+import { TableToolbar } from '@/components/shared/table-toolbar';
 
 interface ReporteOperacionesContentProps {
   allSales: SaleReceipt[];
@@ -37,73 +38,36 @@ interface ReporteOperacionesContentProps {
 }
 
 export function ReporteOperacionesContent({ allSales, allServices, allInventory, serviceTypes }: ReporteOperacionesContentProps) {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
-    const now = new Date();
-    return { from: startOfMonth(now), to: endOfMonth(now) };
-  });
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
-
-  const [reporteOpSearchTerm, setReporteOpSearchTerm] = useState("");
-  const [reporteOpTypeFilter, setReporteOpTypeFilter] = useState<string>("all");
-  const [reporteOpSortOption, setReporteOpSortOption] = useState<string>("date_desc");
-  const [reporteOpPaymentMethodFilter, setReporteOpPaymentMethodFilter] = useState<PaymentMethod | 'all'>("all");
-
-  const combinedOperations = useMemo((): FinancialOperation[] => {
-    const saleOperations: FinancialOperation[] = allSales.map(s => ({
-        id: s.id, date: s.saleDate, type: 'Venta', 
-        description: s.items.map(i => i.itemName).join(', '), 
-        totalAmount: s.totalAmount, profit: calculateSaleProfit(s, allInventory), originalObject: s 
-    }));
-    
-    const serviceOperations: FinancialOperation[] = allServices
-        .filter(s => s.status === 'Entregado' || s.status === 'Completado')
-        .map(s => {
-            // Prioritize delivery date for financials, but use service date as fallback (for migrated data)
-            const dateToUse = s.deliveryDateTime || s.serviceDate;
-            const description = s.description || (s.serviceItems || []).map(i => i.name).join(', ');
-            return {
-                id: s.id, date: dateToUse, type: s.serviceType || 'Servicio General', 
-                description: description, totalAmount: s.totalCost, 
-                profit: s.serviceProfit || 0, originalObject: s 
-            };
-        });
+  
+  const { 
+    filteredData: filteredAndSortedOperations, 
+    ...tableManager 
+  } = useTableManager<FinancialOperation>({
+    initialData: useMemo((): FinancialOperation[] => {
+        const saleOperations: FinancialOperation[] = allSales.map(s => ({
+            id: s.id, date: s.saleDate, type: 'Venta', 
+            description: s.items.map(i => i.itemName).join(', '), 
+            totalAmount: s.totalAmount, profit: calculateSaleProfit(s, allInventory), originalObject: s 
+        }));
         
-    return [...saleOperations, ...serviceOperations];
-  }, [allSales, allServices, allInventory]);
-
-  const filteredAndSortedOperations = useMemo(() => {
-    if (!dateRange?.from) return [];
-    const from = startOfDay(dateRange.from);
-    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-    
-    let list = combinedOperations.filter(op => {
-      if (!op.date) return false;
-      const parsedDate = parseDate(op.date);
-      return isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
-    });
-    
-    if (reporteOpTypeFilter !== 'all') { list = list.filter(op => op.type === reporteOpTypeFilter); }
-    if (reporteOpPaymentMethodFilter !== 'all') { list = list.filter(op => (op.originalObject as SaleReceipt | ServiceRecord).paymentMethod === reporteOpPaymentMethodFilter); }
-    if (reporteOpSearchTerm) { list = list.filter(op => op.id.toLowerCase().includes(reporteOpSearchTerm.toLowerCase()) || op.description.toLowerCase().includes(reporteOpSearchTerm.toLowerCase())); }
-    
-    list.sort((a, b) => {
-        switch (reporteOpSortOption) {
-            case 'date_asc': return compareAsc(parseDate(a.date!)!, parseDate(b.date!)!);
-            case 'amount_desc': return b.totalAmount - a.totalAmount;
-            case 'amount_asc': return a.totalAmount - b.totalAmount;
-            case 'profit_desc': return b.profit - a.profit;
-            case 'profit_asc': return a.profit - b.profit;
-            case 'date_desc': default: return compareDesc(parseDate(a.date!)!, parseDate(b.date!)!);
-        }
-    });
-    return list;
-  }, [combinedOperations, dateRange, reporteOpSearchTerm, reporteOpTypeFilter, reporteOpPaymentMethodFilter, reporteOpSortOption]);
-
-  const handleApplyDateFilter = () => {
-    setDateRange(tempDateRange);
-    setIsCalendarOpen(false);
-  };
+        const serviceOperations: FinancialOperation[] = allServices
+            .filter(s => s.status === 'Entregado' || s.status === 'Completado')
+            .map(s => {
+                const dateToUse = s.deliveryDateTime || s.serviceDate;
+                const description = s.description || (s.serviceItems || []).map(i => i.name).join(', ');
+                return {
+                    id: s.id, date: dateToUse, type: s.serviceType || 'Servicio General', 
+                    description: description, totalAmount: s.totalCost, 
+                    profit: s.serviceProfit || 0, originalObject: s 
+                };
+            });
+            
+        return [...saleOperations, ...serviceOperations];
+      }, [allSales, allServices, allInventory]),
+    searchKeys: ['id', 'description'],
+    dateFilterKey: 'date',
+    initialSortOption: 'date_desc',
+  });
 
   const getOperationTypeVariant = (type: string) => {
     switch (type) {
@@ -112,7 +76,17 @@ export function ReporteOperacionesContent({ allSales, allServices, allInventory,
     }
   };
   
-  const paymentMethods: (PaymentMethod | 'all')[] = ['all', 'Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia', 'Efectivo/Tarjeta'];
+  const paymentMethods: { value: PaymentMethod | 'all', label: string }[] = [
+    { value: 'all', label: 'Todos' }, { value: 'Efectivo', label: 'Efectivo' }, { value: 'Tarjeta', label: 'Tarjeta' },
+    { value: 'Transferencia', label: 'Transferencia' }, { value: 'Efectivo+Transferencia', label: 'Efectivo+Transferencia' },
+    { value: 'Tarjeta+Transferencia', label: 'Tarjeta+Transferencia' }, { value: 'Efectivo/Tarjeta', label: 'Efectivo/Tarjeta' },
+  ];
+  
+  const operationTypes = useMemo(() => [
+      { value: 'all', label: 'Todos' },
+      { value: 'Venta', label: 'Venta' },
+      ...serviceTypes.map(st => ({ value: st.name, label: st.name }))
+  ], [serviceTypes]);
 
   return (
     <div className="space-y-4">
@@ -120,83 +94,31 @@ export function ReporteOperacionesContent({ allSales, allServices, allInventory,
         <h2 className="text-2xl font-semibold tracking-tight">Detalle de Operaciones</h2>
         <p className="text-muted-foreground">Ventas y servicios completados en el período seleccionado.</p>
       </div>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex-1 w-full">
-            <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input type="search" placeholder="Buscar por ID o descripción..." className="w-full rounded-lg bg-card pl-8" value={reporteOpSearchTerm} onChange={(e) => setReporteOpSearchTerm(e.target.value)} />
-            </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:justify-end">
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} locale={es} showOutsideDays={false}/>
-                    <div className="p-2 border-t flex justify-end">
-                        <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
-                    </div>
-                </PopoverContent>
-            </Popover>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex-1 sm:flex-initial bg-card">
-                <Filter className="mr-2 h-4 w-4" />
-                <span>Tipo: {reporteOpTypeFilter === 'all' ? 'Todos' : reporteOpTypeFilter}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Filtrar por Tipo</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={reporteOpTypeFilter} onValueChange={setReporteOpTypeFilter}>
-                <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="Venta">Venta</DropdownMenuRadioItem>
-                {serviceTypes.map((type) => (
-                  <DropdownMenuRadioItem key={type.id} value={type.name}>{type.name}</DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex-1 sm:flex-initial bg-card">
-                <Filter className="mr-2 h-4 w-4" />
-                <span>Pago: {reporteOpPaymentMethodFilter === 'all' ? 'Todos' : reporteOpPaymentMethodFilter}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Filtrar por Método de Pago</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={reporteOpPaymentMethodFilter} onValueChange={(v) => setReporteOpPaymentMethodFilter(v as PaymentMethod | 'all')}>
-                {paymentMethods.map(method => (
-                  <DropdownMenuRadioItem key={method} value={method}>{method === 'all' ? 'Todos' : method}</DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex-1 sm:flex-initial bg-card">
-                <ListFilter className="mr-2 h-4 w-4" />
-                <span>Ordenar por</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={reporteOpSortOption} onValueChange={setReporteOpSortOption}>
-                <DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="amount_desc">Monto (Mayor a Menor)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="amount_asc">Monto (Menor a Mayor)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="profit_desc">Ganancia (Mayor a Menor)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="profit_asc">Ganancia (Menor a Mayor)</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+      
+      <TableToolbar
+        searchTerm={tableManager.searchTerm}
+        onSearchTermChange={tableManager.setSearchTerm}
+        searchPlaceholder="Buscar por ID o descripción..."
+        dateRange={tableManager.dateRange}
+        onDateRangeChange={tableManager.setDateRange}
+        sortOption={tableManager.sortOption}
+        onSortOptionChange={tableManager.setSortOption}
+        sortOptions={[
+            { value: 'date_desc', label: 'Fecha (Más Reciente)' },
+            { value: 'date_asc', label: 'Fecha (Más Antiguo)' },
+            { value: 'amount_desc', label: 'Monto (Mayor a Menor)' },
+            { value: 'amount_asc', label: 'Monto (Menor a Mayor)' },
+            { value: 'profit_desc', label: 'Ganancia (Mayor a Menor)' },
+            { value: 'profit_asc', label: 'Ganancia (Menor a Mayor)' },
+        ]}
+        filterOptions={[
+            { value: 'type', label: 'Tipo de Operación', options: operationTypes },
+            { value: 'originalObject.paymentMethod', label: 'Método de Pago', options: paymentMethods },
+        ]}
+        otherFilters={tableManager.otherFilters}
+        onFilterChange={tableManager.setOtherFilters}
+      />
+      
       <Card>
         <CardContent className="pt-6">
           <div className="rounded-md border overflow-x-auto">

@@ -19,6 +19,7 @@ import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { TableToolbar } from '@/components/shared/table-toolbar';
 
 export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: User | null, initialUsers: User[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
@@ -26,15 +27,17 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
   const availableRoles = initialRoles;
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [users, searchTerm]);
-  
+  const {
+    filteredData,
+    ...tableManager
+  } = useTableManager<User>({
+    initialData: users,
+    searchKeys: ['name', 'email', 'role'],
+    dateFilterKey: 'hireDate',
+    initialSortOption: 'name_asc'
+  });
+
   const canEditOrDelete = (user: User): boolean => {
     if (!currentUser) return false;
     if (currentUser.role === 'Superadministrador') return user.id !== currentUser.id;
@@ -88,30 +91,31 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
 
   return (
     <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-            <div>
-                <h2 className="text-2xl font-bold tracking-tight">Lista de Personal</h2>
-                <p className="text-muted-foreground">Gestiona los perfiles, roles y salarios de todo tu equipo.</p>
-            </div>
+        <div className="flex justify-end">
             <Button onClick={() => handleOpenForm()}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Integrante
             </Button>
         </div>
         
-        <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar por nombre o email..."
-              className="w-full rounded-lg bg-card pl-8 md:w-1/2 lg:w-1/3"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-        </div>
+        <TableToolbar
+          searchTerm={tableManager.searchTerm}
+          onSearchTermChange={tableManager.setSearchTerm}
+          searchPlaceholder="Buscar por nombre, email o rol..."
+          sortOption={tableManager.sortOption}
+          onSortOptionChange={tableManager.setSortOption}
+          sortOptions={[
+              { value: 'name_asc', label: 'Nombre (A-Z)' },
+              { value: 'name_desc', label: 'Nombre (Z-A)' },
+              { value: 'role_asc', label: 'Rol (A-Z)' },
+              { value: 'role_desc', label: 'Rol (Z-A)' },
+              { value: 'hireDate_desc', label: 'Contratación (Más Reciente)' },
+              { value: 'hireDate_asc', label: 'Contratación (Más Antiguo)' },
+          ]}
+        />
         
         <Card>
             <CardContent className="pt-6">
-                {filteredUsers.length > 0 ? (
+                {filteredData.length > 0 ? (
                   <div className="overflow-x-auto rounded-md border">
                   <Table>
                     <TableHeader className="bg-black">
@@ -125,7 +129,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredUsers.map(user => {
+                      {filteredData.map(user => {
                         const hireDate = user.hireDate ? parseDate(user.hireDate) : null;
                         return (
                           <TableRow key={user.id}>

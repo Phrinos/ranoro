@@ -373,7 +373,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
           onOpenChange={setIsTicketDialogOpen}
           title="Ticket de Servicio"
           footerActions={<>
-            <Button onClick={() => handleCopyAsImage(false)} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+            <Button onClick={() => handleCopyAsImage()} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
             <Button onClick={handleShare} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
             <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
           </>}

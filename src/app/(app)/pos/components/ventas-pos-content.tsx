@@ -60,16 +60,11 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
   });
 
   return (
-    <Card>
-      <CardHeader className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Historial de Ventas</h2>
-            <p className="text-muted-foreground">Consulta, filtra y reimprime tickets.</p>
-          </div>
-          <Button asChild className="flex-1 sm:flex-initial">
-            <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
-          </Button>
+    <div className="space-y-4">
+        <div className="flex justify-end">
+            <Button asChild>
+                <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
+            </Button>
         </div>
         <TableToolbar
             {...tableManager}
@@ -84,16 +79,16 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
             canGoNext={tableManager.canGoNext}
             paginationSummary={tableManager.paginationSummary}
         />
-      </CardHeader>
-      <CardContent>
-        <SalesTable
-          sales={filteredAndSortedSales}
-          onReprintTicket={onReprintTicket}
-          inventoryItems={allInventory}
-          onEditSale={onViewSale}
-        />
-      </CardContent>
-    </Card>
+        <Card>
+            <CardContent className="pt-6">
+                <SalesTable
+                  sales={filteredAndSortedSales}
+                  onReprintTicket={onReprintTicket}
+                  inventoryItems={allInventory}
+                  onEditSale={onViewSale}
+                />
+            </CardContent>
+        </Card>
+    </div>
   );
 }
-
