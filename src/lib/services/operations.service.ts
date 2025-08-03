@@ -375,7 +375,7 @@ const registerSale = async (saleId: string, saleData: Omit<SaleReceipt, 'id' | '
         batch.set(cashTransactionRef, {
             date: new Date().toISOString(),
             type: 'Entrada',
-            amount: totalAmount,
+            amount: newSale.amountInCash || totalAmount, // Use split amount if available
             concept: `Venta POS #${saleId.slice(0, 6)}`,
             userId: 'system',
             userName: 'Sistema',
@@ -393,11 +393,24 @@ const registerPurchase = async (data: any): Promise<void> => {
     
     // 1. Update supplier debt if payment method is 'Credito'
     if (data.paymentMethod === 'Crédito') {
-        const supplierRef = doc(db, "suppliers", data.supplierId);
-        const supplier = suppliers.find(s => s.id === data.supplierId);
-        if (supplier) {
-            batch.update(supplierRef, { debtAmount: (supplier.debtAmount || 0) + data.invoiceTotal });
-        }
+      const accountRef = doc(collection(db, 'payableAccounts'));
+      const newAccount: Omit<PayableAccount, 'id'> = {
+        supplierId: data.supplierId,
+        supplierName: suppliers.find(s => s.id === data.supplierId)?.name || 'Desconocido',
+        invoiceId: data.invoiceId,
+        invoiceDate: new Date().toISOString(),
+        dueDate: data.dueDate.toISOString(),
+        totalAmount: data.invoiceTotal,
+        paidAmount: 0,
+        status: 'Pendiente'
+      };
+      batch.set(accountRef, cleanObjectForFirestore(newAccount));
+      
+      const supplierRef = doc(db, "suppliers", data.supplierId);
+      const supplier = suppliers.find(s => s.id === data.supplierId);
+      if (supplier) {
+        batch.update(supplierRef, { debtAmount: (supplier.debtAmount || 0) + data.invoiceTotal });
+      }
     } else if (data.paymentMethod === 'Efectivo') {
         const supplierName = suppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
         const newTransaction = {

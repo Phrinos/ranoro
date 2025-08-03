@@ -45,6 +45,9 @@ const posFormSchema = z.object({
   paymentMethod: z.enum(paymentMethods).default('Efectivo'),
   cardFolio: z.string().optional(),
   transferFolio: z.string().optional(),
+  amountInCash: z.coerce.number().optional(),
+  amountInCard: z.coerce.number().optional(),
+  amountInTransfer: z.coerce.number().optional(),
 }).superRefine((data, ctx) => {
     if (data.paymentMethod?.includes('Tarjeta') && !data.cardFolio) {
         ctx.addIssue({
@@ -206,7 +209,9 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         });
       } catch (error) {
         console.error('Error sharing:', error);
-        toast({ title: 'Error al compartir', variant: 'destructive' });
+        if(!String(error).includes('AbortError')) {
+           toast({ title: 'Error al compartir', variant: 'destructive' });
+        }
       }
     } else if (imageFile) {
         // Fallback for desktop browsers that don't support navigator.share with files

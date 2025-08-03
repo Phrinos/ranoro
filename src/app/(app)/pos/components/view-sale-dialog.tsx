@@ -11,17 +11,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -29,9 +18,10 @@ import { Separator } from "@/components/ui/separator";
 import type { SaleReceipt } from "@/types";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Ban, MessageSquare } from "lucide-react";
+import { Ban, MessageSquare, Share2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 interface ViewSaleDialogProps {
   open: boolean;
@@ -123,36 +113,27 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale, onSendW
         </div>
         <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">
             <div className="flex gap-2">
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
+                 <ConfirmDialog
+                    triggerButton={
                         <Button variant="destructive" disabled={isCancelled}>
                             <Ban className="mr-2 h-4 w-4" />
                             Cancelar Venta
                         </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>¿Está seguro de cancelar esta venta?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Esta acción no se puede deshacer. El stock de los artículos vendidos será restaurado al inventario. Se requiere un motivo para la cancelación.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <div className="mt-4">
-                          <Label htmlFor="cancellation-reason" className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
-                          <Textarea id="cancellation-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej: Error en el cobro, el cliente se arrepintió..." className="mt-2" />
-                        </div>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel onClick={() => setReason('')}>No</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onCancelSale(sale.id, reason)} disabled={!reason.trim()} className="bg-destructive hover:bg-destructive/90">
-                                Sí, Cancelar Venta
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                    }
+                    title="¿Está seguro de cancelar esta venta?"
+                    description="Esta acción no se puede deshacer. El stock de los artículos vendidos será restaurado al inventario. Se requiere un motivo para la cancelación."
+                    onConfirm={() => onCancelSale(sale.id, reason)}
+                    confirmText="Sí, Cancelar Venta"
+                >
+                    <div className="mt-4">
+                        <Label htmlFor="cancellation-reason" className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                        <Textarea id="cancellation-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej: Error en el cobro, el cliente se arrepintió..." className="mt-2" />
+                    </div>
+                </ConfirmDialog>
             </div>
             <div className="flex gap-2">
-                <Button variant="outline" onClick={() => onSendWhatsapp(sale)} disabled={isCancelled}>
-                    <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+                <Button variant="outline" onClick={() => onSendWhatsapp(sale)} disabled={isCancelled} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200">
+                    <Share2 className="mr-2 h-4 w-4" /> Compartir
                 </Button>
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                     Cerrar

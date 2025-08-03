@@ -34,13 +34,12 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Efectivo/Tarjeta": WalletCards,
 };
 
-export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnly?: boolean, customerName?: string }) {
+export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean }) {
   const form = useFormContext();
   const { control, watch, formState: { errors } } = form;
   const selectedPaymentMethod = watch("paymentMethod");
   const isDelivered = watch('status') === 'Entregado';
-  const { totalCost } = useServiceTotals(form as any);
-
+  
   // If the form is read-only AND it's a delivered service, we display info, not a form.
   if (isReadOnly && isDelivered) {
     return (
@@ -75,7 +74,7 @@ export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnl
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Detalles de Pago</CardTitle>
+        <CardTitle>Detalles de Pago y Cliente</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <FormField
@@ -145,13 +144,13 @@ export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnl
           <div className="space-y-2 rounded-md border p-4">
             <p className="text-sm font-medium">Desglose de Pago</p>
             {selectedPaymentMethod.includes('Efectivo') && (
-              <FormField control={control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+              <FormField control={control} name="amountInCash" render={({ field }) => (<FormItem><FormLabel>Monto en Efectivo</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
             )}
             {selectedPaymentMethod.includes('Tarjeta') && (
-              <FormField control={control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+              <FormField control={control} name="amountInCard" render={({ field }) => (<FormItem><FormLabel>Monto en Tarjeta</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
             )}
             {selectedPaymentMethod.includes('Transferencia') && (
-              <FormField control={control} name="amountInTransfer" render={({ field }) => (<FormItem><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
+              <FormField control={control} name="amountInTransfer" render={({ field }) => (<FormItem><FormLabel>Monto en Transferencia</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem>)} />
             )}
           </div>
         )}
