@@ -71,9 +71,6 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
                 )}
               </TableCell>
               <TableCell className="text-right print:hidden">
-                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEdit(supplier); }} className="mr-2">
-                  <Edit className="h-4 w-4" />
-                </Button>
                 <ConfirmDialog
                     triggerButton={<Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                     title={`¿Eliminar a ${supplier.name}?`}
