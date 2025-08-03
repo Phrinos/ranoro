@@ -92,7 +92,7 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
 
   return (
     <div className="space-y-4">
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-3">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Costo Total del Inventario</CardTitle><DollarSign className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">${summary.totalInventoryCost.toLocaleString('es-ES')}</div><p className="text-xs text-muted-foreground">Valor de venta: ${summary.totalInventorySellingPrice.toLocaleString('es-ES')}</p></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summary.lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summary.productsCount + summary.servicesCount}</div><p className="text-xs text-muted-foreground">{summary.productsCount} Productos y {summary.servicesCount} Servicios.</p></CardContent></Card>
