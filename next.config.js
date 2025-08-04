@@ -31,6 +31,13 @@ const nextConfig = {
       },
     ];
   },
+  
+  // 5. Orígenes de desarrollo permitidos para CORS
+  experimental: {
+    allowedDevOrigins: [
+      "https://*-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
+    ],
+  },
 };
 
 module.exports = nextConfig;
