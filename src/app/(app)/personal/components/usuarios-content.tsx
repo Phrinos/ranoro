@@ -20,6 +20,7 @@ import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { TableToolbar } from '@/components/shared/table-toolbar';
+import { useTableManager } from '@/hooks/useTableManager';
 
 export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: User | null, initialUsers: User[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
