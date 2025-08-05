@@ -32,14 +32,14 @@ import { cn } from "@/lib/utils";
 import type { InventoryMovement } from '@/types';
 
 
-export function InventarioPageComponent({
+export default function InventarioPageComponent({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const tab = searchParams?.tab as string | undefined;
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState(tab || 'informe');
+  const [activeTab, setActiveTab] = useState(tab || 'productos');
   
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
@@ -119,7 +119,8 @@ export function InventarioPageComponent({
       return [...saleMovements, ...serviceMovements, ...purchaseMovements];
     }, [isLoading, sales, services, inventoryItems, payableAccounts]);
   
-  const handlePrint = useCallback(() => {
+  const handlePrint = useCallback((itemsToPrint: InventoryItem[]) => {
+      setInventoryItems(itemsToPrint); // Pass the currently filtered/sorted items to the print component
       setIsPrintDialogOpen(true);
   }, []);
 
@@ -154,10 +155,8 @@ export function InventarioPageComponent({
   }
 
   const tabsConfig = [
-    { value: "informe", label: "Entradas y Salidas" },
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
-    { value: "proveedores", label: "Proveedores" },
     { value: "analisis", label: "Análisis IA" },
   ];
 
@@ -189,12 +188,6 @@ export function InventarioPageComponent({
             </div>
         </div>
         
-        <TabsContent value="informe" className="mt-6">
-            <InformeContent 
-                onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
-                movements={inventoryMovements}
-            />
-        </TabsContent>
         <TabsContent value="productos" className="mt-6">
             <ProductosContent 
                 inventoryItems={inventoryItems} 
@@ -204,9 +197,6 @@ export function InventarioPageComponent({
         </TabsContent>
         <TabsContent value="categorias" className="mt-6">
             <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
-        </TabsContent>
-        <TabsContent value="proveedores" className="mt-6">
-            <ProveedoresContent suppliers={suppliers} />
         </TabsContent>
         <TabsContent value="analisis" className="mt-6">
             <AnalisisIaContent inventoryItems={inventoryItems} />

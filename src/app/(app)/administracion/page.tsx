@@ -1,8 +1,12 @@
 
 
-import { Suspense } from "react";
-import { AdministracionPageComponent } from "./components/page-component";
+import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
+
+const AdministracionPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.AdministracionPageComponent }))
+);
+
 
 export default function AdministracionPageWrapper({
   searchParams,

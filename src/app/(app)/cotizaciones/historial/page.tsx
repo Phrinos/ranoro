@@ -2,9 +2,13 @@
 
 "use client";
 
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-import { CotizacionesPageComponent } from './components/page-component';
+
+const CotizacionesPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.CotizacionesPageComponent }))
+);
+
 
 export default function CotizacionesPageWrapper() {
   return (

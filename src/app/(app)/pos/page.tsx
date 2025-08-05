@@ -1,7 +1,11 @@
 
-import { Suspense } from 'react';
+
+import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-import { PosPageComponent } from './components/page-component';
+
+const PosPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.PosPageComponent }))
+);
 
 export default function POSPageWrapper({
   searchParams,

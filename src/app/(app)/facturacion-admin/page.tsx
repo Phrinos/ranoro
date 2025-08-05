@@ -1,8 +1,12 @@
 
 
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-import { FacturacionAdminPageComponent } from './components/page-component';
+
+const FacturacionAdminPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.FacturacionAdminPageComponent }))
+);
+
 
 export default function FacturacionAdminPageWrapper() {
   return (

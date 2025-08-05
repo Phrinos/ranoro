@@ -2,10 +2,10 @@
 
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, DollarSign, AlertTriangle, Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PlusCircle, Printer, DollarSign, AlertTriangle, Package } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
@@ -17,6 +17,34 @@ const getSortPriority = (item: InventoryItem): number => {
     if (item.quantity === 0) return 1; // Out of stock
     if (item.quantity <= item.lowStockThreshold) return 2; // Low stock
     return 3; // Normal stock
+};
+
+interface SummaryData {
+    totalInventoryCost: number;
+    totalInventorySellingPrice: number;
+    lowStockItemsCount: number;
+    productsCount: number;
+    servicesCount: number;
+}
+
+const calculateSummary = (items: InventoryItem[]): SummaryData => {
+    let cost = 0, sellingPriceValue = 0, lowStock = 0, products = 0, services = 0;
+    items.forEach(item => {
+      if (item.isService) services++;
+      else {
+        products++;
+        cost += (item.quantity || 0) * (item.unitPrice || 0);
+        sellingPriceValue += (item.quantity || 0) * (item.sellingPrice || 0);
+        if ((item.quantity || 0) <= (item.lowStockThreshold || 0)) lowStock++;
+      }
+    });
+    return { 
+        totalInventoryCost: cost, 
+        totalInventorySellingPrice: sellingPriceValue, 
+        lowStockItemsCount: lowStock, 
+        productsCount: products, 
+        servicesCount: services, 
+    };
 };
 
 
@@ -49,25 +77,7 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
     return items; 
   }, [filteredData, tableManager.sortOption]);
 
-  const summary = React.useMemo(() => {
-    let cost = 0, sellingPriceValue = 0, lowStock = 0, products = 0, services = 0;
-    inventoryItems.forEach(item => {
-      if (item.isService) services++;
-      else {
-        products++;
-        cost += (item.quantity || 0) * (item.unitPrice || 0);
-        sellingPriceValue += (item.quantity || 0) * (item.sellingPrice || 0);
-        if ((item.quantity || 0) <= (item.lowStockThreshold || 0)) lowStock++;
-      }
-    });
-    return { 
-        totalInventoryCost: cost, 
-        totalInventorySellingPrice: sellingPriceValue, 
-        lowStockItemsCount: lowStock, 
-        productsCount: products, 
-        servicesCount: services, 
-    };
-  }, [inventoryItems]);
+  const summary = useMemo(() => calculateSummary(inventoryItems), [inventoryItems]);
 
   const handlePrint = () => {
     onPrint(customSortedItems);
@@ -106,24 +116,9 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
 
         <TableToolbar
             {...tableManager}
-            onDateRangeChange={tableManager.setDateRange}
             sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre, SKU, marca..."
         />
-        
-        <div className="flex items-center justify-between pt-2">
-            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
-            <div className="flex items-center space-x-2">
-                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
-                    <ChevronLeft className="h-4 w-4" />
-                    Anterior
-                </Button>
-                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
-                    Siguiente
-                    <ChevronRight className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
       
       <Card>
         <CardContent className="pt-0">

@@ -1,8 +1,12 @@
 
 
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-import { HistorialServiciosPageComponent } from './components/page-component';
+
+const HistorialServiciosPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.HistorialServiciosPageComponent }))
+);
+
 
 export default function HistorialServiciosPageWrapper({
   searchParams,

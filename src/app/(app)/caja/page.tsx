@@ -2,10 +2,13 @@
 
 "use client";
 
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-import { CajaPageComponent } from './components/page-component';
 import { useSearchParams } from 'next/navigation';
+
+const CajaPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.CajaPageComponent }))
+);
 
 function CajaPage() {
     const searchParams = useSearchParams();

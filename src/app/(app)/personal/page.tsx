@@ -1,10 +1,14 @@
 
+
 "use client";
 
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-import { PersonalPageComponent } from './components/page-component';
 import { useSearchParams } from 'next/navigation';
+
+const PersonalPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.PersonalPageComponent }))
+);
 
 function PersonalPage() {
     const searchParams = useSearchParams();

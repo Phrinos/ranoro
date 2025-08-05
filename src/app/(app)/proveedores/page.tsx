@@ -1,9 +1,13 @@
 
+
 "use client";
 
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-import { ProveedoresPageComponent } from './components/page-component';
+
+const ProveedoresPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.ProveedoresPageComponent }))
+);
 
 export default function ProveedoresPageWrapper() {
   return (

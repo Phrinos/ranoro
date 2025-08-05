@@ -1,7 +1,12 @@
 
-import { Suspense } from 'react';
+
+import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
-import { OpcionesPageComponent } from './components/page-component';
+
+const OpcionesPageComponent = lazy(() => 
+  import('./components/page-component').then(module => ({ default: module.OpcionesPageComponent }))
+);
+
 
 export default function OpcionesPageWrapper({
   searchParams,
