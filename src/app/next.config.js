@@ -32,10 +32,14 @@ const nextConfig = {
     ];
   },
 
-  // ✅ 6. allowedDevOrigins → en raíz
-  allowedDevOrigins: [
-    "https://*-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
-  ],
+  // 5. Webpack config
+  webpack: (config) => {
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      /require.extensions is not supported by webpack. Use a loader instead./,
+    ];
+    return config;
+  }
 };
 
 module.exports = nextConfig;

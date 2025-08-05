@@ -145,23 +145,24 @@ export default function DriverDetailPage() {
     }
   };
   
-const handleAssignVehicle = async (newVehicleId: string | null) => {
+const handleAssignVehicle = useCallback(async (newVehicleId: string | null) => {
     if (!driver || !db) return toast({ title: "Error", description: "No se encontró el conductor.", variant: "destructive" });
 
     const batch = writeBatch(db);
     const oldVehicleId = driver.assignedVehicleId;
 
-    // 1. Unassign old vehicle from this driver
+    // 1. Unassign the old vehicle from this driver
     if (oldVehicleId) {
         batch.update(inventoryService.getVehicleDocRef(oldVehicleId), { assignedDriverId: null });
     }
 
-    // 2. Unassign the new vehicle from any other driver
+    // 2. Unassign the new vehicle from any other driver it might be assigned to
     if (newVehicleId) {
-        const otherDriverAssigned = drivers.find(d => d.assignedVehicleId === newVehicleId && d.id !== driver.id);
-        if (otherDriverAssigned) {
-            batch.update(personnelService.getDriverDocRef(otherDriverAssigned.id), { assignedVehicleId: null });
+        const vehicleToAssign = allVehicles.find(v => v.id === newVehicleId);
+        if (vehicleToAssign?.assignedDriverId && vehicleToAssign.assignedDriverId !== driver.id) {
+            batch.update(personnelService.getDriverDocRef(vehicleToAssign.assignedDriverId), { assignedVehicleId: null });
         }
+        
         // 3. Assign new vehicle to this driver and vice versa
         batch.update(inventoryService.getVehicleDocRef(newVehicleId), { assignedDriverId: driver.id });
     }
@@ -177,7 +178,7 @@ const handleAssignVehicle = async (newVehicleId: string | null) => {
         console.error("Error al asignar vehículo:", e);
         toast({ title: "Error al Asignar", description: `Ocurrió un error: ${e instanceof Error ? e.message : 'Error desconocido'}`, variant: "destructive"});
     }
-}
+}, [driver, allVehicles, fetchDriverData, toast]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -644,5 +645,3 @@ const handleAssignVehicle = async (newVehicleId: string | null) => {
     </>
   );
 }
-
-    

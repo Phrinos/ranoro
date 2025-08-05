@@ -23,7 +23,7 @@ import { db } from '@/lib/firebaseClient';
 interface DetailsTabContentProps {
   vehicle: Vehicle;
   drivers: Driver[];
-  allVehicles: Vehicle[]; // Added this prop
+  allVehicles: Vehicle[];
   onEdit: () => void;
   onRefresh: () => void;
 }
@@ -45,12 +45,13 @@ export function DetailsTabContent({ vehicle, drivers, allVehicles, onEdit, onRef
         batch.update(personnelService.getDriverDocRef(oldDriverId), { assignedVehicleId: null });
     }
 
-    // 2. Unassign the new driver from any other vehicle
+    // 2. Unassign the new driver from any other vehicle they might be assigned to
     if (newDriverId) {
-        const otherVehicleAssigned = allVehicles.find(v => v.assignedDriverId === newDriverId && v.id !== vehicle.id);
-        if (otherVehicleAssigned) {
-            batch.update(inventoryService.getVehicleDocRef(otherVehicleAssigned.id), { assignedDriverId: null });
+        const otherVehicleAssignedToNewDriver = allVehicles.find(v => v.assignedDriverId === newDriverId && v.id !== vehicle.id);
+        if (otherVehicleAssignedToNewDriver) {
+            batch.update(inventoryService.getVehicleDocRef(otherVehicleAssignedToNewDriver.id), { assignedDriverId: null });
         }
+        
         // 3. Assign this vehicle to the new driver
         batch.update(personnelService.getDriverDocRef(newDriverId), { assignedVehicleId: vehicle.id });
     }
@@ -66,7 +67,7 @@ export function DetailsTabContent({ vehicle, drivers, allVehicles, onEdit, onRef
         console.error("Error al asignar conductor:", e);
         toast({ title: "Error al Asignar", description: `Ocurrió un error: ${e instanceof Error ? e.message : 'Error desconocido'}`, variant: "destructive"});
     }
-  }, [vehicle, drivers, allVehicles, onRefresh]);
+  }, [vehicle, allVehicles, onRefresh, toast]);
 
 
   const formatServiceInfo = (date?: string | Date, mileage?: number): string => {
@@ -140,7 +141,7 @@ export function DetailsTabContent({ vehicle, drivers, allVehicles, onEdit, onRef
                 <SelectTrigger><SelectValue placeholder="Seleccionar un conductor..."/>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="null">-- Ninguno --</SelectItem>
+                  <SelectItem value={"null"}>-- Ninguno --</SelectItem>
                   {availableDrivers.map(d => (
                     <SelectItem key={d.id} value={d.id}>
                       {d.name}
