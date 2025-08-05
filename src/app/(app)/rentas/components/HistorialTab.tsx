@@ -182,7 +182,7 @@ export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: H
               payment={paymentForReceipt} 
               workshopInfo={workshopInfo} 
               driver={drivers.find(d => d.id === paymentForReceipt.driverId)}
-              allPaymentsForDriver={payments.filter(p => p.driverId === paymentForReceipt.driverId)}
+              allPaymentsForDriver={allPayments.filter(p => p.driverId === paymentForReceipt.driverId)}
               vehicle={vehicles.find(v => v.licensePlate === paymentForReceipt.vehicleLicensePlate)}
             />
           )}
