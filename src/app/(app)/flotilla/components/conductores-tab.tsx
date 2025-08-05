@@ -9,7 +9,7 @@ import type { Driver, Vehicle } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatCurrency, calculateDriverDebt } from "@/lib/utils";
+import { formatCurrency, calculateDriverDebt, cn } from "@/lib/utils";
 import { DriverDialog } from '../../conductores/components/driver-dialog';
 import type { DriverFormValues } from '../../conductores/components/driver-form';
 import { personnelService } from '@/lib/services';
@@ -114,8 +114,8 @@ export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps)
                             : <UserCheck className="h-5 w-5 text-green-600" title="Activo"/>
                           }
                         </TableCell>
-                        <TableCell className="font-semibold">{driver.name}</TableCell>
-                        <TableCell>{driver.phone}</TableCell>
+                        <TableCell className={cn("font-semibold", driver.isArchived && "text-muted-foreground")}>{driver.name}</TableCell>
+                        <TableCell className={cn(driver.isArchived && "text-muted-foreground")}>{driver.phone}</TableCell>
                         <TableCell>
                             {driver.isArchived 
                                 ? <span className="text-muted-foreground italic">Archivado</span>
