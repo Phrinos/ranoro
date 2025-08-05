@@ -9,7 +9,14 @@
       "https://*-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
     ],
     "method": [
-      "GET"
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE"
+    ],
+    "header": [
+      "Content-Type",
+      "x-goog-resumable"
     ],
     "maxAgeSeconds": 3600
   }
