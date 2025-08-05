@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { parseDate } from '@/lib/forms';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { GARANTIA_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -429,7 +430,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
                         <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
-                        <p className="text-[7px] text-gray-600">Recibo de conformidad. El servicio realizado cuenta con una garantía de 90 días o 1,000 km, lo que ocurra primero.</p>
+                        <p className="text-[7px] text-gray-600">{GARANTIA_CONDICIONES_TEXT}</p>
                     </div>
                 </div>
            </section>

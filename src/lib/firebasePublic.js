@@ -1,8 +1,15 @@
-// src/lib/firebasePublic.js
-// Este archivo ahora importa la configuración centralizada de firebaseClient.js
-// para asegurar que toda la aplicación use la misma conexión.
 
+/**
+ * ----------------------------------------------------------
+ * Firebase Public Client
+ * ----------------------------------------------------------
+ * This module provides a simplified and secure way to access
+ * Firestore for public-facing parts of the application.
+ * It re-exports the `db` instance from `firebaseClient.js`
+ * to ensure a single, consistent Firebase connection.
+ * ----------------------------------------------------------
+ */
 import { db } from './firebaseClient';
 
-// Exporta solo la instancia de Firestore para acceso público.
+// Re-export the Firestore instance for public use.
 export { db };

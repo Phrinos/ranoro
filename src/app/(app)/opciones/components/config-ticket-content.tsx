@@ -1,25 +1,27 @@
 
-
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Slider } from '@/components/ui/slider';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from "@/components/ui/checkbox";
-import { Save, Upload, Loader2, Bold, Printer } from 'lucide-react';
+import { Form } from '@/components/ui/form';
+import { Save, Printer } from 'lucide-react';
 import type { SaleReceipt, WorkshopInfo } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { storage } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { optimizeImage } from '@/lib/utils';
 import { TicketContent } from "@/components/ticket-content";
+import { useDebouncedCallback } from 'use-debounce';
+
+import { HeaderLogoCard } from './config-ticket/header-logo-card';
+import { InformacionNegocioCard } from './config-ticket/informacion-negocio-card';
+import { EstiloTextoTicketCard } from './config-ticket/estilo-texto-ticket-card';
+import { MensajesPiePaginaCard } from './config-ticket/mensajes-pie-pagina-card';
+import { PieTicketEspaciadoCard } from './config-ticket/pie-ticket-espaciado-card';
 
 const LOCALSTORAGE_KEY = "workshopTicketInfo";
 
@@ -79,85 +81,65 @@ const defaultWorkshopInfo: WorkshopInfo = {
   fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914", fixedFooterTextBold: false,
 };
 
-const TextFieldWithBoldness = ({ name, label, control, isTextarea = false }: { name: keyof TicketForm; label: string; control: any; isTextarea?: boolean }) => (
-    <FormField control={control} name={name} render={({ field }) => (
-        <FormItem>
-            <FormLabel>{label}</FormLabel>
-            <div className="flex items-center gap-2">
-                <FormControl>{isTextarea ? <Textarea {...field} /> : <Input {...field} />}</FormControl>
-                <FormField control={control} name={`${name}Bold` as any} render={({ field: boldField }) => (
-                    <FormItem className="flex items-center space-x-1.5 space-y-0" title="Negrita">
-                        <FormControl><Checkbox checked={boldField.value} onCheckedChange={boldField.onChange} /></FormControl>
-                        <Bold className="h-4 w-4" />
-                    </FormItem>
-                )}/>
-            </div>
-             <FormMessage />
-        </FormItem>
-    )}/>
-);
-
 export function ConfiguracionTicketPageContent() {
   const { toast } = useToast();
-  const ticketContentRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const form = useForm<TicketForm>({ resolver: zodResolver(ticketSchema), defaultValues: defaultWorkshopInfo });
-  const watchedValues = form.watch();
+  const methods = useForm<TicketForm>({ resolver: zodResolver(ticketSchema), defaultValues: defaultWorkshopInfo });
+  const watchedValues = methods.watch();
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem(LOCALSTORAGE_KEY) : null;
-    if (stored) {
-      try {
-        form.reset(JSON.parse(stored) as TicketForm);
-      } catch {
-        form.reset(defaultWorkshopInfo);
-      }
-    }
-  }, [form]);
+    const loadSettings = () => {
+        const stored = localStorage.getItem(LOCALSTORAGE_KEY);
+        if (stored) {
+            try {
+                methods.reset(JSON.parse(stored) as TicketForm);
+            } catch {
+                methods.reset(defaultWorkshopInfo);
+            }
+        }
+    };
+    loadSettings();
 
-  const onSubmit = (data: TicketForm) => {
-    try {
-      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
-      toast({ title: "Configuración guardada", description: "Se actualizó la información del ticket", duration: 3000 });
-    } catch {
-      toast({ title: "Error al guardar", variant: "destructive", duration: 3000 });
-    }
-  };
-  
-  const handlePrint = () => {
+    const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === LOCALSTORAGE_KEY) {
+            loadSettings();
+        }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [methods]);
+
+  const debouncedSave = useDebouncedCallback((data: TicketForm) => {
+      try {
+        localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
+        toast({ title: "Configuración guardada", description: "Se actualizó la información del ticket.", duration: 2000 });
+      } catch {
+        toast({ title: "Error al guardar", variant: "destructive" });
+      }
+  }, 300);
+
+  const onSubmit = useCallback((data: TicketForm) => debouncedSave(data), [debouncedSave]);
+
+  const handlePrint = useCallback(() => {
     const content = document.querySelector('.ticket-preview-content')?.innerHTML;
     if (!content) return;
-
     const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
-      
-      const stylesheets = Array.from(document.getElementsByTagName('link'));
-      stylesheets.forEach(sheet => {
-          if (sheet.rel === 'stylesheet' && sheet.href) {
-            printWindow.document.write(`<link rel="stylesheet" href="${sheet.href}">`);
-          }
-      });
-      
-      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .ticket-preview-content { margin: 0; padding: 0; } }</style></head><body>');
-      printWindow.document.write(content);
-      printWindow.document.write('</body></html>');
-      
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
+    if (!printWindow) return;
+    printWindow.document.write(`<html><head><title>Imprimir Ticket</title><link rel="stylesheet" href="/path/to/your/tailwind.css"></head><body>${content}</body></html>`);
+    printWindow.document.close();
+    printWindow.onload = () => {
+        printWindow.focus();
         printWindow.print();
         printWindow.close();
-      }, 250);
-    }
-  };
+    };
+  }, []);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-    if (!storage) return toast({ title: "Error de Configuración", variant: "destructive" });
+    if (!file || !storage) return;
+
     setIsUploading(true);
     toast({ title: 'Subiendo imagen...', description: 'Por favor, espere.' });
     try {
@@ -165,28 +147,43 @@ export function ConfiguracionTicketPageContent() {
       const storageRef = ref(storage, `workshop-logos/logo-${Date.now()}.png`);
       await uploadString(storageRef, optimizedDataUrl, 'data_url');
       const downloadURL = await getDownloadURL(storageRef);
-      form.setValue('logoUrl', downloadURL, { shouldDirty: true });
+      methods.setValue('logoUrl', downloadURL, { shouldDirty: true, shouldValidate: true });
       toast({ title: '¡Logo actualizado!', description: 'La nueva imagen se ha cargado correctamente.' });
     } catch (error) {
+      console.error("Upload error:", error);
       toast({ title: 'Error al subir', variant: 'destructive' });
     } finally {
       setIsUploading(false);
     }
-  };
-
+  }, [methods, toast]);
+  
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-1">
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Card><CardHeader><CardTitle>Encabezado y Logo</CardTitle></CardHeader><CardContent className="space-y-4"><FormField control={form.control} name="blankLinesTop" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Arriba)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0} /></FormControl></FormItem>)}/><FormItem><FormLabel>Subir Logo</FormLabel><Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>{isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}{isUploading ? "Subiendo..." : "Seleccionar Imagen"}</Button><input type="file" ref={fileInputRef} className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} /><FormDescription>El logo actual se mostrará en la vista previa.</FormDescription></FormItem><FormField control={form.control} name="logoWidth" render={({ field }) => (<FormItem><FormLabel>Ancho del Logo: {field.value || defaultWorkshopInfo.logoWidth}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.logoWidth || 120]} onValueChange={(value) => field.onChange(value[0])} min={40} max={250} step={5} /></FormControl></FormItem>)}/></CardContent></Card>
-                    <Card><CardHeader><CardTitle>Información del Negocio</CardTitle></CardHeader><CardContent className="space-y-4"><TextFieldWithBoldness name="name" label="Nombre del Taller" control={form.control} /><TextFieldWithBoldness name="phone" label="Teléfono" control={form.control} /><TextFieldWithBoldness name="addressLine1" label="Dirección (Línea 1)" control={form.control} /><TextFieldWithBoldness name="addressLine2" label="Dirección (Línea 2)" control={form.control} /><TextFieldWithBoldness name="cityState" label="Ciudad, Estado, C.P." control={form.control} /><FormField control={form.control} name="headerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Encabezado): {field.value || defaultWorkshopInfo.headerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.headerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/></CardContent></Card>
-                    <Card><CardHeader><CardTitle>Estilo del Texto del Ticket</CardTitle></CardHeader><CardContent className="space-y-4"><FormField control={form.control} name="bodyFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Cuerpo): {field.value || defaultWorkshopInfo.bodyFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.bodyFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/><FormField control={form.control} name="itemsFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Artículos): {field.value || defaultWorkshopInfo.itemsFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.itemsFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/><FormField control={form.control} name="totalsFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Totales): {field.value || defaultWorkshopInfo.totalsFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.totalsFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/></CardContent></Card>
-                    <Card><CardHeader><CardTitle>Mensajes de Pie de Página</CardTitle></CardHeader><CardContent className="space-y-4"><TextFieldWithBoldness name="footerLine1" label="Línea de Agradecimiento" control={form.control} /><TextFieldWithBoldness name="footerLine2" label="Línea de Contacto" control={form.control} /><FormField control={form.control} name="footerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Pie): {field.value || defaultWorkshopInfo.footerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.footerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/></CardContent></Card>
-                    <Card><CardHeader><CardTitle>Pie de Ticket y Espaciado Final</CardTitle></CardHeader><CardContent className="space-y-4"><TextFieldWithBoldness name="fixedFooterText" label="Texto Final" control={form.control} isTextarea /><FormField control={form.control} name="blankLinesBottom" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Abajo)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0}/></FormControl></FormItem>)}/></CardContent></Card>
-                    <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}><Save className="mr-2 h-4 w-4" />{form.formState.isSubmitting ? "Guardando…" : "Guardar Cambios"}</Button>
+          <FormProvider {...methods}>
+            <Form {...methods}>
+                <form onSubmit={methods.handleSubmit(onSubmit)} onChange={() => methods.handleSubmit(onSubmit)()} className="space-y-6">
+                    <HeaderLogoCard
+                      fileInputRef={fileInputRef}
+                      isUploading={isUploading}
+                      handleImageUpload={handleImageUpload}
+                      defaultLogoWidth={defaultWorkshopInfo.logoWidth!}
+                    />
+                    <InformacionNegocioCard defaultHeaderFontSize={defaultWorkshopInfo.headerFontSize!} />
+                    <EstiloTextoTicketCard
+                      defaultBodyFontSize={defaultWorkshopInfo.bodyFontSize!}
+                      defaultItemsFontSize={defaultWorkshopInfo.itemsFontSize!}
+                      defaultTotalsFontSize={defaultWorkshopInfo.totalsFontSize!}
+                    />
+                    <MensajesPiePaginaCard defaultFooterFontSize={defaultWorkshopInfo.footerFontSize!} />
+                    <PieTicketEspaciadoCard />
+                    <Button type="submit" className="w-full" disabled={methods.formState.isSubmitting}>
+                      <Save className="mr-2 h-4 w-4" />
+                      {methods.formState.isSubmitting ? "Guardando…" : "Guardar Cambios"}
+                    </Button>
                 </form>
             </Form>
+          </FormProvider>
         </div>
         <div className="lg:col-span-2">
             <Card className="shadow-lg sticky top-24">
@@ -195,11 +192,14 @@ export function ConfiguracionTicketPageContent() {
                         <CardTitle>Vista Previa del Ticket</CardTitle>
                         <CardDescription>Así se verá tu ticket impreso.</CardDescription>
                     </div>
-                    <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+                    <Button onClick={handlePrint} variant="outline" aria-label="Imprimir ticket de vista previa">
+                      <Printer className="mr-2 h-4 w-4"/>
+                      Imprimir
+                    </Button>
                 </CardHeader>
                 <CardContent className="bg-gray-200 dark:bg-gray-800 p-4 sm:p-8 flex justify-center overflow-auto">
                     <div className="ticket-preview-content">
-                        <TicketContent ref={ticketContentRef} sale={sampleSale} previewWorkshopInfo={watchedValues as WorkshopInfo} />
+                        <TicketContent sale={sampleSale} previewWorkshopInfo={watchedValues as WorkshopInfo} />
                     </div>
                 </CardContent>
             </Card>
