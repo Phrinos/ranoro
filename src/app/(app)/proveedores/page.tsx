@@ -6,7 +6,7 @@ import { Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
 
 const ProveedoresPageComponent = lazy(() => 
-  import('./components/page-component').then(module => ({ default: module.ProveedoresPageComponent }))
+  import('./components/page-component').then(module => ({ default: module.default }))
 );
 
 export default function ProveedoresPageWrapper() {
