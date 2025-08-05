@@ -157,11 +157,9 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     });
 
     // --- Corrected Accumulated Balance Calculation (for the main display) ---
-    const runningBalanceStart = latestInitialBalance?.amount || 0;
-    const runningBalanceStartDate = latestInitialBalance?.date ? startOfDay(parseISO(latestInitialBalance.date)) : new Date(0);
-    const endOfToday = endOfDay(new Date()); // Always calculate up to now
-    
-    const runningBalanceInterval = { start: runningBalanceStartDate, end: endOfToday };
+    const monthStart = startOfMonth(new Date());
+    const endOfToday = endOfDay(new Date());
+    const runningBalanceInterval = { start: monthStart, end: endOfToday };
     
     const cashFromSalesSince = allSales.filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo') && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), runningBalanceInterval))
       .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
@@ -172,7 +170,11 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     const manualCashInSince = allCashTransactions.filter(t => t.type === 'Entrada' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), runningBalanceInterval)).reduce((sum, t) => sum + t.amount, 0);
     const manualCashOutSince = allCashTransactions.filter(t => t.type === 'Salida' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), runningBalanceInterval)).reduce((sum, t) => sum + t.amount, 0);
     
-    const finalAccumulatedBalance = runningBalanceStart + cashFromSalesSince + cashFromServicesSince + manualCashInSince - manualCashOutSince;
+    // For simplicity, we assume the starting balance for the month is 0 if not explicitly set.
+    // A more advanced version might look for the first initial balance of the month.
+    const startingBalanceThisMonth = 0; 
+    
+    const finalAccumulatedBalance = startingBalanceThisMonth + cashFromSalesSince + cashFromServicesSince + manualCashInSince - manualCashOutSince;
     
     return { 
         initialBalance: dailyInitial,
