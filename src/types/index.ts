@@ -1,5 +1,3 @@
-
-
 // src/types/index.ts
 import { type VariantProps } from "class-variance-authority"
 import { sidebarMenuButtonVariants } from './sidebar.types';
@@ -431,6 +429,7 @@ export interface MonthlyFixedExpense {
   amount: number;
   notes?: string;
   category?: 'Renta' | 'Servicios' | 'Otros';
+  createdAt?: string; // ISO String
 }
 
 export interface CashDrawerTransaction {
@@ -547,7 +546,7 @@ export interface CapacityAnalysisOutput {
 export interface InventoryMovement {
   id: string;
   date: string; // ISO String
-  type: 'Venta' | 'Servicio';
+  type: 'Venta' | 'Servicio' | 'Compra';
   relatedId: string;
   itemName: string;
   quantity: number;

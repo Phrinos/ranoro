@@ -21,7 +21,6 @@ import {
 import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { DateRange } from 'react-day-picker';
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
@@ -143,8 +142,14 @@ export function FinanzasPageComponent({
             return totals;
           }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
 
+        // Filter fixed expenses based on their creation date relative to the *end* of the current period.
+        const totalFixedExpensesValue = fixedExpenses
+            .filter(expense => {
+                const createdAt = parseDate(expense.createdAt);
+                return createdAt && isValid(createdAt) && !isAfter(createdAt, to);
+            })
+            .reduce((sum, expense) => sum + expense.amount, 0);
 
-        const totalFixedExpensesValue = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         const totalBaseExpenses = totalTechnicianSalaries + totalAdministrativeSalaries + totalFixedExpensesValue;
         
         const netProfitBeforeCommissions = totalOperationalProfit - totalBaseExpenses;

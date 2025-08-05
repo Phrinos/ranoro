@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/fixed-expenses-dialog.tsx
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -77,7 +76,7 @@ export function FixedExpensesDialog({
 
   const handleSaveExpense = async (values: FixedExpenseFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive' });
-    const dataToSave = { 
+    const dataToSave: Partial<MonthlyFixedExpense> = { 
         name: values.name, 
         amount: Number(values.amount), 
         notes: values.notes || '',
@@ -88,6 +87,8 @@ export function FixedExpensesDialog({
         await updateDoc(doc(db, 'fixedMonthlyExpenses', editingExpense.id), dataToSave);
         toast({ title: 'Gasto Actualizado' });
       } else {
+        // Add creation date for new expenses
+        dataToSave.createdAt = new Date().toISOString();
         await addDoc(collection(db, 'fixedMonthlyExpenses'), dataToSave);
         toast({ title: 'Gasto Agregado' });
       }
