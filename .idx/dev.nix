@@ -8,6 +8,7 @@
     pkgs.nodejs_20
     pkgs.zulu
     pkgs.ripgrep
+    pkgs.git-lfs
   ];
   # Sets environment variables in the workspace
   env = {};

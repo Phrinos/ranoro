@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from "react";
@@ -26,7 +27,7 @@ export const VehiclesTable = React.memo(({ vehicles }: VehiclesTableProps) => {
   const handleRowClick = (vehicleId: string) => {
     router.push(`/vehiculos/${vehicleId}`);
   };
-
+  
   if (!vehicles.length) {
     return (
         <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">

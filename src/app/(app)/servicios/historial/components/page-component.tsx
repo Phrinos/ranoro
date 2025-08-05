@@ -278,7 +278,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     });
   }, [toast, vehicles, workshopInfo]);
   
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     const imageFile = await handleCopyAsImage(true);
     if (imageFile && navigator.share) {
       try {
@@ -289,17 +289,15 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         });
       } catch (error) {
         console.error('Error sharing:', error);
-        // Fallback to text copy if sharing fails for non-abort reasons
         if (!String(error).includes('AbortError')) {
            toast({ title: 'No se pudo compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
            handleCopyServiceForWhatsapp(recordForTicket!);
         }
       }
     } else {
-        // Fallback if sharing is not supported or image creation failed
         handleCopyServiceForWhatsapp(recordForTicket!);
     }
-  };
+  }, [handleCopyAsImage, handleCopyServiceForWhatsapp, recordForTicket, workshopInfo, toast]);
 
   const handlePrint = () => {
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
@@ -310,7 +308,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
-  const renderServiceCard = (record: ServiceRecord) => (
+  const renderServiceCard = useCallback((record: ServiceRecord) => (
     <ServiceAppointmentCard 
       key={record.id}
       service={record}
@@ -330,7 +328,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         }
       }}
     />
-  );
+  ), [vehicles, personnel, handleOpenFormDialog, handleShowPreview, handleOpenPaymentDialog, handlePrintTicket, handleConfirmAppointment, handleDeleteService, handleCancelRecord, currentUser?.role]);
 
   return (
     <>
