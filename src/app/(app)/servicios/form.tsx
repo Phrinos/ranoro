@@ -1,3 +1,4 @@
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -49,8 +50,8 @@ import type {
   QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, SafetyCheckValue, InventoryCategory, Supplier, PaymentMethod, Personnel
 } from '@/types'
 
-import { VehicleDialog } from '../vehiculos/components/vehicle-dialog'
-import type { VehicleFormValues } from '../vehiculos/components/vehicle-form'
+import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
 import { ServiceDetailsCard } from './components/ServiceDetailsCard'
 import { VehicleSelectionCard } from './components/VehicleSelectionCard'
 import { ReceptionAndDelivery } from './components/ReceptionAndDelivery'
@@ -334,12 +335,11 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
     setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url], { shouldDirty: true });
   }, [getValues, setValue]);
-
-  const handleChecklistPhotoUploaded = useCallback((itemName: string, url: string) => {
-      const fieldName = itemName as `safetyInspection.${keyof SafetyInspection}`;
-      const currentCheckValue = getValues(fieldName) as SafetyCheckValue || { status: 'na', photos: [] };
+  
+  const handleChecklistPhotoUploaded = useCallback((fieldName: `safetyInspection.${string}`, url: string) => {
+      const currentCheckValue = getValues(fieldName as any) as SafetyCheckValue || { status: 'na', photos: [] };
       const updatedPhotos = [...(currentCheckValue.photos || []), url];
-      setValue(fieldName, { ...currentCheckValue, photos: updatedPhotos });
+      setValue(fieldName as any, { ...currentCheckValue, photos: updatedPhotos }, { shouldDirty: true });
   }, [getValues, setValue]);
 
   const handleViewImage = (url: string) => {

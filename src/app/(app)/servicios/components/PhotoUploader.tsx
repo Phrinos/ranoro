@@ -104,7 +104,6 @@ export function PhotoUploader({
         onChange={handlePhotoUpload}
         capture="environment"
         className="hidden"
-        multiple
       />
     </>
   );

@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/SafetyChecklist.tsx
 "use client";
 
@@ -65,23 +66,24 @@ const inspectionGroups = [
 ];
 
 const ChecklistItemPhotoUploader = ({ 
-    itemName, 
+    fieldName,
     serviceId, 
     onUpload, 
     photos, 
     isReadOnly, 
     onViewImage 
 }: { 
-    itemName: string, 
+    fieldName: `safetyInspection.${string}`,
     serviceId: string, 
-    onUpload: (itemName: string, url: string) => void, 
+    onUpload: (fieldName: `safetyInspection.${string}`, url: string) => void, 
     photos: string[], 
     isReadOnly?: boolean,
     onViewImage: (url: string) => void 
 }) => {
 
     const handleUploadComplete = (reportIndex: number, url: string) => {
-        onUpload(itemName, url);
+        // Here reportIndex is not really used, as we have the specific field name
+        onUpload(fieldName, url);
     };
 
     return (
@@ -103,7 +105,7 @@ const ChecklistItemPhotoUploader = ({
             </div>
             {!isReadOnly && photos.length < 2 && (
                  <PhotoUploader
-                    reportIndex={0} 
+                    reportIndex={0} // Not used here, but required by prop
                     serviceId={serviceId}
                     onUploadComplete={handleUploadComplete}
                     photosLength={photos.length}
@@ -130,7 +132,7 @@ const SafetyCheckRow = ({
   label: string;
   isReadOnly?: boolean;
   serviceId: string;
-  onPhotoUploaded: (itemName: string, url: string) => void;
+  onPhotoUploaded: (itemName: `safetyInspection.${string}`, url: string) => void;
   onViewImage: (url: string) => void;
   isEnhancingText: string | null;
   handleEnhanceText: (fieldName: any) => void;
@@ -198,7 +200,7 @@ const SafetyCheckRow = ({
                 )}
               />
               <ChecklistItemPhotoUploader
-                itemName={name}
+                fieldName={name as `safetyInspection.${string}`}
                 serviceId={serviceId}
                 photos={field.value?.photos || []}
                 onUpload={onPhotoUploaded}
@@ -221,7 +223,7 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
   isEnhancingText: string | null;
   handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description` | `safetyInspection.${string}.notes`) => void;
   serviceId: string;
-  onPhotoUploaded: (itemName: string, url: string) => void;
+  onPhotoUploaded: (fieldName: `safetyInspection.${string}`, url: string) => void;
   onViewImage: (url: string) => void;
 }) => {
   const { control, getValues } = useFormContext();
