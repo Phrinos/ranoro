@@ -148,23 +148,23 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     const startOfSelectedDate = startOfDay(date);
     const endOfSelectedDate = endOfDay(date);
 
-    // Use a fixed start date for all calculations, as per user request
-    const calculationStartDate = new Date('2024-08-01T06:00:00.000Z');
-
-    const transactionsInRange = allCashTransactions.filter(t => {
+    // --- Daily Summary Calculation (for the selected day only) ---
+    const transactionsInSelectedDay = allCashTransactions.filter(t => {
         const transactionDate = parseDate(t.date);
         return transactionDate && isValid(transactionDate) && isWithinInterval(transactionDate, { start: startOfSelectedDate, end: endOfSelectedDate });
     });
     
-    // Daily Summary Calculation (based only on transactions for the selected day)
     const dailyBalanceDoc = dailyInitialBalance && isSameDay(parseDate(dailyInitialBalance.date)!, startOfSelectedDate) ? dailyInitialBalance : null;
     const dailyInitial = dailyBalanceDoc?.amount || 0;
     
-    const dailyCashIn = transactionsInRange.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
-    const dailyCashOut = transactionsInRange.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
+    const dailyCashIn = transactionsInSelectedDay.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
+    const dailyCashOut = transactionsInSelectedDay.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
 
-    // Accumulated Balance Calculation (from Aug 1st to end of selected day)
-    const accumulatedInterval = { start: calculationStartDate, end: endOfSelectedDate };
+    // --- Accumulated Balance Calculation (for the current month) ---
+    const monthStart = startOfMonth(date);
+    const monthEnd = endOfDay(date); // Calculate up to the end of the selected day
+    
+    const accumulatedInterval = { start: monthStart, end: monthEnd };
 
     const accumulatedTransactions = allCashTransactions.filter(t => {
       const transactionDate = parseDate(t.date);
@@ -174,9 +174,10 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     const accumulatedCashIn = accumulatedTransactions.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
     const accumulatedCashOut = accumulatedTransactions.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
     
+    // The accumulated balance starts from 0 at the beginning of the month.
     const finalAccumulatedBalance = accumulatedCashIn - accumulatedCashOut;
 
-    // For the "Corte", we need all operations, not just cash.
+    // --- Data for "Corte" ---
     const salesInDay = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: startOfSelectedDate, end: endOfSelectedDate }));
     const servicesInDay = allServices.filter(s => s.status === 'Entregado' && (s.deliveryDateTime || s.serviceDate) && isValid(parseDate(s.deliveryDateTime || s.serviceDate)!) && isWithinInterval(parseDate(s.deliveryDateTime || s.serviceDate)!, { start: startOfSelectedDate, end: endOfSelectedDate }));
     const salesByPaymentMethodInDay: Record<string, number> = {};
@@ -208,10 +209,30 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
   const transactionsForCorte = useMemo(() => {
     const start = startOfDay(date);
     const end = endOfDay(date);
-    return allCashTransactions
-      .filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }))
+    const salesInDay = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start, end }));
+    const servicesInDay = allServices.filter(s => s.status === 'Entregado' && (s.deliveryDateTime || s.serviceDate) && isValid(parseDate(s.deliveryDateTime || s.serviceDate)!) && isWithinInterval(parseDate(s.deliveryDateTime || s.serviceDate)!, { start, end }));
+    
+    const cashFromSales = salesInDay.filter(s => s.paymentMethod?.includes('Efectivo')).map(s => ({
+      id: `sale-${s.id}`,
+      date: s.saleDate,
+      type: 'Entrada' as const,
+      amount: s.amountInCash || s.totalAmount,
+      concept: `Venta POS #${s.id.slice(0, 6)}`,
+      userName: s.customerName || 'Sistema',
+    }));
+    
+    const cashFromServices = servicesInDay.filter(s => s.paymentMethod?.includes('Efectivo')).map(s => ({
+      id: `service-${s.id}`,
+      date: s.deliveryDateTime || s.serviceDate,
+      type: 'Entrada' as const,
+      amount: s.amountInCash || (s.totalCost || 0),
+      concept: `Servicio #${s.id.slice(0, 6)}`,
+      userName: s.customerName || 'Sistema',
+    }));
+    
+    return [...allCashTransactions.filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end })), ...cashFromSales, ...cashFromServices]
       .sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
-  }, [date, allCashTransactions]);
+  }, [date, allCashTransactions, allSales, allServices]);
 
   const handleSetInitialBalance = useCallback(async () => {
     if (initialBalanceAmount === '' || Number(initialBalanceAmount) < 0) return;
@@ -286,7 +307,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-4 rounded-lg bg-muted border text-center">
-              <p className="text-sm font-medium text-muted-foreground">SALDO FINAL ESPERADO</p>
+              <p className="text-sm font-medium text-muted-foreground">SALDO FINAL ESPERADO (MES)</p>
               <p className="text-4xl font-bold text-primary">{formatCurrency(cajaSummaryData.finalCashBalance)}</p>
             </div>
             <div className="space-y-2 text-sm">
