@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ShieldCheck, Car, AlertTriangle, User } from "lucide-react";
+import { PlusCircle, ShieldCheck, Car, AlertTriangle } from "lucide-react";
 import type { Vehicle, Driver } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,8 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import { inventoryService, personnelService } from '@/lib/services';
 import { AddVehicleToFleetDialog } from './add-vehicle-to-fleet-dialog';
 import { FineCheckDialog } from './fine-check-dialog';
+import { format, parseISO, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface VehiculosFlotillaTabProps {
   allVehicles: Vehicle[];
@@ -104,33 +106,28 @@ export function VehiculosFlotillaTab({ allVehicles, allDrivers }: VehiculosFloti
                 <TableRow>
                   <TableHead className="text-white">Placa</TableHead>
                   <TableHead className="text-white">Vehículo</TableHead>
-                  <TableHead className="text-white">Conductor Asignado</TableHead>
+                  <TableHead className="text-white">KM Actual</TableHead>
+                  <TableHead className="text-white">Último Servicio</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredData.length > 0 ? (
                   filteredData.map(vehicle => {
-                    const driver = allDrivers.find(d => d.id === vehicle.assignedDriverId);
                     return (
                       <TableRow key={vehicle.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/flotilla/${vehicle.id}`)}>
                         <TableCell className="font-semibold">{vehicle.licensePlate}</TableCell>
                         <TableCell>{vehicle.make} {vehicle.model}</TableCell>
+                        <TableCell>{vehicle.currentMileage ? `${vehicle.currentMileage.toLocaleString('es-ES')} km` : 'N/A'}</TableCell>
                         <TableCell>
-                          {driver ? (
-                            <span className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-green-600"/> {driver.name}
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-2 text-muted-foreground">
-                                <AlertTriangle className="h-4 w-4 text-orange-500"/> Sin asignar
-                            </span>
-                          )}
+                          {vehicle.lastServiceDate && isValid(parseISO(vehicle.lastServiceDate))
+                            ? format(parseISO(vehicle.lastServiceDate), "dd MMM yyyy", { locale: es }) 
+                            : 'N/A'}
                         </TableCell>
                       </TableRow>
                     );
                   })
                 ) : (
-                  <TableRow><TableCell colSpan={3} className="h-24 text-center">No hay vehículos en la flotilla.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay vehículos en la flotilla.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
