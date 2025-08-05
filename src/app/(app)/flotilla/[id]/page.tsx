@@ -152,7 +152,6 @@ export default function FleetVehicleDetailPage() {
           <DetailsTabContent 
             vehicle={vehicle} 
             drivers={drivers}
-            allVehicles={allVehicles}
             onEdit={() => setIsVehicleEditDialogOpen(true)} 
             onRefresh={fetchVehicleAndDrivers}
           />
