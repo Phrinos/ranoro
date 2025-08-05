@@ -156,17 +156,18 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       salesByPaymentMethodInDay[method] = (salesByPaymentMethodInDay[method] || 0) + amount;
     });
 
-    // --- Accumulated Balance Calculation (for the main display) ---
+    // --- Corrected Accumulated Balance Calculation (for the main display) ---
     const runningBalanceStart = latestInitialBalance?.amount || 0;
-    const runningBalanceStartDate = latestInitialBalance?.date ? parseISO(latestInitialBalance.date) : new Date(0);
+    const runningBalanceStartDate = latestInitialBalance?.date ? startOfDay(parseISO(latestInitialBalance.date)) : new Date(0);
+    const endOfToday = endOfDay(new Date()); // Always calculate up to now
     
-    const runningBalanceInterval = { start: startOfDay(runningBalanceStartDate), end: endOfSelectedDate };
+    const runningBalanceInterval = { start: runningBalanceStartDate, end: endOfToday };
     
-    const salesSinceLastBalance = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), runningBalanceInterval));
-    const servicesSinceLastBalance = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), runningBalanceInterval));
-    
-    const cashFromSalesSince = salesSinceLastBalance.filter(s => s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
-    const cashFromServicesSince = servicesSinceLastBalance.filter(s => s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
+    const cashFromSalesSince = allSales.filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo') && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), runningBalanceInterval))
+      .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
+      
+    const cashFromServicesSince = allServices.filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo') && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), runningBalanceInterval))
+      .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
 
     const manualCashInSince = allCashTransactions.filter(t => t.type === 'Entrada' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), runningBalanceInterval)).reduce((sum, t) => sum + t.amount, 0);
     const manualCashOutSince = allCashTransactions.filter(t => t.type === 'Salida' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), runningBalanceInterval)).reduce((sum, t) => sum + t.amount, 0);
