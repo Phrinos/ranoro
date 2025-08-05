@@ -147,8 +147,8 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
   const cajaSummaryData = useMemo(() => {
     const startOfSelectedDate = startOfDay(date);
     const endOfSelectedDate = endOfDay(date);
-
-    // --- Daily Summary Calculation ---
+    
+    // Daily Summary Calculation
     const dailyBalanceDoc = dailyInitialBalance && isSameDay(parseDate(dailyInitialBalance.date)!, startOfSelectedDate) ? dailyInitialBalance : null;
     const dailyInitial = dailyBalanceDoc?.amount || 0;
     
@@ -169,22 +169,17 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       salesByPaymentMethodInDay[method] = (salesByPaymentMethodInDay[method] || 0) + amount;
     });
 
-    // --- Accumulated Balance Calculation ---
-    const monthStart = new Date('2024-08-01T00:00:00'); // Start from Aug 1st
-    const endOfToday = endOfDay(new Date());
-    const runningBalanceInterval = { start: monthStart, end: endOfToday };
-    
-    const cashFromSalesSince = allSales.filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo') && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), runningBalanceInterval))
-      .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
-      
-    const cashFromServicesSince = allServices.filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo') && (s.deliveryDateTime || s.serviceDate) && isValid(parseDate(s.deliveryDateTime || s.serviceDate)!) && isWithinInterval(parseDate(s.deliveryDateTime || s.serviceDate)!, runningBalanceInterval))
-      .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
+    // Accumulated Balance Calculation (From latest initial balance to end of selected day)
+    const runningBalanceStart = latestInitialBalance ? parseDate(latestInitialBalance.date) : startOfMonth(new Date());
+    const runningBalanceInterval = { start: runningBalanceStart!, end: endOfSelectedDate };
 
+    const startingBalance = latestInitialBalance?.amount || 0;
+
+    const cashFromSalesSince = allSales.filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo') && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), runningBalanceInterval)).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
+    const cashFromServicesSince = allServices.filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo') && isValid(parseDate(s.deliveryDateTime || s.serviceDate)!) && isWithinInterval(parseDate(s.deliveryDateTime || s.serviceDate)!, runningBalanceInterval)).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
     const manualCashInSince = allCashTransactions.filter(t => t.type === 'Entrada' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), runningBalanceInterval)).reduce((sum, t) => sum + t.amount, 0);
     const manualCashOutSince = allCashTransactions.filter(t => t.type === 'Salida' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), runningBalanceInterval)).reduce((sum, t) => sum + t.amount, 0);
-    
-    const startingBalance = 0; // Starting from zero on Aug 1st
-    
+
     const finalAccumulatedBalance = startingBalance + cashFromSalesSince + cashFromServicesSince + manualCashInSince - manualCashOutSince;
     
     return { 
@@ -197,7 +192,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
         totalServices: servicesInDay.length,
         finalCashBalance: finalAccumulatedBalance,
     };
-  }, [date, allSales, allServices, allCashTransactions, dailyInitialBalance]);
+  }, [date, allSales, allServices, allCashTransactions, dailyInitialBalance, latestInitialBalance]);
   
   const manualCashMovements = useMemo(() => {
     const start = startOfDay(date);
@@ -206,6 +201,43 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
         .filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }) && !t.relatedType)
         .sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
   }, [date, allCashTransactions]);
+
+  const transactionsForCorte = useMemo(() => {
+    const start = startOfDay(date);
+    const end = endOfDay(date);
+
+    const manualTransactions = allCashTransactions.filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }));
+
+    const cashFromSales: CashDrawerTransaction[] = allSales
+      .filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo') && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start, end }))
+      .map(s => ({
+        id: `sale-${s.id}`,
+        date: s.saleDate,
+        type: 'Entrada',
+        amount: s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0,
+        concept: `Venta POS #${s.id.slice(0, 6)}`,
+        userId: 'system',
+        userName: s.customerName || 'Sistema',
+        relatedType: 'Venta',
+        relatedId: s.id,
+      }));
+
+    const cashFromServices: CashDrawerTransaction[] = allServices
+      .filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo') && isValid(parseDate(s.deliveryDateTime || s.serviceDate)!) && isWithinInterval(parseDate(s.deliveryDateTime || s.serviceDate)!, { start, end }))
+      .map(s => ({
+        id: `service-${s.id}`,
+        date: s.deliveryDateTime || s.serviceDate,
+        type: 'Entrada',
+        amount: s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0,
+        concept: `Servicio #${s.id.slice(0, 6)}`,
+        userId: 'system',
+        userName: s.serviceAdvisorName || 'Sistema',
+        relatedType: 'Servicio',
+        relatedId: s.id,
+      }));
+    
+    return [...manualTransactions, ...cashFromSales, ...cashFromServices].sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+  }, [date, allCashTransactions, allSales, allServices]);
 
   const handleSetInitialBalance = useCallback(async () => {
     if (initialBalanceAmount === '' || Number(initialBalanceAmount) < 0) return;
@@ -336,9 +368,16 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       </Dialog>
       
       <PrintTicketDialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen} title="Corte de Caja">
-         <CorteDiaContent reportData={cajaSummaryData} date={date} transactions={allCashTransactions.filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start: startOfDay(date), end: endOfDay(date) }))} />
+         <CorteDiaContent
+            reportData={cajaSummaryData}
+            date={date}
+            transactions={transactionsForCorte}
+          />
       </PrintTicketDialog>
     </>
   );
 }
 
+
+
+    

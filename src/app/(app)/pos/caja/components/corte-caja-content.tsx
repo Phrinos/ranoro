@@ -5,9 +5,10 @@
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
-import type { WorkshopInfo, CashDrawerTransaction } from '@/types';
+import type { WorkshopInfo, CashDrawerTransaction, SaleReceipt, ServiceRecord } from '@/types';
 import { cn, formatCurrency } from '@/lib/utils';
 import Image from 'next/image';
+import { parseDate } from '@/lib/forms';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -126,7 +127,7 @@ export const CorteDiaContent = React.forwardRef<HTMLDivElement, CorteCajaContent
         </div>
       ))}
        {renderDashedLine()}
-      <div className="font-semibold my-1">TRANSACCIONES MANUALES</div>
+      <div className="font-semibold my-1">TRANSACCIONES DEL DÍA</div>
       {transactions.length > 0 ? (
         transactions.map(t => (
             <div key={t.id} className="text-xs py-0.5">
@@ -137,7 +138,7 @@ export const CorteDiaContent = React.forwardRef<HTMLDivElement, CorteCajaContent
                 <div className="text-right text-neutral-500">{t.userName}</div>
             </div>
         ))
-      ) : <p className="text-xs text-center text-neutral-500">Sin movimientos manuales</p>}
+      ) : <p className="text-xs text-center text-neutral-500">Sin movimientos para mostrar</p>}
       
       {renderDashedLine()}
       <p className="text-center text-xs mt-2">Fin del Reporte</p>
@@ -145,3 +146,5 @@ export const CorteDiaContent = React.forwardRef<HTMLDivElement, CorteCajaContent
   );
 });
 CorteDiaContent.displayName = "CorteDiaContent";
+
+    
