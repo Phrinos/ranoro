@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { CorteDiaContent } from '../../caja/components/corte-caja-content';
@@ -174,7 +174,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     const accumulatedCashIn = accumulatedTransactions.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
     const accumulatedCashOut = accumulatedTransactions.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
     
-    // The accumulated balance starts from 0 at the beginning of the month.
     const finalAccumulatedBalance = accumulatedCashIn - accumulatedCashOut;
 
     // --- Data for "Corte" ---
