@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -81,7 +82,7 @@ function CashTransactionForm({ type, onSubmit }: { type: 'Entrada' | 'Salida', o
   )
 }
 
-function TransactionsList({ transactions, onDelete }: { transactions: CashDrawerTransaction[], onDelete: (id: string) => void }) {
+function TransactionsList({ transactions, onDelete, currentUser }: { transactions: CashDrawerTransaction[], onDelete: (id: string) => void, currentUser: User | null }) {
     if (!transactions.length) {
         return <div className="text-center text-muted-foreground p-4">No hay transacciones manuales hoy.</div>;
     }
@@ -99,7 +100,7 @@ function TransactionsList({ transactions, onDelete }: { transactions: CashDrawer
                             <p className="text-xs text-muted-foreground">{t.userName}</p>
                         </TableCell>
                         <TableCell className="text-right">
-                          {!t.relatedType && (
+                          {!t.relatedType && currentUser?.role === 'Superadministrador' && (
                             <ConfirmDialog
                               triggerButton={<Button variant="ghost" size="icon" title="Eliminar Transacción"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
                               title="¿Eliminar Transacción?"
@@ -130,17 +131,29 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
   const [isInitialBalanceDialogOpen, setIsInitialBalanceDialogOpen] = useState(false);
   const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
   const [isCorteDialogOpen, setIsCorteDialogOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    if (authUserString) {
+      try {
+        setCurrentUser(JSON.parse(authUserString));
+      } catch (e) {
+        console.error("Failed to parse user from localStorage:", e);
+      }
+    }
+  }, []);
   
   const cajaSummaryData = useMemo(() => {
     const startOfSelectedDate = startOfDay(date);
     const endOfSelectedDate = endOfDay(date);
 
-    // --- Daily Summary Calculation (for the report and daily view) ---
+    // --- Daily Summary Calculation ---
     const dailyBalanceDoc = dailyInitialBalance && isSameDay(parseDate(dailyInitialBalance.date)!, startOfSelectedDate) ? dailyInitialBalance : null;
     const dailyInitial = dailyBalanceDoc?.amount || 0;
     
     const salesInDay = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: startOfSelectedDate, end: endOfSelectedDate }));
-    const servicesInDay = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start: startOfSelectedDate, end: endOfSelectedDate }));
+    const servicesInDay = allServices.filter(s => s.status === 'Entregado' && (s.deliveryDateTime || s.serviceDate) && isValid(parseDate(s.deliveryDateTime || s.serviceDate)!) && isWithinInterval(parseDate(s.deliveryDateTime || s.serviceDate)!, { start: startOfSelectedDate, end: endOfSelectedDate }));
     
     const cashFromSalesInDay = salesInDay.filter(s => s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
     const cashFromServicesInDay = servicesInDay.filter(s => s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
@@ -156,25 +169,23 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       salesByPaymentMethodInDay[method] = (salesByPaymentMethodInDay[method] || 0) + amount;
     });
 
-    // --- Corrected Accumulated Balance Calculation (for the main display) ---
-    const monthStart = startOfMonth(new Date());
+    // --- Accumulated Balance Calculation ---
+    const monthStart = new Date('2024-08-01T00:00:00'); // Start from Aug 1st
     const endOfToday = endOfDay(new Date());
     const runningBalanceInterval = { start: monthStart, end: endOfToday };
     
     const cashFromSalesSince = allSales.filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo') && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), runningBalanceInterval))
       .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
       
-    const cashFromServicesSince = allServices.filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo') && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), runningBalanceInterval))
+    const cashFromServicesSince = allServices.filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo') && (s.deliveryDateTime || s.serviceDate) && isValid(parseDate(s.deliveryDateTime || s.serviceDate)!) && isWithinInterval(parseDate(s.deliveryDateTime || s.serviceDate)!, runningBalanceInterval))
       .reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
 
     const manualCashInSince = allCashTransactions.filter(t => t.type === 'Entrada' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), runningBalanceInterval)).reduce((sum, t) => sum + t.amount, 0);
     const manualCashOutSince = allCashTransactions.filter(t => t.type === 'Salida' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), runningBalanceInterval)).reduce((sum, t) => sum + t.amount, 0);
     
-    // For simplicity, we assume the starting balance for the month is 0 if not explicitly set.
-    // A more advanced version might look for the first initial balance of the month.
-    const startingBalanceThisMonth = 0; 
+    const startingBalance = 0; // Starting from zero on Aug 1st
     
-    const finalAccumulatedBalance = startingBalanceThisMonth + cashFromSalesSince + cashFromServicesSince + manualCashInSince - manualCashOutSince;
+    const finalAccumulatedBalance = startingBalance + cashFromSalesSince + cashFromServicesSince + manualCashInSince - manualCashOutSince;
     
     return { 
         initialBalance: dailyInitial,
@@ -186,7 +197,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
         totalServices: servicesInDay.length,
         finalCashBalance: finalAccumulatedBalance,
     };
-  }, [date, allSales, allServices, allCashTransactions, dailyInitialBalance, latestInitialBalance]);
+  }, [date, allSales, allServices, allCashTransactions, dailyInitialBalance]);
   
   const manualCashMovements = useMemo(() => {
     const start = startOfDay(date);
@@ -198,8 +209,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
 
   const handleSetInitialBalance = useCallback(async () => {
     if (initialBalanceAmount === '' || Number(initialBalanceAmount) < 0) return;
-    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
     
     await operationsService.setInitialCashBalance({
       date: startOfDay(date).toISOString(),
@@ -210,11 +219,9 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     setIsInitialBalanceDialogOpen(false);
     setInitialBalanceAmount('');
     toast({ title: 'Saldo Inicial Guardado' });
-  }, [initialBalanceAmount, toast, date]);
+  }, [initialBalanceAmount, toast, date, currentUser]);
   
   const handleAddTransaction = useCallback(async (type: 'Entrada' | 'Salida', values: CashTransactionFormValues) => {
-    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
     
     await operationsService.addCashTransaction({
       type,
@@ -224,12 +231,16 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       userName: currentUser?.name || 'Sistema',
     });
     toast({ title: `Se registró una ${type.toLowerCase()} de caja.` });
-  }, [toast]);
+  }, [toast, currentUser]);
   
   const handleDeleteTransaction = useCallback(async (transactionId: string) => {
+    if (currentUser?.role !== 'Superadministrador') {
+      toast({ title: 'Permiso Denegado', description: 'No tiene permiso para eliminar transacciones.', variant: 'destructive' });
+      return;
+    }
     await operationsService.deleteCashTransaction(transactionId);
     toast({ title: `Transacción eliminada.` });
-  }, [toast]);
+  }, [toast, currentUser]);
 
   return (
     <>
@@ -295,7 +306,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
              <Card>
               <CardHeader><CardTitle>Transacciones Manuales del Día</CardTitle></CardHeader>
               <CardContent>
-                <TransactionsList transactions={manualCashMovements} onDelete={handleDeleteTransaction} />
+                <TransactionsList transactions={manualCashMovements} onDelete={handleDeleteTransaction} currentUser={currentUser} />
               </CardContent>
             </Card>
         </div>
@@ -330,3 +341,4 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     </>
   );
 }
+
