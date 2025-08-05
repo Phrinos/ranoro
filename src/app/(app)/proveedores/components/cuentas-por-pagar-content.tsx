@@ -1,5 +1,4 @@
 // src/app/(app)/proveedores/components/cuentas-por-pagar-content.tsx
-
 "use client";
 
 import React, { useMemo } from 'react';
@@ -36,7 +35,7 @@ interface CuentasPorPagarContentProps {
   onRegisterPayment: (account: PayableAccount) => void;
 }
 
-export const CuentasPorPagarContent: React.FC<CuentasPorPagarContentProps> = ({ accounts, onRegisterPayment }) => {
+export function CuentasPorPagarContent({ accounts, onRegisterPayment }: CuentasPorPagarContentProps) {
   const { filteredData, ...tableManager } = useTableManager<PayableAccount>({
     initialData: accounts,
     searchKeys: ['supplierName', 'invoiceId'],
@@ -61,6 +60,7 @@ export const CuentasPorPagarContent: React.FC<CuentasPorPagarContentProps> = ({ 
         </div>
       <TableToolbar
         {...tableManager}
+        onSearchTermChange={tableManager.setSearchTerm}
         searchPlaceholder="Buscar por proveedor o folio..."
         sortOptions={sortOptions}
         filterOptions={[{ value: 'status', label: 'Estado', options: statusOptions }]}
