@@ -168,11 +168,14 @@ export function UnifiedPreviewDialog({
         });
       } catch (error) {
         console.error('Error sharing:', error);
-        if(!String(error).includes('AbortError')) {
-           toast({ title: 'Error al compartir', variant: 'destructive' });
+        // Fallback to text copy if sharing fails for non-abort reasons
+        if (!String(error).includes('AbortError')) {
+           toast({ title: 'No se pudo compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
+           handleCopyServiceForWhatsapp();
         }
       }
-    } else if (imageFile) {
+    } else {
+        // Fallback if sharing is not supported or image creation failed
         handleCopyServiceForWhatsapp();
     }
   };
