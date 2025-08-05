@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ShieldCheck, Car, AlertTriangle } from "lucide-react";
+import { PlusCircle, ShieldCheck, Car, AlertTriangle, User } from "lucide-react";
 import type { Vehicle, Driver } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
