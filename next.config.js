@@ -31,6 +31,15 @@ const nextConfig = {
       },
     ];
   },
+
+  // 5. Webpack config
+  webpack: (config) => {
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      /require.extensions is not supported by webpack. Use a loader instead./,
+    ];
+    return config;
+  }
 };
 
 module.exports = nextConfig;
