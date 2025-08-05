@@ -98,6 +98,7 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
             <div className="flex justify-between"><span>Conductor:</span><span className="font-semibold">{payment.driverName}</span></div>
             <div className="flex justify-between"><span>Vehículo:</span><span className="font-semibold">{payment.vehicleLicensePlate}</span></div>
             {payment.note && <div className="text-left"><span>Concepto:</span><span className="font-semibold block">{payment.note}</span></div>}
+            {payment.paymentMethod && <div className="flex justify-between"><span>Método de Pago:</span><span className="font-semibold">{payment.paymentMethod}</span></div>}
             <div className="flex justify-between text-lg"><span>TOTAL PAGADO:</span><span className="font-bold">{formattedAmount}</span></div>
         </div>
         
