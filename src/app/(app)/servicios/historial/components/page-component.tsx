@@ -304,10 +304,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   };
   
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-
   const renderServiceCard = useCallback((record: ServiceRecord) => (
     <ServiceAppointmentCard 
       key={record.id}
@@ -329,6 +325,10 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       }}
     />
   ), [vehicles, personnel, handleOpenFormDialog, handleShowPreview, handleOpenPaymentDialog, handlePrintTicket, handleConfirmAppointment, handleDeleteService, handleCancelRecord, currentUser?.role]);
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <>
