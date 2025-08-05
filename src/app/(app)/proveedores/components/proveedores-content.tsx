@@ -86,6 +86,7 @@ export function ProveedoresContent({ suppliers }: ProveedoresContentProps) {
         
         <TableToolbar 
             {...tableManager}
+            onSearchTermChange={tableManager.setSearchTerm}
             sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre o contacto..."
         />
