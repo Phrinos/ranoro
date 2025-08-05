@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, PlusCircle, ArrowDownCircle, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from "@/lib/utils";
-import { startOfDay, endOfDay, parseISO, isWithinInterval, isValid } from 'date-fns';
+import { startOfDay, endOfDay, parseISO, isWithinInterval, isValid, startOfMonth, endOfMonth } from 'date-fns';
 
 import { inventoryService, operationsService, personnelService } from '@/lib/services';
 import { RegisterPaymentDialog } from "./register-payment-dialog";
@@ -96,7 +96,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 
   const totalCashBalance = useMemo(() => {
     const now = new Date();
-    const interval = { start: startOfDay(now), end: endOfDay(now) };
+    const interval = { start: startOfMonth(now), end: endOfMonth(now) };
 
     const totalIncome = payments
       .filter(p => (p.paymentMethod === 'Efectivo' || !p.paymentMethod) && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), interval))
@@ -134,7 +134,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
           <div className="flex items-center gap-2 p-2 h-10 rounded-md border bg-card text-card-foreground shadow-sm">
             <Wallet className="h-5 w-5 text-green-500" />
             <div className="flex flex-col items-end">
-              <span className="text-xs text-muted-foreground -mb-1">Caja (Hoy)</span>
+              <span className="text-xs text-muted-foreground -mb-1">Caja (Este Mes)</span>
               <span className="font-bold">{formatCurrency(totalCashBalance)}</span>
             </div>
           </div>
