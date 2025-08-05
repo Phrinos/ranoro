@@ -132,9 +132,10 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
   const [isCorteDialogOpen, setIsCorteDialogOpen] = useState(false);
   
   const cajaSummaryData = useMemo(() => {
-    // --- Daily Summary Calculation (for the report) ---
     const startOfSelectedDate = startOfDay(date);
     const endOfSelectedDate = endOfDay(date);
+
+    // --- Daily Summary Calculation (for the report and daily view) ---
     const dailyBalanceDoc = dailyInitialBalance && isSameDay(parseDate(dailyInitialBalance.date)!, startOfSelectedDate) ? dailyInitialBalance : null;
     const dailyInitial = dailyBalanceDoc?.amount || 0;
     
@@ -155,11 +156,13 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       salesByPaymentMethodInDay[method] = (salesByPaymentMethodInDay[method] || 0) + amount;
     });
 
-    // --- Accumulated Balance Calculation (for the display) ---
+    // --- Accumulated Balance Calculation (for the main display) ---
     const runningBalanceStart = latestInitialBalance?.amount || 0;
     const runningBalanceStartDate = latestInitialBalance?.date ? parseISO(latestInitialBalance.date) : new Date(0);
-    const runningBalanceInterval = { start: runningBalanceStartDate, end: endOfSelectedDate };
-
+    
+    // The interval starts from the beginning of the day of the last initial balance
+    const runningBalanceInterval = { start: startOfDay(runningBalanceStartDate), end: endOfSelectedDate };
+    
     const salesSinceLastBalance = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), runningBalanceInterval));
     const servicesSinceLastBalance = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), runningBalanceInterval));
     
@@ -170,7 +173,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     const manualCashOutSince = allCashTransactions.filter(t => t.type === 'Salida' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), runningBalanceInterval)).reduce((sum, t) => sum + t.amount, 0);
     
     const finalAccumulatedBalance = runningBalanceStart + cashFromSalesSince + cashFromServicesSince + manualCashInSince - manualCashOutSince;
-
+    
     return { 
         initialBalance: dailyInitial,
         totalCashSales: totalCashOpsInDay, 
@@ -179,7 +182,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
         salesByPaymentMethod: salesByPaymentMethodInDay, 
         totalSales: salesInDay.length, 
         totalServices: servicesInDay.length,
-        finalCashBalance: finalAccumulatedBalance, // Use accumulated balance for display
+        finalCashBalance: finalAccumulatedBalance,
     };
   }, [date, allSales, allServices, allCashTransactions, dailyInitialBalance, latestInitialBalance]);
   
@@ -325,5 +328,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     </>
   );
 }
+
+    
 
     
