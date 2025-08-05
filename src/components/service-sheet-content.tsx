@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -437,6 +436,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </main>
         
         <footer className="mt-auto pt-2 text-xs">
+           <section className="mt-2 text-center text-gray-500 text-[10px] space-x-4">
+              <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+              <span>|</span>
+              <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
+           </section>
            {effectiveWorkshopInfo.fixedFooterText && (
             <div className="text-center mt-2 pt-2 border-t border-gray-200">
               <p className="text-[10px] text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>

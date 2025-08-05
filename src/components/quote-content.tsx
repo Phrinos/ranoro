@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { QuoteRecord, Vehicle, Technician, WorkshopInfo, Driver, RentalPayment } from '@/types';
@@ -12,6 +11,7 @@ import { AlertCircle, CalendarCheck } from 'lucide-react';
 import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import Image from 'next/image';
 import { parseDate } from '@/lib/forms';
+import Link from 'next/link';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -234,8 +234,13 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             <div className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</div>
           </section>
           
+           <section className="mt-4 text-center text-gray-500 text-[10px] space-x-4">
+              <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+              <span>|</span>
+              <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
+           </section>
           {effectiveWorkshopInfo.fixedFooterText && (
-             <div className="text-center mt-6 pt-4 border-t border-gray-200">
+             <div className="text-center mt-2 pt-2 border-t border-gray-200">
                 <p className="text-[9px] text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
             </div>
           )}
