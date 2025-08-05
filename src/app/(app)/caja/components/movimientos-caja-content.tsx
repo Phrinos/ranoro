@@ -96,6 +96,7 @@ export function MovimientosCajaContent({ allCashTransactions, allSales, allServi
     <div className="space-y-4">
       <TableToolbar
         {...tableManager}
+        onSearchTermChange={tableManager.setSearchTerm}
         searchPlaceholder="Buscar por concepto, usuario o ID..."
         sortOptions={sortOptions}
         filterOptions={filterOptions}
