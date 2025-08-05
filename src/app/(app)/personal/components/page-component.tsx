@@ -1,18 +1,20 @@
 
 
+
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense, AppRole } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Users, Shield, TrendingUp, BookOpen, DatabaseZap } from 'lucide-react';
 import { adminService, operationsService, inventoryService } from '@/lib/services';
-import { RendimientoPersonalContent } from './rendimiento-content';
-import { UsuariosPageContent } from './usuarios-content';
-import { RolesPageContent } from '../../administracion/components/roles-content';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+
+const RendimientoPersonalContent = lazy(() => import('./rendimiento-content').then(m => ({ default: m.RendimientoPersonalContent })));
+const UsuariosPageContent = lazy(() => import('./usuarios-content').then(m => ({ default: m.UsuariosPageContent })));
+const RolesPageContent = lazy(() => import('../../administracion/components/roles-content').then(m => ({ default: m.RolesPageContent })));
 
 export function PersonalPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
@@ -48,9 +50,9 @@ export function PersonalPageComponent({ tab }: { tab?: string }) {
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
   
   const tabs = [
-    { value: "rendimiento", label: "Rendimiento", content: <RendimientoPersonalContent /> },
-    { value: "usuarios", label: "Personal", content: <UsuariosPageContent currentUser={currentUser} initialUsers={allUsers} initialRoles={allRoles} /> },
-    { value: "roles", label: "Roles y Permisos", content: <RolesPageContent currentUser={currentUser} initialRoles={allRoles} /> },
+    { value: "rendimiento", label: "Rendimiento", content: <Suspense fallback={<Loader2 className="animate-spin" />}><RendimientoPersonalContent /></Suspense> },
+    { value: "usuarios", label: "Personal", content: <Suspense fallback={<Loader2 className="animate-spin" />}><UsuariosPageContent currentUser={currentUser} initialUsers={allUsers} initialRoles={allRoles} /></Suspense> },
+    { value: "roles", label: "Roles y Permisos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><RolesPageContent currentUser={currentUser} initialRoles={allRoles} /></Suspense> },
   ];
 
   return (

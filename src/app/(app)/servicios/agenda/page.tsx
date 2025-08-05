@@ -1,29 +1,31 @@
 
 
+
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
-import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, isTomorrow, compareAsc, compareDesc, isSameDay, addDays, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ServiceCalendar } from '../components/service-calendar';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Badge } from "@/components/ui/badge";
-import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import { ServiceAppointmentCard } from '../components/ServiceAppointmentCard';
 import { inventoryService, personnelService, operationsService, adminService } from '@/lib/services';
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../components/PaymentDetailsDialog';
 import { parseDate } from '@/lib/forms';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch } from 'firebase/firestore';
+
+const ServiceDialog = lazy(() => import('../components/service-dialog').then(module => ({ default: module.ServiceDialog })));
+const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
+const PaymentDetailsDialog = lazy(() => import('../components/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
+const ServiceCalendar = lazy(() => import('../components/service-calendar').then(module => ({ default: module.ServiceCalendar })));
+const ServiceAppointmentCard = lazy(() => import('../components/ServiceAppointmentCard').then(module => ({ default: module.ServiceAppointmentCard })));
 
 
 const handleAiError = (error: any, toast: any, context: string): string => {
@@ -290,18 +292,19 @@ function AgendaPageComponent() {
   }
 
   const renderServiceCard = (service: ServiceRecord) => (
-    <ServiceAppointmentCard 
-      key={service.id}
-      service={service}
-      vehicles={vehicles}
-      technicians={personnel}
-      onEdit={() => handleOpenServiceDialog(service)}
-      onConfirm={() => handleConfirmAppointment(service.id)}
-      onView={() => handleShowPreview(service)}
-      onComplete={() => handleOpenCompleteDialog(service)}
-      onDelete={() => handleDeleteService(service.id)}
-      onCancel={() => { const reason = prompt('Motivo de cancelación:'); if(reason) handleCancelService(service.id, reason)}}
-    />
+    <Suspense fallback={<div className="h-24 bg-muted rounded-lg animate-pulse" />} key={service.id}>
+      <ServiceAppointmentCard 
+        service={service}
+        vehicles={vehicles}
+        technicians={personnel}
+        onEdit={() => handleOpenServiceDialog(service)}
+        onConfirm={() => handleConfirmAppointment(service.id)}
+        onView={() => handleShowPreview(service)}
+        onComplete={() => handleOpenCompleteDialog(service)}
+        onDelete={() => handleDeleteService(service.id)}
+        onCancel={() => { const reason = prompt('Motivo de cancelación:'); if(reason) handleCancelService(service.id, reason)}}
+      />
+    </Suspense>
   );
 
   return (
@@ -352,42 +355,46 @@ function AgendaPageComponent() {
           </Card>
         </TabsContent>
         <TabsContent value="calendario">
-          <ServiceCalendar services={scheduledServices} vehicles={vehicles} technicians={personnel} onServiceClick={(s) => handleOpenServiceDialog(s)} />
+          <Suspense fallback={<Loader2 className="animate-spin" />}>
+            <ServiceCalendar services={scheduledServices} vehicles={vehicles} technicians={personnel} onServiceClick={(s) => handleOpenServiceDialog(s)} />
+          </Suspense>
         </TabsContent>
       </Tabs>
 
-      {isServiceDialogOpen && (
-        <ServiceDialog
-          open={isServiceDialogOpen}
-          onOpenChange={setIsServiceDialogOpen}
-          service={editingService}
-          vehicles={vehicles}
-          technicians={personnel}
-          inventoryItems={inventoryItems}
-          serviceTypes={serviceTypes}
-          onSave={handleSaveService}
-          onCancelService={handleCancelService}
-          onComplete={handleConfirmCompletion}
-        />
-      )}
-      
-       {isSheetOpen && serviceForPreview && (
-        <UnifiedPreviewDialog
-          open={isSheetOpen}
-          onOpenChange={setIsSheetOpen}
-          service={serviceForPreview}
-        />
-      )}
-      
-      {serviceToComplete && (
-        <PaymentDetailsDialog
-            open={isPaymentDialogOpen}
-            onOpenChange={setIsPaymentDialogOpen}
-            service={serviceToComplete}
-            onConfirm={handleConfirmCompletion}
-            isCompletionFlow={true}
-        />
-      )}
+      <Suspense fallback={null}>
+        {isServiceDialogOpen && (
+          <ServiceDialog
+            open={isServiceDialogOpen}
+            onOpenChange={setIsServiceDialogOpen}
+            service={editingService}
+            vehicles={vehicles}
+            technicians={personnel}
+            inventoryItems={inventoryItems}
+            serviceTypes={serviceTypes}
+            onSave={handleSaveService}
+            onCancelService={handleCancelService}
+            onComplete={handleConfirmCompletion}
+          />
+        )}
+        
+        {isSheetOpen && serviceForPreview && (
+          <UnifiedPreviewDialog
+            open={isSheetOpen}
+            onOpenChange={setIsSheetOpen}
+            service={serviceForPreview}
+          />
+        )}
+        
+        {serviceToComplete && (
+          <PaymentDetailsDialog
+              open={isPaymentDialogOpen}
+              onOpenChange={setIsPaymentDialogOpen}
+              service={serviceToComplete}
+              onConfirm={handleConfirmCompletion}
+              isCompletionFlow={true}
+          />
+        )}
+      </Suspense>
     </>
   );
 }

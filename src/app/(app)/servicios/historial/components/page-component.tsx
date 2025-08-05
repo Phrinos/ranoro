@@ -1,29 +1,31 @@
 
 
+
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { ServiceDialog } from "../../components/service-dialog";
-import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../../components/PaymentDetailsDialog';
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
 import { isToday, startOfMonth, endOfMonth, compareDesc } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ServiceAppointmentCard } from '../../components/ServiceAppointmentCard';
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { operationsService, inventoryService, personnelService, adminService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
 import { parseDate } from '@/lib/forms';
 import { writeBatch } from 'firebase/firestore';
-import { TicketContent } from '@/components/ticket-content';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
 import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+
+const ServiceDialog = lazy(() => import('../../components/service-dialog').then(module => ({ default: module.ServiceDialog })));
+const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
+const PaymentDetailsDialog = lazy(() => import('../../components/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
+const ServiceAppointmentCard = lazy(() => import('../../components/ServiceAppointmentCard').then(module => ({ default: module.ServiceAppointmentCard })));
+const TicketContent = lazy(() => import('@/components/ticket-content').then(module => ({ default: module.TicketContent })));
+const PrintTicketDialog = lazy(() => import('@/components/ui/print-ticket-dialog').then(module => ({ default: module.PrintTicketDialog })));
 
 const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
     { value: 'all', label: 'Todos los Estados' },
@@ -288,7 +290,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
           text: `Ticket de tu servicio en ${workshopInfo?.name || 'nuestro taller'}.`,
         });
       } catch (error) {
-        console.error('Error sharing:', error);
         if (!String(error).includes('AbortError')) {
            toast({ title: 'No se pudo compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
            handleCopyServiceForWhatsapp(recordForTicket!);
@@ -305,25 +306,26 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   
 
   const renderServiceCard = useCallback((record: ServiceRecord) => (
-    <ServiceAppointmentCard 
-      key={record.id}
-      service={record}
-      vehicles={vehicles}
-      technicians={personnel}
-      onEdit={() => handleOpenFormDialog(record)}
-      onView={() => handleShowPreview(record)}
-      onComplete={() => handleOpenPaymentDialog(record)}
-      onPrintTicket={() => handlePrintTicket(record)}
-      onConfirm={() => handleConfirmAppointment(record)}
-      onEditPayment={() => handleOpenPaymentDialog(record)}
-      onDelete={currentUser?.role === 'Superadministrador' ? () => handleDeleteService(record.id) : undefined}
-      onCancel={() => {
-        if (record.id) {
-          const reason = prompt("Motivo de la cancelación:");
-          if (reason) handleCancelRecord(record.id, reason);
-        }
-      }}
-    />
+    <Suspense fallback={<div className="h-24 bg-muted rounded-lg animate-pulse" />} key={record.id}>
+      <ServiceAppointmentCard 
+        service={record}
+        vehicles={vehicles}
+        technicians={personnel}
+        onEdit={() => handleOpenFormDialog(record)}
+        onView={() => handleShowPreview(record)}
+        onComplete={() => handleOpenPaymentDialog(record)}
+        onPrintTicket={() => handlePrintTicket(record)}
+        onConfirm={() => handleConfirmAppointment(record)}
+        onEditPayment={() => handleOpenPaymentDialog(record)}
+        onDelete={currentUser?.role === 'Superadministrador' ? () => handleDeleteService(record.id) : undefined}
+        onCancel={() => {
+          if (record.id) {
+            const reason = prompt("Motivo de la cancelación:");
+            if (reason) handleCancelRecord(record.id, reason);
+          }
+        }}
+      />
+    </Suspense>
   ), [vehicles, personnel, handleOpenFormDialog, handleShowPreview, handleOpenPaymentDialog, handlePrintTicket, handleConfirmAppointment, handleDeleteService, handleCancelRecord, currentUser?.role]);
 
   if (isLoading) {
@@ -379,56 +381,58 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
           {filteredHistorical.length > 0 ? filteredHistorical.map(renderServiceCard) : <p className="text-center text-muted-foreground py-10">No hay servicios que coincidan.</p>}
         </TabsContent>
       </Tabs>
-
-      {isFormDialogOpen && (
-        <ServiceDialog
-          open={isFormDialogOpen}
-          onOpenChange={setIsFormDialogOpen}
-          service={editingRecord}
-          vehicles={vehicles}
-          technicians={personnel}
-          inventoryItems={inventoryItems}
-          serviceTypes={serviceTypes}
-          onCancelService={handleCancelRecord}
-          mode='service'
-          onSave={handleSaveRecord}
-          onComplete={handleConfirmCompletion}
-        />
-      )}
       
-      {serviceToEditPayment && (
-        <PaymentDetailsDialog
-          open={isPaymentDialogOpen}
-          onOpenChange={setIsPaymentDialogOpen}
-          service={serviceToEditPayment}
-          onConfirm={handleUpdatePaymentDetails}
-          isCompletionFlow={serviceToEditPayment.status !== 'Entregado'}
-        />
-      )}
+      <Suspense fallback={null}>
+        {isFormDialogOpen && (
+          <ServiceDialog
+            open={isFormDialogOpen}
+            onOpenChange={setIsFormDialogOpen}
+            service={editingRecord}
+            vehicles={vehicles}
+            technicians={personnel}
+            inventoryItems={inventoryItems}
+            serviceTypes={serviceTypes}
+            onCancelService={handleCancelRecord}
+            mode='service'
+            onSave={handleSaveRecord}
+            onComplete={handleConfirmCompletion}
+          />
+        )}
+        
+        {serviceToEditPayment && (
+          <PaymentDetailsDialog
+            open={isPaymentDialogOpen}
+            onOpenChange={setIsPaymentDialogOpen}
+            service={serviceToEditPayment}
+            onConfirm={handleUpdatePaymentDetails}
+            isCompletionFlow={serviceToEditPayment.status !== 'Entregado'}
+          />
+        )}
 
-      {isPreviewOpen && recordForPreview && <UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={recordForPreview}/>}
-      
-      {recordForTicket && (
-        <PrintTicketDialog
-          open={isTicketDialogOpen}
-          onOpenChange={setIsTicketDialogOpen}
-          title="Ticket de Servicio"
-          footerActions={<>
-            <Button onClick={() => handleCopyAsImage()} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-            <Button onClick={handleShare} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
-            <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
-          </>}
-        >
-          <div id="printable-ticket">
-            <TicketContent
-              ref={ticketContentRef}
-              service={recordForTicket}
-              vehicle={vehicles.find(v => v.id === recordForTicket.vehicleId)}
-              previewWorkshopInfo={workshopInfo || undefined}
-            />
-          </div>
-        </PrintTicketDialog>
-      )}
+        {isPreviewOpen && recordForPreview && <UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={recordForPreview}/>}
+        
+        {recordForTicket && (
+          <PrintTicketDialog
+            open={isTicketDialogOpen}
+            onOpenChange={setIsTicketDialogOpen}
+            title="Ticket de Servicio"
+            footerActions={<>
+              <Button onClick={() => handleCopyAsImage()} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+              <Button onClick={handleShare} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
+              <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+            </>}
+          >
+            <div id="printable-ticket">
+              <TicketContent
+                ref={ticketContentRef}
+                service={recordForTicket}
+                vehicle={vehicles.find(v => v.id === recordForTicket.vehicleId)}
+                previewWorkshopInfo={workshopInfo || undefined}
+              />
+            </div>
+          </PrintTicketDialog>
+        )}
+      </Suspense>
     </>
   );
 }

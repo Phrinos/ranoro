@@ -1,8 +1,9 @@
+
 // src/app/(app)/finanzas/components/page-component.tsx
 
 "use client";
 
-import { useState, useMemo, useEffect, Suspense, useRef } from 'react';
+import React, { useState, useMemo, useEffect, Suspense, lazy } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -16,7 +17,7 @@ import {
   parseISO,
   isWithinInterval,
   isValid,
-  startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc
+  startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc, isAfter
 } from "date-fns";
 import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from 'lucide-react';
@@ -25,10 +26,11 @@ import type { DateRange } from 'react-day-picker';
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
-import { ReporteOperacionesContent } from './reporte-operaciones-content';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { EgresosContent } from './egresos-content';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+
+const ReporteOperacionesContent = lazy(() => import('./reporte-operaciones-content').then(m => ({ default: m.ReporteOperacionesContent })));
+const EgresosContent = lazy(() => import('./egresos-content').then(m => ({ default: m.EgresosContent })));
 
 
 export function FinanzasPageComponent({
@@ -276,8 +278,8 @@ export function FinanzasPageComponent({
                 </div>
             )
         },
-        { value: "egresos", label: "Egresos", content:  <div className="space-y-6"><div className="mb-6">{dateFilterComponent}</div><EgresosContent financialSummary={financialSummary} fixedExpenses={fixedExpenses} onExpensesUpdated={(updated) => setFixedExpenses([...updated])} /></div> },
-        { value: "operaciones", label: "Operaciones", content: <ReporteOperacionesContent allSales={allSales} allServices={allServices} allInventory={allInventory} serviceTypes={serviceTypes} /> },
+        { value: "egresos", label: "Egresos", content:  <Suspense fallback={<Loader2 className="animate-spin" />}><div className="space-y-6"><div className="mb-6">{dateFilterComponent}</div><EgresosContent financialSummary={financialSummary} fixedExpenses={fixedExpenses} onExpensesUpdated={(updated) => setFixedExpenses([...updated])} /></div></Suspense> },
+        { value: "operaciones", label: "Operaciones", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ReporteOperacionesContent allSales={allSales} allServices={allServices} allInventory={allInventory} serviceTypes={serviceTypes} /></Suspense> },
     ];
     
     return (

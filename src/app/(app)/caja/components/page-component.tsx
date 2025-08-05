@@ -1,16 +1,17 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
 import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { operationsService, inventoryService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
-import { CajaPosContent } from '../../pos/caja/components/caja-pos-content';
-import { MovimientosCajaContent } from './movimientos-caja-content';
 import { db } from '@/lib/firebaseClient';
 import { query, collection, orderBy, limit, onSnapshot } from 'firebase/firestore';
+
+const CajaPosContent = lazy(() => import('../../pos/caja/components/caja-pos-content').then(module => ({ default: module.CajaPosContent })));
+const MovimientosCajaContent = lazy(() => import('./movimientos-caja-content').then(module => ({ default: module.MovimientosCajaContent })));
 
 
 export function CajaPageComponent({ tab }: { tab?: string }) {
