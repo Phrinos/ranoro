@@ -2,10 +2,10 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, DollarSign, AlertTriangle, Package } from 'lucide-react';
+import { DollarSign, AlertTriangle, Package, PlusCircle, Printer } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
@@ -77,7 +77,7 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
     return items; 
   }, [filteredData, tableManager.sortOption]);
 
-  const summary = useMemo(() => calculateSummary(inventoryItems), [inventoryItems]);
+  const summary = React.useMemo(() => calculateSummary(inventoryItems), [inventoryItems]);
 
   const handlePrint = () => {
     onPrint(customSortedItems);
@@ -115,7 +115,12 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
         </div>
 
         <TableToolbar
-            {...tableManager}
+            searchTerm={tableManager.searchTerm}
+            onSearchTermChange={tableManager.setSearchTerm}
+            dateRange={tableManager.dateRange}
+            onDateRangeChange={tableManager.setDateRange}
+            sortOption={tableManager.sortOption}
+            onSortOptionChange={tableManager.setSortOption}
             sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre, SKU, marca..."
         />
