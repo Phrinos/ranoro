@@ -10,7 +10,7 @@ import type { DateRange } from 'react-day-picker';
 import { formatCurrency } from "@/lib/utils";
 import type { RentalPayment, VehicleExpense } from '@/types';
 import { DollarSign, AlertCircle, LineChart, TrendingDown, CalendarIcon as CalendarDateIcon } from "lucide-react";
-import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } from 'date-fns';
+import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,7 @@ interface ResumenTabProps {
 export function ResumenTab({ payments, expenses, monthlyBalances }: ResumenTabProps) {
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
-    return { from: startOfDay(now), to: endOfDay(now) };
+    return { from: startOfMonth(now), to: endOfMonth(now) };
   });
 
   const summaryData = useMemo(() => {
