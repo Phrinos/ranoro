@@ -120,7 +120,7 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
                         {debtInfo.depositDebt > 0 && <div className="flex justify-between"><span>Deuda de depósito:</span><span>{formatCurrency(debtInfo.depositDebt)}</span></div>}
                         {debtInfo.rentalDebt > 0 && <div className="flex justify-between"><span>Deuda de renta:</span><span>{formatCurrency(debtInfo.rentalDebt)}</span></div>}
                         {debtInfo.manualDebt > 0 && <div className="flex justify-between"><span>Adeudo pendiente:</span><span>{formatCurrency(debtInfo.manualDebt)}</span></div>}
-                        <div className="flex justify-between font-bold border-t border-red-300 mt-1 pt-1"><span>Deuda Total Restante:</span><span>{formatCurrency(debtInfo.totalDebt)}</span></div>
+                        <div className="flex justify-between font-bold mt-1 pt-1"><span>Deuda Total Restante:</span><span>{formatCurrency(debtInfo.totalDebt)}</span></div>
                     </div>
                 </div>
             </>
