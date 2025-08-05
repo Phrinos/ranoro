@@ -97,8 +97,8 @@ export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps)
                 <TableRow>
                   <TableHead className="text-white">Estado</TableHead>
                   <TableHead className="text-white">Conductor</TableHead>
+                  <TableHead className="text-white">Teléfono</TableHead>
                   <TableHead className="text-white">Vehículo Asignado</TableHead>
-                  <TableHead className="text-right text-white">Deuda Total</TableHead>
                   <TableHead className="w-10 text-white"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -106,7 +106,6 @@ export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps)
                 {filteredData.length > 0 ? (
                   filteredData.map(driver => {
                     const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
-                    const debt = calculateDriverDebt(driver, [], allVehicles);
                     return (
                       <TableRow key={driver.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/conductores/${driver.id}`)}>
                         <TableCell>
@@ -116,10 +115,8 @@ export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps)
                           }
                         </TableCell>
                         <TableCell className="font-semibold">{driver.name}</TableCell>
+                        <TableCell>{driver.phone}</TableCell>
                         <TableCell>{vehicle ? `${vehicle.licensePlate} - ${vehicle.make}` : 'Sin vehículo'}</TableCell>
-                        <TableCell className="text-right font-bold text-red-600">
-                          {debt.totalDebt > 0 ? formatCurrency(debt.totalDebt) : '-'}
-                        </TableCell>
                         <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground"/></TableCell>
                       </TableRow>
                     );
