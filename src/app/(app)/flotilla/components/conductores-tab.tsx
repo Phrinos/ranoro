@@ -21,21 +21,40 @@ interface ConductoresTabProps {
   allVehicles: Vehicle[];
 }
 
+const getDriverSortPriority = (driver: Driver): number => {
+    if (driver.isArchived) return 3; // Lowest priority
+    if (!driver.assignedVehicleId) return 2; // Medium priority
+    return 1; // Highest priority
+};
+
+
 export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps) {
   const router = useRouter();
   const { toast } = useToast();
   
   const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  
+  const sortedInitialDrivers = useMemo(() => {
+    return [...allDrivers].sort((a,b) => {
+        const priorityA = getDriverSortPriority(a);
+        const priorityB = getDriverSortPriority(b);
+        if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+        }
+        return a.name.localeCompare(b.name);
+    });
+  }, [allDrivers]);
+
 
   const {
     filteredData,
     ...tableManager
   } = useTableManager<Driver>({
-    initialData: allDrivers,
+    initialData: sortedInitialDrivers,
     searchKeys: ['name', 'phone'],
     dateFilterKey: '', // No date filter here
-    initialSortOption: 'name_asc'
+    initialSortOption: 'default' // Using a default and handling sort logic in component
   });
 
   const handleOpenDriverDialog = useCallback((driver?: Driver) => {
