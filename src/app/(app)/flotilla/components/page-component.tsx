@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
@@ -22,9 +21,6 @@ import { Loader2 } from 'lucide-react';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
-
-const FINE_CHECK_STORAGE_KEY = 'lastFineCheckDate';
-type DriverSortOption = 'name_asc' | 'name_desc';
 
 const ConductoresTab = lazy(() => import('./conductores-tab').then(module => ({ default: module.ConductoresTab })));
 const VehiculosFlotillaTab = lazy(() => import('./vehiculos-flotilla-tab').then(module => ({ default: module.VehiculosFlotillaTab })));
