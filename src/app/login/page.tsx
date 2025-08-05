@@ -41,6 +41,17 @@ export default function LoginPage() {
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
+
+    if (!emailLogin.trim() || !passwordLogin.trim()) {
+      toast({
+        title: "Campos Incompletos",
+        description: "Por favor, ingrese su correo electrónico y contraseña.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       if (!auth || !db) throw new Error("Firebase no está inicializado.");
       const userCredential = await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
