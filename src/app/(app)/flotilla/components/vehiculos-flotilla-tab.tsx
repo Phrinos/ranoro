@@ -110,7 +110,7 @@ export function VehiculosFlotillaTab({ allVehicles, allDrivers }: VehiculosFloti
               <TableBody>
                 {filteredData.length > 0 ? (
                   filteredData.map(vehicle => {
-                    const driver = allDrivers.find(d => d.id === vehicle.assignedVehicleId);
+                    const driver = allDrivers.find(d => d.id === vehicle.assignedDriverId);
                     return (
                       <TableRow key={vehicle.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/flotilla/${vehicle.id}`)}>
                         <TableCell className="font-semibold">{vehicle.licensePlate}</TableCell>

@@ -84,7 +84,7 @@ export interface Vehicle {
     date: string; // ISO String
     mileage?: number;
   };
-  assignedVehicleId?: string; // New field to link to a driver
+  assignedDriverId?: string | null;
 }
 
 export interface ManualDebtEntry {
@@ -101,7 +101,7 @@ export interface Driver {
   address: string;
   phone: string;
   emergencyPhone: string;
-  assignedVehicleId?: string;
+  assignedVehicleId?: string | null;
   documents?: {
     ineFrontUrl?: string;
     ineBackUrl?: string;
@@ -440,7 +440,7 @@ export interface CashDrawerTransaction {
   concept: string;
   userId: string;
   userName: string;
-  relatedType?: 'Venta' | 'Servicio' | 'Compra';
+  relatedType?: 'Venta' | 'Servicio' | 'Compra' | 'InitialBalance';
   relatedId?: string;
 }
 

@@ -11,6 +11,7 @@ import {
   writeBatch,
   getDocs,
   query,
+  DocumentReference,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList, ServiceTypeRecord, MonthlyFixedExpense, PayableAccount } from "@/types";
@@ -223,6 +224,11 @@ const updateVehicle = async (id: string, data: Partial<Vehicle>): Promise<Vehicl
   return { id, ...(updatedDoc.data() as Omit<Vehicle, 'id'>) };
 }
 
+const getVehicleDocRef = (id: string): DocumentReference => {
+  if (!db) throw new Error("Database not initialized.");
+  return doc(db, 'vehicles', id);
+};
+
 
 // --- Price Lists ---
 
@@ -320,6 +326,7 @@ export const inventoryService = {
     onVehiclesUpdate,
     onVehiclesUpdatePromise,
     getVehicleById,
+    getVehicleDocRef,
     addVehicle,
     saveVehicle,
     updateVehicle,

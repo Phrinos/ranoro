@@ -37,6 +37,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { writeBatch } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
 
 type DocType = 'ineFrontUrl' | 'ineBackUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl';
 
@@ -143,33 +145,38 @@ export default function DriverDetailPage() {
     }
   };
   
-const handleAssignVehicle = async (newVehicleId: string) => {
-  if (!driver) return toast({ title: "Error", description: "No se encontró el conductor.", variant: "destructive" });
+const handleAssignVehicle = async (newVehicleId: string | null) => {
+    if (!driver || !db) return toast({ title: "Error", description: "No se encontró el conductor.", variant: "destructive" });
 
-  const oldVehicleId = driver.assignedVehicleId;
+    const batch = writeBatch(db);
+    const oldVehicleId = driver.assignedVehicleId;
 
-  try {
-    const updates = [];
-
-    // 1. Unassign the old vehicle if it exists
+    // 1. Unassign old vehicle from this driver
     if (oldVehicleId) {
-      updates.push(inventoryService.saveVehicle({ assignedVehicleId: null } as any, oldVehicleId));
+        batch.update(inventoryService.getVehicleDocRef(oldVehicleId), { assignedDriverId: null });
     }
 
-    // 2. Assign the new vehicle
-    updates.push(inventoryService.saveVehicle({ assignedVehicleId: driver.id } as any, newVehicleId));
-
-    // 3. Update the driver's assigned vehicle ID
-    updates.push(personnelService.saveDriver({ assignedVehicleId: newVehicleId }, driverId));
-
-    await Promise.all(updates);
+    // 2. Unassign the new vehicle from any other driver
+    if (newVehicleId) {
+        const otherDriverAssigned = drivers.find(d => d.assignedVehicleId === newVehicleId && d.id !== driver.id);
+        if (otherDriverAssigned) {
+            batch.update(personnelService.getDriverDocRef(otherDriverAssigned.id), { assignedVehicleId: null });
+        }
+        // 3. Assign new vehicle to this driver and vice versa
+        batch.update(inventoryService.getVehicleDocRef(newVehicleId), { assignedDriverId: driver.id });
+    }
     
-    await fetchDriverData();
-    toast({ title: "Vehículo Asignado", description: "Se ha asignado el nuevo vehículo al conductor." });
-  } catch(e) {
-    console.error("Error al asignar vehículo:", e);
-    toast({ title: "Error al Asignar", description: `Ocurrió un error: ${e instanceof Error ? e.message : 'Error desconocido'}`, variant: "destructive"});
-  }
+    // 4. Update the driver's assigned vehicle ID
+    batch.update(personnelService.getDriverDocRef(driver.id), { assignedVehicleId: newVehicleId });
+
+    try {
+        await batch.commit();
+        await fetchDriverData(); // Refresh all data
+        toast({ title: "Vehículo Asignado", description: "La asignación ha sido actualizada." });
+    } catch(e) {
+        console.error("Error al asignar vehículo:", e);
+        toast({ title: "Error al Asignar", description: `Ocurrió un error: ${e instanceof Error ? e.message : 'Error desconocido'}`, variant: "destructive"});
+    }
 }
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -413,11 +420,14 @@ const handleAssignVehicle = async (newVehicleId: string) => {
               <div className="flex items-end gap-2">
                 <div className="flex-grow">
                   <Label>Cambiar Vehículo Asignado</Label>
-                  <Select onValueChange={handleAssignVehicle} defaultValue={driver.assignedVehicleId}>
+                  <Select onValueChange={handleAssignVehicle} value={driver.assignedVehicleId || ""}>
                     <SelectTrigger><SelectValue placeholder="Seleccionar vehículo de la flotilla" /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value={"null"}>-- Ninguno --</SelectItem>
                       {fleetVehicles.map(v => (
-                        <SelectItem key={v.id} value={v.id}>{v.licensePlate} - {v.make} {v.model}</SelectItem>
+                        <SelectItem key={v.id} value={v.id} disabled={!!v.assignedDriverId && v.assignedDriverId !== driver.id}>
+                            {v.licensePlate} - {v.make} {v.model} {v.assignedDriverId && v.assignedDriverId !== driver.id ? '(Asignado a otro)' : ''}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

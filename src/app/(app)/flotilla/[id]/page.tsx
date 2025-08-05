@@ -3,7 +3,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import type { Vehicle, VehiclePaperwork } from '@/types';
+import type { Vehicle, VehiclePaperwork, Driver } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, Edit, ArrowLeft, Trash2, Loader2 } from 'lucide-react';
@@ -24,7 +24,7 @@ import {
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService, operationsService, personnelService } from '@/lib/services';
 import { DetailsTabContent } from './components/details-tab-content';
 import { MaintenancesTabContent } from './components/maintenances-tab-content';
 import { FinesTabContent } from './components/fines-tab-content';
@@ -38,37 +38,46 @@ export default function FleetVehicleDetailPage() {
   const router = useRouter();
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [isVehicleEditDialogOpen, setIsVehicleEditDialogOpen] = useState(false);
 
-  const fetchVehicle = useCallback(async () => {
-    const fetchedVehicle = await inventoryService.getVehicleById(vehicleId);
+  const fetchVehicleAndDrivers = useCallback(async () => {
+    const [fetchedVehicle, fetchedDrivers] = await Promise.all([
+      inventoryService.getVehicleById(vehicleId),
+      personnelService.onDriversUpdatePromise()
+    ]);
+    
     if(fetchedVehicle && fetchedVehicle.isFleetVehicle) {
         setVehicle(fetchedVehicle);
+        setDrivers(fetchedDrivers);
     } else {
         setVehicle(null);
     }
   }, [vehicleId]);
 
   useEffect(() => {
-    fetchVehicle();
-  }, [fetchVehicle]);
+    fetchVehicleAndDrivers();
+  }, [fetchVehicleAndDrivers]);
 
   const handleSaveVehicle = useCallback(async (formData: VehicleFormValues) => {
     if (!vehicle) return;
     try {
         await inventoryService.saveVehicle(formData, vehicle.id);
-        await fetchVehicle(); // Re-fetch data to reflect changes
+        await fetchVehicleAndDrivers(); // Re-fetch data to reflect changes
         setIsVehicleEditDialogOpen(false);
         toast({ title: "Vehículo Actualizado" });
     } catch(e) {
         toast({ title: "Error", description: "No se pudieron guardar los cambios.", variant: "destructive"});
     }
-  }, [vehicle, toast, fetchVehicle]);
+  }, [vehicle, toast, fetchVehicleAndDrivers]);
 
   const handleRemoveFromFleet = useCallback(async () => {
     if (!vehicle) return;
     try {
-        await inventoryService.updateVehicle(vehicle.id, { isFleetVehicle: false, dailyRentalCost: null });
+        await inventoryService.updateVehicle(vehicle.id, { isFleetVehicle: false, dailyRentalCost: null, assignedDriverId: null });
+        if (vehicle.assignedDriverId) {
+            await personnelService.saveDriver({ assignedVehicleId: null }, vehicle.assignedDriverId);
+        }
         toast({ title: "Vehículo Removido", description: `${vehicle.licensePlate} ha sido removido de la flotilla.` });
         router.push('/flotilla');
     } catch(e) {
@@ -137,7 +146,12 @@ export default function FleetVehicleDetailPage() {
         </TabsList>
 
         <TabsContent value="details" className="mt-6 space-y-6">
-          <DetailsTabContent vehicle={vehicle} onEdit={() => setIsVehicleEditDialogOpen(true)} />
+          <DetailsTabContent 
+            vehicle={vehicle} 
+            drivers={drivers}
+            onEdit={() => setIsVehicleEditDialogOpen(true)} 
+            onRefresh={fetchVehicleAndDrivers}
+          />
         </TabsContent>
         
         <TabsContent value="maintenances" className="mt-6">

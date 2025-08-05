@@ -2,23 +2,71 @@
 
 "use client";
 
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from '@/components/ui/label';
 import { Car, Gauge, Edit, User as UserIcon, CalendarDays, History, StickyNote } from 'lucide-react';
-import type { Vehicle } from '@/types';
+import type { Vehicle, Driver } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseISO } from 'date-fns';
 import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
+import { personnelService, inventoryService } from '@/lib/services';
+import { toast } from '@/hooks/use-toast';
+import { writeBatch } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
+
 
 interface DetailsTabContentProps {
   vehicle: Vehicle;
+  drivers: Driver[];
   onEdit: () => void;
+  onRefresh: () => void;
 }
 
-export function DetailsTabContent({ vehicle, onEdit }: DetailsTabContentProps) {
+export function DetailsTabContent({ vehicle, drivers, onEdit, onRefresh }: DetailsTabContentProps) {
+  
+  const assignedDriver = useMemo(() => {
+    return drivers.find(d => d.id === vehicle.assignedDriverId);
+  }, [drivers, vehicle.assignedDriverId]);
+
+  const handleAssignDriver = useCallback(async (newDriverId: string | null) => {
+    if (!vehicle || !db) return toast({ title: "Error", description: "No se encontró el vehículo.", variant: "destructive" });
+
+    const batch = writeBatch(db);
+    const oldDriverId = vehicle.assignedDriverId;
+
+    // 1. Unassign the old driver from this vehicle
+    if (oldDriverId) {
+        batch.update(personnelService.getDriverDocRef(oldDriverId), { assignedVehicleId: null });
+    }
+
+    // 2. Unassign the new driver from any other vehicle
+    if (newDriverId) {
+        const otherVehicleAssigned = allVehicles.find(v => v.assignedDriverId === newDriverId && v.id !== vehicle.id);
+        if (otherVehicleAssigned) {
+            batch.update(inventoryService.getVehicleDocRef(otherVehicleAssigned.id), { assignedDriverId: null });
+        }
+        // 3. Assign this vehicle to the new driver
+        batch.update(personnelService.getDriverDocRef(newDriverId), { assignedVehicleId: vehicle.id });
+    }
+    
+    // 4. Update the vehicle's assigned driver ID
+    batch.update(inventoryService.getVehicleDocRef(vehicle.id), { assignedDriverId: newDriverId });
+
+    try {
+        await batch.commit();
+        onRefresh();
+        toast({ title: "Conductor Asignado", description: "La asignación ha sido actualizada." });
+    } catch(e) {
+        console.error("Error al asignar conductor:", e);
+        toast({ title: "Error al Asignar", description: `Ocurrió un error: ${e instanceof Error ? e.message : 'Error desconocido'}`, variant: "destructive"});
+    }
+  }, [vehicle, drivers, onRefresh]);
+
 
   const formatServiceInfo = (date?: string | Date, mileage?: number): string => {
     if (!date) return 'No hay registro.';
@@ -30,6 +78,10 @@ export function DetailsTabContent({ vehicle, onEdit }: DetailsTabContentProps) {
     
     return `${mileagePart}${datePart}`;
   };
+
+  const availableDrivers = useMemo(() => {
+    return drivers.filter(d => !d.isArchived && (!d.assignedVehicleId || d.assignedVehicleId === vehicle.id));
+  }, [drivers, vehicle.id]);
 
   return (
     <>
@@ -75,6 +127,32 @@ export function DetailsTabContent({ vehicle, onEdit }: DetailsTabContentProps) {
         </CardContent>
       </Card>
       
+       <Card>
+        <CardHeader>
+          <CardTitle>Asignación de Conductor</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end gap-2">
+            <div className="flex-grow">
+              <Label>Conductor Asignado</Label>
+              <Select onValueChange={handleAssignDriver} value={vehicle.assignedDriverId || ""}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar un conductor..."/>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="null">-- Ninguno --</SelectItem>
+                  {availableDrivers.map(d => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Costos y Deducciones Fijas</CardTitle>

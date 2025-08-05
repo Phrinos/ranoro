@@ -102,6 +102,12 @@ const onDriversUpdate = (callback: (drivers: Driver[]) => void): (() => void) =>
     return unsubscribe;
 };
 
+const onDriversUpdatePromise = async (): Promise<Driver[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(query(collection(db, "drivers")));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Driver));
+};
+
 const getDriverById = async (id: string): Promise<Driver | undefined> => {
     if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, 'drivers', id);
@@ -144,13 +150,18 @@ const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => 
         const driverData = driverDoc.data() as Driver;
         if (driverData?.assignedVehicleId) {
             const vehicleRef = doc(db, 'vehicles', driverData.assignedVehicleId);
-            batch.update(vehicleRef, { assignedVehicleId: null });
+            batch.update(vehicleRef, { assignedDriverId: null });
             batch.update(driverRef, { assignedVehicleId: null });
         }
     }
 
     await batch.commit();
 };
+
+const getDriverDocRef = (id: string) => {
+    if (!db) throw new Error("Database not initialized.");
+    return doc(db, 'drivers', id);
+}
 
 
 export const personnelService = {
@@ -159,7 +170,9 @@ export const personnelService = {
     savePersonnel,
     archivePersonnel,
     onDriversUpdate,
+    onDriversUpdatePromise,
     getDriverById,
+    getDriverDocRef,
     saveDriver,
     archiveDriver,
     onAreasUpdate,
