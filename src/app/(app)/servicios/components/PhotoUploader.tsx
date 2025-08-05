@@ -39,8 +39,8 @@ export function PhotoUploader({
     }
     if (!file) return;
 
-    if (!serviceId) {
-        toast({ title: "Error", description: "Se necesita un ID de servicio válido para subir fotos. Guarde el servicio primero.", variant: "destructive" });
+    if (!serviceId || serviceId === 'new') {
+        toast({ title: "Guarda el servicio primero", description: "Debes guardar el servicio antes de poder añadir fotos.", variant: "destructive" });
         return;
     }
 
