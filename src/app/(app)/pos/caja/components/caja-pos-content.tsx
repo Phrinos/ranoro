@@ -226,7 +226,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
         initialBalance: dailyInitial,
         totalCashIn: dailyCashIn, 
         totalCashOut: dailyCashOut, 
-        finalCashBalance,
+        finalCashBalance: finalAccumulatedBalance,
         salesByPaymentMethod: salesByPaymentMethod,
         totalSales: transactionsInSelectedDay.filter(t=>t.relatedType === 'Venta').length,
         totalServices: transactionsInSelectedDay.filter(t=>t.relatedType === 'Servicio').length,
@@ -409,4 +409,5 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
 
 
     
+
 
