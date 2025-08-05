@@ -39,17 +39,20 @@ export default function FleetVehicleDetailPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
   const [isVehicleEditDialogOpen, setIsVehicleEditDialogOpen] = useState(false);
 
   const fetchVehicleAndDrivers = useCallback(async () => {
-    const [fetchedVehicle, fetchedDrivers] = await Promise.all([
+    const [fetchedVehicle, fetchedDrivers, allVehiclesData] = await Promise.all([
       inventoryService.getVehicleById(vehicleId),
-      personnelService.onDriversUpdatePromise()
+      personnelService.onDriversUpdatePromise(),
+      inventoryService.onVehiclesUpdatePromise()
     ]);
     
     if(fetchedVehicle && fetchedVehicle.isFleetVehicle) {
         setVehicle(fetchedVehicle);
         setDrivers(fetchedDrivers);
+        setAllVehicles(allVehiclesData);
     } else {
         setVehicle(null);
     }
@@ -149,6 +152,7 @@ export default function FleetVehicleDetailPage() {
           <DetailsTabContent 
             vehicle={vehicle} 
             drivers={drivers}
+            allVehicles={allVehicles}
             onEdit={() => setIsVehicleEditDialogOpen(true)} 
             onRefresh={fetchVehicleAndDrivers}
           />

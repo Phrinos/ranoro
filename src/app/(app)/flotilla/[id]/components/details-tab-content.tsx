@@ -23,11 +23,12 @@ import { db } from '@/lib/firebaseClient';
 interface DetailsTabContentProps {
   vehicle: Vehicle;
   drivers: Driver[];
+  allVehicles: Vehicle[]; // Added this prop
   onEdit: () => void;
   onRefresh: () => void;
 }
 
-export function DetailsTabContent({ vehicle, drivers, onEdit, onRefresh }: DetailsTabContentProps) {
+export function DetailsTabContent({ vehicle, drivers, allVehicles, onEdit, onRefresh }: DetailsTabContentProps) {
   
   const assignedDriver = useMemo(() => {
     return drivers.find(d => d.id === vehicle.assignedDriverId);
@@ -65,7 +66,7 @@ export function DetailsTabContent({ vehicle, drivers, onEdit, onRefresh }: Detai
         console.error("Error al asignar conductor:", e);
         toast({ title: "Error al Asignar", description: `Ocurrió un error: ${e instanceof Error ? e.message : 'Error desconocido'}`, variant: "destructive"});
     }
-  }, [vehicle, drivers, onRefresh]);
+  }, [vehicle, drivers, allVehicles, onRefresh]);
 
 
   const formatServiceInfo = (date?: string | Date, mileage?: number): string => {
@@ -136,8 +137,7 @@ export function DetailsTabContent({ vehicle, drivers, onEdit, onRefresh }: Detai
             <div className="flex-grow">
               <Label>Conductor Asignado</Label>
               <Select onValueChange={handleAssignDriver} value={vehicle.assignedDriverId || ""}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar un conductor..."/>
+                <SelectTrigger><SelectValue placeholder="Seleccionar un conductor..."/>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="null">-- Ninguno --</SelectItem>
