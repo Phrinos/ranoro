@@ -22,7 +22,7 @@ import {
 import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
-import type { DateRange } from 'react-day-picker';
+import type { DateRange } from "react-day-picker";
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
@@ -80,7 +80,7 @@ export function FinanzasPageComponent({
         const emptyState = { 
             monthYearLabel: 'Cargando...', totalOperationalIncome: 0, totalIncomeFromSales: 0, totalIncomeFromServices: 0,
             totalProfitFromSales: 0, totalProfitFromServices: 0, totalCostOfGoods: 0, totalOperationalProfit: 0, 
-            totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0, totalFixedExpenses: 0,
+            totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0, totalFixedExpenses: 0, totalBaseExpenses: 0,
             totalVariableCommissions: 0, netProfit: 0, isProfitableForCommissions: false, serviceIncomeBreakdown: {},
             totalInventoryValue: 0, totalUnitsSold: 0
         };
@@ -137,14 +137,12 @@ export function FinanzasPageComponent({
 
             if (role === 'tecnico') {
               totals.totalTechnicianSalaries += person.monthlySalary || 0;
-            } else if (role === 'asesor') {
+            } else {
               totals.totalAdministrativeSalaries += person.monthlySalary || 0;
             } 
-            // Nota: superadministrador no se suma a ningún grupo
             return totals;
           }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
 
-        // Filter fixed expenses based on their creation date relative to the *end* of the current period.
         const totalFixedExpensesValue = fixedExpenses
             .filter(expense => {
                 const createdAt = parseDate(expense.createdAt);
@@ -180,7 +178,7 @@ export function FinanzasPageComponent({
         return { 
             monthYearLabel: dateLabel, totalOperationalIncome, totalIncomeFromSales, totalIncomeFromServices, 
             totalProfitFromSales, totalProfitFromServices, totalCostOfGoods, totalOperationalProfit,
-            totalTechnicianSalaries, totalAdministrativeSalaries, totalFixedExpenses: totalFixedExpensesValue,
+            totalTechnicianSalaries, totalAdministrativeSalaries, totalFixedExpenses: totalFixedExpensesValue, totalBaseExpenses,
             totalVariableCommissions, netProfit, isProfitableForCommissions, serviceIncomeBreakdown,
             totalInventoryValue, totalUnitsSold
         };
@@ -232,8 +230,8 @@ export function FinanzasPageComponent({
                             <hr className="my-4 border-border"/>
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">(-) Gastos Fijos y Nómina:</span>
-                                    <span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalTechnicianSalaries + financialSummary.totalAdministrativeSalaries + financialSummary.totalFixedExpenses)}</span>
+                                    <span className="text-muted-foreground">(-) Gastos Fijos (Nómina, Renta, etc.):</span>
+                                    <span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalBaseExpenses)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-muted-foreground">(-) Comisiones Variables:</span>
