@@ -90,7 +90,7 @@ export function ProveedoresContent({ suppliers }: ProveedoresContentProps) {
             sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre o contacto..."
         />
-        <Card>
+        <Card className="mt-4">
             <CardContent className="p-0">
                 <SuppliersTable suppliers={filteredAndSortedSuppliers} onEdit={handleOpenDialog} onDelete={handleDeleteSupplier} />
             </CardContent>
