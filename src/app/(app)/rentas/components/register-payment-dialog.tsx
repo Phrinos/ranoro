@@ -14,18 +14,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Driver, Vehicle } from "@/types";
+import type { Driver, Vehicle, PaymentMethod } from "@/types";
 import { DollarSign } from 'lucide-react';
 import { subDays, isBefore, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+
+const paymentOptions: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia'];
 
 interface RegisterPaymentDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   drivers: Driver[];
   vehicles: Vehicle[];
-  onSave: (driverId: string, amount: number, note: string | undefined, mileage?: number) => void;
+  onSave: (driverId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, mileage?: number) => void;
 }
 
 export function RegisterPaymentDialog({
@@ -41,6 +43,7 @@ export function RegisterPaymentDialog({
   const [mileage, setMileage] = useState<number | ''>('');
   const [note, setNote] = useState('');
   const [needsMileageUpdate, setNeedsMileageUpdate] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Efectivo');
 
   useEffect(() => {
     if (!open) {
@@ -50,6 +53,7 @@ export function RegisterPaymentDialog({
       setMileage('');
       setNote('');
       setNeedsMileageUpdate(false);
+      setPaymentMethod('Efectivo');
       return;
     }
 
@@ -94,7 +98,7 @@ export function RegisterPaymentDialog({
         return;
     }
 
-    onSave(selectedDriverId, Number(amount), note, mileage !== '' ? Number(mileage) : undefined);
+    onSave(selectedDriverId, Number(amount), paymentMethod, note, mileage !== '' ? Number(mileage) : undefined);
     onOpenChange(false);
   };
 
@@ -104,7 +108,7 @@ export function RegisterPaymentDialog({
         <DialogHeader className="p-6 pb-4 border-b">
           <DialogTitle>Registrar Pago de Renta</DialogTitle>
           <DialogDescription>
-            Seleccione el conductor y confirme el monto del pago.
+            Seleccione el conductor y confirme los detalles del pago.
           </DialogDescription>
         </DialogHeader>
         <div className="p-6 space-y-6">
@@ -121,13 +125,26 @@ export function RegisterPaymentDialog({
                 </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="amount-input">Monto del Pago</Label>
-            <div className="relative">
-                <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input id="amount-input" type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8" />
+           <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor="amount-input">Monto del Pago</Label>
+                <div className="relative">
+                    <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input id="amount-input" type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8" />
+                </div>
             </div>
-          </div>
+             <div className="space-y-2">
+                <Label htmlFor="payment-method-select">Método</Label>
+                <Select onValueChange={(value) => setPaymentMethod(value as PaymentMethod)} value={paymentMethod}>
+                    <SelectTrigger id="payment-method-select"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        {paymentOptions.map(opt => (
+                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+           </div>
           {needsMileageUpdate && (
             <div className="space-y-2">
                 <Label htmlFor="mileage-input">Kilometraje Actual (Obligatorio)</Label>

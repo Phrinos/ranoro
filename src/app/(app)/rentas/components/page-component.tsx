@@ -3,12 +3,12 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import type { RentalPayment, Driver, Vehicle, WorkshopInfo, VehicleExpense, OwnerWithdrawal } from '@/types';
+import type { RentalPayment, Driver, Vehicle, WorkshopInfo, VehicleExpense, OwnerWithdrawal, PaymentMethod } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, PlusCircle, ArrowDownCircle, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from "@/lib/utils";
 import { startOfDay, endOfDay, parseISO, isWithinInterval, isValid } from 'date-fns';
 
 import { inventoryService, operationsService, personnelService } from '@/lib/services';
@@ -64,9 +64,9 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
 
-  const handleSavePayment = async (driverId: string, amount: number, note: string | undefined, mileage?: number) => {
+  const handleSavePayment = async (driverId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, mileage?: number) => {
     try {
-        const newPayment = await operationsService.addRentalPayment(driverId, amount, note, mileage);
+        const newPayment = await operationsService.addRentalPayment(driverId, amount, paymentMethod, note, mileage);
         toast({ title: 'Pago Registrado' });
         setIsPaymentDialogOpen(false);
     } catch (e: any) {
@@ -99,7 +99,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
     const interval = { start: startOfDay(now), end: endOfDay(now) };
 
     const totalIncome = payments
-      .filter(p => isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), interval))
+      .filter(p => (p.paymentMethod === 'Efectivo' || !p.paymentMethod) && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), interval))
       .reduce((sum, p) => sum + p.amount, 0);
       
     const totalWithdrawals = withdrawals
@@ -134,7 +134,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
           <div className="flex items-center gap-2 p-2 h-10 rounded-md border bg-card text-card-foreground shadow-sm">
             <Wallet className="h-5 w-5 text-green-500" />
             <div className="flex flex-col items-end">
-              <span className="text-xs text-muted-foreground -mb-1">Caja</span>
+              <span className="text-xs text-muted-foreground -mb-1">Caja (Hoy)</span>
               <span className="font-bold">{formatCurrency(totalCashBalance)}</span>
             </div>
           </div>

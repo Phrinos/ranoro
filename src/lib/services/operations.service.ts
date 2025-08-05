@@ -16,7 +16,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply, User, PayableAccount, Supplier } from "@/types";
+import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply, User, PayableAccount, Supplier, PaymentMethod } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
@@ -554,7 +554,7 @@ const onRentalPaymentsUpdatePromise = async (): Promise<RentalPayment[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RentalPayment));
 }
 
-const addRentalPayment = async (driverId: string, amount: number, note: string | undefined, mileage?: number): Promise<RentalPayment> => {
+const addRentalPayment = async (driverId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, mileage?: number): Promise<RentalPayment> => {
     if (!db) throw new Error("Database not initialized.");
     const driver = await personnelService.getDriverById(driverId);
     if (!driver) throw new Error("Driver not found.");
@@ -571,6 +571,7 @@ const addRentalPayment = async (driverId: string, amount: number, note: string |
         paymentDate: new Date().toISOString(),
         amount: amount,
         daysCovered: amount / (vehicle.dailyRentalCost || 1),
+        paymentMethod: paymentMethod,
         note: note,
         registeredBy: user?.name || 'Sistema',
     };
