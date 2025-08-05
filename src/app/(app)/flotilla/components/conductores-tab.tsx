@@ -116,7 +116,12 @@ export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps)
                         </TableCell>
                         <TableCell className="font-semibold">{driver.name}</TableCell>
                         <TableCell>{driver.phone}</TableCell>
-                        <TableCell>{vehicle ? `${vehicle.licensePlate} - ${vehicle.make}` : 'Sin vehículo'}</TableCell>
+                        <TableCell>
+                            {driver.isArchived 
+                                ? <span className="text-muted-foreground italic">Archivado</span>
+                                : (vehicle ? `${vehicle.licensePlate} - ${vehicle.make}` : 'Sin vehículo')
+                            }
+                        </TableCell>
                         <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground"/></TableCell>
                       </TableRow>
                     );
