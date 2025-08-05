@@ -155,16 +155,9 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       const amount = 'totalAmount' in op ? op.totalAmount : (op.totalCost || 0);
       salesByPaymentMethodInDay[method] = (salesByPaymentMethodInDay[method] || 0) + amount;
     });
-    
-    const balanceStartDate = latestInitialBalance ? parseISO(latestInitialBalance.date) : new Date(0);
-    const runningInitialBalance = latestInitialBalance?.amount || 0;
-    
-    const cashFromSalesSince = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: balanceStartDate, end: new Date() }) && s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? s.totalAmount : s.amountInCash || 0), 0);
-    const cashFromServicesSince = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start: balanceStartDate, end: new Date() }) && s.paymentMethod?.includes('Efectivo')).reduce((sum, s) => sum + (s.paymentMethod === 'Efectivo' ? (s.totalCost || 0) : s.amountInCash || 0), 0);
-    const manualInSince = allCashTransactions.filter(t => t.type === 'Entrada' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start: balanceStartDate, end: new Date() })).reduce((sum, t) => sum + t.amount, 0);
-    const manualOutSince = allCashTransactions.filter(t => t.type === 'Salida' && isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start: balanceStartDate, end: new Date() })).reduce((sum, t) => sum + t.amount, 0);
-    
-    const finalCashBalance = runningInitialBalance + cashFromSalesSince + cashFromServicesSince + manualInSince - manualOutSince;
+
+    // Final balance is now specific to the selected day
+    const finalCashBalanceForDay = dailyInitial + totalCashOpsInDay + manualCashInDay - manualCashOutDay;
 
     return { 
         initialBalance: dailyInitial, 
@@ -174,9 +167,9 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
         salesByPaymentMethod: salesByPaymentMethodInDay, 
         totalSales: salesInDay.length, 
         totalServices: servicesInDay.length,
-        finalCashBalance,
+        finalCashBalance: finalCashBalanceForDay,
     };
-  }, [date, allSales, allServices, allCashTransactions, dailyInitialBalance, latestInitialBalance]);
+  }, [date, allSales, allServices, allCashTransactions, dailyInitialBalance]);
   
   const manualCashMovements = useMemo(() => {
     const start = startOfDay(date);
