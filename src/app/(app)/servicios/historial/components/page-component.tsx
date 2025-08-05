@@ -251,30 +251,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     }
   }, [recordForTicket, toast]);
   
-  const handleShare = async () => {
-    const imageFile = await handleCopyAsImage(true);
-    if (imageFile && navigator.share) {
-      try {
-        await navigator.share({
-          files: [imageFile],
-          title: 'Ticket de Servicio',
-          text: `Ticket de tu servicio en ${workshopInfo?.name || 'nuestro taller'}.`,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-        if(!String(error).includes('AbortError')) {
-           toast({ title: 'Error al compartir', variant: 'destructive' });
-        }
-      }
-    } else {
-        handleCopyServiceForWhatsapp(recordForTicket!);
-    }
-  };
-
-  const handlePrint = () => {
-    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
-  };
-  
   const handleCopyServiceForWhatsapp = useCallback((service: ServiceRecord) => {
     const vehicle = vehicles.find(v => v.id === service.vehicleId);
     const workshopName = workshopInfo?.name || 'nuestro taller';
@@ -293,7 +269,32 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
     });
   }, [toast, vehicles, workshopInfo]);
+  
+  const handleShare = async () => {
+    const imageFile = await handleCopyAsImage(true);
+    if (imageFile && navigator.share) {
+      try {
+        await navigator.share({
+          files: [imageFile],
+          title: 'Ticket de Servicio',
+          text: `Ticket de tu servicio en ${workshopInfo?.name || 'nuestro taller'}.`,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+        if(!String(error).includes('AbortError')) {
+           toast({ title: 'Error al compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
+           handleCopyServiceForWhatsapp(recordForTicket!);
+        }
+      }
+    } else {
+        handleCopyServiceForWhatsapp(recordForTicket!);
+    }
+  };
 
+  const handlePrint = () => {
+    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
+  };
+  
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
