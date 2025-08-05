@@ -160,7 +160,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     const runningBalanceStart = latestInitialBalance?.amount || 0;
     const runningBalanceStartDate = latestInitialBalance?.date ? parseISO(latestInitialBalance.date) : new Date(0);
     
-    // The interval starts from the beginning of the day of the last initial balance
     const runningBalanceInterval = { start: startOfDay(runningBalanceStartDate), end: endOfSelectedDate };
     
     const salesSinceLastBalance = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), runningBalanceInterval));
@@ -328,7 +327,3 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     </>
   );
 }
-
-    
-
-    
