@@ -173,8 +173,8 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             <>
                 {renderDashedLine()}
                 <div className="text-center" style={{ fontSize: `${bodyFontSize}px` }}>
-                    <p>Pagado con: {operation.paymentMethod}</p>
-                    <div className="text-left text-xs pl-2">
+                    <p className="font-bold">Pagado con: {operation.paymentMethod}</p>
+                    <div className="text-center text-xs">
                       { (operation.paymentMethod?.includes('+') || operation.paymentMethod?.includes('/')) && operation.amountInCash ? <p>- Efectivo: {formatCurrency(operation.amountInCash)}</p> : null}
                       { (operation.paymentMethod?.includes('+') || operation.paymentMethod?.includes('/')) && operation.amountInCard ? <p>- Tarjeta: {formatCurrency(operation.amountInCard)}</p> : null}
                       { (operation.paymentMethod?.includes('+') || operation.paymentMethod?.includes('/')) && operation.amountInTransfer ? <p>- Transferencia: {formatCurrency(operation.amountInTransfer)}</p> : null}
