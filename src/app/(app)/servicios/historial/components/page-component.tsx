@@ -23,6 +23,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
 import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
     { value: 'all', label: 'Todos los Estados' },
@@ -52,6 +53,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ServiceRecord | null>(null);
@@ -70,6 +72,12 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
 
   useEffect(() => {
     setIsLoading(true);
+
+    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    if (authUserString) {
+        try { setCurrentUser(JSON.parse(authUserString)); } catch (e) { console.error("Error parsing auth user from localStorage", e); }
+    }
+
     const unsubs = [
       operationsService.onServicesUpdate((services) => {
         setAllServices(services.filter(s => s.status !== 'Cotizacion'));
@@ -281,12 +289,14 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         });
       } catch (error) {
         console.error('Error sharing:', error);
-        if(!String(error).includes('AbortError')) {
-           toast({ title: 'Error al compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
+        // Fallback to text copy if sharing fails for non-abort reasons
+        if (!String(error).includes('AbortError')) {
+           toast({ title: 'No se pudo compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
            handleCopyServiceForWhatsapp(recordForTicket!);
         }
       }
     } else {
+        // Fallback if sharing is not supported or image creation failed
         handleCopyServiceForWhatsapp(recordForTicket!);
     }
   };
@@ -312,7 +322,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       onPrintTicket={() => handlePrintTicket(record)}
       onConfirm={() => handleConfirmAppointment(record)}
       onEditPayment={() => handleOpenPaymentDialog(record)}
-      onDelete={() => handleDeleteService(record.id)}
+      onDelete={currentUser?.role === 'Superadministrador' ? () => handleDeleteService(record.id) : undefined}
       onCancel={() => {
         if (record.id) {
           const reason = prompt("Motivo de la cancelación:");
