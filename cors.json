@@ -6,22 +6,15 @@
       "https://ranoro-jm8l0.web.app",
       "https://ranoro-jm8l0.firebaseapp.com",
       "https://ranoro.mx",
-      "https://*-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
+      "https://*.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
     ],
-    "method": [
-      "GET",
-      "POST",
-      "PUT",
-      "DELETE",
-      "OPTIONS"
-    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     "responseHeader": [
       "Content-Type",
       "Authorization",
-      "Content-Length",
-      "User-Agent",
-      "x-goog-resumable",
-      "x-goog-meta-origin"
+      "X-Goog-Upload-URL",
+      "X-Goog-Upload-Status",
+      "X-Goog-Upload-Chunk-Granularity"
     ],
     "maxAgeSeconds": 3600
   }
