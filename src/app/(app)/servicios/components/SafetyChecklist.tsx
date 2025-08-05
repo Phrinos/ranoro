@@ -43,10 +43,10 @@ const inspectionGroups = [
     { name: "safetyInspection.carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
   ]},
   { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
-    { name: "suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
-    { name: "suspension_amortiguadores", label: "16. AMORTIGUADORES" },
-    { name: "suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
-    { name: "suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
+    { name: "safetyInspection.suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
+    { name: "safetyInspection.suspension_amortiguadores", label: "16. AMORTIGUADORES" },
+    { name: "safetyInspection.suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
+    { name: "safetyInspection.suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
   ]},
   { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
     { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
@@ -103,7 +103,7 @@ const ChecklistItemPhotoUploader = ({
             </div>
             {!isReadOnly && photos.length < 2 && (
                  <PhotoUploader
-                    reportIndex={0} // Not strictly needed here, but required by component prop
+                    reportIndex={0} 
                     serviceId={serviceId}
                     onUploadComplete={handleUploadComplete}
                     photosLength={photos.length}
@@ -198,7 +198,7 @@ const SafetyCheckRow = ({
                 )}
               />
               <ChecklistItemPhotoUploader
-                itemName={name.split('.').pop()!}
+                itemName={name}
                 serviceId={serviceId}
                 photos={field.value?.photos || []}
                 onUpload={onPhotoUploaded}
@@ -337,5 +337,3 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
     </>
   );
 };
-
-    

@@ -336,7 +336,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   }, [getValues, setValue]);
 
   const handleChecklistPhotoUploaded = useCallback((itemName: string, url: string) => {
-      const fieldName: `safetyInspection.${keyof SafetyInspection}` = `safetyInspection.${itemName as keyof SafetyInspection}`;
+      const fieldName = itemName as `safetyInspection.${keyof SafetyInspection}`;
       const currentCheckValue = getValues(fieldName) as SafetyCheckValue || { status: 'na', photos: [] };
       const updatedPhotos = [...(currentCheckValue.photos || []), url];
       setValue(fieldName, { ...currentCheckValue, photos: updatedPhotos });
