@@ -12,11 +12,12 @@
       "GET",
       "POST",
       "PUT",
-      "DELETE"
+      "DELETE",
+      "OPTIONS"
     ],
-    "header": [
+    "responseHeader": [
       "Content-Type",
-      "x-goog-resumable"
+      "Authorization"
     ],
     "maxAgeSeconds": 3600
   }
