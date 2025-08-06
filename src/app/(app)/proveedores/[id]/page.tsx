@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -21,7 +20,7 @@ import type { Supplier, PayableAccount, User } from '@/types';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { PayableAccountDialog } from '../components/payable-account-dialog';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 
 export default function SupplierDetailPage() {
@@ -100,18 +99,12 @@ export default function SupplierDetailPage() {
       <div className="flex items-center justify-between">
         <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4"/>Volver</Button>
         <div className="flex gap-2">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/>Eliminar Proveedor</Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>¿Estás seguro?</AlertDialogTitle><AlertDialogDescription>Esta acción eliminará permanentemente al proveedor "{supplier.name}" y todo su historial de cuentas. No se puede deshacer.</AlertDialogDescription></AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteSupplier} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDialog
+                triggerButton={<Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/>Eliminar Proveedor</Button>}
+                title={`¿Estás seguro de eliminar a "${supplier.name}"?`}
+                description="Esta acción eliminará permanentemente al proveedor y todo su historial de cuentas. No se puede deshacer."
+                onConfirm={handleDeleteSupplier}
+            />
             <Button onClick={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4"/>Editar Proveedor</Button>
         </div>
       </div>

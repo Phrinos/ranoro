@@ -33,12 +33,20 @@ interface ViewSaleDialogProps {
 
 export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale, onSendWhatsapp }: ViewSaleDialogProps) {
   const [reason, setReason] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!sale) return null;
 
   const isCancelled = sale.status === 'Cancelado';
   const saleDate = parseISO(sale.saleDate);
   const formattedDate = format(saleDate, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
+
+  const handleConfirmCancel = async () => {
+    setIsLoading(true);
+    await onCancelSale(sale.id, reason);
+    setIsLoading(false);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -123,8 +131,9 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale, onSendW
                     }
                     title="¿Está seguro de cancelar esta venta?"
                     description="Esta acción no se puede deshacer. El stock de los artículos vendidos será restaurado al inventario. Se requiere un motivo para la cancelación."
-                    onConfirm={() => onCancelSale(sale.id, reason)}
+                    onConfirm={handleConfirmCancel}
                     confirmText="Sí, Cancelar Venta"
+                    isLoading={isLoading}
                 >
                     <div className="mt-4">
                         <Label htmlFor="cancellation-reason" className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>

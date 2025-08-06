@@ -1,17 +1,18 @@
 
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Receipt, Save, Loader2, Wallet, CreditCard, Send, PlusCircle, Trash2, DollarSign } from 'lucide-react';
+import { Receipt, Save, Loader2, Wallet, CreditCard, Send, PlusCircle, Trash2, DollarSign, CheckCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Payment } from '@/types';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { useToast } from '@/hooks/use-toast';
 
 const IVA_RATE = 0.16;
 
@@ -31,8 +32,10 @@ export function SaleSummary() {
     name: "payments",
   });
   
+  const { toast } = useToast();
   const watchedItems = watch("items");
   const watchedPayments = watch('payments');
+  const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
 
   const [subTotal, setSubTotal] = useState(0);
   const [tax, setTax] = useState(0);
@@ -56,6 +59,20 @@ export function SaleSummary() {
   
   const totalPaid = watchedPayments?.reduce((acc: number, p: Payment) => acc + (Number(p.amount) || 0), 0) || 0;
 
+  const handleValidateFolio = (index: number) => {
+      const originalFolio = watch(`payments.${index}.folio`);
+      const enteredFolio = prompt(`Por favor, reingrese el folio para validar:`, '');
+      if (enteredFolio === null) return; 
+
+      if (enteredFolio === originalFolio) {
+          setValidatedFolios(prev => ({ ...prev, [index]: true }));
+          toast({ title: "Folio Validado", description: "El folio coincide correctamente." });
+      } else {
+          setValidatedFolios(prev => ({ ...prev, [index]: false }));
+          toast({ title: "Error de Validación", description: "Los folios no coinciden. Por favor, verifique.", variant: "destructive" });
+      }
+  };
+
 
   return (
     <Card className="h-full flex flex-col">
@@ -69,10 +86,11 @@ export function SaleSummary() {
             {fields.map((field, index) => {
                     const selectedMethod = watchedPayments[index]?.method;
                     const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
-                    const folioLabel = selectedMethod === 'Transferencia' ? 'Folio de Transferencia' : 'Folio de Voucher';
+                    const folioLabel = selectedMethod === 'Transferencia' ? 'Folio/Referencia' : 'Folio de Voucher';
+                    const isFolioValidated = validatedFolios[index];
 
                     return (
-                        <div key={field.id} className="space-y-2 p-3 border rounded-md">
+                        <Card key={field.id} className="p-4 bg-muted/50">
                             <div className="flex gap-2 items-end">
                                 <FormField
                                     control={control}
@@ -111,28 +129,34 @@ export function SaleSummary() {
                                 {fields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
                             </div>
                             {showFolio && (
-                                <FormField
-                                    control={control}
-                                    name={`payments.${index}.folio`}
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <Input placeholder={folioLabel} {...field} value={field.value ?? ''} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
+                                <div className="flex items-end gap-2 mt-2">
+                                     <FormField
+                                        control={control}
+                                        name={`payments.${index}.folio`}
+                                        render={({ field }) => (
+                                            <FormItem className="flex-grow">
+                                                <FormControl>
+                                                    <div className="relative">
+                                                        <Input placeholder={folioLabel} {...field} value={field.value ?? ''} />
+                                                        {isFolioValidated && <CheckCircle className="absolute right-2 top-2.5 h-5 w-5 text-green-500" />}
+                                                    </div>
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <Button type="button" variant="secondary" size="sm" onClick={() => handleValidateFolio(index)}>Validar</Button>
+                                </div>
                             )}
                             <FormField
                                 control={control}
                                 name={`payments.${index}.amount`}
                                 render={() => <FormMessage />}
                             />
-                        </div>
+                        </Card>
                     );
             })}
             {availablePaymentMethods.length > 0 && (
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: 0, folio: '' })}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: undefined, folio: '' })}>
                         <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
                     </Button>
             )}
