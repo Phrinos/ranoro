@@ -45,6 +45,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SignatureDialog } from '../components/signature-dialog';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Image from 'next/image';
+import { useServiceTotals } from '@/hooks/use-service-form-hooks';
 
 // Lazy loading for tab content
 const SafetyChecklist = lazy(() => import('../components/SafetyChecklist').then(module => ({ default: module.SafetyChecklist })));
@@ -94,6 +95,8 @@ export default function NuevoServicioPage() {
   });
 
   const { control, watch, formState, handleSubmit, setValue, getValues } = methods;
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(methods);
+
 
   useEffect(() => {
     const unsubs = [
@@ -131,15 +134,22 @@ export default function NuevoServicioPage() {
   const handleSaleCompletion = async (values: ServiceCreationFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
     
+    const serviceDataWithTotals = {
+        ...values,
+        totalCost,
+        totalSuppliesWorkshopCost,
+        serviceProfit,
+    };
+
     if (values.status === 'Entregado') {
-        const tempService = { ...values, id: 'new_service_temp' } as ServiceRecord;
+        const tempService = { ...serviceDataWithTotals, id: 'new_service_temp' } as ServiceRecord;
         setServiceToComplete(tempService);
         setIsPaymentDialogOpen(true);
         return;
     }
 
     try {
-        const savedRecord = await serviceService.saveService(values as ServiceRecord);
+        const savedRecord = await serviceService.saveService(serviceDataWithTotals as ServiceRecord);
         toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
         setServiceForPreview(savedRecord);
         setIsPreviewOpen(true);
