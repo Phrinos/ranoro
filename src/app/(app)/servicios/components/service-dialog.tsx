@@ -1,396 +1,212 @@
+
+
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
-import { TableToolbar } from '@/components/shared/table-toolbar';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, User } from "@/types";
-import { useToast } from "@/hooks/use-toast";
-import { useTableManager } from "@/hooks/useTableManager";
-import { isToday, startOfMonth, endOfMonth, compareDesc } from "date-fns";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import { serviceService, inventoryService, personnelService, adminService } from '@/lib/services';
-import { db } from '@/lib/firebaseClient';
-import { parseDate } from '@/lib/forms';
-import { writeBatch } from 'firebase/firestore';
-import { Button } from "@/components/ui/button";
-import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import type { PaymentDetailsFormValues } from "./PaymentDetailsDialog";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ServiceForm } from "./service-form";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
+import { useToast } from "@/hooks/use-toast"; 
+import { db } from '@/lib/firebaseClient.js';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { operationsService } from '@/lib/services';
 
-const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
-const PaymentDetailsDialog = lazy(() => import('./PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
-const ServiceAppointmentCard = lazy(() => import('./ServiceAppointmentCard').then(module => ({ default: module.ServiceAppointmentCard })));
-const TicketContent = lazy(() => import('@/components/ticket-content').then(module => ({ default: module.TicketContent })));
-const PrintTicketDialog = lazy(() => import('@/components/ui/print-ticket-dialog').then(module => ({ default: module.PrintTicketDialog })));
 
-const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
-    { value: 'all', label: 'Todos los Estados' },
-    { value: 'Agendado', label: 'Agendado' },
-    { value: 'En Taller', label: 'En Taller' },
-    { value: 'Entregado', label: 'Entregado' },
-    { value: 'Cancelado', label: 'Cancelado' },
-];
+interface ServiceDialogProps {
+  trigger?: React.ReactNode;
+  service?: ServiceRecord | null; 
+  quote?: Partial<QuoteRecord> | null; // For quote mode initialization
+  vehicles: Vehicle[]; 
+  technicians: User[]; 
+  inventoryItems: InventoryItem[]; 
+  serviceTypes: ServiceTypeRecord[];
+  onSave?: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
+  isReadOnly?: boolean; 
+  open?: boolean; 
+  onOpenChange?: (isOpen: boolean) => void; 
+  onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void; 
+  mode?: 'service' | 'quote'; // New mode prop
+  onDelete?: (id: string) => void; // For quote deletion
+  onCancelService?: (serviceId: string, reason: string) => void;
+  onViewQuoteRequest?: (serviceId: string) => void;
+}
 
-const paymentMethodOptions: { value: PaymentMethod | 'all'; label: string }[] = [
-    { value: 'all', label: 'Todos los Métodos' },
-    { value: 'Efectivo', label: 'Efectivo' },
-    { value: 'Tarjeta', label: 'Tarjeta' },
-    { value: 'Transferencia', label: 'Transferencia' },
-    { value: 'Efectivo+Transferencia', label: 'Efectivo+Transferencia' },
-    { value: 'Tarjeta+Transferencia', label: 'Tarjeta+Transferencia' },
-    { value: 'Efectivo/Tarjeta', label: 'Efectivo/Tarjeta' },
-];
-
-export function HistorialServiciosPageComponent({ status }: { status?: string }) {
+export function ServiceDialog({ 
+  trigger, 
+  service, 
+  quote,
+  vehicles, 
+  technicians, 
+  inventoryItems, 
+  serviceTypes,
+  onSave, 
+  isReadOnly = false,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+  onVehicleCreated,
+  mode = 'service', // Default to service mode
+  onDelete,
+  onCancelService,
+  onViewQuoteRequest,
+}: ServiceDialogProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState(status || "activos");
 
-  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [personnel, setPersonnel] = useState<User[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentStatus, setCurrentStatus] = useState<ServiceRecord['status'] | undefined>();
 
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
-  
-  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
-  const [recordForTicket, setRecordForTicket] = useState<ServiceRecord | null>(null);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
-  const ticketContentRef = useRef<HTMLDivElement>(null);
-  
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [serviceToEditPayment, setServiceToEditPayment] = useState<ServiceRecord | null>(null);
-
+  const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
   useEffect(() => {
-    setIsLoading(true);
-
-    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-    if (authUserString) {
-        try { setCurrentUser(JSON.parse(authUserString)); } catch (e) { console.error("Error parsing auth user from localStorage", e); }
+    if(open) {
+      setCurrentStatus(service?.status || quote?.status);
     }
+  }, [open, service, quote]);
 
-    const unsubs = [
-      serviceService.onServicesUpdate((services) => {
-        setAllServices(services.filter(s => s.status !== 'Cotizacion'));
-        setIsLoading(false); 
-      }),
-      inventoryService.onVehiclesUpdate(setVehicles),
-      adminService.onUsersUpdate(setPersonnel),
-      inventoryService.onItemsUpdate(setInventoryItems),
-      inventoryService.onServiceTypesUpdate(setServiceTypes),
-    ];
 
-    const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
-    if (storedWorkshopInfo) {
-      try { setWorkshopInfo(JSON.parse(storedWorkshopInfo)); } catch (e) { console.error(e); }
-    }
-    return () => unsubs.forEach((unsub) => unsub());
-  }, []);
+  // Mark signatures as "viewed" when the dialog opens
+  useEffect(() => {
+    const syncAndMarkAsViewed = async () => {
+      if (open && service && service.id && mode === 'service') {
+        let changed = false;
+        let serviceToUpdate = { ...service };
 
-  const { activeServices, historicalServices } = useMemo(() => {
-    const servicesForToday = allServices.filter(s => {
-      const serviceDate = parseDate(s.serviceDate);
-      const deliveryDate = parseDate(s.deliveryDateTime);
-      // Activos son los que están en Taller o Agendados para hoy.
-      if (s.status === 'En Taller') return true;
-      if (s.status === 'Agendado' && serviceDate && isToday(serviceDate)) return true;
-      // También mostramos los que se completaron/cancelaron hoy para tener el resumen del día.
-      if ((s.status === 'Entregado' || s.status === 'Cancelado') && deliveryDate && isToday(deliveryDate)) return true;
-      return false;
-    });
+        // Sync from public document first
+        if (service.publicId && db) {
+          try {
+            const publicDocRef = doc(db, 'publicServices', service.publicId);
+            const publicDocSnap = await getDoc(publicDocRef);
 
-    const getStatusPriority = (service: ServiceRecord): number => {
-        if (service.status === 'En Taller' && service.subStatus === 'En Espera de Refacciones') return 1;
-        if (service.status === 'En Taller' && service.subStatus === 'Proveedor Externo') return 2;
-        if (service.status === 'Agendado' && service.appointmentStatus === 'Confirmada') return 3;
-        if (service.status === 'En Taller' && service.subStatus === 'Reparando') return 4;
-        if (service.status === 'En Taller' && !service.subStatus) return 4; // Default for 'En Taller'
-        if (service.status === 'Agendado' && service.appointmentStatus !== 'Confirmada') return 5;
-        if (service.status === 'En Taller' && service.subStatus === 'Completado') return 6;
-        if (service.status === 'Entregado') return 7;
-        if (service.status === 'Cancelado') return 8;
-        return 99; // Default case
-    };
-
-    const sortedActiveServices = servicesForToday.sort((a, b) => {
-        const priorityA = getStatusPriority(a);
-        const priorityB = getStatusPriority(b);
-        if (priorityA !== priorityB) {
-            return priorityA - priorityB;
+            if (publicDocSnap.exists()) {
+              const publicData = publicDocSnap.data() as ServiceRecord;
+              if (publicData.customerSignatureReception && !serviceToUpdate.customerSignatureReception) {
+                serviceToUpdate.customerSignatureReception = publicData.customerSignatureReception;
+                changed = true;
+              }
+              if (publicData.customerSignatureDelivery && !serviceToUpdate.customerSignatureDelivery) {
+                serviceToUpdate.customerSignatureDelivery = publicData.customerSignatureDelivery;
+                changed = true;
+              }
+            }
+          } catch (e) {
+            console.error("Failed to sync signatures from public doc:", e);
+          }
         }
-        // Use reception date for sorting, fallback to service date
-        const dateA = parseDate(a.receptionDateTime) || parseDate(a.serviceDate);
-        const dateB = parseDate(b.receptionDateTime) || parseDate(b.serviceDate);
 
-        if (!dateA) return 1;
-        if (!dateB) return -1;
+        // Now, mark as viewed
+        if (serviceToUpdate.customerSignatureReception && !serviceToUpdate.receptionSignatureViewed) {
+          serviceToUpdate.receptionSignatureViewed = true;
+          changed = true;
+        }
+        if (serviceToUpdate.customerSignatureDelivery && !serviceToUpdate.deliverySignatureViewed) {
+          serviceToUpdate.deliverySignatureViewed = true;
+          changed = true;
+        }
         
-        return compareDesc(dateA, dateB);
-    });
-
-    return { activeServices: sortedActiveServices, historicalServices: allServices };
-  }, [allServices]);
-
-  const { 
-    filteredData: filteredHistorical,
-    ...historicalTableManager
-  } = useTableManager<ServiceRecord>({
-    initialData: historicalServices,
-    searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
-    dateFilterKey: "deliveryDateTime",
-    initialSortOption: "deliveryDateTime_desc",
-    initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
-    itemsPerPage: 10,
-  });
-  
-  const handleCancelRecord = useCallback(async (serviceId: string, reason: string) => {
-    try {
-      await serviceService.cancelService(serviceId, reason);
-      toast({ title: 'Servicio cancelado.' });
-    } catch (e) {
-      toast({ title: "Error", description: "No se pudo cancelar el registro.", variant: "destructive"});
-    }
-  }, [toast]);
-
-  const handleDeleteService = useCallback(async (serviceId: string) => {
-    try {
-      await serviceService.deleteService(serviceId);
-      toast({ title: "Servicio Eliminado", description: "El registro ha sido eliminado permanentemente." });
-    } catch (e) {
-      toast({ title: "Error", description: "No se pudo eliminar el servicio.", variant: "destructive" });
-    }
-  }, [toast]);
-
-  const handleShowPreview = useCallback((service: ServiceRecord) => {
-    setRecordForPreview(service);
-    setIsPreviewOpen(true);
-  }, []);
-  
-  const handleOpenPaymentDialog = useCallback((service: ServiceRecord) => {
-    setServiceToEditPayment(service);
-    setIsPaymentDialogOpen(true);
-  }, []);
-
-  const handleUpdatePaymentDetails = useCallback(async (serviceId: string, paymentDetails: PaymentDetailsFormValues) => {
-    await serviceService.updateService(serviceId, paymentDetails);
-    toast({ title: "Detalles de Pago Actualizados" });
-    setIsPaymentDialogOpen(false);
-  }, [toast]);
-
-
-  const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
-     if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
-    try {
-      const batch = writeBatch(db);
-      await serviceService.completeService(service, { ...paymentDetails, nextServiceInfo }, batch);
-      await batch.commit();
-      toast({ title: "Servicio Completado" });
-      const updatedService = { ...service, ...paymentDetails, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
-      setRecordForTicket(updatedService);
-      setIsTicketDialogOpen(true);
-    } catch (e) {
-      toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
-    } finally {
-      setIsPaymentDialogOpen(false);
-    }
-  }, [toast]);
-  
-  const handlePrintTicket = useCallback((record: ServiceRecord) => {
-    setRecordForTicket(record);
-    setIsTicketDialogOpen(true);
-  }, []);
-
-  const handleConfirmAppointment = useCallback(async (service: ServiceRecord) => {
-    await serviceService.updateService(service.id, { appointmentStatus: "Confirmada" });
-    toast({ title: "Cita Confirmada" });
-  }, [toast]);
-  
-  const handleCopyAsImage = useCallback(async (isForSharing: boolean = false) => {
-    if (!ticketContentRef.current || !recordForTicket) return null;
-    const html2canvas = (await import('html2canvas')).default;
-    try {
-      const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error("Could not create blob from canvas.");
-      
-      if (isForSharing) {
-        return new File([blob], `ticket_servicio_${recordForTicket.id}.png`, { type: 'image/png' });
-      } else {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        toast({ title: "Copiado", description: "La imagen ha sido copiada." });
-        return null;
-      }
-    } catch (e) {
-      console.error('Error handling image:', e);
-      toast({ title: "Error", description: "No se pudo procesar la imagen del ticket.", variant: "destructive" });
-      return null;
-    }
-  }, [recordForTicket, toast]);
-  
-  const handleCopyServiceForWhatsapp = useCallback((service: ServiceRecord) => {
-    const vehicle = vehicles.find(v => v.id === service.vehicleId);
-    const workshopName = workshopInfo?.name || 'nuestro taller';
-    
-    let message = `Hola ${vehicle?.ownerName || 'Cliente'}, aquí tienes los detalles de tu servicio en ${workshopName}.`;
-    if(service.publicId){
-        const shareUrl = `${window.location.origin}/s/${service.publicId}`;
-        message += `\n\nPuedes ver los detalles y firmar de conformidad en el siguiente enlace:\n${shareUrl}`;
-    } else {
-        message += `\n\nFolio de Servicio: ${service.id}\nTotal: ${formatCurrency(service.totalCost)}`;
-    }
-    
-    message += `\n\n¡Agradecemos tu preferencia!`;
-
-    navigator.clipboard.writeText(message).then(() => {
-      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
-    });
-  }, [toast, vehicles, workshopInfo]);
-  
-  const handleShare = useCallback(async () => {
-    const imageFile = await handleCopyAsImage(true);
-    if (imageFile && navigator.share) {
-      try {
-        await navigator.share({
-          files: [imageFile],
-          title: `Servicio #${recordForTicket?.id}`,
-          text: `Detalles del servicio para ${vehicles.find(v => v.id === recordForTicket?.vehicleId)?.licensePlate} en ${workshopInfo?.name || 'nuestro taller'}.`,
-        });
-      } catch (error) {
-        if (!String(error).includes('AbortError')) {
-           toast({ title: 'No se pudo compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
-           handleCopyServiceForWhatsapp(recordForTicket!);
+        if (changed && db) {
+          const serviceDocRef = doc(db, "serviceRecords", service.id);
+          await setDoc(serviceDocRef, { 
+              customerSignatureReception: serviceToUpdate.customerSignatureReception,
+              customerSignatureDelivery: serviceToUpdate.customerSignatureDelivery,
+              receptionSignatureViewed: serviceToUpdate.receptionSignatureViewed,
+              deliverySignatureViewed: serviceToUpdate.deliverySignatureViewed,
+           }, { merge: true });
         }
       }
-    } else {
-        // Fallback if sharing is not supported or image creation failed
-        handleCopyServiceForWhatsapp(recordForTicket!);
-    }
-  }, [handleCopyAsImage, handleCopyServiceForWhatsapp, recordForTicket, workshopInfo, toast, vehicles]);
+    };
+    syncAndMarkAsViewed();
+  }, [open, service, mode]);
 
-  const handlePrint = () => {
-    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
+  const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
+    if (isReadOnly) {
+      onOpenChange(false);
+      return;
+    }
+
+    try {
+        const savedRecord = await operationsService.saveService(formData);
+        toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
+        if (onSave) {
+            await onSave(savedRecord);
+        }
+        onOpenChange(false);
+    } catch (error) {
+        console.error(`Error saving ${mode} from dialog:`, error);
+        toast({
+            title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`,
+            description: `Ocurrió un problema al intentar guardar desde el diálogo.`,
+            variant: "destructive",
+        });
+    }
   };
   
+  const getDynamicTitles = () => {
+    const currentRecord = service || quote;
+    const status = currentStatus || currentRecord?.status;
 
-  const renderServiceCard = useCallback((record: ServiceRecord) => (
-    <Suspense fallback={<div className="h-24 bg-muted rounded-lg animate-pulse" />} key={record.id}>
-      <ServiceAppointmentCard 
-        service={record}
-        vehicles={vehicles}
-        technicians={personnel}
-        onEdit={() => router.push(`/servicios/${record.id}`)}
-        onView={() => handleShowPreview(record)}
-        onComplete={() => handleOpenPaymentDialog(record)}
-        onPrintTicket={() => handlePrintTicket(record)}
-        onConfirm={() => handleConfirmAppointment(record)}
-        onEditPayment={() => handleOpenPaymentDialog(record)}
-        onDelete={currentUser?.role === 'Superadministrador' ? () => handleDeleteService(record.id) : undefined}
-        onCancel={() => {
-          if (record.id) {
-            const reason = prompt("Motivo de la cancelación:");
-            if (reason) handleCancelRecord(record.id, reason);
-          }
-        }}
-      />
-    </Suspense>
-  ), [vehicles, personnel, router, handleShowPreview, handleOpenPaymentDialog, handlePrintTicket, handleConfirmAppointment, handleDeleteService, handleCancelRecord, currentUser?.role]);
+    if (isReadOnly) {
+        switch (status) {
+            case 'Cotizacion': return { title: "Detalles de la Cotización", description: "Visualizando los detalles de la cotización." };
+            case 'Agendado': return { title: "Detalles de la Cita", description: "Visualizando los detalles de la cita agendada." };
+            default: return { title: "Detalles del Servicio", description: "Visualizando los detalles de la orden de servicio." };
+        }
+    }
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
+    if (currentRecord?.id) { // Editing existing record
+        switch (status) {
+            case 'Cotizacion': return { title: "Editar Cotización", description: "Actualiza los detalles de la cotización." };
+            case 'Agendado': return { title: "Editar Cita", description: "Actualiza los detalles de la cita." };
+            default: return { title: "Editar Servicio", description: "Actualiza los detalles de la orden de servicio." };
+        }
+    }
+    
+    // Creating new record
+    switch (status) {
+        case 'Cotizacion': return { title: "Nueva Cotización", description: "Completa la información para una nueva cotización." };
+        case 'Agendado': return { title: "Nueva Cita", description: "Completa la información para una nueva cita." };
+        case 'En Taller': return { title: "Nuevo Servicio", description: "Completa la información para una nueva orden de servicio." };
+        default: return { title: "Nuevo Registro", description: "Selecciona un estado para continuar." };
+    }
+  };
 
-  return (
-    <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Gestión de Servicios</h1>
-        <p className="text-primary-foreground/80 mt-1">Consulta servicios activos y el historial completo.</p>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="activos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Servicios Activos (Hoy)</TabsTrigger>
-          <TabsTrigger value="historial" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Historial Completo</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="activos" className="mt-0 space-y-4">
-          {activeServices.length > 0 ? activeServices.map(renderServiceCard) : <p className="text-center text-muted-foreground py-10">No hay servicios activos para hoy.</p>}
-        </TabsContent>
-
-        <TabsContent value="historial" className="mt-0 space-y-4">
-          <TableToolbar
-            searchTerm={historicalTableManager.searchTerm}
-            onSearchTermChange={historicalTableManager.setSearchTerm}
-            dateRange={historicalTableManager.dateRange}
-            onDateRangeChange={historicalTableManager.setDateRange}
-            sortOption={historicalTableManager.sortOption}
-            onSortOptionChange={historicalTableManager.setSortOption}
-            otherFilters={historicalTableManager.otherFilters}
-            onFilterChange={historicalTableManager.setOtherFilters}
-            searchPlaceholder="Buscar por folio, placa..."
-            filterOptions={[
-                { value: 'status', label: 'Estado', options: serviceStatusOptions },
-                { value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions },
-            ]}
-          />
-           <div className="flex items-center justify-between pt-2">
-            <p className="text-sm text-muted-foreground">{historicalTableManager.paginationSummary}</p>
-            <div className="flex items-center space-x-2">
-              <Button size="sm" onClick={historicalTableManager.goToPreviousPage} disabled={!historicalTableManager.canGoPrevious} variant="outline" className="bg-card">
-                <ChevronLeft className="h-4 w-4" />
-                Anterior
-              </Button>
-              <Button size="sm" onClick={historicalTableManager.goToNextPage} disabled={!historicalTableManager.canGoNext} variant="outline" className="bg-card">
-                Siguiente
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          {filteredHistorical.length > 0 ? filteredHistorical.map(renderServiceCard) : <p className="text-center text-muted-foreground py-10">No hay servicios que coincidan.</p>}
-        </TabsContent>
-      </Tabs>
+  const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
       
-      <Suspense fallback={null}>
-        {serviceToEditPayment && (
-          <PaymentDetailsDialog
-            open={isPaymentDialogOpen}
-            onOpenChange={setIsPaymentDialogOpen}
-            record={serviceToEditPayment}
-            onConfirm={handleUpdatePaymentDetails}
-            isCompletionFlow={serviceToEditPayment.status !== 'Entregado'}
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
+      <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
+        </DialogHeader>
+        <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
+          <ServiceForm
+            initialDataService={service}
+            vehicles={vehicles} 
+            technicians={technicians as User[]}
+            inventoryItems={inventoryItems}
+            serviceTypes={serviceTypes}
+            categories={[]}
+            suppliers={[]}
+            onSubmit={internalOnSave}
+            onClose={() => onOpenChange(false)}
+            isReadOnly={isReadOnly}
+            onVehicleCreated={onVehicleCreated} 
+            mode={mode}
+            onCancelService={onCancelService}
+            onTotalCostChange={() => {}}
           />
-        )}
-
-        {isPreviewOpen && recordForPreview && <UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={recordForPreview}/>}
-        
-        {recordForTicket && (
-          <PrintTicketDialog
-            open={isTicketDialogOpen}
-            onOpenChange={setIsTicketDialogOpen}
-            title="Ticket de Servicio"
-            footerActions={<>
-              <Button onClick={() => handleCopyAsImage()} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-              <Button onClick={handleShare} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
-              <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
-            </>}
-          >
-            <div id="printable-ticket">
-              <TicketContent
-                ref={ticketContentRef}
-                service={recordForTicket}
-                vehicle={vehicles.find(v => v.id === recordForTicket.vehicleId)}
-                previewWorkshopInfo={workshopInfo || undefined}
-              />
-            </div>
-          </PrintTicketDialog>
-        )}
-      </Suspense>
-    </>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

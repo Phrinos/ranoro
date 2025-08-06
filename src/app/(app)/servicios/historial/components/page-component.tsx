@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
 import { isToday, startOfMonth, endOfMonth, compareDesc } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { serviceService, inventoryService, personnelService, adminService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
 import { parseDate } from '@/lib/forms';
@@ -20,6 +20,8 @@ import { formatCurrency } from "@/lib/utils";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import type { PaymentDetailsFormValues } from "../../components/PaymentDetailsDialog";
 import { useRouter } from "next/navigation";
+import { ServiceDialog } from "../../components/service-dialog";
+
 
 const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
 const PaymentDetailsDialog = lazy(() => import('../../components/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
@@ -364,7 +366,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
             open={isPaymentDialogOpen}
             onOpenChange={setIsPaymentDialogOpen}
             record={serviceToEditPayment}
-            onConfirm={handleUpdatePaymentDetails}
+            onConfirm={(id, details) => handleUpdatePaymentDetails(id, details)}
             isCompletionFlow={serviceToEditPayment.status !== 'Entregado'}
           />
         )}
