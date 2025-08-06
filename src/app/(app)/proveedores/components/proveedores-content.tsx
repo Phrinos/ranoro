@@ -86,11 +86,10 @@ export function ProveedoresContent({ suppliers }: ProveedoresContentProps) {
         
         <TableToolbar 
             {...tableManager}
-            onSearchTermChange={tableManager.setSearchTerm}
             sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre o contacto..."
         />
-        <Card className="mt-4">
+        <Card>
             <CardContent className="p-0">
                 <SuppliersTable suppliers={filteredAndSortedSuppliers} onEdit={handleOpenDialog} onDelete={handleDeleteSupplier} />
             </CardContent>

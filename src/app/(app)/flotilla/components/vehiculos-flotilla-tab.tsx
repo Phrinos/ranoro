@@ -94,7 +94,7 @@ export function VehiculosFlotillaTab({ allVehicles, allDrivers }: VehiculosFloti
         sortOptions={[
           { value: 'licensePlate_asc', label: 'Placa (A-Z)' },
           { value: 'make_asc', label: 'Marca (A-Z)' },
-          { value: 'model_asc', label: 'Modelo (A-Z)' },
+          { value: 'model_asc', label: 'Modelo (Z-A)' },
         ]}
       />
 

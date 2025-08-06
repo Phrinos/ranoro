@@ -99,11 +99,8 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
         </div>
         
         <TableToolbar
-          searchTerm={tableManager.searchTerm}
-          onSearchTermChange={tableManager.setSearchTerm}
+          {...tableManager}
           searchPlaceholder="Buscar por nombre, email o rol..."
-          sortOption={tableManager.sortOption}
-          onSortOptionChange={tableManager.setSortOption}
           sortOptions={[
               { value: 'name_asc', label: 'Nombre (A-Z)' },
               { value: 'name_desc', label: 'Nombre (Z-A)' },

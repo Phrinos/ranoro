@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -150,18 +151,15 @@ export function useTableManager<T extends { [key: string]: any }>({
   };
 
   return {
-    // Original state and setters
     searchTerm,
-    setSearchTerm,
+    onSearchTermChange: setSearchTerm,
     sortOption,
-    setSortOption,
+    onSortOptionChange: setSortOption,
     dateRange,
-    setDateRange,
+    onDateRangeChange: setDateRange,
     otherFilters,
-    setOtherFilters,
-    // Derived/Paginated data
+    onFilterChange: setOtherFilters,
     filteredData: paginatedData,
-    // Pagination state and handlers
     currentPage,
     totalPages,
     totalItems,
