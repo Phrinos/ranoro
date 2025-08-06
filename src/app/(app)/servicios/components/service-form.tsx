@@ -201,6 +201,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
                     <ServiceItemsList
                         isReadOnly={isReadOnly}
                         inventoryItems={invItems}
+                        serviceTypes={serviceTypes}
                         mode={mode}
                         onNewInventoryItemCreated={handleNewInventoryItemCreated}
                         categories={categories}
