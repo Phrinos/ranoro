@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PageHeader } from "@/components/page-header";
 import { ServiceForm } from "../components/service-form";
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
@@ -15,20 +14,23 @@ import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-r
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { nanoid } from 'nanoid';
+import html2canvas from 'html2canvas';
+import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
-import html2canvas from 'html2canvas';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../components/PaymentDetailsDialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type POSFormValues = z.infer<typeof serviceFormSchema>;
+type ServiceCreationFormValues = z.infer<typeof serviceFormSchema>;
 
 export default function NuevoServicioPage() {
   const { toast } = useToast(); 
@@ -49,11 +51,10 @@ export default function NuevoServicioPage() {
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
-  const methods = useForm<POSFormValues>({
+  const methods = useForm<ServiceCreationFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
-      items: [],
-      customerName: 'Cliente Mostrador',
+      serviceItems: [],
       payments: [{ method: 'Efectivo', amount: undefined }],
       status: 'Cotizacion', // Default status
     },
@@ -85,7 +86,7 @@ export default function NuevoServicioPage() {
     return () => unsubs.forEach(unsub => unsub());
   }, []);
   
-  const handleSaleCompletion = async (values: POSFormValues) => {
+  const handleSaleCompletion = async (values: ServiceCreationFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
     
     // If creating a service directly as "Entregado", open the payment dialog first.
@@ -98,7 +99,7 @@ export default function NuevoServicioPage() {
 
     // Standard save for other statuses
     try {
-        const savedRecord = await serviceService.saveService(values);
+        const savedRecord = await serviceService.saveService(values as ServiceRecord);
         toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
         setServiceForPreview(savedRecord);
         setIsPreviewOpen(true);
