@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -40,28 +41,10 @@ export function PaymentSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Detalles de Pago y Cliente</CardTitle>
+        <CardTitle>Métodos de Pago</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <FormField
-          control={control}
-          name="customerName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nombre del Cliente</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Ej: Cliente Mostrador" 
-                  {...field} 
-                  value={field.value}
-                  onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
         <div className="space-y-4 rounded-md border p-4">
-           <FormLabel>Métodos de Pago</FormLabel>
            {fields.map((field, index) => {
                 const selectedMethod = watchedPayments[index]?.method;
                 const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
@@ -145,5 +128,3 @@ export function PaymentSection() {
     </Card>
   );
 }
-
-    
