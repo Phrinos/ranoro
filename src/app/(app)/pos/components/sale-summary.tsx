@@ -52,63 +52,6 @@ export function SaleSummary() {
   const [validationFolio, setValidationFolio] = useState('');
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
 
-  // Recalculate commissions and totals when items or payments change
-  useEffect(() => {
-    const currentItems = getValues('items') || [];
-    const currentPayments = getValues('payments') || [];
-
-    const physicalItemsSubtotal = currentItems
-      .filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'))
-      .reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0);
-
-    let newItems = currentItems.filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'));
-
-    const hasCardPayment = currentPayments.some((p: Payment) => p.method === 'Tarjeta');
-    const hasMSIPayment = currentPayments.some((p: Payment) => p.method === 'Tarjeta MSI');
-
-    if (hasCardPayment) {
-      const commissionAmount = physicalItemsSubtotal * 0.041;
-      newItems.push({
-        inventoryItemId: 'COMMISSION_CARD',
-        itemName: 'Comisión Tarjeta (4.1%)',
-        quantity: 1,
-        unitPrice: commissionAmount,
-        totalPrice: commissionAmount,
-        isService: true,
-      });
-    }
-
-    if (hasMSIPayment) {
-      const commissionAmount = physicalItemsSubtotal * 0.077;
-      newItems.push({
-        inventoryItemId: 'COMMISSION_MSI',
-        itemName: 'Comisión Tarjeta MSI (7.7%)',
-        quantity: 1,
-        unitPrice: commissionAmount,
-        totalPrice: commissionAmount,
-        isService: true,
-      });
-    }
-
-    // Use a simple check to avoid infinite re-renders
-    if (JSON.stringify(newItems) !== JSON.stringify(currentItems)) {
-      setValue('items', newItems, { shouldDirty: true });
-    }
-  }, [watchedPayments, watchedItems, getValues, setValue]);
-
-  const { subTotal, tax, total } = useMemo(() => {
-    const newTotalAmount = watchedItems?.reduce((sum: number, item: any) => sum + item.totalPrice || 0, 0) || 0;
-    const newSubTotal = newTotalAmount / (1 + IVA_RATE);
-    const newTax = newTotalAmount - newSubTotal;
-    return { subTotal: newSubTotal, tax: newTax, total: newTotalAmount };
-  }, [watchedItems]);
-
-  const hasItems = watchedItems && watchedItems.length > 0;
-  const availablePaymentMethods = paymentMethods.filter(
-    method => !watchedPayments?.some((p: Payment) => p.method === method)
-  );
-  const totalPaid = watchedPayments?.reduce((acc: number, p: Payment) => acc + (Number(p.amount) || 0), 0) || 0;
-
   const handleOpenValidateDialog = (index: number) => {
     setValidationIndex(index);
     setValidationFolio('');
@@ -128,6 +71,65 @@ export function SaleSummary() {
     }
     setIsValidationDialogOpen(false);
   };
+  
+  // Recalculate commissions and totals when items or payments change
+  useEffect(() => {
+    const currentItems = getValues('items') || [];
+    const currentPayments = getValues('payments') || [];
+
+    const physicalItemsSubtotal = currentItems
+      .filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'))
+      .reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0);
+
+    let newItems = currentItems.filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'));
+
+    // Check if card payments are present AND validated
+    const hasValidatedCardPayment = currentPayments.some((p: Payment, index: number) => p.method === 'Tarjeta' && validatedFolios[index]);
+    const hasValidatedMSIPayment = currentPayments.some((p: Payment, index: number) => p.method === 'Tarjeta MSI' && validatedFolios[index]);
+
+    if (hasValidatedCardPayment) {
+      const commissionAmount = physicalItemsSubtotal * 0.041;
+      newItems.push({
+        inventoryItemId: 'COMMISSION_CARD',
+        itemName: 'Comisión Tarjeta (4.1%)',
+        quantity: 1,
+        unitPrice: commissionAmount,
+        totalPrice: commissionAmount,
+        isService: true,
+      });
+    }
+
+    if (hasValidatedMSIPayment) {
+      const commissionAmount = physicalItemsSubtotal * 0.077;
+      newItems.push({
+        inventoryItemId: 'COMMISSION_MSI',
+        itemName: 'Comisión Tarjeta MSI (7.7%)',
+        quantity: 1,
+        unitPrice: commissionAmount,
+        totalPrice: commissionAmount,
+        isService: true,
+      });
+    }
+
+    // Use a simple check to avoid infinite re-renders
+    if (JSON.stringify(newItems) !== JSON.stringify(currentItems)) {
+      setValue('items', newItems, { shouldDirty: true });
+    }
+  }, [watchedPayments, watchedItems, getValues, setValue, validatedFolios]);
+
+
+  const { subTotal, tax, total } = useMemo(() => {
+    const newTotalAmount = watchedItems?.reduce((sum: number, item: any) => sum + item.totalPrice || 0, 0) || 0;
+    const newSubTotal = newTotalAmount / (1 + IVA_RATE);
+    const newTax = newTotalAmount - newSubTotal;
+    return { subTotal: newSubTotal, tax: newTax, total: newTotalAmount };
+  }, [watchedItems]);
+
+  const hasItems = watchedItems && watchedItems.length > 0;
+  const availablePaymentMethods = paymentMethods.filter(
+    method => !watchedPayments?.some((p: Payment) => p.method === method)
+  );
+  const totalPaid = watchedPayments?.reduce((acc: number, p: Payment) => acc + (Number(p.amount) || 0), 0) || 0;
 
   return (
     <>
