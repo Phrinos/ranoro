@@ -14,7 +14,7 @@ import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { cn, formatCurrency } from "@/lib/utils";
-import { operationsService } from '@/lib/services';
+import { cashService } from '@/lib/services';
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
@@ -241,8 +241,8 @@ export function CajaPosContent({ allCashOperations, initialCashBalance: dailyIni
     };
 
     await Promise.all([
-      operationsService.setInitialCashBalance(balanceData),
-      operationsService.addCashTransaction(transactionData)
+      cashService.setInitialCashBalance(balanceData),
+      cashService.addCashTransaction(transactionData)
     ]);
 
     setIsInitialBalanceDialogOpen(false);
@@ -252,7 +252,7 @@ export function CajaPosContent({ allCashOperations, initialCashBalance: dailyIni
   
   const handleAddTransaction = useCallback(async (type: 'Entrada' | 'Salida', values: CashTransactionFormValues) => {
     
-    await operationsService.addCashTransaction({
+    await cashService.addCashTransaction({
       type,
       amount: values.amount,
       concept: values.concept,
@@ -267,7 +267,7 @@ export function CajaPosContent({ allCashOperations, initialCashBalance: dailyIni
       toast({ title: 'Permiso Denegado', description: 'No tiene permiso para eliminar transacciones.', variant: 'destructive' });
       return;
     }
-    await operationsService.deleteCashTransaction(transactionId);
+    await cashService.deleteCashTransaction(transactionId);
     toast({ title: `Transacción eliminada.` });
   }, [toast, currentUser]);
 
@@ -375,6 +375,7 @@ export function CajaPosContent({ allCashOperations, initialCashBalance: dailyIni
 
 
     
+
 
 
 
