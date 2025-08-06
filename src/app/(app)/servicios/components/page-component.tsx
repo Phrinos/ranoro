@@ -16,7 +16,7 @@ import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 
 const ActivosTabContent = lazy(() => import('./activos-tab-content').then(module => ({ default: module.ActivosTabContent })));
-const HistorialTabContent = lazy(() => import('./historial-tab-content').then(module => ({ default: module.HistorialTabContent })));
+const HistorialTabContent = lazy(() => import('./historial-tab-content'));
 const AgendaTabContent = lazy(() => import('./agenda-tab-content').then(module => ({ default: module.AgendaTabContent })));
 const CotizacionesTabContent = lazy(() => import('./cotizaciones-tab-content').then(module => ({ default: module.CotizacionesTabContent })));
 const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
