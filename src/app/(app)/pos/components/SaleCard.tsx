@@ -27,13 +27,15 @@ interface SaleCardProps {
     inventoryItems: InventoryItem[];
     onViewSale: () => void;
     onReprintTicket: () => void;
+    onEditPayment: () => void;
 }
 
 export const SaleCard = React.memo(({
     sale,
     inventoryItems,
     onViewSale,
-    onReprintTicket
+    onReprintTicket,
+    onEditPayment,
 }: SaleCardProps) => {
 
     const saleDate = parseDate(sale.saleDate);
@@ -41,11 +43,14 @@ export const SaleCard = React.memo(({
     const isCancelled = sale.status === 'Cancelado';
 
     const getItemsWithCategory = () => {
-        return sale.items.map(item => {
-            const inventoryItem = inventoryItems.find(i => i.id === item.inventoryItemId);
-            const category = inventoryItem?.category?.toUpperCase() || '';
-            return `${category} ${item.itemName}`;
-        }).join(', ');
+        const firstItem = sale.items[0];
+        if (!firstItem) return 'Venta sin artículos';
+
+        const inventoryItem = inventoryItems.find(i => i.id === firstItem.inventoryItemId);
+        const category = inventoryItem?.category?.toUpperCase() || 'ARTÍCULO';
+        const otherItemsCount = sale.items.length - 1;
+
+        return `${category}: ${firstItem.itemName}${otherItemsCount > 0 ? ` y ${otherItemsCount} más` : ''}`;
     };
 
     return (
@@ -111,6 +116,9 @@ export const SaleCard = React.memo(({
                           <div className="flex justify-center items-center gap-1">
                                 <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Cancelar Venta">
                                     <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={onEditPayment} title="Editar Pago" disabled={isCancelled}>
+                                    <DollarSign className="h-4 w-4 text-green-600" />
                                 </Button>
                                 <Button variant="ghost" size="icon" onClick={onReprintTicket} title="Reimprimir Ticket" disabled={isCancelled}>
                                     <Printer className="h-4 w-4" />

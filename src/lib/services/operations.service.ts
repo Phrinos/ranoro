@@ -363,6 +363,12 @@ const onSalesUpdatePromise = async (): Promise<SaleReceipt[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SaleReceipt));
 }
 
+const updateSale = async (saleId: string, data: Partial<SaleReceipt>): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const saleRef = doc(db, 'sales', saleId);
+    await updateDoc(saleRef, cleanObjectForFirestore(data));
+};
+
 const registerSale = async (
     saleId: string, 
     saleData: Omit<SaleReceipt, 'id' | 'saleDate' | 'subTotal' | 'tax' | 'totalAmount' | 'status' | 'registeredById' | 'registeredByName'>, 
@@ -741,6 +747,7 @@ export const operationsService = {
     getServicesForVehicle,
     onSalesUpdate,
     onSalesUpdatePromise,
+    updateSale,
     registerSale,
     registerPurchase,
     onCashTransactionsUpdate,
@@ -759,5 +766,3 @@ export const operationsService = {
     addOwnerWithdrawal,
     registerPayableAccountPayment,
 };
-
-    

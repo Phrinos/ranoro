@@ -21,6 +21,7 @@ import { VentasPosContent } from './ventas-pos-content';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { isToday, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../../servicios/components/PaymentDetailsDialog';
 
 export function PosPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
@@ -38,6 +39,8 @@ export function PosPageComponent({ tab }: { tab?: string }) {
   const [selectedSaleForReprint, setSelectedSaleForReprint] = useState<SaleReceipt | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [saleToEditPayment, setSaleToEditPayment] = useState<SaleReceipt | null>(null);
 
 
   useEffect(() => {
@@ -119,7 +122,6 @@ export function PosPageComponent({ tab }: { tab?: string }) {
           text: `Ticket de tu compra en ${workshopInfo?.name || 'nuestro taller'}.`,
         });
       } catch (error) {
-        console.error('Error sharing:', error);
         if(!String(error).includes('AbortError')) {
            toast({ title: 'Error al compartir', variant: 'destructive' });
         }
@@ -145,6 +147,17 @@ Total: ${formatCurrency(sale.totalAmount)}
     });
   }, [toast, workshopInfo]);
   
+  const handleOpenPaymentDialog = useCallback((sale: SaleReceipt) => {
+    setSaleToEditPayment(sale);
+    setIsPaymentDialogOpen(true);
+  }, []);
+
+  const handleUpdatePaymentDetails = useCallback(async (saleId: string, paymentDetails: PaymentDetailsFormValues) => {
+    await operationsService.updateSale(saleId, paymentDetails);
+    toast({ title: "Detalles de Pago Actualizados" });
+    setIsPaymentDialogOpen(false);
+  }, [toast]);
+  
 
   if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
   
@@ -154,7 +167,13 @@ Total: ${formatCurrency(sale.totalAmount)}
         <h1 className="text-3xl font-bold tracking-tight">Punto de Venta</h1>
         <p className="text-primary-foreground/80 mt-1">Registra ventas y gestiona las transacciones de mostrador.</p>
       </div>
-      <VentasPosContent allSales={allSales} allInventory={allInventory} onReprintTicket={handleReprintSale} onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }} />
+      <VentasPosContent 
+        allSales={allSales} 
+        allInventory={allInventory} 
+        onReprintTicket={handleReprintSale} 
+        onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
+        onEditPayment={handleOpenPaymentDialog}
+      />
 
       <PrintTicketDialog
         open={isReprintDialogOpen && !!selectedSaleForReprint}
@@ -172,6 +191,16 @@ Total: ${formatCurrency(sale.totalAmount)}
       </PrintTicketDialog>
       
       {selectedSale && <ViewSaleDialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} sale={selectedSale} onCancelSale={handleCancelSale} onSendWhatsapp={handleCopySaleForWhatsapp} />}
+
+      {saleToEditPayment && (
+        <PaymentDetailsDialog
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+          record={saleToEditPayment}
+          onConfirm={handleUpdatePaymentDetails}
+          recordType="sale"
+        />
+      )}
     </>
   );
 }

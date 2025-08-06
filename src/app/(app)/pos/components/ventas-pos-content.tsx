@@ -30,10 +30,11 @@ interface VentasPosContentProps {
   allInventory: InventoryItem[];
   onReprintTicket: (sale: SaleReceipt) => void;
   onViewSale: (sale: SaleReceipt) => void;
+  onEditPayment: (sale: SaleReceipt) => void;
 }
 
 
-export function VentasPosContent({ allSales, allInventory, onReprintTicket, onViewSale }: VentasPosContentProps) {
+export function VentasPosContent({ allSales, allInventory, onReprintTicket, onViewSale, onEditPayment }: VentasPosContentProps) {
   
   const { 
     filteredData: filteredAndSortedSales,
@@ -42,7 +43,7 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
     initialData: allSales,
     searchKeys: ['id', 'customerName', 'items.itemName', 'payments.method'],
     dateFilterKey: 'saleDate',
-    initialSortOption: 'saleDate_desc',
+    initialSortOption: 'date_desc',
     itemsPerPage: 10,
   });
 
@@ -72,6 +73,7 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
                       inventoryItems={allInventory}
                       onReprintTicket={() => onReprintTicket(sale)}
                       onViewSale={() => onViewSale(sale)}
+                      onEditPayment={() => onEditPayment(sale)}
                   />
               ))}
           </div>
