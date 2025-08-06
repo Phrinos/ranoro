@@ -145,12 +145,6 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     onSubmit(values as ServiceRecord);
   };
   
-  const watchedStatus = watch('status');
-  const watchedSubStatus = watch('subStatus');
-
-  const pageTitle = initialDataService ? `Editar Servicio #${initialDataService.id.slice(-6)}` : "Nuevo Servicio / Cotización";
-  const pageDescription = initialDataService ? `Modifica los detalles para el vehículo ${initialDataService.vehicleIdentifier || ''}.` : "Completa la información para crear un nuevo registro.";
-  
   return (
     <>
         <FormProvider {...form}>
