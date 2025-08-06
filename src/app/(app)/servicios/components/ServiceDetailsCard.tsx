@@ -89,15 +89,15 @@ export function ServiceDetailsCard({
           />
 
           {showWorkshopFields && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 items-end">
               <FormField
                 control={control}
                 name="subStatus"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="md:col-span-1">
                     <FormLabel>Sub-Estado Taller</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
                       <SelectContent>
                         {relevantSubStatusOptions.map(s => <SelectItem key={s.value} value={s.value!}>{s.label}</SelectItem>)}
                       </SelectContent>
@@ -109,7 +109,7 @@ export function ServiceDetailsCard({
                 control={control}
                 name="technicianId"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="md:col-span-2">
                     <FormLabel>Técnico Asignado</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl>
