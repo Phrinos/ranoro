@@ -12,11 +12,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { operationsService } from '@/lib/services';
+import { serviceService } from '@/lib/services';
 
 
 interface ServiceDialogProps {
@@ -27,6 +27,8 @@ interface ServiceDialogProps {
   technicians: User[]; 
   inventoryItems: InventoryItem[]; 
   serviceTypes: ServiceTypeRecord[];
+  categories: InventoryCategory[];
+  suppliers: Supplier[];
   onSave?: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
   isReadOnly?: boolean; 
   open?: boolean; 
@@ -36,6 +38,7 @@ interface ServiceDialogProps {
   onDelete?: (id: string) => void; // For quote deletion
   onCancelService?: (serviceId: string, reason: string) => void;
   onViewQuoteRequest?: (serviceId: string) => void;
+  onComplete?: (serviceId: string, paymentDetails: any) => void;
 }
 
 export function ServiceDialog({ 
@@ -46,6 +49,8 @@ export function ServiceDialog({
   technicians, 
   inventoryItems, 
   serviceTypes,
+  categories,
+  suppliers,
   onSave, 
   isReadOnly = false,
   open: controlledOpen,
@@ -55,6 +60,7 @@ export function ServiceDialog({
   onDelete,
   onCancelService,
   onViewQuoteRequest,
+  onComplete
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -132,7 +138,7 @@ export function ServiceDialog({
     }
 
     try {
-        const savedRecord = await operationsService.saveService(formData);
+        const savedRecord = await serviceService.saveService(formData);
         toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
         if (onSave) {
             await onSave(savedRecord);
@@ -192,11 +198,11 @@ export function ServiceDialog({
           <ServiceForm
             initialDataService={service}
             vehicles={vehicles} 
-            technicians={technicians as User[]}
+            technicians={technicians}
             inventoryItems={inventoryItems}
             serviceTypes={serviceTypes}
-            categories={[]}
-            suppliers={[]}
+            categories={categories}
+            suppliers={suppliers}
             onSubmit={internalOnSave}
             onClose={() => onOpenChange(false)}
             isReadOnly={isReadOnly}
