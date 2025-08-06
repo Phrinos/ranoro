@@ -33,6 +33,7 @@ import { Calendar } from '@/components/ui/calendar';
 interface VehicleSelectionCardProps {
   isReadOnly?: boolean;
   localVehicles: Vehicle[];
+  serviceHistory: ServiceRecord[];
   onVehicleSelected: (vehicle: Vehicle | null) => void;
   onOpenNewVehicleDialog: (plate?: string) => void;
 }
@@ -40,6 +41,7 @@ interface VehicleSelectionCardProps {
 export function VehicleSelectionCard({
   isReadOnly,
   localVehicles,
+  serviceHistory,
   onVehicleSelected,
   onOpenNewVehicleDialog,
 }: VehicleSelectionCardProps) {
@@ -52,15 +54,9 @@ export function VehicleSelectionCard({
   const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [lastService, setLastService] = useState<ServiceRecord | null>(null);
-  const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
   
   const vehicleId = watch('vehicleId');
-
-  useEffect(() => {
-    serviceService.onServicesUpdate(setServiceHistory);
-  }, []);
   
-
   useEffect(() => {
     const findVehicleData = (vId: string) => {
       const vehicle = localVehicles.find(v => v.id === vId);

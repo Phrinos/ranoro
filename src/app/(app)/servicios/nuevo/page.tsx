@@ -1,5 +1,3 @@
-
-
 // src/app/(app)/servicios/nuevo/page.tsx
 
 "use client";
@@ -64,6 +62,7 @@ export default function NuevoServicioPage() {
   const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,6 +107,7 @@ export default function NuevoServicioPage() {
       inventoryService.onCategoriesUpdate(setAllCategories),
       inventoryService.onSuppliersUpdate(setAllSuppliers),
       inventoryService.onVehiclesUpdate(setVehicles),
+      serviceService.onServicesUpdate(setAllServices),
       adminService.onUsersUpdate(setUsers),
       inventoryService.onServiceTypesUpdate((data) => {
         setServiceTypes(data);
@@ -141,8 +141,8 @@ export default function NuevoServicioPage() {
         totalCost,
         totalSuppliesWorkshopCost,
         serviceProfit,
-        quoteDate: values.status === 'Cotizacion' ? now : undefined,
-        serviceDate: values.status !== 'Cotizacion' ? (values.serviceDate || now) : undefined,
+        quoteDate: values.status === 'Cotizacion' ? now.toISOString() : undefined,
+        serviceDate: values.status !== 'Cotizacion' ? (values.serviceDate || now) : (values.serviceDate || now),
     };
 
     if (values.status === 'Entregado') {
@@ -293,6 +293,7 @@ export default function NuevoServicioPage() {
         <VehicleSelectionCard
           isReadOnly={false}
           localVehicles={vehicles}
+          serviceHistory={allServices}
           onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
           onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
         />
