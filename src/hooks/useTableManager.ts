@@ -78,29 +78,30 @@ export function useTableManager<T extends { [key: string]: any }>({
       if (value !== 'all' && value !== undefined) {
         data = data.filter(item => {
             const itemValue = getNestedValue(item, key);
-            // Special handling for string inclusion (e.g., paymentMethod)
-            if (typeof itemValue === 'string' && typeof value === 'string') {
-                return itemValue.includes(value);
-            }
             // Handle cases where itemValue is an array of objects (like payments)
             if (Array.isArray(itemValue)) {
               return itemValue.some(subItem => subItem && subItem.method === value);
+            }
+             // Special handling for string inclusion (e.g., paymentMethod)
+            if (typeof itemValue === 'string' && typeof value === 'string') {
+                return itemValue.includes(value);
             }
             return itemValue === value;
         });
       }
     });
     
-    // Generic sorter
+    // Sorting logic
     data.sort((a, b) => {
       const [sortKey, sortDirection] = sortOption.split('_');
       const isAsc = sortDirection === 'asc';
 
       const valA = getNestedValue(a, sortKey);
       const valB = getNestedValue(b, sortKey);
+      
+      const isDateKey = sortKey.toLowerCase().includes('date');
 
-      // Date sorting
-      if (sortKey.toLowerCase().includes('date') || sortKey === 'saleDate' || sortKey === 'deliveryDateTime') {
+      if (isDateKey) {
         const dateA = parseDate(valA);
         const dateB = parseDate(valB);
         if (!dateA || !isValid(dateA)) return 1;
@@ -108,30 +109,25 @@ export function useTableManager<T extends { [key: string]: any }>({
         return isAsc ? compareAsc(dateA, dateB) : compareDesc(dateA, dateB);
       }
       
-      // Numeric sorting
       if (typeof valA === 'number' && typeof valB === 'number') {
         return isAsc ? valA - valB : valB - valA;
       }
 
-      // String sorting (case-insensitive)
       if (typeof valA === 'string' && typeof valB === 'string') {
         return isAsc
-          ? valA.localeCompare(valB, undefined, { sensitivity: 'base' })
-          : valB.localeCompare(valA, undefined, { sensitivity: 'base' });
+          ? valA.localeCompare(valB, 'es', { sensitivity: 'base' })
+          : valB.localeCompare(valA, 'es', { sensitivity: 'base' });
       }
 
-      // Fallback for mixed or null/undefined types
-      if (valA == null) return 1;
-      if (valB == null) return -1;
-      
-      // Default fallback for date (handles 'date_desc' etc.)
-      const dateA = parseDate(getNestedValue(a, dateFilterKey as string));
-      const dateB = parseDate(getNestedValue(b, dateFilterKey as string));
-      if(dateA && dateB) {
-        return compareDesc(dateA, dateB);
+      // Default fallback: If sortKey is not a date, number, or string, or values are null/undefined,
+      // maintain a stable order by sorting by the main date key descending.
+      const defaultDateA = parseDate(getNestedValue(a, dateFilterKey as string));
+      const defaultDateB = parseDate(getNestedValue(b, dateFilterKey as string));
+      if (defaultDateA && defaultDateB && isValid(defaultDateA) && isValid(defaultDateB)) {
+        return compareDesc(defaultDateA, defaultDateB);
       }
-      
-      return 0;
+
+      return 0; // Final fallback if no valid date key exists
     });
 
     return data;
