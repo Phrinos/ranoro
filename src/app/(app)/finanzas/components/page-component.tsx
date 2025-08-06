@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/page-component.tsx
 
 "use client";
@@ -17,7 +16,7 @@ import {
   parseISO,
   isWithinInterval,
   isValid,
-  startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc, isAfter
+  startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc, isAfter, differenceInDays, getDaysInMonth
 } from "date-fns";
 import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from 'lucide-react';
@@ -89,24 +88,63 @@ export function FinanzasPageComponent({
         
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
+        const interval = { start: from, end: to };
         
         const salesInRange = allSales.filter(s => {
           const sDate = parseDate(s.saleDate);
-          return s.status !== 'Cancelado' && sDate && isValid(sDate) && isWithinInterval(sDate, { start: from, end: to });
+          return s.status !== 'Cancelado' && sDate && isValid(sDate) && isWithinInterval(sDate, interval);
         });
         
         const servicesInRange = allServices.filter(s => {
           const dateToParse = s.deliveryDateTime || s.serviceDate;
           if (!dateToParse) return false;
           const parsedDate = parseDate(dateToParse);
-          return (s.status === 'Completado' || s.status === 'Entregado') && isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
+          return (s.status === 'Completado' || s.status === 'Entregado') && isValid(parsedDate) && isWithinInterval(parsedDate, interval);
         });
 
+        // --- INGRESOS Y GANANCIA BRUTA ---
         const totalIncomeFromSales = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
         const totalProfitFromSales = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
         const totalIncomeFromServices = servicesInRange.reduce((sum, s) => sum + (s.totalCost || 0), 0);
         const totalProfitFromServices = servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
         
+        const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
+        const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
+
+        // --- EGRESOS Y RESULTADO NETO ---
+        const daysInPeriod = differenceInDays(to, from) + 1;
+        const daysInMonthOfPeriod = getDaysInMonth(from);
+        const periodFactor = daysInPeriod / daysInMonthOfPeriod;
+
+        const totalBaseSalaries = allPersonnel
+          .filter(p => !p.isArchived)
+          .reduce((sum, person) => sum + (person.monthlySalary || 0), 0);
+            
+        const totalOtherFixedExpenses = fixedExpenses
+            .filter(expense => {
+                const createdAt = parseDate(expense.createdAt);
+                return createdAt && isValid(createdAt) && !isAfter(createdAt, to);
+            })
+            .reduce((sum, expense) => sum + expense.amount, 0);
+        
+        const proportionalBaseExpenses = (totalBaseSalaries + totalOtherFixedExpenses) * periodFactor;
+        
+        const netProfitBeforeCommissions = totalOperationalProfit - proportionalBaseExpenses;
+        const isProfitableForCommissions = netProfitBeforeCommissions > 0;
+        
+        let totalVariableCommissions = 0;
+        if (isProfitableForCommissions) {
+          totalVariableCommissions = allPersonnel
+            .filter(p => !p.isArchived)
+            .reduce((sum, person) => {
+                const commission = netProfitBeforeCommissions * ((person.commissionRate || 0) / 100);
+                return sum + commission;
+            }, 0);
+        }
+        
+        const netProfit = netProfitBeforeCommissions - totalVariableCommissions;
+        
+        // --- MÉTRICAS ADICIONALES ---
         const serviceIncomeBreakdown: Record<string, { income: number; profit: number; count: number }> = {};
         if (salesInRange.length > 0) {
             serviceIncomeBreakdown['Venta'] = {
@@ -122,63 +160,21 @@ export function FinanzasPageComponent({
           serviceIncomeBreakdown[type].profit += s.serviceProfit || 0;
           serviceIncomeBreakdown[type].count += 1;
         });
-        
-        const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
-        const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
 
         const totalCostOfGoods = salesInRange.reduce((cost, s) => cost + s.items.reduce((c, i) => c + ((allInventory.find(inv => inv.id === i.inventoryItemId)?.unitPrice || 0) * i.quantity), 0), 0) + servicesInRange.reduce((cost, s) => cost + (s.totalSuppliesWorkshopCost || 0), 0);
-        
         const totalUnitsSold = salesInRange.reduce((sum, s) => sum + s.items.reduce((count, item) => count + item.quantity, 0), 0) + servicesInRange.reduce((sum, s) => sum + (s.serviceItems || []).flatMap(si => si.suppliesUsed || []).reduce((count, supply) => count + supply.quantity, 0), 0);
-        
-        const { totalTechnicianSalaries, totalAdministrativeSalaries } = allPersonnel
-          .filter(p => !p.isArchived)
-          .reduce((totals, person) => {
-            const role = (person.role || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-            if (role === 'tecnico') {
-              totals.totalTechnicianSalaries += person.monthlySalary || 0;
-            } else {
-              totals.totalAdministrativeSalaries += person.monthlySalary || 0;
-            } 
-            return totals;
-          }, { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0 });
-
-        const totalFixedExpensesValue = fixedExpenses
-            .filter(expense => {
-                const createdAt = parseDate(expense.createdAt);
-                return createdAt && isValid(createdAt) && !isAfter(createdAt, to);
-            })
-            .reduce((sum, expense) => sum + expense.amount, 0);
-
-        const totalBaseExpenses = totalTechnicianSalaries + totalAdministrativeSalaries + totalFixedExpensesValue;
-        
-        const netProfitBeforeCommissions = totalOperationalProfit - totalBaseExpenses;
-        const isProfitableForCommissions = netProfitBeforeCommissions > 0;
-        
-        let totalVariableCommissions = 0;
-        if (isProfitableForCommissions) {
-          totalVariableCommissions = allPersonnel
-            .filter(p => !p.isArchived)
-            .reduce((sum, person) => {
-                const commission = netProfitBeforeCommissions * ((person.commissionRate || 0) / 100);
-                return sum + commission;
-            }, 0);
-        }
-        
-        const netProfit = netProfitBeforeCommissions - totalVariableCommissions;
-
+        const totalInventoryValue = allInventory.filter(item => !item.isService).reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
         const dateLabel = dateRange.to && !isSameDay(dateRange.from, dateRange.to)
             ? `${format(dateRange.from, 'dd MMM', { locale: es })} - ${format(dateRange.to, 'dd MMM, yyyy', { locale: es })}`
             : format(dateRange.from, 'dd \'de\' MMMM, yyyy', { locale: es });
 
-        const totalInventoryValue = allInventory
-            .filter(item => !item.isService)
-            .reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
-
         return { 
             monthYearLabel: dateLabel, totalOperationalIncome, totalIncomeFromSales, totalIncomeFromServices, 
             totalProfitFromSales, totalProfitFromServices, totalCostOfGoods, totalOperationalProfit,
-            totalTechnicianSalaries, totalAdministrativeSalaries, totalFixedExpenses: totalFixedExpensesValue, totalBaseExpenses,
+            totalTechnicianSalaries: totalBaseSalaries, // For EgresosContent, this is total
+            totalAdministrativeSalaries: 0, // Simplified for now
+            totalFixedExpenses: totalOtherFixedExpenses, // For EgresosContent
+            totalBaseExpenses: proportionalBaseExpenses, // Proportional
             totalVariableCommissions, netProfit, isProfitableForCommissions, serviceIncomeBreakdown,
             totalInventoryValue, totalUnitsSold
         };
@@ -191,7 +187,7 @@ export function FinanzasPageComponent({
 
     const dateFilterComponent = (
         <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
-            <Button variant="outline" size="sm" onClick={() => { setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) }); setTempDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) }); }} className="bg-card">Hoy</Button>
+            <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfDay(new Date()), to: endOfDay(new Date()) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Hoy</Button>
             <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Esta Semana</Button>
             <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfMonth(new Date()), to: endOfMonth(new Date()) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Este Mes</Button>
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -230,7 +226,7 @@ export function FinanzasPageComponent({
                             <hr className="my-4 border-border"/>
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">(-) Gastos Fijos (Nómina, Renta, etc.):</span>
+                                    <span className="text-muted-foreground">(-) Gastos Fijos (Proporcionales):</span>
                                     <span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalBaseExpenses)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">

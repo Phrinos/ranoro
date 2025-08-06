@@ -6,7 +6,10 @@
       "https://ranoro-jm8l0.web.app",
       "https://ranoro-jm8l0.firebaseapp.com",
       "https://ranoro.mx",
-      "https://*.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
+      "https://*.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
+      "https://4000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
+      "https://*-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
+      "https://9000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
     ],
     "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     "responseHeader": [

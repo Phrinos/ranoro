@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useRef, useState, useCallback } from "react";
@@ -20,6 +18,10 @@ interface PhotoUploaderProps {
   maxPhotos?: number;
 }
 
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 export function PhotoUploader({
   reportIndex,
   serviceId,
@@ -35,7 +37,6 @@ export function PhotoUploader({
   const handlePhotoUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     
-    // Reset input immediately to allow re-uploading the same file
     if (event.target) {
         event.target.value = "";
     }
@@ -52,8 +53,18 @@ export function PhotoUploader({
         return;
     }
     
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        toast({ title: "Tipo de archivo no válido", description: "Por favor, selecciona un archivo de imagen (jpg, png, webp).", variant: "destructive" });
+        return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        toast({ title: "Archivo demasiado grande", description: `El tamaño máximo de archivo es de ${MAX_FILE_SIZE_MB} MB.`, variant: "destructive" });
+        return;
+    }
+    
     if (!storage) {
-        toast({ title: "Storage no disponible", variant: "destructive" });
+        toast({ title: "Storage no disponible", description: "No se ha podido conectar con el servidor de almacenamiento.", variant: "destructive" });
         return;
     }
 
@@ -74,7 +85,17 @@ export function PhotoUploader({
 
     } catch (err) {
         console.error("Error al subir:", err);
-        toast({ title: "Error al subir", description: err instanceof Error ? err.message : "Ocurrió un error desconocido.", variant: "destructive" });
+        let errorMessage = "Ocurrió un error desconocido.";
+        if (err instanceof Error) {
+            if (err.message.includes("storage/unauthorized") || err.message.includes("storage/object-not-found")) {
+                errorMessage = "No tienes permisos para realizar esta acción.";
+            } else if (err.message.includes("network-request-failed")) {
+                errorMessage = "Error de red. Por favor, comprueba tu conexión a internet.";
+            } else {
+                errorMessage = err.message;
+            }
+        }
+        toast({ title: "Error al subir la imagen", description: errorMessage, variant: "destructive" });
     } finally {
         setIsUploading(false);
     }
@@ -103,7 +124,7 @@ export function PhotoUploader({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept={ALLOWED_FILE_TYPES.join(",")}
         onChange={handlePhotoUpload}
         capture="environment"
         className="hidden"
