@@ -73,7 +73,7 @@ export function SaleSummary() {
     });
 
     // Update the ref to the current state for the next render.
-    previousPaymentsRef.current = JSON.parse(JSON.stringify(currentPayments));
+    previousPaymentsRef.current = JSON.parse(JSON.stringify(currentPayments || []));
 
   }, [watchedPayments]);
   
@@ -86,40 +86,39 @@ export function SaleSummary() {
     const physicalItemsSubtotal = currentItems
       .filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'))
       .reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0);
-
+      
     let newItems = currentItems.filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'));
 
-    const hasValidatedCardPayment = currentPayments.some((p: Payment, index: number) => p.method === 'Tarjeta' && validatedFolios[index]);
-    const hasValidatedMSIPayment = currentPayments.some((p: Payment, index: number) => p.method === 'Tarjeta MSI' && validatedFolios[index]);
-
-    if (hasValidatedCardPayment) {
-      const commissionAmount = physicalItemsSubtotal * 0.041;
-      newItems.push({
-        inventoryItemId: 'COMMISSION_CARD',
-        itemName: 'Comisión Tarjeta (4.1%)',
-        quantity: 1,
-        unitPrice: commissionAmount,
-        totalPrice: commissionAmount,
-        isService: true,
-      });
-    }
-
-    if (hasValidatedMSIPayment) {
-      const commissionAmount = physicalItemsSubtotal * 0.077;
-      newItems.push({
-        inventoryItemId: 'COMMISSION_MSI',
-        itemName: 'Comisión Tarjeta MSI (7.7%)',
-        quantity: 1,
-        unitPrice: commissionAmount,
-        totalPrice: commissionAmount,
-        isService: true,
-      });
-    }
+    currentPayments.forEach((payment: Payment, index: number) => {
+        if (validatedFolios[index]) {
+            if (payment.method === 'Tarjeta') {
+                const commissionAmount = physicalItemsSubtotal * 0.041;
+                newItems.push({
+                    inventoryItemId: 'COMMISSION_CARD',
+                    itemName: 'Comisión Tarjeta (4.1%)',
+                    quantity: 1,
+                    unitPrice: commissionAmount,
+                    totalPrice: commissionAmount,
+                    isService: true,
+                });
+            } else if (payment.method === 'Tarjeta MSI') {
+                const commissionAmount = physicalItemsSubtotal * 0.077;
+                newItems.push({
+                    inventoryItemId: 'COMMISSION_MSI',
+                    itemName: 'Comisión Tarjeta MSI (7.7%)',
+                    quantity: 1,
+                    unitPrice: commissionAmount,
+                    totalPrice: commissionAmount,
+                    isService: true,
+                });
+            }
+        }
+    });
 
     if (JSON.stringify(newItems) !== JSON.stringify(currentItems)) {
       setValue('items', newItems, { shouldDirty: true });
     }
-  }, [watchedPayments, watchedItems, getValues, setValue, validatedFolios]);
+  }, [watchedPayments, validatedFolios, getValues, setValue]);
 
   const handleOpenValidateDialog = (index: number) => {
     setValidationIndex(index);
@@ -165,7 +164,7 @@ export function SaleSummary() {
           <div className="space-y-2">
             <FormLabel>Métodos de Pago</FormLabel>
             {fields.map((field, index) => {
-              const selectedMethod = watchedPayments[index]?.method;
+              const selectedMethod = watch(`payments.${index}.method`);
               const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
               const folioLabel = selectedMethod === 'Transferencia' ? 'Folio/Referencia' : 'Folio de Voucher';
               const isFolioValidated = validatedFolios[index];
@@ -186,8 +185,8 @@ export function SaleSummary() {
                                 step="0.01"
                                 placeholder="0.00"
                                 {...field}
-                                value={field.value ?? ''}
-                                onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                value={field.value === 0 ? '' : field.value ?? ''}
+                                onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                                 className="pl-8 bg-white"
                               />
                             </FormControl>
@@ -232,7 +231,9 @@ export function SaleSummary() {
                           </FormItem>
                         )}
                       />
-                      <Button type="button" variant="secondary" size="sm" onClick={() => handleOpenValidateDialog(index)}>Validar</Button>
+                      {(selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI') && (
+                        <Button type="button" variant="secondary" size="sm" onClick={() => handleOpenValidateDialog(index)}>Validar</Button>
+                      )}
                     </div>
                   )}
                   <FormField
