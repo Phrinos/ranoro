@@ -93,7 +93,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                                         <div className="relative">
                                             <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                             <FormControl>
-                                                <Input type="number" step="0.01" {...field} value={field.value === 0 ? '' : field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} className="pl-8" disabled={isReadOnly} placeholder="0.00"/>
+                                                <Input type="number" step="0.01" {...field} value={field.value === 0 ? '' : field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} placeholder="0.00"/>
                                             </FormControl>
                                         </div>
                                     </FormItem>
@@ -109,7 +109,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                                             <SelectContent>
                                                 {paymentMethods.map(method => {
                                                     const Icon = paymentMethodIcons[method];
-                                                    return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method) === -1 && method !== selectedMethod}>
+                                                    return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method as any) === -1 && method !== selectedMethod}>
                                                                 <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
                                                             </SelectItem>
                                                     );
@@ -121,15 +121,16 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                             />
                             {!isReadOnly && fields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
                         </div>
-                        {showFolio && (
+                         {showFolio && (
                              <FormField
                                 control={control}
                                 name={`payments.${index}.folio`}
                                 render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="mt-2">
                                         <FormControl>
                                             <Input placeholder={folioLabel} {...field} value={field.value ?? ''} disabled={isReadOnly} />
                                         </FormControl>
+                                        <FormMessage/>
                                     </FormItem>
                                 )}
                             />
@@ -156,7 +157,6 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
               render={({ field }) => <FormMessage />}
             />
         </div>
-
       </CardContent>
     </Card>
   );
