@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useCallback, Suspense, lazy } from "react";
@@ -9,8 +8,8 @@ import { List, Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const AgendaListContent = lazy(() => import('./agenda-list-content').then(module => ({ default: module.AgendaListContent })));
-const ServiceCalendar = lazy(() => import('../components/service-calendar').then(module => ({ default: module.ServiceCalendar })));
+const AgendaListContent = lazy(() => import('./agenda-list-content'));
+const ServiceCalendar = lazy(() => import('../components/service-calendar'));
 
 interface AgendaTabContentProps {
   services: ServiceRecord[];
