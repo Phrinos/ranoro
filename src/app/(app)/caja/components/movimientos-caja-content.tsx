@@ -99,6 +99,9 @@ export function MovimientosCajaContent({ allCashTransactions, allSales, allServi
       <TableToolbar
         {...tableManager}
         onSearchTermChange={tableManager.setSearchTerm}
+        onDateRangeChange={tableManager.setDateRange}
+        onSortOptionChange={tableManager.setSortOption}
+        onFilterChange={tableManager.setOtherFilters}
         searchPlaceholder="Buscar por concepto, usuario o ID..."
         sortOptions={sortOptions}
         filterOptions={filterOptions}
