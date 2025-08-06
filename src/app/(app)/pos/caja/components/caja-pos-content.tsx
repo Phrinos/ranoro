@@ -118,14 +118,12 @@ function TransactionsList({ transactions, onDelete, currentUser }: { transaction
 
 
 interface CajaPosContentProps {
-  allSales: SaleReceipt[];
-  allServices: ServiceRecord[];
-  allCashTransactions: CashDrawerTransaction[];
+  allCashOperations: CashDrawerTransaction[];
   initialCashBalance: InitialCashBalance | null;
   latestInitialBalance: InitialCashBalance | null;
 }
 
-export function CajaPosContent({ allSales, allServices, allCashTransactions, initialCashBalance: dailyInitialBalance, latestInitialBalance }: CajaPosContentProps) {
+export function CajaPosContent({ allCashOperations, initialCashBalance: dailyInitialBalance, latestInitialBalance }: CajaPosContentProps) {
   const { toast } = useToast();
   const [date, setDate] = useState(startOfDay(new Date()));
   const [isInitialBalanceDialogOpen, setIsInitialBalanceDialogOpen] = useState(false);
@@ -143,41 +141,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       }
     }
   }, []);
-  
-  const allCashOperations = useMemo(() => {
-    // 1. Get manual transactions
-    const manualTransactions = allCashTransactions;
-
-    // 2. Convert delivered services paid in cash to transactions
-    const serviceTransactions = allServices
-      .filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo'))
-      .map(s => ({
-        id: `service-${s.id}`,
-        date: s.deliveryDateTime || s.serviceDate,
-        type: 'Entrada' as const,
-        amount: s.amountInCash || (s.totalCost || 0),
-        concept: `Servicio #${s.id.slice(0, 6)} - ${s.vehicleIdentifier}`,
-        userName: s.serviceAdvisorName || 'Sistema',
-        relatedType: 'Servicio' as const,
-        relatedId: s.id,
-      }));
-    
-    // 3. Convert sales paid in cash to transactions
-    const saleTransactions = allSales
-      .filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo'))
-      .map(s => ({
-        id: `sale-${s.id}`,
-        date: s.saleDate,
-        type: 'Entrada' as const,
-        amount: s.amountInCash || s.totalAmount,
-        concept: `Venta POS #${s.id.slice(0, 6)}`,
-        userName: s.customerName || 'Sistema',
-        relatedType: 'Venta' as const,
-        relatedId: s.id,
-      }));
-
-    return [...manualTransactions, ...serviceTransactions, ...saleTransactions];
-  }, [allCashTransactions, allServices, allSales]);
 
   const cajaSummaryData = useMemo(() => {
     const startOfSelectedDate = startOfDay(date);
@@ -235,10 +198,13 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
   const manualCashMovements = useMemo(() => {
     const start = startOfDay(date);
     const end = endOfDay(date);
-    return allCashTransactions
-        .filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }) && !t.relatedType)
-        .sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
-  }, [date, allCashTransactions]);
+    return allCashOperations
+        .filter(t => {
+          const tDate = parseDate(t.date);
+          return tDate && isWithinInterval(tDate, { start, end }) && !t.relatedType
+        })
+        .sort((a,b) => compareDesc(parseDate(a.date)!, parseDate(b.date)!));
+  }, [date, allCashOperations]);
 
   const transactionsForCorte = useMemo(() => {
     const start = startOfDay(date);
@@ -262,10 +228,15 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       userName: currentUser?.name || 'Sistema',
     };
     
+    // We create a separate transaction for the initial balance to ensure it appears in the log
+    // and contributes to the daily total.
     const transactionData = {
-        ...balanceData,
+        date: startOfDay(date).toISOString(), // Make sure it's at the beginning of the day
         type: 'Entrada' as const,
+        amount: Number(initialBalanceAmount),
         concept: 'Saldo Inicial de Caja',
+        userId: currentUser?.id || 'system',
+        userName: currentUser?.name || 'Sistema',
         relatedType: 'InitialBalance' as const,
         relatedId: format(date, 'yyyy-MM-dd')
     };
@@ -405,6 +376,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
 
 
     
+
 
 
 

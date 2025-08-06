@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -40,28 +41,6 @@ export function MovimientosCajaContent({ allCashTransactions, allSales, allServi
     }
   };
   
-  const initialData = useMemo((): CashDrawerTransaction[] => {
-    const servicePaymentsAsTransactions: CashDrawerTransaction[] = allServices
-      .filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo'))
-      .map(s => ({
-        id: `service-${s.id}`,
-        date: s.deliveryDateTime || s.serviceDate,
-        type: 'Entrada',
-        amount: s.amountInCash || s.totalCost || 0, // Use partial cash amount if available
-        concept: `Servicio #${s.id.slice(0, 6)}`,
-        userName: s.serviceAdvisorName || 'Sistema',
-        relatedType: 'Servicio',
-        relatedId: s.id,
-      }));
-
-    // Filter out any service transactions that already exist in allCashTransactions to prevent duplicates
-    const existingServiceTransactionIds = new Set(allCashTransactions.filter(t => t.relatedType === 'Servicio').map(t => t.relatedId));
-    const uniqueServiceTransactions = servicePaymentsAsTransactions.filter(st => !existingServiceTransactionIds.has(st.relatedId));
-      
-    return [...allCashTransactions, ...uniqueServiceTransactions];
-
-  }, [allCashTransactions, allServices]);
-
   const {
     filteredData: filteredTransactions,
     paginationSummary,
@@ -71,7 +50,7 @@ export function MovimientosCajaContent({ allCashTransactions, allSales, allServi
     goToPreviousPage,
     ...tableManager
   } = useTableManager<CashDrawerTransaction>({
-    initialData: initialData,
+    initialData: allCashTransactions,
     searchKeys: ['concept', 'userName', 'relatedId'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
