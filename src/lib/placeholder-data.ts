@@ -154,34 +154,22 @@ export const calculateSaleProfit = (
     inventory.map((i) => [i.id, i])
   );
 
-  let totalGrossProfit = 0;
+  const totalRevenue = sale.totalAmount || 0;
 
+  let totalCostOfGoods = 0;
   for (const saleItem of sale.items) {
-    // 1. Determine if the item is a service or a product
-    let isService = saleItem.isService;
-    if (isService === undefined) {
-      const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
-      isService = inventoryItem?.isService || false;
+    const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
+    
+    // Only add to cost if it's a product (not a service) and exists in inventory
+    if (inventoryItem && !inventoryItem.isService) {
+      totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
     }
-    
-    // 2. Calculate pre-tax price for the item line
-    const itemTotalPriceWithTax = saleItem.totalPrice || 0;
-    const itemTotalPriceBeforeTax = itemTotalPriceWithTax / (1 + IVA_RATE);
-    
-    // 3. Determine cost of goods for this item line
-    let itemCostOfGoods = 0;
-    if (!isService) {
-      const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
-      itemCostOfGoods = (inventoryItem?.unitPrice || 0) * saleItem.quantity;
-    }
-    
-    // 4. Calculate profit for this item line and add to total
-    totalGrossProfit += (itemTotalPriceBeforeTax - itemCostOfGoods);
   }
 
-  // 5. Subtract the card commission from the total gross profit
-  const finalProfit = totalGrossProfit - (sale.cardCommission || 0);
-  
+  const cardCommission = sale.cardCommission || 0;
+
+  const finalProfit = totalRevenue - totalCostOfGoods - cardCommission;
+
   return isFinite(finalProfit) ? finalProfit : 0;
 };
 
