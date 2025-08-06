@@ -49,7 +49,7 @@ import { Dialog } from '@/components/ui/dialog';
 const SafetyChecklist = lazy(() => import('../components/SafetyChecklist').then(module => ({ default: module.SafetyChecklist })));
 const PhotoReportTab = lazy(() => import('../components/PhotoReportTab').then(module => ({ default: module.PhotoReportTab })));
 const ReceptionAndDelivery = lazy(() => import('../components/ReceptionAndDelivery').then(module => ({ default: module.ReceptionAndDelivery })));
-const ImageViewerDialogContent = lazy(() => import('@/components/shared/image-viewer-dialog').then(module => ({ default: module.ImageViewerDialogContent })));
+const ImageViewerDialogContent = lazy(() => import('@/components/shared/image-viewer-dialog'));
 
 
 type ServiceCreationFormValues = z.infer<typeof serviceFormSchema>;
