@@ -11,7 +11,7 @@ import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import { nanoid } from 'nanoid'
 import {
   Ban, Camera, CheckCircle, Download, Eye, ShieldCheck, Trash2, Wrench, BrainCircuit, Loader2, PlusCircle, Signature,
-  Wallet, DollarSign, CalendarCheck, Edit
+  CalendarIcon, Wallet, DollarSign, CalendarCheck, Edit
 } from 'lucide-react'
 import {
   Card,
@@ -24,8 +24,7 @@ import { format, setHours, setMinutes, isValid, addDays, addMonths, addYears } f
 import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
+import { Form } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -36,16 +35,9 @@ import type {
   QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, SafetyCheckValue, InventoryCategory, Supplier, PaymentMethod, Personnel
 } from '@/types'
 
-import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog'
+import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
 import { VehicleSelectionCard } from './components/VehicleSelectionCard'
-import { ReceptionAndDelivery } from './components/ReceptionAndDelivery'
-import { SafetyChecklist } from './components/SafetyChecklist'
-import { SignatureDialog } from './components/signature-dialog'
-import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog'
-import { suggestQuote } from '@/ai/flows/quote-suggestion-flow'
-import { enhanceText } from '@/ai/flows/text-enhancement-flow'
-import { PhotoReportTab } from './components/PhotoReportTab';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { parseDate } from '@/lib/forms';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
@@ -284,4 +276,3 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   );
 });
 ServiceForm.displayName = "ServiceForm";
-```
