@@ -141,8 +141,7 @@ export default function NuevoServicioPage() {
         totalCost,
         totalSuppliesWorkshopCost,
         serviceProfit,
-        quoteDate: values.status === 'Cotizacion' ? now.toISOString() : undefined,
-        serviceDate: values.status !== 'Cotizacion' ? (values.serviceDate || now) : (values.serviceDate || now),
+        serviceDate: values.serviceDate || now,
     };
 
     if (values.status === 'Entregado') {

@@ -1,4 +1,3 @@
-
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -78,7 +77,6 @@ export const serviceFormSchema = z.object({
     vehicleIdentifier: z.string().optional(),
     vehicleLicensePlateSearch: z.string().optional(),
     serviceDate: z.date().optional(),
-    quoteDate: z.date().optional(),
     receptionDateTime: z.date().optional(),
     deliveryDateTime: z.date().optional(),
     mileage: z.coerce.number({ invalid_type_error: 'El kilometraje debe ser numérico.' }).int('El kilometraje debe ser un número entero.').min(0, 'El kilometraje no puede ser negativo.').optional(),

@@ -235,7 +235,6 @@ export interface ServiceRecord {
   vehicleId: string;
   vehicleIdentifier?: string;
   serviceDate: string;
-  // serviceType?: string; // DEPRECATED - Now belongs to ServiceItem
   description?: string;
   technicianId: string;
   technicianName?: string;
@@ -280,7 +279,6 @@ export interface ServiceRecord {
   };
   photoReports?: PhotoReportGroup[];
   appointmentStatus?: 'Creada' | 'Confirmada';
-  quoteDate?: string;
   customerName?: string;
 }
 
