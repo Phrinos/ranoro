@@ -43,7 +43,7 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { ServiceDetailsCard } from '../components/ServiceDetailsCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SignatureDialog } from '../components/signature-dialog';
-import { Dialog } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Image from 'next/image';
 
 // Lazy loading for tab content
