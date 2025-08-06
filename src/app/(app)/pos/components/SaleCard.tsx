@@ -58,7 +58,6 @@ export const SaleCard = React.memo(({
             return <Badge variant="destructive" className="font-bold">CANCELADO</Badge>;
         }
         
-        // New logic: If `payments` array exists and has items, use it.
         if (Array.isArray(sale.payments) && sale.payments.length > 0) {
             return sale.payments.map((p, index) => (
                 <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
@@ -67,11 +66,11 @@ export const SaleCard = React.memo(({
             ));
         }
 
-        // Fallback for old data with single paymentMethod string
         if (typeof sale.paymentMethod === 'string') {
-            const methods = sale.paymentMethod.split(/[+/]/); // Splits by '+' or '/'
+            const methods = sale.paymentMethod.split(/[+/]/);
+            const totalAmount = sale.totalAmount || 0;
             return methods.map((method, index) => {
-                const amount = index === 0 ? sale.totalAmount : 0; // Assign full amount to first method
+                const amount = index === 0 ? totalAmount : 0;
                 return (
                     <Badge key={index} variant={getPaymentMethodVariant(method.trim() as Payment['method'])} className="text-xs">
                         {formatCurrency(amount)} <span className="font-normal ml-1 opacity-80">({method.trim()})</span>
@@ -80,7 +79,6 @@ export const SaleCard = React.memo(({
             });
         }
         
-        // If no payment data is found
         return <Badge variant="outline">Sin Pago</Badge>;
     };
 
@@ -97,7 +95,7 @@ export const SaleCard = React.memo(({
 
                     {/* Bloque 2: Artículos y Cliente */}
                     <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-y md:border-y-0 md:border-x">
-                       <div className="font-bold text-black text-lg">
+                       <div className="font-bold text-lg">
                             <TooltipProvider>
                                 <Tooltip>
                                 <TooltipTrigger asChild>
@@ -134,7 +132,8 @@ export const SaleCard = React.memo(({
 
                     {/* Bloque 5: Acciones y Usuario */}
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-auto flex-shrink-0 space-y-2">
-                         <p className="text-xs text-muted-foreground">Atendió: {sale.registeredByName || 'Sistema'}</p>
+                         <p className="text-xs text-muted-foreground">Atendió:</p>
+                         <p className="text-sm font-semibold">{sale.registeredByName || 'Usuario no disponible'}</p>
                           <div className="flex justify-center items-center gap-1">
                                 <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Cancelar Venta">
                                     <Edit className="h-4 w-4" />
