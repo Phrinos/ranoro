@@ -19,8 +19,8 @@ import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import type { PaymentDetailsFormValues } from "../../components/PaymentDetailsDialog";
+import { useRouter } from "next/navigation";
 
-const ServiceDialog = lazy(() => import('../../components/service-dialog').then(module => ({ default: module.ServiceDialog })));
 const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
 const PaymentDetailsDialog = lazy(() => import('../../components/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 const ServiceAppointmentCard = lazy(() => import('../../components/ServiceAppointmentCard').then(module => ({ default: module.ServiceAppointmentCard })));
@@ -47,6 +47,7 @@ const paymentMethodOptions: { value: PaymentMethod | 'all'; label: string }[] = 
 
 export function HistorialServiciosPageComponent({ status }: { status?: string }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState(status || "activos");
 
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
@@ -56,9 +57,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<ServiceRecord | null>(null);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
@@ -154,27 +152,10 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     itemsPerPage: 10,
   });
   
-  const handleSaveRecord = useCallback(async (data: QuoteRecord | ServiceRecord) => {
-    if ('status' in data && data.status === 'Entregado' && data.id) {
-        setIsPaymentDialogOpen(true);
-        setServiceToEditPayment(data as ServiceRecord);
-        return;
-    }
-    
-    try {
-      await serviceService.saveService(data);
-      setIsFormDialogOpen(false);
-      // toast({ title: 'Servicio actualizado.' });
-    } catch (e) {
-      toast({ title: "Error", description: `No se pudo guardar el registro.`, variant: "destructive"});
-    }
-  }, [toast]);
-
   const handleCancelRecord = useCallback(async (serviceId: string, reason: string) => {
     try {
       await serviceService.cancelService(serviceId, reason);
       toast({ title: 'Servicio cancelado.' });
-      setIsFormDialogOpen(false);
     } catch (e) {
       toast({ title: "Error", description: "No se pudo cancelar el registro.", variant: "destructive"});
     }
@@ -192,11 +173,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   const handleShowPreview = useCallback((service: ServiceRecord) => {
     setRecordForPreview(service);
     setIsPreviewOpen(true);
-  }, []);
-
-  const handleOpenFormDialog = useCallback((record: ServiceRecord) => {
-    setEditingRecord(record);
-    setIsFormDialogOpen(true);
   }, []);
   
   const handleOpenPaymentDialog = useCallback((service: ServiceRecord) => {
@@ -225,7 +201,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
     } finally {
       setIsPaymentDialogOpen(false);
-      setIsFormDialogOpen(false);
     }
   }, [toast]);
   
@@ -312,7 +287,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         service={record}
         vehicles={vehicles}
         technicians={personnel}
-        onEdit={() => handleOpenFormDialog(record)}
+        onEdit={() => router.push(`/servicios/${record.id}`)}
         onView={() => handleShowPreview(record)}
         onComplete={() => handleOpenPaymentDialog(record)}
         onPrintTicket={() => handlePrintTicket(record)}
@@ -327,7 +302,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         }}
       />
     </Suspense>
-  ), [vehicles, personnel, handleOpenFormDialog, handleShowPreview, handleOpenPaymentDialog, handlePrintTicket, handleConfirmAppointment, handleDeleteService, handleCancelRecord, currentUser?.role]);
+  ), [vehicles, personnel, router, handleShowPreview, handleOpenPaymentDialog, handlePrintTicket, handleConfirmAppointment, handleDeleteService, handleCancelRecord, currentUser?.role]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -384,22 +359,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       </Tabs>
       
       <Suspense fallback={null}>
-        {isFormDialogOpen && (
-          <ServiceDialog
-            open={isFormDialogOpen}
-            onOpenChange={setIsFormDialogOpen}
-            service={editingRecord}
-            vehicles={vehicles}
-            technicians={personnel}
-            inventoryItems={inventoryItems}
-            serviceTypes={serviceTypes}
-            onCancelService={handleCancelRecord}
-            mode='service'
-            onSave={handleSaveRecord}
-            onComplete={handleConfirmCompletion}
-          />
-        )}
-        
         {serviceToEditPayment && (
           <PaymentDetailsDialog
             open={isPaymentDialogOpen}
