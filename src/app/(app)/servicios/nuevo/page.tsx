@@ -8,8 +8,8 @@ import * as z from 'zod';
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { inventoryService, serviceService, adminService } from '@/lib/services';
-import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2, CalendarIcon as CalendarDateIcon } from 'lucide-react';
+import { inventoryService, serviceService, adminService, operationsService } from '@/lib/services';
+import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2, CalendarIcon as CalendarDateIcon, BrainCircuit } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
@@ -37,6 +37,7 @@ import { Input } from '@/components/ui/input';
 import { format, setHours, setMinutes, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 
 type ServiceCreationFormValues = z.infer<typeof serviceFormSchema>;
 
@@ -87,6 +88,7 @@ export default function NuevoServicioPage() {
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
   
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
 
   const methods = useForm<ServiceCreationFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -200,6 +202,23 @@ export default function NuevoServicioPage() {
     setIsNewVehicleDialogOpen(true);
   }, []);
 
+  const handleEnhanceText = useCallback(async (fieldName: keyof ServiceCreationFormValues) => {
+      const currentValue = methods.getValues(fieldName);
+      if (typeof currentValue !== 'string' || !currentValue) return;
+  
+      setIsEnhancingText(fieldName);
+      try {
+        const context = fieldName === 'notes' ? 'Notas del Servicio' : 'Descripción';
+        const result = await enhanceText({ text: currentValue, context });
+        methods.setValue(fieldName, result, { shouldDirty: true });
+        toast({ title: "Texto Mejorado", description: "La IA ha optimizado la redacción." });
+      } catch (error) {
+        toast({ title: "Error de IA", description: "No se pudo mejorar el texto.", variant: "destructive" });
+      } finally {
+        setIsEnhancingText(null);
+      }
+    }, [methods, toast]);
+
 
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
@@ -208,115 +227,115 @@ export default function NuevoServicioPage() {
   return (
     <FormProvider {...methods}>
       <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Nuevo Servicio / Cotización</CardTitle>
-              <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+        <Card>
+          <CardHeader>
+            <CardTitle>Nuevo Servicio / Cotización</CardTitle>
+            <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                <FormField
+                  control={control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="font-bold">
+                            <SelectValue placeholder="Seleccione un estado" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {statusOptions.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                {relevantSubStatusOptions.length > 0 && (
                   <FormField
                     control={control}
-                    name="status"
+                    name="subStatus"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <FormLabel>Sub-Estado</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={relevantSubStatusOptions.length === 0}>
                           <FormControl>
-                            <SelectTrigger className="font-bold">
-                              <SelectValue placeholder="Seleccione un estado" />
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccione sub-estado..." />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {statusOptions.map(opt => (
-                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            {relevantSubStatusOptions.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value!}>{opt.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </FormItem>
                     )}
                   />
-                  {relevantSubStatusOptions.length > 0 && (
-                    <FormField
-                      control={control}
-                      name="subStatus"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Sub-Estado</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={relevantSubStatusOptions.length === 0}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleccione sub-estado..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {relevantSubStatusOptions.map(opt => (
-                                  <SelectItem key={opt.value} value={opt.value!}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                  )}
-               </div>
-               {watchedStatus === 'Agendado' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end pt-4 border-t">
-                    <Controller
-                      name="serviceDate"
-                      control={control}
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel className={cn(formState.errors.serviceDate && "text-destructive")}>Fecha de Cita</FormLabel>
-                          <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", formState.errors.serviceDate && "border-destructive focus-visible:ring-destructive")}>
-                                {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                                <CalendarDateIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                  const currentTime = field.value || new Date();
-                                  const newDate = date ? setMinutes(setHours(date, currentTime.getHours()), currentTime.getMinutes()) : undefined;
-                                  field.onChange(newDate);
-                                  setIsDatePickerOpen(false);
-                                }}
-                                initialFocus
-                                locale={es}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </FormItem>
-                      )}
-                    />
-                    <Controller
-                      name="serviceDate"
-                      control={control}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hora de la Cita</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="time"
-                              value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                              onChange={(e) => {
-                                if (!e.target.value) return;
-                                const [h, m] = e.target.value.split(':').map(Number);
-                                field.onChange(setMinutes(setHours(field.value || new Date(), h), m));
-                              }}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 )}
-            </CardContent>
-          </Card>
+              </div>
+              {watchedStatus === 'Agendado' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end pt-4 border-t">
+                  <Controller
+                    name="serviceDate"
+                    control={control}
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel className={cn(formState.errors.serviceDate && "text-destructive")}>Fecha de Cita</FormLabel>
+                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", formState.errors.serviceDate && "border-destructive focus-visible:ring-destructive")}>
+                              {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                              <CalendarDateIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={(date) => {
+                                const currentTime = field.value || new Date();
+                                const newDate = date ? setMinutes(setHours(date, currentTime.getHours()), currentTime.getMinutes()) : undefined;
+                                field.onChange(newDate);
+                                setIsDatePickerOpen(false);
+                              }}
+                              initialFocus
+                              locale={es}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </FormItem>
+                    )}
+                  />
+                  <Controller
+                    name="serviceDate"
+                    control={control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hora de la Cita</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="time"
+                            value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
+                            onChange={(e) => {
+                              if (!e.target.value) return;
+                              const [h, m] = e.target.value.split(':').map(Number);
+                              field.onChange(setMinutes(setHours(field.value || new Date(), h), m));
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+          </CardContent>
+        </Card>
         
         <VehicleSelectionCard
           isReadOnly={false}
@@ -334,6 +353,8 @@ export default function NuevoServicioPage() {
               categories={allCategories}
               suppliers={allSuppliers}
               serviceTypes={serviceTypes}
+              isEnhancingText={isEnhancingText}
+              handleEnhanceText={handleEnhanceText}
             />
           </div>
           <div className="lg:col-span-2 space-y-6">
