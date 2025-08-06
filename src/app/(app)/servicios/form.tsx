@@ -50,8 +50,8 @@ import type {
   QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, SafetyCheckValue, InventoryCategory, Supplier, PaymentMethod, Personnel
 } from '@/types'
 
-import { VehicleDialog } from '../vehiculos/components/vehicle-dialog'
-import type { VehicleFormValues } from '../vehiculos/components/vehicle-form'
+import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
 import { ServiceDetailsCard } from './components/ServiceDetailsCard'
 import { VehicleSelectionCard } from './components/VehicleSelectionCard'
 import { ReceptionAndDelivery } from './components/ReceptionAndDelivery'
@@ -66,7 +66,7 @@ import { parseDate } from '@/lib/forms';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
-import { PaymentSection } from '../../pos/components/payment-section';
+import { PaymentSection } from './components/PaymentSection';
 import Link from 'next/link';
 import { Input } from "@/components/ui/input";
 
@@ -128,9 +128,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
         customerSignatureDelivery: initialDataService.customerSignatureDelivery || null,
         technicianName: initialDataService.technicianName || null, 
         serviceAdvisorSignatureDataUrl: initialDataService.serviceAdvisorSignatureDataUrl || '',
-        paymentMethod: initialDataService.paymentMethod || 'Efectivo',
-        cardFolio: initialDataService.cardFolio || '',
-        transferFolio: initialDataService.transferFolio || '',
+        payments: initialDataService.payments?.length ? initialDataService.payments : [],
         nextServiceInfo: initialDataService.nextServiceInfo || undefined,
         mileage: initialDataService.mileage || undefined,
         serviceItems:
@@ -176,9 +174,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
       customerSignatureReception: null,
       customerSignatureDelivery: null,
       serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl || '',
-      paymentMethod: 'Efectivo',
-      cardFolio: '',
-      transferFolio: '',
+      payments: [],
       nextServiceInfo: undefined,
       vehicleId: '',
       mileage: undefined,
@@ -218,11 +214,45 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
 
   const watchedStatus = watch('status');
   const watchedSubStatus = watch('subStatus');
+  const watchedPayments = watch('payments');
   
   useEffect(() => {
     if (onStatusChange) onStatusChange(watchedStatus);
     if (onSubStatusChange) onSubStatusChange(watchedSubStatus);
   }, [watchedStatus, watchedSubStatus, onStatusChange, onSubStatusChange]);
+  
+  useEffect(() => {
+    const currentItems = getValues('serviceItems') || [];
+    const totalWithoutCommission = currentItems.reduce((acc, item) => {
+        if (item.id !== 'COMMISSION_FEE') {
+            return acc + (item.price || 0);
+        }
+        return acc;
+    }, 0) || 0;
+
+    let commissionAmount = 0;
+    const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
+    const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
+    
+    if (hasCardPayment) commissionAmount += totalWithoutCommission * 0.041;
+    if (hasMSIPayment) commissionAmount += totalWithoutCommission * 0.077;
+
+    let newItems = currentItems.filter((item: any) => item.id !== 'COMMISSION_FEE');
+
+    if (hasCardPayment || hasMSIPayment) {
+        newItems.push({
+            id: 'COMMISSION_FEE',
+            name: 'Comisión de Tarjeta',
+            price: commissionAmount,
+            suppliesUsed: [],
+        });
+    }
+
+    if (JSON.stringify(newItems) !== JSON.stringify(currentItems)) {
+        setValue('serviceItems', newItems, { shouldDirty: true });
+    }
+}, [watchedPayments, getValues, setValue]);
+
   
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
@@ -375,13 +405,11 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     dataToSubmit.subTotal = totalCost / (1 + IVA);
     dataToSubmit.taxAmount = totalCost - (totalCost / (1 + IVA));
 
-    // Get technician name from ID to save it
     if (dataToSubmit.technicianId) {
         const technician = technicians.find(t => t.id === dataToSubmit.technicianId);
         dataToSubmit.technicianName = technician?.name || null;
     }
 
-    // Ensure advisor signature is a data URL if it's a new service
     if (!initialDataService?.id && dataToSubmit.serviceAdvisorSignatureDataUrl && !dataToSubmit.serviceAdvisorSignatureDataUrl.startsWith('data:')) {
         const authUser = JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) || 'null');
         if (authUser?.signatureDataUrl) {
@@ -395,6 +423,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   
   const formTabs = [
       { id: 'details', label: 'Detalles' },
+      { id: 'payment', label: 'Pago' },
       { id: 'reception', label: 'Ingreso/Salida' },
       { id: 'photoreport', label: 'Fotos' },
       { id: 'checklist', label: 'Revisión' },
@@ -415,11 +444,10 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b flex justify-between items-center">
-                            <TabsList className={cn("grid w-full", "grid-cols-4")}>
-                                <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
-                                <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
-                                <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
-                                <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
+                            <TabsList className={cn("grid w-full", `grid-cols-${formTabs.length}`)}>
+                               {formTabs.map(tab => (
+                                   <TabsTrigger key={tab.id} value={tab.id} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{tab.label}</TabsTrigger>
+                               ))}
                             </TabsList>
                              <Button type="button" variant="ghost" size="icon" onClick={() => setIsPreviewOpen(true)} title="Vista Previa" className="ml-2">
                                 <Eye className="h-5 w-5"/>
@@ -440,6 +468,9 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
                                 categories={allCategories}
                                 suppliers={allSuppliers}
                             />
+                        </TabsContent>
+                         <TabsContent value="payment" className="mt-0">
+                            <PaymentSection isReadOnly={isReadOnly} />
                         </TabsContent>
                         <TabsContent value="reception" className="mt-0">
                            <ReceptionAndDelivery 
@@ -510,3 +541,5 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   );
 });
 ServiceForm.displayName = "ServiceForm";
+
+    
