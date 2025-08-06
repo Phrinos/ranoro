@@ -86,19 +86,22 @@ export function VentasPosContent({ allSales, allInventory, allUsers, currentUser
         
         {filteredAndSortedSales.length > 0 ? (
           <div className="space-y-4">
-              {filteredAndSortedSales.map(sale => (
-                  <SaleCard
-                      key={sale.id}
-                      sale={sale}
-                      inventoryItems={allInventory}
-                      users={allUsers}
-                      currentUser={currentUser}
-                      onReprintTicket={() => onReprintTicket(sale)}
-                      onViewSale={() => onViewSale(sale)}
-                      onEditPayment={() => onEditPayment(sale)}
-                      onDeleteSale={() => onDeleteSale(sale.id)}
-                  />
-              ))}
+              {filteredAndSortedSales.map(sale => {
+                  const saleFromState = allSales.find(s => s.id === sale.id) || sale;
+                  return (
+                      <SaleCard
+                          key={sale.id}
+                          sale={saleFromState}
+                          inventoryItems={allInventory}
+                          users={allUsers}
+                          currentUser={currentUser}
+                          onReprintTicket={() => onReprintTicket(saleFromState)}
+                          onViewSale={() => onViewSale(saleFromState)}
+                          onEditPayment={() => onEditPayment(saleFromState)}
+                          onDeleteSale={() => onDeleteSale(saleFromState.id)}
+                      />
+                  );
+              })}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
