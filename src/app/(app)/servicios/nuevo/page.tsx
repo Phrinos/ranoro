@@ -1,4 +1,5 @@
 
+
 // src/app/(app)/servicios/nuevo/page.tsx
 
 "use client";
@@ -134,11 +135,14 @@ export default function NuevoServicioPage() {
   const handleSaleCompletion = async (values: ServiceCreationFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
     
+    const now = new Date();
     const serviceDataWithTotals = {
         ...values,
         totalCost,
         totalSuppliesWorkshopCost,
         serviceProfit,
+        quoteDate: values.status === 'Cotizacion' ? now : undefined,
+        serviceDate: values.status !== 'Cotizacion' ? (values.serviceDate || now) : undefined,
     };
 
     if (values.status === 'Entregado') {
@@ -195,8 +199,8 @@ export default function NuevoServicioPage() {
     setServiceForPreview(null);
     methods.reset();
     const targetPath = serviceForPreview?.status === 'Cotizacion' 
-                      ? '/cotizaciones/historial' 
-                      : '/servicios/historial';
+                      ? '/servicios?tab=cotizaciones'
+                      : '/servicios?tab=historial';
     router.push(targetPath);
   };
   

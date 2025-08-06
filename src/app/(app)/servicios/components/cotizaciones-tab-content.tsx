@@ -35,8 +35,8 @@ export default function CotizacionesTabContent({
   } = useTableManager<ServiceRecord>({
     initialData: quotes,
     searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
-    dateFilterKey: "quoteDate",
-    initialSortOption: "quoteDate_desc",
+    dateFilterKey: "serviceDate", // Use serviceDate as it's more reliable
+    initialSortOption: "serviceDate_desc",
     initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
     itemsPerPage: 10,
   });
@@ -51,8 +51,8 @@ export default function CotizacionesTabContent({
         {...tableManager}
         searchPlaceholder="Buscar por folio, placa o descripción..."
         sortOptions={[
-            { value: 'quoteDate_desc', label: 'Más Reciente' },
-            { value: 'quoteDate_asc', label: 'Más Antiguo' },
+            { value: 'serviceDate_desc', label: 'Más Reciente' },
+            { value: 'serviceDate_asc', label: 'Más Antiguo' },
             { value: 'totalCost_desc', label: 'Monto (Mayor a Menor)' },
             { value: 'totalCost_asc', label: 'Monto (Menor a Mayor)' },
         ]}
