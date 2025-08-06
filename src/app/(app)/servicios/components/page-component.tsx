@@ -10,15 +10,15 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, WorkshopInfo, InventoryCategory, Supplier } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { serviceService, inventoryService, adminService } from '@/lib/services';
+import { serviceService, inventoryService, adminService, operationsService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 
-const ActivosTabContent = lazy(() => import('./activos-tab-content').then(module => ({ default: module.ActivosTabContent })));
+const ActivosTabContent = lazy(() => import('./activos-tab-content'));
 const HistorialTabContent = lazy(() => import('./historial-tab-content'));
-const AgendaTabContent = lazy(() => import('./agenda-tab-content').then(module => ({ default: module.AgendaTabContent })));
-const CotizacionesTabContent = lazy(() => import('./cotizaciones-tab-content').then(module => ({ default: module.CotizacionesTabContent })));
+const AgendaTabContent = lazy(() => import('./agenda-tab-content'));
+const CotizacionesTabContent = lazy(() => import('./cotizaciones-tab-content'));
 const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
 const PaymentDetailsDialog = lazy(() => import('../components/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 
