@@ -151,12 +151,20 @@ export const calculateSaleProfit = (
   if (!sale?.items?.length) return 0;
 
   const inventoryMap = new Map<string, InventoryItem>(inventory.map((i) => [i.id, i]));
+  
   let totalCost = 0;
-
   for (const saleItem of sale.items) {
+    // Commissions are not part of the cost of goods
+    if (saleItem.inventoryItemId?.startsWith('COMMISSION')) {
+      continue;
+    }
     const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
+    // Only physical products have a unit cost. Services have a price but their cost is 0.
     if (inventoryItem && !inventoryItem.isService) {
       totalCost += (inventoryItem.unitPrice || 0) * saleItem.quantity;
+    } else if (saleItem.isService) {
+        // This is a service item, its cost is 0.
+        totalCost += 0;
     }
   }
   
