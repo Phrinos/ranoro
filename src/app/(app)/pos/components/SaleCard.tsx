@@ -137,7 +137,7 @@ export const SaleCard = React.memo(({
 
                     {/* Bloque 4: Método de Pago */}
                      <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-48 flex-shrink-0 space-y-2">
-                        <p className="text-xs font-semibold text-muted-foreground">MÉTODO DE PAGO</p>
+                        <p className="text-xs font-semibold text-muted-foreground">Métodos de Pago</p>
                         <div className="flex flex-wrap gap-1 justify-center">
                             {getPaymentBadges()}
                          </div>
