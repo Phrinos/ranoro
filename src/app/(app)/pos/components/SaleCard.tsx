@@ -94,7 +94,7 @@ export const SaleCard = React.memo(({
             <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row text-sm">
                     {/* Bloque 1: Fecha e ID venta */}
-                    <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-muted/50">
+                    <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-card">
                         <p className="text-muted-foreground text-sm">{saleDate && isValid(saleDate) ? format(saleDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
                         <p className="font-bold text-lg text-foreground">{saleDate && isValid(saleDate) ? format(saleDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
                         <p className="text-muted-foreground text-xs mt-1">{sale.id}</p>
@@ -140,7 +140,7 @@ export const SaleCard = React.memo(({
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-auto flex-shrink-0 space-y-2">
                         <div className="text-center">
                             <p className="text-xs text-muted-foreground">Atendió</p>
-                            <p className="text-xs text-muted-foreground">{sellerName}</p>
+                            <p className="text-xs">{sellerName}</p>
                         </div>
                         <div className="flex justify-center items-center gap-1 flex-wrap">
                             <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Cancelar Venta">

@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useTableManager } from '@/hooks/useTableManager';
 import { SaleCard } from './SaleCard';
 import { Receipt } from 'lucide-react';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 const sortOptions = [
     { value: 'date_desc', label: 'Más Reciente' },
@@ -46,6 +47,7 @@ export function VentasPosContent({ allSales, allInventory, allUsers, onReprintTi
     dateFilterKey: 'saleDate',
     initialSortOption: 'date_desc',
     itemsPerPage: 10,
+    initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
   });
 
   return (
@@ -55,7 +57,6 @@ export function VentasPosContent({ allSales, allInventory, allUsers, onReprintTi
         </Button>
         
         <TableToolbar
-            {...tableManager}
             onFilterChange={tableManager.setOtherFilters}
             onSearchTermChange={tableManager.setSearchTerm}
             onSortOptionChange={tableManager.setSortOption}
@@ -63,7 +64,22 @@ export function VentasPosContent({ allSales, allInventory, allUsers, onReprintTi
             sortOptions={sortOptions}
             filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
             searchPlaceholder="Buscar por ID, cliente, artículo..."
+            {...tableManager}
         />
+
+        <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
+            <div className="flex items-center space-x-2">
+                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                </Button>
+                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
+                    Siguiente
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
         
         {filteredAndSortedSales.length > 0 ? (
           <div className="space-y-4">
@@ -86,20 +102,6 @@ export function VentasPosContent({ allSales, allInventory, allUsers, onReprintTi
               <p className="text-sm">Intente cambiar su búsqueda o el rango de fechas.</p>
           </div>
         )}
-        
-        <div className="flex items-center justify-between pt-2">
-            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
-            <div className="flex items-center space-x-2">
-                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
-                    <ChevronLeft className="h-4 w-4" />
-                    Anterior
-                </Button>
-                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
-                    Siguiente
-                    <ChevronRight className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
     </div>
   );
 }
