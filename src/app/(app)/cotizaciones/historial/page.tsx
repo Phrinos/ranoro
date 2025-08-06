@@ -1,18 +1,18 @@
+
 // src/app/(app)/cotizaciones/historial/page.tsx
 "use client";
 
-import { Suspense, lazy } from 'react';
+import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { CotizacionesPageComponent } from './components/page-component';
 
 export default function CotizacionesPageWrapper() {
   const router = useRouter();
 
-  // Redirect to the unified services history page, filtered for quotes
-  if (typeof window !== 'undefined') {
+  useEffect(() => {
+    // Redirect to the unified services history page, filtered for quotes
     router.replace('/servicios/historial?status=Cotizacion');
-  }
+  }, [router]);
 
   return (
     <div className="flex h-64 w-full items-center justify-center">
