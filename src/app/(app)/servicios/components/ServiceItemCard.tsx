@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card } from '@/components/ui/card';
-import { Plus, PlusCircle, Trash2, Wrench, Tags } from "lucide-react";
+import { Plus, PlusCircle, Trash2, Wrench, Tags } from 'lucide-react';
 import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord } from "@/types";
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -185,7 +185,7 @@ export function ServiceItemCard({
                                     {...field}
                                     disabled={isReadOnly}
                                     onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
-                                    className={cn(serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
+                                    className={cn("bg-white", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
                                 />
                             </FormControl>
                         </FormItem>
@@ -198,7 +198,7 @@ export function ServiceItemCard({
                     <FormItem>
                         <FormLabel>Tipo de Servicio</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
                         <SelectContent>
                             {serviceTypes.slice().sort((a,b)=>a.name.localeCompare(b.name)).map((type) => (
                                 <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
@@ -222,8 +222,9 @@ export function ServiceItemCard({
                                     placeholder="0.00"
                                     {...field}
                                     value={field.value ?? ''}
-                                    onChange={(e) => field.onChange(e.target.value === '' ? '' : Number(e.target.value))}
+                                    onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                                     disabled={isReadOnly}
+                                    className="bg-white"
                                 />
                             </FormControl>
                         </FormItem>
@@ -275,7 +276,7 @@ export function ServiceItemCard({
                         )
                     })}
                     {!isReadOnly && (
-                        <Button type="button" variant="outline" size="sm" onClick={() => setIsAddSupplyDialogOpen(true) }>
+                        <Button type="button" variant="outline" size="sm" className="bg-white hover:bg-gray-100" onClick={() => setIsAddSupplyDialogOpen(true) }>
                             <PlusCircle className="mr-2 h-4 w-4"/> Añadir Insumo
                         </Button>
                     )}

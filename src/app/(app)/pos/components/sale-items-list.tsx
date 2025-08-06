@@ -117,7 +117,7 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
           )}
         </ScrollArea>
         <div className="mt-4 flex justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={onAddItem}><PlusCircle className="mr-2 h-4 w-4" />Añadir Artículo/Servicio</Button>
+            <Button type="button" variant="outline" size="sm" onClick={onAddItem} className="bg-white hover:bg-gray-100"><PlusCircle className="mr-2 h-4 w-4" />Añadir Artículo/Servicio</Button>
         </div>
       </CardContent>
     </Card>
