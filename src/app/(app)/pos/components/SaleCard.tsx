@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import type { SaleReceipt, InventoryItem, Payment, User } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, Printer, TrendingUp, User as UserIcon, DollarSign } from 'lucide-react';
+import { Edit, Printer, TrendingUp, User as UserIcon, DollarSign, Trash2 } from 'lucide-react';
 import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
@@ -19,23 +19,28 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { calculateSaleProfit } from '@/lib/placeholder-data';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface SaleCardProps {
     sale: SaleReceipt;
     inventoryItems: InventoryItem[];
     users: User[];
+    currentUser: User | null;
     onViewSale: () => void;
     onReprintTicket: () => void;
     onEditPayment: () => void;
+    onDeleteSale: () => void;
 }
 
 export const SaleCard = React.memo(({
     sale,
     inventoryItems,
     users,
+    currentUser,
     onViewSale,
     onReprintTicket,
     onEditPayment,
+    onDeleteSale,
 }: SaleCardProps) => {
 
     const saleDate = parseDate(sale.saleDate);
@@ -160,6 +165,14 @@ export const SaleCard = React.memo(({
                             <Button variant="ghost" size="icon" onClick={onReprintTicket} title="Reimprimir Ticket" disabled={isCancelled}>
                                 <Printer className="h-4 w-4" />
                             </Button>
+                            {currentUser?.role === 'Superadministrador' && (
+                                <ConfirmDialog
+                                    triggerButton={<Button variant="ghost" size="icon" title="Eliminar Venta Permanentemente"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                                    title="¿Eliminar Venta Permanentemente?"
+                                    description={`Esta acción eliminará por completo la venta #${sale.id.slice(-6)} y restaurará el stock. No se puede deshacer.`}
+                                    onConfirm={onDeleteSale}
+                                />
+                            )}
                         </div>
                     </div>
 

@@ -42,11 +42,17 @@ export function PosPageComponent({ tab }: { tab?: string }) {
   const ticketContentRef = useRef<HTMLDivElement>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [saleToEditPayment, setSaleToEditPayment] = useState<SaleReceipt | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
+
+    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    if (authUserString) {
+      try { setCurrentUser(JSON.parse(authUserString)); } catch (e) { console.error("Error parsing auth user", e); }
+    }
 
     unsubs.push(operationsService.onSalesUpdate(setAllSales));
     unsubs.push(inventoryService.onItemsUpdate(setAllInventory));
@@ -64,31 +70,24 @@ export function PosPageComponent({ tab }: { tab?: string }) {
   }, []);
   
   const handleCancelSale = useCallback(async (saleId: string, reason: string) => {
-    if (!db) return;
-    const saleToCancel = allSales.find(s => s.id === saleId);
-    if (!saleToCancel || saleToCancel.status === 'Cancelado') return;
-    
-    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
-    
-    const batch = writeBatch(db);
-    // Restore stock
-    saleToCancel.items.forEach(item => {
-        const invItem = allInventory.find(i => i.id === item.inventoryItemId);
-        if (invItem && !invItem.isService) {
-            const itemRef = doc(db, 'inventory', item.inventoryItemId);
-            batch.update(itemRef, { quantity: invItem.quantity + item.quantity });
-        }
-    });
-    
-    // Update sale status
-    const saleRef = doc(db, 'sales', saleId);
-    batch.update(saleRef, { status: 'Cancelado', cancellationReason: reason, cancelledBy: currentUser?.name || 'Sistema' });
+    try {
+        await operationsService.cancelSale(saleId, reason, currentUser);
+        toast({ title: 'Venta Cancelada', description: 'El stock ha sido restaurado.' });
+        setIsViewDialogOpen(false);
+    } catch(e) {
+        toast({ title: "Error", description: "No se pudo cancelar la venta.", variant: "destructive"});
+    }
+  }, [currentUser, toast]);
 
-    await batch.commit();
-    toast({ title: 'Venta Cancelada', description: 'El stock ha sido restaurado.' });
-    setIsViewDialogOpen(false);
-  }, [allSales, allInventory, toast]);
+  const handleDeleteSale = useCallback(async (saleId: string) => {
+    try {
+        await operationsService.deleteSale(saleId, currentUser);
+        toast({ title: 'Venta Eliminada', description: 'La venta se ha eliminado permanentemente.' });
+    } catch(e) {
+        toast({ title: "Error", description: "No se pudo eliminar la venta.", variant: "destructive"});
+    }
+  }, [currentUser, toast]);
+
 
   const handleReprintSale = useCallback((sale: SaleReceipt) => { setSelectedSaleForReprint(sale); setIsReprintDialogOpen(true); }, []);
   
@@ -173,9 +172,11 @@ Total: ${formatCurrency(sale.totalAmount)}
         allSales={allSales} 
         allInventory={allInventory} 
         allUsers={allUsers}
+        currentUser={currentUser}
         onReprintTicket={handleReprintSale} 
         onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
         onEditPayment={handleOpenPaymentDialog}
+        onDeleteSale={handleDeleteSale}
       />
 
       <PrintTicketDialog
@@ -183,9 +184,9 @@ Total: ${formatCurrency(sale.totalAmount)}
         onOpenChange={setIsReprintDialogOpen}
         title="Reimprimir Ticket"
         footerActions={<>
-          <Button onClick={() => handleCopyAsImage()} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-          <Button onClick={handleShare} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
-          <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+          <Button onClick={() => handleCopyAsImage()} variant="outline" size="icon" title="Copiar Imagen"><Copy className="h-4 w-4"/></Button>
+          <Button onClick={handleShare} variant="outline" size="icon" title="Compartir Ticket"><Share2 className="h-4 w-4" /></Button>
+          <Button onClick={handlePrint} variant="outline" size="icon" title="Imprimir"><Printer className="h-4 w-4"/></Button>
         </>}
       >
         <div id="printable-ticket">

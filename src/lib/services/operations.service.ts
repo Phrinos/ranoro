@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -368,6 +369,75 @@ const updateSale = async (saleId: string, data: Partial<SaleReceipt>): Promise<v
     const saleRef = doc(db, 'sales', saleId);
     await updateDoc(saleRef, cleanObjectForFirestore(data));
 };
+
+const cancelSale = async (saleId: string, reason: string, user: User | null): Promise<void> => {
+  if (!db) return;
+  
+  const saleDoc = await getDoc(doc(db, 'sales', saleId));
+  const saleData = saleDoc.data() as SaleReceipt;
+  if (!saleData || saleData.status === 'Cancelado') return;
+  
+  const batch = writeBatch(db);
+  
+  // Restore inventory
+  for (const item of saleData.items) {
+    const invItemRef = doc(db, 'inventory', item.inventoryItemId);
+    const invItemDoc = await getDoc(invItemRef);
+    if (invItemDoc.exists()) {
+      const invItemData = invItemDoc.data() as InventoryItem;
+      if (!invItemData.isService) {
+        batch.update(invItemRef, { quantity: (invItemData.quantity || 0) + item.quantity });
+      }
+    }
+  }
+  
+  // Update sale status
+  batch.update(doc(db, 'sales', saleId), {
+    status: 'Cancelado',
+    cancellationReason: reason,
+    cancelledBy: user?.name || 'Sistema'
+  });
+  
+  await batch.commit();
+};
+
+const deleteSale = async (saleId: string, user: User | null): Promise<void> => {
+  if (!db) return;
+  
+  const saleDoc = await getDoc(doc(db, 'sales', saleId));
+  if (!saleDoc.exists()) return;
+  const saleData = saleDoc.data() as SaleReceipt;
+  
+  const batch = writeBatch(db);
+  
+  // Restore inventory only if the sale was not already cancelled
+  if (saleData.status !== 'Cancelado') {
+      for (const item of saleData.items) {
+        const invItemRef = doc(db, 'inventory', item.inventoryItemId);
+        const invItemDoc = await getDoc(invItemRef);
+        if (invItemDoc.exists()) {
+          const invItemData = invItemDoc.data() as InventoryItem;
+          if (!invItemData.isService) {
+            batch.update(invItemRef, { quantity: (invItemData.quantity || 0) + item.quantity });
+          }
+        }
+      }
+  }
+  
+  // Delete the sale document
+  batch.delete(doc(db, 'sales', saleId));
+  
+  // Log the deletion
+  await logAudit('Eliminar', `Venta #${saleId.slice(-6)} fue eliminada permanentemente por ${user?.name}.`, {
+    entityType: 'Venta',
+    entityId: saleId,
+    userId: user?.id || 'system',
+    userName: user?.name || 'Sistema'
+  });
+  
+  await batch.commit();
+};
+
 
 const registerSale = async (
     saleId: string, 
@@ -749,6 +819,8 @@ export const operationsService = {
     onSalesUpdatePromise,
     updateSale,
     registerSale,
+    cancelSale,
+    deleteSale,
     registerPurchase,
     onCashTransactionsUpdate,
     addCashTransaction,

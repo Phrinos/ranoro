@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -30,13 +31,15 @@ interface VentasPosContentProps {
   allSales: SaleReceipt[];
   allInventory: InventoryItem[];
   allUsers: User[];
+  currentUser: User | null;
   onReprintTicket: (sale: SaleReceipt) => void;
   onViewSale: (sale: SaleReceipt) => void;
   onEditPayment: (sale: SaleReceipt) => void;
+  onDeleteSale: (saleId: string) => void;
 }
 
 
-export function VentasPosContent({ allSales, allInventory, allUsers, onReprintTicket, onViewSale, onEditPayment }: VentasPosContentProps) {
+export function VentasPosContent({ allSales, allInventory, allUsers, currentUser, onReprintTicket, onViewSale, onEditPayment, onDeleteSale }: VentasPosContentProps) {
   
   const { 
     filteredData: filteredAndSortedSales,
@@ -89,9 +92,11 @@ export function VentasPosContent({ allSales, allInventory, allUsers, onReprintTi
                       sale={sale}
                       inventoryItems={allInventory}
                       users={allUsers}
+                      currentUser={currentUser}
                       onReprintTicket={() => onReprintTicket(sale)}
                       onViewSale={() => onViewSale(sale)}
                       onEditPayment={() => onEditPayment(sale)}
+                      onDeleteSale={() => onDeleteSale(sale.id)}
                   />
               ))}
           </div>
