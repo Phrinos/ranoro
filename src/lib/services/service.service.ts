@@ -1,0 +1,168 @@
+
+
+import {
+  collection,
+  onSnapshot,
+  addDoc,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  writeBatch,
+  getDocs,
+  query,
+  DocumentReference,
+  Timestamp,
+  where,
+  orderBy,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { db } from '../firebaseClient';
+import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment } from "@/types";
+import { cleanObjectForFirestore } from '../forms';
+import { logAudit } from '../placeholder-data';
+import { nanoid } from 'nanoid';
+import { savePublicDocument } from '../public-document';
+import { cashService } from './cash.service';
+import type { PaymentDetailsFormValues } from '@/app/(app)/servicios/components/PaymentDetailsDialog';
+
+// --- Service Listeners ---
+
+const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "serviceRecords"), orderBy("serviceDate", "desc"));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord)));
+    }, (error) => console.error("Error listening to services:", error.message));
+};
+
+const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
+    if (!db) return [];
+    const q = query(collection(db, "serviceRecords"), orderBy("serviceDate", "desc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+};
+
+const getServicesForVehicle = async (vehicleId: string): Promise<ServiceRecord[]> => {
+    if (!db) return [];
+    const q = query(
+        collection(db, "serviceRecords"), 
+        where("vehicleId", "==", vehicleId),
+        orderBy("serviceDate", "desc")
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+};
+
+
+// --- Service CRUD Operations ---
+
+const addService = async (data: Omit<ServiceRecord, 'id'>): Promise<ServiceRecord> => {
+    if (!db) throw new Error("Database not initialized.");
+    const newId = `SRV-${nanoid(8).toUpperCase()}`;
+    
+    const serviceData = {
+        ...data,
+        id: newId,
+        publicId: newId, 
+        receptionDateTime: new Date().toISOString(),
+    };
+    
+    const cleanedData = cleanObjectForFirestore(serviceData);
+    await setDoc(doc(db, 'serviceRecords', newId), cleanedData);
+    
+    // Save to public collection
+    const vehicle = await getDoc(doc(db, 'vehicles', data.vehicleId));
+    if (vehicle.exists()) {
+        await savePublicDocument('service', cleanedData, vehicle.data() as Vehicle);
+    }
+
+    return serviceData as ServiceRecord;
+};
+
+const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const docRef = doc(db, 'serviceRecords', id);
+    const cleanedData = cleanObjectForFirestore(data);
+    await updateDoc(docRef, cleanedData);
+};
+
+const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<ServiceRecord> => {
+    if (!db) throw new Error("Database not initialized.");
+    const isEditing = !!data.id;
+    
+    if (isEditing) {
+        await updateService(data.id!, data);
+        const updatedDoc = await getDoc(doc(db, 'serviceRecords', data.id!));
+        return { id: updatedDoc.id, ...updatedDoc.data() } as ServiceRecord;
+    } else {
+        return await addService(data as Omit<ServiceRecord, 'id'>);
+    }
+};
+
+
+const cancelService = async (serviceId: string, reason: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await updateDoc(doc(db, 'serviceRecords', serviceId), {
+        status: 'Cancelado',
+        cancellationReason: reason,
+        deliveryDateTime: new Date().toISOString(),
+    });
+};
+
+const deleteService = async (serviceId: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await deleteDoc(doc(db, 'serviceRecords', serviceId));
+};
+
+const completeService = async (
+    service: ServiceRecord, 
+    paymentDetails: PaymentDetailsFormValues & { nextServiceInfo?: ServiceRecord['nextServiceInfo'] },
+    batch: any // Firebase WriteBatch
+): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    
+    const serviceRef = doc(db, 'serviceRecords', service.id);
+    
+    // 1. Update service record status, payment details, and delivery time
+    const updateData = {
+        status: 'Entregado' as const,
+        deliveryDateTime: new Date().toISOString(),
+        payments: paymentDetails.payments,
+        nextServiceInfo: paymentDetails.nextServiceInfo,
+    };
+    batch.update(serviceRef, cleanObjectForFirestore(updateData));
+
+    // 2. Register cash transactions if applicable
+    const authUserString = localStorage.getItem('authUser');
+    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+    
+    for (const payment of paymentDetails.payments) {
+        if (payment.method === 'Efectivo') {
+            const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
+            batch.set(cashTransactionRef, {
+                date: new Date().toISOString(),
+                type: 'Entrada' as const,
+                amount: payment.amount,
+                concept: `Servicio #${service.id.slice(-6)}`,
+                userId: currentUser?.id || 'system',
+                userName: currentUser?.name || 'Sistema',
+                relatedType: 'Servicio' as const,
+                relatedId: service.id,
+            });
+        }
+    }
+};
+
+export const serviceService = {
+    onServicesUpdate,
+    onServicesUpdatePromise,
+    getServicesForVehicle,
+    addService,
+    updateService,
+    saveService,
+    cancelService,
+    deleteService,
+    completeService,
+};
+
