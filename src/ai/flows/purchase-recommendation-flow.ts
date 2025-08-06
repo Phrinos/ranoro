@@ -9,6 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { serviceService } from '@/lib/services'; // Ensure this is the correct service
 
 // --- Schemas for Main Flow Input (from UI) ---
 const ScheduledServiceSchema = z.object({

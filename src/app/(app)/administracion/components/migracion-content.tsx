@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { migrateProducts, type ExtractedProduct } from '@/ai/flows/product-migration-flow';
 import { migrateData, type MigrateDataOutput } from '@/ai/flows/data-migration-flow';
 import { useToast } from '@/hooks/use-toast';
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService, serviceService } from '@/lib/services';
 import { formatCurrency } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
@@ -144,7 +144,7 @@ export function MigracionPageContent() {
         
         try {
             if (analysisResult.type === 'operaciones' && (analysisResult.services.length > 0 || analysisResult.vehicles.length > 0)) {
-                await operationsService.saveMigratedServices(analysisResult.services, analysisResult.vehicles);
+                await serviceService.saveMigratedServices(analysisResult.services, analysisResult.vehicles);
                 itemsAdded = (analysisResult.vehicles?.length || 0) + (analysisResult.services?.length || 0);
             } else if (analysisResult.type === 'productos' && analysisResult.products) {
                 if (analysisResult.products.length > 0) {

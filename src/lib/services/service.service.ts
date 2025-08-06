@@ -18,13 +18,15 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment } from "@/types";
+import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { logAudit } from '../placeholder-data';
 import { nanoid } from 'nanoid';
 import { savePublicDocument } from '../public-document';
 import { cashService } from './cash.service';
 import type { PaymentDetailsFormValues } from '@/app/(app)/servicios/components/PaymentDetailsDialog';
+import { inventoryService } from './inventory.service';
+import { format, parse } from 'date-fns';
 
 // --- Service Listeners ---
 
@@ -100,6 +102,46 @@ const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<
     }
 };
 
+const saveMigratedServices = async (services: any[], vehicles: any[]) => {
+    if (!db) throw new Error("Database not initialized.");
+    const batch = writeBatch(db);
+
+    // Save new vehicles
+    for (const vehicleData of vehicles) {
+      const vehicleRef = doc(collection(db, "vehicles"));
+      batch.set(vehicleRef, cleanObjectForFirestore(vehicleData));
+    }
+
+    // Save new services
+    for (const serviceData of services) {
+        const serviceRef = doc(collection(db, 'serviceRecords'));
+        const { vehicleLicensePlate, serviceDate, description, totalCost } = serviceData;
+
+        // Find the vehicle to link
+        const vehicleSnapshot = await getDocs(query(collection(db, "vehicles"), where("licensePlate", "==", vehicleLicensePlate), limit(1)));
+        const vehicleId = vehicleSnapshot.empty ? null : vehicleSnapshot.docs[0].id;
+        
+        // Try to parse the flexible date format
+        const parsedDate = parse(serviceDate, 'M/d/yy', new Date());
+
+        const newService = {
+            vehicleId,
+            vehicleIdentifier: vehicleLicensePlate,
+            serviceDate: isValid(parsedDate) ? parsedDate.toISOString() : new Date().toISOString(),
+            description,
+            totalCost,
+            status: 'Entregado',
+            paymentMethod: 'Efectivo',
+            // Add other required fields with default values
+            receptionDateTime: isValid(parsedDate) ? parsedDate.toISOString() : new Date().toISOString(),
+            deliveryDateTime: isValid(parsedDate) ? parsedDate.toISOString() : new Date().toISOString(),
+        };
+
+        batch.set(serviceRef, cleanObjectForFirestore(newService));
+    }
+    await batch.commit();
+};
+
 
 const cancelService = async (serviceId: string, reason: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
@@ -161,6 +203,7 @@ export const serviceService = {
     addService,
     updateService,
     saveService,
+    saveMigratedServices,
     cancelService,
     deleteService,
     completeService,

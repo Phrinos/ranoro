@@ -16,7 +16,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
-import { operationsService } from '@/lib/services';
+import { fleetService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 
 interface HistorialTabProps {
@@ -39,7 +39,7 @@ export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: H
   
   const handleUpdatePaymentNote = async (paymentId: string, note: string) => {
     try {
-      await operationsService.updateRentalPayment(paymentId, { note });
+      await fleetService.updateRentalPayment(paymentId, { note });
       toast({ title: 'Concepto Actualizado' });
       setIsEditNoteDialogOpen(false);
     } catch (e: any) {
