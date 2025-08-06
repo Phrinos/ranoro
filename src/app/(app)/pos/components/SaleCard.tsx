@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,22 +44,23 @@ export const SaleCard = React.memo(({
     const profit = calculateSaleProfit(sale, inventoryItems);
     const isCancelled = sale.status === 'Cancelado';
 
-    const getItemsWithCategory = () => {
+    const itemsDescription = useMemo(() => {
         const firstItem = sale.items[0];
         if (!firstItem) return 'Venta sin artículos';
-
+        
         const inventoryItem = inventoryItems.find(i => i.id === firstItem.inventoryItemId);
         const category = inventoryItem?.category?.toUpperCase() || 'ARTÍCULO';
         const otherItemsCount = sale.items.length - 1;
-
+        
         return `${category}: ${firstItem.itemName}${otherItemsCount > 0 ? ` y ${otherItemsCount} más` : ''}`;
-    };
+    }, [sale.items, inventoryItems]);
     
-    const getPaymentBadges = () => {
+    const paymentBadges = useMemo(() => {
         if (isCancelled) {
-            return <Badge variant="destructive" className="font-bold">CANCELADO</Badge>;
+            return [<Badge key="cancelled" variant="destructive" className="font-bold">CANCELADO</Badge>];
         }
         
+        // New logic: If `payments` array exists and has items, use it.
         if (Array.isArray(sale.payments) && sale.payments.length > 0) {
             return sale.payments.map((p, index) => (
                 <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
@@ -68,32 +69,31 @@ export const SaleCard = React.memo(({
             ));
         }
 
+        // Fallback for older records with string-based `paymentMethod`
         if (typeof sale.paymentMethod === 'string') {
             const methods = sale.paymentMethod.split(/[+/]/);
             const totalAmount = sale.totalAmount || 0;
-            return methods.map((method, index) => {
-                const amount = index === 0 ? totalAmount : 0;
-                return (
-                    <Badge key={index} variant={getPaymentMethodVariant(method.trim() as Payment['method'])} className="text-xs">
-                        {formatCurrency(amount)} <span className="font-normal ml-1 opacity-80">({method.trim()})</span>
-                    </Badge>
-                );
-            });
+            const amountPerMethod = methods.length > 1 ? 0 : totalAmount; // Assign total only if single method
+
+            return methods.map((method, index) => (
+                <Badge key={index} variant={getPaymentMethodVariant(method.trim() as Payment['method'])} className="text-xs">
+                    {/* If amounts are not detailed, show total on the first badge or handle as needed */}
+                    {formatCurrency(index === 0 ? totalAmount : 0)} <span className="font-normal ml-1 opacity-80">({method.trim()})</span>
+                </Badge>
+            ));
         }
         
-        return <Badge variant="outline">Sin Pago</Badge>;
-    };
-
-    const getSellerName = () => {
-        if (sale.registeredByName) {
-            return sale.registeredByName;
-        }
+        return [<Badge key="no-payment" variant="outline">Sin Pago</Badge>];
+    }, [sale.payments, sale.paymentMethod, sale.totalAmount, isCancelled]);
+    
+    const sellerName = useMemo(() => {
+        if (sale.registeredByName) return sale.registeredByName;
         if (sale.registeredById) {
             const seller = users.find(u => u.id === sale.registeredById);
             return seller?.name || 'Usuario no disponible';
         }
         return 'Usuario no disponible';
-    };
+    }, [sale.registeredById, sale.registeredByName, users]);
 
     return (
         <Card className={cn("shadow-sm overflow-hidden", isCancelled && "bg-muted/60 opacity-80")}>
@@ -112,7 +112,7 @@ export const SaleCard = React.memo(({
                             <TooltipProvider>
                                 <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <span className="truncate">{getItemsWithCategory()}</span>
+                                    <span className="truncate">{itemsDescription}</span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     {sale.items.map(i => <p key={i.inventoryItemId}>{i.quantity} x {i.itemName}</p>)}
@@ -125,39 +125,41 @@ export const SaleCard = React.memo(({
                             <span>{sale.customerName || 'Cliente Mostrador'}</span>
                        </div>
                     </div>
-
-                    {/* Bloque 3: Total y Ganancia */}
-                    <div className="p-3 flex flex-col justify-center items-center md:items-end md:w-48 text-center md:text-right">
-                       <p className="text-xs text-muted-foreground">Costo Cliente</p>
-                       <p className="font-bold text-xl text-primary">{formatCurrency(sale.totalAmount)}</p>
-                       <p className="text-sm text-green-600 flex items-center gap-1">
-                            <TrendingUp className="h-4 w-4" /> {formatCurrency(profit)}
-                       </p>
+                    
+                    <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right border-t md:border-0 md:border-l w-full md:w-auto flex-shrink-0 space-y-2">
+                        <div>
+                           <p className="text-xs text-muted-foreground">Costo Cliente</p>
+                           <p className="font-bold text-xl text-primary">{formatCurrency(sale.totalAmount)}</p>
+                           <p className="text-sm text-green-600 flex items-center gap-1">
+                                <TrendingUp className="h-4 w-4" /> {formatCurrency(profit)}
+                           </p>
+                        </div>
+                        <div className="w-full text-center md:text-right">
+                           <p className="text-xs text-muted-foreground">Atendió:</p>
+                           <p className="text-sm">{sellerName}</p>
+                        </div>
                     </div>
+
 
                     {/* Bloque 4: Método de Pago */}
                      <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-48 flex-shrink-0 space-y-2">
                         <p className="text-xs font-semibold text-muted-foreground">Métodos de Pago</p>
                         <div className="flex flex-wrap gap-1 justify-center">
-                            {getPaymentBadges()}
+                            {paymentBadges}
                          </div>
                     </div>
 
-                    {/* Bloque 5: Acciones y Usuario */}
-                    <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-auto flex-shrink-0 space-y-2">
-                         <p className="text-xs text-muted-foreground">Atendió:</p>
-                         <p className="text-sm">{getSellerName()}</p>
-                          <div className="flex justify-center items-center gap-1">
-                                <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Cancelar Venta">
-                                    <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={onEditPayment} title="Editar Pago" disabled={isCancelled}>
-                                    <DollarSign className="h-4 w-4 text-green-600" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={onReprintTicket} title="Reimprimir Ticket" disabled={isCancelled}>
-                                    <Printer className="h-4 w-4" />
-                                </Button>
-                         </div>
+                    {/* Bloque 5: Acciones */}
+                    <div className="p-4 flex justify-center items-center gap-1 border-t md:border-t-0 md:border-l w-full md:w-auto flex-shrink-0">
+                        <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Cancelar Venta">
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={onEditPayment} title="Editar Pago" disabled={isCancelled}>
+                            <DollarSign className="h-4 w-4 text-green-600" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={onReprintTicket} title="Reimprimir Ticket" disabled={isCancelled}>
+                            <Printer className="h-4 w-4" />
+                        </Button>
                     </div>
 
                 </div>
