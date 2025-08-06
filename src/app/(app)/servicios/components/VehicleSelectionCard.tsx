@@ -162,8 +162,8 @@ export function VehicleSelectionCard({
                   {formatServiceInfo(lastService)}
               </p>
           </div>
-          <div className="flex justify-between items-center pt-2">
-              <Button type="button" variant="link" className="p-0 h-auto" onClick={handleViewProfile}>
+          <div className="flex justify-end items-center pt-2 gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={handleViewProfile}>
                 Perfil del Vehículo
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedVehicle(null); setValue('vehicleId', undefined); onVehicleSelected(null); }}>
