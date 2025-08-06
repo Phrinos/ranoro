@@ -10,7 +10,7 @@ import { Loader2 } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { db } from '@/lib/firebaseClient';
 import { query, collection, orderBy, limit, onSnapshot, where, doc } from 'firebase/firestore';
-import { format, startOfDay, isSameDay } from 'date-fns';
+import { format, startOfDay, isSameDay, startOfMonth, endOfMonth, isWithinInterval, isValid, parseISO } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 
 const CajaPosContent = lazy(() => import('../../pos/caja/components/caja-pos-content').then(module => ({ default: module.CajaPosContent })));
@@ -66,39 +66,9 @@ export function CajaPageComponent({ tab }: { tab?: string }) {
   }, []);
   
   const allCashOperations = useMemo(() => {
-    // 1. Get manual transactions
-    const manualTransactions = allCashTransactions;
-
-    // 2. Convert delivered services paid in cash to transactions
-    const serviceTransactions = allServices
-      .filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo'))
-      .map(s => ({
-        id: `service-${s.id}`,
-        date: s.deliveryDateTime || s.serviceDate,
-        type: 'Entrada' as const,
-        amount: s.amountInCash || (s.totalCost || 0),
-        concept: `Servicio #${s.id.slice(0, 6)} - ${s.vehicleIdentifier}`,
-        userName: s.serviceAdvisorName || 'Sistema',
-        relatedType: 'Servicio' as const,
-        relatedId: s.id,
-      }));
-    
-    // 3. Convert sales paid in cash to transactions
-    const saleTransactions = allSales
-      .filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo'))
-      .map(s => ({
-        id: `sale-${s.id}`,
-        date: s.saleDate,
-        type: 'Entrada' as const,
-        amount: s.amountInCash || s.totalAmount,
-        concept: `Venta POS #${s.id.slice(0, 6)}`,
-        userName: s.customerName || 'Sistema',
-        relatedType: 'Venta' as const,
-        relatedId: s.id,
-      }));
-
-    return [...manualTransactions, ...serviceTransactions, ...saleTransactions];
-  }, [allCashTransactions, allServices, allSales]);
+    // Only use the manual transactions here, as service/sale transactions are now added via `operationsService`
+    return [...allCashTransactions].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+  }, [allCashTransactions]);
 
   const posTabs = [
     { value: "caja", label: "Caja", content: <CajaPosContent allCashOperations={allCashOperations} initialCashBalance={initialCashBalance} latestInitialBalance={latestInitialBalance} /> },

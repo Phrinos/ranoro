@@ -393,7 +393,7 @@ const registerSale = async (saleId: string, saleData: Omit<SaleReceipt, 'id' | '
             amount: newSale.amountInCash || totalAmount, // Use split amount if available
             concept: `Venta POS #${saleId.slice(0, 6)}`,
             userId: 'system',
-            userName: 'Sistema',
+            userName: newSale.customerName || 'Cliente Mostrador',
             relatedType: 'Venta',
             relatedId: saleId,
         });
