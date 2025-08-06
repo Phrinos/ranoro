@@ -9,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Wallet, ArrowUpCircle, ArrowDownCircle, Printer, Pencil, Trash2, CalendarIcon as CalendarDateIcon, DollarSign } from "lucide-react";
 import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from "@/types";
-import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, isSameDay, subDays, startOfWeek, startOfMonth, compareDesc } from "date-fns";
+import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, isSameDay, subDays, startOfWeek, startOfMonth, compareDesc, endOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -215,6 +215,23 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     };
   }, [date, allCashOperations, dailyInitialBalance]);
   
+  const totalCashInMonth = useMemo(() => {
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+
+    const transactionsInMonth = allCashOperations.filter(t => {
+      const transactionDate = parseDate(t.date);
+      return transactionDate && isValid(transactionDate) && isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
+    });
+    
+    const cashIn = transactionsInMonth.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
+    const cashOut = transactionsInMonth.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
+
+    return cashIn - cashOut;
+
+  }, [allCashOperations]);
+  
   const manualCashMovements = useMemo(() => {
     const start = startOfDay(date);
     const end = endOfDay(date);
@@ -294,8 +311,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
         <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end w-full sm:w-auto">
             <Button variant="outline" size="sm" onClick={() => setDate(startOfDay(new Date()))} className="bg-card">Hoy</Button>
             <Button variant="outline" size="sm" onClick={() => setDate(startOfDay(subDays(new Date(), 1)))} className="bg-card">Ayer</Button>
-            <Button variant="outline" size="sm" onClick={() => setDate(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="bg-card">Esta Semana</Button>
-            <Button variant="outline" size="sm" onClick={() => setDate(startOfMonth(new Date()))} className="bg-card">Este Mes</Button>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant={"outline"} className="w-full sm:w-auto justify-start text-left font-normal bg-card">
@@ -322,8 +337,8 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-4 rounded-lg bg-muted border text-center">
-              <p className="text-sm font-medium text-muted-foreground">SALDO FINAL ESPERADO (DÍA)</p>
-              <p className="text-4xl font-bold text-primary">{formatCurrency(cajaSummaryData.finalCashBalance)}</p>
+              <p className="text-sm font-medium text-muted-foreground">DINERO EN CAJA (ESTE MES)</p>
+              <p className="text-4xl font-bold text-primary">{formatCurrency(totalCashInMonth)}</p>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between items-center">
@@ -390,6 +405,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
 
 
     
+
 
 
 

@@ -5,7 +5,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { CashDrawerTransaction, SaleReceipt, ServiceRecord, InitialCashBalance } from '@/types';
-import { format, parseISO, compareDesc } from "date-fns";
+import { format, parseISO, compareDesc, startOfMonth, endOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 import { formatCurrency, cn } from "@/lib/utils";
 import { Badge } from '@/components/ui/badge';
@@ -74,7 +74,8 @@ export function MovimientosCajaContent({ allCashTransactions, allSales, allServi
     initialData: initialData,
     searchKeys: ['concept', 'userName', 'relatedId'],
     dateFilterKey: 'date',
-    initialSortOption: 'date_desc'
+    initialSortOption: 'date_desc',
+    initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) }
   });
 
   const sortOptions = [
