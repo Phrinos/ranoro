@@ -4,8 +4,10 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, FormProvider, useFormContext } from "react-hook-form"
+import { useForm, useWatch, Controller, useFieldArray, FormProvider, useFormContext } from "react-hook-form"
+import * as z from 'zod'
 
+import Image from 'next/image'
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import { nanoid } from 'nanoid'
 import {
@@ -26,13 +28,14 @@ import { Button } from '@/components/ui/button'
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import type {
   ServiceRecord, Vehicle, Technician, InventoryItem,
-  QuoteRecord, User, ServiceTypeRecord, InventoryCategory, Supplier
-} from '@/types' 
+  QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, InventoryCategory, Supplier, PaymentMethod, Personnel
+} from '@/types'
 
-import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog'
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { VehicleSelectionCard } from './components/VehicleSelectionCard'
 import { serviceFormSchema } from '@/schemas/service-form';
@@ -41,7 +44,6 @@ import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { ServiceItemsList } from './components/ServiceItemsList';
 import { ServiceSummary } from './components/ServiceSummary';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -106,12 +108,8 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
       allVehiclesForDialog: parentVehicles,
       status: status,
       serviceType: firstType,
-      serviceItems: [{
-        id: nanoid(),
-        name: firstType,
-        price: undefined,
-        suppliesUsed: [],
-      }],
+      serviceItems: [],
+      payments: [{ method: 'Efectivo', amount: undefined }],
       serviceAdvisorId: authUser?.id,
       serviceAdvisorName: authUser?.name,
     } as z.infer<typeof serviceFormSchema>;
@@ -202,7 +200,6 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
         <FormProvider {...form}>
             <form ref={ref} id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
                 <div className="flex-grow overflow-y-auto space-y-6">
-                    {/* START: Moved from ServiceDetailsHeader */}
                      <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle className="text-lg">Detalles Generales del Servicio</CardTitle>
@@ -286,7 +283,6 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
                             )}
                         </CardContent>
                     </Card>
-                    {/* END: Moved from ServiceDetailsHeader */}
 
                     <VehicleSelectionCard
                         isReadOnly={props.isReadOnly}
@@ -298,7 +294,9 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
                       <div className="lg:col-span-3">
                         <ServiceItemsList
+                            isReadOnly={props.isReadOnly}
                             inventoryItems={invItems}
+                            mode={mode}
                             onNewInventoryItemCreated={handleNewInventoryItemCreated}
                             categories={allCategories}
                             suppliers={allSuppliers}
