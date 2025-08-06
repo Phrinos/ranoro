@@ -15,7 +15,7 @@ import type { Vehicle, ServiceRecord } from '@/types';
 import { format, isValid, parseISO, addMonths, addYears } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { operationsService } from '@/lib/services';
+import { serviceService } from '@/lib/services';
 import Link from 'next/link';
 import { parseDate } from '@/lib/forms';
 
@@ -53,7 +53,7 @@ export function VehicleSelectionCard({
   const vehicleId = watch('vehicleId');
 
   useEffect(() => {
-    operationsService.onServicesUpdate(setServiceHistory);
+    serviceService.onServicesUpdate(setServiceHistory);
   }, []);
 
   useEffect(() => {
@@ -342,5 +342,3 @@ export function VehicleSelectionCard({
     </Card>
   );
 }
-
-    
