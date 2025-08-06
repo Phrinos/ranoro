@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,29 +59,10 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Detalles de Pago y Cliente</CardTitle>
+        <CardTitle>Métodos de Pago</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <FormField
-          control={control}
-          name="customerName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nombre del Cliente</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Ej: Cliente Mostrador" 
-                  {...field} 
-                  value={field.value || ''}
-                  onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
-                  disabled={isReadOnly} 
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
         <div className="space-y-4 rounded-md border p-4">
-           <FormLabel>Métodos de Pago</FormLabel>
            {fields.map((field, index) => {
                 const selectedMethod = watchedPayments[index]?.method;
                 const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
@@ -161,9 +142,25 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
               render={({ field }) => <FormMessage />}
             />
         </div>
+        <FormField
+            control={control}
+            name="customerName"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Nombre del Cliente</FormLabel>
+                <FormControl>
+                    <Input 
+                    placeholder="Ej: Cliente Mostrador" 
+                    {...field} 
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
+                    disabled={isReadOnly} 
+                    />
+                </FormControl>
+                </FormItem>
+            )}
+            />
       </CardContent>
     </Card>
   );
 }
-
-    

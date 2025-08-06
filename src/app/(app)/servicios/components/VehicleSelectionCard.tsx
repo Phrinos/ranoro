@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useFormContext } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -10,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone, CalendarCheck, ArrowRight, Edit } from 'lucide-react';
+import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone, CalendarCheck, ArrowRight, Edit, Search } from 'lucide-react';
 import type { Vehicle, ServiceRecord } from '@/types';
 import { format, isValid, parseISO, addMonths, addYears } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -18,6 +17,15 @@ import { cn } from '@/lib/utils';
 import { serviceService } from '@/lib/services';
 import Link from 'next/link';
 import { parseDate } from '@/lib/forms';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
 
 interface VehicleSelectionCardProps {
   isReadOnly?: boolean;
@@ -32,29 +40,27 @@ export function VehicleSelectionCard({
   onVehicleSelected,
   onOpenNewVehicleDialog,
 }: VehicleSelectionCardProps) {
-  const { control, setValue, getValues, watch, formState: { errors } } = useFormContext();
+  const { control, setValue, getValues, watch } = useFormContext();
   const { toast } = useToast();
 
-  const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(getValues('vehicleLicensePlateSearch') || "");
+  const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
+  const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState("");
   const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [lastService, setLastService] = useState<ServiceRecord | null>(null);
-  const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
   
+  const vehicleId = watch('vehicleId');
   const watchedStatus = watch('status');
   const watchedSubStatus = watch('subStatus');
-  
-  const showNextServiceCard = useMemo(() => {
-    return (watchedStatus === 'En Taller' && watchedSubStatus === 'Completado') || watchedStatus === 'Entregado';
-  }, [watchedStatus, watchedSubStatus]);
-
-
-  const vehicleId = watch('vehicleId');
 
   useEffect(() => {
     serviceService.onServicesUpdate(setServiceHistory);
   }, []);
+  
+  const showNextServiceCard = useMemo(() => {
+    return (watchedStatus === 'En Taller' && watchedSubStatus === 'Completado') || watchedStatus === 'Entregado';
+  }, [watchedStatus, watchedSubStatus]);
 
   useEffect(() => {
     const findVehicleData = (vId: string) => {
@@ -62,7 +68,6 @@ export function VehicleSelectionCard({
       if (vehicle) {
         setSelectedVehicle(vehicle);
         setVehicleLicensePlateSearch(vehicle.licensePlate);
-        
         const vehicleServices = serviceHistory
           .filter(s => s.vehicleId === vehicle.id)
           .sort((a, b) => {
@@ -72,72 +77,25 @@ export function VehicleSelectionCard({
               if (!isValid(dateB)) return -1;
               return dateB.getTime() - dateA.getTime();
           });
-          
-        const latestService = vehicleServices[0] || null;
-        setLastService(latestService);
+        setLastService(vehicleServices[0] || null);
       } else {
         setSelectedVehicle(null);
         setLastService(null);
       }
     };
-
     if (vehicleId) {
       findVehicleData(vehicleId);
-    } else {
-        setSelectedVehicle(null);
-        setLastService(null);
     }
   }, [vehicleId, localVehicles, serviceHistory]);
 
-  const handleSearchVehicle = () => {
-    if (!vehicleLicensePlateSearch.trim()) {
-      toast({ title: "Ingrese Placa", description: "Por favor ingrese una placa para buscar.", variant: "destructive" });
-      return;
-    }
-    const found = localVehicles.find(v => v.licensePlate.toLowerCase() === vehicleLicensePlateSearch.trim().toLowerCase());
-    if (found) {
-      handleSelectVehicleFromSearch(found);
-      toast({ title: "Vehículo Encontrado", description: `${found.make} ${found.model} ${found.year}` });
-    } else {
-      setSelectedVehicle(null);
-      setValue('vehicleId', undefined);
-      setVehicleNotFound(true);
-      setLastService(null);
-      toast({ title: "Vehículo No Encontrado", description: "Puede registrarlo si es nuevo.", variant: "default" });
-    }
-  };
-
-  const handleSelectVehicleFromSearch = (vehicle: Vehicle) => {
+  const handleSelectVehicle = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
-    setVehicleLicensePlateSearch(vehicle.licensePlate);
-    setValue('vehicleId', String(vehicle.id), { shouldValidate: true });
+    setValue('vehicleId', vehicle.id, { shouldValidate: true });
     if (vehicle.isFleetVehicle && vehicle.currentMileage) {
       setValue('mileage', vehicle.currentMileage, { shouldDirty: true });
     }
-    setVehicleNotFound(false);
-    setVehicleSearchResults([]);
-    
-    const vehicleServices = serviceHistory
-      .filter(s => s.vehicleId === vehicle.id)
-      .sort((a, b) => {
-        const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate) || new Date(0);
-        const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate) || new Date(0);
-        if (!isValid(dateA)) return 1;
-        if (!isValid(dateB)) return -1;
-        return dateB.getTime() - dateA.getTime();
-      });
-      
-    const latestService = vehicleServices[0] || null;
-    setLastService(latestService);
-    
     onVehicleSelected(vehicle);
-  };
-  
-   const handleVehiclePlateKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      handleSearchVehicle();
-    }
+    setIsSelectionDialogOpen(false);
   };
 
   useEffect(() => {
@@ -145,11 +103,6 @@ export function VehicleSelectionCard({
       setVehicleSearchResults([]);
       return;
     }
-    if (selectedVehicle && selectedVehicle.licensePlate === vehicleLicensePlateSearch) {
-      setVehicleSearchResults([]);
-      return;
-    }
-
     const lowerSearch = vehicleLicensePlateSearch.toLowerCase();
     const results = localVehicles.filter(v =>
       v.licensePlate.toLowerCase().includes(lowerSearch) ||
@@ -158,8 +111,8 @@ export function VehicleSelectionCard({
       v.ownerName.toLowerCase().includes(lowerSearch)
     ).slice(0, 5);
     setVehicleSearchResults(results);
-  }, [vehicleLicensePlateSearch, localVehicles, selectedVehicle]);
-  
+  }, [vehicleLicensePlateSearch, localVehicles]);
+
   const formatServiceInfo = (service: ServiceRecord | null): string => {
     if (!service) return 'No hay registro.';
     const relevantDate = parseDate(service.deliveryDateTime) || parseDate(service.serviceDate);
@@ -168,177 +121,165 @@ export function VehicleSelectionCard({
     return `${service.mileage ? `${service.mileage.toLocaleString('es-ES')} km - ` : ''}${format(relevantDate, "dd MMM yyyy", { locale: es })} - ${description}`;
   };
 
-  const formatNextServiceInfo = (info: { date: string; mileage?: number } | null | undefined): string => {
-      if (!info || !info.date) return 'No programado.';
-      const parsedDate = parseDate(info.date);
-      if(!parsedDate || !isValid(parsedDate)) return 'Fecha inválida.';
-      
-      const datePart = `Fecha: ${format(parsedDate, "dd MMM yyyy", { locale: es })}`;
-      const mileagePart = (info.mileage && isFinite(info.mileage)) ? ` / KM: ${info.mileage.toLocaleString('es-MX')}` : '';
-      return datePart + mileagePart;
-  };
+  if (selectedVehicle) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg">Información del Vehículo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-2 h-full flex flex-col justify-center relative">
+                      <Button asChild variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7">
+                          <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil del vehículo">
+                              <Edit className="h-4 w-4" />
+                          </Link>
+                      </Button>
+                      <div>
+                          <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
+                      </div>
+                      <div className="space-y-1 pt-1">
+                          <p className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerName}</p>
+                          <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerPhone || 'Tel. no registrado'}</p>
+                      </div>
+                      <div className="text-xs pt-2 mt-auto border-t space-y-1">
+                          <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Último Servicio:</p>
+                          <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}>{formatServiceInfo(lastService)}</p>
+                      </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <FormField
+                        control={control}
+                        name="mileage"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Kilometraje (Opcional)</FormLabel>
+                                <FormControl>
+                                    <Input type="number" placeholder="Ej: 55000 km" {...field} value={field.value ?? ''} disabled={isReadOnly} />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                     {showNextServiceCard && (
+                        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
+                            <CardHeader className="p-3">
+                                <CardTitle className="text-base flex items-center gap-2 text-blue-800 dark:text-blue-300">
+                                    <CalendarCheck className="h-5 w-5" />Próximo Servicio Recomendado
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-3 pt-0 space-y-4">
+                              <div className="space-y-1">
+                                    <FormLabel>Fecha</FormLabel>
+                                    <div className="flex gap-2 items-center">
+                                        <FormField
+                                            control={control}
+                                            name="nextServiceInfo.date"
+                                            render={({ field }) => ( <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly} className="flex-grow"/></FormControl>)}
+                                        />
+                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())} className="bg-white hover:bg-gray-100 text-black">6m</Button>
+                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())} className="bg-white hover:bg-gray-100 text-black">1a</Button>
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <FormLabel>Kilometraje</FormLabel>
+                                    <div className="flex gap-2 items-center">
+                                        <FormField
+                                            control={control}
+                                            name="nextServiceInfo.mileage"
+                                            render={({ field }) => (<FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} className="flex-grow" /></FormControl>)}
+                                        />
+                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)} className="bg-white hover:bg-gray-100 text-black">+10k</Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                  </div>
+              </div>
+               <div className="flex justify-start">
+                    <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedVehicle(null); setValue('vehicleId', undefined); onVehicleSelected(null); }}>
+                        Cambiar Vehículo
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Información del Vehículo</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <FormField
-                  control={control}
-                  name="vehicleId"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel className={cn(errors.vehicleId && "text-destructive")}>Placa del Vehículo</FormLabel>
-                      <div className="relative">
-                          <FormControl>
-                          <Input
-                              placeholder="Buscar / Ingresar Placas"
-                              onChange={(e) => {
-                                  const upperCaseValue = e.target.value.toUpperCase();
-                                  setVehicleLicensePlateSearch(upperCaseValue);
-                                  field.onChange(undefined);
-                                  setSelectedVehicle(null);
-                                  setVehicleNotFound(false);
-                              }}
-                              value={vehicleLicensePlateSearch}
-                              disabled={isReadOnly}
-                              onKeyDown={handleVehiclePlateKeyDown}
-                              className={cn(errors.vehicleId && "border-destructive focus-visible:ring-destructive", "w-full")}
-                          />
-                          </FormControl>
-                          {vehicleSearchResults.length > 0 && (
-                          <div className="absolute top-full mt-1 w-full md:w-full z-20">
-                              <ScrollArea className="h-auto max-h-[150px] rounded-md border bg-background shadow-lg">
-                              <div className="p-2">
-                                  {vehicleSearchResults.map(v => (
-                                  <button
-                                      type="button"
-                                      key={v.id}
-                                      onClick={() => handleSelectVehicleFromSearch(v)}
-                                      className="w-full text-left p-2 rounded-md hover:bg-muted"
-                                  >
-                                      <p className="font-semibold">{v.licensePlate}</p>
-                                      <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
-                                  </button>
-                                  ))}
-                              </div>
-                              </ScrollArea>
-                          </div>
-                          )}
-                      </div>
-                  </FormItem>
-                  )}
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full h-24 border-2 border-dashed bg-muted/30 hover:bg-muted/50 text-muted-foreground"
+        onClick={() => setIsSelectionDialogOpen(true)}
+        disabled={isReadOnly}
+      >
+        <CarIcon className="mr-4 h-8 w-8" />
+        <span className="text-lg">Seleccionar Vehículo</span>
+      </Button>
+
+      <Dialog open={isSelectionDialogOpen} onOpenChange={setIsSelectionDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Buscar Vehículo</DialogTitle>
+            <DialogDescription>
+              Busque por placa, marca, modelo o propietario.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar vehículo..."
+                value={vehicleLicensePlateSearch}
+                onChange={(e) => setVehicleLicensePlateSearch(e.target.value)}
+                className="pl-8"
               />
-              <FormField
-                control={control}
-                name="mileage"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Kilometraje (Opcional)</FormLabel>
-                        <FormControl>
-                            <Input
-                            type="number"
-                            placeholder="Ej: 55000 km"
-                            {...field}
-                            value={field.value ?? ''}
-                            disabled={isReadOnly}
-                            />
-                        </FormControl>
-                    </FormItem>
-                )}
-            />
             </div>
-        </div>
-        
-        {selectedVehicle && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-                <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-2 h-full flex flex-col justify-center relative">
-                    <Button asChild variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7">
-                        <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil del vehículo">
-                            <Edit className="h-4 w-4" />
-                        </Link>
+            <ScrollArea className="h-60 border rounded-md">
+              <div className="p-2 space-y-1">
+                {vehicleSearchResults.length > 0 ? (
+                  vehicleSearchResults.map((v) => (
+                    <Button
+                      key={v.id}
+                      variant="ghost"
+                      className="w-full justify-start text-left h-auto"
+                      onClick={() => handleSelectVehicle(v)}
+                    >
+                      <div>
+                        <p className="font-semibold">{v.licensePlate}</p>
+                        <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
+                      </div>
                     </Button>
-                    <div>
-                        <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
-                    </div>
-                    <div className="space-y-1 pt-1">
-                        <p className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerName}</p>
-                        <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerPhone || 'Tel. no registrado'}</p>
-                    </div>
-                    <div className="text-xs pt-2 mt-auto border-t space-y-1">
-                        <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Último Servicio:</p>
-                        <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}>{formatServiceInfo(lastService)}</p>
-                    </div>
-                </div>
-                
-                 {showNextServiceCard && (
-                    <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
-                        <CardHeader className="p-3">
-                            <CardTitle className="text-base flex items-center gap-2 text-blue-800 dark:text-blue-300">
-                                <CalendarCheck className="h-5 w-5" />Próximo Servicio Recomendado
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0 space-y-4">
-                           <div className="space-y-1">
-                                <FormLabel>Fecha</FormLabel>
-                                <div className="flex gap-2 items-center">
-                                    <FormField
-                                        control={control}
-                                        name="nextServiceInfo.date"
-                                        render={({ field }) => (
-                                            <FormControl>
-                                                <Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly} className="flex-grow"/>
-                                            </FormControl>
-                                        )}
-                                    />
-                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())} className="bg-white hover:bg-gray-100 text-black">6m</Button>
-                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())} className="bg-white hover:bg-gray-100 text-black">1a</Button>
-                                </div>
-                            </div>
-
-                            <div className="space-y-1">
-                                <FormLabel>Kilometraje</FormLabel>
-                                <div className="flex gap-2 items-center">
-                                    <FormField
-                                        control={control}
-                                        name="nextServiceInfo.mileage"
-                                        render={({ field }) => (
-                                            <FormControl>
-                                                <Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} className="flex-grow" />
-                                            </FormControl>
-                                        )}
-                                    />
-                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)} className="bg-white hover:bg-gray-100 text-black">+10k</Button>
-                                    <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)} className="bg-white hover:bg-gray-100 text-black">+15k</Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center p-4 text-sm text-muted-foreground">
+                    {vehicleLicensePlateSearch.length > 1
+                      ? "No se encontraron vehículos."
+                      : "Escriba para buscar..."}
+                  </div>
                 )}
-            </div>
-        )}
-
-        {vehicleNotFound && !selectedVehicle && !isReadOnly && (
-          <div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => onOpenNewVehicleDialog(vehicleLicensePlateSearch)}
-              className="w-full sm:w-auto"
-            >
-              <CarIcon className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
-            </Button>
+              </div>
+            </ScrollArea>
+             <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={() => {
+                  setIsSelectionDialogOpen(false);
+                  onOpenNewVehicleDialog(vehicleLicensePlateSearch);
+                }}
+              >
+                <CarIcon className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
+              </Button>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <DialogFooter>
+             <Button variant="outline" onClick={() => setIsSelectionDialogOpen(false)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

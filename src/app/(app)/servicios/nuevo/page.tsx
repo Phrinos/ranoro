@@ -151,11 +151,6 @@ export default function NuevoServicioPage() {
 
   return (
     <>
-      <PageHeader
-        title="Nuevo Servicio / Cotización"
-        description="Complete la información. El registro se guardará en la base de datos al finalizar."
-      />
-      
       <FormProvider {...methods}>
         <ServiceForm
           vehicles={vehicles}
@@ -167,25 +162,9 @@ export default function NuevoServicioPage() {
           mode="quote" // Start as a quote by default
           onVehicleCreated={handleVehicleCreated}
           onTotalCostChange={() => {}} // No-op for this page as total is not displayed in header
+          categories={allCategories}
+          suppliers={allSuppliers}
         />
-        <div className="mt-6 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => router.push('/servicios/historial')}>
-                <X className="mr-2 h-4 w-4" />
-                Cancelar
-            </Button>
-            <Button
-                type="submit"
-                form="service-form"
-                disabled={methods.formState.isSubmitting}
-            >
-                {methods.formState.isSubmitting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                )}
-                Crear Registro
-            </Button>
-        </div>
       </FormProvider>
       
       {serviceForPreview && (
