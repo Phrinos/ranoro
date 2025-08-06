@@ -10,7 +10,7 @@ import { TicketContent } from '@/components/ticket-content';
 import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User, InventoryCategory, Supplier } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { operationsService, inventoryService, adminService } from '@/lib/services';
+import { inventoryService, adminService, saleService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
 import { VentasPosContent } from "./components/ventas-pos-content";
@@ -45,7 +45,7 @@ export default function PosPageComponent({ tab }: { tab?: string }) {
       try { setCurrentUser(JSON.parse(authUserString)); } catch (e) { console.error("Error parsing auth user", e); }
     }
 
-    unsubs.push(operationsService.onSalesUpdate(setAllSales));
+    unsubs.push(saleService.onSalesUpdate(setAllSales));
     unsubs.push(inventoryService.onItemsUpdate(setAllInventory));
     unsubs.push(inventoryService.onCategoriesUpdate(setAllCategories));
     unsubs.push(inventoryService.onSuppliersUpdate(setAllSuppliers));
@@ -132,10 +132,10 @@ Total: ${formatCurrency(sale.totalAmount)}
         allSales={allSales} 
         allInventory={allInventory} 
         allUsers={allUsers}
-        allCategories={allCategories}
-        allSuppliers={allSuppliers}
         currentUser={currentUser}
         onReprintTicket={handleReprintSale}
+        allCategories={allCategories}
+        allSuppliers={allSuppliers}
       />
 
       <PrintTicketDialog

@@ -12,7 +12,7 @@ import { SaleCard } from './SaleCard';
 import { Receipt } from 'lucide-react';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { ViewSaleDialog } from './view-sale-dialog';
-import { operationsService } from '@/lib/services';
+import { saleService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 
 const sortOptions = [
@@ -67,7 +67,7 @@ export function VentasPosContent({
   
   const handleCancelSale = useCallback(async (saleId: string, reason: string) => {
     try {
-        await operationsService.cancelSale(saleId, reason, currentUser);
+        await saleService.cancelSale(saleId, reason, currentUser);
         toast({ title: 'Venta Cancelada', description: 'El stock ha sido restaurado.' });
         setIsViewDialogOpen(false);
     } catch(e) {
@@ -77,7 +77,7 @@ export function VentasPosContent({
   
   const handleDeleteSale = useCallback(async (saleId: string) => {
     try {
-        await operationsService.deleteSale(saleId, currentUser);
+        await saleService.deleteSale(saleId, currentUser);
         toast({ title: 'Venta Eliminada', description: 'La venta se ha eliminado permanentemente.' });
         setIsViewDialogOpen(false);
     } catch(e) {
@@ -86,7 +86,7 @@ export function VentasPosContent({
   }, [currentUser, toast]);
 
   const handleUpdatePaymentDetails = useCallback(async (saleId: string, paymentDetails: any) => {
-    await operationsService.updateSale(saleId, paymentDetails);
+    await saleService.updateSale(saleId, paymentDetails);
     toast({ title: "Detalles de Pago Actualizados" });
   }, [toast]);
 
@@ -133,8 +133,6 @@ export function VentasPosContent({
                           currentUser={currentUser}
                           onReprintTicket={() => onReprintTicket(sale)}
                           onViewSale={() => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
-                          onEditPayment={() => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
-                          onDeleteSale={handleDeleteSale}
                       />
                   );
               })}
