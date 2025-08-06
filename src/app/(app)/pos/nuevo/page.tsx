@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -8,7 +9,7 @@ import { PosForm } from '../components/pos-form';
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService, saleService } from '@/lib/services';
 import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
@@ -94,7 +95,7 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     
     try {
       const saleId = `SALE-${nanoid(8).toUpperCase()}`;
-      await operationsService.registerSale(saleId, values, currentInventoryItems, currentUser, batch);
+      await saleService.registerSale(saleId, values, currentInventoryItems, currentUser, batch);
       await batch.commit();
 
       const totalAmount = values.items.reduce((sum, item) => sum + item.totalPrice, 0);

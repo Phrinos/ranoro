@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from '@/components/page-header';
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService, saleService, serviceService } from '@/lib/services';
 import type { InventoryItem, SaleReceipt, ServiceRecord } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { InformePosContent } from '../../pos/components/informe-pos-content';
@@ -17,8 +17,8 @@ export function InformesPageComponent() {
     useEffect(() => {
         setIsLoading(true);
         const unsubs = [
-            operationsService.onSalesUpdate(setAllSales),
-            operationsService.onServicesUpdate(setAllServices),
+            saleService.onSalesUpdate(setAllSales),
+            serviceService.onServicesUpdate(setAllServices),
             inventoryService.onItemsUpdate((items) => {
                 setAllInventory(items);
                 setIsLoading(false);

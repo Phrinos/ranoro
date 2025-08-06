@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -29,7 +30,7 @@ import {
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Separator } from '@/components/ui/separator';
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService, saleService, serviceService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 
 interface InventoryMovement {
@@ -65,8 +66,8 @@ export default function InventoryItemDetailPage() {
 
       if (fetchedItem) {
         const [servicesData, salesData, categoriesData, suppliersData] = await Promise.all([
-            operationsService.onServicesUpdatePromise(),
-            operationsService.onSalesUpdatePromise(),
+            serviceService.onServicesUpdatePromise(),
+            saleService.onSalesUpdatePromise(),
             inventoryService.onCategoriesUpdatePromise(),
             inventoryService.onSuppliersUpdatePromise()
         ]);

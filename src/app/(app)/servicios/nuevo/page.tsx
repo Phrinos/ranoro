@@ -11,7 +11,7 @@ import { ServiceForm } from "../components/service-form";
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, User } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { inventoryService, operationsService, adminService } from '@/lib/services';
+import { inventoryService, serviceService, purchaseService } from '@/lib/services';
 import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
@@ -53,7 +53,10 @@ export default function NuevoServicioPage() {
 
   useEffect(() => {
     const unsubs = [
-      inventoryService.onItemsUpdate(setCurrentInventoryItems),
+      inventoryService.onItemsUpdate((items) => {
+        setCurrentInventoryItems(items);
+        setIsLoading(false);
+      }),
       inventoryService.onCategoriesUpdate(setAllCategories),
       inventoryService.onSuppliersUpdate(setAllSuppliers),
       inventoryService.onVehiclesUpdate(setVehicles),
@@ -85,7 +88,7 @@ export default function NuevoServicioPage() {
 
     // Standard save for other statuses
     try {
-        const savedRecord = await operationsService.saveService(values);
+        const savedRecord = await serviceService.saveService(values);
         toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
         setServiceForPreview(savedRecord);
         setIsPreviewOpen(true);
@@ -101,11 +104,11 @@ export default function NuevoServicioPage() {
     try {
       // First, save the service to get an ID
       const { id: _, ...serviceData } = serviceToComplete; // Remove temp ID
-      const savedService = await operationsService.saveService(serviceData as ServiceRecord);
+      const savedService = await serviceService.saveService(serviceData as ServiceRecord);
 
       // Now, complete the just-saved service
       const batch = writeBatch(db);
-      await operationsService.completeService(savedService, paymentDetails, batch);
+      await serviceService.completeService(savedService, paymentDetails, batch);
       await batch.commit();
 
       const finalServiceRecord = { ...savedService, ...paymentDetails, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
@@ -200,7 +203,7 @@ export default function NuevoServicioPage() {
         <PaymentDetailsDialog
           open={isPaymentDialogOpen}
           onOpenChange={setIsPaymentDialogOpen}
-          service={serviceToComplete}
+          record={serviceToComplete}
           onConfirm={(serviceId, paymentDetails) => handleCompleteNewService(paymentDetails)}
           isCompletionFlow={true}
         />

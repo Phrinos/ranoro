@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { analyzeInventory } from '@/ai/flows/inventory-analysis-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { operationsService, inventoryService, personnelService } from '@/lib/services';
+import { serviceService, saleService, inventoryService, personnelService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, isValid, isToday, isSameDay, endOfDay } from 'date-fns';
@@ -95,8 +95,8 @@ export default function DashboardPage() {
   useEffect(() => {
     setIsLoading(true);
     const unsubs = [
-      operationsService.onServicesUpdate(setAllServices),
-      operationsService.onSalesUpdate(setAllSales),
+      serviceService.onServicesUpdate(setAllServices),
+      saleService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
       personnelService.onPersonnelUpdate(setAllPersonnel),
       inventoryService.onFixedExpensesUpdate(setFixedExpenses),
@@ -105,8 +105,8 @@ export default function DashboardPage() {
     
     // Check when all initial data loads are complete
     Promise.all([
-        operationsService.onServicesUpdatePromise(),
-        operationsService.onSalesUpdatePromise(),
+        serviceService.onServicesUpdatePromise(),
+        saleService.onSalesUpdatePromise(),
         inventoryService.onItemsUpdatePromise(),
         personnelService.onPersonnelUpdatePromise(),
         inventoryService.onFixedExpensesUpdatePromise(),

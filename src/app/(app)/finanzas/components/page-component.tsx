@@ -22,7 +22,7 @@ import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
-import { operationsService, inventoryService, personnelService } from '@/lib/services';
+import { serviceService, saleService, inventoryService, personnelService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -56,8 +56,8 @@ export function FinanzasPageComponent({
     useEffect(() => {
         setIsLoading(true);
         const unsubs: (() => void)[] = [
-            operationsService.onSalesUpdate(setAllSales),
-            operationsService.onServicesUpdate(setAllServices),
+            saleService.onSalesUpdate(setAllSales),
+            serviceService.onServicesUpdate(setAllServices),
             inventoryService.onItemsUpdate(setAllInventory),
             inventoryService.onServiceTypesUpdate(setServiceTypes),
             personnelService.onPersonnelUpdate(setAllPersonnel),

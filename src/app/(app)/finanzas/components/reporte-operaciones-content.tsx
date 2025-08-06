@@ -57,7 +57,7 @@ export function ReporteOperacionesContent({ allSales, allServices, allInventory,
                 const description = s.description || (s.serviceItems || []).map(i => i.name).join(', ');
                 return {
                     id: s.id, date: dateToUse, type: s.serviceType || 'Servicio General', 
-                    description: description, totalAmount: s.totalCost, 
+                    description: description, totalAmount: s.totalCost || 0, 
                     profit: s.serviceProfit || 0, originalObject: s 
                 };
             });
@@ -113,7 +113,7 @@ export function ReporteOperacionesContent({ allSales, allServices, allInventory,
         ]}
         filterOptions={[
             { value: 'type', label: 'Tipo de Operación', options: operationTypes },
-            { value: 'originalObject.paymentMethod', label: 'Método de Pago', options: paymentMethods },
+            { value: 'originalObject.payments.method', label: 'Método de Pago', options: paymentMethods },
         ]}
         otherFilters={tableManager.otherFilters}
         onFilterChange={tableManager.setOtherFilters}
