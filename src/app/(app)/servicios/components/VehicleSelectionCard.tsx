@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -124,6 +125,7 @@ export function VehicleSelectionCard({
 
   if (selectedVehicle) {
     return (
+      <div className="relative">
         <Card className="relative">
           <CardHeader>
              <div className="flex justify-between items-start">
@@ -139,7 +141,7 @@ export function VehicleSelectionCard({
             {/* Left Column */}
             <div className="space-y-4">
                  <div className="p-3 border rounded-md bg-muted/30">
-                    <p className="text-xs text-muted-foreground">{selectedVehicle.ownerName}</p>
+                    <p className="text-xs text-muted-foreground">{selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
                     <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
                 </div>
                 <FormField
@@ -164,12 +166,12 @@ export function VehicleSelectionCard({
                     <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedVehicle(null); setValue('vehicleId', undefined); onVehicleSelected(null); }}>
                       Cambiar Vehículo
                     </Button>
-                    <div className="text-right">
-                        <p className="text-xs font-medium text-muted-foreground">Último Servicio:</p>
-                        <p className="text-xs truncate" title={formatServiceInfo(lastService)}>
-                            {formatServiceInfo(lastService)}
-                        </p>
-                    </div>
+                </div>
+                 <div className="text-left mt-2 pt-2 border-t">
+                    <p className="text-xs font-medium text-muted-foreground">Último Servicio:</p>
+                    <p className="text-xs truncate" title={formatServiceInfo(lastService)}>
+                        {formatServiceInfo(lastService)}
+                    </p>
                 </div>
             </div>
             
