@@ -156,10 +156,17 @@ export const calculateSaleProfit = (
 
   let totalCostOfGoods = 0;
   for (const saleItem of sale.items) {
-    const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
-    const isService = saleItem.isService || (inventoryItem && inventoryItem.isService);
+    // Check if the item from the sale is a service.
+    const isServiceInSale = saleItem.isService;
 
-    // Only add to cost if it's a physical product, not a service.
+    // As a fallback, check the main inventory list.
+    const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
+    const isServiceInInventory = inventoryItem?.isService;
+
+    // The item is a service if it's marked as such in either place.
+    const isService = isServiceInSale || isServiceInInventory;
+
+    // Only add to cost if it's NOT a service (i.e., a physical product).
     if (!isService && inventoryItem) {
       totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
     }

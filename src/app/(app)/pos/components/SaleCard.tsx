@@ -131,13 +131,14 @@ export const SaleCard = React.memo(({
                     {/* Bloque 3: Costo y Atendio */}
                     <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-2 border-t md:border-0">
                          <div>
-                           <p className="text-xs text-muted-foreground">Costo Cliente</p>
-                           <p className="font-bold text-xl text-primary">{formatCurrency(sale.totalAmount)}</p>
+                           <p className="text-xs text-muted-foreground mb-1 text-right">Costo Cliente</p>
+                           <p className="font-bold text-xl text-primary text-right">{formatCurrency(sale.totalAmount)}</p>
                         </div>
                         <div>
-                            <p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end">
-                                <TrendingUp className="h-4 w-4" /> {formatCurrency(profit)}
-                            </p>
+                           <p className="text-xs text-muted-foreground">Ganancia</p>
+                           <p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end">
+                              <TrendingUp className="h-4 w-4" /> {formatCurrency(profit)}
+                           </p>
                         </div>
                     </div>
 
