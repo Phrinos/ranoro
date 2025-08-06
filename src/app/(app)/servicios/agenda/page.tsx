@@ -1,13 +1,13 @@
 
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from "react";
+import { useRouter } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
-import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo, User } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo, User, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, isTomorrow, compareAsc, compareDesc, isSameDay, addDays, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Badge } from "@/components/ui/badge";
-import { inventoryService, personnelService, operationsService, adminService } from '@/lib/services';
+import { inventoryService, personnelService, serviceService, adminService } from '@/lib/services';
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { parseDate } from '@/lib/forms';
 import { db } from '@/lib/firebaseClient';
@@ -40,16 +40,16 @@ const handleAiError = (error: any, toast: any, context: string): string => {
 
 function AgendaPageComponent() {
   const { toast } = useToast();
+  const router = useRouter();
   
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]); 
   const [personnel, setPersonnel] = useState<User[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]); 
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
+  const [categories, setCategories] = useState<InventoryCategory[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
-  const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(false);
@@ -67,10 +67,12 @@ function AgendaPageComponent() {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
 
-    unsubs.push(operationsService.onServicesUpdate(setAllServices));
+    unsubs.push(serviceService.onServicesUpdate(setAllServices));
     unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
     unsubs.push(adminService.onUsersUpdate(setPersonnel));
     unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
+    unsubs.push(inventoryService.onCategoriesUpdate(setCategories));
+    unsubs.push(inventoryService.onSuppliersUpdate(setSuppliers));
     unsubs.push(inventoryService.onServiceTypesUpdate((data) => {
         setServiceTypes(data);
         setIsLoading(false);
@@ -187,55 +189,32 @@ function AgendaPageComponent() {
     return todayServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
   }, [todayServices]);
 
-  const handleOpenServiceDialog = useCallback((service: ServiceRecord | null) => {
-    setEditingService(service);
-    setIsServiceDialogOpen(true);
-  }, []);
-  
   const handleShowPreview = useCallback((service: ServiceRecord) => {
     setServiceForPreview(service);
     setIsSheetOpen(true);
   }, []);
   
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
-    await operationsService.cancelService(serviceId, reason);
+    await serviceService.cancelService(serviceId, reason);
     toast({ title: "Servicio Cancelado" });
-    setIsServiceDialogOpen(false);
   }, [toast]);
 
   const handleDeleteService = useCallback(async (serviceId: string) => {
     try {
-      await operationsService.deleteService(serviceId);
+      await serviceService.deleteService(serviceId);
       toast({ title: "Servicio Eliminado", description: "El registro ha sido eliminado permanentemente." });
     } catch (e) {
       toast({ title: "Error", description: "No se pudo eliminar el servicio.", variant: "destructive" });
     }
   }, [toast]);
 
-
-  const handleVehicleCreated = useCallback(async (newVehicle: Omit<Vehicle, 'id'>) => {
-      await inventoryService.addVehicle(newVehicle as VehicleFormValues);
-      toast({ title: "Vehículo Creado" });
-  }, [toast]);
-  
   const handleConfirmAppointment = useCallback(async (serviceId: string) => {
-    await operationsService.updateService(serviceId, { appointmentStatus: 'Confirmada' });
+    await serviceService.updateService(serviceId, { appointmentStatus: 'Confirmada' });
     toast({
       title: "Cita Confirmada",
       description: `La cita para el servicio #${serviceId} ha sido marcada como confirmada.`,
     });
   }, [toast]);
-  
-  const handleSaveService = useCallback(async (data: ServiceRecord | QuoteRecord) => {
-      if ('status' in data) {
-        if(data.id) {
-            await operationsService.updateService(data.id, data);
-        } else {
-            await operationsService.addService(data);
-        }
-      }
-      setIsServiceDialogOpen(false);
-  }, []);
 
   const handleOpenCompleteDialog = useCallback((service: ServiceRecord) => {
     setServiceToComplete(service);
@@ -249,7 +228,7 @@ function AgendaPageComponent() {
     if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
     try {
         const batch = writeBatch(db);
-        await operationsService.completeService(serviceToUpdate, { ...paymentDetails, nextServiceInfo: serviceToUpdate.nextServiceInfo }, batch);
+        await serviceService.completeService(serviceToUpdate, { ...paymentDetails, nextServiceInfo: serviceToUpdate.nextServiceInfo }, batch);
         await batch.commit();
         setIsPaymentDialogOpen(false);
         toast({
@@ -297,7 +276,7 @@ function AgendaPageComponent() {
         service={service}
         vehicles={vehicles}
         technicians={personnel}
-        onEdit={() => handleOpenServiceDialog(service)}
+        onEdit={() => router.push(`/servicios/${service.id}`)}
         onConfirm={() => handleConfirmAppointment(service.id)}
         onView={() => handleShowPreview(service)}
         onComplete={() => handleOpenCompleteDialog(service)}
@@ -356,27 +335,12 @@ function AgendaPageComponent() {
         </TabsContent>
         <TabsContent value="calendario">
           <Suspense fallback={<Loader2 className="animate-spin" />}>
-            <ServiceCalendar services={scheduledServices} vehicles={vehicles} technicians={personnel} onServiceClick={(s) => handleOpenServiceDialog(s)} />
+            <ServiceCalendar services={scheduledServices} vehicles={vehicles} technicians={personnel} onServiceClick={(s) => router.push(`/servicios/${s.id}`)} />
           </Suspense>
         </TabsContent>
       </Tabs>
 
       <Suspense fallback={null}>
-        {isServiceDialogOpen && (
-          <ServiceDialog
-            open={isServiceDialogOpen}
-            onOpenChange={setIsServiceDialogOpen}
-            service={editingService}
-            vehicles={vehicles}
-            technicians={personnel}
-            inventoryItems={inventoryItems}
-            serviceTypes={serviceTypes}
-            onSave={handleSaveService}
-            onCancelService={handleCancelService}
-            onComplete={handleConfirmCompletion}
-          />
-        )}
-        
         {isSheetOpen && serviceForPreview && (
           <UnifiedPreviewDialog
             open={isSheetOpen}
@@ -389,8 +353,8 @@ function AgendaPageComponent() {
           <PaymentDetailsDialog
               open={isPaymentDialogOpen}
               onOpenChange={setIsPaymentDialogOpen}
-              service={serviceToComplete}
-              onConfirm={handleConfirmCompletion}
+              record={serviceToComplete}
+              onConfirm={(id, paymentDetails) => handleConfirmCompletion(serviceToComplete, paymentDetails)}
               isCompletionFlow={true}
           />
         )}

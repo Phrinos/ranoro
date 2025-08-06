@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
+import { useRouter } from 'next/navigation';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -19,9 +20,6 @@ import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import type { PaymentDetailsFormValues } from "../../components/PaymentDetailsDialog";
-import { useRouter } from "next/navigation";
-import { ServiceDialog } from "../../components/service-dialog";
-
 
 const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
 const PaymentDetailsDialog = lazy(() => import('../../components/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
@@ -55,8 +53,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [personnel, setPersonnel] = useState<User[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -87,8 +83,6 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       }),
       inventoryService.onVehiclesUpdate(setVehicles),
       adminService.onUsersUpdate(setPersonnel),
-      inventoryService.onItemsUpdate(setInventoryItems),
-      inventoryService.onServiceTypesUpdate(setServiceTypes),
     ];
 
     const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');

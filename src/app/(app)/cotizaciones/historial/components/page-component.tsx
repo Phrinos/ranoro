@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { ServiceDialog } from "../../../servicios/components/service-dialog";
+import { useRouter } from 'next/navigation';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TableToolbar } from "@/components/shared/table-toolbar";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, Personnel, InventoryCategory, Supplier } from "@/types";
@@ -23,18 +23,12 @@ import Link from 'next/link';
 
 export function CotizacionesPageComponent() {
   const { toast } = useToast();
+  const router = useRouter();
   
   const [allQuotes, setAllQuotes] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
-  const [categories, setCategories] = useState<InventoryCategory[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<ServiceRecord | null>(null);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
@@ -43,16 +37,10 @@ export function CotizacionesPageComponent() {
     const unsubs = [
       serviceService.onServicesUpdate((services) => {
         setAllQuotes(services.filter(s => s.status === 'Cotizacion'));
+        setIsLoading(false);
       }),
       inventoryService.onVehiclesUpdate(setVehicles),
       personnelService.onPersonnelUpdate(setPersonnel),
-      inventoryService.onItemsUpdate(setInventoryItems),
-      inventoryService.onCategoriesUpdate(setCategories),
-      inventoryService.onSuppliersUpdate(setSuppliers),
-      inventoryService.onServiceTypesUpdate((data) => {
-          setServiceTypes(data);
-          setIsLoading(false);
-      }),
     ];
 
     return () => unsubs.forEach((unsub) => unsub());
@@ -65,21 +53,10 @@ export function CotizacionesPageComponent() {
     initialSortOption: 'quoteDate_desc', // Sort by quote date, newest first
   });
 
-  const handleSaveRecord = useCallback(async (data: QuoteRecord | ServiceRecord) => {
-    try {
-      await serviceService.saveService(data);
-      setIsFormDialogOpen(false);
-      toast({ title: 'Cotización actualizada.' });
-    } catch (e) {
-      toast({ title: "Error", description: `No se pudo guardar la cotización.`, variant: "destructive"});
-    }
-  }, [toast]);
-
   const handleCancelRecord = useCallback(async (serviceId: string, reason: string) => {
     try {
       await serviceService.cancelService(serviceId, reason);
       toast({ title: 'Cotización cancelada.' });
-      setIsFormDialogOpen(false);
     } catch (e) {
       toast({ title: "Error", description: "No se pudo cancelar la cotización.", variant: "destructive"});
     }
@@ -88,11 +65,6 @@ export function CotizacionesPageComponent() {
   const handleShowPreview = useCallback((service: ServiceRecord) => {
     setRecordForPreview(service);
     setIsPreviewOpen(true);
-  }, []);
-
-  const handleOpenFormDialog = useCallback((record: ServiceRecord) => {
-    setEditingRecord(record);
-    setIsFormDialogOpen(true);
   }, []);
 
   if (isLoading) {
@@ -105,7 +77,7 @@ export function CotizacionesPageComponent() {
       service={record}
       vehicles={vehicles}
       technicians={personnel as Technician[]}
-      onEdit={() => handleOpenFormDialog(record)}
+      onEdit={() => router.push(`/servicios/${record.id}`)}
       onView={() => handleShowPreview(record)}
       onCancel={() => {
         if (record.id) {
@@ -127,23 +99,6 @@ export function CotizacionesPageComponent() {
           <TableToolbar {...quotesTableManager} searchPlaceholder="Buscar por folio, vehículo..." />
           {filteredQuotes.length > 0 ? filteredQuotes.map(renderQuoteCard) : <p className="text-center text-muted-foreground py-10">No hay cotizaciones que coincidan con la búsqueda.</p>}
       </div>
-
-      {isFormDialogOpen && (
-        <ServiceDialog
-          open={isFormDialogOpen}
-          onOpenChange={setIsFormDialogOpen}
-          service={editingRecord}
-          vehicles={vehicles}
-          technicians={personnel as User[]}
-          inventoryItems={inventoryItems}
-          serviceTypes={serviceTypes}
-          categories={categories}
-          suppliers={suppliers}
-          onCancelService={handleCancelRecord}
-          mode='quote'
-          onSave={handleSaveRecord}
-        />
-      )}
       
       {isPreviewOpen && recordForPreview && <UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={recordForPreview}/>}
     </>
