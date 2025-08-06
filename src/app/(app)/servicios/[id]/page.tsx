@@ -1,26 +1,36 @@
-
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PageHeader } from "@/components/page-header";
 import type { ServiceRecord, QuoteRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
-import { serviceService, inventoryService, adminService } from '@/lib/services';
-import { Loader2, Save, X, Ban, DollarSign } from 'lucide-react';
+import { serviceService, inventoryService, adminService, operationsService } from '@/lib/services';
+import { Loader2, Save, X, Ban, DollarSign, Wrench, ShieldCheck, Camera, FileText, Eye } from 'lucide-react';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../components/PaymentDetailsDialog';
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
-import { VehicleSelectionCard } from '../components/VehicleSelectionCard';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
-import { ServiceItemsList } from '../components/ServiceItemsList';
-import { PaymentSection } from '../components/PaymentSection';
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog } from '@/components/ui/dialog';
+import { SignatureDialog } from '../components/signature-dialog';
+import { normalizeDataUrl } from '@/lib/utils';
+import { enhanceText } from '@/ai/flows/text-enhancement-flow';
+import Image from 'next/image';
+
+const ServiceItemsList = lazy(() => import('../components/ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
+const PaymentSection = lazy(() => import('../components/PaymentSection').then(module => ({ default: module.PaymentSection })));
+const VehicleSelectionCard = lazy(() => import('../components/VehicleSelectionCard').then(module => ({ default: module.VehicleSelectionCard })));
+const SafetyChecklist = lazy(() => import('../components/SafetyChecklist').then(module => ({ default: module.SafetyChecklist })));
+const PhotoReportTab = lazy(() => import('../components/PhotoReportTab').then(module => ({ default: module.PhotoReportTab })));
+const ReceptionAndDelivery = lazy(() => import('../components/ReceptionAndDelivery').then(module => ({ default: module.ReceptionAndDelivery })));
+const ImageViewerDialogContent = lazy(() => import('@/components/shared/image-viewer-dialog').then(module => ({ default: module.ImageViewerDialogContent })));
 
 
 export default function EditarServicioPage() {
@@ -42,25 +52,27 @@ export default function EditarServicioPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
+  const [signatureTarget, setSignatureTarget] = useState<'reception' | 'delivery' | 'technician' | null>(null);
+  const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('servicio');
+
 
   const methods = useForm<z.infer<typeof serviceFormSchema>>({
     resolver: zodResolver(serviceFormSchema),
   });
 
-  const { reset, handleSubmit } = methods;
+  const { reset, handleSubmit, getValues, setValue } = methods;
 
   useEffect(() => {
     const fetchData = async () => {
         setIsLoading(true);
         try {
             const [
-              serviceData,
-              vehiclesData,
-              usersData,
-              inventoryData,
-              serviceTypesData,
-              categoriesData,
-              suppliersData
+              serviceData, vehiclesData, usersData, inventoryData,
+              serviceTypesData, categoriesData, suppliersData
             ] = await Promise.all([
               serviceService.getDocById('serviceRecords', serviceId),
               inventoryService.onVehiclesUpdatePromise(),
@@ -87,6 +99,7 @@ export default function EditarServicioPage() {
             
             reset({
                 ...serviceData,
+                initialStatus: serviceData.status,
                 allVehiclesForDialog: vehiclesData,
             });
 
@@ -109,7 +122,7 @@ export default function EditarServicioPage() {
   const handleVehicleCreated = async (newVehicleData: VehicleFormValues) => {
       const newVehicle = await inventoryService.addVehicle(newVehicleData);
       toast({ title: "Vehículo Creado" });
-      methods.setValue('vehicleId', newVehicle.id); // Set the newly created vehicle in the form
+      methods.setValue('vehicleId', newVehicle.id);
       setIsNewVehicleDialogOpen(false);
   };
   
@@ -124,7 +137,7 @@ export default function EditarServicioPage() {
 
     const serviceRecordValues = values as ServiceRecord;
 
-    if (serviceRecordValues.status === 'Entregado') {
+    if (serviceRecordValues.status === 'Entregado' && initialData.status !== 'Entregado') {
         setServiceToComplete({ ...initialData, ...serviceRecordValues });
         setIsPaymentDialogOpen(true);
         return;
@@ -132,7 +145,7 @@ export default function EditarServicioPage() {
 
     try {
       await serviceService.saveService({ ...serviceRecordValues, id: serviceId });
-      toast({ title: 'Servicio Actualizado', description: `El registro #${serviceId} ha sido actualizado.` });
+      toast({ title: 'Servicio Actualizado', description: `El registro #${serviceId.slice(-6)} ha sido actualizado.` });
       router.push('/servicios/historial');
     } catch(e) {
       console.error(e);
@@ -167,6 +180,57 @@ export default function EditarServicioPage() {
       }
     }
   };
+  
+  const handleOpenSignature = (type: 'reception' | 'delivery' | 'technician') => {
+    setSignatureTarget(type);
+    setIsSignatureDialogOpen(true);
+  };
+  
+  const handleSaveSignature = (signatureDataUrl: string) => {
+    if (signatureTarget) {
+      let fieldToUpdate: keyof ServiceRecord | `safetyInspection.technicianSignature` = "customerSignatureReception";
+      if(signatureTarget === 'delivery') fieldToUpdate = "customerSignatureDelivery";
+      if(signatureTarget === 'technician') fieldToUpdate = "safetyInspection.technicianSignature";
+      setValue(fieldToUpdate as any, signatureDataUrl, { shouldDirty: true });
+    }
+    setIsSignatureDialogOpen(false);
+    setSignatureTarget(null);
+  };
+
+  const handleEnhanceText = useCallback(async (fieldName: any) => {
+      const currentValue = getValues(fieldName);
+      if (typeof currentValue !== 'string' || !currentValue) return;
+  
+      setIsEnhancingText(fieldName);
+      try {
+        let context = 'Notas del Servicio'; // default
+        if (fieldName.includes('vehicleConditions')) context = 'Condiciones del Vehículo';
+        if (fieldName.includes('customerItems')) context = 'Pertenencias del Cliente';
+        const result = await enhanceText({ text: currentValue, context });
+        setValue(fieldName, result, { shouldDirty: true });
+        toast({ title: "Texto Mejorado", description: "La IA ha optimizado la redacción." });
+      } catch (error) {
+        toast({ title: "Error de IA", description: "No se pudo mejorar el texto.", variant: "destructive" });
+      } finally {
+        setIsEnhancingText(null);
+      }
+  }, [getValues, setValue, toast]);
+
+  const handlePhotoUploaded = (reportIndex: number, url: string) => {
+    const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
+    setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url], { shouldDirty: true });
+  };
+  
+  const handleChecklistPhotoUploaded = (itemName: `safetyInspection.${string}`, url: string) => {
+    const currentItemValue = getValues(itemName) || { photos: [] };
+    setValue(itemName, { ...currentItemValue, photos: [...currentItemValue.photos, url] }, { shouldDirty: true });
+  };
+  
+  const handleViewImage = (url: string) => {
+    setViewingImageUrl(url);
+    setIsImageViewerOpen(true);
+  };
+
 
   if (isLoading || !initialData) {
     return (
@@ -177,6 +241,8 @@ export default function EditarServicioPage() {
     );
   }
 
+  const showTabs = initialData.status === 'En Taller' || initialData.status === 'Entregado' || initialData.status === 'Cancelado';
+
   return (
     <FormProvider {...methods}>
         <form id="service-form" onSubmit={handleSubmit(handleUpdateService)} className="space-y-6">
@@ -184,30 +250,63 @@ export default function EditarServicioPage() {
                 title={`Editar Servicio #${initialData.id.slice(-6)}`}
                 description={`Modifica los detalles para el vehículo ${initialData.vehicleIdentifier || ''}.`}
             />
-            
-            <VehicleSelectionCard
-                isReadOnly={false}
-                localVehicles={vehicles}
-                onVehicleSelected={(v) => methods.setValue('vehicleIdentifier', v?.licensePlate)}
-                onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
-            />
 
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-                <div className="lg:col-span-3">
-                <ServiceItemsList
-                    isReadOnly={false}
-                    inventoryItems={inventoryItems}
-                    mode={initialData.status === 'Cotizacion' ? 'quote' : 'service'}
-                    onNewInventoryItemCreated={handleNewInventoryItemCreated}
-                    categories={categories}
-                    suppliers={suppliers}
-                    serviceTypes={serviceTypes}
-                />
-                </div>
-                <div className="lg:col-span-2 space-y-6">
-                    <PaymentSection />
-                </div>
-            </div>
+            {showTabs ? (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList>
+                  <TabsTrigger value="servicio"><Wrench className="mr-2 h-4 w-4"/>Servicio</TabsTrigger>
+                  <TabsTrigger value="revision"><ShieldCheck className="mr-2 h-4 w-4"/>Revisión</TabsTrigger>
+                  <TabsTrigger value="fotos"><Camera className="mr-2 h-4 w-4"/>Fotos</TabsTrigger>
+                  <TabsTrigger value="entrega"><FileText className="mr-2 h-4 w-4"/>Recepción/Entrega</TabsTrigger>
+                </TabsList>
+                <TabsContent value="servicio" className="mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+                        <div className="lg:col-span-3">
+                          <Suspense fallback={<Loader2 className="animate-spin" />}>
+                            <ServiceItemsList isReadOnly={false} inventoryItems={inventoryItems} mode={'service'} onNewInventoryItemCreated={handleNewInventoryItemCreated} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText}/>
+                          </Suspense>
+                        </div>
+                        <div className="lg:col-span-2 space-y-6">
+                          <Suspense fallback={<Loader2 className="animate-spin" />}>
+                            <PaymentSection />
+                          </Suspense>
+                        </div>
+                    </div>
+                </TabsContent>
+                <TabsContent value="revision" className="mt-6">
+                  <Suspense fallback={<Loader2 className="animate-spin" />}>
+                     <SafetyChecklist isReadOnly={false} onSignatureClick={() => handleOpenSignature('technician')} signatureDataUrl={watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={serviceId} onPhotoUploaded={handleChecklistPhotoUploaded} onViewImage={handleViewImage}/>
+                  </Suspense>
+                </TabsContent>
+                <TabsContent value="fotos" className="mt-6">
+                   <Suspense fallback={<Loader2 className="animate-spin" />}>
+                      <PhotoReportTab isReadOnly={false} serviceId={serviceId} onPhotoUploaded={handlePhotoUploaded} onViewImage={handleViewImage}/>
+                   </Suspense>
+                </TabsContent>
+                <TabsContent value="entrega" className="mt-6">
+                   <Suspense fallback={<Loader2 className="animate-spin" />}>
+                      <ReceptionAndDelivery isReadOnly={false} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} onOpenSignature={handleOpenSignature}/>
+                   </Suspense>
+                </TabsContent>
+              </Tabs>
+            ) : (
+              // Vista sin pestañas para Cotizacion/Agendado
+              <>
+                 <VehicleSelectionCard isReadOnly={false} localVehicles={vehicles} onVehicleSelected={(v) => methods.setValue('vehicleIdentifier', v?.licensePlate)} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/>
+                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+                    <div className="lg:col-span-3">
+                      <Suspense fallback={<Loader2 className="animate-spin" />}>
+                        <ServiceItemsList isReadOnly={false} inventoryItems={inventoryItems} mode={initialData.status === 'Cotizacion' ? 'quote' : 'service'} onNewInventoryItemCreated={handleNewInventoryItemCreated} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText}/>
+                      </Suspense>
+                    </div>
+                    <div className="lg:col-span-2 space-y-6">
+                      <Suspense fallback={<Loader2 className="animate-spin" />}>
+                        <PaymentSection />
+                      </Suspense>
+                    </div>
+                 </div>
+              </>
+            )}
 
             <div className="mt-6 flex justify-between items-center">
                 <ConfirmDialog
@@ -241,10 +340,22 @@ export default function EditarServicioPage() {
             open={isPaymentDialogOpen}
             onOpenChange={setIsPaymentDialogOpen}
             record={serviceToComplete}
-            onConfirm={(id, details) => handleCompleteService(serviceToComplete, details)}
+            onConfirm={(id, details) => handleCompleteService(details)}
             isCompletionFlow={true}
             />
         )}
+        
+        <SignatureDialog
+            open={isSignatureDialogOpen}
+            onOpenChange={setIsSignatureDialogOpen}
+            onSave={handleSaveSignature}
+        />
+        
+        <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+          <Suspense fallback={<Loader2 className="animate-spin" />}>
+             <ImageViewerDialogContent imageUrl={viewingImageUrl} />
+          </Suspense>
+        </Dialog>
     </FormProvider>
   );
 }
