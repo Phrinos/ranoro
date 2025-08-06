@@ -164,32 +164,6 @@ export default function NuevoServicioPage() {
   return (
     <>
       <FormProvider {...methods}>
-        <Card className="bg-white mb-6 shadow-sm">
-            <CardHeader>
-                <CardTitle className="text-2xl">Nuevo Servicio / Cotización</CardTitle>
-                <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <FormField
-                    control={control}
-                    name="status"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            <SelectItem value="Cotizacion">Cotización</SelectItem>
-                            <SelectItem value="Agendado">Agendado</SelectItem>
-                            <SelectItem value="En Taller">En Taller (Ingreso Directo)</SelectItem>
-                            <SelectItem value="Entregado">Entregado (Registro Histórico)</SelectItem>
-                        </SelectContent>
-                        </Select>
-                    </FormItem>
-                    )}
-                />
-            </CardContent>
-        </Card>
         <ServiceForm
           vehicles={vehicles}
           technicians={users}
