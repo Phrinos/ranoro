@@ -54,8 +54,8 @@ export const SaleCard = React.memo(({
                 <div className="flex flex-col md:flex-row text-sm">
                     {/* Bloque 1: Fecha e ID */}
                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-muted/50">
-                        <p className="font-semibold text-lg text-foreground">{saleDate && isValid(saleDate) ? format(saleDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
-                        <p className="text-muted-foreground">{saleDate && isValid(saleDate) ? format(saleDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
+                        <p className="text-muted-foreground text-sm">{saleDate && isValid(saleDate) ? format(saleDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
+                        <p className="font-bold text-lg text-foreground">{saleDate && isValid(saleDate) ? format(saleDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
                         <p className="text-muted-foreground text-xs mt-1">{sale.id}</p>
                     </div>
 
