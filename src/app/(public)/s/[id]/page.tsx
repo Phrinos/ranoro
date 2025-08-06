@@ -98,7 +98,7 @@ export default function PublicServicePage() {
   if (showQuote) tabs.push({ value: 'quote', label: 'Cotización', icon: Eye });
   if (showOrder) tabs.push({ value: 'order', label: 'Orden', icon: Wrench });
   if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión', icon: ShieldCheck });
-  if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Fotos', icon: Camera });
+  if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico', icon: Camera });
 
   const defaultTabValue = service && (service.status === 'Cotizacion' || service.status === 'Agendado') ? 'quote' : 'order';
   const [activeTab, setActiveTab] = useState(defaultTabValue);
