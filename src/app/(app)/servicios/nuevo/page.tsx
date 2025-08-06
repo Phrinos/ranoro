@@ -42,6 +42,8 @@ import { cn } from '@/lib/utils';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { ServiceDetailsCard } from '../components/ServiceDetailsCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SignatureDialog } from '../components/signature-dialog';
+import { Dialog } from '@/components/ui/dialog';
 
 // Lazy loading for tab content
 const SafetyChecklist = lazy(() => import('../components/SafetyChecklist').then(module => ({ default: module.SafetyChecklist })));
