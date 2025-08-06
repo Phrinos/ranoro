@@ -91,6 +91,7 @@ export default function NuevoServicioPage() {
       serviceItems: [],
       payments: [{ method: 'Efectivo', amount: undefined }],
       status: 'Cotizacion', // Default status
+      serviceDate: new Date(), // Set creation date
     },
   });
 
@@ -136,15 +137,21 @@ export default function NuevoServicioPage() {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
     
     const now = new Date();
-    const serviceDataWithTotals = {
+    const serviceDataWithTotals: Partial<ServiceRecord> = {
         ...values,
         totalCost,
         totalSuppliesWorkshopCost,
         serviceProfit,
-        serviceDate: values.serviceDate || now,
+        serviceDate: values.serviceDate || now, // Ensure serviceDate is set
     };
+    
+    // Auto-set reception and delivery dates based on status change
+    if (values.status === 'En Taller' && !values.receptionDateTime) {
+        serviceDataWithTotals.receptionDateTime = now;
+    }
 
     if (values.status === 'Entregado') {
+        serviceDataWithTotals.deliveryDateTime = now;
         const tempService = { ...serviceDataWithTotals, id: 'new_service_temp' } as ServiceRecord;
         setServiceToComplete(tempService);
         setIsPaymentDialogOpen(true);
@@ -167,16 +174,12 @@ export default function NuevoServicioPage() {
 
     try {
       const { id: _, ...serviceData } = serviceToComplete;
-      const savedService = await serviceService.saveService(serviceData as ServiceRecord);
+      const finalServiceData = { ...serviceData, payments: paymentDetails.payments };
+      
+      const savedService = await serviceService.saveService(finalServiceData as ServiceRecord);
 
-      const batch = writeBatch(db);
-      await serviceService.completeService(savedService, paymentDetails, batch);
-      await batch.commit();
-
-      const finalServiceRecord = { ...savedService, ...paymentDetails, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
-
-      toast({ title: 'Servicio Completado', description: `El servicio #${finalServiceRecord.id} ha sido creado y completado.` });
-      setServiceForPreview(finalServiceRecord);
+      toast({ title: 'Servicio Completado', description: `El servicio #${savedService.id} ha sido creado y completado.` });
+      setServiceForPreview(savedService);
       setIsPreviewOpen(true);
 
     } catch(e) {

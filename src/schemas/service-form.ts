@@ -76,7 +76,8 @@ export const serviceFormSchema = z.object({
     vehicleId: z.string().min(1, 'Debe seleccionar un vehículo.'),
     vehicleIdentifier: z.string().optional(),
     vehicleLicensePlateSearch: z.string().optional(),
-    serviceDate: z.date().optional(),
+    serviceDate: z.date().optional(), // Creation date
+    appointmentDateTime: z.date().optional(), // Specific for the appointment
     receptionDateTime: z.date().optional(),
     deliveryDateTime: z.date().optional(),
     mileage: z.coerce.number({ invalid_type_error: 'El kilometraje debe ser numérico.' }).int('El kilometraje debe ser un número entero.').min(0, 'El kilometraje no puede ser negativo.').optional(),
@@ -97,7 +98,7 @@ export const serviceFormSchema = z.object({
     safetyInspection: safetyInspectionSchema.optional(),
     serviceAdvisorId: z.string().optional(),
     serviceAdvisorName: z.string().optional(),
-    serviceAdvisorSignatureDataUrl: z.string().optional(),
+    serviceAdvisorSignatureDataUrl: z.string().optional(), 
     payments: z.array(paymentSchema).optional(),
     nextServiceInfo: z.object({
         date: z.string().optional(),
@@ -108,10 +109,10 @@ export const serviceFormSchema = z.object({
     totalCost: z.number().optional(),
     allVehiclesForDialog: z.array(z.any()).optional(), 
 }).refine(
-    (d) => !(d.status === 'Agendado' && !d.serviceDate),
+    (d) => !(d.status === 'Agendado' && !d.appointmentDateTime),
     {
       message: "La fecha de la cita es obligatoria para el estado 'Agendado'.",
-      path: ['serviceDate'],
+      path: ['appointmentDateTime'],
     }
 );
 

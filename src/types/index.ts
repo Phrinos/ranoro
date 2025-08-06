@@ -1,5 +1,3 @@
-
-
 // src/types/index.ts
 import { type VariantProps } from "class-variance-authority"
 import { sidebarMenuButtonVariants } from './sidebar.types';
@@ -234,7 +232,8 @@ export interface ServiceRecord {
   publicId?: string;
   vehicleId: string;
   vehicleIdentifier?: string;
-  serviceDate: string;
+  serviceDate: string; // Creation date
+  appointmentDateTime?: string; // Specific for the appointment
   description?: string;
   technicianId: string;
   technicianName?: string;

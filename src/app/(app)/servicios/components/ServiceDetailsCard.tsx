@@ -129,14 +129,14 @@ export function ServiceDetailsCard({
         {showAppointmentFields && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t items-end">
             <Controller
-              name="serviceDate"
+              name="appointmentDateTime"
               control={control}
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel className={cn(errors.serviceDate && "text-destructive")}>Fecha de Cita</FormLabel>
+                  <FormLabel className={cn(errors.appointmentDateTime && "text-destructive")}>Fecha de Cita</FormLabel>
                   <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild disabled={isReadOnly}>
-                      <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", errors.serviceDate && "border-destructive focus-visible:ring-destructive")} disabled={isReadOnly}>
+                      <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", errors.appointmentDateTime && "border-destructive focus-visible:ring-destructive")} disabled={isReadOnly}>
                         {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
@@ -162,7 +162,7 @@ export function ServiceDetailsCard({
               )}
             />
             <Controller
-              name="serviceDate"
+              name="appointmentDateTime"
               control={control}
               render={({ field }) => (
                 <FormItem>
