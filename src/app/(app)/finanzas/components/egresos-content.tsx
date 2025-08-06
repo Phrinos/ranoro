@@ -20,31 +20,15 @@ interface FinancialSummary {
 interface EgresosContentProps {
   financialSummary: FinancialSummary;
   fixedExpenses: MonthlyFixedExpense[];
+  personnel: Personnel[];
   onExpensesUpdated: (updated: MonthlyFixedExpense[]) => void;
 }
 
-export function EgresosContent({ financialSummary, fixedExpenses, onExpensesUpdated }: EgresosContentProps) {
+export function EgresosContent({ financialSummary, fixedExpenses, personnel, onExpensesUpdated }: EgresosContentProps) {
   const [isExpensesDialogOpen, setIsExpensesDialogOpen] = useState(false);
-  
-  const groupedExpenses = useMemo(() => {
-    const groups: { [key: string]: MonthlyFixedExpense[] } = {
-      'Renta': [],
-      'Servicios': [],
-      'Otros': [],
-    };
-    fixedExpenses.forEach(expense => {
-      const category = expense.category || 'Otros';
-      if (groups[category]) {
-        groups[category].push(expense);
-      } else {
-        groups['Otros'].push(expense);
-      }
-    });
-    return groups;
-  }, [fixedExpenses]);
-  
+
   const totalPayroll = financialSummary.totalTechnicianSalaries + financialSummary.totalAdministrativeSalaries;
-  const totalOtherFixed = financialSummary.totalFixedExpenses;
+  const totalOtherFixed = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
   const totalFixedAndPayroll = totalPayroll + totalOtherFixed;
 
   return (
@@ -54,15 +38,15 @@ export function EgresosContent({ financialSummary, fixedExpenses, onExpensesUpda
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl flex items-center gap-2">
               <TrendingDown className="h-6 w-6 text-red-500" />
-              Egresos Fijos y Variables
+              Egresos Fijos Mensuales
             </CardTitle>
             <Button variant="outline" size="sm" onClick={() => setIsExpensesDialogOpen(true)}>
               <Pencil className="mr-2 h-4 w-4" />
-              Editar Gastos Fijos
+              Editar Gastos
             </Button>
           </div>
           <CardDescription>
-            Detalle de gastos fijos (nómina, servicios) y variables (comisiones) del periodo.
+            Detalle de gastos fijos (nómina, servicios) del mes. Las comisiones se calculan aparte sobre la utilidad.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -71,14 +55,12 @@ export function EgresosContent({ financialSummary, fixedExpenses, onExpensesUpda
               <div>
                 <h3 className="font-semibold text-lg mb-2">Nómina Base</h3>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Sueldos (Técnicos):</span>
-                    <span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianSalaries)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Sueldos (Asesores/Admin):</span>
-                    <span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeSalaries)}</span>
-                  </div>
+                  {personnel.filter(p => !p.isArchived && p.monthlySalary && p.monthlySalary > 0).map(p => (
+                    <div key={p.id} className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">{p.name}:</span>
+                      <span className="font-semibold">{formatCurrency(p.monthlySalary)}</span>
+                    </div>
+                  ))}
                    <div className="flex justify-between items-center text-sm font-bold border-t pt-2 mt-2">
                     <span className="text-foreground">Total Nómina Base:</span>
                     <span className="font-semibold text-red-600">{formatCurrency(totalPayroll)}</span>
@@ -108,13 +90,6 @@ export function EgresosContent({ financialSummary, fixedExpenses, onExpensesUpda
              <div className="flex justify-between items-center font-bold text-lg">
                 <span className="text-foreground">Total Egresos Fijos Mensuales:</span>
                 <span className="text-red-600">{formatCurrency(totalFixedAndPayroll)}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <BadgeCent className="h-4 w-4" />
-                  Comisiones Variables (Calculadas sobre ganancia neta):
-                </span>
-                <span className="font-semibold text-red-600">{formatCurrency(financialSummary.totalVariableCommissions)}</span>
               </div>
           </div>
 

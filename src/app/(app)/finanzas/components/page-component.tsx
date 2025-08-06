@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/page-component.tsx
 
 "use client";
@@ -123,7 +124,7 @@ export function FinanzasPageComponent({
         const totalOtherFixedExpenses = fixedExpenses
             .filter(expense => {
                 const createdAt = parseDate(expense.createdAt);
-                return createdAt && isValid(createdAt) && !isAfter(createdAt, to);
+                return !createdAt || !isValid(createdAt) || !isAfter(createdAt, to);
             })
             .reduce((sum, expense) => sum + expense.amount, 0);
         
@@ -171,10 +172,10 @@ export function FinanzasPageComponent({
         return { 
             monthYearLabel: dateLabel, totalOperationalIncome, totalIncomeFromSales, totalIncomeFromServices, 
             totalProfitFromSales, totalProfitFromServices, totalCostOfGoods, totalOperationalProfit,
-            totalTechnicianSalaries: totalBaseSalaries, // For EgresosContent, this is total
-            totalAdministrativeSalaries: 0, // Simplified for now
-            totalFixedExpenses: totalOtherFixedExpenses, // For EgresosContent
-            totalBaseExpenses: proportionalBaseExpenses, // Proportional
+            totalTechnicianSalaries: totalBaseSalaries, 
+            totalAdministrativeSalaries: 0, 
+            totalFixedExpenses: totalOtherFixedExpenses,
+            totalBaseExpenses: proportionalBaseExpenses,
             totalVariableCommissions, netProfit, isProfitableForCommissions, serviceIncomeBreakdown,
             totalInventoryValue, totalUnitsSold
         };
@@ -272,7 +273,7 @@ export function FinanzasPageComponent({
                 </div>
             )
         },
-        { value: "egresos", label: "Egresos", content:  <Suspense fallback={<Loader2 className="animate-spin" />}><div className="space-y-6"><div className="mb-6">{dateFilterComponent}</div><EgresosContent financialSummary={financialSummary} fixedExpenses={fixedExpenses} onExpensesUpdated={(updated) => setFixedExpenses([...updated])} /></div></Suspense> },
+        { value: "egresos", label: "Egresos", content:  <Suspense fallback={<Loader2 className="animate-spin" />}><div className="space-y-6"><div className="mb-6">{dateFilterComponent}</div><EgresosContent financialSummary={financialSummary} fixedExpenses={fixedExpenses} personnel={allPersonnel} onExpensesUpdated={(updated) => setFixedExpenses([...updated])} /></div></Suspense> },
         { value: "operaciones", label: "Operaciones", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ReporteOperacionesContent allSales={allSales} allServices={allServices} allInventory={allInventory} serviceTypes={serviceTypes} /></Suspense> },
     ];
     
