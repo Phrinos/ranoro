@@ -274,40 +274,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </header>
 
         <main className="flex-grow">
-           <section className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2 text-xs">
-              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
-                <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
-                <div className="space-y-0.5 p-2 text-sm">
-                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{capitalizeWords(vehicle?.ownerName || '')}</span></p>
-                  <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
-                  {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
-                </div>
-              </div>
-              <div className={cn("border-2 border-black rounded-md overflow-hidden flex-1", shouldShowNextService ? "md:col-span-1" : "md:col-span-2")}>
-                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
-                  <div className="space-y-0.5 p-2 text-sm">
-                      <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
-                      <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span></p>
-                      {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
-                      {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
-                  </div>
-              </div>
-              {shouldShowNextService && (
-                  <div className="border-2 border-red-700 rounded-md overflow-hidden flex-1">
-                    <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
-                    <div className="p-2 space-y-1 text-center text-sm">
-                        <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
-                        {service.nextServiceInfo!.date && isValid(parseDate(service.nextServiceInfo!.date)) && (
-                            <p className="font-bold">Fecha: {format(parseDate(service.nextServiceInfo!.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
-                        )}
-                        {service.nextServiceInfo!.mileage && (
-                            <p className="font-bold">Kilometraje: {service.nextServiceInfo!.mileage.toLocaleString('es-MX')} km</p>
-                        )}
-                    </div>
-                  </div>
-              )}
+          <section className="mb-2 text-sm border-b-2 border-black pb-2">
+            <p className="font-bold">{vehicle ? `${vehicle.licensePlate} - ${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
+            <p className="text-xs">{capitalizeWords(vehicle?.ownerName || '')} - {vehicle?.ownerPhone || ''}</p>
           </section>
-            
+
           {driverDebt.totalDebt > 0 && (
             <div className="my-2 p-2 border-2 border-red-500 bg-red-50 rounded-md text-red-800">
                 <h4 className="font-bold text-sm flex items-center gap-2"><AlertCircle className="h-4 w-4"/>AVISO DE ADEUDO</h4>
@@ -317,10 +288,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </div>
           )}
 
-
-          <section className="border-2 border-black rounded-md overflow-hidden mb-2">
-              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">TRABAJOS A REALIZAR</h3>
-              <div className="p-2 space-y-1 text-xs min-h-[8rem]">
+           <section className="mb-2">
+              <h3 className="font-bold text-xs text-center uppercase tracking-wider mb-1">Trabajos a Realizar</h3>
+              <div className="space-y-1 text-xs min-h-[5rem]">
                 {service.serviceItems && service.serviceItems.length > 0 ? (
                   service.serviceItems.map((item, index) => {
                       const isLastItem = index === service.serviceItems.length - 1;
