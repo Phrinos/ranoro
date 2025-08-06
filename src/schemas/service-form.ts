@@ -65,7 +65,7 @@ export const safetyInspectionSchema = z.object({
 
 const paymentSchema = z.object({
     method: z.enum(['Efectivo', 'Tarjeta', 'Tarjeta MSI', 'Transferencia']),
-    amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero."),
+    amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero.").optional(),
     folio: z.string().optional(),
 });
 

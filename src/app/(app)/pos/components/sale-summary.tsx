@@ -100,7 +100,7 @@ export function SaleSummary() {
                                             <div className="relative">
                                                 <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                                 <FormControl>
-                                                    <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8"/>
+                                                    <Input type="number" step="0.01" {...field} value={field.value ?? ''} placeholder="0.00" className="pl-8"/>
                                                 </FormControl>
                                             </div>
                                         </FormItem>
@@ -116,7 +116,7 @@ export function SaleSummary() {
                                                 <SelectContent>
                                                     {paymentMethods.map(method => {
                                                         const Icon = paymentMethodIcons[method];
-                                                        return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method) === -1 && method !== selectedMethod}>
+                                                        return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method as any) === -1 && method !== selectedMethod}>
                                                                     <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
                                                                 </SelectItem>
                                                         );

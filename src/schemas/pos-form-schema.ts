@@ -14,7 +14,7 @@ const saleItemSchema = z.object({
 
 const paymentSchema = z.object({
     method: z.enum(['Efectivo', 'Tarjeta', 'Tarjeta MSI', 'Transferencia']),
-    amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero."),
+    amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero.").optional(),
     folio: z.string().optional(),
 });
 
@@ -25,7 +25,7 @@ export const posFormSchema = z.object({
   payments: z.array(paymentSchema).min(1, 'Debe agregar al menos un método de pago.'),
 }).superRefine((data, ctx) => {
     const totalItems = data.items.reduce((acc, item) => acc + item.totalPrice, 0);
-    const totalPayments = data.payments.reduce((acc, payment) => acc + payment.amount, 0);
+    const totalPayments = data.payments.reduce((acc, payment) => acc + (payment.amount || 0), 0);
 
     if (Math.abs(totalItems - totalPayments) > 0.01) {
         ctx.addIssue({
