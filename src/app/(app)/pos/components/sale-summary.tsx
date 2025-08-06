@@ -26,7 +26,7 @@ const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
 };
 
 export function SaleSummary() {
-  const { control, watch, formState } = useFormContext();
+  const { control, watch, formState, getValues, setValue } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "payments",
@@ -36,6 +36,51 @@ export function SaleSummary() {
   const watchedItems = watch("items");
   const watchedPayments = watch('payments');
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+      const currentItems = getValues('items') || [];
+      const currentPayments = getValues('payments') || [];
+
+      // Calculate subtotal of ONLY tangible items, not commissions
+      const itemsSubtotal = currentItems
+          .filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'))
+          .reduce((sum: number, item: any) => sum + (item.unitPrice * item.quantity || 0), 0);
+
+      const hasCardPayment = currentPayments.some((p: Payment) => p.method === 'Tarjeta');
+      const hasMSIPayment = currentPayments.some((p: Payment) => p.method === 'Tarjeta MSI');
+
+      let newItems = currentItems.filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'));
+
+      if (hasCardPayment) {
+          const commissionAmount = itemsSubtotal * 0.041;
+          newItems.push({
+              inventoryItemId: 'COMMISSION_CARD',
+              itemName: 'Comisión Tarjeta (4.1%)',
+              quantity: 1,
+              unitPrice: commissionAmount,
+              totalPrice: commissionAmount,
+              isService: true,
+          });
+      }
+
+      if (hasMSIPayment) {
+          const commissionAmount = itemsSubtotal * 0.077;
+          newItems.push({
+              inventoryItemId: 'COMMISSION_MSI',
+              itemName: 'Comisión Tarjeta MSI (7.7%)',
+              quantity: 1,
+              unitPrice: commissionAmount,
+              totalPrice: commissionAmount,
+              isService: true,
+          });
+      }
+      
+      // Update items only if there's a change to avoid infinite loops
+      if (JSON.stringify(newItems) !== JSON.stringify(currentItems)) {
+          setValue('items', newItems, { shouldDirty: true });
+      }
+
+  }, [watchedPayments, getValues, setValue]);
 
   const [subTotal, setSubTotal] = useState(0);
   const [tax, setTax] = useState(0);
@@ -105,7 +150,7 @@ export function SaleSummary() {
                                                         step="0.01"
                                                         {...field}
                                                         placeholder="0.00"
-                                                        value={field.value === 0 ? '' : field.value ?? ''}
+                                                        value={field.value ?? ''}
                                                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                                                         className="pl-8 bg-white"
                                                     />
