@@ -16,12 +16,12 @@ import { Button } from "@/components/ui/button";
 import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import type { PaymentDetailsFormValues } from "../../components/PaymentDetailsDialog";
+import type { PaymentDetailsFormValues } from "./PaymentDetailsDialog";
 import { useRouter } from "next/navigation";
 
 const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
-const PaymentDetailsDialog = lazy(() => import('../../components/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
-const ServiceAppointmentCard = lazy(() => import('../../components/ServiceAppointmentCard').then(module => ({ default: module.ServiceAppointmentCard })));
+const PaymentDetailsDialog = lazy(() => import('./PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
+const ServiceAppointmentCard = lazy(() => import('./ServiceAppointmentCard').then(module => ({ default: module.ServiceAppointmentCard })));
 const TicketContent = lazy(() => import('@/components/ticket-content').then(module => ({ default: module.TicketContent })));
 const PrintTicketDialog = lazy(() => import('@/components/ui/print-ticket-dialog').then(module => ({ default: module.PrintTicketDialog })));
 
