@@ -70,6 +70,23 @@ const getServicesForVehicle = async (vehicleId: string): Promise<ServiceRecord[]
 
 
 // --- Service CRUD Operations ---
+const updateVehicleOnServiceChange = async (vehicleId: string, serviceDate: string) => {
+    if (!db) return;
+    const vehicleRef = doc(db, 'vehicles', vehicleId);
+    try {
+        const vehicleDoc = await getDoc(vehicleRef);
+        if (vehicleDoc.exists()) {
+            const vehicleData = vehicleDoc.data() as Vehicle;
+            // Only update if the new service is more recent
+            if (!vehicleData.lastServiceDate || new Date(serviceDate) > new Date(vehicleData.lastServiceDate)) {
+                await updateDoc(vehicleRef, { lastServiceDate: serviceDate });
+            }
+        }
+    } catch (e) {
+        console.error("Failed to update vehicle's lastServiceDate", e);
+    }
+};
+
 
 const addService = async (data: Omit<ServiceRecord, 'id'>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
@@ -85,6 +102,10 @@ const addService = async (data: Omit<ServiceRecord, 'id'>): Promise<ServiceRecor
     const cleanedData = cleanObjectForFirestore(serviceData);
     await setDoc(doc(db, 'serviceRecords', newId), cleanedData);
     
+    if (data.vehicleId && data.serviceDate) {
+      await updateVehicleOnServiceChange(data.vehicleId, data.serviceDate);
+    }
+    
     // Save to public collection
     const vehicle = await getDoc(doc(db, 'vehicles', data.vehicleId));
     if (vehicle.exists()) {
@@ -99,6 +120,14 @@ const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<
     const docRef = doc(db, 'serviceRecords', id);
     const cleanedData = cleanObjectForFirestore(data);
     await updateDoc(docRef, cleanedData);
+
+    const updatedDoc = await getDoc(docRef);
+    if (updatedDoc.exists()) {
+        const updatedData = updatedDoc.data() as ServiceRecord;
+        if (updatedData.vehicleId && updatedData.serviceDate) {
+            await updateVehicleOnServiceChange(updatedData.vehicleId, updatedData.serviceDate);
+        }
+    }
 };
 
 const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<ServiceRecord> => {
@@ -177,17 +206,23 @@ const completeService = async (
     if (!db) throw new Error("Database not initialized.");
     
     const serviceRef = doc(db, 'serviceRecords', service.id);
+    const deliveryDate = new Date().toISOString();
     
     // 1. Update service record status, payment details, and delivery time
     const updateData = {
         status: 'Entregado' as const,
-        deliveryDateTime: new Date().toISOString(),
+        deliveryDateTime: deliveryDate,
         payments: paymentDetails.payments,
         nextServiceInfo: paymentDetails.nextServiceInfo,
     };
     batch.update(serviceRef, cleanObjectForFirestore(updateData));
+    
+    // 2. Update vehicle's last service date
+    if (service.vehicleId) {
+        await updateVehicleOnServiceChange(service.vehicleId, deliveryDate);
+    }
 
-    // 2. Register cash transactions if applicable
+    // 3. Register cash transactions if applicable
     const authUserString = localStorage.getItem('authUser');
     const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
     

@@ -1,3 +1,4 @@
+
 // src/types/index.ts
 import { type VariantProps } from "class-variance-authority"
 import { sidebarMenuButtonVariants } from './sidebar.types';
@@ -69,7 +70,6 @@ export interface Vehicle {
   licensePlate: string;
   color?: string;
   notes?: string;
-  serviceHistory?: Pick<ServiceRecord, 'id' | 'serviceDate' | 'description' | 'totalCost' | 'status' | 'mileage'>[];
   lastServiceDate?: string; 
   isFleetVehicle?: boolean;
   dailyRentalCost?: number | null;
@@ -233,6 +233,7 @@ export interface ServiceRecord {
   vehicleId: string;
   vehicleIdentifier?: string;
   serviceDate: string; // Creation date
+  quoteDate?: string; // DEPRECATED
   appointmentDateTime?: string; // Specific for the appointment
   description?: string;
   technicianId: string;
