@@ -2,20 +2,21 @@
 
 "use client";
 
-import { useFieldArray, useFormContext, type Control } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import React from 'react';
+import { useFormContext, useFieldArray } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Plus, PlusCircle, Trash2, Wrench, Tags } from 'lucide-react';
-import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord } from "@/types";
+import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord } from '@/types';
 import { useState, useCallback } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 import { AddSupplyDialog } from './add-supply-dialog';
 import { capitalizeWords, formatCurrency, cn } from '@/lib/utils';
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
-import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
+import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
 import { inventoryService } from "@/lib/services";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -201,7 +202,7 @@ export function ServiceItemCard({
                         <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
                         <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
                         <SelectContent>
-                            {serviceTypes.slice().sort((a,b)=>a.name.localeCompare(b.name)).map((type) => (
+                            {serviceTypes && serviceTypes.slice().sort((a,b)=>a.name.localeCompare(b.name)).map((type) => (
                                 <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
                             ))}
                         </SelectContent>
@@ -222,7 +223,7 @@ export function ServiceItemCard({
                                     type="number"
                                     placeholder="0.00"
                                     {...field}
-                                    value={field.value === 0 ? '' : field.value ?? ''}
+                                    value={field.value ?? ''}
                                     onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                                     disabled={isReadOnly}
                                     className="bg-white"

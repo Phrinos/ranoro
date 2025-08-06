@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { ServiceDialog } from "../../../servicios/components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TableToolbar } from "@/components/shared/table-toolbar";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, Personnel } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod, Personnel, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
 import { ServiceAppointmentCard } from "../../../servicios/components/ServiceAppointmentCard";
@@ -29,6 +29,8 @@ export function CotizacionesPageComponent() {
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
+  const [categories, setCategories] = useState<InventoryCategory[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
@@ -45,6 +47,8 @@ export function CotizacionesPageComponent() {
       inventoryService.onVehiclesUpdate(setVehicles),
       personnelService.onPersonnelUpdate(setPersonnel),
       inventoryService.onItemsUpdate(setInventoryItems),
+      inventoryService.onCategoriesUpdate(setCategories),
+      inventoryService.onSuppliersUpdate(setSuppliers),
       inventoryService.onServiceTypesUpdate((data) => {
           setServiceTypes(data);
           setIsLoading(false);
@@ -133,6 +137,8 @@ export function CotizacionesPageComponent() {
           technicians={personnel as User[]}
           inventoryItems={inventoryItems}
           serviceTypes={serviceTypes}
+          categories={categories}
+          suppliers={suppliers}
           onCancelService={handleCancelRecord}
           mode='quote'
           onSave={handleSaveRecord}
