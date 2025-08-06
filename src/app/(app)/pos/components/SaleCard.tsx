@@ -11,7 +11,7 @@ import {
 import type { SaleReceipt, InventoryItem, Payment } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, Printer, TrendingUp, Ban, ShoppingCart, User as UserIcon } from 'lucide-react';
+import { Edit, Printer, TrendingUp, Ban, ShoppingCart, User as UserIcon, DollarSign } from 'lucide-react';
 import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
@@ -52,7 +52,7 @@ export const SaleCard = React.memo(({
         <Card className={cn("shadow-sm overflow-hidden", isCancelled && "bg-muted/60 opacity-80")}>
             <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row text-sm">
-                    {/* Bloque 1: Fecha e ID */}
+                    {/* Bloque 1: Fecha e ID venta */}
                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-muted/50">
                         <p className="text-muted-foreground text-sm">{saleDate && isValid(saleDate) ? format(saleDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
                         <p className="font-bold text-lg text-foreground">{saleDate && isValid(saleDate) ? format(saleDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
@@ -87,9 +87,10 @@ export const SaleCard = React.memo(({
                        </p>
                     </div>
 
-                    {/* Bloque 4 & 5: Pagos, Acciones y Usuario */}
-                    <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                         <div className="flex flex-wrap gap-1 justify-center">
+                    {/* Bloque 4: Método de Pago */}
+                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-48 flex-shrink-0 space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground">MÉTODO DE PAGO</p>
+                        <div className="flex flex-wrap gap-1 justify-center">
                             {isCancelled ? (
                                 <Badge variant="destructive" className="font-bold">CANCELADO</Badge>
                             ) : sale.payments && sale.payments.length > 0 ? (
@@ -102,7 +103,11 @@ export const SaleCard = React.memo(({
                                 <Badge variant="outline">Sin Pago</Badge>
                             )}
                          </div>
-                         <p className="text-xs text-muted-foreground">Por: {sale.registeredByName || 'Sistema'}</p>
+                    </div>
+
+                    {/* Bloque 5: Acciones y Usuario */}
+                    <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-auto flex-shrink-0 space-y-2">
+                         <p className="text-xs text-muted-foreground">Atendió: {sale.registeredByName || 'Sistema'}</p>
                           <div className="flex justify-center items-center gap-1">
                                 <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Cancelar Venta">
                                     <Edit className="h-4 w-4" />
