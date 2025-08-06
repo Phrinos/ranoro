@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -17,7 +16,7 @@ import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, Us
 import { useToast } from '@/hooks/use-toast'; 
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { operationsService } from '@/lib/services';
+import { serviceService } from '@/lib/services';
 import { PaymentDetailsDialog, type PaymentDetailsFormValues } from './PaymentDetailsDialog';
 import { Button } from '@/components/ui/button';
 import { Ban, Loader2, DollarSign } from 'lucide-react';
@@ -179,7 +178,7 @@ export function ServiceDialog({
 
     // Standard save logic for other statuses
     try {
-        const savedRecord = await operationsService.saveService(formData);
+        const savedRecord = await serviceService.saveService(formData);
         toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
         if (onSave) {
             await onSave(savedRecord);
@@ -332,7 +331,7 @@ export function ServiceDialog({
         <PaymentDetailsDialog
             open={isPaymentDialogOpen}
             onOpenChange={setIsPaymentDialogOpen}
-            service={serviceToComplete}
+            record={serviceToComplete}
             onConfirm={handleConfirmCompletion}
             isCompletionFlow={true}
         />
