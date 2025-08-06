@@ -9,8 +9,8 @@ import { operationsService, inventoryService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { db } from '@/lib/firebaseClient';
-import { query, collection, orderBy, limit, onSnapshot, where, startOfDay, isSameDay } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { query, collection, orderBy, limit, onSnapshot, where, doc } from 'firebase/firestore';
+import { format, startOfDay, isSameDay } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 
 const CajaPosContent = lazy(() => import('../../pos/caja/components/caja-pos-content').then(module => ({ default: module.CajaPosContent })));
