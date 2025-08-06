@@ -52,7 +52,7 @@ export const SaleCard = React.memo(({
                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-muted/50">
                         <p className="font-semibold text-lg text-foreground">{saleDate && isValid(saleDate) ? format(saleDate, "dd MMM", { locale: es }) : "N/A"}</p>
                         <p className="text-muted-foreground text-xs">{saleDate && isValid(saleDate) ? format(saleDate, "yyyy, HH:mm 'hrs'", { locale: es }) : "Hora inválida"}</p>
-                        <p className="text-muted-foreground text-xs mt-1">Folio: {sale.id}</p>
+                        <p className="text-muted-foreground text-xs mt-1">{sale.id}</p>
                     </div>
 
                     {/* Bloque 2: Artículos y Cliente */}
@@ -61,7 +61,7 @@ export const SaleCard = React.memo(({
                           <ShoppingCart className="h-4 w-4" />
                            <Badge variant="outline">{category}</Badge>
                        </div>
-                       <div className="font-bold text-black">
+                       <div className="font-bold text-black text-base">
                             <TooltipProvider>
                                 <Tooltip>
                                 <TooltipTrigger asChild>
@@ -80,7 +80,7 @@ export const SaleCard = React.memo(({
                     </div>
 
                     {/* Bloque 3: Total y Ganancia */}
-                    <div className="p-4 flex flex-col justify-center items-center md:items-end md:w-48 text-center md:text-right">
+                    <div className="p-3 flex flex-col justify-center items-center md:items-end md:w-40 text-center md:text-right">
                        <p className="font-bold text-xl text-primary">{formatCurrency(sale.totalAmount)}</p>
                        <p className="text-sm text-green-600 flex items-center gap-1">
                             <TrendingUp className="h-4 w-4" /> {formatCurrency(profit)}
@@ -120,5 +120,3 @@ export const SaleCard = React.memo(({
 });
 
 SaleCard.displayName = 'SaleCard';
-
-    
