@@ -36,7 +36,7 @@ interface VentasPosContentProps {
 export function VentasPosContent({ allSales, allInventory, onReprintTicket, onViewSale }: VentasPosContentProps) {
   
   const { 
-    filteredData,
+    filteredData: filteredAndSortedSales,
     ...tableManager 
   } = useTableManager<SaleReceipt>({
     initialData: allSales,
@@ -45,15 +45,6 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
     initialSortOption: 'date_desc',
     itemsPerPage: 10,
   });
-  
-  const filteredAndSortedSales = useMemo(() => {
-    const paymentFilter = tableManager.otherFilters?.paymentMethod;
-    if (!paymentFilter || paymentFilter === 'all') {
-        return filteredData;
-    }
-    return filteredData.filter(sale => sale.payments?.some(p => p.method === paymentFilter));
-  }, [filteredData, tableManager.otherFilters]);
-
 
   return (
     <div className="space-y-4">
@@ -63,9 +54,13 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
         
         <TableToolbar
             {...tableManager}
-            searchPlaceholder="Buscar por ID, cliente, artículo..."
+            onFilterChange={tableManager.setOtherFilters}
+            onSearchTermChange={tableManager.setSearchTerm}
+            onSortOptionChange={tableManager.setSortOption}
+            onDateRangeChange={tableManager.setDateRange}
             sortOptions={sortOptions}
-            filterOptions={[{ value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions }]}
+            filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
+            searchPlaceholder="Buscar por ID, cliente, artículo..."
         />
         
         {filteredAndSortedSales.length > 0 ? (
@@ -104,5 +99,3 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
     </div>
   );
 }
-
-    
