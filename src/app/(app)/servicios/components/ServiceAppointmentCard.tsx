@@ -6,7 +6,6 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { StatusTracker } from "./StatusTracker";
 import type { ServiceRecord, Vehicle, Technician, PaymentMethod, ServiceSubStatus, User, Payment } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -95,37 +94,24 @@ export const ServiceAppointmentCard = React.memo(({
     };
 
     const renderPaymentBadges = () => {
-        if (!isCompleted) return null;
-
-        if (Array.isArray(service.payments) && service.payments.length > 0) {
-            return (
-                <div className="flex flex-wrap gap-1 justify-end mt-1">
-                    {service.payments.map((p: Payment, index: number) => (
-                        <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
-                           {formatCurrency(p.amount)} <span className="font-normal ml-1 opacity-80">({p.method})</span>
-                        </Badge>
-                    ))}
-                </div>
-            );
+        if (!isCompleted || !Array.isArray(service.payments) || service.payments.length === 0) {
+            return null;
         }
         
-        // Fallback for older records using the single paymentMethod field
-        if (service.paymentMethod) {
-            return (
-                <div className="flex flex-wrap gap-1 justify-end mt-1">
-                    <Badge variant={getPaymentMethodVariant(service.paymentMethod as Payment['method'])} className="text-xs">
-                        {service.paymentMethod}
+        return (
+            <div className="flex flex-wrap gap-1 justify-end mt-1">
+                {service.payments.map((p: Payment, index: number) => (
+                    <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
+                       {formatCurrency(p.amount)} <span className="font-normal ml-1 opacity-80">({p.method})</span>
                     </Badge>
-                </div>
-            );
-        }
-
-        return null;
+                ))}
+            </div>
+        );
     };
 
 
     return (
-        <Card className="shadow-sm overflow-hidden mb-4">
+        <Card className={cn("shadow-sm overflow-hidden mb-4", isCancelled && "bg-muted/60 opacity-80")}>
             <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row text-sm">
                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
@@ -140,7 +126,6 @@ export const ServiceAppointmentCard = React.memo(({
                              )}
                         </div>
                         <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
-                        <StatusTracker status={service.status} />
                     </div>
                     <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
                         {vehicle && (
