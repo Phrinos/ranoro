@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusTracker } from "./StatusTracker";
-import type { ServiceRecord, Vehicle, Technician, PaymentMethod, ServiceSubStatus, User } from '@/types';
+import type { ServiceRecord, Vehicle, Technician, PaymentMethod, ServiceSubStatus, User, Payment } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Edit, CheckCircle, Ban, DollarSign, User as UserIcon, Phone, TrendingUp, Clock, Wrench, Eye, Printer, Trash2 } from 'lucide-react';
@@ -94,15 +94,35 @@ export const ServiceAppointmentCard = React.memo(({
         }
     };
 
-    const renderPaymentBadge = () => {
-        if (!isCompleted || !service.paymentMethod) return null;
+    const renderPaymentBadges = () => {
+        if (!isCompleted) return null;
+
+        if (Array.isArray(service.payments) && service.payments.length > 0) {
+            return (
+                <div className="flex flex-wrap gap-1 justify-end mt-1">
+                    {service.payments.map((p: Payment, index: number) => (
+                        <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
+                           {formatCurrency(p.amount)} <span className="font-normal ml-1 opacity-80">({p.method})</span>
+                        </Badge>
+                    ))}
+                </div>
+            );
+        }
         
-        return (
-            <Badge variant={getPaymentMethodVariant(service.paymentMethod)} className="mt-1 text-xs whitespace-nowrap">
-                {service.paymentMethod}
-            </Badge>
-        );
+        // Fallback for older records using the single paymentMethod field
+        if (service.paymentMethod) {
+            return (
+                <div className="flex flex-wrap gap-1 justify-end mt-1">
+                    <Badge variant={getPaymentMethodVariant(service.paymentMethod as Payment['method'])} className="text-xs">
+                        {service.paymentMethod}
+                    </Badge>
+                </div>
+            );
+        }
+
+        return null;
     };
+
 
     return (
         <Card className="shadow-sm overflow-hidden mb-4">
@@ -145,7 +165,7 @@ export const ServiceAppointmentCard = React.memo(({
                                     <TrendingUp className="h-4 w-4" /> {formatCurrency(service.serviceProfit)}
                                 </p>
                             </div>
-                            {renderPaymentBadge()}
+                            {renderPaymentBadges()}
                         </div>
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
