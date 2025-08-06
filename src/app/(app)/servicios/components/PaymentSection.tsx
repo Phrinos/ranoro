@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/PaymentSection.tsx
 "use client";
 
@@ -48,11 +47,36 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Pago y Resumen</CardTitle>
+        <CardTitle>Resumen y Pago</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Totals Section */}
+        <div className="w-full space-y-2">
+            <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal:</span>
+                <span className="font-medium">{formatCurrency(subTotal)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">IVA (16%):</span>
+                <span className="font-medium">{formatCurrency(tax)}</span>
+            </div>
+            <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                <span>TOTAL:</span>
+                <span className="text-primary">{formatCurrency(totalCost)}</span>
+            </div>
+            <div className="flex justify-between text-sm pt-2 border-t">
+                <span className="text-muted-foreground">Costo Insumos (Taller):</span>
+                <span className="font-medium">{formatCurrency(totalSuppliesWorkshopCost)}</span>
+            </div>
+            <div className="flex justify-between text-sm font-semibold text-green-600">
+                <span>Ganancia Bruta:</span>
+                <span>{formatCurrency(serviceProfit)}</span>
+            </div>
+        </div>
+        
         {/* Payment Methods Section */}
-        <div className="space-y-4 rounded-md border p-4">
+        <div className="space-y-4 rounded-md border p-4 pt-4 border-t">
+           <FormLabel>Métodos de Pago</FormLabel>
            {fields.map((field, index) => {
                 const selectedMethod = watchedPayments[index]?.method;
                 const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
@@ -133,29 +157,6 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
             />
         </div>
 
-        {/* Totals Section */}
-        <div className="w-full mt-auto space-y-2 pt-4 border-t">
-            <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal:</span>
-                <span className="font-medium">{formatCurrency(subTotal)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">IVA (16%):</span>
-                <span className="font-medium">{formatCurrency(tax)}</span>
-            </div>
-            <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                <span>TOTAL:</span>
-                <span className="text-primary">{formatCurrency(totalCost)}</span>
-            </div>
-            <div className="flex justify-between text-sm pt-2 border-t">
-                <span className="text-muted-foreground">Costo Insumos (Taller):</span>
-                <span className="font-medium">{formatCurrency(totalSuppliesWorkshopCost)}</span>
-            </div>
-            <div className="flex justify-between text-sm font-semibold text-green-600">
-                <span>Ganancia Bruta:</span>
-                <span>{formatCurrency(serviceProfit)}</span>
-            </div>
-        </div>
       </CardContent>
     </Card>
   );
