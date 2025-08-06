@@ -219,9 +219,9 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           title="Venta Completada"
           description={`Ticket para la venta #${saleForTicket.id}`}
           footerActions={<>
-              <Button onClick={() => handleCopyAsImage()} variant="outline" size="icon" title="Copiar Imagen"><Copy className="h-4 w-4"/></Button>
-              <Button onClick={handleShare} variant="outline" size="icon" title="Compartir Ticket"><Share2 className="h-4 w-4" /></Button>
-              <Button onClick={handlePrint} variant="outline" size="icon" title="Imprimir"><Printer className="h-4 w-4"/></Button>
+            <Button onClick={() => handleCopyAsImage()} size="icon" title="Copiar Imagen" className="bg-blue-600 hover:bg-blue-700 text-white"><Copy className="h-4 w-4"/></Button>
+            <Button onClick={handleShare} size="icon" title="Compartir Ticket" className="bg-green-600 hover:bg-green-700 text-white"><Share2 className="h-4 w-4" /></Button>
+            <Button onClick={handlePrint} size="icon" title="Imprimir" className="bg-red-600 hover:bg-red-700 text-white"><Printer className="h-4 w-4"/></Button>
           </>}
         >
           <div id="printable-ticket">
