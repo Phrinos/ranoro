@@ -86,34 +86,40 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
           {fields.length > 0 ? (
             <div className="space-y-4">
               {fields.map((field: any, index) => (
-                <div key={field.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
-                    <div className="flex-1 w-full sm:w-auto space-y-2">
-                        <div>
-                            <FormLabel className="text-xs">Artículo</FormLabel>
-                            <Input readOnly value={`${field.itemName} (${formatCurrency(field.unitPrice)} c/u)`} className="bg-white border-none text-sm font-medium w-full mt-1"/>
+                <div key={field.id} className="relative p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
+                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo" className="absolute top-1 right-1 h-7 w-7">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                        <div className="flex-1 w-full sm:w-auto space-y-2">
+                            <div>
+                                <FormLabel className="text-xs">Artículo</FormLabel>
+                                <Input readOnly value={`${field.itemName} (${formatCurrency(field.unitPrice)} c/u)`} className="bg-white border-none text-sm font-medium w-full mt-1"/>
+                            </div>
+                            <div className="w-full sm:w-40">
+                                <FormLabel className="text-xs">Cantidad</FormLabel>
+                                <div className="flex items-center justify-center gap-1 mt-1">
+                                <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(index, -1)}><Minus className="h-4 w-4" /></Button>
+                                <Input 
+                                    type="number" 
+                                    step="any" 
+                                    min="0.001" 
+                                    value={field.quantity} 
+                                    onChange={(e) => handleManualQuantitySet(index, e.target.value)} 
+                                    className="w-full text-center font-medium h-8 bg-white" 
+                                />
+                                <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(index, 1)}><Plus className="h-4 w-4" /></Button>
+                                </div>
+                            </div>
                         </div>
-                        <div className="w-full sm:w-40">
-                            <FormLabel className="text-xs">Cantidad</FormLabel>
-                            <div className="flex items-center justify-center gap-1 mt-1">
-                              <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(index, -1)}><Minus className="h-4 w-4" /></Button>
-                              <Input 
-                                type="number" 
-                                step="any" 
-                                min="0.001" 
-                                value={field.quantity} 
-                                onChange={(e) => handleManualQuantitySet(index, e.target.value)} 
-                                className="w-full text-center font-medium h-8 bg-white" 
-                              />
-                              <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(index, 1)}><Plus className="h-4 w-4" /></Button>
+
+                        <div className="w-full sm:w-auto mt-2 sm:mt-0 self-start sm:self-center">
+                            <div className="flex justify-between items-center sm:flex-col sm:items-end sm:text-right">
+                                <FormLabel className="text-xs">Precio Total (IVA Inc.)</FormLabel>
+                                <Input readOnly value={formatCurrency(field.totalPrice)} className="bg-white border-none text-sm font-medium h-auto p-0 text-right sm:h-8 sm:p-2 sm:mt-1"/>
                             </div>
                         </div>
                     </div>
-
-                    <div className="w-full sm:w-28 mt-2 sm:mt-0 sm:self-end">
-                        <FormLabel className="text-xs">Precio Total (IVA Inc.)</FormLabel>
-                        <Input readOnly value={formatCurrency(field.totalPrice)} className="bg-white border-none text-sm font-medium mt-1"/>
-                    </div>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo" className="sm:self-end mb-1"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </div>
               ))}
             </div>
