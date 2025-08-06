@@ -134,9 +134,9 @@ export function SaleSummary() {
         </div>
         </CardHeader>
         <CardContent className="pt-0 flex flex-col space-y-4 flex-grow">
-          <div className="space-y-2">
-            <FormLabel>Métodos de Pago</FormLabel>
-            {fields.map((field, index) => {
+          <div className="space-y-4 rounded-md border p-4 pt-4 border-t">
+           <FormLabel>Métodos de Pago</FormLabel>
+           {fields.map((field, index) => {
               const selectedMethod = watch(`payments.${index}.method`);
               const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
               const folioLabel = selectedMethod === 'Transferencia' ? 'Folio/Referencia' : 'Folio de Voucher';

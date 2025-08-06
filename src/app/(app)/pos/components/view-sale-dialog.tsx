@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -81,7 +82,7 @@ export function ViewSaleDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="px-6 py-4">
+        <div className="flex-grow overflow-y-auto px-6 py-4">
           <FormProvider {...methods}>
             <PosForm 
               inventoryItems={inventory} 
@@ -91,7 +92,7 @@ export function ViewSaleDialog({
               initialData={sale}
             />
           </FormProvider>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-row justify-between items-center w-full gap-2">
           <div>

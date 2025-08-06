@@ -39,92 +39,85 @@ export function PaymentSection() {
   const totalPaid = watchedPayments?.reduce((acc: number, p: Payment) => acc + (Number(p.amount) || 0), 0) || 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Métodos de Pago</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-4 rounded-md border p-4">
-           {fields.map((field, index) => {
-                const selectedMethod = watchedPayments[index]?.method;
-                const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
-                const folioLabel = selectedMethod === 'Transferencia' ? 'Folio de Transferencia' : 'Folio de Voucher';
+    <div className="space-y-4 rounded-md border p-4">
+        <FormLabel>Métodos de Pago</FormLabel>
+        {fields.map((field, index) => {
+            const selectedMethod = watchedPayments[index]?.method;
+            const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
+            const folioLabel = selectedMethod === 'Transferencia' ? 'Folio de Transferencia' : 'Folio de Voucher';
 
-                return (
-                    <div key={field.id} className="space-y-2">
-                        <div className="flex gap-2 items-end">
-                            <FormField
-                                control={control}
-                                name={`payments.${index}.amount`}
-                                render={({ field }) => (
-                                    <FormItem className="flex-grow">
-                                        <div className="relative">
-                                            <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <FormControl>
-                                                <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8"/>
-                                            </FormControl>
-                                        </div>
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={control}
-                                name={`payments.${index}.method`}
-                                render={({ field }) => (
-                                    <FormItem className="w-48">
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                {paymentMethods.map(method => {
-                                                    const Icon = paymentMethodIcons[method];
-                                                    return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method) === -1 && method !== selectedMethod}>
-                                                                <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
-                                                            </SelectItem>
-                                                    );
-                                                })}
-                                            </SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                )}
-                            />
-                            {fields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
-                        </div>
-                        {showFolio && (
-                             <FormField
-                                control={control}
-                                name={`payments.${index}.folio`}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <Input placeholder={folioLabel} {...field} value={field.value ?? ''} />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        )}
+            return (
+                <div key={field.id} className="space-y-2">
+                    <div className="flex gap-2 items-end">
                         <FormField
                             control={control}
                             name={`payments.${index}.amount`}
-                            render={() => <FormMessage />}
+                            render={({ field }) => (
+                                <FormItem className="flex-grow">
+                                    <div className="relative">
+                                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <FormControl>
+                                            <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8"/>
+                                        </FormControl>
+                                    </div>
+                                </FormItem>
+                            )}
                         />
+                        <FormField
+                            control={control}
+                            name={`payments.${index}.method`}
+                            render={({ field }) => (
+                                <FormItem className="w-48">
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            {paymentMethods.map(method => {
+                                                const Icon = paymentMethodIcons[method];
+                                                return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method) === -1 && method !== selectedMethod}>
+                                                            <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
+                                                        </SelectItem>
+                                                );
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )}
+                        />
+                        {fields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
                     </div>
-                );
-           })}
-           {availablePaymentMethods.length > 0 && (
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: 0, folio: '' })}>
-                    <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
-                </Button>
-           )}
-           <div className="flex justify-end font-semibold pt-2 border-t">
-                Total Pagado: {formatCurrency(totalPaid)}
-           </div>
-           <FormField
-              control={control}
-              name="payments"
-              render={({ field }) => <FormMessage />}
-            />
+                    {showFolio && (
+                            <FormField
+                            control={control}
+                            name={`payments.${index}.folio`}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input placeholder={folioLabel} {...field} value={field.value ?? ''} />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        )}
+                    <FormField
+                        control={control}
+                        name={`payments.${index}.amount`}
+                        render={() => <FormMessage />}
+                    />
+                </div>
+            );
+        })}
+        {availablePaymentMethods.length > 0 && (
+            <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: 0, folio: '' })}>
+                <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
+            </Button>
+        )}
+        <div className="flex justify-end font-semibold pt-2 border-t">
+            Total Pagado: {formatCurrency(totalPaid)}
         </div>
-      </CardContent>
-    </Card>
+        <FormField
+            control={control}
+            name="payments"
+            render={({ field }) => <FormMessage />}
+        />
+    </div>
   );
 }

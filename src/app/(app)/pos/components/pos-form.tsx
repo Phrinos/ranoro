@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
@@ -110,7 +111,7 @@ export function PosForm({
 
   return (
     <>
-      <form id="pos-form" onSubmit={methods.handleSubmit(onSaleComplete)} className="space-y-6">
+      <div id="pos-form" className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           {/* Columna Izquierda: Lista de Artículos */}
           <div className="lg:col-span-3">
@@ -122,7 +123,7 @@ export function PosForm({
             <SaleSummary />
           </div>
         </div>
-      </form>
+      </div>
 
       <AddItemDialog
         open={isAddItemDialogOpen}

@@ -157,60 +157,30 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   
   return (
     <>
-      <PageHeader
-        title={pageTitle}
-        description={pageDescription}
-      />
+        <PageHeader
+            title={pageTitle}
+            description={pageDescription}
+        />
         <FormProvider {...form}>
             <form ref={ref} id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden space-y-6">
                 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-lg">Detalles Generales del Servicio</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <FormField
-                            control={control}
-                            name="status"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Estado del Servicio</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    <SelectItem value="Cotizacion">Cotización</SelectItem>
-                                    <SelectItem value="Agendado">Agendado</SelectItem>
-                                    <SelectItem value="En Taller">En Taller</SelectItem>
-                                    <SelectItem value="Entregado">Entregado</SelectItem>
-                                </SelectContent>
-                                </Select>
-                            </FormItem>
-                            )}
-                        />
-                        {watchedStatus === 'En Taller' && (
-                            <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado Taller</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl><SelectContent>{["Proveedor Externo", "En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <VehicleSelectionCard
-                    isReadOnly={isReadOnly}
-                    localVehicles={parentVehicles}
-                    onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
-                    onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
-                />
-
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-                    <div className="lg:col-span-3">
-                    <ServiceItemsList
-                        isReadOnly={isReadOnly}
-                        inventoryItems={invItems}
-                        serviceTypes={serviceTypes}
-                        mode={mode}
-                        onNewInventoryItemCreated={handleNewInventoryItemCreated}
-                        categories={categories}
-                        suppliers={suppliers}
-                    />
+                    <div className="lg:col-span-3 space-y-6">
+                        <VehicleSelectionCard
+                            isReadOnly={isReadOnly}
+                            localVehicles={parentVehicles}
+                            onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
+                            onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+                        />
+                        <ServiceItemsList
+                            isReadOnly={isReadOnly}
+                            inventoryItems={invItems}
+                            serviceTypes={serviceTypes}
+                            mode={mode}
+                            onNewInventoryItemCreated={handleNewInventoryItemCreated}
+                            categories={categories}
+                            suppliers={suppliers}
+                        />
                     </div>
                     <div className="lg:col-span-2 space-y-6">
                         <PaymentSection />
