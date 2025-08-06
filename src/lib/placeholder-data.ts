@@ -160,8 +160,8 @@ export const calculateSaleProfit = (
   for (const saleItem of sale.items) {
     const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
     
-    // Only add to cost if it's a product (not a service) and exists in inventory
-    if (inventoryItem && !inventoryItem.isService) {
+    // The cost is the workshop's unit price, regardless of whether it's a service or a product.
+    if (inventoryItem) {
       totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
     }
   }
