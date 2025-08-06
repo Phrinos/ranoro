@@ -1,3 +1,4 @@
+// src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
@@ -23,6 +24,7 @@ import { SignatureDialog } from '../components/signature-dialog';
 import { normalizeDataUrl } from '@/lib/utils';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import Image from 'next/image';
+import { ServiceDetailsCard } from '../components/ServiceDetailsCard';
 
 const ServiceItemsList = lazy(() => import('../components/ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
 const PaymentSection = lazy(() => import('../components/PaymentSection').then(module => ({ default: module.PaymentSection })));
@@ -64,7 +66,7 @@ export default function EditarServicioPage() {
     resolver: zodResolver(serviceFormSchema),
   });
 
-  const { reset, handleSubmit, getValues, setValue } = methods;
+  const { reset, handleSubmit, getValues, setValue, watch } = methods;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -206,6 +208,8 @@ export default function EditarServicioPage() {
         let context = 'Notas del Servicio'; // default
         if (fieldName.includes('vehicleConditions')) context = 'Condiciones del Vehículo';
         if (fieldName.includes('customerItems')) context = 'Pertenencias del Cliente';
+        if (fieldName.includes('safetyInspection.inspectionNotes')) context = 'Observaciones de Inspección';
+        if (fieldName.includes('notes')) context = 'Notas Adicionales';
         const result = await enhanceText({ text: currentValue, context });
         setValue(fieldName, result, { shouldDirty: true });
         toast({ title: "Texto Mejorado", description: "La IA ha optimizado la redacción." });
@@ -249,6 +253,12 @@ export default function EditarServicioPage() {
             <PageHeader
                 title={`Editar Servicio #${initialData.id.slice(-6)}`}
                 description={`Modifica los detalles para el vehículo ${initialData.vehicleIdentifier || ''}.`}
+            />
+            
+            <ServiceDetailsCard
+              isReadOnly={false}
+              users={users}
+              serviceTypes={serviceTypes}
             />
 
             {showTabs ? (

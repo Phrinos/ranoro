@@ -1,3 +1,4 @@
+// src/app/(app)/servicios/nuevo/page.tsx
 
 "use client";
 
@@ -38,32 +39,9 @@ import { format, setHours, setMinutes, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
+import { ServiceDetailsCard } from '../components/ServiceDetailsCard';
 
 type ServiceCreationFormValues = z.infer<typeof serviceFormSchema>;
-
-const statusOptions: { value: ServiceRecord['status'], label: string }[] = [
-    { value: 'Cotizacion', label: 'Cotización' },
-    { value: 'Agendado', label: 'Agendado' },
-    { value: 'En Taller', label: 'En Taller' },
-    { value: 'Entregado', label: 'Entregado' },
-];
-
-const subStatusOptions: Record<ServiceRecord['status'], { value: ServiceRecord['subStatus'], label: string }[]> = {
-    'Cotizacion': [],
-    'Agendado': [
-        { value: 'Cita Agendada', label: 'Cita Agendada' },
-        { value: 'Cita Confirmada', label: 'Cita Confirmada' },
-    ],
-    'En Taller': [
-        { value: 'Ingresado', label: 'Ingresado' },
-        { value: 'En Espera de Refacciones', label: 'Espera Refacciones' },
-        { value: 'Reparando', label: 'Reparando' },
-        { value: 'Completado', label: 'Listo para Entrega' },
-    ],
-    'Proveedor Externo': [],
-    'Entregado': [],
-    'Cancelado': [],
-};
 
 export default function NuevoServicioPage() {
   const { toast } = useToast(); 
@@ -100,9 +78,6 @@ export default function NuevoServicioPage() {
   });
 
   const { control, watch, formState, handleSubmit, setValue } = methods;
-  const watchedStatus = watch('status');
-  const relevantSubStatusOptions = subStatusOptions[watchedStatus] || [];
-
 
   useEffect(() => {
     const unsubs = [
@@ -124,9 +99,18 @@ export default function NuevoServicioPage() {
     if (storedWorkshopInfo) {
       try { setWorkshopInfo(JSON.parse(storedWorkshopInfo)); } catch (e) { console.error(e); }
     }
+    
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+    if (currentUser) {
+      setValue('serviceAdvisorId', currentUser.id);
+      setValue('serviceAdvisorName', currentUser.name);
+      setValue('serviceAdvisorSignatureDataUrl', currentUser.signatureDataUrl || '');
+    }
+
 
     return () => unsubs.forEach(unsub => unsub());
-  }, []);
+  }, [setValue]);
   
   const handleSaleCompletion = async (values: ServiceCreationFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
@@ -227,115 +211,11 @@ export default function NuevoServicioPage() {
   return (
     <FormProvider {...methods}>
       <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Nuevo Servicio / Cotización</CardTitle>
-            <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                <FormField
-                  control={control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="font-bold">
-                            <SelectValue placeholder="Seleccione un estado" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {statusOptions.map(opt => (
-                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-                {relevantSubStatusOptions.length > 0 && (
-                  <FormField
-                    control={control}
-                    name="subStatus"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sub-Estado</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={relevantSubStatusOptions.length === 0}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccione sub-estado..." />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {relevantSubStatusOptions.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value!}>{opt.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </div>
-              {watchedStatus === 'Agendado' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end pt-4 border-t">
-                  <Controller
-                    name="serviceDate"
-                    control={control}
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel className={cn(formState.errors.serviceDate && "text-destructive")}>Fecha de Cita</FormLabel>
-                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", formState.errors.serviceDate && "border-destructive focus-visible:ring-destructive")}>
-                              {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                              <CalendarDateIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={(date) => {
-                                const currentTime = field.value || new Date();
-                                const newDate = date ? setMinutes(setHours(date, currentTime.getHours()), currentTime.getMinutes()) : undefined;
-                                field.onChange(newDate);
-                                setIsDatePickerOpen(false);
-                              }}
-                              initialFocus
-                              locale={es}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </FormItem>
-                    )}
-                  />
-                  <Controller
-                    name="serviceDate"
-                    control={control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Hora de la Cita</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="time"
-                            value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                            onChange={(e) => {
-                              if (!e.target.value) return;
-                              const [h, m] = e.target.value.split(':').map(Number);
-                              field.onChange(setMinutes(setHours(field.value || new Date(), h), m));
-                            }}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-          </CardContent>
-        </Card>
+        <ServiceDetailsCard
+          isReadOnly={false}
+          users={users}
+          serviceTypes={serviceTypes}
+        />
         
         <VehicleSelectionCard
           isReadOnly={false}
@@ -348,7 +228,7 @@ export default function NuevoServicioPage() {
             <ServiceItemsList
               isReadOnly={false}
               inventoryItems={currentInventoryItems}
-              mode={watchedStatus === 'Cotizacion' ? 'quote' : 'service'}
+              mode={watch('status') === 'Cotizacion' ? 'quote' : 'service'}
               onNewInventoryItemCreated={handleNewInventoryItemCreated}
               categories={allCategories}
               suppliers={allSuppliers}

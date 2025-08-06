@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceItemsList.tsx
 "use client";
 
@@ -25,8 +24,8 @@ interface ServiceItemsListProps {
   onNewInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
   categories: InventoryCategory[];
   suppliers: Supplier[];
-  isEnhancingText?: string | null;
-  handleEnhanceText?: (fieldName: keyof ServiceFormValues | `serviceItems.${number}.suppliesUsed.${number}.description`) => void;
+  isEnhancingText: string | null;
+  handleEnhanceText: (fieldName: keyof ServiceFormValues | `serviceItems.${number}.suppliesUsed.${number}.description` | 'notes') => void;
 }
 
 export function ServiceItemsList({

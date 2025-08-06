@@ -33,7 +33,6 @@ const subStatusOptions: Record<string, { value: ServiceFormValues['subStatus'], 
     'En Taller': [
         { value: 'Ingresado', label: 'Ingresado' },
         { value: 'En Espera de Refacciones', label: 'Espera Refacciones' },
-        { value: 'Proveedor Externo', label: 'Proveedor Externo' },
         { value: 'Reparando', label: 'Reparando' },
         { value: 'Completado', label: 'Listo para Entrega' },
     ],
