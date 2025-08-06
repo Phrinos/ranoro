@@ -449,17 +449,18 @@ const registerSale = async (
     batch: ReturnType<typeof writeBatch>
 ): Promise<void> => {
     const IVA_RATE = 0.16;
+    
+    const commissionItem = saleData.items.find(i => i.inventoryItemId === 'COMMISSION_FEE');
     const itemsForSale = saleData.items.filter(i => i.inventoryItemId !== 'COMMISSION_FEE');
+    const cardCommission = commissionItem?.unitPrice || 0;
+
     const totalAmount = itemsForSale.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
     const subTotal = totalAmount / (1 + IVA_RATE);
     const tax = totalAmount - subTotal;
-    
-    const commissionItem = saleData.items.find(i => i.inventoryItemId === 'COMMISSION_FEE');
-    const cardCommission = commissionItem?.unitPrice || 0;
 
     const newSale: Omit<SaleReceipt, 'id'> = {
       ...saleData,
-      items: itemsForSale,
+      items: saleData.items, // Save ALL items, including commission
       saleDate: new Date().toISOString(),
       subTotal, 
       tax, 
@@ -473,6 +474,7 @@ const registerSale = async (
     const newSaleRef = doc(db, "sales", saleId);
     batch.set(newSaleRef, cleanObjectForFirestore(newSale));
 
+    // Only decrement stock for non-commission items
     itemsForSale.forEach(soldItem => {
         const inventoryItem = inventoryItems.find(invItem => invItem.id === soldItem.inventoryItemId);
         if (inventoryItem && !inventoryItem.isService) {
