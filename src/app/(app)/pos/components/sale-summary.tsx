@@ -3,17 +3,36 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Receipt, Save, Loader2 } from 'lucide-react';
+import { Receipt, Save, Loader2, Wallet, CreditCard, Send, PlusCircle, Trash2, DollarSign } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Payment } from '@/types';
 
 const IVA_RATE = 0.16;
 
+const paymentMethods: Payment['method'][] = ['Efectivo', 'Tarjeta', 'Tarjeta MSI', 'Transferencia'];
+
+const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Tarjeta MSI": CreditCard,
+  "Transferencia": Send,
+};
+
 export function SaleSummary() {
-  const { watch, formState } = useFormContext();
+  const { control, watch, formState } = useFormContext();
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "payments",
+  });
+  
   const watchedItems = watch("items");
+  const watchedPayments = watch('payments');
 
   const [subTotal, setSubTotal] = useState(0);
   const [tax, setTax] = useState(0);
@@ -31,32 +50,113 @@ export function SaleSummary() {
   
   const hasItems = watchedItems && watchedItems.length > 0;
 
+  const availablePaymentMethods = paymentMethods.filter(
+    method => !watchedPayments?.some((p: Payment) => p.method === method)
+  );
+  
+  const totalPaid = watchedPayments?.reduce((acc: number, p: Payment) => acc + (Number(p.amount) || 0), 0) || 0;
+
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle>Resumen de Venta</CardTitle>
+        <CardTitle>Resumen y Pago</CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 flex flex-col space-y-2 flex-grow justify-between">
-        <div className="w-full">
-          <div className="text-lg w-full flex justify-between"><span>Subtotal:</span> <span className="font-semibold">{formatCurrency(subTotal)}</span></div>
-          <div className="text-sm text-muted-foreground w-full flex justify-between"><span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span> <span className="font-semibold">{formatCurrency(tax)}</span></div>
+      <CardContent className="pt-0 flex flex-col space-y-4 flex-grow">
+        {/* Payment Methods */}
+        <div className="space-y-2">
+            <FormLabel>Métodos de Pago</FormLabel>
+            {fields.map((field, index) => {
+                    const selectedMethod = watchedPayments[index]?.method;
+                    const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
+                    const folioLabel = selectedMethod === 'Transferencia' ? 'Folio de Transferencia' : 'Folio de Voucher';
+
+                    return (
+                        <div key={field.id} className="space-y-2 p-3 border rounded-md">
+                            <div className="flex gap-2 items-end">
+                                <FormField
+                                    control={control}
+                                    name={`payments.${index}.amount`}
+                                    render={({ field }) => (
+                                        <FormItem className="flex-grow">
+                                            <div className="relative">
+                                                <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                <FormControl>
+                                                    <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8"/>
+                                                </FormControl>
+                                            </div>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={control}
+                                    name={`payments.${index}.method`}
+                                    render={({ field }) => (
+                                        <FormItem className="w-48">
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    {paymentMethods.map(method => {
+                                                        const Icon = paymentMethodIcons[method];
+                                                        return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method) === -1 && method !== selectedMethod}>
+                                                                    <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
+                                                                </SelectItem>
+                                                        );
+                                                    })}
+                                                </SelectContent>
+                                            </Select>
+                                        </FormItem>
+                                    )}
+                                />
+                                {fields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                            </div>
+                            {showFolio && (
+                                <FormField
+                                    control={control}
+                                    name={`payments.${index}.folio`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                <Input placeholder={folioLabel} {...field} value={field.value ?? ''} />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+                            <FormField
+                                control={control}
+                                name={`payments.${index}.amount`}
+                                render={() => <FormMessage />}
+                            />
+                        </div>
+                    );
+            })}
+            {availablePaymentMethods.length > 0 && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: 0, folio: '' })}>
+                        <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
+                    </Button>
+            )}
         </div>
-        <div className="w-full space-y-4">
-           <div className="text-2xl font-bold w-full flex justify-between pt-2 border-t"><span>Total:</span> <span className="text-primary">{formatCurrency(total)}</span></div>
-            <Button
-                type="submit"
-                form="pos-form"
-                disabled={formState.isSubmitting || !hasItems}
-                className="w-full h-12 text-lg"
-            >
-                {formState.isSubmitting ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
-                    <Save className="mr-2 h-5 w-5" />
-                )}
-                Completar Venta ({formatCurrency(total)})
-            </Button>
+
+        {/* Totals Section */}
+        <div className="w-full mt-auto space-y-2">
+            <div className="text-lg w-full flex justify-between pt-4 border-t"><span>Subtotal:</span> <span className="font-semibold">{formatCurrency(subTotal)}</span></div>
+            <div className="text-sm text-muted-foreground w-full flex justify-between"><span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span> <span className="font-semibold">{formatCurrency(tax)}</span></div>
+            <div className="text-2xl font-bold w-full flex justify-between pt-2 border-t"><span>Total:</span> <span className="text-primary">{formatCurrency(total)}</span></div>
         </div>
+        <Button
+            type="submit"
+            form="pos-form"
+            disabled={formState.isSubmitting || !hasItems}
+            className="w-full h-12 text-lg"
+        >
+            {formState.isSubmitting ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+                <Save className="mr-2 h-5 w-5" />
+            )}
+            Completar Venta ({formatCurrency(total)})
+        </Button>
       </CardContent>
     </Card>
   );
