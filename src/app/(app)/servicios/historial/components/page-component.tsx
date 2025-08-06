@@ -296,6 +296,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         }
       }
     } else {
+        // Fallback if sharing is not supported or image creation failed
         handleCopyServiceForWhatsapp(recordForTicket!);
     }
   }, [handleCopyAsImage, handleCopyServiceForWhatsapp, recordForTicket, workshopInfo, toast]);
@@ -403,7 +404,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
           <PaymentDetailsDialog
             open={isPaymentDialogOpen}
             onOpenChange={setIsPaymentDialogOpen}
-            service={serviceToEditPayment}
+            record={serviceToEditPayment}
             onConfirm={handleUpdatePaymentDetails}
             isCompletionFlow={serviceToEditPayment.status !== 'Entregado'}
           />

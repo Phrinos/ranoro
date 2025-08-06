@@ -133,6 +133,8 @@ export function VentasPosContent({
                           currentUser={currentUser}
                           onReprintTicket={() => onReprintTicket(sale)}
                           onViewSale={() => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
+                          onEditPayment={() => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
+                          onDeleteSale={handleDeleteSale}
                       />
                   );
               })}
