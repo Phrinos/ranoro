@@ -13,7 +13,6 @@ import type { PaymentMethod } from '@/types';
 import { cn } from '@/lib/utils';
 import { capitalizeWords } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { useServiceTotals } from '@/hooks/use-service-form-hooks';
 
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [

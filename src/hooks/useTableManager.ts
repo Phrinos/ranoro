@@ -48,9 +48,19 @@ export function useTableManager<T extends { [key: string]: any }>({
     if (searchTerm) {
       const lowercasedTerm = searchTerm.toLowerCase();
       data = data.filter(item => 
-        searchKeys.some(key => 
-          String(getNestedValue(item, key as string) ?? '').toLowerCase().includes(lowercasedTerm)
-        )
+        searchKeys.some(key => {
+          if (typeof key === 'string' && key.includes('.')) {
+              // Handle nested arrays, e.g., 'items.itemName'
+              const [arrayKey, nestedKey] = key.split('.');
+              const arrayValue = item[arrayKey];
+              if (Array.isArray(arrayValue)) {
+                  return arrayValue.some(subItem => 
+                      String(subItem[nestedKey] ?? '').toLowerCase().includes(lowercasedTerm)
+                  );
+              }
+          }
+          return String(getNestedValue(item, key as string) ?? '').toLowerCase().includes(lowercasedTerm);
+        })
       );
     }
 
@@ -67,7 +77,14 @@ export function useTableManager<T extends { [key: string]: any }>({
 
     Object.entries(otherFilters).forEach(([key, value]) => {
       if (value !== 'all' && value !== undefined) {
-        data = data.filter(item => getNestedValue(item, key) === value);
+        data = data.filter(item => {
+            const itemValue = getNestedValue(item, key);
+            // Special handling for string inclusion (e.g., paymentMethod)
+            if (typeof itemValue === 'string' && typeof value === 'string') {
+                return itemValue.includes(value);
+            }
+            return itemValue === value;
+        });
       }
     });
     

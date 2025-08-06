@@ -34,21 +34,18 @@ const sortOptions = [
     { value: 'date_asc', label: 'Más Antiguo' },
 ];
 
-const paymentMethods: { value: PaymentMethod | 'all', label: string }[] = [
+const paymentMethods: { value: PaymentMethod | 'all' | string, label: string }[] = [
     { value: 'all', label: 'Todos' },
     { value: 'Efectivo', label: 'Efectivo' },
     { value: 'Tarjeta', label: 'Tarjeta' },
     { value: 'Transferencia', label: 'Transferencia' },
-    { value: 'Efectivo+Transferencia', label: 'Efectivo+Transferencia' },
-    { value: 'Tarjeta+Transferencia', label: 'Tarjeta+Transferencia' },
-    { value: 'Efectivo/Tarjeta', label: 'Efectivo/Tarjeta' },
 ];
 
 
 export function VentasPosContent({ allSales, allInventory, onReprintTicket, onViewSale }: VentasPosContentProps) {
   
   const { 
-    filteredData: filteredAndSortedSales, 
+    filteredData: initialFilteredData, 
     ...tableManager 
   } = useTableManager<SaleReceipt>({
     initialData: allSales,
@@ -58,6 +55,14 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
     initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
     itemsPerPage: 10,
   });
+
+  const filteredAndSortedSales = useMemo(() => {
+    const paymentFilter = tableManager.otherFilters?.paymentMethod;
+    if (!paymentFilter || paymentFilter === 'all') {
+      return initialFilteredData;
+    }
+    return initialFilteredData.filter(sale => sale.paymentMethod?.includes(paymentFilter));
+  }, [initialFilteredData, tableManager.otherFilters]);
 
   return (
     <div className="space-y-4">

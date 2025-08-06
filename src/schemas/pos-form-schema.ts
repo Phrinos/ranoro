@@ -13,10 +13,6 @@ const saleItemSchema = z.object({
   unitType: z.enum(['units', 'ml', 'liters']).optional(),
 });
 
-const paymentMethods: [string, ...string[]] = [
-  'Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia', 'Efectivo/Tarjeta'
-];
-
 export const posFormSchema = z.object({
   items: z.array(saleItemSchema).min(1, 'Debe agregar al menos un artículo a la venta.'),
   customerName: z.string().optional(),

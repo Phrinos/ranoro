@@ -13,8 +13,6 @@ import type { PaymentMethod } from '@/types';
 import { cn } from '@/lib/utils';
 import { capitalizeWords } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { useServiceTotals } from '@/hooks/use-service-form-hooks';
-
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
   "Efectivo",
@@ -34,40 +32,10 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Efectivo/Tarjeta": WalletCards,
 };
 
-export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean }) {
+export function PaymentSection() {
   const form = useFormContext();
   const { control, watch, formState: { errors } } = form;
   const selectedPaymentMethod = watch("paymentMethod");
-  const isDelivered = watch('status') === 'Entregado';
-  
-  // If the form is read-only AND it's a delivered service, we display info, not a form.
-  if (isReadOnly && isDelivered) {
-    return (
-       <Card>
-        <CardHeader>
-            <CardTitle>Detalles del Pago</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-            <div className="flex justify-between">
-                <span className="text-muted-foreground">Método de Pago:</span>
-                <Badge variant="outline">{watch('paymentMethod') || 'N/A'}</Badge>
-            </div>
-             {watch('cardFolio') && (
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Folio Tarjeta:</span>
-                    <span className="font-mono">{watch('cardFolio')}</span>
-                </div>
-            )}
-            {watch('transferFolio') && (
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Folio Transferencia:</span>
-                    <span className="font-mono">{watch('transferFolio')}</span>
-                </div>
-            )}
-        </CardContent>
-       </Card>
-    );
-  }
 
   const isMixedPayment = selectedPaymentMethod?.includes('+') || selectedPaymentMethod?.includes('/');
 
@@ -89,7 +57,6 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                   {...field} 
                   value={field.value}
                   onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
-                  disabled={isReadOnly} 
                 />
               </FormControl>
             </FormItem>
@@ -109,7 +76,6 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                         type="tel"
                         placeholder="Ej: 4491234567" 
                         {...field} 
-                        disabled={isReadOnly} 
                         className="pl-8"
                       />
                     </FormControl>
@@ -123,7 +89,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Método de Pago</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Seleccione método de pago" /></SelectTrigger>
                   </FormControl>
@@ -164,7 +130,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
             render={({ field }) => (
               <FormItem>
                 <FormLabel className={cn(errors.cardFolio && "text-destructive")}>Folio Terminal (Tarjeta)</FormLabel>
-                <FormControl><Input placeholder="Ingrese folio de la transacción" {...field} disabled={isReadOnly} className={cn(errors.cardFolio && "border-destructive focus-visible:ring-destructive")} /></FormControl>
+                <FormControl><Input placeholder="Ingrese folio de la transacción" {...field} className={cn(errors.cardFolio && "border-destructive focus-visible:ring-destructive")} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -177,7 +143,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
             render={({ field }) => (
               <FormItem>
                 <FormLabel className={cn(errors.transferFolio && "text-destructive")}>Folio Transferencia</FormLabel>
-                <FormControl><Input placeholder="Referencia de la transferencia" {...field} disabled={isReadOnly} className={cn(errors.transferFolio && "border-destructive focus-visible:ring-destructive")} /></FormControl>
+                <FormControl><Input placeholder="Referencia de la transferencia" {...field} className={cn(errors.transferFolio && "border-destructive focus-visible:ring-destructive")} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
