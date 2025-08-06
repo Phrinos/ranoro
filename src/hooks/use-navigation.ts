@@ -1,3 +1,4 @@
+
 // src/hooks/use-navigation.ts
 "use client";
 
@@ -24,15 +25,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['dashboard:view']
   },
   { 
-    label: 'Cotizaciones', path: '/cotizaciones/historial', icon: FileText, groupTag: 'Mi Taller',
-    permissions: ['services:create'] 
-  },
-  { 
-    label: 'Agenda', path: '/servicios/agenda', icon: CalendarDays, groupTag: 'Mi Taller',
-    permissions: ['services:create']
-  },
-  { 
-    label: 'Servicios', path: '/servicios/historial', icon: Wrench, groupTag: 'Mi Taller',
+    label: 'Servicios', path: '/servicios', icon: Wrench, groupTag: 'Mi Taller',
     permissions: ['services:view_history']
   },
   { 
@@ -140,7 +133,28 @@ const useNavigation = (): NavigationEntry[] => {
   const entriesWithActiveState = filteredNavStructure.map(entry => {
     let isActive = pathname === entry.path.split('?')[0];
     const isParentRoute = pathname.startsWith(`${entry.path.split('?')[0]}/`);
-    if (isParentRoute) {
+
+    if (pathname.startsWith('/servicios')) {
+        isActive = entry.path === '/servicios';
+    } else if (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios')) {
+        isActive = entry.path === '/vehiculos';
+    } else if (pathname.startsWith('/pos')) {
+        isActive = entry.path === '/pos';
+    } else if (pathname.startsWith('/caja')) {
+        isActive = entry.path === '/caja';
+    } else if (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos')) {
+        isActive = entry.path === '/personal';
+    } else if (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual')) {
+        isActive = entry.path === '/opciones';
+    } else if (pathname.startsWith('/finanzas') || pathname.startsWith('/facturacion-admin')) {
+        isActive = entry.path === '/finanzas';
+    } else if (pathname.startsWith('/administracion') || pathname.startsWith('/admin')) {
+        isActive = entry.path === '/administracion';
+    } else if (pathname.startsWith('/flotilla') || pathname.startsWith('/rentas')) {
+        isActive = entry.path === '/flotilla' || entry.path === '/rentas';
+        if (pathname.startsWith('/flotilla') && entry.path === '/rentas') isActive = false;
+        if (pathname.startsWith('/rentas') && entry.path === '/flotilla') isActive = false;
+    } else if (isParentRoute) {
         const isMoreSpecificActive = filteredNavStructure.some(otherEntry => 
             pathname.startsWith(`${otherEntry.path.split('?')[0]}/`) && otherEntry.path.length > entry.path.length
         );
@@ -149,30 +163,12 @@ const useNavigation = (): NavigationEntry[] => {
         }
     }
     
-    // Path-specific grouping logic
-    if (pathname.startsWith('/servicios/')) isActive = entry.path === '/servicios/historial';
-    if (pathname.startsWith('/cotizaciones')) isActive = entry.path === '/cotizaciones/historial';
-    if (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios')) isActive = entry.path === '/vehiculos';
-    if (pathname.startsWith('/pos')) isActive = entry.path === '/pos';
-    if (pathname.startsWith('/caja')) isActive = entry.path === '/caja';
-    if (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos')) isActive = entry.path === '/personal';
-    if (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual')) isActive = entry.path === '/opciones';
-    if (pathname.startsWith('/finanzas') || pathname.startsWith('/facturacion-admin')) isActive = entry.path === '/finanzas';
-    if (pathname.startsWith('/administracion') || pathname.startsWith('/admin')) isActive = entry.path === '/administracion';
-    
-    // Specific deactivations for clarity
-    if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/agenda') || pathname.startsWith('/servicios/nuevo'))) isActive = false;
+    // Specific deactivations
+    if (entry.path === '/servicios' && (pathname.startsWith('/servicios/nuevo'))) isActive = false;
     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
-    if (entry.path === '/rentas' && pathname.startsWith('/flotilla')) isActive = false;
-    if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
     if (pathname.startsWith('/inventario')) isActive = entry.path === '/inventario';
     if (pathname.startsWith('/proveedores')) isActive = entry.path === '/proveedores';
     
-    // Combined flotilla/rentas logic
-    if (pathname.startsWith('/flotilla') || pathname.startsWith('/rentas')) {
-        isActive = entry.path === '/flotilla';
-    }
-
     return { ...entry, isActive };
   });
   

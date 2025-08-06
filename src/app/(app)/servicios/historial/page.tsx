@@ -1,23 +1,16 @@
 
 
-import { Suspense, lazy } from 'react';
-import { Loader2 } from 'lucide-react';
+"use client";
 
-const HistorialServiciosPageComponent = lazy(() => 
-  import('./components/page-component').then(module => ({ default: module.HistorialServiciosPageComponent }))
-);
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
+export default function HistorialRedirector() {
+  const router = useRouter();
+  
+  useEffect(() => {
+    router.replace('/servicios?tab=historial');
+  }, [router]);
 
-export default function HistorialServiciosPageWrapper({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  const status = searchParams?.status as string | undefined;
-
-  return (
-    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <HistorialServiciosPageComponent status={status} />
-    </Suspense>
-  );
+  return null; 
 }
