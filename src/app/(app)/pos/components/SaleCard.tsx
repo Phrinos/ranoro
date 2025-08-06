@@ -52,6 +52,7 @@ export const SaleCard = React.memo(({
         const category = inventoryItem?.category?.toUpperCase() || 'ARTÍCULO';
         const otherItemsCount = sale.items.length - 1;
         
+        // Remove truncate to allow wrapping
         return `${category}: ${firstItem.itemName}${otherItemsCount > 0 ? ` y ${otherItemsCount} más` : ''}`;
     }, [sale.items, inventoryItems]);
     
@@ -60,7 +61,6 @@ export const SaleCard = React.memo(({
             return [<Badge key="cancelled" variant="destructive" className="font-bold">CANCELADO</Badge>];
         }
         
-        // New logic: If `payments` array exists and has items, use it.
         if (Array.isArray(sale.payments) && sale.payments.length > 0) {
             return sale.payments.map((p, index) => (
                 <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
@@ -69,16 +69,14 @@ export const SaleCard = React.memo(({
             ));
         }
 
-        // Fallback for older records with string-based `paymentMethod`
         if (typeof sale.paymentMethod === 'string') {
             const methods = sale.paymentMethod.split(/[+/]/);
             const totalAmount = sale.totalAmount || 0;
-            const amountPerMethod = methods.length > 1 ? 0 : totalAmount; // Assign total only if single method
-
+            const amountPerMethod = totalAmount / methods.length;
+            
             return methods.map((method, index) => (
-                <Badge key={index} variant={getPaymentMethodVariant(method.trim() as Payment['method'])} className="text-xs">
-                    {/* If amounts are not detailed, show total on the first badge or handle as needed */}
-                    {formatCurrency(index === 0 ? totalAmount : 0)} <span className="font-normal ml-1 opacity-80">({method.trim()})</span>
+                 <Badge key={index} variant={getPaymentMethodVariant(method.trim() as Payment['method'])} className="text-xs">
+                    {formatCurrency(amountPerMethod)} <span className="font-normal ml-1 opacity-80">({method.trim()})</span>
                 </Badge>
             ));
         }
@@ -109,16 +107,7 @@ export const SaleCard = React.memo(({
                     {/* Bloque 2: Artículos y Cliente */}
                     <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-y md:border-y-0 md:border-x">
                        <div className="font-bold text-lg">
-                            <TooltipProvider>
-                                <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <span className="truncate">{itemsDescription}</span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    {sale.items.map(i => <p key={i.inventoryItemId}>{i.quantity} x {i.itemName}</p>)}
-                                </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                           <p className="whitespace-normal">{itemsDescription}</p>
                        </div>
                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
                             <UserIcon className="h-3 w-3" />
@@ -126,11 +115,12 @@ export const SaleCard = React.memo(({
                        </div>
                     </div>
                     
-                    <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right border-t md:border-0 md:border-l w-full md:w-auto flex-shrink-0 space-y-2">
-                        <div>
+                    {/* Bloque 3: Costo y Vendedor */}
+                    <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-2 border-t md:border-0 md:border-l">
+                         <div>
                            <p className="text-xs text-muted-foreground">Costo Cliente</p>
                            <p className="font-bold text-xl text-primary">{formatCurrency(sale.totalAmount)}</p>
-                           <p className="text-sm text-green-600 flex items-center gap-1">
+                           <p className="text-sm text-green-600 flex items-center gap-1 justify-end">
                                 <TrendingUp className="h-4 w-4" /> {formatCurrency(profit)}
                            </p>
                         </div>
@@ -139,7 +129,6 @@ export const SaleCard = React.memo(({
                            <p className="text-sm">{sellerName}</p>
                         </div>
                     </div>
-
 
                     {/* Bloque 4: Método de Pago */}
                      <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-48 flex-shrink-0 space-y-2">
