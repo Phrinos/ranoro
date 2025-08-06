@@ -5,9 +5,9 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { formatCurrency, getPaymentMethodVariant, capitalizeWords } from '@/lib/utils';
-import type { SaleReceipt, InventoryItem, User } from '@/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { formatCurrency, capitalizeWords } from '@/lib/utils';
+import type { SaleReceipt, InventoryItem, User, Payment } from '@/types';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import { User as UserIcon, TrendingUp, Wallet, CreditCard, Send, ShoppingCart, Tags, AlertCircle } from 'lucide-react';
 
@@ -67,15 +67,21 @@ export function PosFormView({ sale, inventory, users }: PosFormViewProps) {
                     )}
                     <div className="space-y-2">
                         {sale.items.length > 0 ? (
-                            sale.items.map((item, index) => (
-                                <div key={index} className="flex justify-between items-center p-2 border rounded-md">
-                                    <div>
-                                        <p className="font-medium">{item.itemName}</p>
-                                        <p className="text-sm text-muted-foreground">{item.quantity} x {formatCurrency(item.unitPrice)}</p>
+                            sale.items.map((item, index) => {
+                                const inventoryItem = inventory.find(inv => inv.id === item.inventoryItemId);
+                                const isCommission = item.inventoryItemId === 'COMMISSION_FEE';
+                                const cost = isCommission ? item.unitPrice : inventoryItem?.unitPrice || 0;
+                                return (
+                                    <div key={index} className="flex justify-between items-center p-2 border rounded-md">
+                                        <div>
+                                            <p className="font-medium">{item.itemName}</p>
+                                            <p className="text-sm text-muted-foreground">{item.quantity} x {formatCurrency(item.unitPrice)}</p>
+                                            <p className="text-xs text-blue-600">Costo Taller: {formatCurrency(cost)}</p>
+                                        </div>
+                                        <p className="font-semibold">{formatCurrency(item.totalPrice)}</p>
                                     </div>
-                                    <p className="font-semibold">{formatCurrency(item.totalPrice)}</p>
-                                </div>
-                            ))
+                                )
+                            })
                         ) : (
                             <div className="text-center text-muted-foreground p-4">No hay artículos en esta venta.</div>
                         )}
