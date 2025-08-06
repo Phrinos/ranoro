@@ -10,7 +10,8 @@ import {
   getDoc,
   query,
   orderBy,
-  Timestamp
+  Timestamp,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { User, AppRole, AuditLog } from "@/types";
@@ -61,6 +62,18 @@ const onUsersUpdate = (callback: (users: User[]) => void): (() => void) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
     }, (error) => console.error("Error listening to users:", error instanceof Error ? error.message : String(error)));
 };
+
+/**
+ * Fetches the current list of users once.
+ * @returns A promise that resolves to an array of users.
+ */
+const onUsersUpdatePromise = async (): Promise<User[]> => {
+    if (!db) return [];
+    const usersCollection = collection(db, 'users');
+    const snapshot = await getDocs(usersCollection);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+};
+
 
 /**
  * Subscribes to real-time updates of the application roles.
@@ -218,6 +231,7 @@ const updateUserProfile = async (user: Partial<User> & { id: string }): Promise<
 
 export const adminService = {
     onUsersUpdate,
+    onUsersUpdatePromise,
     onRolesUpdate,
     onAuditLogsUpdate,
     saveUser,
