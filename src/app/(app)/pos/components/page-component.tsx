@@ -194,7 +194,15 @@ Total: ${formatCurrency(sale.totalAmount)}
         </div>
       </PrintTicketDialog>
       
-      {selectedSale && <ViewSaleDialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} sale={selectedSale} onCancelSale={handleCancelSale} onSendWhatsapp={handleCopySaleForWhatsapp} />}
+      {selectedSale && <ViewSaleDialog
+        open={isViewDialogOpen} 
+        onOpenChange={setIsViewDialogOpen} 
+        sale={selectedSale} 
+        inventory={allInventory}
+        users={allUsers}
+        onCancelSale={handleCancelSale} 
+        onSendWhatsapp={handleCopySaleForWhatsapp} 
+      />}
 
       {saleToEditPayment && (
         <PaymentDetailsDialog
