@@ -40,9 +40,13 @@ export const SaleCard = React.memo(({
     const profit = calculateSaleProfit(sale, inventoryItems);
     const isCancelled = sale.status === 'Cancelado';
 
-    const firstItem = sale.items?.[0];
-    const firstItemDetails = firstItem ? inventoryItems.find(i => i.id === firstItem.inventoryItemId) : null;
-    const category = firstItemDetails?.category || 'Varios';
+    const getItemsWithCategory = () => {
+        return sale.items.map(item => {
+            const inventoryItem = inventoryItems.find(i => i.id === item.inventoryItemId);
+            const category = inventoryItem?.category?.toUpperCase() || '';
+            return `${category} ${item.itemName}`;
+        }).join(', ');
+    };
 
     return (
         <Card className={cn("shadow-sm overflow-hidden", isCancelled && "bg-muted/60 opacity-80")}>
@@ -57,15 +61,11 @@ export const SaleCard = React.memo(({
 
                     {/* Bloque 2: Artículos y Cliente */}
                     <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-y md:border-y-0 md:border-x">
-                       <div className="flex items-center gap-2 text-muted-foreground">
-                          <ShoppingCart className="h-4 w-4" />
-                           <Badge variant="outline">{category}</Badge>
-                       </div>
                        <div className="font-bold text-black text-base">
                             <TooltipProvider>
                                 <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <span className="truncate">{sale.items.map(i => i.itemName).join(', ')}</span>
+                                    <span className="truncate">{getItemsWithCategory()}</span>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     {sale.items.map(i => <p key={i.inventoryItemId}>{i.quantity} x {i.itemName}</p>)}
