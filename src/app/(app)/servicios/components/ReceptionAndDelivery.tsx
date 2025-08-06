@@ -85,7 +85,7 @@ export const ReceptionAndDelivery = ({
     : null;
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
       {/* --- RECEPCIÓN CARD --- */}
       <Card>
         <CardHeader>
@@ -95,82 +95,78 @@ export const ReceptionAndDelivery = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <div className="space-y-2">
-                <FormLabel>Fecha y Hora de Ingreso</FormLabel>
-                <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
-                    {formattedReceptionDate || 'Pendiente'}
-                </div>
-            </div>
-            <FormField
-                control={control}
-                name="fuelLevel"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Nivel de Combustible</FormLabel>
-                    <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isReadOnly}
-                    >
-                    <FormControl>
-                        <SelectTrigger>
-                        <SelectValue placeholder="Seleccione nivel..." />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {fuelLevels.map((level) => (
-                        <SelectItem key={level} value={level}>
-                            {level}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
-                </FormItem>
-                )}
-            />
+           <div className="space-y-2">
+              <FormLabel>Fecha y Hora de Ingreso</FormLabel>
+              <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
+                  {formattedReceptionDate || 'Pendiente'}
+              </div>
           </div>
+          <FormField
+              control={control}
+              name="fuelLevel"
+              render={({ field }) => (
+              <FormItem>
+                  <FormLabel>Nivel de Combustible</FormLabel>
+                  <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  disabled={isReadOnly}
+                  >
+                  <FormControl>
+                      <SelectTrigger>
+                      <SelectValue placeholder="Seleccione nivel..." />
+                      </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                      {fuelLevels.map((level) => (
+                      <SelectItem key={level} value={level}>
+                          {level}
+                      </SelectItem>
+                      ))}
+                  </SelectContent>
+                  </Select>
+              </FormItem>
+              )}
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={control}
-              name="vehicleConditions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex justify-between items-center w-full">
-                    <span>Condiciones del Vehículo</span>
-                    {!isReadOnly && (
-                      <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}>
-                        {isEnhancingText === "vehicleConditions" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                      </Button>
-                    )}
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} disabled={isReadOnly} className="min-h-[100px]" />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="customerItems"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex justify-between items-center w-full">
-                    <span>Pertenencias del Cliente</span>
-                    {!isReadOnly && (
-                      <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}>
-                        {isEnhancingText === "customerItems" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                      </Button>
-                    )}
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} disabled={isReadOnly} className="min-h-[100px]" />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            control={control}
+            name="vehicleConditions"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex justify-between items-center w-full">
+                  <span>Condiciones del Vehículo</span>
+                  {!isReadOnly && (
+                    <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}>
+                      {isEnhancingText === "vehicleConditions" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                    </Button>
+                  )}
+                </FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} disabled={isReadOnly} className="min-h-[100px]" />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="customerItems"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex justify-between items-center w-full">
+                  <span>Pertenencias del Cliente</span>
+                  {!isReadOnly && (
+                    <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}>
+                      {isEnhancingText === "customerItems" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                    </Button>
+                  )}
+                </FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} disabled={isReadOnly} className="min-h-[100px]" />
+                </FormControl>
+              </FormItem>
+            )}
+          />
           
           <div className="pt-4 border-t">
             <FormLabel className="font-semibold text-base">Firma de Ingreso</FormLabel>
@@ -270,5 +266,3 @@ export const ReceptionAndDelivery = ({
     </div>
   );
 };
-
-    
