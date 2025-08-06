@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ServiceRecord, PaymentMethod, SaleReceipt, Payment } from "@/types";
-import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, DollarSign } from "lucide-react";
+import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, DollarSign, Trash2, PlusCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -112,7 +112,7 @@ export function PaymentDetailsDialog({
     if (Math.abs(totalPaid - totalAmount) > 0.01) {
         toast({
             title: "El pago no coincide",
-            description: `El total pagado (${formatCurrency(totalPaid)}) no coincide con el total del servicio (${formatCurrency(totalAmount)}).`,
+            description: `El total pagado (${formatCurrency(totalPaid)}) no coincide con el total del registro (${formatCurrency(totalAmount)}).`,
             variant: "destructive"
         });
         return;
@@ -163,6 +163,7 @@ export function PaymentDetailsDialog({
               })}
               {availablePaymentMethods.length > 0 && (
                   <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: 0, folio: '' })}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
                       Añadir método de pago
                   </Button>
               )}
