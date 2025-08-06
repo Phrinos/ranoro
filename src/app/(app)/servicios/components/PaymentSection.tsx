@@ -1,5 +1,5 @@
 
-
+// src/app/(app)/servicios/components/PaymentSection.tsx
 "use client";
 
 import React from 'react';
@@ -8,11 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wallet, CreditCard, Send } from 'lucide-react';
-import type { Payment } from '@/types';
+import { Wallet, CreditCard, Send, PlusCircle, Trash2, DollarSign } from 'lucide-react';
+import type { Payment, ServiceFormValues } from '@/types';
 import { Button } from '@/components/ui/button';
-import { capitalizeWords, formatCurrency } from '@/lib/utils';
-import { DollarSign, PlusCircle, Trash2 } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
+import { useServiceTotals } from '@/hooks/use-service-form-hooks';
 
 const paymentMethods: Payment['method'][] = ['Efectivo', 'Tarjeta', 'Tarjeta MSI', 'Transferencia'];
 
@@ -24,11 +24,17 @@ const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
 };
 
 export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean }) {
-  const { control, watch } = useFormContext();
+  const form = useFormContext<ServiceFormValues>();
+  const { control, watch } = form;
   const { fields, append, remove } = useFieldArray({
     control,
     name: "payments",
   });
+
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
+  const IVA_RATE = 0.16;
+  const subTotal = totalCost / (1 + IVA_RATE);
+  const tax = totalCost - subTotal;
 
   const watchedPayments = watch("payments");
   const isDelivered = watch('status') === 'Entregado';
@@ -39,30 +45,13 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
   
   const totalPaid = watchedPayments?.reduce((acc: number, p: Payment) => acc + (Number(p.amount) || 0), 0) || 0;
   
-  if (isReadOnly && isDelivered) {
-    return (
-       <Card>
-        <CardHeader>
-            <CardTitle>Detalles del Pago</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-           {watchedPayments?.map((p: Payment, index: number) => (
-             <div key={index} className="flex justify-between">
-                <span className="text-muted-foreground">{p.method} {p.folio && `(Folio: ${p.folio})`}:</span>
-                <span className="font-semibold">{formatCurrency(p.amount)}</span>
-            </div>
-           ))}
-        </CardContent>
-       </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Métodos de Pago</CardTitle>
+        <CardTitle>Pago y Resumen</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Payment Methods Section */}
         <div className="space-y-4 rounded-md border p-4">
            {fields.map((field, index) => {
                 const selectedMethod = watchedPayments[index]?.method;
@@ -142,6 +131,30 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
               name="payments"
               render={({ field }) => <FormMessage />}
             />
+        </div>
+
+        {/* Totals Section */}
+        <div className="w-full mt-auto space-y-2 pt-4 border-t">
+            <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal:</span>
+                <span className="font-medium">{formatCurrency(subTotal)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">IVA (16%):</span>
+                <span className="font-medium">{formatCurrency(tax)}</span>
+            </div>
+            <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                <span>TOTAL:</span>
+                <span className="text-primary">{formatCurrency(totalCost)}</span>
+            </div>
+            <div className="flex justify-between text-sm pt-2 border-t">
+                <span className="text-muted-foreground">Costo Insumos (Taller):</span>
+                <span className="font-medium">{formatCurrency(totalSuppliesWorkshopCost)}</span>
+            </div>
+            <div className="flex justify-between text-sm font-semibold text-green-600">
+                <span>Ganancia Bruta:</span>
+                <span>{formatCurrency(serviceProfit)}</span>
+            </div>
         </div>
       </CardContent>
     </Card>

@@ -30,7 +30,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VehicleSelectionCard } from '../components/VehicleSelectionCard';
 import { ServiceItemsList } from '../components/ServiceItemsList';
-import { ServiceSummary } from '../components/ServiceSummary';
+import { PaymentSection } from '../components/PaymentSection';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
@@ -44,7 +44,6 @@ const statusOptions: { value: ServiceRecord['status'], label: string }[] = [
     { value: 'Cotizacion', label: 'Cotización' },
     { value: 'Agendado', label: 'Agendado' },
     { value: 'En Taller', label: 'En Taller' },
-    { value: 'Proveedor Externo', label: 'Proveedor Externo' },
     { value: 'Entregado', label: 'Entregado' },
 ];
 
@@ -208,116 +207,117 @@ export default function NuevoServicioPage() {
 
   return (
     <FormProvider {...methods}>
-      <Card className="bg-white border rounded-lg p-6 shadow-sm mb-6">
-        <CardHeader className="p-0">
-          <CardTitle>Nuevo Servicio / Cotización</CardTitle>
-          <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0 mt-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-            <FormField
-              control={control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="font-bold">
-                        <SelectValue placeholder="Seleccione un estado" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {statusOptions.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-            {relevantSubStatusOptions.length > 0 && (
-              <FormField
-                control={control}
-                name="subStatus"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sub-Estado</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={relevantSubStatusOptions.length === 0}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccione sub-estado..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {relevantSubStatusOptions.map(opt => (
-                            <SelectItem key={opt.value} value={opt.value!}>{opt.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
+      <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Nuevo Servicio / Cotización</CardTitle>
+              <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                  <FormField
+                    control={control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="font-bold">
+                              <SelectValue placeholder="Seleccione un estado" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {statusOptions.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                  {relevantSubStatusOptions.length > 0 && (
+                    <FormField
+                      control={control}
+                      name="subStatus"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sub-Estado</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value} disabled={relevantSubStatusOptions.length === 0}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccione sub-estado..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {relevantSubStatusOptions.map(opt => (
+                                  <SelectItem key={opt.value} value={opt.value!}>{opt.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                  )}
+               </div>
+               {watchedStatus === 'Agendado' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end pt-4 border-t">
+                    <Controller
+                      name="serviceDate"
+                      control={control}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel className={cn(formState.errors.serviceDate && "text-destructive")}>Fecha de Cita</FormLabel>
+                          <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", formState.errors.serviceDate && "border-destructive focus-visible:ring-destructive")}>
+                                {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                                <CalendarDateIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={(date) => {
+                                  const currentTime = field.value || new Date();
+                                  const newDate = date ? setMinutes(setHours(date, currentTime.getHours()), currentTime.getMinutes()) : undefined;
+                                  field.onChange(newDate);
+                                  setIsDatePickerOpen(false);
+                                }}
+                                initialFocus
+                                locale={es}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </FormItem>
+                      )}
+                    />
+                    <Controller
+                      name="serviceDate"
+                      control={control}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hora de la Cita</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="time"
+                              value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
+                              onChange={(e) => {
+                                if (!e.target.value) return;
+                                const [h, m] = e.target.value.split(':').map(Number);
+                                field.onChange(setMinutes(setHours(field.value || new Date(), h), m));
+                              }}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 )}
-              />
-            )}
-          </div>
-          {watchedStatus === 'Agendado' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end pt-4 border-t">
-              <Controller
-                name="serviceDate"
-                control={control}
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel className={cn(formState.errors.serviceDate && "text-destructive")}>Fecha de Cita</FormLabel>
-                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", formState.errors.serviceDate && "border-destructive focus-visible:ring-destructive")}>
-                          {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                          <CalendarDateIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={(date) => {
-                            const currentTime = field.value || new Date();
-                            const newDate = date ? setMinutes(setHours(date, currentTime.getHours()), currentTime.getMinutes()) : undefined;
-                            field.onChange(newDate);
-                            setIsDatePickerOpen(false);
-                          }}
-                          initialFocus
-                          locale={es}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </FormItem>
-                )}
-              />
-              <Controller
-                name="serviceDate"
-                control={control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hora de la Cita</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="time"
-                        value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                        onChange={(e) => {
-                          if (!e.target.value) return;
-                          const [h, m] = e.target.value.split(':').map(Number);
-                          field.onChange(setMinutes(setHours(field.value || new Date(), h), m));
-                        }}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6 mt-6">
+            </CardContent>
+          </Card>
+        
         <VehicleSelectionCard
           isReadOnly={false}
           localVehicles={vehicles}
@@ -337,7 +337,7 @@ export default function NuevoServicioPage() {
             />
           </div>
           <div className="lg:col-span-2 space-y-6">
-            <ServiceSummary />
+            <PaymentSection />
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">

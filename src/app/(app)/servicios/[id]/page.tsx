@@ -19,7 +19,7 @@ import { db } from '@/lib/firebaseClient';
 import { VehicleSelectionCard } from '../components/VehicleSelectionCard';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import { ServiceItemsList } from '../components/ServiceItemsList';
-import { ServiceSummary } from '../components/ServiceSummary';
+import { PaymentSection } from '../components/PaymentSection';
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
 
 
@@ -144,7 +144,7 @@ export default function EditarServicioPage() {
     if (!serviceToComplete || !db) return;
     try {
         const batch = writeBatch(db);
-        await serviceService.completeService(serviceToComplete, paymentDetails, batch);
+        await serviceService.completeService(serviceToComplete, { ...paymentDetails, nextServiceInfo: serviceToComplete.nextServiceInfo }, batch);
         await batch.commit();
         toast({ title: "Servicio Completado" });
         setIsPaymentDialogOpen(false);
@@ -201,10 +201,11 @@ export default function EditarServicioPage() {
                     onNewInventoryItemCreated={handleNewInventoryItemCreated}
                     categories={categories}
                     suppliers={suppliers}
+                    serviceTypes={serviceTypes}
                 />
                 </div>
                 <div className="lg:col-span-2 space-y-6">
-                    <ServiceSummary />
+                    <PaymentSection />
                 </div>
             </div>
 
@@ -240,7 +241,7 @@ export default function EditarServicioPage() {
             open={isPaymentDialogOpen}
             onOpenChange={setIsPaymentDialogOpen}
             record={serviceToComplete}
-            onConfirm={(id, details) => handleCompleteService(details)}
+            onConfirm={(id, details) => handleCompleteService(serviceToComplete, details)}
             isCompletionFlow={true}
             />
         )}
