@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,27 +51,33 @@ export function SaleSummary() {
   const [validationIndex, setValidationIndex] = useState<number | null>(null);
   const [validationFolio, setValidationFolio] = useState('');
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
-
-  const handleOpenValidateDialog = (index: number) => {
-    setValidationIndex(index);
-    setValidationFolio('');
-    setIsValidationDialogOpen(true);
-  };
-
-  const handleConfirmValidation = () => {
-    if (validationIndex === null) return;
-    const originalFolio = watch(`payments.${validationIndex}.folio`);
-    
-    if (validationFolio === originalFolio) {
-      setValidatedFolios(prev => ({ ...prev, [validationIndex]: true }));
-      toast({ title: "Folio Validado", description: "El folio coincide correctamente." });
-    } else {
-      setValidatedFolios(prev => ({ ...prev, [validationIndex]: false }));
-      toast({ title: "Error de Validación", description: "Los folios no coinciden. Por favor, verifique.", variant: "destructive" });
-    }
-    setIsValidationDialogOpen(false);
-  };
   
+  const previousPaymentsRef = useRef<Payment[]>([]);
+
+  useEffect(() => {
+    // This effect runs when watchedPayments changes.
+    // It compares the current payments with the previous state.
+    const currentPayments = watchedPayments || [];
+    
+    // Check if a payment method has changed for any entry.
+    currentPayments.forEach((currentPayment, index) => {
+      const previousPayment = previousPaymentsRef.current[index];
+      if (previousPayment && currentPayment.method !== previousPayment.method) {
+        // Method has changed, reset validation for this index.
+        setValidatedFolios(prev => {
+          const newValidated = { ...prev };
+          delete newValidated[index];
+          return newValidated;
+        });
+      }
+    });
+
+    // Update the ref to the current state for the next render.
+    previousPaymentsRef.current = JSON.parse(JSON.stringify(currentPayments));
+
+  }, [watchedPayments]);
+  
+
   // Recalculate commissions and totals when items or payments change
   useEffect(() => {
     const currentItems = getValues('items') || [];
@@ -83,7 +89,6 @@ export function SaleSummary() {
 
     let newItems = currentItems.filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'));
 
-    // Check if card payments are present AND validated
     const hasValidatedCardPayment = currentPayments.some((p: Payment, index: number) => p.method === 'Tarjeta' && validatedFolios[index]);
     const hasValidatedMSIPayment = currentPayments.some((p: Payment, index: number) => p.method === 'Tarjeta MSI' && validatedFolios[index]);
 
@@ -111,11 +116,30 @@ export function SaleSummary() {
       });
     }
 
-    // Use a simple check to avoid infinite re-renders
     if (JSON.stringify(newItems) !== JSON.stringify(currentItems)) {
       setValue('items', newItems, { shouldDirty: true });
     }
   }, [watchedPayments, watchedItems, getValues, setValue, validatedFolios]);
+
+  const handleOpenValidateDialog = (index: number) => {
+    setValidationIndex(index);
+    setValidationFolio('');
+    setIsValidationDialogOpen(true);
+  };
+
+  const handleConfirmValidation = () => {
+    if (validationIndex === null) return;
+    const originalFolio = watch(`payments.${validationIndex}.folio`);
+    
+    if (validationFolio === originalFolio) {
+      setValidatedFolios(prev => ({ ...prev, [validationIndex]: true }));
+      toast({ title: "Folio Validado", description: "El folio coincide correctamente." });
+    } else {
+      setValidatedFolios(prev => ({ ...prev, [validationIndex]: false }));
+      toast({ title: "Error de Validación", description: "Los folios no coinciden. Por favor, verifique.", variant: "destructive" });
+    }
+    setIsValidationDialogOpen(false);
+  };
 
 
   const { subTotal, tax, total } = useMemo(() => {
@@ -162,7 +186,7 @@ export function SaleSummary() {
                                 step="0.01"
                                 placeholder="0.00"
                                 {...field}
-                                value={field.value === 0 ? '' : field.value ?? ''}
+                                value={field.value ?? ''}
                                 onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                                 className="pl-8 bg-white"
                               />
