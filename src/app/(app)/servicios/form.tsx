@@ -1,29 +1,51 @@
 
-/* app/(app)/servicios/components/service-form.tsx */
+/* app/(app)/servicios/form.tsx */
 'use client'
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, FormProvider, useFormContext } from "react-hook-form"
 
-import { useCallback, useState, useEffect, useRef } from 'react'
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import { nanoid } from 'nanoid'
+import {
+  Ban, Camera, CheckCircle, Download, Eye, ShieldCheck, Trash2, Wrench, BrainCircuit, Loader2, PlusCircle, Signature,
+  CalendarIcon, Wallet, DollarSign, CalendarCheck, Edit
+} from 'lucide-react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { format, setHours, setMinutes, isValid, addDays, addMonths, addYears } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+import { Button } from '@/components/ui/button'
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
+import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 
 import type {
   ServiceRecord, Vehicle, Technician, InventoryItem,
   QuoteRecord, User, ServiceTypeRecord, InventoryCategory, Supplier
 } from '@/types' 
 
-import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog'
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { VehicleSelectionCard } from './components/VehicleSelectionCard'
 import { serviceFormSchema } from '@/schemas/service-form';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
-import { ServiceDetailsHeader } from './components/ServiceDetailsHeader';
 import { ServiceItemsList } from './components/ServiceItemsList';
 import { ServiceSummary } from './components/ServiceSummary';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
@@ -162,13 +184,109 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
 
     onSubmit(dataToSubmit);
   };
+  
+    const watchedStatus = watch('status');
+    const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
+
+    const showAppointmentFields = useMemo(() => {
+        return watchedStatus === 'Agendado';
+    }, [watchedStatus]);
+
+    const showTechnicianField = useMemo(() => {
+        return watchedStatus === 'En Taller' || watchedStatus === 'Entregado';
+    }, [watchedStatus]);
+
 
   return (
     <>
         <FormProvider {...form}>
             <form ref={ref} id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
                 <div className="flex-grow overflow-y-auto space-y-6">
-                    <ServiceDetailsHeader technicians={technicians} serviceTypes={serviceTypes} />
+                    {/* START: Moved from ServiceDetailsHeader */}
+                     <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle className="text-lg">Detalles Generales del Servicio</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <FormField
+                                control={control}
+                                name="status"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Estado del Servicio</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Cotizacion">Cotización</SelectItem>
+                                        <SelectItem value="Agendado">Agendado</SelectItem>
+                                        <SelectItem value="En Taller">En Taller</SelectItem>
+                                        <SelectItem value="Entregado">Entregado</SelectItem>
+                                    </SelectContent>
+                                    </Select>
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={control}
+                                name="serviceType"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tipo de Servicio</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {serviceTypes.map((type) => (
+                                        <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                    </Select>
+                                </FormItem>
+                                )}
+                            />
+                            {showAppointmentFields && (
+                                <FormField
+                                    control={control}
+                                    name="serviceDate"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>Fecha de Cita</FormLabel>
+                                            <Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}>
+                                                <PopoverTrigger asChild disabled={isReadOnly}>
+                                                    <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>
+                                                        {field.value ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date); setIsServiceDatePickerOpen(false); }} disabled={isReadOnly} initialFocus locale={es} />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+                            {showTechnicianField && (
+                                <FormField
+                                    control={control}
+                                    name="technicianId"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Técnico Asignado</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione técnico..." /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    {technicians.filter(t => !t.isArchived).map((tech) => (
+                                                        <SelectItem key={tech.id} value={tech.id}>{tech.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+                        </CardContent>
+                    </Card>
+                    {/* END: Moved from ServiceDetailsHeader */}
 
                     <VehicleSelectionCard
                         isReadOnly={props.isReadOnly}
