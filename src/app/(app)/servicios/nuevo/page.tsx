@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -11,7 +10,7 @@ import { ServiceForm } from "../components/service-form";
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, User } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { inventoryService, serviceService, purchaseService } from '@/lib/services';
+import { inventoryService, serviceService, purchaseService, adminService } from '@/lib/services';
 import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
@@ -74,7 +73,7 @@ export default function NuevoServicioPage() {
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
-
+  
   const handleSaleCompletion = async (values: POSFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
     
