@@ -82,6 +82,10 @@ export function useTableManager<T extends { [key: string]: any }>({
             if (typeof itemValue === 'string' && typeof value === 'string') {
                 return itemValue.includes(value);
             }
+            // Handle cases where itemValue is an array of objects (like payments)
+            if (Array.isArray(itemValue)) {
+              return itemValue.some(subItem => subItem && subItem.method === value);
+            }
             return itemValue === value;
         });
       }
@@ -96,9 +100,9 @@ export function useTableManager<T extends { [key: string]: any }>({
       const valB = getNestedValue(b, sortKey);
 
       // Date sorting
-      if (sortKey.toLowerCase().includes('date')) {
-        const dateA = parseDate(valA); // Use robust parser
-        const dateB = parseDate(valB); // Use robust parser
+      if (sortKey.toLowerCase().includes('date') || sortKey === 'saleDate' || sortKey === 'deliveryDateTime') {
+        const dateA = parseDate(valA);
+        const dateB = parseDate(valB);
         if (!dateA || !isValid(dateA)) return 1;
         if (!dateB || !isValid(dateB)) return -1;
         return isAsc ? compareAsc(dateA, dateB) : compareDesc(dateA, dateB);
@@ -120,7 +124,14 @@ export function useTableManager<T extends { [key: string]: any }>({
       if (valA == null) return 1;
       if (valB == null) return -1;
       
-      return 0; // No change if types are weird
+      // Default fallback for date (handles 'date_desc' etc.)
+      const dateA = parseDate(getNestedValue(a, dateFilterKey as string));
+      const dateB = parseDate(getNestedValue(b, dateFilterKey as string));
+      if(dateA && dateB) {
+        return compareDesc(dateA, dateB);
+      }
+      
+      return 0;
     });
 
     return data;
