@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceSummary.tsx
 "use client";
 

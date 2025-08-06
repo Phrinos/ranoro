@@ -7,7 +7,7 @@ import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Receipt, Save, Loader2, Wallet, CreditCard, Send, PlusCircle, Trash2, DollarSign, CheckCircle, AlertTriangle } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, capitalizeWords } from '@/lib/utils';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -113,6 +113,25 @@ export function SaleSummary() {
       <Card className="h-full flex flex-col">
         <CardHeader>
           <CardTitle>Resumen y Pago</CardTitle>
+          <div className="pt-2">
+           <FormField
+              control={control}
+              name="customerName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre del Cliente</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Ej: Cliente Mostrador" 
+                      {...field} 
+                      value={field.value}
+                      onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+        </div>
         </CardHeader>
         <CardContent className="pt-0 flex flex-col space-y-4 flex-grow">
           <div className="space-y-2">

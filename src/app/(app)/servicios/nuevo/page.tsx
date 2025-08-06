@@ -2,14 +2,15 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { PosForm } from '../components/pos-form';
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, serviceService, adminService } from '@/lib/services';
-import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-react';
+import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2, CalendarIcon as CalendarDateIcon } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
@@ -31,6 +32,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { VehicleSelectionCard } from '../components/VehicleSelectionCard';
 import { ServiceItemsList } from '../components/ServiceItemsList';
 import { ServiceSummary } from '../components/ServiceSummary';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+import { format, setHours, setMinutes, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 type ServiceCreationFormValues = z.infer<typeof serviceFormSchema>;
 
@@ -55,6 +62,8 @@ export default function NuevoServicioPage() {
   
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
+  
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const methods = useForm<ServiceCreationFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -173,13 +182,13 @@ export default function NuevoServicioPage() {
   return (
     <>
       <FormProvider {...methods}>
-        <Card className="bg-card border rounded-lg p-6 shadow-sm mb-6">
+        <Card className="bg-white border rounded-lg p-6 shadow-sm mb-6">
           <CardHeader className="p-0">
               <CardTitle>Nuevo Servicio / Cotización</CardTitle>
               <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
           </CardHeader>
-          <CardContent className="p-0 mt-4">
-              <div className="max-w-sm">
+          <CardContent className="p-0 mt-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                   control={control}
                   name="status"
@@ -201,6 +210,60 @@ export default function NuevoServicioPage() {
                       </FormItem>
                   )}
                   />
+                  {watchedStatus === 'Agendado' && (
+                       <div className="grid grid-cols-2 gap-2">
+                        <Controller
+                            name="serviceDate"
+                            control={control}
+                            render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel className={cn(formState.errors.serviceDate && "text-destructive")}>Fecha de Cita</FormLabel>
+                                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", formState.errors.serviceDate && "border-destructive focus-visible:ring-destructive")}>
+                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                                    <CalendarDateIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={(date) => {
+                                        const currentTime = field.value || new Date();
+                                        const newDate = date ? setMinutes(setHours(date, currentTime.getHours()), currentTime.getMinutes()) : undefined;
+                                        field.onChange(newDate);
+                                        setIsDatePickerOpen(false);
+                                    }}
+                                    initialFocus
+                                    locale={es}
+                                    />
+                                </PopoverContent>
+                                </Popover>
+                            </FormItem>
+                            )}
+                        />
+                         <Controller
+                            name="serviceDate"
+                            control={control}
+                            render={({ field }) => (
+                            <FormItem className="flex flex-col justify-end">
+                                <FormControl>
+                                <Input
+                                    type="time"
+                                    value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
+                                    onChange={(e) => {
+                                    if (!e.target.value) return;
+                                    const [h, m] = e.target.value.split(':').map(Number);
+                                    field.onChange(setMinutes(setHours(field.value || new Date(), h), m));
+                                    }}
+                                />
+                                </FormControl>
+                            </FormItem>
+                            )}
+                        />
+                       </div>
+                  )}
               </div>
           </CardContent>
         </Card>
