@@ -1,4 +1,5 @@
 
+
 // src/types/index.ts
 import { type VariantProps } from "class-variance-authority"
 import { sidebarMenuButtonVariants } from './sidebar.types';
@@ -215,7 +216,7 @@ export interface PhotoReportGroup {
 export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado';
 export type ServiceSubStatus = 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Proveedor Externo';
 
-export type PaymentType = 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Tarjeta MSI';
+export type PaymentType = 'Efectivo' | 'Tarjeta' | 'Tarjeta MSI' | 'Transferencia';
 export interface Payment {
     method: PaymentType;
     amount: number;
@@ -378,6 +379,7 @@ export interface SaleReceipt {
   tax: number;
   totalAmount: number;
   payments?: Payment[]; // <-- New payment structure
+  cardCommission?: number; // New field for card commission cost
   // Deprecated payment fields
   paymentMethod?: string;
   customerName?: string;
@@ -585,5 +587,3 @@ export interface PayableAccount {
     paidAmount: number;
     status: 'Pendiente' | 'Pagado Parcialmente' | 'Pagado';
 }
-
-    

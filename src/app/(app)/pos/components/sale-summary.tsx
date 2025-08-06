@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -55,15 +56,11 @@ export function SaleSummary() {
   const previousPaymentsRef = useRef<Payment[]>([]);
 
   useEffect(() => {
-    // This effect runs when watchedPayments changes.
-    // It compares the current payments with the previous state.
     const currentPayments = watchedPayments || [];
     
-    // Check if a payment method has changed for any entry.
-    currentPayments.forEach((currentPayment, index) => {
+    currentPayments.forEach((currentPayment: Payment, index: number) => {
       const previousPayment = previousPaymentsRef.current[index];
       if (previousPayment && currentPayment.method !== previousPayment.method) {
-        // Method has changed, reset validation for this index.
         setValidatedFolios(prev => {
           const newValidated = { ...prev };
           delete newValidated[index];
@@ -72,53 +69,10 @@ export function SaleSummary() {
       }
     });
 
-    // Update the ref to the current state for the next render.
     previousPaymentsRef.current = JSON.parse(JSON.stringify(currentPayments || []));
 
   }, [watchedPayments]);
   
-
-  // Recalculate commissions and totals when items or payments change
-  useEffect(() => {
-    const currentItems = getValues('items') || [];
-    const currentPayments = getValues('payments') || [];
-
-    const physicalItemsSubtotal = currentItems
-      .filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'))
-      .reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0);
-      
-    let newItems = currentItems.filter((item: any) => !item.inventoryItemId?.startsWith('COMMISSION'));
-
-    currentPayments.forEach((payment: Payment, index: number) => {
-        if (validatedFolios[index]) {
-            if (payment.method === 'Tarjeta') {
-                const commissionAmount = physicalItemsSubtotal * 0.041;
-                newItems.push({
-                    inventoryItemId: 'COMMISSION_CARD',
-                    itemName: 'Comisión Tarjeta (4.1%)',
-                    quantity: 1,
-                    unitPrice: commissionAmount,
-                    totalPrice: commissionAmount,
-                    isService: true,
-                });
-            } else if (payment.method === 'Tarjeta MSI') {
-                const commissionAmount = physicalItemsSubtotal * 0.077;
-                newItems.push({
-                    inventoryItemId: 'COMMISSION_MSI',
-                    itemName: 'Comisión Tarjeta MSI (7.7%)',
-                    quantity: 1,
-                    unitPrice: commissionAmount,
-                    totalPrice: commissionAmount,
-                    isService: true,
-                });
-            }
-        }
-    });
-
-    if (JSON.stringify(newItems) !== JSON.stringify(currentItems)) {
-      setValue('items', newItems, { shouldDirty: true });
-    }
-  }, [watchedPayments, validatedFolios, getValues, setValue]);
 
   const handleOpenValidateDialog = (index: number) => {
     setValidationIndex(index);

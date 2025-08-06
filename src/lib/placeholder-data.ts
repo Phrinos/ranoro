@@ -160,8 +160,11 @@ export const calculateSaleProfit = (
     }
   }
   
+  // The total amount already includes tax, so we get the pre-tax amount
   const totalAmountPreTax = sale.totalAmount / (1 + IVA_RATE);
-  const profit = totalAmountPreTax - totalCost;
+
+  // The profit is the pre-tax total minus the cost of goods and any card commission
+  const profit = totalAmountPreTax - totalCost - (sale.cardCommission || 0);
   
   return isFinite(profit) ? profit : 0;
 };
