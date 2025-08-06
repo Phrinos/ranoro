@@ -40,6 +40,10 @@ export const SaleCard = React.memo(({
     const profit = calculateSaleProfit(sale, inventoryItems);
     const isCancelled = sale.status === 'Cancelado';
 
+    const firstItem = sale.items?.[0];
+    const firstItemDetails = firstItem ? inventoryItems.find(i => i.id === firstItem.inventoryItemId) : null;
+    const category = firstItemDetails?.category || 'Varios';
+
     return (
         <Card className={cn("shadow-sm overflow-hidden", isCancelled && "bg-muted/60 opacity-80")}>
             <CardContent className="p-0">
@@ -51,24 +55,27 @@ export const SaleCard = React.memo(({
                         <p className="text-muted-foreground text-xs mt-1">Folio: {sale.id}</p>
                     </div>
 
-                    {/* Bloque 2: Cliente y Artículos */}
+                    {/* Bloque 2: Artículos y Cliente */}
                     <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-y md:border-y-0 md:border-x">
                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <UserIcon className="h-4 w-4" />
-                            <span className="font-medium">{sale.customerName || 'Cliente Mostrador'}</span>
-                       </div>
-                       <div className="flex items-center gap-2 text-muted-foreground">
                           <ShoppingCart className="h-4 w-4" />
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="truncate">{sale.items.map(i => i.itemName).join(', ')}</span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {sale.items.map(i => <p key={i.inventoryItemId}>{i.quantity} x {i.itemName}</p>)}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                           <Badge variant="outline">{category}</Badge>
+                       </div>
+                       <div className="font-bold text-black">
+                            <TooltipProvider>
+                                <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="truncate">{sale.items.map(i => i.itemName).join(', ')}</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {sale.items.map(i => <p key={i.inventoryItemId}>{i.quantity} x {i.itemName}</p>)}
+                                </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                       </div>
+                       <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                            <UserIcon className="h-3 w-3" />
+                            <span>{sale.customerName || 'Cliente Mostrador'}</span>
                        </div>
                     </div>
 
