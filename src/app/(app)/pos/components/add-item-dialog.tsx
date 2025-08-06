@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -12,6 +11,7 @@ import { Search, PackagePlus, Plus, Minus, ArrowLeft, DollarSign } from 'lucide-
 import type { InventoryItem } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 interface AddItemDialogProps {
   open: boolean;
@@ -30,14 +30,21 @@ export function AddItemDialog({ open, onOpenChange, inventoryItems, onItemSelect
 
 
   const filteredItems = useMemo(() => {
+    // When there is no search term, we show a default list.
+    // It's better to show items with stock first.
     if (!searchTerm.trim()) {
-      return inventoryItems.filter(item => !item.isService && item.quantity > 0).slice(0, 10);
+      return inventoryItems
+        .filter(item => !item.isService)
+        .sort((a,b) => b.quantity - a.quantity) // Show items with more stock first
+        .slice(0, 10);
     }
+    
+    // When searching, search through all items (products and services).
     const lowerSearchTerm = searchTerm.toLowerCase();
     return inventoryItems
       .filter(item =>
-        (!item.isService && item.quantity > 0) &&
-        (item.name.toLowerCase().includes(lowerSearchTerm) || (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm)))
+        item.name.toLowerCase().includes(lowerSearchTerm) || 
+        (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm))
       )
       .slice(0, 10);
   }, [searchTerm, inventoryItems]);
@@ -85,10 +92,14 @@ export function AddItemDialog({ open, onOpenChange, inventoryItems, onItemSelect
                   {filteredItems.map(item => (
                     <Button key={item.id} variant="ghost" className="w-full justify-start text-left h-auto py-1.5 px-2" onClick={() => handleSelectItem(item)}>
                       <div>
-                        <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.sku})</span></p>
-                        <p className="text-xs text-muted-foreground">
-                          Stock: {item.quantity} | Venta: {formatCurrency(item.sellingPrice)}
-                        </p>
+                        <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.sku || 'N/A'})</span></p>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          {item.isService 
+                            ? <Badge variant="outline">Servicio</Badge> 
+                            : <Badge variant={item.quantity > 0 ? "secondary" : "destructive"}>Stock: {item.quantity}</Badge>
+                          }
+                          <span>Venta: {formatCurrency(item.sellingPrice)}</span>
+                        </div>
                       </div>
                     </Button>
                   ))}
@@ -107,15 +118,20 @@ export function AddItemDialog({ open, onOpenChange, inventoryItems, onItemSelect
             <div className="pt-2 space-y-4">
               <div className="p-3 border rounded-md bg-muted">
                 <p className="font-semibold text-sm">Artículo: {selectedItem.name}</p>
-                <p className="text-xs text-muted-foreground">Stock Disponible: {selectedItem.quantity}</p>
+                 <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    {selectedItem.isService 
+                        ? <Badge variant="outline">Servicio</Badge> 
+                        : <Badge variant={selectedItem.quantity > 0 ? "secondary" : "destructive"}>Stock Disponible: {selectedItem.quantity}</Badge>
+                    }
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <Label htmlFor="inventory-quantity" className="text-xs">Cantidad</Label>
-                   <Input id="inventory-quantity" type="number" step="1" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value === '' ? '' : parseInt(e.target.value))} className="h-10" />
+                  <Label htmlFor="inventory-quantity">Cantidad</Label>
+                   <Input id="inventory-quantity" type="number" step="1" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value === '' ? '' : parseInt(e.target.value))} className="h-10" disabled={selectedItem.isService} />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="unit-price" className="text-xs">Precio Venta (Unitario)</Label>
+                  <Label htmlFor="unit-price">Precio Venta (Unitario)</Label>
                   <div className="relative">
                     <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input id="unit-price" type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value === '' ? '' : Number(e.target.value))} className="h-10 pl-8" />
