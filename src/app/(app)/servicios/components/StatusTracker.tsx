@@ -4,6 +4,7 @@
 import React from 'react';
 import type { ServiceRecord } from '@/types';
 import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
 
 interface StatusTrackerProps {
   status: ServiceRecord['status'] | 'Cotizacion';
@@ -35,18 +36,18 @@ export const StatusTracker = ({ status }: StatusTrackerProps) => {
         return (
           <React.Fragment key={state.id}>
             {index > 0 && (
-              <div className={cn("h-0.5 w-2 flex-grow rounded-full", isActive ? "bg-green-500" : "bg-muted")} />
+              <div className={cn("h-0.5 w-4 flex-grow rounded-full", isActive ? "bg-green-500" : "bg-muted")} />
             )}
             <div
               title={state.label}
               className={cn(
-                "flex h-6 w-8 items-center justify-center rounded-md border text-[10px] font-bold transition-colors",
+                "flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors",
                 isActive
-                  ? "border-green-500 bg-green-500/10 text-green-600"
-                  : "border-muted-foreground/20 bg-muted/50 text-muted-foreground/60"
+                  ? "border-green-500 bg-green-500"
+                  : "border-muted bg-background"
               )}
             >
-              {state.id}
+              {isActive && <Check className="h-4 w-4 text-white" />}
             </div>
           </React.Fragment>
         );
