@@ -1,8 +1,9 @@
+
 // src/app/(app)/servicios/nuevo/page.tsx
 
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,7 +11,7 @@ import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supp
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, serviceService, adminService, operationsService } from '@/lib/services';
-import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2, CalendarIcon as CalendarDateIcon, BrainCircuit } from 'lucide-react';
+import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2, CalendarIcon as CalendarDateIcon, BrainCircuit, Wrench, ShieldCheck, Camera, FileText, Eye } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
@@ -40,6 +41,14 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { ServiceDetailsCard } from '../components/ServiceDetailsCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+// Lazy loading for tab content
+const SafetyChecklist = lazy(() => import('../components/SafetyChecklist').then(module => ({ default: module.SafetyChecklist })));
+const PhotoReportTab = lazy(() => import('../components/PhotoReportTab').then(module => ({ default: module.PhotoReportTab })));
+const ReceptionAndDelivery = lazy(() => import('../components/ReceptionAndDelivery').then(module => ({ default: module.ReceptionAndDelivery })));
+const ImageViewerDialogContent = lazy(() => import('@/components/shared/image-viewer-dialog').then(module => ({ default: module.ImageViewerDialogContent })));
+
 
 type ServiceCreationFormValues = z.infer<typeof serviceFormSchema>;
 
@@ -65,8 +74,13 @@ export default function NuevoServicioPage() {
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
   
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('servicio');
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
+  const [signatureTarget, setSignatureTarget] = useState<'reception' | 'delivery' | 'technician' | null>(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+
 
   const methods = useForm<ServiceCreationFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -77,7 +91,7 @@ export default function NuevoServicioPage() {
     },
   });
 
-  const { control, watch, formState, handleSubmit, setValue } = methods;
+  const { control, watch, formState, handleSubmit, setValue, getValues } = methods;
 
   useEffect(() => {
     const unsubs = [
@@ -186,22 +200,60 @@ export default function NuevoServicioPage() {
     setIsNewVehicleDialogOpen(true);
   }, []);
 
-  const handleEnhanceText = useCallback(async (fieldName: keyof ServiceCreationFormValues) => {
-      const currentValue = methods.getValues(fieldName);
+  const handleEnhanceText = useCallback(async (fieldName: any) => {
+      const currentValue = getValues(fieldName);
       if (typeof currentValue !== 'string' || !currentValue) return;
   
       setIsEnhancingText(fieldName);
       try {
-        const context = fieldName === 'notes' ? 'Notas del Servicio' : 'Descripción';
+        let context = 'Notas del Servicio'; // default
+        if (fieldName.includes('vehicleConditions')) context = 'Condiciones del Vehículo';
+        if (fieldName.includes('customerItems')) context = 'Pertenencias del Cliente';
+        if (fieldName.includes('safetyInspection.inspectionNotes')) context = 'Observaciones de Inspección';
+        if (fieldName.includes('notes')) context = 'Notas Adicionales';
         const result = await enhanceText({ text: currentValue, context });
-        methods.setValue(fieldName, result, { shouldDirty: true });
+        setValue(fieldName, result, { shouldDirty: true });
         toast({ title: "Texto Mejorado", description: "La IA ha optimizado la redacción." });
       } catch (error) {
         toast({ title: "Error de IA", description: "No se pudo mejorar el texto.", variant: "destructive" });
       } finally {
         setIsEnhancingText(null);
       }
-    }, [methods, toast]);
+  }, [getValues, setValue, toast]);
+  
+  const handleOpenSignature = (type: 'reception' | 'delivery' | 'technician') => {
+    setSignatureTarget(type);
+    setIsSignatureDialogOpen(true);
+  };
+  
+  const handleSaveSignature = (signatureDataUrl: string) => {
+    if (signatureTarget) {
+      let fieldToUpdate: keyof ServiceCreationFormValues | `safetyInspection.technicianSignature` = "customerSignatureReception";
+      if(signatureTarget === 'delivery') fieldToUpdate = "customerSignatureDelivery";
+      if(signatureTarget === 'technician') fieldToUpdate = "safetyInspection.technicianSignature";
+      setValue(fieldToUpdate as any, signatureDataUrl, { shouldDirty: true });
+    }
+    setIsSignatureDialogOpen(false);
+    setSignatureTarget(null);
+  };
+
+  const handlePhotoUploaded = (reportIndex: number, url: string) => {
+    const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
+    setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url], { shouldDirty: true });
+  };
+  
+  const handleChecklistPhotoUploaded = (itemName: `safetyInspection.${string}`, url: string) => {
+    const currentItemValue = getValues(itemName) || { photos: [] };
+    setValue(itemName, { ...currentItemValue, photos: [...currentItemValue.photos, url] }, { shouldDirty: true });
+  };
+  
+  const handleViewImage = (url: string) => {
+    setViewingImageUrl(url);
+    setIsImageViewerOpen(true);
+  };
+
+  const watchedStatus = watch('status');
+  const showTabs = watchedStatus === 'En Taller' || watchedStatus === 'Entregado';
 
 
   if (isLoading) {
@@ -210,6 +262,11 @@ export default function NuevoServicioPage() {
 
   return (
     <FormProvider {...methods}>
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Nuevo Servicio / Cotización</h1>
+        <p className="text-primary-foreground/80 mt-1">Completa la información para crear un nuevo registro.</p>
+      </div>
+
       <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6">
         <ServiceDetailsCard
           isReadOnly={false}
@@ -223,24 +280,62 @@ export default function NuevoServicioPage() {
           onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
           onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
         />
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-          <div className="lg:col-span-3">
-            <ServiceItemsList
-              isReadOnly={false}
-              inventoryItems={currentInventoryItems}
-              mode={watch('status') === 'Cotizacion' ? 'quote' : 'service'}
-              onNewInventoryItemCreated={handleNewInventoryItemCreated}
-              categories={allCategories}
-              suppliers={allSuppliers}
-              serviceTypes={serviceTypes}
-              isEnhancingText={isEnhancingText}
-              handleEnhanceText={handleEnhanceText}
-            />
-          </div>
-          <div className="lg:col-span-2 space-y-6">
-            <PaymentSection />
-          </div>
-        </div>
+
+        {showTabs ? (
+           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList>
+                <TabsTrigger value="servicio"><Wrench className="mr-2 h-4 w-4"/>Servicio</TabsTrigger>
+                <TabsTrigger value="revision"><ShieldCheck className="mr-2 h-4 w-4"/>Revisión</TabsTrigger>
+                <TabsTrigger value="fotos"><Camera className="mr-2 h-4 w-4"/>Fotos</TabsTrigger>
+                <TabsTrigger value="entrega"><FileText className="mr-2 h-4 w-4"/>Recepción/Entrega</TabsTrigger>
+              </TabsList>
+              <TabsContent value="servicio" className="mt-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+                      <div className="lg:col-span-3">
+                          <ServiceItemsList isReadOnly={false} inventoryItems={currentInventoryItems} mode={'service'} onNewInventoryItemCreated={handleNewInventoryItemCreated} categories={allCategories} suppliers={allSuppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/>
+                      </div>
+                      <div className="lg:col-span-2 space-y-6">
+                          <PaymentSection />
+                      </div>
+                  </div>
+              </TabsContent>
+               <TabsContent value="revision" className="mt-6">
+                <Suspense fallback={<Loader2 className="animate-spin" />}>
+                    <SafetyChecklist isReadOnly={false} onSignatureClick={() => handleOpenSignature('technician')} signatureDataUrl={watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} serviceId={getValues('id') || 'new'} onPhotoUploaded={handleChecklistPhotoUploaded} onViewImage={handleViewImage}/>
+                </Suspense>
+              </TabsContent>
+              <TabsContent value="fotos" className="mt-6">
+                <Suspense fallback={<Loader2 className="animate-spin" />}>
+                    <PhotoReportTab isReadOnly={false} serviceId={getValues('id') || 'new'} onPhotoUploaded={handlePhotoUploaded} onViewImage={handleViewImage}/>
+                </Suspense>
+              </TabsContent>
+              <TabsContent value="entrega" className="mt-6">
+                <Suspense fallback={<Loader2 className="animate-spin" />}>
+                    <ReceptionAndDelivery isReadOnly={false} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature}/>
+                </Suspense>
+              </TabsContent>
+            </Tabs>
+        ) : (
+           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+              <div className="lg:col-span-3">
+                <ServiceItemsList
+                  isReadOnly={false}
+                  inventoryItems={currentInventoryItems}
+                  mode={watch('status') === 'Cotizacion' ? 'quote' : 'service'}
+                  onNewInventoryItemCreated={handleNewInventoryItemCreated}
+                  categories={allCategories}
+                  suppliers={allSuppliers}
+                  serviceTypes={serviceTypes}
+                  isEnhancingText={isEnhancingText}
+                  handleEnhanceText={handleEnhanceText}
+                />
+              </div>
+              <div className="lg:col-span-2 space-y-6">
+                <PaymentSection />
+              </div>
+            </div>
+        )}
+
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="outline" type="button" onClick={() => router.back()}>
             <X className="mr-2 h-4 w-4" />
@@ -259,6 +354,7 @@ export default function NuevoServicioPage() {
           </Button>
         </div>
       </form>
+
       <VehicleDialog
         open={isNewVehicleDialogOpen}
         onOpenChange={setIsNewVehicleDialogOpen}
@@ -283,6 +379,18 @@ export default function NuevoServicioPage() {
           title="Registro Creado con Éxito"
         />
       )}
+      
+      <SignatureDialog 
+        open={!!signatureTarget} 
+        onOpenChange={(isOpen) => !isOpen && setSignatureTarget(null)} 
+        onSave={handleSaveSignature}
+      />
+      
+      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+          <Suspense fallback={<Loader2 className="animate-spin" />}>
+             <ImageViewerDialogContent imageUrl={viewingImageUrl} />
+          </Suspense>
+      </Dialog>
     </FormProvider>
   );
 }
