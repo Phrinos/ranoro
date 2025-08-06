@@ -3,10 +3,6 @@
 
 import React from 'react';
 import {
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -26,10 +22,6 @@ export default function ImageViewerDialogContent({ imageUrl }: ImageViewerDialog
 
   return (
     <>
-      <DialogHeader className="print:hidden">
-        <DialogTitle>Vista Previa de Imagen</DialogTitle>
-        <DialogDescription>Visualización de la imagen adjunta.</DialogDescription>
-      </DialogHeader>
       <div className="relative aspect-video w-full min-h-[50vh]">
         {imageUrl ? (
           <Image
