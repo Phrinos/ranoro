@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
 import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
-import { operationsService, inventoryService } from '@/lib/services';
+import { saleService, serviceService, cashService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { db } from '@/lib/firebaseClient';
@@ -35,9 +35,9 @@ export function CajaPageComponent({ tab }: { tab?: string }) {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
 
-    unsubs.push(operationsService.onSalesUpdate(setAllSales));
-    unsubs.push(operationsService.onServicesUpdate(setAllServices));
-    unsubs.push(operationsService.onCashTransactionsUpdate(setAllCashTransactions));
+    unsubs.push(saleService.onSalesUpdate(setAllSales));
+    unsubs.push(serviceService.onServicesUpdate(setAllServices));
+    unsubs.push(cashService.onCashTransactionsUpdate(setAllCashTransactions));
 
     // Listener for today's initial balance
     const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
