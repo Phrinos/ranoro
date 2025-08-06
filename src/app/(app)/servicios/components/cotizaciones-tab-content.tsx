@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -31,13 +30,13 @@ export default function CotizacionesTabContent({
   
   const { 
     filteredData,
-    ...tableManager
+    ...tableManager 
   } = useTableManager<ServiceRecord>({
     initialData: quotes,
     searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
     dateFilterKey: "serviceDate", // Use serviceDate as it's more reliable
     initialSortOption: "serviceDate_desc",
-    initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
+    // initialDateRange is removed to show all quotes by default
     itemsPerPage: 10,
   });
 
