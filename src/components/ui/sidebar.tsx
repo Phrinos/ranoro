@@ -73,6 +73,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
         data-side={side}
+        {...(state !== "expanded" && { inert: "true", "aria-hidden": true })}
       >
         <div
           className={cn(
