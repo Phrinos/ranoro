@@ -23,6 +23,21 @@ import { nanoid } from 'nanoid';
 
 // --- Rental Payments ---
 
+const onRentalPaymentsUpdate = (callback: (payments: RentalPayment[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "rentalPayments"));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RentalPayment)));
+    });
+};
+
+const onRentalPaymentsUpdatePromise = async (): Promise<RentalPayment[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(query(collection(db, "rentalPayments")));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RentalPayment));
+};
+
+
 const addRentalPayment = async (
   driverId: string, 
   amount: number, 
@@ -86,6 +101,13 @@ const updateRentalPayment = async (paymentId: string, data: Partial<RentalPaymen
 
 
 // --- Vehicle Expenses ---
+const onVehicleExpensesUpdate = (callback: (expenses: VehicleExpense[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "vehicleExpenses"));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehicleExpense)));
+    });
+};
 
 const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'vehicleLicensePlate'>): Promise<VehicleExpense> => {
     if (!db) throw new Error("Database not initialized.");
@@ -103,6 +125,13 @@ const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'veh
 };
 
 // --- Owner Withdrawals ---
+const onOwnerWithdrawalsUpdate = (callback: (withdrawals: OwnerWithdrawal[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "ownerWithdrawals"));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as OwnerWithdrawal)));
+    });
+};
 
 const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): Promise<OwnerWithdrawal> => {
     if (!db) throw new Error("Database not initialized.");
@@ -118,7 +147,10 @@ const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): P
 export const fleetService = {
   addRentalPayment,
   updateRentalPayment,
+  onRentalPaymentsUpdate,
+  onRentalPaymentsUpdatePromise,
   addVehicleExpense,
-  addOwnerWithdrawal
+  onVehicleExpensesUpdate,
+  addOwnerWithdrawal,
+  onOwnerWithdrawalsUpdate
 };
-

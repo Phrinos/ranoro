@@ -1,3 +1,4 @@
+
 // src/app/(app)/rentas/components/HistorialTab.tsx
 "use client";
 

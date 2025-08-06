@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
 import { ServiceAppointmentCard } from "../../../servicios/components/ServiceAppointmentCard";
 import { Loader2 } from "lucide-react";
-import { operationsService, inventoryService, personnelService } from '@/lib/services';
+import { serviceService, inventoryService, personnelService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch } from 'firebase/firestore';
 import { TicketContent } from '@/components/ticket-content';
@@ -39,7 +39,7 @@ export function CotizacionesPageComponent() {
 
   useEffect(() => {
     const unsubs = [
-      operationsService.onServicesUpdate((services) => {
+      serviceService.onServicesUpdate((services) => {
         setAllQuotes(services.filter(s => s.status === 'Cotizacion'));
       }),
       inventoryService.onVehiclesUpdate(setVehicles),
@@ -63,7 +63,7 @@ export function CotizacionesPageComponent() {
 
   const handleSaveRecord = useCallback(async (data: QuoteRecord | ServiceRecord) => {
     try {
-      await operationsService.saveService(data);
+      await serviceService.saveService(data);
       setIsFormDialogOpen(false);
       toast({ title: 'Cotización actualizada.' });
     } catch (e) {
@@ -73,7 +73,7 @@ export function CotizacionesPageComponent() {
 
   const handleCancelRecord = useCallback(async (serviceId: string, reason: string) => {
     try {
-      await operationsService.cancelService(serviceId, reason);
+      await serviceService.cancelService(serviceId, reason);
       toast({ title: 'Cotización cancelada.' });
       setIsFormDialogOpen(false);
     } catch (e) {
@@ -130,7 +130,7 @@ export function CotizacionesPageComponent() {
           onOpenChange={setIsFormDialogOpen}
           service={editingRecord}
           vehicles={vehicles}
-          technicians={personnel}
+          technicians={personnel as User[]}
           inventoryItems={inventoryItems}
           serviceTypes={serviceTypes}
           onCancelService={handleCancelRecord}

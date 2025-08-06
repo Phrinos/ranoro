@@ -1,3 +1,4 @@
+
 // src/app/(app)/rentas/components/page-component.tsx
 "use client";
 
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency } from "@/lib/utils";
 import { startOfDay, endOfDay, parseISO, isWithinInterval, isValid, startOfMonth, endOfMonth } from 'date-fns';
 
-import { inventoryService, operationsService, personnelService } from '@/lib/services';
+import { inventoryService, fleetService, personnelService } from '@/lib/services';
 import { RegisterPaymentDialog } from "./register-payment-dialog";
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './vehicle-expense-dialog';
 import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './owner-withdrawal-dialog';
@@ -51,9 +52,9 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 
     unsubs.push(personnelService.onDriversUpdate(setDrivers));
     unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
-    unsubs.push(operationsService.onVehicleExpensesUpdate(setExpenses));
-    unsubs.push(operationsService.onOwnerWithdrawalsUpdate(setWithdrawals));
-    unsubs.push(operationsService.onRentalPaymentsUpdate((data) => {
+    unsubs.push(fleetService.onVehicleExpensesUpdate(setExpenses));
+    unsubs.push(fleetService.onOwnerWithdrawalsUpdate(setWithdrawals));
+    unsubs.push(fleetService.onRentalPaymentsUpdate((data) => {
         setPayments(data);
         setIsLoading(false);
     }));
@@ -66,7 +67,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 
   const handleSavePayment = async (driverId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, mileage?: number) => {
     try {
-        const newPayment = await operationsService.addRentalPayment(driverId, amount, paymentMethod, note, mileage);
+        const newPayment = await fleetService.addRentalPayment(driverId, amount, paymentMethod, note, mileage);
         toast({ title: 'Pago Registrado' });
         setIsPaymentDialogOpen(false);
     } catch (e: any) {
@@ -76,7 +77,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
 
   const handleSaveExpense = async (data: VehicleExpenseFormValues) => {
     try {
-        await operationsService.addVehicleExpense(data);
+        await fleetService.addVehicleExpense(data);
         toast({ title: 'Gasto Registrado'});
         setIsExpenseDialogOpen(false);
     } catch(e: any) {
@@ -86,7 +87,7 @@ function RentasPageComponent({ tab, action }: { tab?: string, action?: string | 
   
   const handleSaveWithdrawal = async (data: OwnerWithdrawalFormValues) => {
     try {
-        await operationsService.addOwnerWithdrawal(data);
+        await fleetService.addOwnerWithdrawal(data);
         toast({ title: 'Retiro Registrado'});
         setIsWithdrawalDialogOpen(false);
     } catch(e: any) {
