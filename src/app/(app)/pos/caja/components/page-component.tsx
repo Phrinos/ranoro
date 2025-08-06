@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
@@ -14,7 +13,7 @@ import { format, startOfDay, isSameDay, startOfMonth, endOfMonth, isWithinInterv
 import { parseDate } from '@/lib/forms';
 
 const CajaPosContent = lazy(() => import('./caja-pos-content').then(module => ({ default: module.CajaPosContent })));
-const MovimientosCajaContent = lazy(() => import('./movimientos-caja-content').then(module => ({ default: module.MovimientosCajaContent })));
+const MovimientosCajaContent = lazy(() => import('../../../caja/components/movimientos-caja-content').then(module => ({ default: module.MovimientosCajaContent })));
 
 
 export function CajaPageComponent({ tab }: { tab?: string }) {

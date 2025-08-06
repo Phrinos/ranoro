@@ -24,6 +24,7 @@ export const posFormSchema = z.object({
   customerName: z.string().optional(),
   whatsappNumber: z.string().optional(),
   payments: z.array(paymentSchema).min(1, 'Debe agregar al menos un método de pago.'),
+  cardCommission: z.number().optional(), // Add this field
 }).superRefine((data, ctx) => {
     // Total amount charged to the customer
     const totalItems = data.items.reduce((acc, item) => acc + item.totalPrice, 0);
