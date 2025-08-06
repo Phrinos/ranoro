@@ -1,12 +1,10 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PageHeader } from "@/components/page-header";
-import { ServiceForm } from "../form";
 import type { ServiceRecord, QuoteRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
@@ -18,6 +16,12 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../components/PaymentDetailsDialog';
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
+import { VehicleSelectionCard } from '../components/VehicleSelectionCard';
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
+import { ServiceItemsList } from '../components/ServiceItemsList';
+import { ServiceSummary } from '../components/ServiceSummary';
+import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
+
 
 export default function EditarServicioPage() {
   const { toast } = useToast(); 
@@ -36,8 +40,14 @@ export default function EditarServicioPage() {
 
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
+  const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
 
+  const methods = useForm<z.infer<typeof serviceFormSchema>>({
+    resolver: zodResolver(serviceFormSchema),
+  });
+
+  const { reset, handleSubmit } = methods;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,6 +84,11 @@ export default function EditarServicioPage() {
             setServiceTypes(serviceTypesData);
             setCategories(categoriesData);
             setSuppliers(suppliersData);
+            
+            reset({
+                ...serviceData,
+                allVehiclesForDialog: vehiclesData,
+            });
 
         } catch (error) {
             console.error("Error fetching data for edit page:", error);
@@ -84,19 +99,39 @@ export default function EditarServicioPage() {
     };
 
     fetchData();
-  }, [serviceId, router, toast]);
+  }, [serviceId, router, toast, reset]);
+  
+  const handleOpenNewVehicleDialog = useCallback((plate?: string) => {
+    setNewVehicleInitialPlate(plate);
+    setIsNewVehicleDialogOpen(true);
+  }, []);
+  
+  const handleVehicleCreated = async (newVehicleData: VehicleFormValues) => {
+      const newVehicle = await inventoryService.addVehicle(newVehicleData);
+      toast({ title: "Vehículo Creado" });
+      methods.setValue('vehicleId', newVehicle.id); // Set the newly created vehicle in the form
+      setIsNewVehicleDialogOpen(false);
+  };
+  
+  const handleNewInventoryItemCreated = async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
+    const newItem = await inventoryService.addItem(formData);
+    toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
+    return newItem;
+  };
 
-  const handleUpdateService = async (values: ServiceRecord | QuoteRecord) => {
+  const handleUpdateService = async (values: z.infer<typeof serviceFormSchema>) => {
     if (!initialData) return;
 
-    if ('status' in values && values.status === 'Entregado') {
-        setServiceToComplete({ ...initialData, ...values } as ServiceRecord);
+    const serviceRecordValues = values as ServiceRecord;
+
+    if (serviceRecordValues.status === 'Entregado') {
+        setServiceToComplete({ ...initialData, ...serviceRecordValues });
         setIsPaymentDialogOpen(true);
         return;
     }
 
     try {
-      await serviceService.saveService({ ...values, id: serviceId });
+      await serviceService.saveService({ ...serviceRecordValues, id: serviceId });
       toast({ title: 'Servicio Actualizado', description: `El registro #${serviceId} ha sido actualizado.` });
       router.push('/servicios/historial');
     } catch(e) {
@@ -133,7 +168,7 @@ export default function EditarServicioPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !initialData) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="mr-2 h-8 w-8 animate-spin" />
@@ -141,63 +176,74 @@ export default function EditarServicioPage() {
       </div>
     );
   }
-  
-  if (!initialData) {
-    return <div className="text-center p-8">Servicio no encontrado.</div>;
-  }
 
   return (
-    <>
-      <PageHeader
-        title={`Editar Servicio #${initialData.id.slice(-6)}`}
-        description={`Modifica los detalles para el vehículo ${initialData.vehicleIdentifier || ''}.`}
-      />
-      
-      <ServiceForm
-        ref={formRef}
-        initialDataService={initialData}
-        vehicles={vehicles}
-        technicians={users}
-        inventoryItems={inventoryItems}
-        serviceTypes={serviceTypes}
-        onSubmit={handleUpdateService}
-        onClose={() => router.push('/servicios/historial')}
-        onCancelService={handleCancelService}
-        onVehicleCreated={() => {}} // This should ideally not happen here
-        onTotalCostChange={() => {}} // No-op for this page
-      />
-      
-      <div className="mt-6 flex justify-between items-center">
-        <ConfirmDialog
-            triggerButton={<Button variant="destructive" disabled={initialData.status === 'Cancelado'}><Ban className="mr-2 h-4 w-4"/>Cancelar Servicio</Button>}
-            title="¿Cancelar este servicio?"
-            description="Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer."
-            onConfirm={handleCancelService}
-        />
-        <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.back()}>
-                <X className="mr-2 h-4 w-4" />
-                Cerrar
-            </Button>
-            <Button
-                type="button" 
-                onClick={() => formRef.current?.requestSubmit()}
-            >
-                <Save className="mr-2 h-4 w-4" />
-                Guardar Cambios
-            </Button>
-        </div>
-      </div>
+    <FormProvider {...methods}>
+        <form id="service-form" onSubmit={handleSubmit(handleUpdateService)} className="space-y-6">
+            <PageHeader
+                title={`Editar Servicio #${initialData.id.slice(-6)}`}
+                description={`Modifica los detalles para el vehículo ${initialData.vehicleIdentifier || ''}.`}
+            />
+            
+            <VehicleSelectionCard
+                isReadOnly={false}
+                localVehicles={vehicles}
+                onVehicleSelected={(v) => methods.setValue('vehicleIdentifier', v?.licensePlate)}
+                onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+            />
 
-      {serviceToComplete && (
-        <PaymentDetailsDialog
-          open={isPaymentDialogOpen}
-          onOpenChange={setIsPaymentDialogOpen}
-          record={serviceToComplete}
-          onConfirm={(id, details) => handleCompleteService(details)}
-          isCompletionFlow={true}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+                <div className="lg:col-span-3">
+                <ServiceItemsList
+                    isReadOnly={false}
+                    inventoryItems={inventoryItems}
+                    mode={initialData.status === 'Cotizacion' ? 'quote' : 'service'}
+                    onNewInventoryItemCreated={handleNewInventoryItemCreated}
+                    categories={categories}
+                    suppliers={suppliers}
+                />
+                </div>
+                <div className="lg:col-span-2 space-y-6">
+                    <ServiceSummary />
+                </div>
+            </div>
+
+            <div className="mt-6 flex justify-between items-center">
+                <ConfirmDialog
+                    triggerButton={<Button variant="destructive" type="button" disabled={initialData.status === 'Cancelado'}><Ban className="mr-2 h-4 w-4"/>Cancelar Servicio</Button>}
+                    title="¿Cancelar este servicio?"
+                    description="Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer."
+                    onConfirm={handleCancelService}
+                />
+                <div className="flex gap-2">
+                    <Button variant="outline" type="button" onClick={() => router.back()}>
+                        <X className="mr-2 h-4 w-4" />
+                        Cerrar
+                    </Button>
+                    <Button type="submit">
+                        <Save className="mr-2 h-4 w-4" />
+                        Guardar Cambios
+                    </Button>
+                </div>
+            </div>
+        </form>
+
+        <VehicleDialog
+            open={isNewVehicleDialogOpen}
+            onOpenChange={setIsNewVehicleDialogOpen}
+            onSave={handleVehicleCreated}
+            vehicle={{ licensePlate: newVehicleInitialPlate }}
         />
-      )}
-    </>
+
+        {serviceToComplete && (
+            <PaymentDetailsDialog
+            open={isPaymentDialogOpen}
+            onOpenChange={setIsPaymentDialogOpen}
+            record={serviceToComplete}
+            onConfirm={(id, details) => handleCompleteService(details)}
+            isCompletionFlow={true}
+            />
+        )}
+    </FormProvider>
   );
 }

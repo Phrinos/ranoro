@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ServiceForm } from "../components/service-form";
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -20,15 +19,18 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { nanoid } from 'nanoid';
 import html2canvas from 'html2canvas';
-import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { serviceFormSchema } from '@/schemas/service-form';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
+import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
 import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../components/PaymentDetailsDialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VehicleSelectionCard } from '../components/VehicleSelectionCard';
+import { ServiceItemsList } from '../components/ServiceItemsList';
+import { ServiceSummary } from '../components/ServiceSummary';
 
 type ServiceCreationFormValues = z.infer<typeof serviceFormSchema>;
 
@@ -50,6 +52,9 @@ export default function NuevoServicioPage() {
 
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  
+  const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
+  const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
 
   const methods = useForm<ServiceCreationFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -60,7 +65,7 @@ export default function NuevoServicioPage() {
     },
   });
 
-  const { control, watch } = methods;
+  const { control, watch, formState, handleSubmit, setValue } = methods;
   const watchedStatus = watch('status');
 
   useEffect(() => {
@@ -90,7 +95,6 @@ export default function NuevoServicioPage() {
   const handleSaleCompletion = async (values: ServiceCreationFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
     
-    // If creating a service directly as "Entregado", open the payment dialog first.
     if (values.status === 'Entregado') {
         const tempService = { ...values, id: 'new_service_temp' } as ServiceRecord;
         setServiceToComplete(tempService);
@@ -98,7 +102,6 @@ export default function NuevoServicioPage() {
         return;
     }
 
-    // Standard save for other statuses
     try {
         const savedRecord = await serviceService.saveService(values as ServiceRecord);
         toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
@@ -114,11 +117,9 @@ export default function NuevoServicioPage() {
     if (!serviceToComplete) return;
 
     try {
-      // First, save the service to get an ID
-      const { id: _, ...serviceData } = serviceToComplete; // Remove temp ID
+      const { id: _, ...serviceData } = serviceToComplete;
       const savedService = await serviceService.saveService(serviceData as ServiceRecord);
 
-      // Now, complete the just-saved service
       const batch = writeBatch(db);
       await serviceService.completeService(savedService, paymentDetails, batch);
       await batch.commit();
@@ -146,7 +147,7 @@ export default function NuevoServicioPage() {
   const handleDialogClose = () => {
     setIsPreviewOpen(false);
     setServiceForPreview(null);
-    methods.reset(); // Reset the form for a new sale
+    methods.reset();
     const targetPath = serviceForPreview?.status === 'Cotizacion' 
                       ? '/cotizaciones/historial' 
                       : '/servicios/historial';
@@ -154,9 +155,16 @@ export default function NuevoServicioPage() {
   };
   
   const handleVehicleCreated = async (newVehicleData: VehicleFormValues) => {
-      await inventoryService.addVehicle(newVehicleData);
+      const newVehicle = await inventoryService.addVehicle(newVehicleData);
       toast({ title: "Vehículo Creado" });
+      setValue('vehicleId', newVehicle.id); // Set the newly created vehicle in the form
+      setIsNewVehicleDialogOpen(false);
   };
+
+  const handleOpenNewVehicleDialog = useCallback((plate?: string) => {
+    setNewVehicleInitialPlate(plate);
+    setIsNewVehicleDialogOpen(true);
+  }, []);
 
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
@@ -165,51 +173,80 @@ export default function NuevoServicioPage() {
   return (
     <>
       <FormProvider {...methods}>
-        <Card className="bg-card border rounded-lg p-6 mb-6 shadow-sm">
-          <CardHeader className="p-0">
-            <CardTitle>Nuevo Servicio / Cotización</CardTitle>
-            <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0 mt-4">
-            <div className="max-w-sm">
-              <FormField
-                control={control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="font-bold">
-                          <SelectValue placeholder="Seleccione un estado" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {["Cotizacion", "Agendado", "En Taller"].map(s => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6">
+            <Card className="bg-card border rounded-lg p-6 shadow-sm">
+              <CardHeader className="p-0">
+                <CardTitle>Nuevo Servicio / Cotización</CardTitle>
+                <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 mt-4">
+                <div className="max-w-sm">
+                  <FormField
+                    control={control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="font-bold">
+                              <SelectValue placeholder="Seleccione un estado" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {["Cotizacion", "Agendado", "En Taller"].map(s => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-        <ServiceForm
-          vehicles={vehicles}
-          technicians={users}
-          inventoryItems={currentInventoryItems}
-          serviceTypes={serviceTypes}
-          onSubmit={handleSaleCompletion}
-          onClose={() => router.push('/servicios/historial')}
-          mode={watchedStatus === 'Cotizacion' ? 'quote' : 'service'}
-          onVehicleCreated={handleVehicleCreated}
-          onTotalCostChange={() => {}} 
-          categories={allCategories}
-          suppliers={allSuppliers}
-        />
+            <VehicleSelectionCard
+                isReadOnly={false}
+                localVehicles={vehicles}
+                onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
+                onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+            />
+
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+                <div className="lg:col-span-3">
+                <ServiceItemsList
+                    isReadOnly={false}
+                    inventoryItems={currentInventoryItems}
+                    mode={watchedStatus === 'Cotizacion' ? 'quote' : 'service'}
+                    onNewInventoryItemCreated={handleNewInventoryItemCreated}
+                    categories={allCategories}
+                    suppliers={allSuppliers}
+                />
+                </div>
+                <div className="lg:col-span-2 space-y-6">
+                    <ServiceSummary />
+                </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+                <Button variant="outline" type="button" onClick={() => router.back()}>
+                    <X className="mr-2 h-4 w-4" />
+                    Cancelar
+                </Button>
+                <Button
+                    type="submit"
+                    disabled={formState.isSubmitting}
+                >
+                    {formState.isSubmitting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                    )}
+                    {initialDataService ? "Actualizar Registro" : "Crear Registro"}
+                </Button>
+            </div>
+        </form>
       </FormProvider>
       
       {serviceForPreview && (
@@ -227,10 +264,17 @@ export default function NuevoServicioPage() {
           open={isPaymentDialogOpen}
           onOpenChange={setIsPaymentDialogOpen}
           record={serviceToComplete}
-          onConfirm={(serviceId, paymentDetails) => handleCompleteNewService(paymentDetails)}
+          onConfirm={(id, paymentDetails) => handleCompleteNewService(paymentDetails)}
           isCompletionFlow={true}
         />
       )}
+
+      <VehicleDialog
+        open={isNewVehicleDialogOpen}
+        onOpenChange={setIsNewVehicleDialogOpen}
+        onSave={handleVehicleCreated}
+        vehicle={{ licensePlate: newVehicleInitialPlate }}
+      />
     </>
   );
 }
