@@ -1,49 +1,26 @@
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, FormProvider } from "react-hook-form"
-import * as z from 'zod'
+import { useForm, FormProvider, useFormContext } from "react-hook-form"
 
-import Image from 'next/image'
-import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import { nanoid } from 'nanoid'
-import {
-  Ban, Camera, CheckCircle, Download, Eye, ShieldCheck, Trash2, Wrench, BrainCircuit, Loader2, PlusCircle, Signature,
-  CalendarIcon, Wallet, DollarSign, CalendarCheck, Edit
-} from 'lucide-react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { format, setHours, setMinutes, isValid, addDays, addMonths, addYears } from 'date-fns';
-import { es } from 'date-fns/locale';
-
-import { Button } from '@/components/ui/button'
-import { Form } from '@/components/ui/form'
-import { Textarea } from '@/components/ui/textarea'
-import { useToast } from '@/hooks/use-toast'
-import { cn, formatCurrency } from '@/lib/utils'
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import type {
   ServiceRecord, Vehicle, Technician, InventoryItem,
-  QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, SafetyCheckValue, InventoryCategory, Supplier, PaymentMethod, Personnel
-} from '@/types'
+  QuoteRecord, User, ServiceTypeRecord, InventoryCategory, Supplier
+} from '@/types' 
 
-import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
-import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { VehicleSelectionCard } from './components/VehicleSelectionCard'
 import { serviceFormSchema } from '@/schemas/service-form';
-import { parseDate } from '@/lib/forms';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
-import Link from 'next/link';
 import { ServiceDetailsHeader } from './components/ServiceDetailsHeader';
 import { ServiceItemsList } from './components/ServiceItemsList';
 import { ServiceSummary } from './components/ServiceSummary';
@@ -86,7 +63,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
 
   const { toast } = useToast();
   
-  const defaultValues = useMemo<ServiceFormValues>(() => {
+  const defaultValues = useMemo<z.infer<typeof serviceFormSchema>>(() => {
     const firstType = serviceTypes[0]?.name ?? 'Servicio General';
     const now = new Date();
     const status = initialDataService?.status ?? (mode === 'quote' ? 'Cotizacion' : 'En Taller');
@@ -94,33 +71,8 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     if (initialDataService) {
       return {
         ...initialDataService,
-        initialStatus: initialDataService.status, // Store initial status
         allVehiclesForDialog: parentVehicles,
-        status: status,
-        serviceType: initialDataService.serviceType ?? firstType,
-        serviceDate: initialDataService.serviceDate ? parseDate(initialDataService.serviceDate) : undefined,
-        quoteDate: initialDataService.quoteDate ? parseDate(initialDataService.quoteDate) : (status === 'Cotizacion' ? now : undefined),
-        receptionDateTime: initialDataService.receptionDateTime ? parseDate(initialDataService.receptionDateTime) : undefined,
-        deliveryDateTime: initialDataService.deliveryDateTime ? parseDate(initialDataService.deliveryDateTime) : undefined,
-        customerSignatureReception: initialDataService.customerSignatureReception || null,
-        customerSignatureDelivery: initialDataService.customerSignatureDelivery || null,
-        technicianName: initialDataService.technicianName || null, 
-        serviceAdvisorSignatureDataUrl: initialDataService.serviceAdvisorSignatureDataUrl || '',
-        payments: initialDataService.payments?.length ? initialDataService.payments : [],
-        nextServiceInfo: initialDataService.nextServiceInfo || undefined,
-        mileage: initialDataService.mileage || undefined,
-        serviceItems:
-          initialDataService.serviceItems?.length
-            ? initialDataService.serviceItems
-            : [
-                {
-                  id: nanoid(),
-                  name: initialDataService.serviceType ?? firstType,
-                  price: initialDataService.totalCost ?? undefined,
-                  suppliesUsed: [],
-                },
-              ],
-      } as ServiceFormValues;
+      } as z.infer<typeof serviceFormSchema>;
     }
 
     const authUser = (() => {
@@ -130,44 +82,20 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
 
     return {
       allVehiclesForDialog: parentVehicles,
-      initialStatus: status,
       status: status,
       serviceType: firstType,
-      quoteDate: status === 'Cotizacion' ? now : undefined,
-      serviceDate: status === 'Agendado' ? now : undefined,
-      receptionDateTime: status === 'En Taller' ? now : undefined,
-      technicianId: '',
-      technicianName: null, 
-      customerSignatureReception: null,
-      customerSignatureDelivery: null,
-      serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl || '',
-      payments: [],
-      nextServiceInfo: undefined,
-      vehicleId: '',
-      mileage: undefined,
-      notes: '',
-      subStatus: undefined,
-      vehicleConditions: '',
-      customerItems: '',
-      fuelLevel: '',
       serviceItems: [{
         id: nanoid(),
         name: firstType,
         price: undefined,
         suppliesUsed: [],
       }],
-      photoReports: [{
-        id: `rep_recepcion_${Date.now()}`,
-        date: new Date().toISOString(),
-        description: 'Fotografias de la recepcion del vehiculo',
-        photos: [],
-      }],
       serviceAdvisorId: authUser?.id,
       serviceAdvisorName: authUser?.name,
-    } as ServiceFormValues;
+    } as z.infer<typeof serviceFormSchema>;
   }, [initialDataService, serviceTypes, mode, parentVehicles]);
 
-  const form = useForm<ServiceFormValues>({
+  const form = useForm<z.infer<typeof serviceFormSchema>>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues,
   });
@@ -209,7 +137,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     return newItem;
   }, [toast]);
   
-  const formSubmitWrapper = (values: ServiceFormValues) => {
+  const formSubmitWrapper = (values: z.infer<typeof serviceFormSchema>) => {
     const dataToSubmit: any = { ...values };
     
     dataToSubmit.totalCost = totalCost;
