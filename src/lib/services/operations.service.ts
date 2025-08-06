@@ -460,6 +460,7 @@ const registerSale = async (
       status: 'Completado',
       registeredById: currentUser.id,
       registeredByName: currentUser.name,
+      cardCommission: saleData.cardCommission || 0,
     };
     
     const newSaleRef = doc(db, "sales", saleId);
