@@ -35,8 +35,8 @@ import type {
   QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, InventoryCategory, Supplier, PaymentMethod, Personnel
 } from '@/types'
 
-import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog'
-import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form'
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { VehicleSelectionCard } from './components/VehicleSelectionCard'
 import { serviceFormSchema } from '@/schemas/service-form';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
@@ -144,6 +144,8 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   const formSubmitWrapper = (values: z.infer<typeof serviceFormSchema>) => {
     onSubmit(values as ServiceRecord);
   };
+  
+  const watchedStatus = watch('status');
   
   return (
     <>

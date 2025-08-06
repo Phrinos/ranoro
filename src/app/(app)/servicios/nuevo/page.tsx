@@ -165,13 +165,37 @@ export default function NuevoServicioPage() {
   return (
     <>
       <FormProvider {...methods}>
-        <div className="bg-card border rounded-lg p-6 mb-6 shadow-sm">
-          <h1 className="text-2xl font-bold tracking-tight">Nuevo Servicio / Cotización</h1>
-          <p className="text-muted-foreground mt-1">Completa la información para crear un nuevo registro.</p>
-          <div className="mt-4 max-w-sm">
-             <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Taller"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
-          </div>
-        </div>
+        <Card className="bg-card border rounded-lg p-6 mb-6 shadow-sm">
+          <CardHeader className="p-0">
+            <CardTitle>Nuevo Servicio / Cotización</CardTitle>
+            <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 mt-4">
+            <div className="max-w-sm">
+              <FormField
+                control={control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="font-bold">
+                          <SelectValue placeholder="Seleccione un estado" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {["Cotizacion", "Agendado", "En Taller"].map(s => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         <ServiceForm
           vehicles={vehicles}
