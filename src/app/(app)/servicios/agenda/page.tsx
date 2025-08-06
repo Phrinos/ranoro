@@ -20,8 +20,8 @@ import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form"
 import { parseDate } from '@/lib/forms';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch } from 'firebase/firestore';
+import Link from "next/link";
 
-const ServiceDialog = lazy(() => import('../components/service-dialog').then(module => ({ default: module.ServiceDialog })));
 const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
 const PaymentDetailsDialog = lazy(() => import('../components/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 const ServiceCalendar = lazy(() => import('../components/service-calendar').then(module => ({ default: module.ServiceCalendar })));
@@ -221,8 +221,7 @@ function AgendaPageComponent() {
     setIsPaymentDialogOpen(true);
   }, []);
   
-  const handleConfirmCompletion = useCallback(async (serviceId: string, paymentDetails: PaymentDetailsFormValues) => {
-    const serviceToUpdate = allServices.find(s => s.id === serviceId);
+  const handleConfirmCompletion = useCallback(async (serviceToUpdate: ServiceRecord, paymentDetails: PaymentDetailsFormValues) => {
     if (!serviceToUpdate) return;
     
     if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
@@ -240,7 +239,7 @@ function AgendaPageComponent() {
         setIsPaymentDialogOpen(false);
         toast({ title: "Error al Completar", description: `No se pudo completar el servicio.`, variant: "destructive" });
     }
-  }, [toast, allServices]);
+  }, [toast]);
 
   const renderCapacityBadge = () => {
     if (isCapacityLoading) return <Loader2 className="h-5 w-5 animate-spin" />;
@@ -288,10 +287,17 @@ function AgendaPageComponent() {
 
   return (
     <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Agenda de Citas</h1>
-        <p className="text-primary-foreground/80 mt-1">Planifica y visualiza todas las citas y servicios programados.</p>
-      </div>
+      <PageHeader
+        title="Agenda de Citas"
+        description="Planifica y visualiza todas las citas y servicios programados."
+        actions={
+          <Button asChild>
+            <Link href="/servicios/nuevo">
+              <PlusCircle className="mr-2 h-4 w-4" /> Nueva Cita
+            </Link>
+          </Button>
+        }
+      />
       
       <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -341,10 +347,10 @@ function AgendaPageComponent() {
       </Tabs>
 
       <Suspense fallback={null}>
-        {isSheetOpen && serviceForPreview && (
+        {isPreviewOpen && serviceForPreview && (
           <UnifiedPreviewDialog
-            open={isSheetOpen}
-            onOpenChange={setIsSheetOpen}
+            open={isPreviewOpen}
+            onOpenChange={setIsPreviewOpen}
             service={serviceForPreview}
           />
         )}

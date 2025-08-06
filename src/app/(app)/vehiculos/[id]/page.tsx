@@ -55,11 +55,11 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { VehicleDialog } from "../components/vehicle-dialog";
 import type { VehicleFormValues } from "../components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
-import { ServiceDialog } from "../../servicios/components/service-dialog";
 import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
 import { TicketContent } from "@/components/ticket-content";
-import { inventoryService, operationsService, adminService } from "@/lib/services";
+import { inventoryService, operationsService, adminService, serviceService } from "@/lib/services";
 import { parseDate } from "@/lib/forms";
+import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 
 export default function VehicleDetailPage() {
   const params = useParams();
@@ -70,18 +70,10 @@ export default function VehicleDetailPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
-  const [personnel, setPersonnel] = useState<User[]>([]);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
-  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
-
+  
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceRecord | null>(null);
-
-  const [showPrintTicketDialog, setShowPrintTicketDialog] = useState(false);
-  const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
-  const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<User | null>(null);
 
   const fetchVehicleAndServices = useCallback(async () => {
     const fetchedVehicle = await inventoryService.getVehicleById(vehicleId);
@@ -94,10 +86,6 @@ export default function VehicleDetailPage() {
 
   useEffect(() => {
     fetchVehicleAndServices();
-    adminService.onUsersUpdate(setPersonnel);
-    inventoryService.onItemsUpdate(setInventory);
-    inventoryService.onServiceTypesUpdate(setServiceTypes);
-    inventoryService.onVehiclesUpdate(setAllVehicles); // to pass to dialog
   }, [fetchVehicleAndServices]);
 
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
@@ -109,21 +97,6 @@ export default function VehicleDetailPage() {
       toast({ title: "Vehículo Actualizado" });
     } catch (e) {
         toast({ title: "Error", description: "No se pudieron guardar los cambios.", variant: "destructive" });
-    }
-  };
-
-  const handleServiceUpdated = async (data: ServiceRecord | QuoteRecord) => {
-    if (!("status" in data)) {
-      toast({ title: "Error de Tipo", variant: "destructive" });
-      return;
-    }
-    try {
-        await operationsService.updateService((data as ServiceRecord).id, data);
-        await fetchVehicleAndServices(); // Refetch to show updated service list
-        setIsViewServiceDialogOpen(false);
-        toast({ title: "Servicio Actualizado" });
-    } catch (e) {
-        toast({ title: "Error", description: "No se pudo actualizar el servicio.", variant: "destructive" });
     }
   };
 
@@ -214,16 +187,15 @@ export default function VehicleDetailPage() {
           </div>
         </TabsContent>
         <TabsContent value="services">
-          <Card><CardHeader><CardTitle>Historial de Servicios</CardTitle><CardDescription>Servicios realizados a este vehículo. Haz clic en una fila para ver/editar.</CardDescription></CardHeader><CardContent>{services.length > 0 ? (<div className="rounded-md border"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Kilometraje</TableHead><TableHead className="text-white">Descripción</TableHead><TableHead className="text-white">Técnico</TableHead><TableHead className="text-right text-white">Costo Total</TableHead><TableHead className="text-white">Estado</TableHead></TableRow></TableHeader><TableBody>
+          <Card><CardHeader><CardTitle>Historial de Servicios</CardTitle><CardDescription>Servicios realizados a este vehículo. Haz clic en una fila para ver/editar.</CardDescription></CardHeader><CardContent>{services.length > 0 ? (<div className="rounded-md border"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Kilometraje</TableHead><TableHead className="text-white">Descripción</TableHead><TableHead className="text-right text-white">Costo Total</TableHead><TableHead className="text-white">Estado</TableHead></TableRow></TableHeader><TableBody>
             {services.map((service) => { 
                 const relevantDate = service.deliveryDateTime ? parseDate(service.deliveryDateTime) : service.receptionDateTime ? parseDate(service.receptionDateTime) : service.serviceDate ? parseDate(service.serviceDate) : null;
                 const formattedDate = relevantDate && isValid(relevantDate) ? format(relevantDate, "dd MMM yyyy, HH:mm", { locale: es }) : "N/A"; 
                 return (
-                    <TableRow key={service.id} onClick={() => handleServiceRowClick(service)} className="cursor-pointer hover:bg-muted/50">
+                    <TableRow key={service.id} onClick={() => router.push(`/servicios/${service.id}`)} className="cursor-pointer hover:bg-muted/50">
                         <TableCell>{formattedDate}</TableCell>
                         <TableCell>{service.mileage ? `${service.mileage.toLocaleString("es-ES")} km` : "N/A"}</TableCell>
                         <TableCell>{getServiceDescriptionText(service)}</TableCell>
-                        <TableCell>{personnel.find((t) => t.id === service.technicianId)?.name || service.technicianId}</TableCell>
                         <TableCell className="text-right">${(service.totalCost || 0).toLocaleString("es-ES", { minimumFractionDigits: 2 })}</TableCell>
                         <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
                     </TableRow>
@@ -233,7 +205,7 @@ export default function VehicleDetailPage() {
         </TabsContent>
       </Tabs>
       {vehicle && (<VehicleDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} vehicle={vehicle} onSave={handleSaveEditedVehicle}/>)}
-      {selectedService && (<ServiceDialog open={isViewServiceDialogOpen} onOpenChange={setIsViewServiceDialogOpen} service={selectedService} vehicles={allVehicles} technicians={personnel} inventoryItems={inventory} isReadOnly={false} onSave={handleServiceUpdated} mode="service" serviceTypes={serviceTypes} />)}
+      {selectedService && (<UnifiedPreviewDialog open={isViewServiceDialogOpen} onOpenChange={setIsViewServiceDialogOpen} service={selectedService} vehicle={vehicle}/>)}
     </div>
   );
 }
