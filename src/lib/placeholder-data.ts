@@ -154,32 +154,37 @@ export const calculateSaleProfit = (
     inventory.map((i) => [i.id, i])
   );
 
-  let totalCostOfGoods = 0;
+  let totalGrossProfit = 0;
+
   for (const saleItem of sale.items) {
-    // Check if the item from the sale is a service.
-    const isServiceInSale = saleItem.isService;
-
-    // As a fallback, check the main inventory list.
-    const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
-    const isServiceInInventory = inventoryItem?.isService;
-
-    // The item is a service if it's marked as such in either place.
-    const isService = isServiceInSale || isServiceInInventory;
-
-    // Only add to cost if it's NOT a service (i.e., a physical product).
-    if (!isService && inventoryItem) {
-      totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
+    // 1. Determine if the item is a service or a product
+    let isService = saleItem.isService;
+    if (isService === undefined) {
+      const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
+      isService = inventoryItem?.isService || false;
     }
+    
+    // 2. Calculate pre-tax price for the item line
+    const itemTotalPriceWithTax = saleItem.totalPrice || 0;
+    const itemTotalPriceBeforeTax = itemTotalPriceWithTax / (1 + IVA_RATE);
+    
+    // 3. Determine cost of goods for this item line
+    let itemCostOfGoods = 0;
+    if (!isService) {
+      const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
+      itemCostOfGoods = (inventoryItem?.unitPrice || 0) * saleItem.quantity;
+    }
+    
+    // 4. Calculate profit for this item line and add to total
+    totalGrossProfit += (itemTotalPriceBeforeTax - itemCostOfGoods);
   }
-  
-  // The total amount already includes tax, so we get the pre-tax amount
-  const totalAmountPreTax = sale.totalAmount / (1 + IVA_RATE);
 
-  // The profit is the pre-tax total minus the cost of goods and any card commission
-  const profit = totalAmountPreTax - totalCostOfGoods - (sale.cardCommission || 0);
+  // 5. Subtract the card commission from the total gross profit
+  const finalProfit = totalGrossProfit - (sale.cardCommission || 0);
   
-  return isFinite(profit) ? profit : 0;
+  return isFinite(finalProfit) ? finalProfit : 0;
 };
+
 
 
 export const persistToFirestore = async (collections: string[]) => {
