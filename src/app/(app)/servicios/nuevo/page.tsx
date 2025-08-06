@@ -7,10 +7,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PageHeader } from "@/components/page-header";
 import { ServiceForm } from "../components/service-form";
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, User } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { inventoryService, serviceService, purchaseService, adminService } from '@/lib/services';
+import { inventoryService, serviceService, adminService } from '@/lib/services';
 import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
@@ -24,6 +24,9 @@ import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
 import html2canvas from 'html2canvas';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../components/PaymentDetailsDialog';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type POSFormValues = z.infer<typeof serviceFormSchema>;
 
@@ -48,7 +51,15 @@ export default function NuevoServicioPage() {
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(serviceFormSchema),
+    defaultValues: {
+      items: [],
+      customerName: 'Cliente Mostrador',
+      payments: [{ method: 'Efectivo', amount: undefined }],
+      status: 'Cotizacion', // Default status
+    },
   });
+
+  const { control } = methods;
 
   useEffect(() => {
     const unsubs = [
@@ -152,6 +163,32 @@ export default function NuevoServicioPage() {
   return (
     <>
       <FormProvider {...methods}>
+        <Card className="bg-white mb-6 shadow-sm">
+            <CardHeader>
+                <CardTitle className="text-2xl">Nuevo Servicio / Cotización</CardTitle>
+                <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <FormField
+                    control={control}
+                    name="status"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                            <SelectItem value="Cotizacion">Cotización</SelectItem>
+                            <SelectItem value="Agendado">Agendado</SelectItem>
+                            <SelectItem value="En Taller">En Taller (Ingreso Directo)</SelectItem>
+                            <SelectItem value="Entregado">Entregado (Registro Histórico)</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    </FormItem>
+                    )}
+                />
+            </CardContent>
+        </Card>
         <ServiceForm
           vehicles={vehicles}
           technicians={users}
