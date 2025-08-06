@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
@@ -11,7 +10,7 @@ import { useTableManager } from "@/hooks/useTableManager";
 import { isToday, startOfMonth, endOfMonth, compareDesc } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import { operationsService, inventoryService, personnelService, adminService } from '@/lib/services';
+import { serviceService, inventoryService, personnelService, adminService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
 import { parseDate } from '@/lib/forms';
 import { writeBatch } from 'firebase/firestore';
@@ -19,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, Copy, MessageSquare, Share2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import type { PaymentDetailsFormValues } from "../../components/PaymentDetailsDialog";
 
 const ServiceDialog = lazy(() => import('../../components/service-dialog').then(module => ({ default: module.ServiceDialog })));
 const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
@@ -81,7 +81,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     }
 
     const unsubs = [
-      operationsService.onServicesUpdate((services) => {
+      serviceService.onServicesUpdate((services) => {
         setAllServices(services.filter(s => s.status !== 'Cotizacion'));
         setIsLoading(false); 
       }),
@@ -162,7 +162,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
     }
     
     try {
-      await operationsService.saveService(data);
+      await serviceService.saveService(data);
       setIsFormDialogOpen(false);
       // toast({ title: 'Servicio actualizado.' });
     } catch (e) {
@@ -172,7 +172,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
 
   const handleCancelRecord = useCallback(async (serviceId: string, reason: string) => {
     try {
-      await operationsService.cancelService(serviceId, reason);
+      await serviceService.cancelService(serviceId, reason);
       toast({ title: 'Servicio cancelado.' });
       setIsFormDialogOpen(false);
     } catch (e) {
@@ -182,7 +182,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
 
   const handleDeleteService = useCallback(async (serviceId: string) => {
     try {
-      await operationsService.deleteService(serviceId);
+      await serviceService.deleteService(serviceId);
       toast({ title: "Servicio Eliminado", description: "El registro ha sido eliminado permanentemente." });
     } catch (e) {
       toast({ title: "Error", description: "No se pudo eliminar el servicio.", variant: "destructive" });
@@ -205,7 +205,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   }, []);
 
   const handleUpdatePaymentDetails = useCallback(async (serviceId: string, paymentDetails: PaymentDetailsFormValues) => {
-    await operationsService.updateService(serviceId, paymentDetails);
+    await serviceService.updateService(serviceId, paymentDetails);
     toast({ title: "Detalles de Pago Actualizados" });
     setIsPaymentDialogOpen(false);
   }, [toast]);
@@ -215,7 +215,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
      if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
     try {
       const batch = writeBatch(db);
-      await operationsService.completeService(service, { ...paymentDetails, nextServiceInfo }, batch);
+      await serviceService.completeService(service, { ...paymentDetails, nextServiceInfo }, batch);
       await batch.commit();
       toast({ title: "Servicio Completado" });
       const updatedService = { ...service, ...paymentDetails, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
@@ -235,7 +235,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
   }, []);
 
   const handleConfirmAppointment = useCallback(async (service: ServiceRecord) => {
-    await operationsService.updateService(service.id, { appointmentStatus: "Confirmada" });
+    await serviceService.updateService(service.id, { appointmentStatus: "Confirmada" });
     toast({ title: "Cita Confirmada" });
   }, [toast]);
   
@@ -286,8 +286,8 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
       try {
         await navigator.share({
           files: [imageFile],
-          title: 'Ticket de Servicio',
-          text: `Ticket de tu servicio en ${workshopInfo?.name || 'nuestro taller'}.`,
+          title: `Servicio #${recordForTicket?.id}`,
+          text: `Detalles del servicio para ${vehicles.find(v => v.id === recordForTicket?.vehicleId)?.licensePlate} en ${workshopInfo?.name || 'nuestro taller'}.`,
         });
       } catch (error) {
         if (!String(error).includes('AbortError')) {
@@ -299,7 +299,7 @@ export function HistorialServiciosPageComponent({ status }: { status?: string })
         // Fallback if sharing is not supported or image creation failed
         handleCopyServiceForWhatsapp(recordForTicket!);
     }
-  }, [handleCopyAsImage, handleCopyServiceForWhatsapp, recordForTicket, workshopInfo, toast]);
+  }, [handleCopyAsImage, handleCopyServiceForWhatsapp, recordForTicket, workshopInfo, toast, vehicles]);
 
   const handlePrint = () => {
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
