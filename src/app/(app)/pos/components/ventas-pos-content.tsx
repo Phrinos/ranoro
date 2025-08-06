@@ -42,7 +42,7 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
     initialData: allSales,
     searchKeys: ['id', 'customerName', 'items.itemName', 'payments.method'],
     dateFilterKey: 'saleDate',
-    initialSortOption: 'date_desc',
+    initialSortOption: 'saleDate_desc',
     itemsPerPage: 10,
   });
 

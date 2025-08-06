@@ -48,17 +48,19 @@ export function useTableManager<T extends { [key: string]: any }>({
       const lowercasedTerm = searchTerm.toLowerCase();
       data = data.filter(item => 
         searchKeys.some(key => {
-          if (typeof key === 'string' && key.includes('.')) {
-              // Handle nested arrays, e.g., 'items.itemName'
-              const [arrayKey, nestedKey] = key.split('.');
-              const arrayValue = item[arrayKey];
-              if (Array.isArray(arrayValue)) {
-                  return arrayValue.some(subItem => 
-                      String(subItem[nestedKey] ?? '').toLowerCase().includes(lowercasedTerm)
-                  );
-              }
+          const itemValue = getNestedValue(item, key as string);
+          if (Array.isArray(itemValue)) {
+            // Handle nested arrays, e.g., 'items.itemName' or 'payments.method'
+             return itemValue.some(subItem => {
+                if (typeof subItem === 'object' && subItem !== null) {
+                    return Object.values(subItem).some(val => 
+                        String(val ?? '').toLowerCase().includes(lowercasedTerm)
+                    );
+                }
+                return String(subItem ?? '').toLowerCase().includes(lowercasedTerm);
+            });
           }
-          return String(getNestedValue(item, key as string) ?? '').toLowerCase().includes(lowercasedTerm);
+          return String(itemValue ?? '').toLowerCase().includes(lowercasedTerm);
         })
       );
     }
@@ -99,7 +101,8 @@ export function useTableManager<T extends { [key: string]: any }>({
       const valA = getNestedValue(a, sortKey);
       const valB = getNestedValue(b, sortKey);
       
-      const isDateKey = sortKey.toLowerCase().includes('date');
+      // Default to dateFilterKey if the primary sort key is not a date
+      const isDateKey = sortKey.toLowerCase().includes('date') || sortKey === dateFilterKey;
 
       if (isDateKey) {
         const dateA = parseDate(valA);
@@ -118,18 +121,10 @@ export function useTableManager<T extends { [key: string]: any }>({
           ? valA.localeCompare(valB, 'es', { sensitivity: 'base' })
           : valB.localeCompare(valA, 'es', { sensitivity: 'base' });
       }
-
-      // Default fallback: If sortKey is not a date, number, or string, or values are null/undefined,
-      // maintain a stable order by sorting by the main date key descending.
-      const defaultDateA = parseDate(getNestedValue(a, dateFilterKey as string));
-      const defaultDateB = parseDate(getNestedValue(b, dateFilterKey as string));
-      if (defaultDateA && defaultDateB && isValid(defaultDateA) && isValid(defaultDateB)) {
-        return compareDesc(defaultDateA, defaultDateB);
-      }
-
-      return 0; // Final fallback if no valid date key exists
+      
+      return 0; // Final fallback if types don't match or are not sortable
     });
-
+    
     return data;
   }, [initialData, searchTerm, sortOption, dateRange, otherFilters, searchKeys, dateFilterKey]);
   
