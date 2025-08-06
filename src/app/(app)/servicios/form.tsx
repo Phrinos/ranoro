@@ -50,7 +50,7 @@ import type {
   QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, SafetyCheckValue, InventoryCategory, Supplier, PaymentMethod, Personnel
 } from '@/types'
 
-import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog'
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
 import { ServiceDetailsCard } from './components/ServiceDetailsCard'
 import { VehicleSelectionCard } from './components/VehicleSelectionCard'
@@ -541,5 +541,3 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   );
 });
 ServiceForm.displayName = "ServiceForm";
-
-    
