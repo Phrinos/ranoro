@@ -120,10 +120,9 @@ function TransactionsList({ transactions, onDelete, currentUser }: { transaction
 interface CajaPosContentProps {
   allCashOperations: CashDrawerTransaction[];
   initialCashBalance: InitialCashBalance | null;
-  latestInitialBalance: InitialCashBalance | null;
 }
 
-export function CajaPosContent({ allCashOperations, initialCashBalance: dailyInitialBalance, latestInitialBalance }: CajaPosContentProps) {
+export function CajaPosContent({ allCashOperations, initialCashBalance: dailyInitialBalance }: CajaPosContentProps) {
   const { toast } = useToast();
   const [date, setDate] = useState(startOfDay(new Date()));
   const [isInitialBalanceDialogOpen, setIsInitialBalanceDialogOpen] = useState(false);
@@ -376,6 +375,7 @@ export function CajaPosContent({ allCashOperations, initialCashBalance: dailyIni
 
 
     
+
 
 
 

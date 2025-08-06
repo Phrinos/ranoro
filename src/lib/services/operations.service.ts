@@ -363,7 +363,7 @@ const onSalesUpdatePromise = async (): Promise<SaleReceipt[]> => {
 
 const registerSale = async (
     saleId: string, 
-    saleData: Omit<SaleReceipt, 'id' | 'saleDate' | 'subTotal' | 'tax' | 'totalAmount' | 'status'>, 
+    saleData: Omit<SaleReceipt, 'id' | 'saleDate' | 'subTotal' | 'tax' | 'totalAmount' | 'status' | 'registeredById' | 'registeredByName'>, 
     inventoryItems: InventoryItem[], 
     currentUser: User,
     batch: ReturnType<typeof writeBatch>
@@ -401,7 +401,7 @@ const registerSale = async (
             date: new Date().toISOString(),
             type: 'Entrada',
             amount: newSale.amountInCash || totalAmount, // Use split amount if available
-            concept: `Venta POS #${saleId.slice(0, 6)}`,
+            concept: `Venta POS #${saleId.slice(0, 6)} - ${newSale.customerName || ''}`,
             userId: currentUser.id,
             userName: currentUser.name,
             relatedType: 'Venta',
