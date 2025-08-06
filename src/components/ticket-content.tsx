@@ -171,7 +171,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
                     <p className="font-bold">Forma(s) de Pago:</p>
                     <div className="text-center text-xs">
                         {operation.payments.map((p, index) => (
-                            <p key={index}>- {p.method}: {formatCurrency(p.amount)} {p.folio && `(Folio: ${p.folio})`}</p>
+                            <p key={index}>{p.method}: {formatCurrency(p.amount)} {p.folio && `(Folio: ${p.folio})`}</p>
                         ))}
                     </div>
                 </div>
@@ -229,5 +229,3 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
 );
 
 TicketContent.displayName = "TicketContent";
-
-    

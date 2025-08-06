@@ -43,7 +43,7 @@ export default function NuevaVentaPage() {
     defaultValues: {
       items: [],
       customerName: 'Cliente Mostrador',
-      payments: [{ method: 'Efectivo', amount: 0 }],
+      payments: [{ method: 'Efectivo', amount: undefined }],
     },
   });
 
@@ -114,6 +114,7 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         status: 'Completado',
         registeredById: currentUser.id,
         registeredByName: currentUser.name,
+        cardCommission: values.cardCommission,
       };
       
       toast({ title: 'Venta Registrada', description: `La venta #${saleId} se ha completado.` });
@@ -218,9 +219,9 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           title="Venta Completada"
           description={`Ticket para la venta #${saleForTicket.id}`}
           footerActions={<>
-              <Button onClick={() => handleCopyAsImage()} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-              <Button onClick={handleShare} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><Share2 className="mr-2 h-4 w-4" /> Compartir Ticket</Button>
-              <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+              <Button onClick={() => handleCopyAsImage()} variant="outline" size="icon" title="Copiar Imagen"><Copy className="h-4 w-4"/></Button>
+              <Button onClick={handleShare} variant="outline" size="icon" title="Compartir Ticket"><Share2 className="h-4 w-4" /></Button>
+              <Button onClick={handlePrint} variant="outline" size="icon" title="Imprimir"><Printer className="h-4 w-4"/></Button>
           </>}
         >
           <div id="printable-ticket">
@@ -235,5 +236,3 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     </>
   );
 }
-
-    
