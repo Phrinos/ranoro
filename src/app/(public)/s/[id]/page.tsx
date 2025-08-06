@@ -149,16 +149,23 @@ export default function PublicServicePage() {
                           <CardDescription>Folio: {service.id}</CardDescription>
                       </div>
                        {tabs.length > 1 && (
-                           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-                              <TabsList className={cn('grid w-full', gridColsClass)}>
-                                  {tabs.map(tab => (
-                                      <TabsTrigger key={tab.value} value={tab.value}>
-                                          <tab.icon className="h-4 w-4 mr-2"/>
-                                          {tab.label}
-                                      </TabsTrigger>
-                                  ))}
-                              </TabsList>
-                          </Tabs>
+                            <TabsList className={cn('grid w-full h-auto p-0 bg-transparent gap-2', gridColsClass)}>
+                                {tabs.map(tab => (
+                                    <button
+                                      key={tab.value}
+                                      onClick={() => setActiveTab(tab.value)}
+                                      className={cn(
+                                        'flex-1 min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug flex items-center justify-center',
+                                        activeTab === tab.value
+                                          ? 'bg-primary text-primary-foreground shadow'
+                                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                      )}
+                                    >
+                                        <tab.icon className="h-4 w-4 mr-2"/>
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </TabsList>
                       )}
                   </div>
               </div>
@@ -186,17 +193,19 @@ export default function PublicServicePage() {
         />
         
         <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-            <DialogContent className="max-w-4xl p-2">
-                <DialogHeader className="print:hidden">
-                  <DialogTitle>Vista Previa de Imagen</DialogTitle>
-                  <DialogDescription>Visualización de la imagen adjunta.</DialogDescription>
-                </DialogHeader>
-                <div className="relative aspect-video w-full">
-                    {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada" fill style={{objectFit:"contain"}} sizes="(max-width: 768px) 100vw, 1024px" crossOrigin="anonymous" />)}
-                </div>
-                <DialogFooter>
-                    <Button onClick={() => window.open(viewingImageUrl || '', '_blank')?.focus()}><Download className="mr-2 h-4 w-4"/>Descargar</Button>
-                </DialogFooter>
+            <DialogContent className="max-w-4xl p-2 bg-transparent border-none shadow-none">
+                {viewingImageUrl && (
+                  <div className="relative aspect-video w-full">
+                    <Image
+                      src={viewingImageUrl}
+                      alt="Vista ampliada de evidencia"
+                      fill
+                      style={{ objectFit: 'contain' }}
+                      sizes="(max-width: 768px) 100vw, 1024px"
+                      crossOrigin="anonymous"
+                    />
+                  </div>
+                )}
             </DialogContent>
         </Dialog>
      </>

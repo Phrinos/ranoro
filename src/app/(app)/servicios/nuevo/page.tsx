@@ -285,11 +285,11 @@ export default function NuevoServicioPage() {
 
         {showTabs ? (
            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList>
-                <TabsTrigger value="servicio"><Wrench className="mr-2 h-4 w-4"/>Servicio</TabsTrigger>
-                <TabsTrigger value="revision"><ShieldCheck className="mr-2 h-4 w-4"/>Revisión</TabsTrigger>
-                <TabsTrigger value="fotos"><Camera className="mr-2 h-4 w-4"/>Fotos</TabsTrigger>
-                <TabsTrigger value="entrega"><FileText className="mr-2 h-4 w-4"/>Recepción/Entrega</TabsTrigger>
+              <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
+                  <button type="button" onClick={() => setActiveTab('servicio')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'servicio' ? 'active' : 'inactive'}><Wrench className="mr-2 h-4 w-4"/>Servicio</button>
+                  <button type="button" onClick={() => setActiveTab('entrega')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'entrega' ? 'active' : 'inactive'}><FileText className="mr-2 h-4 w-4"/>Recepción/Entrega</button>
+                  <button type="button" onClick={() => setActiveTab('fotos')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'fotos' ? 'active' : 'inactive'}><Camera className="mr-2 h-4 w-4"/>Fotos</button>
+                  <button type="button" onClick={() => setActiveTab('revision')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'revision' ? 'active' : 'inactive'}><ShieldCheck className="mr-2 h-4 w-4"/>Revisión</button>
               </TabsList>
               <TabsContent value="servicio" className="mt-6">
                   <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
@@ -301,9 +301,9 @@ export default function NuevoServicioPage() {
                       </div>
                   </div>
               </TabsContent>
-               <TabsContent value="revision" className="mt-6">
+               <TabsContent value="entrega" className="mt-6">
                 <Suspense fallback={<Loader2 className="animate-spin" />}>
-                    <SafetyChecklist isReadOnly={false} onSignatureClick={() => handleOpenSignature('technician')} signatureDataUrl={watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} serviceId={getValues('id') || 'new'} onPhotoUploaded={handleChecklistPhotoUploaded} onViewImage={handleViewImage}/>
+                    <ReceptionAndDelivery isReadOnly={false} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature}/>
                 </Suspense>
               </TabsContent>
               <TabsContent value="fotos" className="mt-6">
@@ -311,9 +311,9 @@ export default function NuevoServicioPage() {
                     <PhotoReportTab isReadOnly={false} serviceId={getValues('id') || 'new'} onPhotoUploaded={handlePhotoUploaded} onViewImage={handleViewImage}/>
                 </Suspense>
               </TabsContent>
-              <TabsContent value="entrega" className="mt-6">
+              <TabsContent value="revision" className="mt-6">
                 <Suspense fallback={<Loader2 className="animate-spin" />}>
-                    <ReceptionAndDelivery isReadOnly={false} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature}/>
+                    <SafetyChecklist isReadOnly={false} onSignatureClick={() => handleOpenSignature('technician')} signatureDataUrl={watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} serviceId={getValues('id') || 'new'} onPhotoUploaded={handleChecklistPhotoUploaded} onViewImage={handleViewImage}/>
                 </Suspense>
               </TabsContent>
             </Tabs>
