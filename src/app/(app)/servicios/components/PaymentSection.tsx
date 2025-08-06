@@ -80,7 +80,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
            {fields.map((field, index) => {
                 const selectedMethod = watchedPayments[index]?.method;
                 const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
-                const folioLabel = selectedMethod === 'Transferencia' ? 'Folio de Transferencia' : 'Folio de Voucher';
+                const folioLabel = selectedMethod === 'Transferencia' ? 'Folio/Referencia' : 'Folio de Voucher';
 
                 return (
                     <div key={field.id} className="space-y-2">
@@ -106,15 +106,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                                     <FormItem className="w-48">
                                         <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
                                             <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                {paymentMethods.map(method => {
-                                                    const Icon = paymentMethodIcons[method];
-                                                    return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method as any) === -1 && method !== selectedMethod}>
-                                                                <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
-                                                            </SelectItem>
-                                                    );
-                                                })}
-                                            </SelectContent>
+                                            <SelectContent>{paymentMethods.map(method => (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method as any) === -1 && method !== selectedMethod}><div className="flex items-center gap-2">{React.createElement(paymentMethodIcons[method], {className: "h-4 w-4"})}<span>{method}</span></div></SelectItem>))}</SelectContent>
                                         </Select>
                                     </FormItem>
                                 )}

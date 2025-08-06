@@ -1,5 +1,3 @@
-
-
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -337,7 +335,7 @@ export default function EditarServicioPage() {
                         <X className="mr-2 h-4 w-4" />
                         Cerrar
                     </Button>
-                    <Button type="submit">
+                    <Button type="submit" form="service-form">
                         <Save className="mr-2 h-4 w-4" />
                         Guardar Cambios
                     </Button>
