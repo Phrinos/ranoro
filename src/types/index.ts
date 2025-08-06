@@ -1,5 +1,4 @@
 
-
 // src/types/index.ts
 import { type VariantProps } from "class-variance-authority"
 import { sidebarMenuButtonVariants } from './sidebar.types';
@@ -163,6 +162,7 @@ export interface ServiceItem {
   id: string;
   name: string;
   price: number;
+  serviceType?: string; // Type of service for this specific item
   suppliesUsed: ServiceSupply[];
 }
 
@@ -230,7 +230,7 @@ export interface ServiceRecord {
   vehicleId: string;
   vehicleIdentifier?: string;
   serviceDate: string;
-  serviceType?: string;
+  // serviceType?: string; // DEPRECATED - Now belongs to ServiceItem
   description?: string;
   technicianId: string;
   technicianName?: string;

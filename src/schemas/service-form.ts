@@ -17,6 +17,7 @@ export const serviceItemSchema = z.object({
   name: z.string().min(3, 'El nombre del servicio es requerido.'),
   price: z.coerce.number({ invalid_type_error: 'El precio debe ser un número.' }).min(0, 'El precio debe ser un número positivo.').optional(),
   suppliesUsed: z.array(supplySchema),
+  serviceType: z.string().optional(), // Moved from root
 });
 
 export const photoReportSchema = z.object({
@@ -87,7 +88,7 @@ export const serviceFormSchema = z.object({
     serviceItems: z.array(serviceItemSchema).min(1, 'Debe agregar al menos un ítem de servicio.'),
     status: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Proveedor Externo', 'Entregado', 'Cancelado']),
     subStatus: z.enum(['Cita Agendada', 'Cita Confirmada', 'Ingresado', 'En Espera de Refacciones', 'Reparando', 'Completado']).optional(),
-    serviceType: z.string().optional(),
+    serviceType: z.string().optional(), // This is now deprecated at root level but kept for compatibility.
     vehicleConditions: z.string().optional(),
     fuelLevel: z.string().optional(),
     customerItems: z.string().optional(),

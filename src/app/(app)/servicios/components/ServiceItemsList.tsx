@@ -7,7 +7,7 @@ import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, ShoppingCart } from 'lucide-react';
-import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle } from '@/types';
+import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord } from '@/types';
 import { ServiceItemCard } from './ServiceItemCard';
 import type { ServiceFormValues } from '@/schemas/service-form';
 import { nanoid } from 'nanoid';
@@ -18,6 +18,7 @@ import { AddToPriceListDialog } from "../../precios/components/add-to-price-list
 interface ServiceItemsListProps {
   isReadOnly?: boolean;
   inventoryItems: InventoryItem[];
+  serviceTypes: ServiceTypeRecord[];
   mode: 'service' | 'quote';
   onNewInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
   categories: InventoryCategory[];
@@ -27,6 +28,7 @@ interface ServiceItemsListProps {
 export function ServiceItemsList({
   isReadOnly,
   inventoryItems,
+  serviceTypes,
   mode,
   onNewInventoryItemCreated,
   categories,
@@ -56,6 +58,7 @@ export function ServiceItemsList({
                 removeServiceItem={remove}
                 isReadOnly={isReadOnly}
                 inventoryItems={inventoryItems}
+                serviceTypes={serviceTypes}
                 mode={mode}
                 onNewInventoryItemCreated={onNewInventoryItemCreated}
                 categories={categories}

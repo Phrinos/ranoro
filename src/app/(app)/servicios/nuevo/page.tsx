@@ -56,7 +56,7 @@ const subStatusOptions: Record<ServiceRecord['status'], { value: ServiceRecord['
     ],
     'En Taller': [
         { value: 'Ingresado', label: 'Ingresado' },
-        { value: 'A la Espera de Refacciones', label: 'Espera Refacciones' },
+        { value: 'En Espera de Refacciones', label: 'Espera Refacciones' },
         { value: 'Reparando', label: 'Reparando' },
         { value: 'Completado', label: 'Listo para Entrega' },
     ],
@@ -100,6 +100,8 @@ export default function NuevoServicioPage() {
 
   const { control, watch, formState, handleSubmit, setValue } = methods;
   const watchedStatus = watch('status');
+  const relevantSubStatusOptions = subStatusOptions[watchedStatus] || [];
+
 
   useEffect(() => {
     const unsubs = [
@@ -199,7 +201,6 @@ export default function NuevoServicioPage() {
     setIsNewVehicleDialogOpen(true);
   }, []);
 
-  const relevantSubStatusOptions = subStatusOptions[watchedStatus] || [];
 
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
@@ -332,6 +333,7 @@ export default function NuevoServicioPage() {
               onNewInventoryItemCreated={handleNewInventoryItemCreated}
               categories={allCategories}
               suppliers={allSuppliers}
+              serviceTypes={serviceTypes}
             />
           </div>
           <div className="lg:col-span-2 space-y-6">

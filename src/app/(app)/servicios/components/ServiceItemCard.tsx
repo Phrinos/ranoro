@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useFieldArray, useFormContext, type Control } from "react-hook-form";
@@ -8,7 +7,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Card } from '@/components/ui/card';
 import { Plus, PlusCircle, Trash2, Wrench, Tags } from "lucide-react";
-import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle } from "@/types";
+import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord } from "@/types";
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AddSupplyDialog } from './add-supply-dialog';
@@ -18,6 +17,7 @@ import { InventoryItemDialog } from '../../inventario/components/inventory-item-
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
 import { inventoryService } from "@/lib/services";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 
 // Sub-component for a single Service Item card
@@ -26,6 +26,7 @@ interface ServiceItemCardProps {
   removeServiceItem: (index: number) => void;
   isReadOnly?: boolean;
   inventoryItems: InventoryItem[];
+  serviceTypes: ServiceTypeRecord[];
   mode: 'service' | 'quote';
   onNewInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
   categories: InventoryCategory[];
@@ -37,6 +38,7 @@ export function ServiceItemCard({
     removeServiceItem, 
     isReadOnly, 
     inventoryItems, 
+    serviceTypes,
     mode,
     onNewInventoryItemCreated,
     categories,
@@ -189,6 +191,25 @@ export function ServiceItemCard({
                         </FormItem>
                     )}
                 />
+                 <FormField
+                    control={control}
+                    name={`serviceItems.${serviceIndex}.serviceType`}
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Tipo de Servicio</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                            {serviceTypes.slice().sort((a,b)=>a.name.localeCompare(b.name)).map((type) => (
+                                <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                    </FormItem>
+                    )}
+                />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <FormField
                     control={control}
                     name={`serviceItems.${serviceIndex}.price`}

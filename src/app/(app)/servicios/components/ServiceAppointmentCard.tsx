@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from 'react';
@@ -31,12 +30,16 @@ interface ServiceAppointmentCardProps {
 }
 
 const getServiceDescriptionText = (service: ServiceRecord) => {
-    const serviceType = service.serviceType && service.serviceType !== 'Servicio General' ? `${service.serviceType}: ` : '';
-    const description = (service.serviceItems && service.serviceItems.length > 0)
-        ? service.serviceItems.map(item => item.name).join(', ')
-        : service.description || 'Servicio sin descripción';
-    return `${serviceType}${description}`;
+    if (service.serviceItems && service.serviceItems.length > 0) {
+        // Concatenate service types and names
+        return service.serviceItems
+            .map(item => item.serviceType && item.serviceType !== 'Servicio General' ? item.serviceType : item.name)
+            .filter(Boolean)
+            .join(', ');
+    }
+    return service.description || 'Servicio sin descripción';
 };
+
 
 const getAppointmentStatus = (service: ServiceRecord): { label: string; variant: "lightRed" | "success" } => {
     if (service.appointmentStatus === 'Confirmada') {
