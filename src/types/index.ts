@@ -213,8 +213,8 @@ export interface PhotoReportGroup {
   photos: string[];
 }
 
-export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado';
-export type ServiceSubStatus = 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Proveedor Externo';
+export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Proveedor Externo' | 'Entregado' | 'Cancelado';
+export type ServiceSubStatus = 'Cita Agendada' | 'Cita Confirmada' | 'Ingresado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado';
 
 export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Tarjeta MSI' | 'Transferencia';
 

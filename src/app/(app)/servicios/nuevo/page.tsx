@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PosForm } from '../components/pos-form';
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, Vehicle, Technician, ServiceTypeRecord, QuoteRecord, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -40,6 +39,31 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 type ServiceCreationFormValues = z.infer<typeof serviceFormSchema>;
+
+const statusOptions: { value: ServiceRecord['status'], label: string }[] = [
+    { value: 'Cotizacion', label: 'Cotización' },
+    { value: 'Agendado', label: 'Agendado' },
+    { value: 'En Taller', label: 'En Taller' },
+    { value: 'Proveedor Externo', label: 'Proveedor Externo' },
+    { value: 'Entregado', label: 'Entregado' },
+];
+
+const subStatusOptions: Record<ServiceRecord['status'], { value: ServiceRecord['subStatus'], label: string }[]> = {
+    'Cotizacion': [],
+    'Agendado': [
+        { value: 'Cita Agendada', label: 'Cita Agendada' },
+        { value: 'Cita Confirmada', label: 'Cita Confirmada' },
+    ],
+    'En Taller': [
+        { value: 'Ingresado', label: 'Ingresado' },
+        { value: 'A la Espera de Refacciones', label: 'Espera Refacciones' },
+        { value: 'Reparando', label: 'Reparando' },
+        { value: 'Completado', label: 'Listo para Entrega' },
+    ],
+    'Proveedor Externo': [],
+    'Entregado': [],
+    'Cancelado': [],
+};
 
 export default function NuevoServicioPage() {
   const { toast } = useToast(); 
@@ -175,173 +199,187 @@ export default function NuevoServicioPage() {
     setIsNewVehicleDialogOpen(true);
   }, []);
 
+  const relevantSubStatusOptions = subStatusOptions[watchedStatus] || [];
+
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
   }
 
   return (
-    <>
-        <FormProvider {...methods}>
-            <Card className="bg-white border rounded-lg p-6 shadow-sm mb-6">
-                <CardHeader className="p-0">
-                    <CardTitle>Nuevo Servicio / Cotización</CardTitle>
-                    <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0 mt-4 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                        <FormField
-                            control={control}
-                            name="status"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger className="font-bold">
-                                            <SelectValue placeholder="Seleccione un estado" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                    {["Cotizacion", "Agendado", "En Taller"].map(s => (
-                                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                                    ))}
-                                    </SelectContent>
-                                </Select>
-                            </FormItem>
-                            )}
-                        />
-                         {watchedStatus === 'En Taller' && (
-                            <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado Taller</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl><SelectContent>{["Proveedor Externo", "En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
-                        )}
-                    </div>
-                     {watchedStatus === 'Agendado' && (
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                            <Controller
-                                name="serviceDate"
-                                control={control}
-                                render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel className={cn(formState.errors.serviceDate && "text-destructive")}>Fecha de Cita</FormLabel>
-                                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", formState.errors.serviceDate && "border-destructive focus-visible:ring-destructive")}>
-                                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                                        <CalendarDateIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                        mode="single"
-                                        selected={field.value}
-                                        onSelect={(date) => {
-                                            const currentTime = field.value || new Date();
-                                            const newDate = date ? setMinutes(setHours(date, currentTime.getHours()), currentTime.getMinutes()) : undefined;
-                                            field.onChange(newDate);
-                                            setIsDatePickerOpen(false);
-                                        }}
-                                        initialFocus
-                                        locale={es}
-                                        />
-                                    </PopoverContent>
-                                    </Popover>
-                                </FormItem>
-                                )}
-                            />
-                            <Controller
-                                name="serviceDate"
-                                control={control}
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Hora de la Cita</FormLabel>
-                                    <FormControl>
-                                    <Input
-                                        type="time"
-                                        value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                        onChange={(e) => {
-                                        if (!e.target.value) return;
-                                        const [h, m] = e.target.value.split(':').map(Number);
-                                        field.onChange(setMinutes(setHours(field.value || new Date(), h), m));
-                                        }}
-                                    />
-                                    </FormControl>
-                                </FormItem>
-                                )}
-                            />
-                       </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6 mt-6">
-                <VehicleSelectionCard
-                    isReadOnly={false}
-                    localVehicles={vehicles}
-                    onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
-                    onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
-                />
-
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-                    <div className="lg:col-span-3">
-                    <ServiceItemsList
-                        isReadOnly={false}
-                        inventoryItems={currentInventoryItems}
-                        mode={watchedStatus === 'Cotizacion' ? 'quote' : 'service'}
-                        onNewInventoryItemCreated={handleNewInventoryItemCreated}
-                        categories={allCategories}
-                        suppliers={allSuppliers}
-                    />
-                    </div>
-                    <div className="lg:col-span-2 space-y-6">
-                        <ServiceSummary />
-                    </div>
-                </div>
-
-                <div className="mt-6 flex justify-end gap-2">
-                    <Button variant="outline" type="button" onClick={() => router.back()}>
-                        <X className="mr-2 h-4 w-4" />
-                        Cancelar
-                    </Button>
-                    <Button
-                        type="submit"
-                        disabled={formState.isSubmitting}
-                    >
-                        {formState.isSubmitting ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Save className="mr-2 h-4 w-4" />
-                        )}
-                        {"Crear Registro"}
-                    </Button>
-                </div>
-            </form>
-            
-            <VehicleDialog
-              open={isNewVehicleDialogOpen}
-              onOpenChange={setIsNewVehicleDialogOpen}
-              onSave={handleVehicleCreated}
-              vehicle={{ licensePlate: newVehicleInitialPlate }}
+    <FormProvider {...methods}>
+      <Card className="bg-white border rounded-lg p-6 shadow-sm mb-6">
+        <CardHeader className="p-0">
+          <CardTitle>Nuevo Servicio / Cotización</CardTitle>
+          <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 mt-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            <FormField
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="font-bold">
+                        <SelectValue placeholder="Seleccione un estado" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {statusOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
             />
-
-            {serviceToComplete && (
-              <PaymentDetailsDialog
-                open={isPaymentDialogOpen}
-                onOpenChange={setIsPaymentDialogOpen}
-                record={serviceToComplete}
-                onConfirm={(id, paymentDetails) => handleCompleteNewService(paymentDetails)}
-                isCompletionFlow={true}
+            {relevantSubStatusOptions.length > 0 && (
+              <FormField
+                control={control}
+                name="subStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sub-Estado</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={relevantSubStatusOptions.length === 0}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione sub-estado..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {relevantSubStatusOptions.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value!}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
               />
             )}
-        </FormProvider>
-
-        {serviceForPreview && (
-             <UnifiedPreviewDialog
-                open={isPreviewOpen}
-                onOpenChange={handleDialogClose}
-                service={serviceForPreview}
-                vehicle={vehicles.find(v => v.id === serviceForPreview.vehicleId)}
-                title="Registro Creado con Éxito"
+          </div>
+          {watchedStatus === 'Agendado' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end pt-4 border-t">
+              <Controller
+                name="serviceDate"
+                control={control}
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className={cn(formState.errors.serviceDate && "text-destructive")}>Fecha de Cita</FormLabel>
+                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", formState.errors.serviceDate && "border-destructive focus-visible:ring-destructive")}>
+                          {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                          <CalendarDateIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={(date) => {
+                            const currentTime = field.value || new Date();
+                            const newDate = date ? setMinutes(setHours(date, currentTime.getHours()), currentTime.getMinutes()) : undefined;
+                            field.onChange(newDate);
+                            setIsDatePickerOpen(false);
+                          }}
+                          initialFocus
+                          locale={es}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </FormItem>
+                )}
               />
-        )}
-    </>
+              <Controller
+                name="serviceDate"
+                control={control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hora de la Cita</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
+                        onChange={(e) => {
+                          if (!e.target.value) return;
+                          const [h, m] = e.target.value.split(':').map(Number);
+                          field.onChange(setMinutes(setHours(field.value || new Date(), h), m));
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6 mt-6">
+        <VehicleSelectionCard
+          isReadOnly={false}
+          localVehicles={vehicles}
+          onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
+          onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+        />
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+          <div className="lg:col-span-3">
+            <ServiceItemsList
+              isReadOnly={false}
+              inventoryItems={currentInventoryItems}
+              mode={watchedStatus === 'Cotizacion' ? 'quote' : 'service'}
+              onNewInventoryItemCreated={handleNewInventoryItemCreated}
+              categories={allCategories}
+              suppliers={allSuppliers}
+            />
+          </div>
+          <div className="lg:col-span-2 space-y-6">
+            <ServiceSummary />
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-2">
+          <Button variant="outline" type="button" onClick={() => router.back()}>
+            <X className="mr-2 h-4 w-4" />
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={formState.isSubmitting}
+          >
+            {formState.isSubmitting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            {"Crear Registro"}
+          </Button>
+        </div>
+      </form>
+      <VehicleDialog
+        open={isNewVehicleDialogOpen}
+        onOpenChange={setIsNewVehicleDialogOpen}
+        onSave={handleVehicleCreated}
+        vehicle={{ licensePlate: newVehicleInitialPlate }}
+      />
+      {serviceToComplete && (
+        <PaymentDetailsDialog
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+          record={serviceToComplete}
+          onConfirm={(id, paymentDetails) => handleCompleteNewService(paymentDetails)}
+          isCompletionFlow={true}
+        />
+      )}
+      {serviceForPreview && (
+        <UnifiedPreviewDialog
+          open={isPreviewOpen}
+          onOpenChange={handleDialogClose}
+          service={serviceForPreview}
+          vehicle={vehicles.find(v => v.id === serviceForPreview.vehicleId)}
+          title="Registro Creado con Éxito"
+        />
+      )}
+    </FormProvider>
   );
 }

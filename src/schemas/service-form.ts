@@ -72,7 +72,7 @@ const paymentSchema = z.object({
 export const serviceFormSchema = z.object({
     id: z.string().optional(),
     publicId: z.string().optional(),
-    initialStatus: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado']).optional(),
+    initialStatus: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Proveedor Externo', 'Entregado', 'Cancelado']).optional(),
     vehicleId: z.string().min(1, 'Debe seleccionar un vehículo.'),
     vehicleIdentifier: z.string().optional(),
     vehicleLicensePlateSearch: z.string().optional(),
@@ -85,8 +85,8 @@ export const serviceFormSchema = z.object({
     technicianId: z.string().optional(),
     technicianName: z.string().nullable().optional(),
     serviceItems: z.array(serviceItemSchema).min(1, 'Debe agregar al menos un ítem de servicio.'),
-    status: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado']),
-    subStatus: z.enum(['En Espera de Refacciones', 'Reparando', 'Completado', 'Proveedor Externo']).optional(),
+    status: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Proveedor Externo', 'Entregado', 'Cancelado']),
+    subStatus: z.enum(['Cita Agendada', 'Cita Confirmada', 'Ingresado', 'En Espera de Refacciones', 'Reparando', 'Completado']).optional(),
     serviceType: z.string().optional(),
     vehicleConditions: z.string().optional(),
     fuelLevel: z.string().optional(),
@@ -117,5 +117,3 @@ export const serviceFormSchema = z.object({
 );
 
 export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
-
-    
