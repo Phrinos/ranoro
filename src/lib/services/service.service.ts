@@ -17,6 +17,7 @@ import {
   orderBy,
   serverTimestamp,
   limit,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem } from "@/types";
