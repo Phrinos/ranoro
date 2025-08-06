@@ -172,14 +172,12 @@ export default function NuevoServicioPage() {
 
   return (
     <>
-      <FormProvider {...methods}>
-        <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6">
-            <Card className="bg-card border rounded-lg p-6 shadow-sm">
-              <CardHeader className="p-0">
+        <Card className="bg-card border rounded-lg p-6 shadow-sm mb-6">
+            <CardHeader className="p-0">
                 <CardTitle>Nuevo Servicio / Cotización</CardTitle>
                 <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0 mt-4">
+            </CardHeader>
+            <CardContent className="p-0 mt-4">
                 <div className="max-w-sm">
                   <FormField
                     control={control}
@@ -203,9 +201,11 @@ export default function NuevoServicioPage() {
                     )}
                   />
                 </div>
-              </CardContent>
-            </Card>
+            </CardContent>
+        </Card>
 
+      <FormProvider {...methods}>
+        <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6">
             <VehicleSelectionCard
                 isReadOnly={false}
                 localVehicles={vehicles}
@@ -243,7 +243,7 @@ export default function NuevoServicioPage() {
                     ) : (
                         <Save className="mr-2 h-4 w-4" />
                     )}
-                    {initialDataService ? "Actualizar Registro" : "Crear Registro"}
+                    {"Crear Registro"}
                 </Button>
             </div>
         </form>
@@ -278,3 +278,4 @@ export default function NuevoServicioPage() {
     </>
   );
 }
+
