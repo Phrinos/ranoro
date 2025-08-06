@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -19,7 +20,7 @@ import { db } from '@/lib/firebaseClient';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SignatureDialog } from '../components/signature-dialog';
 import { normalizeDataUrl } from '@/lib/utils';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
@@ -32,7 +33,6 @@ const VehicleSelectionCard = lazy(() => import('../components/VehicleSelectionCa
 const SafetyChecklist = lazy(() => import('../components/SafetyChecklist').then(module => ({ default: module.SafetyChecklist })));
 const PhotoReportTab = lazy(() => import('../components/PhotoReportTab').then(module => ({ default: module.PhotoReportTab })));
 const ReceptionAndDelivery = lazy(() => import('../components/ReceptionAndDelivery').then(module => ({ default: module.ReceptionAndDelivery })));
-const ImageViewerDialogContent = lazy(() => import('@/components/shared/image-viewer-dialog').then(module => ({ default: module.ImageViewerDialogContent })));
 
 
 export default function EditarServicioPage() {
@@ -368,9 +368,20 @@ export default function EditarServicioPage() {
         />
         
         <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-          <Suspense fallback={<Loader2 className="animate-spin" />}>
-             <ImageViewerDialogContent imageUrl={viewingImageUrl} />
-          </Suspense>
+          <DialogContent className="max-w-4xl p-2 bg-transparent border-none shadow-none">
+            {viewingImageUrl && (
+              <div className="relative aspect-video w-full">
+                <Image
+                  src={viewingImageUrl}
+                  alt="Vista ampliada de evidencia"
+                  fill
+                  style={{ objectFit: 'contain' }}
+                  sizes="(max-width: 768px) 100vw, 1024px"
+                  crossOrigin="anonymous"
+                />
+              </div>
+            )}
+          </DialogContent>
         </Dialog>
     </FormProvider>
   );
