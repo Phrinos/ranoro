@@ -183,7 +183,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     const startOfSelectedDate = startOfDay(date);
     const endOfSelectedDate = endOfDay(date);
     
-    // Calculate for the selected day only
     const transactionsInSelectedDay = allCashOperations.filter(t => {
       const transactionDate = parseDate(t.date);
       return transactionDate && isValid(transactionDate) && isWithinInterval(transactionDate, { start: startOfSelectedDate, end: endOfSelectedDate });
@@ -194,26 +193,9 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
     
     const dailyCashIn = transactionsInSelectedDay.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
     const dailyCashOut = transactionsInSelectedDay.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
-
-    // Calculate accumulated balance FOR THE CURRENT MONTH
-    const monthStart = startOfMonth(new Date());
-    const monthEnd = endOfDay(new Date()); // Always up to today for accumulated balance
-    const accumulatedInterval = { start: monthStart, end: monthEnd };
-
-    const accumulatedTransactions = allCashOperations.filter(t => {
-      const transactionDate = parseDate(t.date);
-      return transactionDate && isValid(transactionDate) && isWithinInterval(transactionDate, accumulatedInterval);
-    });
     
-    // Find initial balance for the month, if it exists
-    const initialBalanceForMonth = allCashTransactions.find(t => t.relatedType === 'InitialBalance' && isWithinInterval(parseDate(t.date)!, accumulatedInterval))?.amount || 0;
-
-    const accumulatedCashIn = accumulatedTransactions.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
-    const accumulatedCashOut = accumulatedTransactions.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
+    const finalDailyBalance = dailyInitial + dailyCashIn - dailyCashOut;
     
-    const finalAccumulatedBalance = initialBalanceForMonth + accumulatedCashIn - accumulatedCashOut;
-    
-    // Data for "Corte" is simply the daily transactions
     const salesByPaymentMethod: Record<string, number> = {};
     transactionsInSelectedDay.forEach(t => {
         if(t.type === 'Entrada') {
@@ -226,12 +208,12 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
         initialBalance: dailyInitial,
         totalCashIn: dailyCashIn, 
         totalCashOut: dailyCashOut, 
-        finalCashBalance: finalAccumulatedBalance,
+        finalCashBalance: finalDailyBalance,
         salesByPaymentMethod: salesByPaymentMethod,
         totalSales: transactionsInSelectedDay.filter(t=>t.relatedType === 'Venta').length,
         totalServices: transactionsInSelectedDay.filter(t=>t.relatedType === 'Servicio').length,
     };
-  }, [date, allCashOperations, dailyInitialBalance, allCashTransactions]);
+  }, [date, allCashOperations, dailyInitialBalance]);
   
   const manualCashMovements = useMemo(() => {
     const start = startOfDay(date);
@@ -263,7 +245,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
       userName: currentUser?.name || 'Sistema',
     };
     
-    // Also add to transactions collection for unified tracking
     const transactionData = {
         ...balanceData,
         type: 'Entrada' as const,
@@ -341,7 +322,7 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-4 rounded-lg bg-muted border text-center">
-              <p className="text-sm font-medium text-muted-foreground">SALDO FINAL ESPERADO (MES)</p>
+              <p className="text-sm font-medium text-muted-foreground">SALDO FINAL ESPERADO (DÍA)</p>
               <p className="text-4xl font-bold text-primary">{formatCurrency(cajaSummaryData.finalCashBalance)}</p>
             </div>
             <div className="space-y-2 text-sm">
@@ -409,5 +390,6 @@ export function CajaPosContent({ allSales, allServices, allCashTransactions, ini
 
 
     
+
 
 
