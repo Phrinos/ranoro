@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   calculateSaleProfit,
 } from '@/lib/placeholder-data';
-import type { SaleReceipt, InventoryItem, Payment } from '@/types';
+import type { SaleReceipt, InventoryItem, Payment, User } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Edit, Printer, TrendingUp, Ban, ShoppingCart, User as UserIcon, DollarSign } from 'lucide-react';
@@ -25,6 +25,7 @@ import {
 interface SaleCardProps {
     sale: SaleReceipt;
     inventoryItems: InventoryItem[];
+    users: User[];
     onViewSale: () => void;
     onReprintTicket: () => void;
     onEditPayment: () => void;
@@ -33,6 +34,7 @@ interface SaleCardProps {
 export const SaleCard = React.memo(({
     sale,
     inventoryItems,
+    users,
     onViewSale,
     onReprintTicket,
     onEditPayment,
@@ -80,6 +82,17 @@ export const SaleCard = React.memo(({
         }
         
         return <Badge variant="outline">Sin Pago</Badge>;
+    };
+
+    const getSellerName = () => {
+        if (sale.registeredByName) {
+            return sale.registeredByName;
+        }
+        if (sale.registeredById) {
+            const seller = users.find(u => u.id === sale.registeredById);
+            return seller?.name || 'Usuario no disponible';
+        }
+        return 'Usuario no disponible';
     };
 
     return (
@@ -133,7 +146,7 @@ export const SaleCard = React.memo(({
                     {/* Bloque 5: Acciones y Usuario */}
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-auto flex-shrink-0 space-y-2">
                          <p className="text-xs text-muted-foreground">Atendió:</p>
-                         <p className="text-sm font-semibold">{sale.registeredByName || 'Usuario no disponible'}</p>
+                         <p className="text-sm">{getSellerName()}</p>
                           <div className="flex justify-center items-center gap-1">
                                 <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Cancelar Venta">
                                     <Edit className="h-4 w-4" />

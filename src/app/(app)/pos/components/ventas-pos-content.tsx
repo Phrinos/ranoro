@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { PlusCircle, ChevronLeft, ChevronRight } from "lucide-react";
-import type { SaleReceipt, InventoryItem, Payment } from "@/types";
+import type { SaleReceipt, InventoryItem, Payment, User } from "@/types";
 import Link from "next/link";
 import { useTableManager } from '@/hooks/useTableManager';
 import { SaleCard } from './SaleCard';
@@ -28,13 +28,14 @@ const paymentMethodOptions: { value: Payment['method'] | 'all', label: string }[
 interface VentasPosContentProps {
   allSales: SaleReceipt[];
   allInventory: InventoryItem[];
+  allUsers: User[];
   onReprintTicket: (sale: SaleReceipt) => void;
   onViewSale: (sale: SaleReceipt) => void;
   onEditPayment: (sale: SaleReceipt) => void;
 }
 
 
-export function VentasPosContent({ allSales, allInventory, onReprintTicket, onViewSale, onEditPayment }: VentasPosContentProps) {
+export function VentasPosContent({ allSales, allInventory, allUsers, onReprintTicket, onViewSale, onEditPayment }: VentasPosContentProps) {
   
   const { 
     filteredData: filteredAndSortedSales,
@@ -71,6 +72,7 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
                       key={sale.id}
                       sale={sale}
                       inventoryItems={allInventory}
+                      users={allUsers}
                       onReprintTicket={() => onReprintTicket(sale)}
                       onViewSale={() => onViewSale(sale)}
                       onEditPayment={() => onEditPayment(sale)}

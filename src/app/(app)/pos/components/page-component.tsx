@@ -10,7 +10,7 @@ import { TicketContent } from '@/components/ticket-content';
 import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { operationsService, inventoryService } from '@/lib/services';
+import { operationsService, inventoryService, adminService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
 import { ViewSaleDialog } from "./view-sale-dialog";
@@ -31,6 +31,7 @@ export function PosPageComponent({ tab }: { tab?: string }) {
   // States for data from Firestore
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   
   // States for UI control
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -48,8 +49,9 @@ export function PosPageComponent({ tab }: { tab?: string }) {
     setIsLoading(true);
 
     unsubs.push(operationsService.onSalesUpdate(setAllSales));
-    unsubs.push(inventoryService.onItemsUpdate((items) => {
-        setAllInventory(items);
+    unsubs.push(inventoryService.onItemsUpdate(setAllInventory));
+    unsubs.push(adminService.onUsersUpdate((users) => {
+        setAllUsers(users);
         setIsLoading(false);
     }));
 
@@ -170,6 +172,7 @@ Total: ${formatCurrency(sale.totalAmount)}
       <VentasPosContent 
         allSales={allSales} 
         allInventory={allInventory} 
+        allUsers={allUsers}
         onReprintTicket={handleReprintSale} 
         onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
         onEditPayment={handleOpenPaymentDialog}
