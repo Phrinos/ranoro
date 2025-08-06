@@ -107,7 +107,7 @@ export function SaleSummary() {
                                                         placeholder="0.00"
                                                         value={field.value === 0 ? '' : field.value ?? ''}
                                                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                                                        className="pl-8"
+                                                        className="pl-8 bg-white"
                                                     />
                                                 </FormControl>
                                             </div>
@@ -120,7 +120,7 @@ export function SaleSummary() {
                                     render={({ field }) => (
                                         <FormItem className="w-48">
                                             <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                                <FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl>
                                                 <SelectContent>
                                                     {paymentMethods.map(method => {
                                                         const Icon = paymentMethodIcons[method];
@@ -145,7 +145,7 @@ export function SaleSummary() {
                                             <FormItem className="flex-grow">
                                                 <FormControl>
                                                     <div className="relative">
-                                                        <Input placeholder={folioLabel} {...field} value={field.value ?? ''} />
+                                                        <Input placeholder={folioLabel} {...field} value={field.value ?? ''} className="bg-white" />
                                                         {isFolioValidated && <CheckCircle className="absolute right-2 top-2.5 h-5 w-5 text-green-500" />}
                                                     </div>
                                                 </FormControl>

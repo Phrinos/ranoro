@@ -100,7 +100,7 @@ export function PaymentDetailsDialog({
   useEffect(() => {
     if (open) {
       reset({
-        payments: record.payments?.length ? record.payments : [{ method: 'Efectivo', amount: totalAmount, folio: '' }],
+        payments: record.payments?.length ? record.payments : [{ method: 'Efectivo', amount: totalAmount || undefined, folio: '' }],
       });
     }
   }, [open, record, totalAmount, reset]);
