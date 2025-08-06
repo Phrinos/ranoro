@@ -171,83 +171,81 @@ export default function NuevoServicioPage() {
   }
 
   return (
-    <>
-        <Card className="bg-card border rounded-lg p-6 shadow-sm mb-6">
-            <CardHeader className="p-0">
-                <CardTitle>Nuevo Servicio / Cotización</CardTitle>
-                <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 mt-4">
-                <div className="max-w-sm">
-                  <FormField
-                    control={control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="font-bold">
-                              <SelectValue placeholder="Seleccione un estado" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {["Cotizacion", "Agendado", "En Taller"].map(s => (
-                              <SelectItem key={s} value={s}>{s}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-            </CardContent>
-        </Card>
-
-      <FormProvider {...methods}>
-        <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6">
-            <VehicleSelectionCard
-                isReadOnly={false}
-                localVehicles={vehicles}
-                onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
-                onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
-            />
-
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-                <div className="lg:col-span-3">
-                <ServiceItemsList
-                    isReadOnly={false}
-                    inventoryItems={currentInventoryItems}
-                    mode={watchedStatus === 'Cotizacion' ? 'quote' : 'service'}
-                    onNewInventoryItemCreated={handleNewInventoryItemCreated}
-                    categories={allCategories}
-                    suppliers={allSuppliers}
+    <FormProvider {...methods}>
+      <Card className="bg-card border rounded-lg p-6 shadow-sm mb-6">
+        <CardHeader className="p-0">
+            <CardTitle>Nuevo Servicio / Cotización</CardTitle>
+            <CardDescription>Completa la información para crear un nuevo registro.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 mt-4">
+            <div className="max-w-sm">
+                <FormField
+                control={control}
+                name="status"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Paso 1: Seleccione el estado inicial del registro</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                        <SelectTrigger className="font-bold">
+                            <SelectValue placeholder="Seleccione un estado" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {["Cotizacion", "Agendado", "En Taller"].map(s => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    </FormItem>
+                )}
                 />
-                </div>
-                <div className="lg:col-span-2 space-y-6">
-                    <ServiceSummary />
-                </div>
             </div>
+        </CardContent>
+      </Card>
+      
+      <form id="service-form" onSubmit={handleSubmit(handleSaleCompletion)} className="space-y-6">
+          <VehicleSelectionCard
+              isReadOnly={false}
+              localVehicles={vehicles}
+              onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
+              onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+          />
 
-            <div className="mt-6 flex justify-end gap-2">
-                <Button variant="outline" type="button" onClick={() => router.back()}>
-                    <X className="mr-2 h-4 w-4" />
-                    Cancelar
-                </Button>
-                <Button
-                    type="submit"
-                    disabled={formState.isSubmitting}
-                >
-                    {formState.isSubmitting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                    )}
-                    {"Crear Registro"}
-                </Button>
-            </div>
-        </form>
-      </FormProvider>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+              <div className="lg:col-span-3">
+              <ServiceItemsList
+                  isReadOnly={false}
+                  inventoryItems={currentInventoryItems}
+                  mode={watchedStatus === 'Cotizacion' ? 'quote' : 'service'}
+                  onNewInventoryItemCreated={handleNewInventoryItemCreated}
+                  categories={allCategories}
+                  suppliers={allSuppliers}
+              />
+              </div>
+              <div className="lg:col-span-2 space-y-6">
+                  <ServiceSummary />
+              </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+              <Button variant="outline" type="button" onClick={() => router.back()}>
+                  <X className="mr-2 h-4 w-4" />
+                  Cancelar
+              </Button>
+              <Button
+                  type="submit"
+                  disabled={formState.isSubmitting}
+              >
+                  {formState.isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                  )}
+                  {"Crear Registro"}
+              </Button>
+          </div>
+      </form>
       
       {serviceForPreview && (
          <UnifiedPreviewDialog
@@ -275,7 +273,7 @@ export default function NuevoServicioPage() {
         onSave={handleVehicleCreated}
         vehicle={{ licensePlate: newVehicleInitialPlate }}
       />
-    </>
+    </FormProvider>
   );
 }
 
