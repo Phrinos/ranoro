@@ -310,7 +310,6 @@ export const inventoryService = {
         await updateDoc(doc(db, 'inventory', id), cleanObjectForFirestore(data));
     },
     deleteDoc: deleteDocById,
-    getDocById,
     onCategoriesUpdate,
     onCategoriesUpdatePromise,
     saveCategory,

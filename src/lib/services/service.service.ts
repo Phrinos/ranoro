@@ -16,6 +16,7 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  limit,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem } from "@/types";
@@ -27,6 +28,15 @@ import { cashService } from './cash.service';
 import type { PaymentDetailsFormValues } from '@/app/(app)/servicios/components/PaymentDetailsDialog';
 import { inventoryService } from './inventory.service';
 import { format, parse } from 'date-fns';
+
+// --- Generic Document Getter ---
+const getDocById = async (collectionName: string, id: string): Promise<any> => {
+    if (!db) throw new Error("Database not initialized.");
+    const docRef = doc(db, collectionName, id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+};
+
 
 // --- Service Listeners ---
 
@@ -197,6 +207,7 @@ const completeService = async (
 };
 
 export const serviceService = {
+    getDocById,
     onServicesUpdate,
     onServicesUpdatePromise,
     getServicesForVehicle,
@@ -208,4 +219,3 @@ export const serviceService = {
     deleteService,
     completeService,
 };
-
