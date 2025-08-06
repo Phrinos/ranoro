@@ -29,8 +29,6 @@ interface SaleCardProps {
     currentUser: User | null;
     onViewSale: () => void;
     onReprintTicket: () => void;
-    onEditPayment: () => void;
-    onDeleteSale: () => void;
 }
 
 export const SaleCard = React.memo(({
@@ -40,8 +38,6 @@ export const SaleCard = React.memo(({
     currentUser,
     onViewSale,
     onReprintTicket,
-    onEditPayment,
-    onDeleteSale,
 }: SaleCardProps) => {
 
     const saleDate = parseDate(sale.saleDate);
@@ -50,12 +46,13 @@ export const SaleCard = React.memo(({
     const profit = useMemo(() => calculateSaleProfit(sale, inventoryItems), [sale, inventoryItems]);
 
     const itemsDescription = useMemo(() => {
-        const firstItem = sale.items[0];
+        const itemsToDescribe = sale.items.filter(item => item.inventoryItemId !== 'COMMISSION_FEE');
+        const firstItem = itemsToDescribe[0];
         if (!firstItem) return 'Venta sin artículos';
         
         const inventoryItem = inventoryItems.find(i => i.id === firstItem.inventoryItemId);
         const category = inventoryItem?.category?.toUpperCase() || 'ARTÍCULO';
-        const otherItemsCount = sale.items.length - 1;
+        const otherItemsCount = itemsToDescribe.length - 1;
         
         return `${category}: ${firstItem.itemName}${otherItemsCount > 0 ? ` y ${otherItemsCount} más` : ''}`;
     }, [sale.items, inventoryItems]);
@@ -158,23 +155,12 @@ export const SaleCard = React.memo(({
                             <p className="text-xs">{sellerName}</p>
                         </div>
                         <div className="flex justify-center items-center gap-1 flex-wrap">
-                            <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Cancelar Venta">
+                            <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Editar Venta">
                                 <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={onEditPayment} title="Editar Pago" disabled={isCancelled}>
-                                <DollarSign className="h-4 w-4 text-green-600" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={onReprintTicket} title="Reimprimir Ticket" disabled={isCancelled}>
                                 <Printer className="h-4 w-4" />
                             </Button>
-                            {currentUser?.role === 'Superadministrador' && (
-                                <ConfirmDialog
-                                    triggerButton={<Button variant="ghost" size="icon" title="Eliminar Venta Permanentemente"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
-                                    title="¿Eliminar Venta Permanentemente?"
-                                    description={`Esta acción eliminará por completo la venta #${sale.id.slice(-6)} y restaurará el stock. No se puede deshacer.`}
-                                    onConfirm={onDeleteSale}
-                                />
-                            )}
                         </div>
                     </div>
 

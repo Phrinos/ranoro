@@ -16,11 +16,19 @@ interface POSFormProps {
   suppliers: Supplier[];
   onSaleComplete: (saleData: any) => void;
   onInventoryItemCreated?: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
+  initialData?: SaleReceipt | null; // Added to support editing
 }
 
 const IVA_RATE = 0.16;
 
-export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete, onInventoryItemCreated }: POSFormProps) {
+export function PosForm({ 
+  inventoryItems, 
+  categories, 
+  suppliers, 
+  onSaleComplete, 
+  onInventoryItemCreated,
+  initialData, // Added prop
+}: POSFormProps) {
   const methods = useFormContext();
   const { setValue, getValues, control } = methods;
   
@@ -64,12 +72,7 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
   };
   
     useEffect(() => {
-        const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
-        const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
-
         const currentItems = getValues('items') || [];
-        const commissionItemIndex = currentItems.findIndex((item: any) => item.inventoryItemId === 'COMMISSION_FEE');
-        
         const totalWithoutCommission = currentItems.reduce((acc: number, item: any) => {
             if (item.inventoryItemId !== 'COMMISSION_FEE') {
                 return acc + (item.totalPrice || 0);
@@ -78,39 +81,30 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
         }, 0) || 0;
         
         let commissionAmount = 0;
-        if (hasCardPayment) {
-            commissionAmount += totalWithoutCommission * 0.041;
-        }
-        if (hasMSIPayment) {
-            commissionAmount += totalWithoutCommission * 0.077;
-        }
+        const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
+        const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
+        
+        if (hasCardPayment) commissionAmount += totalWithoutCommission * 0.041;
+        if (hasMSIPayment) commissionAmount += totalWithoutCommission * 0.077;
+        
+        // Remove existing commission to recalculate
+        let newItems = currentItems.filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE');
 
         if (hasCardPayment || hasMSIPayment) {
-            if (commissionItemIndex === -1) {
-                // Add commission item if it doesn't exist
-                const newCommissionItem = {
-                    inventoryItemId: 'COMMISSION_FEE',
-                    itemName: 'Comisión de Tarjeta',
-                    quantity: 1,
-                    unitPrice: commissionAmount,
-                    totalPrice: 0, 
-                    isService: true,
-                };
-                setValue('items', [...currentItems, newCommissionItem]);
-            } else {
-                // Update existing commission item
-                const updatedItems = [...currentItems];
-                if (Math.abs(updatedItems[commissionItemIndex].unitPrice - commissionAmount) > 0.01) {
-                    updatedItems[commissionItemIndex].unitPrice = commissionAmount;
-                    setValue('items', updatedItems, { shouldDirty: true });
-                }
-            }
-        } else if (commissionItemIndex !== -1) {
-            // Remove commission item if no card payment
-            const newItems = currentItems.filter((_: any, index: number) => index !== commissionItemIndex);
-            setValue('items', newItems);
+            newItems.push({
+                inventoryItemId: 'COMMISSION_FEE',
+                itemName: 'Comisión de Tarjeta',
+                quantity: 1,
+                unitPrice: commissionAmount,
+                totalPrice: 0,
+                isService: true,
+            });
         }
         
+        // Use a simple JSON comparison to avoid infinite loops
+        if (JSON.stringify(newItems) !== JSON.stringify(currentItems)) {
+            setValue('items', newItems, { shouldDirty: true });
+        }
     }, [watchedPayments, getValues, setValue]);
 
 

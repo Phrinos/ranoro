@@ -451,10 +451,9 @@ const registerSale = async (
     const IVA_RATE = 0.16;
     
     const commissionItem = saleData.items.find(i => i.inventoryItemId === 'COMMISSION_FEE');
-    const itemsForSale = saleData.items.filter(i => i.inventoryItemId !== 'COMMISSION_FEE');
     const cardCommission = commissionItem?.unitPrice || 0;
 
-    const totalAmount = itemsForSale.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+    const totalAmount = saleData.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
     const subTotal = totalAmount / (1 + IVA_RATE);
     const tax = totalAmount - subTotal;
 
@@ -474,8 +473,9 @@ const registerSale = async (
     const newSaleRef = doc(db, "sales", saleId);
     batch.set(newSaleRef, cleanObjectForFirestore(newSale));
 
-    // Only decrement stock for non-commission items
-    itemsForSale.forEach(soldItem => {
+    // Decrement stock for non-commission items
+    saleData.items.forEach(soldItem => {
+        if (soldItem.inventoryItemId === 'COMMISSION_FEE') return;
         const inventoryItem = inventoryItems.find(invItem => invItem.id === soldItem.inventoryItemId);
         if (inventoryItem && !inventoryItem.isService) {
             const itemRef = doc(db, "inventory", soldItem.inventoryItemId);
