@@ -1,4 +1,4 @@
-// src/app/(app)/finanzas/components/egresos-content.tsx
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -52,38 +52,40 @@ export function EgresosContent({ financialSummary, fixedExpenses, personnel, onE
         </CardHeader>
         <CardContent className="space-y-6">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              {/* Columna de Nómina */}
+              <div className="space-y-3">
                 <h3 className="font-semibold text-lg mb-2">Nómina Base</h3>
-                <div className="space-y-2">
+                <div className="space-y-2 text-sm">
                   {personnel.filter(p => !p.isArchived && p.monthlySalary && p.monthlySalary > 0).map(p => (
-                    <div key={p.id} className="flex justify-between items-center text-sm">
+                    <div key={p.id} className="flex justify-between items-center">
                       <span className="text-muted-foreground">{p.name}:</span>
-                      <span className="font-semibold">{formatCurrency(p.monthlySalary)}</span>
+                      <span className="font-medium">{formatCurrency(p.monthlySalary)}</span>
                     </div>
                   ))}
-                   <div className="flex justify-between items-center text-sm font-bold border-t pt-2 mt-2">
-                    <span className="text-foreground">Total Nómina Base:</span>
-                    <span className="font-semibold text-red-600">{formatCurrency(totalPayroll)}</span>
-                  </div>
+                </div>
+                <div className="flex justify-between items-center text-base font-bold border-t pt-2 mt-2">
+                    <span className="text-foreground">Total Nómina:</span>
+                    <span className="text-red-600">{formatCurrency(totalPayroll)}</span>
                 </div>
               </div>
 
-              <div className="border-t md:border-t-0 md:border-l md:pl-6">
+              {/* Columna de Otros Gastos */}
+              <div className="space-y-3 md:border-l md:pl-8">
                 <h3 className="font-semibold text-lg mb-2">Otros Gastos Fijos</h3>
-                 <div className="space-y-2">
+                 <div className="space-y-2 text-sm">
                     {fixedExpenses.map(expense => (
-                      <div key={expense.id} className="flex justify-between items-center text-sm">
+                      <div key={expense.id} className="flex justify-between items-center">
                         <span className="text-muted-foreground">{expense.name}:</span>
-                        <span className="font-semibold">{formatCurrency(expense.amount)}</span>
+                        <span className="font-medium">{formatCurrency(expense.amount)}</span>
                       </div>
                     ))}
-                    {fixedExpenses.length === 0 && <p className="text-sm text-muted-foreground">No hay otros gastos fijos registrados.</p>}
-                     <div className="flex justify-between items-center text-sm font-bold border-t pt-2 mt-2">
-                        <span className="text-foreground">Total Otros Gastos:</span>
-                        <span className="font-semibold text-red-600">{formatCurrency(totalOtherFixed)}</span>
-                     </div>
-                  </div>
+                    {fixedExpenses.length === 0 && <p className="text-sm text-muted-foreground">No hay otros gastos fijos.</p>}
+                 </div>
+                 <div className="flex justify-between items-center text-base font-bold border-t pt-2 mt-2">
+                    <span className="text-foreground">Total Otros Gastos:</span>
+                    <span className="text-red-600">{formatCurrency(totalOtherFixed)}</span>
+                 </div>
               </div>
           </div>
           
