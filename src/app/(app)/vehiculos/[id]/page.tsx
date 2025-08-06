@@ -57,7 +57,7 @@ import type { VehicleFormValues } from "../components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
 import { TicketContent } from "@/components/ticket-content";
-import { inventoryService, operationsService, adminService, serviceService } from "@/lib/services";
+import { inventoryService, adminService, serviceService } from "@/lib/services";
 import { parseDate } from "@/lib/forms";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 
@@ -79,7 +79,7 @@ export default function VehicleDetailPage() {
     const fetchedVehicle = await inventoryService.getVehicleById(vehicleId);
     setVehicle(fetchedVehicle || null);
     if(fetchedVehicle) {
-        const vehicleServices = await operationsService.getServicesForVehicle(vehicleId);
+        const vehicleServices = await serviceService.getServicesForVehicle(vehicleId);
         setServices(vehicleServices);
     }
   }, [vehicleId]);

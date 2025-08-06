@@ -8,4 +8,4 @@
  * This file may be removed in a future update.
  */
 
-export const operationsService = {};
+// This file is now empty as its functionality is deprecated.
