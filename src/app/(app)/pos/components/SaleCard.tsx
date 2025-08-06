@@ -64,6 +64,7 @@ export const SaleCard = React.memo(({
             ));
         }
 
+        // Fallback for older records
         if (typeof sale.paymentMethod === 'string') {
             const methods = sale.paymentMethod.split(/[+/]/);
             const totalAmount = sale.totalAmount || 0;
@@ -119,7 +120,7 @@ export const SaleCard = React.memo(({
                        </div>
                     </div>
                     
-                    {/* Bloque 3: Costo */}
+                    {/* Bloque 3: Costo y Atendio */}
                     <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-2 border-t md:border-0">
                          <div>
                            <p className="text-xs text-muted-foreground">Costo Cliente</p>
@@ -139,7 +140,7 @@ export const SaleCard = React.memo(({
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-auto flex-shrink-0 space-y-2">
                         <div className="text-center">
                             <p className="text-xs text-muted-foreground">Atendió</p>
-                            <p className="text-sm text-muted-foreground">{sellerName}</p>
+                            <p className="text-xs text-muted-foreground">{sellerName}</p>
                         </div>
                         <div className="flex justify-center items-center gap-1 flex-wrap">
                             <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Cancelar Venta">
@@ -161,4 +162,3 @@ export const SaleCard = React.memo(({
 });
 
 SaleCard.displayName = 'SaleCard';
-
