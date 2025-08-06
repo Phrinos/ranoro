@@ -43,7 +43,8 @@ const getDocById = async (collectionName: string, id: string): Promise<any> => {
 
 const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "serviceRecords"), orderBy("serviceDate", "desc"));
+    // Sort by receptionDateTime descending to capture all records (services and quotes) reliably.
+    const q = query(collection(db, "serviceRecords"), orderBy("receptionDateTime", "desc"));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord)));
     }, (error) => console.error("Error listening to services:", error.message));
@@ -51,7 +52,7 @@ const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() =>
 
 const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
     if (!db) return [];
-    const q = query(collection(db, "serviceRecords"), orderBy("serviceDate", "desc"));
+    const q = query(collection(db, "serviceRecords"), orderBy("receptionDateTime", "desc"));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
 };
