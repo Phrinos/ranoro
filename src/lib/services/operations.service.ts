@@ -381,6 +381,7 @@ const cancelSale = async (saleId: string, reason: string, user: User | null): Pr
   
   // Restore inventory
   for (const item of saleData.items) {
+    if (item.inventoryItemId === 'COMMISSION_FEE') continue;
     const invItemRef = doc(db, 'inventory', item.inventoryItemId);
     const invItemDoc = await getDoc(invItemRef);
     if (invItemDoc.exists()) {
@@ -413,6 +414,7 @@ const deleteSale = async (saleId: string, user: User | null): Promise<void> => {
   // Restore inventory only if the sale was not already cancelled
   if (saleData.status !== 'Cancelado') {
       for (const item of saleData.items) {
+        if (item.inventoryItemId === 'COMMISSION_FEE') continue;
         const invItemRef = doc(db, 'inventory', item.inventoryItemId);
         const invItemDoc = await getDoc(invItemRef);
         if (invItemDoc.exists()) {
@@ -447,12 +449,17 @@ const registerSale = async (
     batch: ReturnType<typeof writeBatch>
 ): Promise<void> => {
     const IVA_RATE = 0.16;
-    const totalAmount = saleData.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+    const itemsForSale = saleData.items.filter(i => i.inventoryItemId !== 'COMMISSION_FEE');
+    const totalAmount = itemsForSale.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
     const subTotal = totalAmount / (1 + IVA_RATE);
     const tax = totalAmount - subTotal;
+    
+    const commissionItem = saleData.items.find(i => i.inventoryItemId === 'COMMISSION_FEE');
+    const cardCommission = commissionItem?.unitPrice || 0;
 
     const newSale: Omit<SaleReceipt, 'id'> = {
       ...saleData,
+      items: itemsForSale,
       saleDate: new Date().toISOString(),
       subTotal, 
       tax, 
@@ -460,13 +467,13 @@ const registerSale = async (
       status: 'Completado',
       registeredById: currentUser.id,
       registeredByName: currentUser.name,
-      cardCommission: saleData.cardCommission || 0,
+      cardCommission: cardCommission,
     };
     
     const newSaleRef = doc(db, "sales", saleId);
     batch.set(newSaleRef, cleanObjectForFirestore(newSale));
 
-    saleData.items.forEach(soldItem => {
+    itemsForSale.forEach(soldItem => {
         const inventoryItem = inventoryItems.find(invItem => invItem.id === soldItem.inventoryItemId);
         if (inventoryItem && !inventoryItem.isService) {
             const itemRef = doc(db, "inventory", soldItem.inventoryItemId);

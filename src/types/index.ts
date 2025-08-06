@@ -216,9 +216,10 @@ export interface PhotoReportGroup {
 export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado';
 export type ServiceSubStatus = 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Proveedor Externo';
 
-export type PaymentType = 'Efectivo' | 'Tarjeta' | 'Tarjeta MSI' | 'Transferencia';
+export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Tarjeta MSI' | 'Transferencia';
+
 export interface Payment {
-    method: PaymentType;
+    method: PaymentMethod;
     amount: number;
     folio?: string;
 }

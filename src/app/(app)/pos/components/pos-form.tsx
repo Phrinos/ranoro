@@ -2,9 +2,9 @@
 
 "use client";
 
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import type { InventoryItem, SaleReceipt, InventoryCategory, Supplier } from "@/types";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { AddItemDialog } from "./add-item-dialog";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
@@ -19,8 +19,14 @@ interface POSFormProps {
   onInventoryItemCreated?: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
 }
 
+const IVA_RATE = 0.16;
+
 export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete, onInventoryItemCreated }: POSFormProps) {
   const methods = useFormContext();
+  const { setValue, getValues, control } = methods;
+
+  const watchedItems = useWatch({ control, name: 'items' });
+  const watchedPayments = useWatch({ control, name: 'payments' });
 
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
@@ -29,8 +35,8 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
   const handleOpenAddItemDialog = () => setIsAddItemDialogOpen(true);
   
   const handleAddItem = useCallback((item: InventoryItem, quantity: number) => {
-    const currentItems = methods.getValues('items') || [];
-    methods.setValue('items', [...currentItems, {
+    const currentItems = getValues('items') || [];
+    setValue('items', [...currentItems, {
         inventoryItemId: item.id,
         itemName: item.name,
         quantity: quantity,
@@ -40,7 +46,7 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
         unitType: item.unitType,
     }]);
     setIsAddItemDialogOpen(false);
-  }, [methods]);
+  }, [setValue, getValues]);
   
   const handleRequestNewItem = useCallback((searchTerm: string) => {
       setNewItemInitialData({
@@ -58,6 +64,44 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
     handleAddItem(newItem, 1);
     setIsNewInventoryItemDialogOpen(false);
   };
+  
+    useEffect(() => {
+        const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta' || p.method === 'Tarjeta MSI');
+        const commissionItemIndex = watchedItems?.findIndex((item: any) => item.inventoryItemId === 'COMMISSION_FEE');
+        
+        const currentTotal = watchedItems?.reduce((acc: number, item: any) => {
+            if (item.inventoryItemId !== 'COMMISSION_FEE') {
+                return acc + (item.totalPrice || 0);
+            }
+            return acc;
+        }, 0) || 0;
+        
+        if (hasCardPayment && commissionItemIndex === -1) {
+            const commissionAmount = currentTotal * 0.035;
+            const newCommissionItem = {
+                inventoryItemId: 'COMMISSION_FEE',
+                itemName: 'Comisión de Tarjeta',
+                quantity: 1,
+                unitPrice: commissionAmount,
+                totalPrice: 0, 
+                isService: true,
+            };
+            const newItems = [...(watchedItems || []), newCommissionItem];
+            setValue('items', newItems);
+
+        } else if (!hasCardPayment && commissionItemIndex !== -1 && commissionItemIndex !== undefined) {
+            const newItems = watchedItems.filter((_: any, index: number) => index !== commissionItemIndex);
+            setValue('items', newItems);
+        } else if (hasCardPayment && commissionItemIndex !== -1 && commissionItemIndex !== undefined) {
+            // Recalculate commission if total changes
+            const commissionAmount = currentTotal * 0.035;
+            const updatedItems = [...watchedItems];
+            updatedItems[commissionItemIndex].unitPrice = commissionAmount;
+            setValue('items', updatedItems, { shouldDirty: true });
+        }
+        
+    }, [watchedPayments, watchedItems, setValue]);
+
 
   return (
     <>

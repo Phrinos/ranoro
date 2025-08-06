@@ -98,6 +98,8 @@ export function AddItemDialog({ open, onOpenChange, inventoryItems, onItemSelect
                             ? <Badge variant="outline">Servicio</Badge> 
                             : <Badge variant={item.quantity > 0 ? "secondary" : "destructive"}>Stock: {item.quantity}</Badge>
                           }
+                          <span>Costo: {formatCurrency(item.unitPrice)}</span>
+                          <span>|</span>
                           <span>Venta: {formatCurrency(item.sellingPrice)}</span>
                         </div>
                       </div>

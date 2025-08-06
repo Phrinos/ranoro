@@ -7,8 +7,8 @@ const saleItemSchema = z.object({
   inventoryItemId: z.string().min(1, 'Seleccione un artículo.'),
   itemName: z.string(),
   quantity: z.coerce.number().min(0.001, 'La cantidad debe ser mayor a 0.'),
-  unitPrice: z.coerce.number(),
-  totalPrice: z.coerce.number(),
+  unitPrice: z.coerce.number(), // This is the COST for the workshop
+  totalPrice: z.coerce.number(), // This is the SELLING price to customer
   isService: z.boolean().optional(),
   unitType: z.enum(['units', 'ml', 'liters']).optional(),
 });
@@ -24,8 +24,8 @@ export const posFormSchema = z.object({
   customerName: z.string().optional(),
   whatsappNumber: z.string().optional(),
   payments: z.array(paymentSchema).min(1, 'Debe agregar al menos un método de pago.'),
-  cardCommission: z.number().optional(), // To store the calculated commission
 }).superRefine((data, ctx) => {
+    // Total amount charged to the customer
     const totalItems = data.items.reduce((acc, item) => acc + item.totalPrice, 0);
     const totalPayments = data.payments.reduce((acc, payment) => acc + (payment.amount || 0), 0);
 
