@@ -1,5 +1,4 @@
 
-
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -64,6 +63,12 @@ export const safetyInspectionSchema = z.object({
     technicianSignature: z.string().optional(),
 }).optional();
 
+const paymentSchema = z.object({
+    method: z.enum(['Efectivo', 'Tarjeta', 'Tarjeta MSI', 'Transferencia']),
+    amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero."),
+    folio: z.string().optional(),
+});
+
 export const serviceFormSchema = z.object({
     id: z.string().optional(),
     publicId: z.string().optional(),
@@ -94,22 +99,15 @@ export const serviceFormSchema = z.object({
     serviceAdvisorId: z.string().optional(),
     serviceAdvisorName: z.string().optional(),
     serviceAdvisorSignatureDataUrl: z.string().optional(),
-    paymentMethod: z.string().optional(),
-    cardFolio: z.string().optional(),
-    confirmCardFolio: z.string().optional(),
-    transferFolio: z.string().optional(),
-    confirmTransferFolio: z.string().optional(),
-    amountInCash: z.coerce.number().optional(),
-    amountInCard: z.coerce.number().optional(),
-    amountInTransfer: z.coerce.number().optional(),
+    payments: z.array(paymentSchema).optional(),
     nextServiceInfo: z.object({
         date: z.string().optional(),
-        mileage: z.number().optional(), // Allow any number, not just integer
+        mileage: z.number().optional(), 
     }).optional().nullable(),
     photoReports: z.array(photoReportSchema).optional(),
     customerName: z.string().optional(),
     totalCost: z.number().optional(),
-    allVehiclesForDialog: z.array(z.any()).optional(), // Add this line
+    allVehiclesForDialog: z.array(z.any()).optional(), 
 }).refine(
     (d) => !(d.status === 'Agendado' && !d.serviceDate),
     {
@@ -119,3 +117,5 @@ export const serviceFormSchema = z.object({
 );
 
 export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
+
+    

@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -16,7 +15,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply, User, PayableAccount, Supplier, PaymentMethod } from "@/types";
+import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply, User, PayableAccount, Supplier, Payment } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
@@ -190,7 +189,7 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
     
     const dataToUpdate = {
         ...paymentAndNextServiceDetails,
-        status: 'Entregado' as const, // Ensure status is correctly typed
+        status: 'Entregado' as const, 
         deliveryDateTime: new Date().toISOString(),
     };
 
@@ -222,7 +221,7 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
         for (const supply of allSupplies) {
             if (supply.supplyId && !supply.isService) {
                 const item = inventoryMap.get(supply.supplyId);
-                if (item) { // Only process if item exists in inventory
+                if (item) { 
                     const itemRef = doc(db, "inventory", supply.supplyId);
                     const newQuantity = Math.max(0, item.quantity - supply.quantity);
                     batch.update(itemRef, { quantity: newQuantity });
@@ -232,18 +231,21 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
     }
     
     // Add cash transaction if paid in cash
-    if (dataToUpdate.paymentMethod?.includes('Efectivo')) {
-        const cashTransactionRef = doc(collection(db, "cashDrawerTransactions"));
-        batch.set(cashTransactionRef, {
-            date: new Date().toISOString(),
-            type: 'Entrada',
-            amount: dataToUpdate.amountInCash || service.totalCost, // Use split amount if available
-            concept: `Servicio #${service.id.slice(0, 6)} - ${service.vehicleIdentifier || ''}`,
-            userId: 'system',
-            userName: dataToUpdate.serviceAdvisorName || 'Sistema',
-            relatedType: 'Servicio',
-            relatedId: service.id,
-        });
+    if (dataToUpdate.payments) {
+        const cashPayment = dataToUpdate.payments.find(p => p.method === 'Efectivo');
+        if (cashPayment && cashPayment.amount > 0) {
+            const cashTransactionRef = doc(collection(db, "cashDrawerTransactions"));
+            batch.set(cashTransactionRef, {
+                date: new Date().toISOString(),
+                type: 'Entrada',
+                amount: cashPayment.amount,
+                concept: `Servicio #${service.id.slice(0, 6)} - ${service.vehicleIdentifier || ''}`,
+                userId: 'system',
+                userName: dataToUpdate.serviceAdvisorName || 'Sistema',
+                relatedType: 'Servicio',
+                relatedId: service.id,
+            });
+        }
     }
 };
 
@@ -285,7 +287,7 @@ const saveMigratedServices = async (services: ExtractedService[], vehicles: Extr
             technicianId: 'N/A',
             serviceAdvisorId: 'system',
             serviceAdvisorName: 'Migración',
-            paymentMethod: 'Efectivo',
+            payments: [{ method: 'Efectivo', amount: service.totalCost }],
             serviceItems: [{ id: 'migrated-item', name: service.description, price: service.totalCost, suppliesUsed: [] }],
         };
         batch.set(newServiceRef, cleanObjectForFirestore(serviceRecord));
@@ -321,7 +323,7 @@ const saveIndividualMigratedService = async (data: {
         technicianId: 'system',
         serviceAdvisorId: 'system',
         serviceAdvisorName: 'Migración',
-        paymentMethod: data.paymentMethod as any,
+        payments: [{ method: data.paymentMethod as Payment['method'], amount: data.totalCost }],
         serviceItems: [{
             id: nanoid(),
             name: data.description,
@@ -395,12 +397,13 @@ const registerSale = async (
         }
     });
     
-    if (newSale.paymentMethod?.includes('Efectivo')) {
+    const cashPayment = saleData.payments?.find(p => p.method === 'Efectivo');
+    if (cashPayment && cashPayment.amount > 0) {
         const cashTransactionRef = doc(collection(db, "cashDrawerTransactions"));
         batch.set(cashTransactionRef, {
             date: new Date().toISOString(),
             type: 'Entrada',
-            amount: newSale.amountInCash || totalAmount, // Use split amount if available
+            amount: cashPayment.amount,
             concept: `Venta POS #${saleId.slice(0, 6)} - ${newSale.customerName || ''}`,
             userId: currentUser.id,
             userName: currentUser.name,
@@ -564,7 +567,7 @@ const onRentalPaymentsUpdatePromise = async (): Promise<RentalPayment[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RentalPayment));
 }
 
-const addRentalPayment = async (driverId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, mileage?: number): Promise<RentalPayment> => {
+const addRentalPayment = async (driverId: string, amount: number, paymentMethod: Payment['method'], note: string | undefined, mileage?: number): Promise<RentalPayment> => {
     if (!db) throw new Error("Database not initialized.");
     const driver = await personnelService.getDriverById(driverId);
     if (!driver) throw new Error("Driver not found.");
@@ -756,3 +759,5 @@ export const operationsService = {
     addOwnerWithdrawal,
     registerPayableAccountPayment,
 };
+
+    

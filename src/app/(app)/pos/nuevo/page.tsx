@@ -1,12 +1,11 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PosForm } from '../components/pos-form';
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService } from '@/lib/services';
@@ -35,7 +34,6 @@ export default function NuevaVentaPage() {
   
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [saleForTicket, setSaleForTicket] = useState<SaleReceipt | null>(null);
-  const [phoneForTicket, setPhoneForTicket] = useState<string | undefined>(undefined);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
 
@@ -45,10 +43,7 @@ export default function NuevaVentaPage() {
     defaultValues: {
       items: [],
       customerName: 'Cliente Mostrador',
-      whatsappNumber: '',
-      paymentMethod: 'Efectivo',
-      cardFolio: '',
-      transferFolio: '',
+      payments: [{ method: 'Efectivo', amount: 0 }],
     },
   });
 
@@ -110,7 +105,9 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
       const newSaleReceipt: SaleReceipt = {
         id: saleId,
         saleDate: new Date().toISOString(),
-        ...values,
+        items: values.items,
+        customerName: values.customerName,
+        payments: values.payments,
         subTotal, 
         tax,
         totalAmount,
@@ -122,7 +119,6 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
       toast({ title: 'Venta Registrada', description: `La venta #${saleId} se ha completado.` });
       
       setSaleForTicket(newSaleReceipt);
-      setPhoneForTicket(values.whatsappNumber);
       setIsTicketDialogOpen(true); // Open dialog to show ticket and actions
       
     } catch(e) {
@@ -139,7 +135,6 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
   const handleDialogClose = () => {
     setIsTicketDialogOpen(false);
     setSaleForTicket(null);
-    setPhoneForTicket(undefined);
     methods.reset(); // Reset the form for a new sale
     router.push('/pos'); // Navigate to the main POS page
   };
@@ -240,3 +235,5 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     </>
   );
 }
+
+    

@@ -215,6 +215,13 @@ export interface PhotoReportGroup {
 export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado';
 export type ServiceSubStatus = 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Proveedor Externo';
 
+export type PaymentType = 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Tarjeta MSI';
+export interface Payment {
+    method: PaymentType;
+    amount: number;
+    folio?: string;
+}
+
 export interface ServiceRecord {
   id: string;
   publicId?: string;
@@ -251,12 +258,15 @@ export interface ServiceRecord {
   serviceAdvisorName?: string;
   serviceAdvisorSignatureDataUrl?: string; 
   workshopInfo?: WorkshopInfo;
-  paymentMethod?: PaymentMethod;
+  payments?: Payment[]; // <-- New payment structure
+  // Deprecated payment fields
+  paymentMethod?: string;
   cardFolio?: string;
   transferFolio?: string;
   amountInCash?: number;
   amountInCard?: number;
   amountInTransfer?: number;
+  
   nextServiceInfo?: {
     date: string;
     mileage?: number;
@@ -360,8 +370,6 @@ export interface SaleItem {
   unitType?: 'units' | 'ml' | 'liters';
 }
 
-export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Efectivo+Transferencia' | 'Tarjeta+Transferencia' | 'Efectivo/Tarjeta';
-
 export interface SaleReceipt {
   id: string;
   saleDate: string; 
@@ -369,7 +377,9 @@ export interface SaleReceipt {
   subTotal: number;
   tax: number;
   totalAmount: number;
-  paymentMethod?: PaymentMethod;
+  payments?: Payment[]; // <-- New payment structure
+  // Deprecated payment fields
+  paymentMethod?: string;
   customerName?: string;
   cardFolio?: string;
   transferFolio?: string;
@@ -575,3 +585,5 @@ export interface PayableAccount {
     paidAmount: number;
     status: 'Pendiente' | 'Pagado Parcialmente' | 'Pagado';
 }
+
+    

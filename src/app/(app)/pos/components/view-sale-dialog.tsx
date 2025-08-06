@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState } from "react";
@@ -18,10 +17,11 @@ import { Separator } from "@/components/ui/separator";
 import type { SaleReceipt } from "@/types";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Ban, MessageSquare, Share2 } from "lucide-react";
+import { Ban, Share2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 
 interface ViewSaleDialogProps {
   open: boolean;
@@ -37,11 +37,6 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale, onSendW
   if (!sale) return null;
 
   const isCancelled = sale.status === 'Cancelado';
-
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-  
   const saleDate = parseISO(sale.saleDate);
   const formattedDate = format(saleDate, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
 
@@ -59,9 +54,15 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale, onSendW
             <span className="text-muted-foreground">Cliente:</span>
             <span className="font-medium">{sale.customerName}</span>
           </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Método de Pago:</span>
-            <Badge variant="outline">{sale.paymentMethod}</Badge>
+          <div className="text-sm">
+            <span className="text-muted-foreground">Métodos de Pago:</span>
+            <div className="flex flex-wrap gap-1 mt-1">
+                 {sale.payments?.map((p, index) => (
+                    <Badge key={index} variant={getPaymentMethodVariant(p.method)}>
+                        {p.method}: {formatCurrency(p.amount)} {p.folio && `(Folio: ${p.folio})`}
+                    </Badge>
+                ))}
+            </div>
           </div>
           {isCancelled && (
             <div className="flex flex-col justify-center items-center text-sm p-2 bg-destructive/10 rounded-md">
@@ -144,3 +145,5 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale, onSendW
     </Dialog>
   );
 }
+
+    

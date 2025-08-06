@@ -1,26 +1,29 @@
 
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Filter, PlusCircle, ChevronLeft, ChevronRight } from "lucide-react";
-import { SalesTable } from "./sales-table";
-import type { SaleReceipt, InventoryItem, PaymentMethod } from "@/types";
-import { format, startOfMonth, endOfMonth, isWithinInterval, isValid, parseISO, compareDesc, startOfWeek, subDays, isSameDay } from "date-fns";
-import { es } from 'date-fns/locale';
-import type { DateRange } from "react-day-picker";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { Input } from '@/components/ui/input';
-import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
+import { PlusCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import type { SaleReceipt, InventoryItem, Payment } from "@/types";
+import Link from "next/link";
+import { useTableManager } from '@/hooks/useTableManager';
+import { SaleCard } from './SaleCard';
+import { Receipt } from 'lucide-react';
 
-type SaleSortOption = "date_desc" | "date_asc" | "total_desc" | "total_asc" | "customer_asc" | "customer_desc";
+const sortOptions = [
+    { value: 'date_desc', label: 'Más Reciente' },
+    { value: 'date_asc', label: 'Más Antiguo' },
+];
+
+const paymentMethodOptions: { value: Payment['method'] | 'all', label: string }[] = [
+    { value: 'all', label: 'Todos' },
+    { value: 'Efectivo', label: 'Efectivo' },
+    { value: 'Tarjeta', label: 'Tarjeta' },
+    { value: 'Tarjeta MSI', label: 'Tarjeta MSI' },
+    { value: 'Transferencia', label: 'Transferencia' },
+];
+
 
 interface VentasPosContentProps {
   allSales: SaleReceipt[];
@@ -29,40 +32,28 @@ interface VentasPosContentProps {
   onViewSale: (sale: SaleReceipt) => void;
 }
 
-const sortOptions = [
-    { value: 'date_desc', label: 'Más Reciente' },
-    { value: 'date_asc', label: 'Más Antiguo' },
-];
-
-const paymentMethods: { value: PaymentMethod | 'all' | string, label: string }[] = [
-    { value: 'all', label: 'Todos' },
-    { value: 'Efectivo', label: 'Efectivo' },
-    { value: 'Tarjeta', label: 'Tarjeta' },
-    { value: 'Transferencia', label: 'Transferencia' },
-];
-
 
 export function VentasPosContent({ allSales, allInventory, onReprintTicket, onViewSale }: VentasPosContentProps) {
   
   const { 
-    filteredData: initialFilteredData, 
+    filteredData,
     ...tableManager 
   } = useTableManager<SaleReceipt>({
     initialData: allSales,
-    searchKeys: ['id', 'customerName', 'items.itemName'],
+    searchKeys: ['id', 'customerName', 'items.itemName', 'payments.method'],
     dateFilterKey: 'saleDate',
     initialSortOption: 'date_desc',
-    initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
     itemsPerPage: 10,
   });
-
+  
   const filteredAndSortedSales = useMemo(() => {
     const paymentFilter = tableManager.otherFilters?.paymentMethod;
     if (!paymentFilter || paymentFilter === 'all') {
-      return initialFilteredData;
+        return filteredData;
     }
-    return initialFilteredData.filter(sale => sale.paymentMethod?.includes(paymentFilter));
-  }, [initialFilteredData, tableManager.otherFilters]);
+    return filteredData.filter(sale => sale.payments?.some(p => p.method === paymentFilter));
+  }, [filteredData, tableManager.otherFilters]);
+
 
   return (
     <div className="space-y-4">
@@ -74,19 +65,28 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
             {...tableManager}
             searchPlaceholder="Buscar por ID, cliente, artículo..."
             sortOptions={sortOptions}
-            filterOptions={[{ value: 'paymentMethod', label: 'Método de Pago', options: paymentMethods }]}
+            filterOptions={[{ value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions }]}
         />
-
-        <Card>
-            <CardContent className="pt-6">
-                <SalesTable
-                  sales={filteredAndSortedSales}
-                  onReprintTicket={onReprintTicket}
-                  inventoryItems={allInventory}
-                  onEditSale={onViewSale}
-                />
-            </CardContent>
-        </Card>
+        
+        {filteredAndSortedSales.length > 0 ? (
+          <div className="space-y-4">
+              {filteredAndSortedSales.map(sale => (
+                  <SaleCard
+                      key={sale.id}
+                      sale={sale}
+                      inventoryItems={allInventory}
+                      onReprintTicket={() => onReprintTicket(sale)}
+                      onViewSale={() => onViewSale(sale)}
+                  />
+              ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+              <Receipt className="h-12 w-12 mb-2" />
+              <h3 className="text-lg font-semibold text-foreground">No se encontraron ventas</h3>
+              <p className="text-sm">Intente cambiar su búsqueda o el rango de fechas.</p>
+          </div>
+        )}
         
         <div className="flex items-center justify-between pt-2">
             <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
@@ -104,3 +104,5 @@ export function VentasPosContent({ allSales, allInventory, onReprintTicket, onVi
     </div>
   );
 }
+
+    

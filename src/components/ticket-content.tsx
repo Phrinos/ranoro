@@ -5,7 +5,7 @@ import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem, Work
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
 import Image from 'next/image';
 
@@ -55,11 +55,6 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
     
     // Corrected: Always use the current time for ticket generation
     const formattedDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
-
-    const formatCurrency = (amount: number | undefined) => {
-      if (typeof amount !== 'number' || isNaN(amount)) return '$0.00';
-      return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    };
     
     const items = sale?.items || [];
     const serviceItems = service?.serviceItems || [];
@@ -169,17 +164,15 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             </div>
         </div>
         
-        {operation?.paymentMethod && (
+        {operation?.payments && operation.payments.length > 0 && (
             <>
                 {renderDashedLine()}
                 <div className="text-center" style={{ fontSize: `${bodyFontSize}px` }}>
-                    <p className="font-bold">Pagado con: {operation.paymentMethod}</p>
+                    <p className="font-bold">Forma(s) de Pago:</p>
                     <div className="text-center text-xs">
-                      { (operation.paymentMethod?.includes('+') || operation.paymentMethod?.includes('/')) && operation.amountInCash ? <p>- Efectivo: {formatCurrency(operation.amountInCash)}</p> : null}
-                      { (operation.paymentMethod?.includes('+') || operation.paymentMethod?.includes('/')) && operation.amountInCard ? <p>- Tarjeta: {formatCurrency(operation.amountInCard)}</p> : null}
-                      { (operation.paymentMethod?.includes('+') || operation.paymentMethod?.includes('/')) && operation.amountInTransfer ? <p>- Transferencia: {formatCurrency(operation.amountInTransfer)}</p> : null}
-                      {operation.cardFolio && <p>Folio Tarjeta: {operation.cardFolio}</p>}
-                      {operation.transferFolio && <p>Folio Transf: {operation.transferFolio}</p>}
+                        {operation.payments.map((p, index) => (
+                            <p key={index}>- {p.method}: {formatCurrency(p.amount)} {p.folio && `(Folio: ${p.folio})`}</p>
+                        ))}
                     </div>
                 </div>
             </>
@@ -236,3 +229,5 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
 );
 
 TicketContent.displayName = "TicketContent";
+
+    
