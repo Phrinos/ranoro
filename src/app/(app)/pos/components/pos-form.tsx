@@ -25,7 +25,6 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
   const { setValue, getValues, control } = methods;
   
   const watchedPayments = useWatch({ control, name: 'payments' });
-  const itemsRef = useRef(getValues('items'));
 
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
@@ -65,7 +64,9 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
   };
   
     useEffect(() => {
-        const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta' || p.method === 'Tarjeta MSI');
+        const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
+        const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
+
         const currentItems = getValues('items') || [];
         const commissionItemIndex = currentItems.findIndex((item: any) => item.inventoryItemId === 'COMMISSION_FEE');
         
@@ -76,8 +77,15 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
             return acc;
         }, 0) || 0;
         
+        let commissionAmount = 0;
         if (hasCardPayment) {
-            const commissionAmount = totalWithoutCommission * 0.035;
+            commissionAmount += totalWithoutCommission * 0.041;
+        }
+        if (hasMSIPayment) {
+            commissionAmount += totalWithoutCommission * 0.077;
+        }
+
+        if (hasCardPayment || hasMSIPayment) {
             if (commissionItemIndex === -1) {
                 // Add commission item if it doesn't exist
                 const newCommissionItem = {
@@ -103,7 +111,7 @@ export function PosForm({ inventoryItems, categories, suppliers, onSaleComplete,
             setValue('items', newItems);
         }
         
-    }, [watchedPayments, setValue, getValues]);
+    }, [watchedPayments, getValues, setValue]);
 
 
   return (
