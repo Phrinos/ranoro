@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone, CalendarCheck, ArrowRight, Edit, Search, Calendar as CalendarDateIcon } from 'lucide-react';
+import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone, CalendarCheck, ArrowRight, Edit, Search, Calendar as CalendarDateIcon, Link2Icon } from 'lucide-react';
 import type { Vehicle, ServiceRecord } from '@/types';
 import { format, isValid, parseISO, addMonths, addYears, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -126,14 +126,7 @@ export function VehicleSelectionCard({
     return (
       <Card className="relative">
         <CardHeader>
-           <div className="flex justify-between items-start">
-              <CardTitle>Vehículo Seleccionado</CardTitle>
-               <Button asChild variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
-                <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil completo del vehículo">
-                    <Edit className="h-4 w-4" />
-                </Link>
-              </Button>
-          </div>
+          <CardTitle>Vehículo Seleccionado</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
            <div className="p-3 border rounded-md bg-muted/30">
@@ -145,7 +138,10 @@ export function VehicleSelectionCard({
             name="mileage"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Kilometraje (Opcional)</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                    <History className="h-4 w-4 text-muted-foreground"/>
+                    Kilometraje Actual
+                </FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="Ej: 55000 km" {...field} value={field.value ?? ''} disabled={isReadOnly} />
                 </FormControl>
@@ -154,11 +150,17 @@ export function VehicleSelectionCard({
           />
           <div className="text-left mt-2 pt-2 border-t">
               <p className="text-sm font-medium text-muted-foreground">Último Servicio:</p>
-              <p className="text-sm font-semibold truncate" title={formatServiceInfo(lastService)}>
+              <p className="font-semibold text-base truncate" title={formatServiceInfo(lastService)}>
                   {formatServiceInfo(lastService)}
               </p>
           </div>
           <div className="flex justify-between items-center pt-2">
+              <Button asChild variant="link" className="p-0 h-auto">
+                <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil completo del vehículo">
+                    <Link2Icon className="mr-2 h-4 w-4" />
+                    Perfil del Vehículo
+                </Link>
+              </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedVehicle(null); setValue('vehicleId', undefined); onVehicleSelected(null); }}>
                 Cambiar Vehículo
               </Button>

@@ -245,7 +245,7 @@ export default function EditarServicioPage() {
     );
   }
 
-  const showTabs = initialData.status === 'En Taller' || initialData.status === 'Entregado' || initialData.status === 'Cancelado';
+  const showTabs = initialData.status === 'En Taller' || initialData.status === 'Entregado' || initialData.status === 'Cancelado' || watch('status') === 'En Taller' || watch('status') === 'Entregado';
 
   return (
     <FormProvider {...methods}>
@@ -261,6 +261,13 @@ export default function EditarServicioPage() {
               serviceTypes={serviceTypes}
             />
 
+            <VehicleSelectionCard 
+              isReadOnly={false} 
+              localVehicles={vehicles} 
+              onVehicleSelected={(v) => methods.setValue('vehicleIdentifier', v?.licensePlate)} 
+              onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+            />
+
             {showTabs ? (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList>
@@ -273,7 +280,7 @@ export default function EditarServicioPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
                         <div className="lg:col-span-3">
                           <Suspense fallback={<Loader2 className="animate-spin" />}>
-                            <ServiceItemsList isReadOnly={false} inventoryItems={inventoryItems} mode={'service'} onNewInventoryItemCreated={handleNewInventoryItemCreated} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText}/>
+                            <ServiceItemsList isReadOnly={false} inventoryItems={inventoryItems} mode={'service'} onNewInventoryItemCreated={handleNewInventoryItemCreated} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/>
                           </Suspense>
                         </div>
                         <div className="lg:col-span-2 space-y-6">
@@ -285,7 +292,7 @@ export default function EditarServicioPage() {
                 </TabsContent>
                 <TabsContent value="revision" className="mt-6">
                   <Suspense fallback={<Loader2 className="animate-spin" />}>
-                     <SafetyChecklist isReadOnly={false} onSignatureClick={() => handleOpenSignature('technician')} signatureDataUrl={watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={serviceId} onPhotoUploaded={handleChecklistPhotoUploaded} onViewImage={handleViewImage}/>
+                     <SafetyChecklist isReadOnly={false} onSignatureClick={() => handleOpenSignature('technician')} signatureDataUrl={watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} serviceId={serviceId} onPhotoUploaded={handleChecklistPhotoUploaded} onViewImage={handleViewImage}/>
                   </Suspense>
                 </TabsContent>
                 <TabsContent value="fotos" className="mt-6">
@@ -295,18 +302,17 @@ export default function EditarServicioPage() {
                 </TabsContent>
                 <TabsContent value="entrega" className="mt-6">
                    <Suspense fallback={<Loader2 className="animate-spin" />}>
-                      <ReceptionAndDelivery isReadOnly={false} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} onOpenSignature={handleOpenSignature}/>
+                      <ReceptionAndDelivery isReadOnly={false} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature}/>
                    </Suspense>
                 </TabsContent>
               </Tabs>
             ) : (
               // Vista sin pestañas para Cotizacion/Agendado
               <>
-                 <VehicleSelectionCard isReadOnly={false} localVehicles={vehicles} onVehicleSelected={(v) => methods.setValue('vehicleIdentifier', v?.licensePlate)} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/>
                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
                     <div className="lg:col-span-3">
                       <Suspense fallback={<Loader2 className="animate-spin" />}>
-                        <ServiceItemsList isReadOnly={false} inventoryItems={inventoryItems} mode={initialData.status === 'Cotizacion' ? 'quote' : 'service'} onNewInventoryItemCreated={handleNewInventoryItemCreated} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText}/>
+                        <ServiceItemsList isReadOnly={false} inventoryItems={inventoryItems} mode={initialData.status === 'Cotizacion' ? 'quote' : 'service'} onNewInventoryItemCreated={handleNewInventoryItemCreated} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/>
                       </Suspense>
                     </div>
                     <div className="lg:col-span-2 space-y-6">
