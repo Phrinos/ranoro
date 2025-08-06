@@ -100,7 +100,15 @@ export function SaleSummary() {
                                             <div className="relative">
                                                 <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                                 <FormControl>
-                                                    <Input type="number" step="0.01" {...field} value={field.value ?? ''} placeholder="0.00" className="pl-8"/>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        {...field}
+                                                        placeholder="0.00"
+                                                        value={field.value === 0 ? '' : field.value ?? ''}
+                                                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                                        className="pl-8"
+                                                    />
                                                 </FormControl>
                                             </div>
                                         </FormItem>

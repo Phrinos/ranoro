@@ -49,7 +49,7 @@ const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
 const paymentDetailsSchema = z.object({
   payments: z.array(z.object({
     method: z.enum(paymentMethods),
-    amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero."),
+    amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero.").optional(),
     folio: z.string().optional(),
   })).min(1, "Debe agregar al menos un método de pago."),
 }).superRefine((data, ctx) => {
@@ -74,7 +74,6 @@ interface PaymentDetailsDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   record: ServiceRecord | SaleReceipt;
-  recordType: 'service' | 'sale';
   onConfirm: (recordId: string, paymentDetails: PaymentDetailsFormValues) => void;
   isCompletionFlow?: boolean;
 }
@@ -83,12 +82,11 @@ export function PaymentDetailsDialog({
   open,
   onOpenChange,
   record,
-  recordType,
   onConfirm,
   isCompletionFlow = false,
 }: PaymentDetailsDialogProps) {
   const { toast } = useToast();
-  const totalAmount = recordType === 'service' ? (record as ServiceRecord).totalCost : (record as SaleReceipt).totalAmount;
+  const totalAmount = 'totalCost' in record ? record.totalCost : record.totalAmount;
 
   const form = useForm<PaymentDetailsFormValues>({
     resolver: zodResolver(paymentDetailsSchema),
@@ -152,7 +150,7 @@ export function PaymentDetailsDialog({
                   return (
                     <Card key={field.id} className="p-4 bg-muted/50">
                         <div className="flex gap-2 items-end">
-                            <FormField control={control} name={`payments.${index}.amount`} render={({ field }) => (<FormItem className="flex-grow"><FormLabel>Monto</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''}/></FormControl></div></FormItem>)}/>
+                            <FormField control={control} name={`payments.${index}.amount`} render={({ field }) => (<FormItem className="flex-grow"><FormLabel>Monto</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" {...field} value={field.value === 0 ? '' : field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} placeholder="0.00"/></FormControl></div></FormItem>)}/>
                             <FormField control={control} name={`payments.${index}.method`} render={({ field }) => (<FormItem className="w-48"><FormLabel>Método</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(method => (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method as any) === -1 && method !== selectedMethod}><div className="flex items-center gap-2">{React.createElement(paymentMethodIcons[method], {className: "h-4 w-4"})}<span>{method}</span></div></SelectItem>))}</SelectContent></Select></FormItem>)}/>
                             {fields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
                         </div>
@@ -162,7 +160,7 @@ export function PaymentDetailsDialog({
                   );
               })}
               {availablePaymentMethods.length > 0 && (
-                  <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: 0, folio: '' })}>
+                  <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: undefined, folio: '' })}>
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Añadir método de pago
                   </Button>

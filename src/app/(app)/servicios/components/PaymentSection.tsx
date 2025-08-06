@@ -98,7 +98,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                                         <div className="relative">
                                             <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                             <FormControl>
-                                                <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8" disabled={isReadOnly}/>
+                                                <Input type="number" step="0.01" {...field} value={field.value === 0 ? '' : field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} className="pl-8" disabled={isReadOnly} placeholder="0.00"/>
                                             </FormControl>
                                         </div>
                                     </FormItem>
@@ -148,7 +148,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                 );
            })}
            {!isReadOnly && availablePaymentMethods.length > 0 && (
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: 0, folio: '' })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: undefined, folio: '' })}>
                     <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
                 </Button>
            )}
