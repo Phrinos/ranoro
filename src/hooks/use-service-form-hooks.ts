@@ -5,6 +5,8 @@ import { useMemo } from 'react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
 import type { ServiceFormValues } from '@/schemas/service-form';
 
+const IVA_RATE = 0.16;
+
 /**
  * Custom hook to calculate service totals dynamically based on form values.
  * @param form - The react-hook-form instance.
@@ -28,6 +30,8 @@ export function useServiceTotals(form: UseFormReturn<ServiceFormValues>) {
       totalCost: total,
       totalSuppliesWorkshopCost: cost,
       serviceProfit: total - cost,
+      subTotal: total / (1 + IVA_RATE),
+      taxAmount: total - total / (1 + IVA_RATE),
     };
   }, [watchedItems]);
 }

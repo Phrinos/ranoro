@@ -33,7 +33,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import type {
   ServiceRecord, Vehicle, Technician, InventoryItem,
-  QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, InventoryCategory, Supplier, PaymentMethod, Personnel
+  QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, InventoryCategory, Supplier, Payment, Personnel
 } from '@/types'
 
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
@@ -115,11 +115,14 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   }, [initialDataService, parentVehicles, mode, form]);
   
   const { control, setValue, watch, formState, handleSubmit, reset, getValues } = form;
-  const { totalCost } = useServiceTotals(form);
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
   useEffect(() => {
+    setValue('totalCost', totalCost);
+    setValue('totalSuppliesWorkshopCost', totalSuppliesWorkshopCost);
+    setValue('serviceProfit', serviceProfit);
     onTotalCostChange(totalCost);
-  }, [totalCost, onTotalCostChange]);
+  }, [totalCost, totalSuppliesWorkshopCost, serviceProfit, setValue, onTotalCostChange]);
 
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);

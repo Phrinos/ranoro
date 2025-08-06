@@ -1,7 +1,12 @@
 
+
 // src/types/index.ts
 import { type VariantProps } from "class-variance-authority"
 import { sidebarMenuButtonVariants } from './sidebar.types';
+import { serviceFormSchema } from '@/schemas/service-form';
+import { z } from 'zod';
+
+export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
 
 export interface WorkshopInfo {
   name: string;
@@ -220,7 +225,7 @@ export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Tarjeta MSI' | 'Transferen
 
 export interface Payment {
     method: PaymentMethod;
-    amount: number;
+    amount?: number;
     folio?: string;
 }
 

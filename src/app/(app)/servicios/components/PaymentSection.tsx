@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/PaymentSection.tsx
 "use client";
 
@@ -30,13 +31,8 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
     name: "payments",
   });
 
-  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
-  const IVA_RATE = 0.16;
-  const subTotal = totalCost / (1 + IVA_RATE);
-  const tax = totalCost - subTotal;
-
+  const { totalCost, subTotal, taxAmount, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   const watchedPayments = watch("payments");
-  const isDelivered = watch('status') === 'Entregado';
 
   const availablePaymentMethods = paymentMethods.filter(
     method => !watchedPayments?.some((p: Payment) => p.method === method)
@@ -58,7 +54,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
             </div>
             <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">IVA (16%):</span>
-                <span className="font-medium">{formatCurrency(tax)}</span>
+                <span className="font-medium">{formatCurrency(taxAmount)}</span>
             </div>
             <div className="flex justify-between font-bold text-lg pt-2 border-t">
                 <span>TOTAL:</span>
