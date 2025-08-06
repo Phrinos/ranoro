@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PosForm } from '../components/pos-form';
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService } from '@/lib/services';
@@ -21,6 +21,7 @@ import { formatCurrency } from '@/lib/utils';
 import { nanoid } from 'nanoid';
 import html2canvas from 'html2canvas';
 import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 
 export default function NuevaVentaPage() {
@@ -85,12 +86,20 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
 
   const handleSaleCompletion = async (values: POSFormValues) => {
     if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
+    
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+
+    if (!currentUser) {
+        toast({ title: 'Error', description: 'No se pudo identificar al usuario. Por favor, inicie sesión de nuevo.', variant: 'destructive'});
+        return;
+    }
 
     const batch = writeBatch(db);
     
     try {
       const saleId = `SALE-${nanoid(8).toUpperCase()}`;
-      await operationsService.registerSale(saleId, values, currentInventoryItems, batch);
+      await operationsService.registerSale(saleId, values, currentInventoryItems, currentUser, batch);
       await batch.commit();
 
       const totalAmount = values.items.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -105,7 +114,9 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         subTotal, 
         tax,
         totalAmount,
-        status: 'Completado'
+        status: 'Completado',
+        registeredById: currentUser.id,
+        registeredByName: currentUser.name,
       };
       
       toast({ title: 'Venta Registrada', description: `La venta #${saleId} se ha completado.` });
@@ -164,12 +175,12 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           text: `Ticket de tu compra en ${workshopInfo?.name || 'nuestro taller'}.`,
         });
       } catch (error) {
-        console.error('Error sharing:', error);
         if(!String(error).includes('AbortError')) {
-           toast({ title: 'Error al compartir', variant: 'destructive' });
+           toast({ title: 'No se pudo compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
+           handleCopySaleForWhatsapp();
         }
       }
-    } else if (imageFile) {
+    } else {
         // Fallback for desktop browsers that don't support navigator.share with files
         handleCopySaleForWhatsapp();
     }
@@ -212,7 +223,7 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           title="Venta Completada"
           description={`Ticket para la venta #${saleForTicket.id}`}
           footerActions={<>
-              <Button onClick={() => handleCopyAsImage(false)} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+              <Button onClick={() => handleCopyAsImage()} className="w-full bg-white hover:bg-gray-100 text-black border"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
               <Button onClick={handleShare} className="w-full bg-green-100 hover:bg-green-200 text-green-800"><Share2 className="mr-2 h-4 w-4" /> Compartir Ticket</Button>
               <Button onClick={handlePrint} className="w-full"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
           </>}

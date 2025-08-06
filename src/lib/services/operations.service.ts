@@ -361,7 +361,13 @@ const onSalesUpdatePromise = async (): Promise<SaleReceipt[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SaleReceipt));
 }
 
-const registerSale = async (saleId: string, saleData: Omit<SaleReceipt, 'id' | 'saleDate' | 'subTotal' | 'tax' | 'totalAmount' | 'status'>, inventoryItems: InventoryItem[], batch: ReturnType<typeof writeBatch>): Promise<void> => {
+const registerSale = async (
+    saleId: string, 
+    saleData: Omit<SaleReceipt, 'id' | 'saleDate' | 'subTotal' | 'tax' | 'totalAmount' | 'status'>, 
+    inventoryItems: InventoryItem[], 
+    currentUser: User,
+    batch: ReturnType<typeof writeBatch>
+): Promise<void> => {
     const IVA_RATE = 0.16;
     const totalAmount = saleData.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
     const subTotal = totalAmount / (1 + IVA_RATE);
@@ -370,8 +376,12 @@ const registerSale = async (saleId: string, saleData: Omit<SaleReceipt, 'id' | '
     const newSale: Omit<SaleReceipt, 'id'> = {
       ...saleData,
       saleDate: new Date().toISOString(),
-      subTotal, tax, totalAmount,
+      subTotal, 
+      tax, 
+      totalAmount,
       status: 'Completado',
+      registeredById: currentUser.id,
+      registeredByName: currentUser.name,
     };
     
     const newSaleRef = doc(db, "sales", saleId);
@@ -392,8 +402,8 @@ const registerSale = async (saleId: string, saleData: Omit<SaleReceipt, 'id' | '
             type: 'Entrada',
             amount: newSale.amountInCash || totalAmount, // Use split amount if available
             concept: `Venta POS #${saleId.slice(0, 6)}`,
-            userId: 'system',
-            userName: newSale.customerName || 'Cliente Mostrador',
+            userId: currentUser.id,
+            userName: currentUser.name,
             relatedType: 'Venta',
             relatedId: saleId,
         });

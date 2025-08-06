@@ -379,6 +379,8 @@ export interface SaleReceipt {
   amountInCash?: number;
   amountInCard?: number;
   amountInTransfer?: number;
+  registeredById?: string;
+  registeredByName?: string;
 }
 
 export type QuoteRecord = ServiceRecord;
