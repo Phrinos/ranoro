@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { serviceService } from '@/lib/services';
-
+import { IVA_RATE } from '@/lib/forms';
 
 interface ServiceDialogProps {
   trigger?: React.ReactNode;
@@ -138,7 +138,21 @@ export function ServiceDialog({
     }
 
     try {
-        const savedRecord = await serviceService.saveService(formData);
+        let dataToSave = { ...formData };
+        if (dataToSave.status === 'Cotizacion') {
+            const totalCost = (dataToSave.serviceItems || []).reduce((sum, item) => sum + (item.price || 0), 0);
+            const suppliesCost = (dataToSave.serviceItems || [])
+                .flatMap(i => i.suppliesUsed || [])
+                .reduce((s, su) => s + (Number(su.unitPrice) || 0) * (Number(su.quantity) || 0), 0);
+            
+            dataToSave.totalCost = totalCost;
+            dataToSave.subTotal = totalCost / (1 + IVA_RATE);
+            dataToSave.taxAmount = totalCost - (totalCost / (1 + IVA_RATE));
+            dataToSave.totalSuppliesWorkshopCost = suppliesCost;
+            dataToSave.serviceProfit = totalCost - suppliesCost;
+        }
+        
+        const savedRecord = await serviceService.saveService(dataToSave);
         toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
         if (onSave) {
             await onSave(savedRecord);
