@@ -149,7 +149,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     <>
         <FormProvider {...form}>
             <form ref={ref} id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden space-y-6">
-                
+
                 <VehicleSelectionCard
                     isReadOnly={isReadOnly}
                     localVehicles={parentVehicles}
