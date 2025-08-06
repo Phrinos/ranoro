@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -142,24 +143,6 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
               render={({ field }) => <FormMessage />}
             />
         </div>
-        <FormField
-            control={control}
-            name="customerName"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Nombre del Cliente</FormLabel>
-                <FormControl>
-                    <Input 
-                    placeholder="Ej: Cliente Mostrador" 
-                    {...field} 
-                    value={field.value || ''}
-                    onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
-                    disabled={isReadOnly} 
-                    />
-                </FormControl>
-                </FormItem>
-            )}
-            />
       </CardContent>
     </Card>
   );
