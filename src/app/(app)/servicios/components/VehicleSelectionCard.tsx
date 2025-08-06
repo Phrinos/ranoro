@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useFormContext, Controller } from "react-hook-form";
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ export function VehicleSelectionCard({
 }: VehicleSelectionCardProps) {
   const { control, setValue, getValues, watch, formState: { errors } } = useFormContext();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
   const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState("");
@@ -122,6 +124,12 @@ export function VehicleSelectionCard({
     return `${mileagePart}${format(relevantDate, "dd MMM yyyy", { locale: es })} - ${description}`;
   };
 
+  const handleViewProfile = () => {
+    if (selectedVehicle) {
+        window.open(`/vehiculos/${selectedVehicle.id}`, '_blank');
+    }
+  };
+
   if (selectedVehicle) {
     return (
       <Card className="relative">
@@ -155,11 +163,8 @@ export function VehicleSelectionCard({
               </p>
           </div>
           <div className="flex justify-between items-center pt-2">
-              <Button asChild variant="link" className="p-0 h-auto">
-                <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil completo del vehículo">
-                    <Link2Icon className="mr-2 h-4 w-4" />
-                    Perfil del Vehículo
-                </Link>
+              <Button type="button" variant="link" className="p-0 h-auto" onClick={handleViewProfile}>
+                Perfil del Vehículo
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedVehicle(null); setValue('vehicleId', undefined); onVehicleSelected(null); }}>
                 Cambiar Vehículo
