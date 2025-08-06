@@ -113,7 +113,10 @@ export function VehicleSelectionCard({
   const formatServiceInfo = (service: ServiceRecord | null): string => {
     if (!service) return 'No hay registro de servicio previo.';
     const relevantDate = parseDate(service.deliveryDateTime) || parseDate(service.serviceDate);
-    const description = service.description || service.serviceItems?.map(item => item.name).join(', ') || 'Servicio General';
+    
+    // Updated logic to use service items for description
+    const description = service.serviceItems?.map(item => item.name).join(', ') || service.description || 'Servicio General';
+    
     if (!relevantDate || !isValid(relevantDate)) return 'Fecha inválida.';
     const mileagePart = service.mileage ? `${service.mileage.toLocaleString('es-ES')} km - ` : '';
     return `${mileagePart}${format(relevantDate, "dd MMM yyyy", { locale: es })} - ${description}`;
@@ -121,49 +124,47 @@ export function VehicleSelectionCard({
 
   if (selectedVehicle) {
     return (
-      <div className="relative">
-        <Card className="relative">
-          <CardHeader>
-             <div className="flex justify-between items-start">
-                <CardTitle>Vehículo Seleccionado</CardTitle>
-                 <Button asChild variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
-                  <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil completo del vehículo">
-                      <Edit className="h-4 w-4" />
-                  </Link>
-                </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <div className="p-3 border rounded-md bg-muted/30">
-                <p className="text-xs text-muted-foreground">{selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
-                <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
-            </div>
-            <FormField
-              control={control}
-              name="mileage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kilometraje (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="Ej: 55000 km" {...field} value={field.value ?? ''} disabled={isReadOnly} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-between items-center pt-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedVehicle(null); setValue('vehicleId', undefined); onVehicleSelected(null); }}>
-                  Cambiar Vehículo
-                </Button>
-            </div>
-             <div className="text-left mt-2 pt-2 border-t">
-                <p className="text-sm font-medium text-muted-foreground">Último Servicio Registrado:</p>
-                <p className="text-sm font-semibold truncate" title={formatServiceInfo(lastService)}>
-                    {formatServiceInfo(lastService)}
-                </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="relative">
+        <CardHeader>
+           <div className="flex justify-between items-start">
+              <CardTitle>Vehículo Seleccionado</CardTitle>
+               <Button asChild variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
+                <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil completo del vehículo">
+                    <Edit className="h-4 w-4" />
+                </Link>
+              </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+           <div className="p-3 border rounded-md bg-muted/30">
+              <p className="text-xs text-muted-foreground">{selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
+              <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
+          </div>
+          <FormField
+            control={control}
+            name="mileage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kilometraje (Opcional)</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="Ej: 55000 km" {...field} value={field.value ?? ''} disabled={isReadOnly} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <div className="text-left mt-2 pt-2 border-t">
+              <p className="text-sm font-medium text-muted-foreground">Último Servicio:</p>
+              <p className="text-sm font-semibold truncate" title={formatServiceInfo(lastService)}>
+                  {formatServiceInfo(lastService)}
+              </p>
+          </div>
+          <div className="flex justify-between items-center pt-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedVehicle(null); setValue('vehicleId', undefined); onVehicleSelected(null); }}>
+                Cambiar Vehículo
+              </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -172,7 +173,7 @@ export function VehicleSelectionCard({
       <Button
         type="button"
         variant="outline"
-        className="w-full h-24 border-2 border-dashed bg-muted/30 hover:bg-muted/50 text-muted-foreground"
+        className="w-full h-24 border-2 border-dashed bg-white hover:bg-gray-100 text-muted-foreground"
         onClick={() => setIsSelectionDialogOpen(true)}
         disabled={isReadOnly}
       >
