@@ -43,7 +43,7 @@ import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { ServiceItemsList } from './ServiceItemsList';
-import { ServiceSummary } from './ServiceSummary';
+import { PaymentSection } from './PaymentSection';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -208,7 +208,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
                     />
                     </div>
                     <div className="lg:col-span-2 space-y-6">
-                        <ServiceSummary />
+                        <PaymentSection />
                     </div>
                 </div>
 
