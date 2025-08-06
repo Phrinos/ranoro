@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { calculateSaleProfit } from '@/lib/placeholder-data';
 
 interface SaleCardProps {
     sale: SaleReceipt;
@@ -39,6 +40,8 @@ export const SaleCard = React.memo(({
 
     const saleDate = parseDate(sale.saleDate);
     const isCancelled = sale.status === 'Cancelado';
+
+    const profit = useMemo(() => calculateSaleProfit(sale, inventoryItems), [sale, inventoryItems]);
 
     const itemsDescription = useMemo(() => {
         const firstItem = sale.items[0];
@@ -125,6 +128,11 @@ export const SaleCard = React.memo(({
                          <div>
                            <p className="text-xs text-muted-foreground">Costo Cliente</p>
                            <p className="font-bold text-xl text-primary">{formatCurrency(sale.totalAmount)}</p>
+                        </div>
+                        <div>
+                            <p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end">
+                                <TrendingUp className="h-4 w-4" /> {formatCurrency(profit)}
+                            </p>
                         </div>
                     </div>
 
