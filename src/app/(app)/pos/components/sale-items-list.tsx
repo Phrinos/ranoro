@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from 'react';
@@ -7,7 +6,7 @@ import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { FormField, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { PlusCircle, Trash2, Minus, Plus, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -60,28 +59,29 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle>Detalles de la Venta</CardTitle>
+        <CardTitle>Artículos Vendidos</CardTitle>
         <CardDescription>Añada artículos y especifique el nombre del cliente.</CardDescription>
+        <div className="pt-2">
+           <FormField
+              control={control}
+              name="customerName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre del Cliente</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Ej: Cliente Mostrador" 
+                      {...field} 
+                      value={field.value}
+                      onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+        </div>
       </CardHeader>
-      <CardContent className="flex flex-col flex-grow space-y-4">
-        <FormField
-          control={control}
-          name="customerName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nombre del Cliente</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Ej: Cliente Mostrador" 
-                  {...field} 
-                  value={field.value}
-                  onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <p className="text-sm font-medium">Artículos Vendidos</p>
+      <CardContent className="flex flex-col flex-grow space-y-4 pt-0">
         <ScrollArea className="flex-grow pr-4">
           {fields.length > 0 ? (
             <div className="space-y-4">
