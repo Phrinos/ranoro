@@ -161,7 +161,6 @@ export default function PublicServicePage() {
                                           : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                       )}
                                     >
-                                        <tab.icon className="h-4 w-4 mr-2"/>
                                         {tab.label}
                                     </button>
                                 ))}
@@ -193,7 +192,7 @@ export default function PublicServicePage() {
         />
         
         <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-            <DialogContent className="max-w-4xl p-2 bg-transparent border-none shadow-none">
+            <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
                 {viewingImageUrl && (
                   <div className="relative aspect-video w-full">
                     <Image

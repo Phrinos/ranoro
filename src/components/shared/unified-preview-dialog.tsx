@@ -167,8 +167,6 @@ export function UnifiedPreviewDialog({
           text: `Detalles del servicio para ${vehicle?.licensePlate} en ${(workshopInfo as WorkshopInfo)?.name || 'nuestro taller'}.`,
         });
       } catch (error) {
-        console.error('Error sharing:', error);
-        // Fallback to text copy if sharing fails for non-abort reasons
         if (!String(error).includes('AbortError')) {
            toast({ title: 'No se pudo compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
            handleCopyServiceForWhatsapp();
@@ -274,15 +272,12 @@ export function UnifiedPreviewDialog({
       </Dialog>
 
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-        <DialogContent className="max-w-4xl p-2">
-          <DialogHeader className="print:hidden">
-            <DialogTitle>Vista Previa de Imagen</DialogTitle>
-            <DialogDescription>Visualización de la imagen adjunta.</DialogDescription>
-          </DialogHeader>
-          <div className="relative aspect-video w-full">
-            {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill style={{objectFit:"contain"}} sizes="(max-width: 768px) 100vw, 1024px" crossOrigin="anonymous" />)}
-          </div>
-          <DialogFooter className="mt-2 print:hidden"><Button onClick={handleDownloadImage}><Download className="mr-2 h-4 w-4"/>Descargar</Button></DialogFooter>
+        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
+            {viewingImageUrl && (
+              <div className="relative aspect-video w-full">
+                <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill style={{objectFit:"contain"}} sizes="(max-width: 768px) 100vw, 1024px" crossOrigin="anonymous" />
+              </div>
+            )}
         </DialogContent>
       </Dialog>
     </>
