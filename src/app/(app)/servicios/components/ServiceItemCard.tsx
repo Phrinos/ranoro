@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useFieldArray, useFormContext, type Control } from "react-hook-form";
@@ -221,7 +222,7 @@ export function ServiceItemCard({
                                     type="number"
                                     placeholder="0.00"
                                     {...field}
-                                    value={field.value ?? ''}
+                                    value={field.value === 0 ? '' : field.value ?? ''}
                                     onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                                     disabled={isReadOnly}
                                     className="bg-white"

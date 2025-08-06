@@ -52,10 +52,10 @@ export function UnifiedPreviewDialog({
   const showPhotoReport = service && !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
   
   const tabs = [];
-  if (showQuote) tabs.push({ value: 'quote', label: 'Cotización', icon: Eye });
-  if (showOrder) tabs.push({ value: 'order', label: 'Orden', icon: Wrench });
-  if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión', icon: ShieldCheck });
-  if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Fotos', icon: Camera });
+  if (showQuote) tabs.push({ value: 'quote', label: 'Cotización' });
+  if (showOrder) tabs.push({ value: 'order', label: 'Orden' });
+  if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión' });
+  if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico' });
     
   const defaultTabValue = service && (service.status === 'Cotizacion' || service.status === 'Agendado') ? 'quote' : 'order';
   const [activeTab, setActiveTab] = useState(defaultTabValue);
@@ -230,8 +230,21 @@ export function UnifiedPreviewDialog({
             </DialogDescription>
             {documentType === 'service' && (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full pt-2">
-                  <TabsList className={`grid w-full ${gridColsClass}`}>
-                      {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{tab.label}</TabsTrigger>)}
+                  <TabsList className={cn('grid w-full h-auto p-0 bg-transparent gap-2', gridColsClass)}>
+                      {tabs.map(tab => (
+                          <button
+                            key={tab.value}
+                            onClick={() => setActiveTab(tab.value)}
+                            className={cn(
+                              'flex-1 min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug flex items-center justify-center',
+                              activeTab === tab.value
+                                ? 'bg-primary text-primary-foreground shadow'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            )}
+                          >
+                              {tab.label}
+                          </button>
+                      ))}
                   </TabsList>
               </Tabs>
             )}
@@ -260,12 +273,12 @@ export function UnifiedPreviewDialog({
             <div className="flex flex-col sm:flex-row gap-2">
               {documentType === 'service' && (
                 <>
-                    <Button onClick={() => handleCopyAsImage()} variant="outline"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-                    <Button onClick={handleCopyServiceForWhatsapp} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
-                    <Button onClick={handleShare} variant="outline"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
+                    <Button onClick={() => handleCopyAsImage()} className="bg-blue-600 hover:bg-blue-700 text-white"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+                    <Button onClick={handleCopyServiceForWhatsapp} className="bg-green-600 hover:bg-green-700 text-white"><MessageSquare className="mr-2 h-4 w-4" /> WhatsApp</Button>
+                    <Button onClick={handleShare} variant="outline" className="bg-white hover:bg-gray-100 text-black border"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
                 </>
               )}
-                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button>
+                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
             </div>
           </DialogFooter>
         </DialogContent>
@@ -275,7 +288,14 @@ export function UnifiedPreviewDialog({
         <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
             {viewingImageUrl && (
               <div className="relative aspect-video w-full">
-                <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill style={{objectFit:"contain"}} sizes="(max-width: 768px) 100vw, 1024px" crossOrigin="anonymous" />
+                <Image
+                  src={viewingImageUrl}
+                  alt="Vista ampliada de evidencia"
+                  fill
+                  style={{ objectFit: 'contain' }}
+                  sizes="(max-width: 768px) 100vw, 1024px"
+                  crossOrigin="anonymous"
+                />
               </div>
             )}
         </DialogContent>
