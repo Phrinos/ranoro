@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
@@ -14,7 +13,9 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { inventoryService } from '@/lib/services/inventory.service';
-import { operationsService } from '@/lib/services/operations.service';
+import { saleService } from '@/lib/services/sale.service';
+import { serviceService } from '@/lib/services/service.service';
+import { purchaseService } from '@/lib/services/purchase.service';
 import { adminService } from '@/lib/services/admin.service';
 import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
@@ -63,8 +64,8 @@ export default function InventarioPageComponent({
     
     unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
     unsubs.push(inventoryService.onCategoriesUpdate(setCategories));
-    unsubs.push(operationsService.onSalesUpdate(setSales));
-    unsubs.push(operationsService.onServicesUpdate(setServices));
+    unsubs.push(saleService.onSalesUpdate(setSales));
+    unsubs.push(serviceService.onServicesUpdate(setServices));
     unsubs.push(inventoryService.onPayableAccountsUpdate(setPayableAccounts));
     unsubs.push(inventoryService.onSuppliersUpdate((data) => {
       setSuppliers(data);
@@ -86,7 +87,7 @@ export default function InventarioPageComponent({
   }, []);
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
-    await operationsService.registerPurchase(data);
+    await purchaseService.registerPurchase(data);
     toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
     setIsRegisterPurchaseOpen(false);
   }, [toast]);
