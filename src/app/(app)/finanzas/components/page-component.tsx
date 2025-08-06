@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/page-component.tsx
 
 "use client";

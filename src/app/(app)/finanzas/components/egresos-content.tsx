@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/egresos-content.tsx
 "use client";
 
@@ -27,7 +26,9 @@ interface EgresosContentProps {
 export function EgresosContent({ financialSummary, fixedExpenses, personnel, onExpensesUpdated }: EgresosContentProps) {
   const [isExpensesDialogOpen, setIsExpensesDialogOpen] = useState(false);
 
-  const totalPayroll = financialSummary.totalTechnicianSalaries + financialSummary.totalAdministrativeSalaries;
+  const totalPayroll = (personnel || []).filter(p => !p.isArchived && p.monthlySalary && p.monthlySalary > 0)
+    .reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
+  
   const totalOtherFixed = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
   const totalFixedAndPayroll = totalPayroll + totalOtherFixed;
 
