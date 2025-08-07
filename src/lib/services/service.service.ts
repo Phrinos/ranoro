@@ -18,17 +18,18 @@ import {
   serverTimestamp,
   limit,
   setDoc,
+  compareDesc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem } from "@/types";
-import { cleanObjectForFirestore, IVA_RATE } from '../forms';
+import { cleanObjectForFirestore, IVA_RATE, parseDate } from '../forms';
 import { logAudit } from '../placeholder-data';
 import { nanoid } from 'nanoid';
 import { savePublicDocument } from '../public-document';
 import { cashService } from './cash.service';
 import type { PaymentDetailsFormValues } from '@/app/(app)/servicios/components/PaymentDetailsDialog';
 import { inventoryService } from './inventory.service';
-import { format, parse, isValid } from 'date-fns';
+import { format, isValid } from 'date-fns';
 
 // --- Generic Document Getter ---
 const getDocById = async (collectionName: string, id: string): Promise<any> => {
@@ -59,13 +60,24 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
 
 const getServicesForVehicle = async (vehicleId: string): Promise<ServiceRecord[]> => {
     if (!db) return [];
+    
+    // Simplified query: only filter by vehicleId. Sorting will be done on the client.
     const q = query(
         collection(db, "serviceRecords"), 
-        where("vehicleId", "==", vehicleId),
-        orderBy("serviceDate", "desc")
+        where("vehicleId", "==", vehicleId)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+    const services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+    
+    // Sort on the client side to avoid needing the composite index immediately.
+    return services.sort((a, b) => {
+        const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate);
+        const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate);
+        if (dateA && dateB) return compareDesc(dateA, dateB);
+        if (dateA) return -1;
+        if (dateB) return 1;
+        return 0;
+    });
 };
 
 
@@ -301,4 +313,5 @@ export const serviceService = {
     deleteService,
     completeService,
 };
+
 
