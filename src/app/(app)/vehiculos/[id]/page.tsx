@@ -49,7 +49,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { format, parseISO, isValid } from "date-fns";
+import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";

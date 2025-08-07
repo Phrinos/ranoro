@@ -16,6 +16,7 @@ import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Car } from "lucide-react";
 import { parseDate } from "@/lib/forms";
+import { Badge } from "@/components/ui/badge";
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
@@ -61,7 +62,10 @@ export const VehiclesTable = React.memo(({ vehicles }: VehiclesTableProps) => {
                 onClick={() => handleRowClick(vehicle.id)}
                 className="cursor-pointer hover:bg-muted/50"
               >
-                <TableCell className="font-semibold">{vehicle.licensePlate}</TableCell>
+                <TableCell className="font-semibold">
+                  <span>{vehicle.licensePlate}</span>
+                  {vehicle.isFleetVehicle && <Badge variant="secondary" className="ml-2">Flotilla</Badge>}
+                </TableCell>
                 <TableCell>{vehicle.make}</TableCell>
                 <TableCell>{vehicle.model}</TableCell>
                 <TableCell>{vehicle.year}</TableCell>
