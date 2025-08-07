@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
@@ -8,12 +7,17 @@ import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, WorkshopInfo, InventoryCategory, Supplier } from '@/types';
+import type { ServiceRecord, Vehicle, User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { serviceService, inventoryService, adminService, operationsService } from '@/lib/services';
+import { inventoryService, adminService, serviceService } from '@/lib/services';
+import { quoteService } from '@/lib/services/quote.service';
+import { agendaService } from '@/lib/services/agenda.service';
+import { historyService } from '@/lib/services/history.service';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
+import { isToday } from 'date-fns';
+import { parseDate } from '@/lib/forms';
 
 const ActivosTabContent = lazy(() => import('./tab-activos'));
 const HistorialTabContent = lazy(() => import('./tab-historial'));
@@ -27,7 +31,12 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(tab || 'activos');
 
-  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  // States for each data category
+  const [quotes, setQuotes] = useState<ServiceRecord[]>([]);
+  const [agendaServices, setAgendaServices] = useState<ServiceRecord[]>([]);
+  const [historyServices, setHistoryServices] = useState<ServiceRecord[]>([]);
+  const [activeServices, setActiveServices] = useState<ServiceRecord[]>([]);
+
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [personnel, setPersonnel] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,18 +49,25 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   const [serviceToEditPayment, setServiceToEditPayment] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
-    setIsLoading(true);
-
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
     if (authUserString) {
-        try { setCurrentUser(JSON.parse(authUserString)); } catch (e) { console.error("Error parsing auth user", e); }
+      try { setCurrentUser(JSON.parse(authUserString)); } catch (e) { console.error("Error parsing auth user", e); }
     }
 
+    // Subscribe to each specialized service
     const unsubs = [
-      serviceService.onServicesUpdate((services) => {
-        setAllServices(services);
-        setIsLoading(false); 
+      quoteService.onQuotesUpdate(setQuotes),
+      agendaService.onAgendaUpdate(agendaData => {
+        setAgendaServices(agendaData);
+        // Derive active services for today from the agenda list
+        const todayServices = agendaData.filter(s => {
+            const serviceDate = parseDate(s.appointmentDateTime || s.serviceDate);
+            return serviceDate && isToday(serviceDate);
+        });
+        setActiveServices(todayServices);
+        setIsLoading(false); // Consider loading finished when agenda is ready
       }),
+      historyService.onHistoryUpdate(setHistoryServices),
       inventoryService.onVehiclesUpdate(setVehicles),
       adminService.onUsersUpdate(setPersonnel),
     ];
@@ -83,7 +99,7 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
       await batch.commit();
       toast({ title: "Servicio Completado" });
       const updatedService = { ...service, ...paymentDetails, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
-      setRecordForPreview(updatedService); // Show the completed record in preview
+      setRecordForPreview(updatedService);
       setIsPreviewOpen(true);
     } catch (e) {
       toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
@@ -105,10 +121,10 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   );
 
   const tabs = [
-    { value: 'activos', label: 'Activos (Hoy)', content: <ActivosTabContent allServices={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenPaymentDialog} /> },
-    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
-    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
-    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onEditPayment={handleOpenPaymentDialog} /> }
+    { value: 'activos', label: 'Activos (Hoy)', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenPaymentDialog} /> },
+    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={agendaServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
+    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
+    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historyServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onEditPayment={handleOpenPaymentDialog} /> }
   ];
 
   return (

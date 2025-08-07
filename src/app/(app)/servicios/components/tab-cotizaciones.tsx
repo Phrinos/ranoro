@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, User } from '@/types';
@@ -10,6 +10,10 @@ import { ServiceAppointmentCard } from './ServiceAppointmentCard';
 import { startOfDay, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { parseDate } from '@/lib/forms';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { serviceService } from '@/lib/services';
+import { useToast } from '@/hooks/use-toast';
 
 interface CotizacionesTabContentProps {
   services: ServiceRecord[];
@@ -25,25 +29,43 @@ export default function CotizacionesTabContent({
   onShowPreview,
 }: CotizacionesTabContentProps) {
   const router = useRouter();
+  const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const quotes = useMemo(() => services.filter(s => s.status === 'Cotizacion'), [services]);
+  const quotes = useMemo(
+    () => services
+      .filter(s => (s.status ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes('cotizacion'))
+      .map(s => ({ ...s, serviceDate: parseDate(s.serviceDate) as Date })),
+    [services]
+  );
   
   const { 
-    filteredData,
+    filteredData, 
     ...tableManager 
   } = useTableManager<ServiceRecord>({
     initialData: quotes,
     searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
-    dateFilterKey: "receptionDateTime",
-    initialSortOption: "receptionDateTime_desc",
+    dateFilterKey: 'serviceDate',
+    initialSortOption: "serviceDate_desc",
     itemsPerPage: 10,
-    // Set a default date range to show the last 90 days of quotes
-    initialDateRange: { from: subDays(startOfDay(new Date()), 90), to: new Date() },
   });
 
   const handleEditQuote = useCallback((quoteId: string) => {
     router.push(`/servicios/${quoteId}`);
   }, [router]);
+  
+  const handleDeleteQuote = async (quoteId: string) => {
+    setIsDeleting(true);
+    try {
+        await serviceService.deleteService(quoteId);
+        toast({ title: 'Cotización Eliminada', description: `La cotización ha sido eliminada permanentemente.` });
+    } catch (e) {
+        toast({ title: 'Error', description: 'No se pudo eliminar la cotización.', variant: 'destructive' });
+    } finally {
+        setIsDeleting(false);
+    }
+  };
+
 
   return (
     <div className="space-y-4">
@@ -51,8 +73,8 @@ export default function CotizacionesTabContent({
         {...tableManager}
         searchPlaceholder="Buscar por folio, placa o descripción..."
         sortOptions={[
-            { value: 'receptionDateTime_desc', label: 'Más Reciente' },
-            { value: 'receptionDateTime_asc', label: 'Más Antiguo' },
+            { value: 'serviceDate_desc', label: 'Más Reciente' },
+            { value: 'serviceDate_asc', label: 'Más Antiguo' },
             { value: 'totalCost_desc', label: 'Monto (Mayor a Menor)' },
             { value: 'totalCost_asc', label: 'Monto (Menor a Mayor)' },
         ]}

@@ -7,9 +7,11 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, User, PaymentMethod } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { startOfMonth, endOfMonth, subDays, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { parseDate } from '@/lib/forms';
+
 
 interface HistorialTabContentProps {
   services: ServiceRecord[];
@@ -41,16 +43,18 @@ export default function HistorialTabContent({
   onEditPayment,
 }: HistorialTabContentProps) {
   const router = useRouter();
-
-  const historicalServices = useMemo(() => services.filter(s => s.status === 'Entregado' || s.status === 'Cancelado'), [services]);
-
+  
+  const getRelevantDate = (service: ServiceRecord): Date | null => {
+      return parseDate(service.deliveryDateTime) || parseDate(service.serviceDate);
+  };
+  
   const {
     filteredData,
     ...tableManager
   } = useTableManager<ServiceRecord>({
-    initialData: historicalServices,
+    initialData: services,
     searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
-    dateFilterKey: "deliveryDateTime",
+    dateFilterKey: "deliveryDateTime", // Primary date key
     initialSortOption: "deliveryDateTime_desc",
     initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
     itemsPerPage: 10,
@@ -103,7 +107,9 @@ export default function HistorialTabContent({
         </div>
       </div>
       {filteredData.length > 0 ? (
-        filteredData.map(renderServiceCard)
+        <div className="space-y-4">
+          {filteredData.map(renderServiceCard)}
+        </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
           <FileText className="h-12 w-12 mb-2" />

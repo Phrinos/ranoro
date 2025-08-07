@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components
 "use client";
 
@@ -43,15 +44,7 @@ export default function ActivosTabContent({
   const router = useRouter();
 
   const activeServices = useMemo(() => {
-    const today = new Date();
-    return allServices.filter(s => {
-      const serviceDate = parseDate(s.appointmentDateTime || s.serviceDate);
-      const deliveryDate = parseDate(s.deliveryDateTime);
-      if (s.status === 'En Taller') return true;
-      if (s.status === 'Agendado' && serviceDate && isToday(serviceDate)) return true;
-      if ((s.status === 'Entregado' || s.status === 'Cancelado') && deliveryDate && isToday(deliveryDate)) return true;
-      return false;
-    }).sort((a, b) => {
+    return allServices.sort((a, b) => {
         const priorityA = getStatusPriority(a);
         const priorityB = getStatusPriority(b);
         if (priorityA !== priorityB) return priorityA - priorityB;
@@ -92,7 +85,7 @@ export default function ActivosTabContent({
           Total facturado hoy: <span className="font-bold text-primary">{formatCurrency(totalEarningsToday)}</span>
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {activeServices.length > 0 ? (
           activeServices.map(renderServiceCard)
         ) : (

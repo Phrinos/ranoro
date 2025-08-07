@@ -27,10 +27,6 @@ export default function AgendaTabContent({
   const router = useRouter();
   const [activeView, setActiveView] = useState('lista');
 
-  const scheduledServices = useMemo(() => 
-    services.filter(s => s.status === 'Agendado' || s.status === 'En Taller'),
-  [services]);
-
   return (
     <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
       <div className="flex justify-end mb-4">
@@ -41,9 +37,9 @@ export default function AgendaTabContent({
       </div>
 
       <TabsContent value="lista">
-        <Suspense fallback={<Loader2 className="animate-spin" />}>
+        <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>}>
           <AgendaListContent 
-            services={scheduledServices} 
+            services={services} 
             vehicles={vehicles}
             personnel={personnel}
             onShowPreview={onShowPreview}
@@ -51,9 +47,9 @@ export default function AgendaTabContent({
         </Suspense>
       </TabsContent>
       <TabsContent value="calendario">
-        <Suspense fallback={<Loader2 className="animate-spin" />}>
+        <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>}>
           <ServiceCalendar 
-            services={scheduledServices} 
+            services={services} 
             vehicles={vehicles}
             technicians={personnel}
             onServiceClick={(s) => router.push(`/servicios/${s.id}`)} 
