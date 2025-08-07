@@ -15,7 +15,7 @@ export const supplySchema = z.object({
 export const serviceItemSchema = z.object({
   id: z.string(),
   name: z.string().min(3, 'El nombre del servicio es requerido.'),
-  price: z.coerce.number({ invalid_type_error: 'El precio debe ser un número.' }).min(0, 'El precio debe ser un número positivo.').optional(),
+  price: z.coerce.number({ invalid_type_error: 'El precio debe ser un número.' }).optional(),
   suppliesUsed: z.array(supplySchema),
   serviceType: z.string().optional(), // Moved from root
 });
