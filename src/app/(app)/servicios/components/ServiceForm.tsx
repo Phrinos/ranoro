@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/service-form.tsx
 "use client";
 
@@ -255,18 +254,21 @@ function ServiceFormContent({
   
   const watchedStatus = watch('status');
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
+  const isSubmitDisabled = isReadOnly || formState.isSubmitting || !formState.isValid;
 
   return (
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
       <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
         <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
-        <VehicleSelectionCard 
-          isReadOnly={isReadOnly} 
-          localVehicles={vehicles} 
-          serviceHistory={serviceHistory}
-          onVehicleSelected={(v) => setValue('vehicleId', v?.id)} 
-          onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
-        />
+        <Suspense fallback={<Loader2 className="animate-spin" />}>
+          <VehicleSelectionCard 
+            isReadOnly={isReadOnly} 
+            localVehicles={vehicles} 
+            serviceHistory={serviceHistory}
+            onVehicleSelected={(v) => setValue('vehicleId', v?.id)} 
+            onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+          />
+        </Suspense>
 
         {showTabs ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -323,7 +325,7 @@ function ServiceFormContent({
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" disabled={isReadOnly || formState.isSubmitting}>
+          <Button type="submit" disabled={isSubmitDisabled}>
             {formState.isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
             {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
           </Button>
@@ -356,7 +358,7 @@ function ServiceFormContent({
           open={isPaymentDialogOpen}
           onOpenChange={setIsPaymentDialogOpen}
           record={serviceToComplete}
-          onConfirm={handleCompleteService}
+          onConfirm={(id, details) => handleCompleteService(serviceToComplete, details, serviceToComplete.nextServiceInfo)}
           isCompletionFlow={true}
           />
       )}
