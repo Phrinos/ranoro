@@ -1,4 +1,4 @@
-// src/app/(app)/servicios/components/activos-tab-content.tsx
+// src/app/(app)/servicios/components
 "use client";
 
 import React, { useMemo, useCallback } from 'react';

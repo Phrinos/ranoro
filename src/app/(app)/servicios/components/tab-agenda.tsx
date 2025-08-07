@@ -9,7 +9,7 @@ import type { ServiceRecord, Vehicle, User } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AgendaListContent = lazy(() => import('./agenda-list-content'));
-const ServiceCalendar = lazy(() => import('../components/service-calendar'));
+const ServiceCalendar = lazy(() => import('./service-calendar'));
 
 interface AgendaTabContentProps {
   services: ServiceRecord[];
@@ -28,7 +28,7 @@ export default function AgendaTabContent({
   const [activeView, setActiveView] = useState('lista');
 
   const scheduledServices = useMemo(() => 
-    services.filter(s => s.status === 'Agendado'),
+    services.filter(s => s.status === 'Agendado' || s.status === 'En Taller'),
   [services]);
 
   return (

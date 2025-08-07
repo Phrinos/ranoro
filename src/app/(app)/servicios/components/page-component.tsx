@@ -15,10 +15,10 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 
-const ActivosTabContent = lazy(() => import('./activos-tab-content'));
-const HistorialTabContent = lazy(() => import('./historial-tab-content'));
-const AgendaTabContent = lazy(() => import('./agenda-tab-content'));
-const CotizacionesTabContent = lazy(() => import('./cotizaciones-tab-content'));
+const ActivosTabContent = lazy(() => import('./tab-activos'));
+const HistorialTabContent = lazy(() => import('./tab-historial'));
+const AgendaTabContent = lazy(() => import('./tab-agenda'));
+const CotizacionesTabContent = lazy(() => import('./tab-cotizaciones'));
 const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
 const PaymentDetailsDialog = lazy(() => import('../components/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 

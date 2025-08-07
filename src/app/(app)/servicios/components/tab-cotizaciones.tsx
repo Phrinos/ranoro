@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -8,7 +7,7 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { startOfDay, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 
@@ -35,9 +34,11 @@ export default function CotizacionesTabContent({
   } = useTableManager<ServiceRecord>({
     initialData: quotes,
     searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
-    dateFilterKey: "serviceDate",
-    initialSortOption: "serviceDate_desc",
+    dateFilterKey: "receptionDateTime",
+    initialSortOption: "receptionDateTime_desc",
     itemsPerPage: 10,
+    // Set a default date range to show the last 90 days of quotes
+    initialDateRange: { from: subDays(startOfDay(new Date()), 90), to: new Date() },
   });
 
   const handleEditQuote = useCallback((quoteId: string) => {
@@ -50,8 +51,8 @@ export default function CotizacionesTabContent({
         {...tableManager}
         searchPlaceholder="Buscar por folio, placa o descripción..."
         sortOptions={[
-            { value: 'serviceDate_desc', label: 'Más Reciente' },
-            { value: 'serviceDate_asc', label: 'Más Antiguo' },
+            { value: 'receptionDateTime_desc', label: 'Más Reciente' },
+            { value: 'receptionDateTime_asc', label: 'Más Antiguo' },
             { value: 'totalCost_desc', label: 'Monto (Mayor a Menor)' },
             { value: 'totalCost_asc', label: 'Monto (Menor a Mayor)' },
         ]}

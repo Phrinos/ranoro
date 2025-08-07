@@ -1,31 +1,30 @@
 
-
 // src/app/(app)/servicios/components/service-form.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, X, Ban, Wrench, ShieldCheck, Camera, FileText, Eye, Trash2 } from 'lucide-react';
-import type { ServiceFormValues } from '@/schemas/service-form';
-import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
+import { Loader2, Save, X, Ban, Trash2 } from 'lucide-react';
+import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
+import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { ServiceDetailsCard } from './ServiceDetailsCard';
-import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
-import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+import { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { useToast } from '@/hooks/use-toast';
-import { normalizeDataUrl } from '@/lib/utils';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { SignatureDialog } from './signature-dialog';
-import { PageHeader } from '@/components/page-header';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PaymentDetailsDialog } from './PaymentDetailsDialog';
 import { serviceService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch } from 'firebase/firestore';
-
+import { z } from 'zod';
+import { useRouter } from 'next/navigation';
 
 // Lazy load complex components
 const ServiceItemsList = lazy(() => import('./ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
@@ -35,8 +34,89 @@ const SafetyChecklist = lazy(() => import('./SafetyChecklist').then(module => ({
 const PhotoReportTab = lazy(() => import('./PhotoReportTab').then(module => ({ default: module.PhotoReportTab })));
 const ReceptionAndDelivery = lazy(() => import('./ReceptionAndDelivery').then(module => ({ default: module.ReceptionAndDelivery })));
 
+// Define the PaymentDetails schema here or import it if defined elsewhere
+const PaymentDetailsFormSchema = z.object({
+    paymentMethod: z.string().min(1, "El método de pago es requerido"),
+    paymentStatus: z.string().min(1, "El estado de pago es requerido"),
+    total: z.number(),
+    subtotal: z.number(),
+    tax: z.number(),
+    notes: z.string().optional(),
+});
+type PaymentDetailsFormValues = z.infer<typeof PaymentDetailsFormSchema>;
+
+
+interface ServiceFormWrapperProps {
+  initialDataService: ServiceRecord | null;
+  vehicles: Vehicle[];
+  technicians: User[];
+  inventoryItems: InventoryItem[];
+  serviceTypes: ServiceTypeRecord[];
+  categories: InventoryCategory[];
+  suppliers: Supplier[];
+  serviceHistory: ServiceRecord[];
+  onSubmit: (data: ServiceFormValues) => Promise<void>;
+  onClose?: () => void;
+  onDelete?: (id: string) => void;
+  onCancelService?: (id: string, reason: string) => void;
+  onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
+  mode: 'service' | 'quote';
+  isReadOnly?: boolean;
+}
+
+export function ServiceForm({
+  initialDataService,
+  vehicles,
+  technicians,
+  inventoryItems,
+  serviceTypes,
+  categories,
+  suppliers,
+  serviceHistory,
+  onSubmit,
+  onDelete,
+  onCancelService,
+  onVehicleCreated,
+  mode,
+}: ServiceFormWrapperProps) {
+  const router = useRouter();
+  const methods = useForm<ServiceFormValues>({
+    resolver: zodResolver(serviceFormSchema),
+    defaultValues: initialDataService || {
+      status: mode === 'quote' ? 'Cotizacion' : 'Activo',
+      // Set other default values as needed
+    },
+  });
+
+  const handleClose = () => {
+    router.back();
+  }
+
+  return (
+    <FormProvider {...methods}>
+      <ServiceFormContent
+        initialData={initialDataService}
+        vehicles={vehicles}
+        technicians={technicians}
+        inventoryItems={inventoryItems}
+        serviceTypes={serviceTypes}
+        categories={categories}
+        suppliers={suppliers}
+        serviceHistory={serviceHistory}
+        onSubmit={onSubmit}
+        onClose={handleClose}
+        isReadOnly={false}
+        mode={mode}
+        onVehicleCreated={onVehicleCreated}
+        onDelete={onDelete}
+        onCancelService={onCancelService}
+      />
+    </FormProvider>
+  );
+}
 
 interface ServiceFormProps {
+  initialData: ServiceRecord | null;
   vehicles: Vehicle[];
   technicians: User[];
   inventoryItems: InventoryItem[];
@@ -53,7 +133,8 @@ interface ServiceFormProps {
   onCancelService?: (id: string, reason: string) => void;
 }
 
-export function ServiceForm({
+export function ServiceFormContent({
+  initialData,
   vehicles,
   technicians,
   inventoryItems,
@@ -85,9 +166,8 @@ export function ServiceForm({
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   
-  const { reset, handleSubmit, getValues, setValue, watch, formState } = methods;
+  const { handleSubmit, getValues, setValue, watch, formState } = methods;
 
-  const initialData = watch();
   const isEditing = !!initialData?.id;
   const isQuote = initialData?.status === 'Cotizacion' || mode === 'quote';
 
@@ -229,7 +309,7 @@ export function ServiceForm({
 
         <div className="flex-shrink-0 flex justify-between items-center mt-6 pt-4 border-t px-6 pb-6 -mx-6 -mb-6 bg-background sticky bottom-0 z-10">
           <div>
-            {(onDelete || onCancelService) && (
+            {(onDelete || onCancelService) && initialData?.id && (
               <ConfirmDialog
                   triggerButton={
                       <Button variant="destructive" type="button" disabled={isReadOnly || initialData?.status === 'Cancelado'}>

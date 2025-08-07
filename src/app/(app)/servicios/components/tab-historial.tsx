@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -80,8 +79,16 @@ export default function HistorialTabContent({
         {...tableManager}
         searchPlaceholder="Buscar por folio, placa..."
         filterOptions={[
-          { value: 'status', label: 'Estado', options: serviceStatusOptions },
-          { value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions },
+          {
+            value: 'status',
+            label: 'Estado',
+            options: serviceStatusOptions,
+          },
+          {
+            value: 'paymentMethod',
+            label: 'Método de Pago',
+            options: paymentMethodOptions,
+          },
         ]}
       />
       <div className="flex items-center justify-between">
@@ -107,4 +114,3 @@ export default function HistorialTabContent({
     </div>
   );
 }
-

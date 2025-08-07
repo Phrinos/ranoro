@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -28,7 +27,7 @@ import { savePublicDocument } from '../public-document';
 import { cashService } from './cash.service';
 import type { PaymentDetailsFormValues } from '@/app/(app)/servicios/components/PaymentDetailsDialog';
 import { inventoryService } from './inventory.service';
-import { format, parse } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 
 // --- Generic Document Getter ---
 const getDocById = async (collectionName: string, id: string): Promise<any> => {
@@ -43,8 +42,8 @@ const getDocById = async (collectionName: string, id: string): Promise<any> => {
 
 const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
     if (!db) return () => {};
-    // Sort by receptionDateTime descending to capture all records (services and quotes) reliably.
-    const q = query(collection(db, "serviceRecords"), orderBy("receptionDateTime", "desc"));
+    // Sort by serviceDate to show scheduled services in the correct order.
+    const q = query(collection(db, "serviceRecords"), orderBy("serviceDate", "desc"));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord)));
     }, (error) => console.error("Error listening to services:", error.message));
@@ -52,7 +51,7 @@ const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() =>
 
 const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
     if (!db) return [];
-    const q = query(collection(db, "serviceRecords"), orderBy("receptionDateTime", "desc"));
+    const q = query(collection(db, "serviceRecords"), orderBy("serviceDate", "desc"));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
 };
