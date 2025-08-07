@@ -1,5 +1,5 @@
 
-
+// src/app/(app)/pos/components/ventas-pos-content.tsx
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -111,7 +111,7 @@ export function VentasPosContent({
             const current = paymentsSummary.get(method) || { count: 0, total: 0 };
             current.count += 1; // This might double count, but it's a fallback
             current.total += amount;
-            paymentsSummary.set(p.method, current);
+            paymentsSummary.set(method, current);
         });
       }
     });
