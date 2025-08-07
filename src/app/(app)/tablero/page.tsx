@@ -3,11 +3,11 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { ServiceRecord, Vehicle, Technician, ServiceSubStatus, ServiceTypeRecord, InventoryItem, Personnel } from '@/types';
-import { ServiceDialog } from '../servicios/components/service-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -94,15 +94,13 @@ const columnStyles: Record<KanbanColumnId, { bg: string; title: string }> = {
 
 export default function TableroPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
-  const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
@@ -161,9 +159,8 @@ export default function TableroPage() {
     return columnOrder.map(id => columns[id]);
   }, [services]);
 
-  const handleCardClick = (service: ServiceRecord) => {
-    setEditingService(service);
-    setIsServiceDialogOpen(true);
+  const handleCardClick = (serviceId: string) => {
+    router.push(`/servicios/${serviceId}`);
   };
   
   const handleMoveService = async (serviceId: string, direction: 'left' | 'right') => {
@@ -203,10 +200,6 @@ export default function TableroPage() {
             description: `El servicio ahora está en "${newColumnId}".`
         });
     }
-  };
-  
-  const handleSaveService = async () => {
-    setIsServiceDialogOpen(false);
   };
 
   if (isLoading) {
@@ -250,7 +243,7 @@ export default function TableroPage() {
                         key={service.id}
                         service={service}
                         vehicle={vehicles.find(v => v.id === service.vehicleId)}
-                        onClick={() => handleCardClick(service)}
+                        onClick={() => handleCardClick(service.id)}
                         onMove={(direction) => handleMoveService(service.id, direction)}
                         isFirst={colIndex === 0}
                         isLast={colIndex === columnOrder.length - 1}
@@ -262,19 +255,6 @@ export default function TableroPage() {
             )
         })}
       </div>
-       {isServiceDialogOpen && editingService && (
-        <ServiceDialog
-          open={isServiceDialogOpen}
-          onOpenChange={setIsServiceDialogOpen}
-          service={editingService}
-          vehicles={vehicles}
-          technicians={personnel}
-          inventoryItems={inventoryItems}
-          serviceTypes={serviceTypes}
-          mode="service"
-          onSave={handleSaveService}
-        />
-      )}
     </>
   );
 }
