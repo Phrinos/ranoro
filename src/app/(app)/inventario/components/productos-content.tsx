@@ -57,10 +57,15 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
     { value: 'default_order', label: 'Orden Inteligente (Recomendado)' },
     { value: 'name_asc', label: 'Nombre (A-Z)' },
     { value: 'name_desc', label: 'Nombre (Z-A)' },
+    { value: 'category_asc', label: 'Categoría (A-Z)' },
+    { value: 'brand_asc', label: 'Marca (A-Z)' },
+    { value: 'sku_asc', label: 'SKU (A-Z)' },
     { value: 'quantity_desc', label: 'Cantidad (Mayor a Menor)' },
     { value: 'quantity_asc', label: 'Cantidad (Menor a Mayor)' },
-    { value: 'price_desc', label: 'Precio (Mayor a Menor)' },
-    { value: 'price_asc', label: 'Precio (Menor a Mayor)' },
+    { value: 'sellingPrice_desc', label: 'Precio (Mayor a Menor)' },
+    { value: 'sellingPrice_asc', label: 'Precio (Menor a Mayor)' },
+    { value: 'unitPrice_desc', label: 'Costo (Mayor a Menor)' },
+    { value: 'unitPrice_asc', label: 'Costo (Menor a Mayor)' },
   ];
 
   return (
@@ -79,17 +84,9 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
         </div>
 
         <TableToolbar
-            searchTerm={tableManager.searchTerm}
-            onSearchTermChange={tableManager.onSearchTermChange}
-            sortOption={tableManager.sortOption}
-            onSortOptionChange={tableManager.onSortOptionChange}
+            {...tableManager}
             sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre, SKU, marca..."
-            paginationSummary={tableManager.paginationSummary}
-            canGoPrevious={tableManager.canGoPrevious}
-            canGoNext={tableManager.canGoNext}
-            onPreviousPage={tableManager.goToPreviousPage}
-            onNextPage={tableManager.goToNextPage}
         />
       
       <Card>

@@ -100,36 +100,38 @@ export function useTableManager<T extends { [key: string]: any }>({
     });
     
     // Sorting logic
-    data.sort((a, b) => {
-      const [sortKey, sortDirection] = sortOption.split('_');
-      const isAsc = sortDirection === 'asc';
+    if (sortOption !== 'default_order') {
+        data.sort((a, b) => {
+            const [sortKey, sortDirection] = sortOption.split('_');
+            const isAsc = sortDirection === 'asc';
 
-      const valA = getNestedValue(a, sortKey);
-      const valB = getNestedValue(b, sortKey);
-      
-      // Default to dateFilterKey if the primary sort key is not a date
-      const isDateKey = sortKey.toLowerCase().includes('date') || sortKey === dateFilterKey;
+            const valA = getNestedValue(a, sortKey);
+            const valB = getNestedValue(b, sortKey);
+            
+            // Default to dateFilterKey if the primary sort key is not a date
+            const isDateKey = sortKey.toLowerCase().includes('date') || sortKey === dateFilterKey;
 
-      if (isDateKey) {
-        const dateA = parseDate(valA);
-        const dateB = parseDate(valB);
-        if (!dateA || !isValid(dateA)) return 1;
-        if (!dateB || !isValid(dateB)) return -1;
-        return isAsc ? compareAsc(dateA, dateB) : compareDesc(dateA, dateB);
-      }
-      
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return isAsc ? valA - valB : valB - valA;
-      }
+            if (isDateKey) {
+                const dateA = parseDate(valA);
+                const dateB = parseDate(valB);
+                if (!dateA || !isValid(dateA)) return 1;
+                if (!dateB || !isValid(dateB)) return -1;
+                return isAsc ? compareAsc(dateA, dateB) : compareDesc(dateA, dateB);
+            }
+            
+            if (typeof valA === 'number' && typeof valB === 'number') {
+                return isAsc ? valA - valB : valB - valA;
+            }
 
-      if (typeof valA === 'string' && typeof valB === 'string') {
-        return isAsc
-          ? valA.localeCompare(valB, 'es', { sensitivity: 'base' })
-          : valB.localeCompare(valA, 'es', { sensitivity: 'base' });
-      }
-      
-      return 0; // Final fallback if types don't match or are not sortable
-    });
+            if (typeof valA === 'string' && typeof valB === 'string') {
+                return isAsc
+                ? valA.localeCompare(valB, 'es', { sensitivity: 'base' })
+                : valB.localeCompare(valA, 'es', { sensitivity: 'base' });
+            }
+            
+            return 0; // Final fallback if types don't match or are not sortable
+        });
+    }
     
     return data;
   }, [initialData, searchTerm, sortOption, dateRange, otherFilters, searchKeys, dateFilterKey]);
@@ -161,7 +163,7 @@ export function useTableManager<T extends { [key: string]: any }>({
     sortOption,
     onSortOptionChange: setSortOption,
     dateRange,
-    onDateRangeChange: setDateRange, // Explicitly return the setter
+    onDateRangeChange: setDateRange,
     otherFilters,
     setOtherFilters,
     filteredData: paginatedData,
