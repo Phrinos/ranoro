@@ -54,6 +54,7 @@ export function useTableManager<T extends { [key: string]: any }>({
             // Handle nested arrays, e.g., 'items.itemName' or 'payments.method'
              return itemValue.some(subItem => {
                 if (typeof subItem === 'object' && subItem !== null) {
+                    // Search in all values of the sub-object
                     return Object.values(subItem).some(val => 
                         String(val ?? '').toLowerCase().includes(lowercasedTerm)
                     );
@@ -81,14 +82,18 @@ export function useTableManager<T extends { [key: string]: any }>({
       if (value !== 'all' && value !== undefined) {
         data = data.filter(item => {
             const itemValue = getNestedValue(item, key);
+
             // Handle cases where itemValue is an array of objects (like payments)
             if (Array.isArray(itemValue)) {
               return itemValue.some(subItem => subItem && subItem.method === value);
             }
-             // Special handling for string inclusion (e.g., paymentMethod)
-            if (typeof itemValue === 'string' && typeof value === 'string') {
-                return itemValue.includes(value);
+            
+            // Handle flat string properties like the old `paymentMethod`
+            if (typeof itemValue === 'string') {
+              // This can handle "Efectivo", "Tarjeta", or "Efectivo/Tarjeta"
+              return itemValue.includes(value);
             }
+            
             return itemValue === value;
         });
       }
@@ -159,6 +164,7 @@ export function useTableManager<T extends { [key: string]: any }>({
     onDateRangeChange: setDateRange,
     otherFilters,
     onFilterChange: setOtherFilters,
+    setOtherFilters,
     filteredData: paginatedData,
     currentPage,
     totalPages,

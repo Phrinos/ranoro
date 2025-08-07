@@ -64,7 +64,7 @@ export function VentasPosContent({
     ...tableManager 
   } = useTableManager<SaleReceipt>({
     initialData: allSales,
-    searchKeys: ['id', 'customerName', 'items.itemName', 'payments.method'],
+    searchKeys: ['id', 'customerName', 'items.itemName', 'payments.method', 'paymentMethod'],
     dateFilterKey: 'saleDate',
     initialSortOption: 'date_desc',
     itemsPerPage: 10,
@@ -84,6 +84,15 @@ export function VentasPosContent({
           current.count += 1;
           current.total += p.amount || 0;
           paymentsSummary.set(p.method, current);
+        });
+      } else if (sale.paymentMethod) { // Fallback for older records
+        const methods = sale.paymentMethod.split(/[+/]/) as Payment['method'][];
+        const amountPerMethod = (sale.totalAmount || 0) / methods.length;
+        methods.forEach(method => {
+            const current = paymentsSummary.get(method) || { count: 0, total: 0 };
+            current.count += 1;
+            current.total += amountPerMethod;
+            paymentsSummary.set(method, current);
         });
       }
     });
