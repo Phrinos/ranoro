@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/PaymentSection.tsx
 "use client";
 
@@ -89,7 +88,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                                         <div className="relative">
                                             <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                             <FormControl>
-                                                <Input type="number" step="0.01" {...field} value={field.value === 0 ? '' : field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} placeholder="0.00"/>
+                                                <Input type="number" step="0.01" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} placeholder="0.00"/>
                                             </FormControl>
                                         </div>
                                     </FormItem>
@@ -100,7 +99,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                                 name={`payments.${index}.method`}
                                 render={({ field }) => (
                                     <FormItem className="w-48">
-                                        <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                                        <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}>
                                             <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
                                             <SelectContent>{paymentMethods.map(method => (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method as any) === -1 && method !== selectedMethod}><div className="flex items-center gap-2">{React.createElement(paymentMethodIcons[method], {className: "h-4 w-4"})}<span>{method}</span></div></SelectItem>))}</SelectContent>
                                         </Select>

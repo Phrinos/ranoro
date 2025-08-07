@@ -1,4 +1,4 @@
-
+// src/app/(app)/pos/components/sale-summary.tsx
 
 "use client";
 
@@ -124,7 +124,7 @@ export function SaleSummary() {
                     <Input 
                       placeholder="Ej: Cliente Mostrador" 
                       {...field} 
-                      value={field.value}
+                      value={field.value || ''}
                       onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
                     />
                   </FormControl>
@@ -158,7 +158,7 @@ export function SaleSummary() {
                                 step="0.01"
                                 placeholder="0.00"
                                 {...field}
-                                value={field.value === 0 ? '' : field.value ?? ''}
+                                value={field.value ?? ''}
                                 onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                                 className="pl-8 bg-white"
                               />
@@ -172,7 +172,7 @@ export function SaleSummary() {
                       name={`payments.${index}.method`}
                       render={({ field }) => (
                         <FormItem className="w-48">
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value || ''}>
                             <FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl>
                             <SelectContent>
                               {paymentMethods.map(method => {

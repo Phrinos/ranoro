@@ -80,7 +80,7 @@ export function ServiceDetailsCard({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className={cn(errors.status && "text-destructive")}>Estado</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || initialStatus === 'Entregado'}>
+                <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly || initialStatus === 'Entregado'}>
                   <FormControl><SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl>
                   <SelectContent>{statusOptions.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                 </Select>
@@ -96,7 +96,7 @@ export function ServiceDetailsCard({
                 render={({ field }) => (
                   <FormItem className="md:col-span-1">
                     <FormLabel>Sub-Estado Taller</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
                       <SelectContent>
                         {relevantSubStatusOptions.map(s => <SelectItem key={s.value} value={s.value!}>{s.label}</SelectItem>)}
@@ -111,7 +111,7 @@ export function ServiceDetailsCard({
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabel>Técnico Asignado</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl>
                       <SelectContent>
                         {technicians.filter((t) => !t.isArchived).map((technician) => (

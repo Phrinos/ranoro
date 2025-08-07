@@ -1,3 +1,4 @@
+// src/app/(public)/facturar/components/billing-form.tsx
 
 "use client";
 
@@ -121,7 +122,7 @@ export function BillingForm() {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Régimen Fiscal</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value ?? ''} disabled={availableRegimes.length === 0}>
+            <Select onValueChange={field.onChange} value={field.value || ''} disabled={availableRegimes.length === 0}>
                 <FormControl>
                     <SelectTrigger>
                     <SelectValue placeholder="Seleccione su régimen fiscal..." />
@@ -141,7 +142,7 @@ export function BillingForm() {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Uso de CFDI</FormLabel>
-             <Select onValueChange={field.onChange} defaultValue={field.value ?? ''}>
+             <Select onValueChange={field.onChange} value={field.value || ''}>
                 <FormControl>
                     <SelectTrigger>
                     <SelectValue placeholder="Seleccione un uso de CFDI..." />

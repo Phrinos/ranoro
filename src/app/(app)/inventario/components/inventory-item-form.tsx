@@ -1,4 +1,4 @@
-
+// src/app/(app)/inventario/components/inventory-item-form.tsx
 
 "use client";
 
@@ -39,20 +39,20 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
   const form = useForm<InventoryItemFormValues>({
     resolver: zodResolver(inventoryItemFormSchema),
     defaultValues: {
-      name: "",
-      brand: "",
-      sku: "",
-      description: "",
-      isService: false,
-      quantity: undefined,
-      unitPrice: undefined,
-      sellingPrice: undefined,
-      lowStockThreshold: 5,
-      unitType: 'units',
-      category: categories.length > 0 ? categories[0].name : "",
-      supplier: suppliers.length > 0 ? suppliers[0].name : "",
-      rendimiento: undefined,
-      ...initialData,
+      name: initialData?.name || "",
+      brand: initialData?.brand || "",
+      sku: initialData?.sku || "",
+      description: initialData?.description || "",
+      isService: initialData?.isService || false,
+      quantity: initialData?.quantity ?? undefined,
+      unitPrice: initialData?.unitPrice ?? undefined,
+      sellingPrice: initialData?.sellingPrice ?? undefined,
+      lowStockThreshold: initialData?.lowStockThreshold ?? 5,
+      unitType: initialData?.unitType || 'units',
+      category: initialData?.category || (categories.length > 0 ? categories[0].name : ""),
+      supplier: initialData?.supplier || (suppliers.length > 0 ? suppliers[0].name : ""),
+      rendimiento: initialData?.rendimiento ?? undefined,
+      ...(initialData?.id && {id: initialData.id})
     },
   });
 
@@ -82,9 +82,10 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
     const submissionValues = {
       ...values,
       quantity: values.isService ? 0 : values.quantity || 0,
-      lowStockThreshold: values.isService ? 0 : values.lowStockThreshold,
+      lowStockThreshold: values.isService ? 0 : values.lowStockThreshold || 0,
       unitPrice: values.unitPrice || 0,
       sellingPrice: values.sellingPrice || 0,
+      rendimiento: values.rendimiento || undefined,
     };
     await onSubmit(submissionValues);
   };
@@ -121,7 +122,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                   <FormItem>
                     <FormLabel>Proveedor</FormLabel>
                     <div className="flex gap-2">
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Seleccione un proveedor" /></SelectTrigger>
                         </FormControl>
@@ -144,7 +145,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                   <FormItem>
                     <FormLabel>Categoría</FormLabel>
                     <div className="flex gap-2">
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Seleccione una categoría" /></SelectTrigger>
                         </FormControl>
@@ -168,7 +169,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Marca</FormLabel>
-                    <FormControl><Input placeholder="Ej: Gonher" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
+                    <FormControl><Input placeholder="Ej: Gonher" {...field} value={field.value || ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -179,7 +180,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nombre del Producto/Servicio</FormLabel>
-                    <FormControl><Input placeholder="Ej: Filtro de Aceite XYZ" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
+                    <FormControl><Input placeholder="Ej: Filtro de Aceite XYZ" {...field} value={field.value || ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -191,7 +192,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Código / SKU (Opcional)</FormLabel>
-                  <FormControl><Input placeholder="Ej: FA-XYZ-001" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
+                  <FormControl><Input placeholder="Ej: FA-XYZ-001" {...field} value={field.value || ''} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -202,7 +203,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Descripción (Opcional)</FormLabel>
-                  <FormControl><Input placeholder="Detalles adicionales..." {...field} /></FormControl>
+                  <FormControl><Input placeholder="Detalles adicionales..." {...field} value={field.value || ''} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -214,7 +215,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Unidad de Medida</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isServiceWatch}>
+                    <Select onValueChange={field.onChange} value={field.value || 'units'} disabled={isServiceWatch}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Seleccione una unidad" /></SelectTrigger>
                       </FormControl>
@@ -259,7 +260,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                   <FormItem>
                     <FormLabel>Rendimiento del Aceite (km)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="Ej: 10000" {...field} value={field.value ?? ''} />
+                      <Input type="number" placeholder="Ej: 10000" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
                     </FormControl>
                     <FormDescription>Duración estimada del aceite en kilómetros antes del próximo cambio.</FormDescription>
                     <FormMessage />
@@ -286,7 +287,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                         {unitTypeWatch === 'ml' ? 'Cantidad Total en Stock (ml)' : unitTypeWatch === 'liters' ? 'Cantidad Total en Stock (L)' : 'Cantidad en Stock'}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Ej: 50" {...field} value={field.value ?? ''} />
+                        <Input type="number" placeholder="Ej: 50" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -301,7 +302,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                         {unitTypeWatch === 'ml' ? 'Umbral de Stock Bajo (ml)' : unitTypeWatch === 'liters' ? 'Umbral de Stock Bajo (L)' : 'Umbral de Stock Bajo'}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Ej: 5" {...field} value={field.value ?? ''} />
+                        <Input type="number" placeholder="Ej: 5" {...field} value={field.value ?? 0} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -329,7 +330,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                       <FormControl>
                         <div className="relative">
                           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input type="number" step="0.01" placeholder="10.50" {...field} value={field.value ?? ''} className="pl-8" />
+                          <Input type="number" step="0.01" placeholder="10.50" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} className="pl-8" />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -347,7 +348,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                       <FormControl>
                         <div className="relative">
                           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input type="number" step="0.01" placeholder="15.99" {...field} value={field.value ?? ''} className="pl-8" />
+                          <Input type="number" step="0.01" placeholder="15.99" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} className="pl-8" />
                         </div>
                       </FormControl>
                       <FormDescription>Calculado automáticamente con 20% de ganancia sobre el costo. Puede modificarlo.</FormDescription>

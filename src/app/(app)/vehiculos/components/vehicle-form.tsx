@@ -1,4 +1,4 @@
-
+// src/app/(app)/vehiculos/components/vehicle-form.tsx
 
 "use client";
 
@@ -33,35 +33,21 @@ interface VehicleFormProps {
 export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
   const form = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
-    defaultValues: initialData ?
-    {
-      ...initialData,
-      year: initialData.year || new Date().getFullYear(),
-      ownerPhone: initialData.ownerPhone || "",
-      ownerEmail: initialData.ownerEmail || "",
-      color: initialData.color || "",
-      vin: initialData.vin || "",
-      notes: initialData.notes || "",
-      dailyRentalCost: initialData.dailyRentalCost ?? null,
-      gpsMonthlyCost: initialData.gpsMonthlyCost ?? null,
-      adminMonthlyCost: initialData.adminMonthlyCost ?? null,
-      insuranceMonthlyCost: initialData.insuranceMonthlyCost ?? null,
-    }
-    : {
-      make: "",
-      model: "",
-      year: new Date().getFullYear(),
-      vin: "",
-      licensePlate: "",
-      color: "",
-      ownerName: "",
-      ownerPhone: "",
-      ownerEmail: "",
-      notes: "",
-      dailyRentalCost: null,
-      gpsMonthlyCost: null,
-      adminMonthlyCost: null,
-      insuranceMonthlyCost: null,
+    defaultValues: {
+      make: initialData?.make || "",
+      model: initialData?.model || "",
+      year: initialData?.year || new Date().getFullYear(),
+      vin: initialData?.vin || "",
+      licensePlate: initialData?.licensePlate || "",
+      color: initialData?.color || "",
+      ownerName: initialData?.ownerName || "",
+      ownerPhone: initialData?.ownerPhone || "",
+      ownerEmail: initialData?.ownerEmail || "",
+      notes: initialData?.notes || "",
+      dailyRentalCost: initialData?.dailyRentalCost ?? undefined,
+      gpsMonthlyCost: initialData?.gpsMonthlyCost ?? undefined,
+      adminMonthlyCost: initialData?.adminMonthlyCost ?? undefined,
+      insuranceMonthlyCost: initialData?.insuranceMonthlyCost ?? undefined,
     },
   });
 
@@ -118,11 +104,11 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
           <div className="space-y-2">
             <h3 className="font-semibold">Costos de Flotilla</h3>
             <div className="space-y-4 rounded-md border p-4">
-              <FormField control={form.control} name="dailyRentalCost" render={({ field }) => ( <FormItem><FormLabel>Costo de Renta Diario</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="250.00" {...field} value={field.value ?? ''} className="pl-8"/></div></FormControl><FormMessage/></FormItem> )}/>
+              <FormField control={form.control} name="dailyRentalCost" render={({ field }) => ( <FormItem><FormLabel>Costo de Renta Diario</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="250.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))}/></div></FormControl><FormMessage/></FormItem> )}/>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <FormField control={form.control} name="gpsMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción GPS (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="150.00" {...field} value={field.value ?? ''} className="pl-8"/></div></FormControl><FormMessage/></FormItem> )}/>
-                 <FormField control={form.control} name="adminMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción Admin (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="200.00" {...field} value={field.value ?? ''} className="pl-8"/></div></FormControl><FormMessage/></FormItem> )}/>
-                 <FormField control={form.control} name="insuranceMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción Seguro (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="250.00" {...field} value={field.value ?? ''} className="pl-8"/></div></FormControl><FormMessage/></FormItem> )}/>
+                 <FormField control={form.control} name="gpsMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción GPS (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="150.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))}/></div></FormControl><FormMessage/></FormItem> )}/>
+                 <FormField control={form.control} name="adminMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción Admin (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="200.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))}/></div></FormControl><FormMessage/></FormItem> )}/>
+                 <FormField control={form.control} name="insuranceMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción Seguro (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="250.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))}/></div></FormControl><FormMessage/></FormItem> )}/>
               </div>
             </div>
           </div>
