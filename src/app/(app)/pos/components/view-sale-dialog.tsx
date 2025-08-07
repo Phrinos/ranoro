@@ -17,8 +17,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SaleReceipt, InventoryItem, User, InventoryCategory, Supplier } from "@/types";
 import { format, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
-import { Ban, Save, Trash2 } from "lucide-react";
+import { es } from 'date-fns/locale';
+import { Ban, Save, Trash2, MessageSquare, Repeat } from "lucide-react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PosForm } from "./pos-form";
 import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
@@ -36,6 +36,7 @@ interface ViewSaleDialogProps {
   onCancelSale: (saleId: string, reason: string) => void;
   onDeleteSale: (saleId: string) => void;
   onPaymentUpdate: (saleId: string, paymentDetails: any) => Promise<void>;
+  onSendWhatsapp: (sale: SaleReceipt) => void;
 }
 
 export function ViewSaleDialog({ 
@@ -47,7 +48,8 @@ export function ViewSaleDialog({
   suppliers,
   onCancelSale,
   onDeleteSale,
-  onPaymentUpdate
+  onPaymentUpdate,
+  onSendWhatsapp,
 }: ViewSaleDialogProps) {
   const { toast } = useToast();
   const methods = useForm<POSFormValues>({
@@ -103,18 +105,15 @@ export function ViewSaleDialog({
               onConfirm={() => onCancelSale(sale.id, prompt("Motivo de la cancelación:") || "Sin motivo especificado")}
               confirmText="Sí, Cancelar Venta"
             />
-             <ConfirmDialog
-                triggerButton={<Button variant="ghost" size="icon" title="Eliminar Venta Permanentemente"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
-                title="¿Eliminar Venta Permanentemente?"
-                description={`Esta acción eliminará por completo la venta #${sale.id.slice(-6)} y restaurará el stock si no está cancelada. No se puede deshacer.`}
-                onConfirm={() => onDeleteSale(sale.id)}
-            />
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onSendWhatsapp(sale)} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200">
+                <MessageSquare className="mr-2 h-4 w-4"/> Enviar por WhatsApp
+            </Button>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cerrar
             </Button>
-            <Button type="submit" form="pos-form">
+            <Button type="submit" form="pos-form" disabled={isCancelled}>
               <Save className="mr-2 h-4 w-4"/> Guardar Cambios
             </Button>
           </div>

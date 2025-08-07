@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { SaleReceipt, InventoryItem, Payment, User } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, Printer, TrendingUp, User as UserIcon, DollarSign, Trash2 } from 'lucide-react';
+import { Edit, Printer, TrendingUp, User as UserIcon, DollarSign, Trash2, Repeat } from 'lucide-react';
 import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,8 @@ interface SaleCardProps {
     currentUser: User | null;
     onViewSale: () => void;
     onReprintTicket: () => void;
+    onEditPayment: () => void;
+    onDeleteSale: () => void;
 }
 
 export const SaleCard = React.memo(({
@@ -38,6 +40,8 @@ export const SaleCard = React.memo(({
     currentUser,
     onViewSale,
     onReprintTicket,
+    onEditPayment,
+    onDeleteSale,
 }: SaleCardProps) => {
 
     const saleDate = parseDate(sale.saleDate);
@@ -158,9 +162,22 @@ export const SaleCard = React.memo(({
                             <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Editar Venta">
                                 <Edit className="h-4 w-4" />
                             </Button>
+                            <Button variant="ghost" size="icon" onClick={onEditPayment} title="Editar Pago">
+                                <Repeat className="h-4 w-4" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={onReprintTicket} title="Reimprimir Ticket" disabled={isCancelled}>
                                 <Printer className="h-4 w-4" />
                             </Button>
+                             <ConfirmDialog
+                                triggerButton={
+                                    <Button variant="ghost" size="icon" title="Eliminar Venta Permanentemente" disabled={isCancelled}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                }
+                                title={`¿Eliminar Venta #${sale.id.slice(-6)}?`}
+                                description="Esta acción no se puede deshacer. Se eliminará el registro de la venta permanentemente y el stock se restaurará (si la venta no estaba ya cancelada)."
+                                onConfirm={onDeleteSale}
+                            />
                         </div>
                     </div>
 

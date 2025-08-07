@@ -78,6 +78,7 @@ export default function PosPageComponent() {
     try {
         await saleService.deleteSale(saleId, currentUser);
         toast({ title: 'Venta Eliminada', description: 'La venta se ha eliminado permanentemente.' });
+        setIsViewDialogOpen(false);
     } catch(e) {
         toast({ title: "Error", description: "No se pudo eliminar la venta.", variant: "destructive"});
     }
@@ -172,6 +173,8 @@ Total: ${formatCurrency(sale.totalAmount)}
         currentUser={currentUser}
         onReprintTicket={handleReprintSale} 
         onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
+        onEditPayment={handleOpenPaymentDialog}
+        onDeleteSale={handleDeleteSale}
       />
 
       <PrintTicketDialog
