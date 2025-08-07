@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
@@ -85,8 +84,13 @@ export function PosForm({
         const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
         const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
         
-        if (hasCardPayment) commissionAmount += totalWithoutCommission * 0.041;
-        if (hasMSIPayment) commissionAmount += totalWithoutCommission * 0.12;
+        // Corrected commission calculation
+        if (hasCardPayment) {
+          commissionAmount += totalWithoutCommission * 0.041; // 4.1% for regular card
+        }
+        if (hasMSIPayment) {
+          commissionAmount += totalWithoutCommission * 0.12; // 12% for MSI card
+        }
         
         // Remove existing commission to recalculate
         let newItems = currentItems.filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE');
