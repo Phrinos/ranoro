@@ -56,18 +56,16 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { VehicleDialog } from "../components/vehicle-dialog";
 import type { VehicleFormValues } from "../components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
-import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
-import { TicketContent } from "@/components/ticket-content";
 import { inventoryService, adminService, serviceService } from "@/lib/services";
 import { parseDate } from "@/lib/forms";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
+import { capitalizeWords } from '@/lib/utils';
 
 export default function VehicleDetailPage() {
   const params = useParams();
   const vehicleId = params.id as string;
   const { toast } = useToast();
   const router = useRouter();
-  const ticketContentRef = useRef<HTMLDivElement>(null);
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
@@ -101,11 +99,6 @@ export default function VehicleDetailPage() {
     }
   };
 
-  const handleServiceRowClick = (service: ServiceRecord) => {
-    setSelectedService(service);
-    setIsViewServiceDialogOpen(true);
-  };
-  
   if (vehicle === undefined) {
     return <div className="container mx-auto py-8 text-center">Cargando datos del vehículo...</div>;
   }
@@ -140,25 +133,22 @@ export default function VehicleDetailPage() {
             <div className="lg:col-span-2 space-y-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle>Datos del Vehículo</CardTitle>
+                        <CardTitle>Datos del Vehículo y Propietario</CardTitle>
                         <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4" />Editar</Button>
                     </CardHeader>
-                    <CardContent className="space-y-2">
-                        <p><strong>Placa:</strong> {vehicle.licensePlate}</p>
-                        <p><strong>Marca:</strong> {vehicle.make}</p>
-                        <p><strong>Modelo:</strong> {vehicle.model}</p>
-                        <p><strong>Año:</strong> {vehicle.year}</p>
-                        <p><strong>VIN:</strong> {vehicle.vin || "N/A"}</p>
-                        <p><strong>Color:</strong> {vehicle.color || "N/A"}</p>
-                        {vehicle.notes && (<div className="pt-2"><p className="font-semibold">Notas del Vehículo:</p><p className="text-sm text-muted-foreground whitespace-pre-wrap">{vehicle.notes}</p></div>)}
-                    </CardContent>
-                </Card>
-                <Card className="bg-amber-50 dark:bg-amber-950/50">
-                    <CardHeader><CardTitle>Datos del Propietario</CardTitle></CardHeader>
-                    <CardContent className="space-y-2">
-                        <p><strong>Nombre:</strong> {vehicle.ownerName}</p>
-                        <p><strong>Teléfono:</strong> {vehicle.ownerPhone || "N/A"}</p>
-                        <p><strong>Email:</strong> {vehicle.ownerEmail || "N/A"}</p>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Marca</p><p>{vehicle.make}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Modelo</p><p>{vehicle.model}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Año</p><p>{vehicle.year}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Color</p><p>{vehicle.color || 'N/A'}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Placa</p><p>{vehicle.licensePlate}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground">VIN</p><p className="font-mono">{vehicle.vin || 'N/A'}</p></div>
+                            <div className="space-y-1 pt-4 border-t md:col-span-2"><p className="font-medium text-muted-foreground">Propietario</p><p className="font-semibold">{vehicle.ownerName}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Teléfono</p><p>{vehicle.ownerPhone || 'N/A'}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Email</p><p>{vehicle.ownerEmail || 'N/A'}</p></div>
+                            {vehicle.notes && (<div className="pt-2 md:col-span-2"><p className="font-semibold">Notas del Vehículo:</p><p className="text-sm text-muted-foreground whitespace-pre-wrap">{vehicle.notes}</p></div>)}
+                        </div>
                     </CardContent>
                 </Card>
             </div>
