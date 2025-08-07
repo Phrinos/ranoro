@@ -5,13 +5,11 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, ShoppingCart } from 'lucide-react';
+import { PlusCircle, Printer } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
+import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { InventoryItem } from '@/types';
-import { useTableManager } from '@/hooks/useTableManager';
-import { DashboardCards } from './DashboardCards';
-
 
 const getSortPriority = (item: InventoryItem): number => {
     // Services have the lowest priority to appear at the end unless specifically sorted.
@@ -21,37 +19,8 @@ const getSortPriority = (item: InventoryItem): number => {
     return 3; // Normal stock
 };
 
-interface SummaryData {
-    totalInventoryCost: number;
-    totalInventorySellingPrice: number;
-    lowStockItemsCount: number;
-    productsCount: number;
-    servicesCount: number;
-}
 
-interface ProductosContentProps {
-  inventoryItems: InventoryItem[];
-  summaryData: SummaryData;
-  onNewItem: () => void;
-  onPrint: (items: InventoryItem[]) => void;
-}
-
-const sortOptions = [
-    { value: 'default_order', label: 'Orden Inteligente (Recomendado)' },
-    { value: 'name_asc', label: 'Nombre (A-Z)' },
-    { value: 'name_desc', label: 'Nombre (Z-A)' },
-    { value: 'quantity_desc', label: 'Cantidad (Mayor a Menor)' },
-    { value: 'quantity_asc', label: 'Cantidad (Menor a Mayor)' },
-    { value: 'price_desc', label: 'Precio (Mayor a Menor)' },
-    { value: 'price_asc', label: 'Precio (Menor a Mayor)' },
-];
-
-export function ProductosContent({ 
-  inventoryItems,
-  summaryData, 
-  onNewItem, 
-  onPrint,
-}: ProductosContentProps) {
+export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inventoryItems: InventoryItem[], onNewItem: () => void, onPrint: (items: InventoryItem[]) => void }) {
   
   const { 
     filteredData, 
@@ -84,6 +53,16 @@ export function ProductosContent({
     onPrint(customSortedItems);
   };
 
+  const sortOptions = [
+    { value: 'default_order', label: 'Orden Inteligente (Recomendado)' },
+    { value: 'name_asc', label: 'Nombre (A-Z)' },
+    { value: 'name_desc', label: 'Nombre (Z-A)' },
+    { value: 'quantity_desc', label: 'Cantidad (Mayor a Menor)' },
+    { value: 'quantity_asc', label: 'Cantidad (Menor a Mayor)' },
+    { value: 'price_desc', label: 'Precio (Mayor a Menor)' },
+    { value: 'price_asc', label: 'Precio (Menor a Mayor)' },
+  ];
+
   return (
     <div className="space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -100,9 +79,17 @@ export function ProductosContent({
         </div>
 
         <TableToolbar
-            {...tableManager}
+            searchTerm={tableManager.searchTerm}
+            onSearchTermChange={tableManager.onSearchTermChange}
+            sortOption={tableManager.sortOption}
+            onSortOptionChange={tableManager.onSortOptionChange}
             sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre, SKU, marca..."
+            paginationSummary={tableManager.paginationSummary}
+            canGoPrevious={tableManager.canGoPrevious}
+            canGoNext={tableManager.canGoNext}
+            onPreviousPage={tableManager.goToPreviousPage}
+            onNextPage={tableManager.goToNextPage}
         />
       
       <Card>
