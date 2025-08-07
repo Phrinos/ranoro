@@ -5,15 +5,18 @@
 import React, { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { TableToolbar } from '@/components/shared/table-toolbar';
-import type { ServiceRecord, Vehicle, User, PaymentMethod } from '@/types';
+import type { ServiceRecord, Vehicle, User, Payment, PaymentMethod } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
 import { startOfMonth, endOfMonth, subDays, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, Wrench, DollarSign, TrendingUp, LineChart } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrency } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 
 interface HistorialTabContentProps {
@@ -54,10 +57,6 @@ export default function HistorialTabContent({
   const router = useRouter();
   const { toast } = useToast();
   
-  const getRelevantDate = (service: ServiceRecord): Date | null => {
-      return parseDate(service.deliveryDateTime) || parseDate(service.serviceDate);
-  };
-  
   const {
     filteredData,
     ...tableManager
@@ -69,6 +68,32 @@ export default function HistorialTabContent({
     initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
     itemsPerPage: 10,
   });
+
+  const summaryData = useMemo(() => {
+    const servicesCount = filteredData.length;
+    const totalRevenue = filteredData.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+    const totalProfit = filteredData.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+
+    const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();
+
+    filteredData.forEach(service => {
+        if (service.payments && service.payments.length > 0) {
+            service.payments.forEach(p => {
+                const current = paymentsSummary.get(p.method) || { count: 0, total: 0 };
+                current.count += 1;
+                current.total += p.amount || 0;
+                paymentsSummary.set(p.method, current);
+            });
+        } else if (service.paymentMethod) { // Fallback for older records
+             const current = paymentsSummary.get(service.paymentMethod as Payment['method']) || { count: 0, total: 0 };
+             current.count += 1;
+             current.total += service.totalCost || 0;
+             paymentsSummary.set(service.paymentMethod as Payment['method'], current);
+        }
+    });
+
+    return { servicesCount, totalRevenue, totalProfit, paymentsSummary };
+  }, [filteredData]);
   
   const handleEditService = (serviceId: string) => {
     router.push(`/servicios/${serviceId}`);
@@ -101,6 +126,45 @@ export default function HistorialTabContent({
 
   return (
     <div className="space-y-4">
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Servicios en Periodo</CardTitle>
+              <Wrench className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{summaryData.servicesCount}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ingresos Totales (Periodo)</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(summaryData.totalRevenue)}</div>
+              <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData.totalProfit)}</p>
+            </CardContent>
+          </Card>
+          <Card className="md:col-span-2">
+             <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Ingresos por Método de Pago</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {Array.from(summaryData.paymentsSummary.entries()).length > 0 ? (
+                  <div className="flex flex-wrap gap-x-4 gap-y-2">
+                    {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => (
+                        <Badge key={method} variant="secondary" className="text-sm">
+                            {method}:<span className="font-semibold ml-1">{formatCurrency(data.total)}</span>
+                        </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No hay pagos registrados en este periodo.</p>
+                )}
+            </CardContent>
+          </Card>
+        </div>
       <TableToolbar
         {...tableManager}
         searchPlaceholder="Buscar por folio, placa..."
@@ -143,3 +207,4 @@ export default function HistorialTabContent({
     </div>
   );
 }
+
