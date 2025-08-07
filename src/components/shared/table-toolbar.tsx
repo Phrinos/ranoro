@@ -147,7 +147,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                 )}
 
                 {/* Date Picker */}
-                {onDateRangeChange && (
+                {dateRange && onDateRangeChange && (
                     <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                         <PopoverTrigger asChild>
                         <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
