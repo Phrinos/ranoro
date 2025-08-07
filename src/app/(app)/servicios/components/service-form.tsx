@@ -1,27 +1,24 @@
 
+
 // src/app/(app)/servicios/components/service-form.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, X, Ban, Wrench, ShieldCheck, Camera, FileText, Eye, Trash2 } from 'lucide-react';
-import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form';
-import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types';
+import type { ServiceFormValues } from '@/schemas/service-form';
+import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { ServiceDetailsCard } from './ServiceDetailsCard';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
-import { inventoryService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { normalizeDataUrl } from '@/lib/utils';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { SignatureDialog } from './signature-dialog';
-import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PaymentDetailsDialog } from './PaymentDetailsDialog';
@@ -40,8 +37,6 @@ const ReceptionAndDelivery = lazy(() => import('./ReceptionAndDelivery').then(mo
 
 
 interface ServiceFormProps {
-  initialDataService?: Partial<ServiceRecord> | null;
-  initialDataQuote?: Partial<QuoteRecord> | null;
   vehicles: Vehicle[];
   technicians: User[];
   inventoryItems: InventoryItem[];
@@ -52,15 +47,13 @@ interface ServiceFormProps {
   onSubmit: (data: ServiceFormValues) => Promise<void>;
   onClose: () => void;
   isReadOnly?: boolean;
-  mode?: 'service' | 'quote';
+  mode: 'service' | 'quote';
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
   onDelete?: (id: string) => void;
   onCancelService?: (id: string, reason: string) => void;
 }
 
 export function ServiceForm({
-  initialDataService,
-  initialDataQuote,
   vehicles,
   technicians,
   inventoryItems,
@@ -71,13 +64,13 @@ export function ServiceForm({
   onSubmit,
   onClose,
   isReadOnly,
-  mode: initialMode = 'service',
+  mode,
   onVehicleCreated,
   onDelete,
   onCancelService,
 }: ServiceFormProps) {
   const { toast } = useToast();
-  const router = useRouter();
+  const methods = useFormContext<ServiceFormValues>();
   
   const [activeTab, setActiveTab] = useState('servicio');
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
@@ -91,54 +84,24 @@ export function ServiceForm({
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-
-
-  const initialData = initialMode === 'service' ? initialDataService : initialDataQuote;
-  const isEditing = !!initialData?.id;
-  const isQuote = initialData?.status === 'Cotizacion' || initialMode === 'quote';
-  const mode = isQuote ? 'quote' : 'service';
-
-  const methods = useForm<ServiceFormValues>({
-    resolver: zodResolver(serviceFormSchema),
-  });
-
+  
   const { reset, handleSubmit, getValues, setValue, watch, formState } = methods;
 
-  useEffect(() => {
-    if (initialData) {
-      reset({
-        ...initialData,
-        initialStatus: initialData.status,
-        allVehiclesForDialog: vehicles,
-      });
-    } else {
-      // Default values for a new service/quote
-      reset({
-        status: mode === 'quote' ? 'Cotizacion' : 'En Taller',
-        initialStatus: mode === 'quote' ? 'Cotizacion' : 'En Taller',
-        serviceDate: new Date(),
-        appointmentDateTime: new Date(),
-        receptionDateTime: new Date(),
-        serviceItems: [],
-        payments: [{ method: 'Efectivo', amount: undefined }],
-        allVehiclesForDialog: vehicles,
-      });
-    }
-  }, [initialData, vehicles, mode, reset]);
+  const initialData = watch();
+  const isEditing = !!initialData?.id;
+  const isQuote = initialData?.status === 'Cotizacion' || mode === 'quote';
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
     
     const serviceRecordValues = values as ServiceRecord;
 
-    // If status is being changed to 'Entregado', open the payment/completion dialog
     if (serviceRecordValues.status === 'Entregado' && initialData?.status !== 'Entregado') {
         setServiceToComplete({ ...(initialData || {}), ...serviceRecordValues } as ServiceRecord);
         setIsPaymentDialogOpen(true);
         return;
     }
     
-    // Otherwise, just save the changes
     await onSubmit(values);
   };
   
@@ -151,12 +114,11 @@ export function ServiceForm({
         toast({ title: "Servicio Completado" });
         setIsPaymentDialogOpen(false);
         setServiceToComplete(null);
-        router.push('/servicios/historial');
+        onClose(); // Close the main dialog
     } catch(e) {
         toast({ title: "Error al completar", variant: "destructive"});
     }
   };
-
 
   const handleOpenNewVehicleDialog = (plate?: string) => {
     setNewVehicleInitialPlate(plate);
@@ -227,17 +189,8 @@ export function ServiceForm({
   const watchedStatus = watch('status');
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
 
-  const pageTitle = isEditing
-    ? `Editar ${isQuote ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`
-    : `Nuevo ${isQuote ? 'Cotización' : 'Servicio'}`;
-  const pageDescription = isEditing
-    ? `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`
-    : `Completa los datos para crear un nuevo registro.`;
-
   return (
-    <FormProvider {...methods}>
-      <PageHeader title={pageTitle} description={pageDescription} />
-      <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 flex-grow overflow-y-auto px-6 py-4">
         <div className="space-y-4">
           <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
           <VehicleSelectionCard 
@@ -274,7 +227,7 @@ export function ServiceForm({
              </div>
         )}
 
-        <div className="flex justify-between items-center mt-6 pt-4 border-t">
+        <div className="flex-shrink-0 flex justify-between items-center mt-6 pt-4 border-t px-6 pb-6 -mx-6 -mb-6 bg-background sticky bottom-0 z-10">
           <div>
             {(onDelete || onCancelService) && (
               <ConfirmDialog
@@ -290,9 +243,13 @@ export function ServiceForm({
                       ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
                       : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'
                   }
-                  onConfirm={isQuote ? () => onDelete?.(initialData!.id!) : () => {
-                      const reason = prompt("Motivo de la cancelación:");
-                      if(reason) onCancelService?.(initialData!.id!, reason);
+                  onConfirm={() => {
+                      if (isQuote && onDelete && initialData?.id) {
+                          onDelete(initialData.id);
+                      } else if (!isQuote && onCancelService && initialData?.id) {
+                          const reason = prompt("Motivo de la cancelación:");
+                          if(reason) onCancelService(initialData.id, reason);
+                      }
                   }}
               />
             )}
@@ -337,6 +294,5 @@ export function ServiceForm({
             />
         )}
       </form>
-    </FormProvider>
   );
 }

@@ -2,38 +2,42 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
-import { db } from '@/lib/firebaseClient.js';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { operationsService } from '@/lib/services';
+import { operationsService, inventoryService } from '@/lib/services';
+import { ServiceFormValues, serviceFormSchema } from '@/schemas/service-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { FormProvider, useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 
 
 interface ServiceDialogProps {
   trigger?: React.ReactNode;
   service?: ServiceRecord | null; 
-  quote?: Partial<QuoteRecord> | null; // For quote mode initialization
+  quote?: Partial<QuoteRecord> | null;
   vehicles: Vehicle[]; 
-  technicians: Technician[]; 
+  technicians: User[]; 
   inventoryItems: InventoryItem[]; 
   serviceTypes: ServiceTypeRecord[];
+  categories: InventoryCategory[];
+  suppliers: Supplier[];
+  serviceHistory: ServiceRecord[];
   onSave?: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
   isReadOnly?: boolean; 
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
   onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void; 
-  mode?: 'service' | 'quote'; // New mode prop
-  onDelete?: (id: string) => void; // For quote deletion
+  mode?: 'service' | 'quote';
+  onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
   onViewQuoteRequest?: (serviceId: string) => void;
 }
@@ -46,166 +50,133 @@ export function ServiceDialog({
   technicians, 
   inventoryItems, 
   serviceTypes,
+  categories,
+  suppliers,
+  serviceHistory,
   onSave, 
   isReadOnly = false,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
   onVehicleCreated,
-  mode = 'service', // Default to service mode
+  mode: initialMode = 'service', // Default to service mode
   onDelete,
   onCancelService,
-  onViewQuoteRequest,
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
-
-  const [currentStatus, setCurrentStatus] = useState<ServiceRecord['status'] | undefined>();
+  const router = useRouter();
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
+  const mode = service?.status === 'Cotizacion' || quote ? 'quote' : initialMode;
+  
+  const initialData = mode === 'quote' ? quote : service;
+
+  const methods = useForm<ServiceFormValues>({
+    resolver: zodResolver(serviceFormSchema),
+  });
+
   useEffect(() => {
-    if(open) {
-      setCurrentStatus(service?.status || quote?.status);
-    }
-  }, [open, service, quote]);
-
-
-  // Mark signatures as "viewed" when the dialog opens
-  useEffect(() => {
-    const syncAndMarkAsViewed = async () => {
-      if (open && service && service.id && mode === 'service') {
-        let changed = false;
-        let serviceToUpdate = { ...service };
-
-        // Sync from public document first
-        if (service.publicId && db) {
-          try {
-            const publicDocRef = doc(db, 'publicServices', service.publicId);
-            const publicDocSnap = await getDoc(publicDocRef);
-
-            if (publicDocSnap.exists()) {
-              const publicData = publicDocSnap.data() as ServiceRecord;
-              if (publicData.customerSignatureReception && !serviceToUpdate.customerSignatureReception) {
-                serviceToUpdate.customerSignatureReception = publicData.customerSignatureReception;
-                changed = true;
-              }
-              if (publicData.customerSignatureDelivery && !serviceToUpdate.customerSignatureDelivery) {
-                serviceToUpdate.customerSignatureDelivery = publicData.customerSignatureDelivery;
-                changed = true;
-              }
-            }
-          } catch (e) {
-            console.error("Failed to sync signatures from public doc:", e);
-          }
-        }
-
-        // Now, mark as viewed
-        if (serviceToUpdate.customerSignatureReception && !serviceToUpdate.receptionSignatureViewed) {
-          serviceToUpdate.receptionSignatureViewed = true;
-          changed = true;
-        }
-        if (serviceToUpdate.customerSignatureDelivery && !serviceToUpdate.deliverySignatureViewed) {
-          serviceToUpdate.deliverySignatureViewed = true;
-          changed = true;
-        }
-        
-        if (changed && db) {
-          const serviceDocRef = doc(db, "serviceRecords", service.id);
-          await setDoc(serviceDocRef, { 
-              customerSignatureReception: serviceToUpdate.customerSignatureReception,
-              customerSignatureDelivery: serviceToUpdate.customerSignatureDelivery,
-              receptionSignatureViewed: serviceToUpdate.receptionSignatureViewed,
-              deliverySignatureViewed: serviceToUpdate.deliverySignatureViewed,
-           }, { merge: true });
-        }
+    if (open) {
+      if (initialData) {
+        methods.reset({
+          ...initialData,
+          initialStatus: initialData.status,
+          allVehiclesForDialog: vehicles,
+        });
+      } else {
+        methods.reset({
+          status: mode === 'quote' ? 'Cotizacion' : 'En Taller',
+          initialStatus: mode === 'quote' ? 'Cotizacion' : 'En Taller',
+          serviceDate: new Date(),
+          appointmentDateTime: new Date(),
+          receptionDateTime: new Date(),
+          serviceItems: [],
+          payments: [{ method: 'Efectivo', amount: undefined }],
+          allVehiclesForDialog: vehicles,
+        });
       }
-    };
-    syncAndMarkAsViewed();
-  }, [open, service, mode]);
+    }
+  }, [open, initialData, vehicles, mode, methods]);
 
-  const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
+
+  const internalOnSave = async (formData: ServiceFormValues) => {
     if (isReadOnly) {
       onOpenChange(false);
       return;
     }
-
+  
     try {
-        const savedRecord = await operationsService.saveService(formData);
-        toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
-        if (onSave) {
-            await onSave(savedRecord);
-        }
-        onOpenChange(false);
+      const savedRecord = await operationsService.saveService(formData as ServiceRecord); // Assuming operationsService handles both create/update
+      toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
+      
+      if (onSave) {
+        await onSave(savedRecord);
+      }
+      
+      onOpenChange(false);
+      
+      const targetTab = savedRecord.status === 'Cotizacion' ? 'cotizaciones' : 
+                      savedRecord.status === 'Agendado' ? 'agenda' : 
+                      savedRecord.status === 'Entregado' ? 'historial' : 'activos';
+      router.push(`/servicios?tab=${targetTab}`);
+      router.refresh();
+
     } catch (error) {
-        console.error(`Error saving ${mode} from dialog:`, error);
-        toast({
-            title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`,
-            description: `Ocurrió un problema al intentar guardar desde el diálogo.`,
-            variant: "destructive",
-        });
+      console.error(`Error saving ${mode} from dialog:`, error);
+      toast({
+        title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`,
+        description: `Ocurrió un problema al intentar guardar.`,
+        variant: "destructive",
+      });
     }
   };
   
   const getDynamicTitles = () => {
-    const currentRecord = service || quote;
-    const status = currentStatus || currentRecord?.status;
-
-    if (isReadOnly) {
-        switch (status) {
-            case 'Cotizacion': return { title: "Detalles de la Cotización", description: "Visualizando los detalles de la cotización." };
-            case 'Agendado': return { title: "Detalles de la Cita", description: "Visualizando los detalles de la cita agendada." };
-            default: return { title: "Detalles del Servicio", description: "Visualizando los detalles de la orden de servicio." };
-        }
-    }
-
-    if (currentRecord?.id) { // Editing existing record
-        switch (status) {
-            case 'Cotizacion': return { title: "Editar Cotización", description: "Actualiza los detalles de la cotización." };
-            case 'Agendado': return { title: "Editar Cita", description: "Actualiza los detalles de la cita." };
-            default: return { title: "Editar Servicio", description: "Actualiza los detalles de la orden de servicio." };
-        }
-    }
+    const status = methods.watch('status') || initialData?.status;
     
-    // Creating new record
-    switch (status) {
-        case 'Cotizacion': return { title: "Nueva Cotización", description: "Completa la información para una nueva cotización." };
-        case 'Agendado': return { title: "Nueva Cita", description: "Completa la información para una nueva cita." };
-        case 'En Taller': return { title: "Nuevo Servicio", description: "Completa la información para una nueva orden de servicio." };
-        default: return { title: "Nuevo Registro", description: "Selecciona un estado para continuar." };
+    if (isReadOnly) {
+        return { title: `Detalles de ${mode === 'quote' ? 'Cotización' : 'Servicio'}`, description: "Visualizando los detalles del registro." };
     }
+    if (initialData?.id) { // Editing
+        return { title: `Editar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`, description: `Actualiza los detalles del folio #${initialData.id.slice(-6)}` };
+    }
+    // Creating
+    return { title: `Nuevo ${mode === 'quote' ? 'Cotización' : 'Servicio'}`, description: "Completa la información para crear el registro." };
   };
 
-
-  const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
+  const { title, description } = getDynamicTitles();
       
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
-          <ServiceForm
-            initialDataService={service}
-            initialDataQuote={quote}
-            vehicles={vehicles} 
-            technicians={technicians}
-            inventoryItems={inventoryItems}
-            serviceTypes={serviceTypes}
-            serviceHistory={[]} // Assuming this can be empty or fetched inside ServiceForm if needed
-            onSubmit={internalOnSave}
-            onClose={() => onOpenChange(false)}
-            isReadOnly={isReadOnly}
-            onVehicleCreated={onVehicleCreated} 
-            mode={mode}
-            onDelete={onDelete}
-            onCancelService={onCancelService}
-          />
-        </div>
+        <FormProvider {...methods}>
+            <Suspense fallback={<div className="flex justify-center items-center h-full"><Loader2 className="animate-spin" /></div>}>
+              <ServiceForm
+                onSubmit={internalOnSave}
+                onClose={() => onOpenChange(false)}
+                isReadOnly={isReadOnly}
+                onDelete={onDelete}
+                onCancelService={onCancelService}
+                onVehicleCreated={onVehicleCreated as any}
+                vehicles={vehicles}
+                technicians={technicians}
+                inventoryItems={inventoryItems}
+                serviceTypes={serviceTypes}
+                serviceHistory={serviceHistory}
+                categories={categories}
+                suppliers={suppliers}
+                mode={mode}
+              />
+            </Suspense>
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );

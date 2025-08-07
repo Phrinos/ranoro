@@ -11,6 +11,7 @@ import { ServiceForm } from '../components/service-form';
 import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import type { ServiceFormValues } from '@/schemas/service-form';
+import { PageHeader } from '@/components/page-header';
 
 
 export default function EditarServicioPage() {
@@ -70,7 +71,9 @@ export default function EditarServicioPage() {
         }
     };
 
-    fetchData();
+    if (serviceId) {
+      fetchData();
+    }
   }, [serviceId, router, toast]);
 
   const handleUpdateService = async (values: ServiceFormValues) => {
@@ -89,7 +92,6 @@ export default function EditarServicioPage() {
   const handleVehicleCreated = async (data: VehicleFormValues) => {
       await inventoryService.addVehicle(data);
       toast({ title: "Vehículo Creado" });
-      // The listener will update the vehicle list automatically
   };
 
   const handleCancelService = async (id: string, reason: string) => {
@@ -113,21 +115,29 @@ export default function EditarServicioPage() {
     );
   }
 
+  const isQuote = initialData.status === 'Cotizacion';
+  const pageTitle = `Editar ${isQuote ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`;
+  const pageDescription = `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`;
+
   return (
-    <ServiceForm
-      initialDataService={initialData}
-      vehicles={vehicles}
-      technicians={users}
-      inventoryItems={inventoryItems}
-      serviceTypes={serviceTypes}
-      categories={categories}
-      suppliers={suppliers}
-      serviceHistory={serviceHistory}
-      onSubmit={handleUpdateService}
-      onClose={() => router.back()}
-      onDelete={handleDeleteQuote}
-      onCancelService={handleCancelService}
-      onVehicleCreated={handleVehicleCreated}
-    />
+    <>
+      <PageHeader title={pageTitle} description={pageDescription} />
+      <ServiceForm
+        initialDataService={initialData}
+        vehicles={vehicles}
+        technicians={users}
+        inventoryItems={inventoryItems}
+        serviceTypes={serviceTypes}
+        categories={categories}
+        suppliers={suppliers}
+        serviceHistory={serviceHistory}
+        onSubmit={handleUpdateService}
+        onClose={() => router.back()}
+        onDelete={handleDeleteQuote}
+        onCancelService={handleCancelService}
+        onVehicleCreated={handleVehicleCreated}
+        mode={isQuote ? 'quote' : 'service'}
+      />
+    </>
   );
 }

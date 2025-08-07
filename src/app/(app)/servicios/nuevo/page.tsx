@@ -13,6 +13,7 @@ import { ServiceForm } from '../components/service-form';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import type { ServiceFormValues } from '@/schemas/service-form';
 import type { Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, ServiceRecord, QuoteRecord } from '@/types';
+import { PageHeader } from '@/components/page-header';
 
 export default function NuevoServicioPage() {
   const { toast } = useToast(); 
@@ -62,25 +63,33 @@ export default function NuevoServicioPage() {
   const handleVehicleCreated = async (newVehicleData: VehicleFormValues) => {
       await inventoryService.addVehicle(newVehicleData);
       toast({ title: "Vehículo Creado" });
-      // The listener will update the vehicle list automatically
   };
   
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
   }
+  
+  const isQuoteMode = router.toString().includes('cotizacion');
 
   return (
-    <ServiceForm
-      vehicles={vehicles}
-      technicians={users}
-      inventoryItems={inventoryItems}
-      serviceTypes={serviceTypes}
-      categories={categories}
-      suppliers={suppliers}
-      serviceHistory={allServices}
-      onSubmit={handleSaveService}
-      onClose={() => router.back()}
-      onVehicleCreated={handleVehicleCreated}
-    />
+    <>
+      <PageHeader
+        title={isQuoteMode ? "Nueva Cotización" : "Nuevo Servicio"}
+        description="Completa los datos para crear un nuevo registro."
+      />
+      <ServiceForm
+        vehicles={vehicles}
+        technicians={users}
+        inventoryItems={inventoryItems}
+        serviceTypes={serviceTypes}
+        categories={categories}
+        suppliers={suppliers}
+        serviceHistory={allServices}
+        onSubmit={handleSaveService}
+        onClose={() => router.back()}
+        onVehicleCreated={handleVehicleCreated}
+        mode={isQuoteMode ? 'quote' : 'service'}
+      />
+    </>
   );
 }
