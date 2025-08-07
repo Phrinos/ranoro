@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -12,6 +13,7 @@ import {
   query,
   DocumentReference,
   Timestamp,
+  orderBy
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { CashDrawerTransaction, InitialCashBalance } from "@/types";
@@ -41,9 +43,21 @@ const deleteCashTransaction = async (transactionId: string): Promise<void> => {
     await deleteDoc(doc(db, 'cashDrawerTransactions', transactionId));
 };
 
+const onCashTransactionsUpdate = (callback: (transactions: CashDrawerTransaction[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, 'cashDrawerTransactions'), orderBy("date", "desc"));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CashDrawerTransaction)));
+    }, (error) => {
+        console.error("Error listening to cash transactions:", error.message);
+        callback([]);
+    });
+};
+
 
 export const cashService = {
   setInitialCashBalance,
   addCashTransaction,
   deleteCashTransaction,
+  onCashTransactionsUpdate,
 };
