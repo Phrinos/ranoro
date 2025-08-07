@@ -45,6 +45,10 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Proveedores', path: '/proveedores', icon: Building, groupTag: 'Operaciones', 
     permissions: ['inventory:manage'] 
   },
+  {
+    label: 'Finanzas', path: '/finanzas', icon: LineChart, groupTag: 'Operaciones',
+    permissions: ['finances:view_report']
+  },
   
   // Mi Flotilla
   {
@@ -59,16 +63,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Flotilla', path: '/flotilla', icon: Truck, groupTag: 'Mi Flotilla',
     permissions: ['fleet:manage']
   },
-  
-  // Análisis
-  {
-    label: 'Finanzas', path: '/finanzas', icon: LineChart, groupTag: 'Análisis',
-    permissions: ['finances:view_report']
-  },
-  {
-    label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Análisis',
-    permissions: ['finances:view_report'] // Assuming same permission for now
-  },
 
   // Opciones
   {
@@ -78,6 +72,10 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   {
     label: 'Opciones', path: '/opciones', icon: Settings, groupTag: 'Opciones',
     permissions: ['dashboard:view'] // All users can see options
+  },
+  {
+    label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Opciones',
+    permissions: ['finances:view_report']
   },
   {
     label: 'Administración', path: '/administracion', icon: Shield, groupTag: 'Opciones',
@@ -138,7 +136,7 @@ const useNavigation = (): NavigationEntry[] => {
     } else if (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual')) {
         isActive = entry.path === '/opciones';
     } else if (pathname.startsWith('/finanzas') || pathname.startsWith('/facturacion-admin')) {
-        isActive = entry.path === '/finanzas';
+        isActive = entry.path === '/finanzas' || entry.path === '/facturacion-admin';
     } else if (pathname.startsWith('/administracion') || pathname.startsWith('/admin')) {
         isActive = entry.path === '/administracion';
     } else if (pathname.startsWith('/flotilla') || pathname.startsWith('/rentas')) {
