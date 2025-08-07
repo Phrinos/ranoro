@@ -1,4 +1,3 @@
-
 // A central hub for all services
 export * from './admin.service';
 export * from './inventory.service';
@@ -11,4 +10,5 @@ export * from './sale.service';
 export * from './cash.service';
 export * from './fleet.service';
 export * from './purchase.service';
+export * from './history.service';
 // The operationsService is deprecated and should not be exported.
