@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 
 "use client";
@@ -57,6 +56,7 @@ export function ServiceDetailsCard({
   const initialStatus = watch('initialStatus'); 
   const relevantSubStatusOptions = subStatusOptions[watchedStatus] || [];
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isQuoteDatePickerOpen, setIsQuoteDatePickerOpen] = useState(false);
 
   const technicians = useMemo(() => {
     return users.filter(u => u.role.toLowerCase().includes('tecnico') || u.role.toLowerCase().includes('admin'));
@@ -65,6 +65,7 @@ export function ServiceDetailsCard({
   const showAppointmentFields = useMemo(() => watchedStatus === 'Agendado', [watchedStatus]);
   const showWorkshopFields = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
   const showTechnicianField = useMemo(() => watchedStatus !== 'Cotizacion', [watchedStatus]);
+  const showQuoteDateField = useMemo(() => watchedStatus === 'Cotizacion', [watchedStatus]);
 
 
   return (
@@ -128,6 +129,43 @@ export function ServiceDetailsCard({
                 </FormItem>
               )}
             />
+        )}
+        
+        {showQuoteDateField && (
+          <div className="pt-4 border-t">
+            <Controller
+              name="serviceDate"
+              control={control}
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className={cn(errors.serviceDate && "text-destructive")}>Fecha de Cotización</FormLabel>
+                  <Popover open={isQuoteDatePickerOpen} onOpenChange={setIsQuoteDatePickerOpen}>
+                    <PopoverTrigger asChild disabled={isReadOnly}>
+                      <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", errors.serviceDate && "border-destructive focus-visible:ring-destructive")} disabled={isReadOnly}>
+                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(date) => {
+                           const newDate = date || new Date();
+                           field.onChange(newDate);
+                           setIsQuoteDatePickerOpen(false);
+                        }}
+                        disabled={isReadOnly}
+                        initialFocus
+                        locale={es}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         )}
 
         {showAppointmentFields && (
