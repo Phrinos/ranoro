@@ -29,7 +29,7 @@ interface TableToolbarProps {
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   dateRange?: DateRange;
-  onDateRangeChange: (range?: DateRange) => void;
+  onDateRangeChange?: (range?: DateRange) => void;
   sortOption: string;
   onSortOptionChange: (value: string) => void;
   sortOptions: Option[];

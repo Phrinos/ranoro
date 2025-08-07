@@ -161,9 +161,8 @@ export function useTableManager<T extends { [key: string]: any }>({
     sortOption,
     onSortOptionChange: setSortOption,
     dateRange,
-    onDateRangeChange: setDateRange,
+    onDateRangeChange: setDateRange, // Explicitly return the setter
     otherFilters,
-    onFilterChange: setOtherFilters,
     setOtherFilters,
     filteredData: paginatedData,
     currentPage,
