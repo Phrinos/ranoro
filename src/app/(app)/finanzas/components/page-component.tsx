@@ -215,8 +215,8 @@ export function FinanzasPageComponent({
             content: (
                  <div className="space-y-6">
                     <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">{dateFilterComponent}</div>
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-                      <Card className="xl:col-span-2">
+                    
+                    <Card>
                         <CardHeader><CardTitle className="text-xl flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary" />Estado de Resultados</CardTitle><CardDescription>Resumen de pérdidas y ganancias para el periodo: {financialSummary.monthYearLabel}</CardDescription></CardHeader>
                         <CardContent className="space-y-4 text-base">
                             <div className="space-y-2">
@@ -241,8 +241,9 @@ export function FinanzasPageComponent({
                                 </div>
                             </div>
                         </CardContent>
-                      </Card>
-                      <div className="space-y-6">
+                    </Card>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <Card>
                           <CardHeader><CardTitle className="text-xl flex items-center gap-2"><TrendingUp className="h-6 w-6 text-green-500" />Ingresos y Ganancia</CardTitle><CardDescription>Detalle por tipo de operación</CardDescription></CardHeader>
                           <CardContent className="space-y-4 text-base">
@@ -267,12 +268,10 @@ export function FinanzasPageComponent({
                         <Suspense fallback={<Loader2 className="animate-spin" />}>
                            <EgresosContent financialSummary={financialSummary} fixedExpenses={fixedExpenses} personnel={allPersonnel} onExpensesUpdated={(updated) => setFixedExpenses([...updated])} />
                         </Suspense>
-                      </div>
                     </div>
                 </div>
             )
         },
-        { value: "egresos", label: "Egresos", content:  <Card><CardHeader><CardTitle>Contenido Movido</CardTitle><CardDescription>El detalle de Egresos Fijos ahora se encuentra en la pestaña de "Resumen" para una vista consolidada.</CardDescription></CardHeader><CardContent><p className="text-muted-foreground">Por favor, seleccione la pestaña de Resumen para ver y editar los egresos fijos mensuales.</p></CardContent></Card> },
     ];
     
     return (
