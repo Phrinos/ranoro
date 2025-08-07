@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
-import { isToday, parseISO, isValid, compareAsc, compareDesc } from 'date-fns';
+import { isToday, parseISO, isValid, compareAsc, compareDesc, isSameDay } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { formatCurrency } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
@@ -52,23 +52,32 @@ export default function ActivosTabContent({
   const { toast } = useToast();
 
   const activeServices = useMemo(() => {
-    return allServices.sort((a, b) => {
-        const dateA = parseDate(a.receptionDateTime) || parseDate(a.serviceDate);
-        const dateB = parseDate(b.receptionDateTime) || parseDate(b.serviceDate);
+    return allServices
+        .filter(s => {
+            if (s.status === 'En Taller' || s.status === 'Agendado') return true;
+            if (s.status === 'Entregado') {
+                const deliveryDate = parseDate(s.deliveryDateTime);
+                return deliveryDate && isValid(deliveryDate) && isToday(deliveryDate);
+            }
+            return false;
+        })
+        .sort((a, b) => {
+            const dateA = parseDate(a.receptionDateTime) || parseDate(a.serviceDate);
+            const dateB = parseDate(b.receptionDateTime) || parseDate(b.serviceDate);
 
-        if (dateA && dateB) {
-            const dateComparison = compareDesc(dateA, dateB);
-            if (dateComparison !== 0) return dateComparison;
-        } else if (dateA) {
-            return -1;
-        } else if (dateB) {
-            return 1;
-        }
-        
-        const priorityA = getStatusPriority(a);
-        const priorityB = getStatusPriority(b);
-        return priorityA - priorityB;
-    });
+            if (dateA && dateB) {
+                const dateComparison = compareDesc(dateA, dateB);
+                if (dateComparison !== 0) return dateComparison;
+            } else if (dateA) {
+                return -1;
+            } else if (dateB) {
+                return 1;
+            }
+            
+            const priorityA = getStatusPriority(a);
+            const priorityB = getStatusPriority(b);
+            return priorityA - priorityB;
+        });
   }, [allServices]);
 
   const totalEarningsToday = useMemo(() => {

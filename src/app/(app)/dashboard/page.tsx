@@ -146,7 +146,7 @@ export default function DashboardPage() {
     return {
         dailyRevenue: revenueFromSales + revenueFromServices,
         dailyProfit: profitFromSales + profitFromServices,
-        activeServices: repairingServices.length + scheduledTodayServices.length,
+        activeServices: repairingServices.length + scheduledTodayServices.length + servicesCompletedToday.length,
         lowStockAlerts: allInventory.filter(item => !item.isService && item.quantity <= item.lowStockThreshold).length
     };
   }, [allServices, allSales, allInventory]);
@@ -464,7 +464,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {isLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold font-headline">{kpiData.activeServices}</div>}
-            {isLoading ? <Skeleton className="h-4 w-3/4 mt-1" /> : <p className="text-xs text-muted-foreground">Reparando y agendados para hoy</p>}
+            {isLoading ? <Skeleton className="h-4 w-3/4 mt-1" /> : <p className="text-xs text-muted-foreground">Reparando, agendados y entregados hoy</p>}
           </CardContent>
         </Card>
         <Card>
@@ -626,5 +626,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
