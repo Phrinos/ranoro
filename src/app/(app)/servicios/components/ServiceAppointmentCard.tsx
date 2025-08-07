@@ -96,7 +96,7 @@ export function ServiceAppointmentCard({
           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-card border-b md:border-b-0 md:border-r">
             <p className="text-muted-foreground text-sm">{parsedDate && isValid(parsedDate) ? format(parsedDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
             <p className="font-bold text-lg text-foreground">{parsedDate && isValid(parsedDate) ? format(parsedDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
-            <p className="text-muted-foreground text-xs mt-2">Folio: ...{service.id.slice(-6)}</p>
+            <p className="text-muted-foreground text-xs mt-2">...{service.id.slice(-6)}</p>
           </div>
 
           {/* Col 2: Client & Vehicle */}
