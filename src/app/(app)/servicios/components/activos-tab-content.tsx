@@ -1,5 +1,4 @@
-
-
+// src/app/(app)/servicios/components/activos-tab-content.tsx
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -46,7 +45,7 @@ export default function ActivosTabContent({
   const activeServices = useMemo(() => {
     const today = new Date();
     return allServices.filter(s => {
-      const serviceDate = parseDate(s.serviceDate);
+      const serviceDate = parseDate(s.appointmentDateTime || s.serviceDate);
       const deliveryDate = parseDate(s.deliveryDateTime);
       if (s.status === 'En Taller') return true;
       if (s.status === 'Agendado' && serviceDate && isToday(serviceDate)) return true;

@@ -1,5 +1,3 @@
-
-
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -50,6 +48,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { PageHeader } from "@/components/page-header";
+import { ServiceDetailsCard } from "./ServiceDetailsCard";
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
@@ -65,10 +64,7 @@ interface Props {
   onCancelService?: (serviceId: string, reason: string) => void;
   isReadOnly?:boolean
   mode?:'service'|'quote'
-  onStatusChange?: (status: ServiceRecord['status']) => void;
-  onSubStatusChange?: (status: ServiceRecord['subStatus']) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
-  onTotalCostChange: (cost: number) => void;
 }
 
 export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref) => {
@@ -85,15 +81,12 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
     onCancelService,
     isReadOnly = false,
     mode = 'service',
-    onStatusChange,
-    onSubStatusChange,
     onVehicleCreated,
-    onTotalCostChange,
   } = props;
 
   const { toast } = useToast();
   
-  const form = useForm<z.infer<typeof serviceFormSchema>>({
+  const methods = useForm<z.infer<typeof serviceFormSchema>>({
     resolver: zodResolver(serviceFormSchema),
   });
   
@@ -103,7 +96,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
         catch { return null }
     })();
     
-    form.reset({
+    methods.reset({
       ...initialDataService,
       allVehiclesForDialog: parentVehicles,
       status: initialDataService?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
@@ -112,17 +105,16 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
       serviceAdvisorId: initialDataService?.serviceAdvisorId || authUser?.id,
       serviceAdvisorName: initialDataService?.serviceAdvisorName || authUser?.name,
     });
-  }, [initialDataService, parentVehicles, mode, form]);
+  }, [initialDataService, parentVehicles, mode, methods]);
   
-  const { control, setValue, watch, formState, handleSubmit, reset, getValues } = form;
-  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
+  const { control, setValue, watch, formState, handleSubmit, reset, getValues } = methods;
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(methods);
   
   useEffect(() => {
     setValue('totalCost', totalCost);
     setValue('totalSuppliesWorkshopCost', totalSuppliesWorkshopCost);
     setValue('serviceProfit', serviceProfit);
-    onTotalCostChange(totalCost);
-  }, [totalCost, totalSuppliesWorkshopCost, serviceProfit, setValue, onTotalCostChange]);
+  }, [totalCost, totalSuppliesWorkshopCost, serviceProfit, setValue]);
 
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
@@ -146,51 +138,63 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
   }, [toast]);
   
   const formSubmitWrapper = (values: z.infer<typeof serviceFormSchema>) => {
-    onSubmit(values as ServiceRecord);
+    const dataWithTotals = {
+      ...values,
+      totalCost,
+      totalSuppliesWorkshopCost,
+      serviceProfit,
+    };
+    onSubmit(dataWithTotals as ServiceRecord);
   };
   
   const watchedStatus = watch('status');
-  const watchedSubStatus = watch('subStatus');
 
   const pageTitle = initialDataService ? `Editar Servicio #${initialDataService.id.slice(-6)}` : "Nuevo Servicio / Cotización";
   const pageDescription = initialDataService ? `Modifica los detalles para el vehículo ${initialDataService.vehicleIdentifier || ''}.` : "Completa la información para crear un nuevo registro.";
   
   return (
-    <>
-        <PageHeader
-            title={pageTitle}
-            description={pageDescription}
-        />
-        <FormProvider {...form}>
-            <form ref={ref} id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden space-y-6">
-                
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-                    <div className="lg:col-span-3 space-y-6">
-                        <VehicleSelectionCard
-                            isReadOnly={isReadOnly}
-                            localVehicles={parentVehicles}
-                            onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
-                            onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
-                        />
-                        <ServiceItemsList
-                            isReadOnly={isReadOnly}
-                            inventoryItems={invItems}
-                            serviceTypes={serviceTypes}
-                            mode={mode}
-                            onNewInventoryItemCreated={handleNewInventoryItemCreated}
-                            categories={categories}
-                            suppliers={suppliers}
-                        />
-                    </div>
-                    <div className="lg:col-span-2 space-y-6">
-                        <PaymentSection />
-                    </div>
+    <FormProvider {...methods}>
+        <form ref={ref} id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden space-y-6">
+            <ServiceDetailsCard
+                isReadOnly={isReadOnly}
+                users={technicians}
+                serviceTypes={serviceTypes}
+            />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+                <div className="lg:col-span-3 space-y-6">
+                    <VehicleSelectionCard
+                        isReadOnly={isReadOnly}
+                        localVehicles={parentVehicles}
+                        serviceHistory={[]} // Assuming this is now handled at a higher level
+                        onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
+                        onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+                    />
+                    <ServiceItemsList
+                        isReadOnly={isReadOnly}
+                        inventoryItems={invItems}
+                        serviceTypes={serviceTypes}
+                        mode={mode}
+                        onNewInventoryItemCreated={handleNewInventoryItemCreated}
+                        categories={categories}
+                        suppliers={suppliers}
+                    />
                 </div>
+                <div className="lg:col-span-2 space-y-6">
+                    <PaymentSection isReadOnly={isReadOnly}/>
+                </div>
+            </div>
 
-                <div className="mt-6 flex justify-end gap-2">
+            <div className="mt-6 flex justify-between items-center">
+                {onCancelService && initialDataService && (
+                    <Button type="button" variant="destructive" onClick={() => onCancelService(initialDataService.id, prompt("Motivo de cancelación:") || "")} disabled={formState.isSubmitting}>
+                        <Ban className="mr-2 h-4 w-4" /> Cancelar Servicio
+                    </Button>
+                )}
+                 <div className="flex justify-end gap-2 w-full">
                     <Button variant="outline" type="button" onClick={onClose}>
                         <X className="mr-2 h-4 w-4" />
-                        Cancelar
+                        Cerrar
                     </Button>
                     <Button
                         type="submit"
@@ -204,8 +208,8 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
                         {initialDataService ? "Actualizar Registro" : "Crear Registro"}
                     </Button>
                 </div>
-            </form>
-        </FormProvider>
+            </div>
+        </form>
 
       <VehicleDialog
         open={isNewVehicleDialogOpen}
@@ -213,7 +217,7 @@ export const ServiceForm = React.forwardRef<HTMLFormElement, Props>((props, ref)
         onSave={handleVehicleCreated}
         vehicle={{ licensePlate: newVehicleInitialPlate }}
       />
-    </>
+    </FormProvider>
   );
 });
 ServiceForm.displayName = "ServiceForm";

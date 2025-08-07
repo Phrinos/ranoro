@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -264,6 +263,7 @@ export default function EditarServicioPage() {
             <VehicleSelectionCard 
               isReadOnly={false} 
               localVehicles={vehicles} 
+              serviceHistory={allServices}
               onVehicleSelected={(v) => methods.setValue('vehicleIdentifier', v?.licensePlate)} 
               onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
             />
