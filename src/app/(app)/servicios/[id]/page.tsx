@@ -63,7 +63,7 @@ export default function ServicioPage() {
                 // Set default values for new service/quote
                 setInitialData({
                     status: 'Cotizacion', // Default to Cotizacion
-                    serviceDate: new Date().toISOString(), // Ensure new records have a date
+                    serviceDate: new Date(), // Ensure new records have a date
                 } as ServiceRecord);
             }
 

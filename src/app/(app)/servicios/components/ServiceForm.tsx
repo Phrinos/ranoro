@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/service-form.tsx
 "use client";
 
@@ -72,6 +73,7 @@ export function ServiceForm({
     defaultValues: {
       ...initialData,
       status: initialData?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
+      serviceDate: initialData?.serviceDate ? new Date(initialData.serviceDate) : new Date(), // Set default date
       allVehiclesForDialog: vehicles, 
     },
   });
@@ -254,7 +256,7 @@ function ServiceFormContent({
   
   const watchedStatus = watch('status');
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
-  const isSubmitDisabled = isReadOnly || formState.isSubmitting || !formState.isValid;
+  const isSubmitDisabled = isReadOnly || formState.isSubmitting;
 
   return (
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
@@ -265,7 +267,7 @@ function ServiceFormContent({
             isReadOnly={isReadOnly} 
             localVehicles={vehicles} 
             serviceHistory={serviceHistory}
-            onVehicleSelected={(v) => setValue('vehicleId', v?.id)} 
+            onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} 
             onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
           />
         </Suspense>

@@ -1,3 +1,4 @@
+
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -76,7 +77,7 @@ export const serviceFormSchema = z.object({
     vehicleId: z.string().min(1, 'Debe seleccionar un vehículo.'),
     vehicleIdentifier: z.string().optional(),
     vehicleLicensePlateSearch: z.string().optional(),
-    serviceDate: z.date().optional(), // Creation date
+    serviceDate: z.date({ required_error: 'La fecha de creación es obligatoria.' }),
     appointmentDateTime: z.date().optional(), // Specific for the appointment
     receptionDateTime: z.date().optional(),
     deliveryDateTime: z.date().optional(),

@@ -68,16 +68,20 @@ export function VehicleSelectionCard({
       if (vehicle) {
         setSelectedVehicle(vehicle);
         setVehicleLicensePlateSearch(vehicle.licensePlate);
-        const vehicleServices = serviceHistory
-          .filter(s => s.vehicleId === vehicle.id)
-          .sort((a, b) => {
-              const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate) || new Date(0);
-              const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate) || new Date(0);
-              if (!isValid(dateA)) return 1;
-              if (!isValid(dateB)) return -1;
-              return dateB.getTime() - dateA.getTime();
-          });
-        setLastService(vehicleServices[0] || null);
+        if (serviceHistory && serviceHistory.length > 0) {
+            const vehicleServices = serviceHistory
+              .filter(s => s.vehicleId === vehicle.id)
+              .sort((a, b) => {
+                  const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate) || new Date(0);
+                  const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate) || new Date(0);
+                  if (!isValid(dateA)) return 1;
+                  if (!isValid(dateB)) return -1;
+                  return dateB.getTime() - dateA.getTime();
+              });
+            setLastService(vehicleServices[0] || null);
+        } else {
+            setLastService(null);
+        }
       } else {
         setSelectedVehicle(null);
         setLastService(null);
@@ -165,7 +169,7 @@ export function VehicleSelectionCard({
               <Button type="button" variant="outline" size="sm" onClick={handleViewProfile}>
                 Perfil del Vehículo
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedVehicle(null); setValue('vehicleId', undefined); onVehicleSelected(null); }}>
+              <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedVehicle(null); setValue('vehicleId', ''); onVehicleSelected(null); }}>
                 Cambiar Vehículo
               </Button>
           </div>
