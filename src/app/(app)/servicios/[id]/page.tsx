@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -9,7 +10,7 @@ import type { ServiceRecord, QuoteRecord, Vehicle, User, InventoryItem, ServiceT
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
 import { serviceService, inventoryService, adminService, operationsService } from '@/lib/services';
-import { Loader2, Save, X, Ban, DollarSign, Wrench, ShieldCheck, Camera, FileText, Eye } from 'lucide-react';
+import { Loader2, Save, X, Ban, DollarSign, Wrench, ShieldCheck, Camera, FileText, Eye, Trash2 } from 'lucide-react';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -48,7 +49,7 @@ export default function EditarServicioPage() {
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
 
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -99,7 +100,7 @@ export default function EditarServicioPage() {
             setServiceTypes(serviceTypesData);
             setCategories(categoriesData);
             setSuppliers(suppliersData);
-            setAllServices(allServicesData);
+            setServiceHistory(allServicesData);
             
             reset({
                 ...serviceData,
@@ -185,6 +186,17 @@ export default function EditarServicioPage() {
     }
   };
   
+  const handleDeleteQuote = async () => {
+    if (!initialData) return;
+    try {
+      await serviceService.deleteService(initialData.id);
+      toast({ title: "Cotización Eliminada", variant: "destructive" });
+      router.push('/servicios?tab=cotizaciones');
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudo eliminar la cotización.", variant: "destructive"});
+    }
+  };
+
   const handleOpenSignature = (type: 'reception' | 'delivery' | 'technician') => {
     setSignatureTarget(type);
     setIsSignatureDialogOpen(true);
@@ -248,12 +260,14 @@ export default function EditarServicioPage() {
   }
 
   const showTabs = initialData.status === 'En Taller' || initialData.status === 'Entregado' || initialData.status === 'Cancelado' || watch('status') === 'En Taller' || watch('status') === 'Entregado';
+  const isQuote = initialData.status === 'Cotizacion';
+
 
   return (
     <FormProvider {...methods}>
         <form id="service-form" onSubmit={handleSubmit(handleUpdateService)} className="space-y-6">
             <PageHeader
-                title={`Editar Servicio #${initialData.id.slice(-6)}`}
+                title={`Editar ${isQuote ? 'Cotización' : 'Servicio'} #${initialData.id.slice(-6)}`}
                 description={`Modifica los detalles para el vehículo ${initialData.vehicleIdentifier || ''}.`}
             />
             
@@ -266,7 +280,7 @@ export default function EditarServicioPage() {
             <VehicleSelectionCard 
               isReadOnly={false} 
               localVehicles={vehicles} 
-              serviceHistory={allServices}
+              serviceHistory={serviceHistory}
               onVehicleSelected={(v) => methods.setValue('vehicleIdentifier', v?.licensePlate)} 
               onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
             />
@@ -329,10 +343,19 @@ export default function EditarServicioPage() {
 
             <div className="mt-6 flex justify-between items-center">
                 <ConfirmDialog
-                    triggerButton={<Button variant="destructive" type="button" disabled={initialData.status === 'Cancelado'}><Ban className="mr-2 h-4 w-4"/>Cancelar Servicio</Button>}
-                    title="¿Cancelar este servicio?"
-                    description="Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer."
-                    onConfirm={handleCancelService}
+                    triggerButton={
+                        <Button variant="destructive" type="button" disabled={initialData.status === 'Cancelado'}>
+                            {isQuote ? <Trash2 className="mr-2 h-4 w-4"/> : <Ban className="mr-2 h-4 w-4"/>}
+                            {isQuote ? 'Eliminar Cotización' : 'Cancelar Servicio'}
+                        </Button>
+                    }
+                    title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
+                    description={
+                        isQuote 
+                        ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
+                        : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'
+                    }
+                    onConfirm={isQuote ? handleDeleteQuote : handleCancelService}
                 />
                 <div className="flex gap-2">
                     <Button variant="outline" type="button" onClick={() => router.back()}>
