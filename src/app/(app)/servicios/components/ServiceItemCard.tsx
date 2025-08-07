@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Plus, PlusCircle, Trash2, Wrench, Tags } from 'lucide-react';
+import { Plus, PlusCircle, Trash2, Wrench, Tags, Minus } from 'lucide-react';
 import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord } from '@/types';
 import { useState, useCallback } from "react";
 import { useToast } from '@/hooks/use-toast';
@@ -97,7 +97,7 @@ export function ServiceItemCard({
             return;
         }
         
-        setValue(`${supplyPath}.quantity`, newQuantity, { shouldDirty: true });
+        update(supplyIndex, { ...currentSupply, quantity: newQuantity });
     };
     
     const handleManualQuantitySet = (index: number, value: string) => {
