@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -260,6 +261,33 @@ const completeService = async (
     }
 };
 
+const idsToUpdate = ["2NzhUlKT6EVRznWXewTcn", "OLHylcZ63Vr4x3BcnVoji", "sBC_oATIMWKtU0TNV7Mt4", "yYUcuxSVnfMYKiNx60c_8"];
+const updateDate = new Date('2024-08-06T08:30:00');
+
+// This function can be called once to update the data.
+// In a real app, this would be a one-time migration script.
+const updateSpecificServices = async () => {
+    if (!db) return;
+    const batch = writeBatch(db);
+    for (const id of idsToUpdate) {
+        const docRef = doc(db, 'serviceRecords', id);
+        batch.update(docRef, { 
+            serviceDate: updateDate.toISOString(),
+            appointmentDateTime: updateDate.toISOString()
+        });
+    }
+    try {
+        await batch.commit();
+        console.log("Successfully updated specific services.");
+    } catch(e) {
+        console.error("Error updating specific services:", e);
+    }
+};
+
+// Uncomment to run the update. Be careful, this is a one-time operation.
+// updateSpecificServices();
+
+
 export const serviceService = {
     getDocById,
     onServicesUpdate,
@@ -273,3 +301,4 @@ export const serviceService = {
     deleteService,
     completeService,
 };
+
