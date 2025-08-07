@@ -18,7 +18,6 @@ import {
   serverTimestamp,
   limit,
   setDoc,
-  compareDesc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem } from "@/types";
@@ -29,7 +28,7 @@ import { savePublicDocument } from '../public-document';
 import { cashService } from './cash.service';
 import type { PaymentDetailsFormValues } from '@/app/(app)/servicios/components/PaymentDetailsDialog';
 import { inventoryService } from './inventory.service';
-import { format, isValid } from 'date-fns';
+import { format, isValid, compareDesc } from 'date-fns';
 
 // --- Generic Document Getter ---
 const getDocById = async (collectionName: string, id: string): Promise<any> => {
@@ -313,5 +312,6 @@ export const serviceService = {
     deleteService,
     completeService,
 };
+
 
 
