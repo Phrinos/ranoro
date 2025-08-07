@@ -3,18 +3,14 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { PageHeader } from "@/components/page-header";
-import type { ServiceRecord, QuoteRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
-import { serviceService, inventoryService, adminService, operationsService } from '@/lib/services';
+import { serviceService, inventoryService, adminService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
-import { db } from '@/lib/firebaseClient';
-import { writeBatch } from 'firebase/firestore';
-import type { VehicleFormValues } from '../../../vehiculos/components/vehicle-form';
 import { ServiceForm } from '../../components/service-form';
+import type { ServiceFormValues } from '@/schemas/service-form';
+import type { Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, ServiceRecord } from '@/types';
+import type { VehicleFormValues } from '../../../vehiculos/components/vehicle-form';
 
 export default function EditarServicioPage() {
   const { toast } = useToast(); 
@@ -87,6 +83,12 @@ export default function EditarServicioPage() {
       toast({ title: 'Error al Actualizar', variant: 'destructive'});
     }
   };
+  
+  const handleVehicleCreated = async (data: VehicleFormValues) => {
+      await inventoryService.addVehicle(data);
+      toast({ title: "Vehículo Creado" });
+      // The listener will update the vehicle list automatically
+  };
 
   const handleCancelService = async (id: string, reason: string) => {
       await serviceService.cancelService(id, reason);
@@ -123,6 +125,7 @@ export default function EditarServicioPage() {
       onClose={() => router.back()}
       onDelete={handleDeleteQuote}
       onCancelService={handleCancelService}
+      onVehicleCreated={handleVehicleCreated}
     />
   );
 }

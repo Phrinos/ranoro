@@ -22,6 +22,7 @@ import { normalizeDataUrl } from '@/lib/utils';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { SignatureDialog } from './signature-dialog';
 import { useRouter } from 'next/navigation';
+import { PageHeader } from '@/components/page-header';
 
 // Lazy load complex components
 const ServiceItemsList = lazy(() => import('./ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
@@ -64,14 +65,14 @@ export function ServiceForm({
   onSubmit,
   onClose,
   isReadOnly,
-  mode = 'service',
+  mode: initialMode = 'service',
   onVehicleCreated,
   onDelete,
   onCancelService,
 }: ServiceFormProps) {
   const { toast } = useToast();
   const router = useRouter();
-
+  
   const [activeTab, setActiveTab] = useState('servicio');
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
@@ -83,8 +84,10 @@ export function ServiceForm({
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
 
-  const initialData = mode === 'service' ? initialDataService : initialDataQuote;
-  const isQuote = initialData?.status === 'Cotizacion' || mode === 'quote';
+  const initialData = initialMode === 'service' ? initialDataService : initialDataQuote;
+  const isEditing = !!initialData?.id;
+  const isQuote = initialData?.status === 'Cotizacion' || initialMode === 'quote';
+  const mode = isQuote ? 'quote' : 'service';
 
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -124,8 +127,6 @@ export function ServiceForm({
     if (onVehicleCreated) {
         await onVehicleCreated(data);
     }
-    // The parent component should handle updating the vehicle list
-    // which will re-render this component.
     setIsNewVehicleDialogOpen(false);
   };
 
@@ -186,8 +187,16 @@ export function ServiceForm({
   const watchedStatus = watch('status');
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
 
+  const pageTitle = isEditing
+    ? `Editar ${isQuote ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`
+    : `Nuevo ${isQuote ? 'Cotización' : 'Servicio'}`;
+  const pageDescription = isEditing
+    ? `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`
+    : `Completa los datos para crear un nuevo registro.`;
+
   return (
     <FormProvider {...methods}>
+      <PageHeader title={pageTitle} description={pageDescription} />
       <form id="service-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-4">
           <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
@@ -250,7 +259,7 @@ export function ServiceForm({
           </div>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button type="submit" disabled={isReadOnly || formState.isSubmitting}>
+            <Button type="submit" form="service-form" disabled={isReadOnly || formState.isSubmitting}>
               {formState.isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
               {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
             </Button>
