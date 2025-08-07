@@ -8,7 +8,7 @@ import { PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { User, Supplier, PayableAccount } from '@/types';
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService, purchaseService } from '@/lib/services';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { ProveedoresContent } from './proveedores-content';
 import { CuentasPorPagarContent } from './cuentas-por-pagar-content';
@@ -57,7 +57,7 @@ export default function ProveedoresPageComponent() {
     try {
       const userString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
       const user: User | null = userString ? JSON.parse(userString) : null;
-      await operationsService.registerPayableAccountPayment(accountId, amount, paymentMethod, note, user);
+      await purchaseService.registerPayableAccountPayment(accountId, amount, paymentMethod, note, user);
       toast({ title: "Pago Registrado", description: "El pago se ha registrado correctamente." });
       setIsPaymentDialogOpen(false);
     } catch(e) {
@@ -66,7 +66,7 @@ export default function ProveedoresPageComponent() {
   }, [toast]);
   
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
-    await operationsService.registerPurchase(data);
+    await purchaseService.registerPurchase(data);
     toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
     setIsRegisterPurchaseOpen(false);
   }, [toast]);

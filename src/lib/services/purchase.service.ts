@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
-import type { User, PayableAccount } from '@/types';
+import type { User, PayableAccount, PaymentMethod } from '@/types';
 import { inventoryService } from './inventory.service';
 import { logAudit } from '../placeholder-data';
 import { cleanObjectForFirestore } from '../forms';
@@ -82,6 +82,55 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   await batch.commit();
 };
 
+
+const registerPayableAccountPayment = async (accountId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, user: User | null): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+
+    const accountRef = doc(db, 'payableAccounts', accountId);
+    const accountSnap = await getDoc(accountRef);
+    if (!accountSnap.exists()) throw new Error("Payable account not found.");
+
+    const accountData = accountSnap.data() as PayableAccount;
+    const newPaidAmount = (accountData.paidAmount || 0) + amount;
+    const newBalance = accountData.totalAmount - newPaidAmount;
+    const newStatus = newBalance <= 0 ? 'Pagado' : 'Pagado Parcialmente';
+
+    const batch = writeBatch(db);
+
+    batch.update(accountRef, {
+      paidAmount: newPaidAmount,
+      status: newStatus,
+    });
+    
+    // Update supplier debt
+    const supplierRef = doc(db, 'suppliers', accountData.supplierId);
+    const supplierSnap = await getDoc(supplierRef);
+    if (supplierSnap.exists()) {
+      const currentDebt = supplierSnap.data().debtAmount || 0;
+      batch.update(supplierRef, { debtAmount: currentDebt - amount });
+    }
+
+    // Add cash transaction if it was paid with cash
+    if (paymentMethod === 'Efectivo') {
+        const transactionRef = doc(collection(db, 'cashDrawerTransactions'));
+        batch.set(transactionRef, {
+            date: new Date().toISOString(),
+            type: 'Salida',
+            amount,
+            concept: `Pago a proveedor: ${accountData.supplierName} (Factura: ${accountData.invoiceId})`,
+            userId: user?.id || 'system',
+            userName: user?.name || 'Sistema',
+            relatedType: 'Compra',
+            relatedId: accountId,
+        });
+    }
+
+    await batch.commit();
+    await logAudit('Pagar', `Registró pago de ${formatCurrency(amount)} a la cuenta de ${accountData.supplierName}.`, { entityType: 'Cuentas Por Pagar', entityId: accountId, userId: user?.id || 'system', userName: user?.name || 'Sistema' });
+};
+
+
 export const purchaseService = {
   registerPurchase,
+  registerPayableAccountPayment,
 };
