@@ -86,7 +86,7 @@ export function PosForm({
         const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
         
         if (hasCardPayment) commissionAmount += totalWithoutCommission * 0.041;
-        if (hasMSIPayment) commissionAmount += totalWithoutCommission * 0.077;
+        if (hasMSIPayment) commissionAmount += totalWithoutCommission * 0.12;
         
         // Remove existing commission to recalculate
         let newItems = currentItems.filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE');
