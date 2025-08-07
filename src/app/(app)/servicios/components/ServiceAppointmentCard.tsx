@@ -1,9 +1,8 @@
 
-
 "use client";
 
-import React, { useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useMemo, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -146,7 +145,9 @@ export function ServiceAppointmentCard({
             </Badge>
             <div className="text-xs text-muted-foreground mt-2 w-full text-center">
               <p>Asesor: {advisor?.name || 'N/A'}</p>
-              <p>Técnico: {technician?.name || 'N/A'}</p>
+              {service.status !== 'Cotizacion' && service.status !== 'Agendado' && (
+                  <p>Técnico: {technician?.name || 'N/A'}</p>
+              )}
             </div>
              <div className="flex justify-center items-center gap-1 flex-wrap mt-2">
                 <Button variant="ghost" size="icon" onClick={onView} title="Ver Detalles">
