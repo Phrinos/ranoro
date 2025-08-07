@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -8,7 +7,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, Package, Server, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, Package, Server, ArrowRight, Loader2, ArrowLeft, DollarSign, Boxes, List, Tag } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -32,6 +31,7 @@ import { es } from 'date-fns/locale';
 import { Separator } from '@/components/ui/separator';
 import { inventoryService, saleService, serviceService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
+import { formatCurrency } from '@/lib/utils';
 
 interface InventoryMovement {
     date: string;
@@ -197,114 +197,100 @@ export default function InventoryItemDetailPage() {
         </TabsList>
 
         <TabsContent value="details">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  {item.isService ? <Server className="h-5 w-5 text-muted-foreground"/> : <Package className="h-5 w-5 text-muted-foreground"/>}
-                  Detalles del {item.isService ? 'Servicio' : 'Producto'}
-                </CardTitle>
-                <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                  <div>
-                      <p className="text-sm font-medium text-muted-foreground">Nombre del Producto/Servicio</p>
-                      <h2 className="text-2xl font-bold">{item.name}</h2>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                      <div>
-                          <p className="text-sm font-medium text-muted-foreground">Marca</p>
-                          <p className="font-semibold">{item.brand || 'N/A'}</p>
-                      </div>
-                      <div>
-                          <p className="text-sm font-medium text-muted-foreground">SKU / Código</p>
-                          <p className="font-semibold">{item.sku || 'N/A'}</p>
-                      </div>
-                  </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-muted-foreground"/>
+                    Detalles del {item.isService ? 'Servicio' : 'Producto'}
+                  </CardTitle>
+                  <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Nombre</p>
+                            <h2 className="text-lg font-bold">{item.name}</h2>
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Marca</p>
+                            <p className="font-semibold">{item.brand || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">SKU / Código</p>
+                            <p className="font-semibold">{item.sku || 'N/A'}</p>
+                        </div>
+                        {item.rendimiento != null && item.rendimiento > 0 && (
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Rendimiento</p>
+                                <p className="font-semibold">{item.rendimiento.toLocaleString('es-ES')} km</p>
+                            </div>
+                        )}
+                    </div>
+                    {item.description && (
+                        <div className="pt-2">
+                            <p className="text-sm font-medium text-muted-foreground">Descripción</p>
+                            <p className="text-base text-foreground whitespace-pre-wrap mt-1">{item.description}</p>
+                        </div>
+                    )}
+                </CardContent>
+              </Card>
 
-                  <div>
-                      <p className="text-sm font-medium text-muted-foreground">Descripción</p>
-                      <p className="text-base text-foreground whitespace-pre-wrap mt-1">{item.description || 'Sin descripción.'}</p>
-                  </div>
-                  
-                  {item.rendimiento && (
-                      <div>
-                          <p className="text-sm font-medium text-muted-foreground">Rendimiento</p>
-                          <p className="font-semibold">{item.rendimiento.toLocaleString('es-ES')} km</p>
-                      </div>
-                  )}
+              <Card>
+                  <CardHeader><CardTitle className="flex items-center gap-2"><List className="h-5 w-5 text-muted-foreground"/>Clasificación</CardTitle></CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
+                     <div><p className="text-sm font-medium text-muted-foreground">Categoría</p><p className="font-semibold">{item.category}</p></div>
+                     <div><p className="text-sm font-medium text-muted-foreground">Proveedor</p><p className="font-semibold">{item.supplier}</p></div>
+                     <div><p className="text-sm font-medium text-muted-foreground">Tipo</p><p className="font-semibold">{item.isService ? 'Servicio' : 'Producto'}</p></div>
+                  </CardContent>
+              </Card>
+               <div className="mt-8 flex justify-start">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" ><Archive className="mr-2 h-4 w-4" />Eliminar Ítem</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader><AlertDialogTitle>¿Estás seguro de eliminar este ítem?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer y eliminará permanentemente el ítem {item.name} del inventario.</AlertDialogDescription></AlertDialogHeader>
+                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDeleteItem} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+            </div>
 
-                  <Separator />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                      <div>
-                          <p className="text-sm font-medium text-muted-foreground">Categoría</p>
-                          <p className="font-semibold">{item.category}</p>
-                      </div>
-                      <div>
-                          <p className="text-sm font-medium text-muted-foreground">Proveedor</p>
-                          <p className="font-semibold">{item.supplier}</p>
-                      </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
-                      <div>
-                          <p className="text-sm font-medium text-muted-foreground">Costo (Taller)</p>
-                          <p className="font-semibold">${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
-                      </div>
-                      <div>
-                          <p className="text-sm font-medium text-muted-foreground">Precio Venta (Cliente)</p>
-                          <p className="font-semibold">${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
-                      </div>
-                      <div>
-                          <p className="text-sm font-medium text-muted-foreground">Tipo</p>
-                          <p className="font-semibold">{item.isService ? 'Servicio' : 'Producto'}</p>
-                      </div>
-                      {!item.isService && (
-                          <>
-                              <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Stock Actual</p>
-                                  <p className="font-semibold">{item.quantity}</p>
-                              </div>
-                              <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Stock Bajo</p>
-                                  <p className="font-semibold">{item.lowStockThreshold}</p>
-                              </div>
-                          </>
-                      )}
-                  </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="mt-8 flex justify-start">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Eliminar Ítem
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro de eliminar este ítem?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta acción no se puede deshacer y eliminará permanentemente el ítem {item.name} del inventario.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteItem} className="bg-destructive hover:bg-destructive/90">
-                    Sí, Eliminar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <div className="lg:col-span-1 space-y-6">
+                <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-muted-foreground"/>Precios</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Costo (Taller)</p>
+                            <p className="font-semibold text-lg">{formatCurrency(item.unitPrice)}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">Precio Venta (Cliente)</p>
+                            <p className="font-semibold text-lg text-primary">{formatCurrency(item.sellingPrice)}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+                {!item.isService && (
+                    <Card>
+                         <CardHeader><CardTitle className="flex items-center gap-2"><Boxes className="h-5 w-5 text-muted-foreground"/>Control de Stock</CardTitle></CardHeader>
+                         <CardContent className="space-y-4">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Stock Actual</p>
+                                <p className="font-semibold text-lg">{item.quantity} {item.unitType !== 'units' ? item.unitType : ''}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Umbral de Stock Bajo</p>
+                                <p className="font-semibold text-lg">{item.lowStockThreshold}</p>
+                            </div>
+                         </CardContent>
+                    </Card>
+                )}
+            </div>
           </div>
         </TabsContent>
 
@@ -341,7 +327,7 @@ export default function InventoryItemDetailPage() {
                                         </TableCell>
                                         <TableCell>
                                             <Link 
-                                                href={move.type === 'Salida por Venta' ? `/pos?id=${move.relatedId}` : `/servicios/historial?id=${move.relatedId}`}
+                                                href={move.type === 'Salida por Venta' ? `/pos?id=${move.relatedId}` : `/servicios/${move.relatedId}`}
                                                 className="text-primary hover:underline flex items-center gap-1"
                                             >
                                                 {move.relatedId} <ArrowRight className="h-3 w-3"/>
