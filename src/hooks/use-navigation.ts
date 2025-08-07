@@ -83,7 +83,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   }
 ];
 
-const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Mi Flotilla', 'Análisis', 'Opciones'];
+const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Mi Flotilla', 'Opciones'];
 
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
@@ -120,36 +120,37 @@ const useNavigation = (): NavigationEntry[] => {
   }, [currentUser, userPermissions]);
 
   const entriesWithActiveState = filteredNavStructure.map(entry => {
-    let isActive = pathname === entry.path.split('?')[0];
+    let isActive = false;
+    const cleanPathname = pathname.split('?')[0];
+    const cleanEntryPath = entry.path.split('?')[0];
 
-    // Special handling for parent routes
-    if (pathname.startsWith('/servicios') && entry.path === '/servicios') {
-        isActive = !pathname.startsWith('/servicios/nuevo');
-    } else if (pathname.startsWith('/vehiculos')) {
-        isActive = entry.path === '/vehiculos';
-    } else if (pathname.startsWith('/pos')) {
-        isActive = !pathname.startsWith('/pos/nuevo');
-    } else if (pathname.startsWith('/caja')) {
-        isActive = entry.path === '/caja';
-    } else if (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos')) {
-        isActive = entry.path === '/personal';
-    } else if (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual')) {
-        isActive = entry.path === '/opciones';
-    } else if (pathname.startsWith('/finanzas') || pathname.startsWith('/facturacion-admin')) {
-        isActive = entry.path === '/finanzas' || entry.path === '/facturacion-admin';
-    } else if (pathname.startsWith('/administracion') || pathname.startsWith('/admin')) {
-        isActive = entry.path === '/administracion';
-    } else if (pathname.startsWith('/flotilla') || pathname.startsWith('/rentas')) {
-        isActive = entry.path === '/flotilla' || entry.path === '/rentas';
-        if (pathname.startsWith('/flotilla') && entry.path === '/rentas') isActive = false;
-        if (pathname.startsWith('/rentas') && entry.path === '/flotilla') isActive = false;
+    // Exact match for most paths
+    if (cleanPathname === cleanEntryPath) {
+        isActive = true;
     }
 
-    // Specific activation for "Nuevo Servicio"
-    if (entry.path === '/servicios/nuevo' && pathname === '/servicios/nuevo') {
-      isActive = true;
+    // Special handling for parent routes where sub-routes should also activate the parent
+    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/finanzas', '/rentas', '/flotilla', '/personal', '/opciones', '/facturacion-admin', '/administracion'];
+    
+    if (parentRoutes.includes(cleanEntryPath) && cleanPathname.startsWith(cleanEntryPath)) {
+        // Only set to active if it's the base path or a sub-path, BUT not a more specific entry
+        // For example, if on /servicios/nuevo, /servicios should NOT be active.
+        if (cleanPathname === cleanEntryPath) {
+            isActive = true;
+        } else if (cleanPathname.startsWith(cleanEntryPath + '/')) {
+            // Check if there is a more specific entry that matches
+            const isMoreSpecificEntryActive = filteredNavStructure.some(e => e.path === cleanPathname);
+            if (!isMoreSpecificEntryActive) {
+                isActive = true;
+            }
+        }
     }
     
+    // Override for specific 'nuevo' pages, which should NOT activate their parent
+    if (pathname === '/servicios/nuevo' && entry.path === '/servicios') {
+      isActive = false;
+    }
+
     return { ...entry, isActive };
   });
   
