@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer } from "lucide-react";
-import type { InventoryItem, InventoryCategory, Supplier, SaleReceipt, ServiceRecord, PayableAccount, InventoryMovement } from '@/types'; 
+import type { InventoryItem, InventoryCategory, Supplier } from '@/types'; 
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,7 @@ import { inventoryService, purchaseService } from '@/lib/services';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from "@/lib/utils";
 import type { PurchaseFormValues } from './register-purchase-dialog';
+import { DashboardCards } from './DashboardCards';
 
 // Lazy load components
 const RegisterPurchaseDialog = lazy(() => import('./register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
@@ -170,13 +171,17 @@ export default function InventarioPageComponent({
         
         <TabsContent value="productos" className="mt-6">
           <Suspense fallback={<Loader2 className="animate-spin" />}>
-            <ProductosContent 
-                inventoryItems={inventoryItems}
-                summaryData={inventorySummary}
-                onNewItem={handleOpenItemDialog}
-                onPrint={handlePrint}
+            <DashboardCards 
+                summaryData={inventorySummary} 
                 onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
             />
+            <div className="mt-6">
+              <ProductosContent 
+                  inventoryItems={inventoryItems}
+                  onNewItem={handleOpenItemDialog}
+                  onPrint={handlePrint}
+              />
+            </div>
           </Suspense>
         </TabsContent>
         <TabsContent value="categorias" className="mt-6">

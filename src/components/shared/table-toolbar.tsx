@@ -29,7 +29,7 @@ interface TableToolbarProps {
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   dateRange?: DateRange;
-  onDateRangeChange: (range?: DateRange) => void;
+  onDateRangeChange?: (range?: DateRange) => void;
   sortOption: string;
   onSortOptionChange: (value: string) => void;
   sortOptions?: Option[];
@@ -74,7 +74,9 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     }, [dateRange]);
 
     const handleApplyDateFilter = () => {
-        onDateRangeChange(tempDateRange);
+        if (onDateRangeChange) {
+            onDateRangeChange(tempDateRange);
+        }
         setIsCalendarOpen(false);
     };
 
@@ -83,8 +85,10 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     };
 
     const setPresetDateRange = (range: DateRange) => {
-        onDateRangeChange(range);
-        setTempDateRange(range);
+        if (onDateRangeChange) {
+            onDateRangeChange(range);
+            setTempDateRange(range);
+        }
     };
 
     const setDateToToday = () => setPresetDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
@@ -143,26 +147,28 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                 )}
 
                 {/* Date Picker */}
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                    <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
-                        <CalendarDateIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (dateRange.to && dateRange.from.getTime() !== dateRange.to.getTime() ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
-                    </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                        <div className="flex p-2">
-                            <Button variant="ghost" size="sm" onClick={setDateToToday}>Hoy</Button>
-                            <Button variant="ghost" size="sm" onClick={setDateToYesterday}>Ayer</Button>
-                            <Button variant="ghost" size="sm" onClick={setDateToThisWeek}>Semana</Button>
-                            <Button variant="ghost" size="sm" onClick={setDateToThisMonth}>Mes</Button>
+                {onDateRangeChange && (
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                        <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
+                            <CalendarDateIcon className="mr-2 h-4 w-4" />
+                            {dateRange?.from ? (dateRange.to && dateRange.from.getTime() !== dateRange.to.getTime() ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                            <div className="flex p-2">
+                                <Button variant="ghost" size="sm" onClick={setDateToToday}>Hoy</Button>
+                                <Button variant="ghost" size="sm" onClick={setDateToYesterday}>Ayer</Button>
+                                <Button variant="ghost" size="sm" onClick={setDateToThisWeek}>Semana</Button>
+                                <Button variant="ghost" size="sm" onClick={setDateToThisMonth}>Mes</Button>
+                            </div>
+                        <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={handleCalendarSelect} numberOfMonths={2} locale={es} showOutsideDays={false} />
+                        <div className="p-2 border-t flex justify-end">
+                            <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
                         </div>
-                    <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={handleCalendarSelect} numberOfMonths={2} locale={es} showOutsideDays={false} />
-                    <div className="p-2 border-t flex justify-end">
-                        <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
-                    </div>
-                    </PopoverContent>
-                </Popover>
+                        </PopoverContent>
+                    </Popover>
+                )}
             </div>
         </div>
 

@@ -34,7 +34,6 @@ interface ProductosContentProps {
   summaryData: SummaryData;
   onNewItem: () => void;
   onPrint: (items: InventoryItem[]) => void;
-  onRegisterPurchaseClick: () => void;
 }
 
 const sortOptions = [
@@ -52,7 +51,6 @@ export function ProductosContent({
   summaryData, 
   onNewItem, 
   onPrint,
-  onRegisterPurchaseClick
 }: ProductosContentProps) {
   
   const { 
@@ -88,11 +86,6 @@ export function ProductosContent({
 
   return (
     <div className="space-y-4">
-        <DashboardCards 
-            summaryData={summaryData} 
-            onRegisterPurchaseClick={onRegisterPurchaseClick}
-        />
-        
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
