@@ -1,3 +1,4 @@
+
 {
   "indexes": [
     {
@@ -10,6 +11,20 @@
         },
         {
           "fieldPath": "invoiceDate",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "serviceRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "vehicleId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "serviceDate",
           "order": "DESCENDING"
         }
       ]
