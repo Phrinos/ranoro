@@ -74,10 +74,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Análisis',
     permissions: ['finances:view_report'] // Assuming same permission for now
   },
-  {
-    label: 'Informes', path: '/informes', icon: BarChart3, groupTag: 'Análisis',
-    permissions: ['pos:view_sales']
-  },
 
   // Opciones
   {
