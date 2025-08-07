@@ -57,7 +57,10 @@ export function ProveedoresContent({
         </div>
         
         <TableToolbar 
-            {...tableManager}
+            searchTerm={tableManager.searchTerm}
+            onSearchTermChange={tableManager.onSearchTermChange}
+            sortOption={tableManager.sortOption}
+            onSortOptionChange={tableManager.onSortOptionChange}
             sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre o contacto..."
         />
