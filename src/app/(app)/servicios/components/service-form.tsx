@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/service-form.tsx
 "use client";
 
@@ -9,7 +8,7 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, X, Ban, Wrench, ShieldCheck, Camera, FileText, Eye, Trash2 } from 'lucide-react';
 import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form';
-import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Payment } from '@/types';
+import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Image from 'next/image';
