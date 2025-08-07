@@ -205,10 +205,21 @@ export default function InventoryItemDetailPage() {
                     <Package className="h-5 w-5 text-muted-foreground"/>
                     Detalles del {item.isService ? 'Servicio' : 'Producto'}
                   </CardTitle>
-                  <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar
-                  </Button>
+                   <div className="flex items-center gap-2">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm"><Archive className="mr-2 h-4 w-4" />Eliminar</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader><AlertDialogTitle>¿Estás seguro de eliminar este ítem?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer y eliminará permanentemente el ítem {item.name} del inventario.</AlertDialogDescription></AlertDialogHeader>
+                          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDeleteItem} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar
+                      </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
@@ -248,17 +259,6 @@ export default function InventoryItemDetailPage() {
                      <div><p className="text-sm font-medium text-muted-foreground">Tipo</p><p className="font-semibold">{item.isService ? 'Servicio' : 'Producto'}</p></div>
                   </CardContent>
               </Card>
-               <div className="mt-8 flex justify-start">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" ><Archive className="mr-2 h-4 w-4" />Eliminar Ítem</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader><AlertDialogTitle>¿Estás seguro de eliminar este ítem?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer y eliminará permanentemente el ítem {item.name} del inventario.</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDeleteItem} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
             </div>
 
             <div className="lg:col-span-1 space-y-6">
