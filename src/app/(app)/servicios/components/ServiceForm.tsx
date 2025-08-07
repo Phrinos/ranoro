@@ -25,6 +25,7 @@ import { db } from '@/lib/firebaseClient';
 import { writeBatch } from 'firebase/firestore';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 // Lazy load complex components
 const ServiceItemsList = lazy(() => import('./ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
@@ -68,6 +69,24 @@ export function ServiceForm({
   mode,
 }: ServiceFormWrapperProps) {
   const router = useRouter();
+
+  // Function to get current user from localStorage
+  const getCurrentUser = (): User | null => {
+      if (typeof window === 'undefined') return null;
+      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      if (authUserString) {
+          try {
+              return JSON.parse(authUserString);
+          } catch (e) {
+              console.error("Could not parse user from localStorage", e);
+              return null;
+          }
+      }
+      return null;
+  };
+  
+  const currentUser = getCurrentUser();
+
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
@@ -75,6 +94,12 @@ export function ServiceForm({
       status: initialData?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
       serviceDate: initialData?.serviceDate ? new Date(initialData.serviceDate) : new Date(), // Set default date
       allVehiclesForDialog: vehicles, 
+      // Set default advisor only for new records
+      ...(!initialData?.id && currentUser && {
+        serviceAdvisorId: currentUser.id,
+        serviceAdvisorName: currentUser.name,
+        serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
+      }),
     },
   });
 
@@ -360,7 +385,7 @@ function ServiceFormContent({
           open={isPaymentDialogOpen}
           onOpenChange={setIsPaymentDialogOpen}
           record={serviceToComplete}
-          onConfirm={(id, details) => handleCompleteService(serviceToComplete, details, serviceToComplete.nextServiceInfo)}
+          onConfirm={(id, details) => handleCompleteService(details)}
           isCompletionFlow={true}
           />
       )}
