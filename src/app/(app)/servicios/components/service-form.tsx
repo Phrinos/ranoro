@@ -23,6 +23,12 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { SignatureDialog } from './signature-dialog';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { PaymentDetailsDialog } from './PaymentDetailsDialog';
+import { serviceService } from '@/lib/services';
+import { db } from '@/lib/firebaseClient';
+import { writeBatch } from 'firebase/firestore';
+
 
 // Lazy load complex components
 const ServiceItemsList = lazy(() => import('./ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
@@ -83,6 +89,9 @@ export function ServiceForm({
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+
 
   const initialData = initialMode === 'service' ? initialDataService : initialDataQuote;
   const isEditing = !!initialData?.id;
@@ -116,6 +125,37 @@ export function ServiceForm({
       });
     }
   }, [initialData, vehicles, mode, reset]);
+
+  const handleFormSubmit = async (values: ServiceFormValues) => {
+    if (isReadOnly) return;
+    
+    const serviceRecordValues = values as ServiceRecord;
+
+    // If status is being changed to 'Entregado', open the payment/completion dialog
+    if (serviceRecordValues.status === 'Entregado' && initialData?.status !== 'Entregado') {
+        setServiceToComplete({ ...(initialData || {}), ...serviceRecordValues } as ServiceRecord);
+        setIsPaymentDialogOpen(true);
+        return;
+    }
+    
+    // Otherwise, just save the changes
+    await onSubmit(values);
+  };
+  
+  const handleCompleteService = async (paymentDetails: PaymentDetailsFormValues) => {
+    if (!serviceToComplete || !db) return;
+    try {
+        const batch = writeBatch(db);
+        await serviceService.completeService(serviceToComplete, { ...paymentDetails, nextServiceInfo: serviceToComplete.nextServiceInfo }, batch);
+        await batch.commit();
+        toast({ title: "Servicio Completado" });
+        setIsPaymentDialogOpen(false);
+        setServiceToComplete(null);
+        router.push('/servicios/historial');
+    } catch(e) {
+        toast({ title: "Error al completar", variant: "destructive"});
+    }
+  };
 
 
   const handleOpenNewVehicleDialog = (plate?: string) => {
@@ -197,7 +237,7 @@ export function ServiceForm({
   return (
     <FormProvider {...methods}>
       <PageHeader title={pageTitle} description={pageDescription} />
-      <form id="service-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         <div className="space-y-4">
           <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
           <VehicleSelectionCard 
@@ -286,6 +326,16 @@ export function ServiceForm({
             )}
           </DialogContent>
         </Dialog>
+        
+        {serviceToComplete && (
+            <PaymentDetailsDialog
+            open={isPaymentDialogOpen}
+            onOpenChange={setIsPaymentDialogOpen}
+            record={serviceToComplete}
+            onConfirm={(id, details) => handleCompleteService(details)}
+            isCompletionFlow={true}
+            />
+        )}
       </form>
     </FormProvider>
   );
