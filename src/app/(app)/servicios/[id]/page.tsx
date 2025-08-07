@@ -48,6 +48,7 @@ export default function EditarServicioPage() {
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
 
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -73,7 +74,7 @@ export default function EditarServicioPage() {
         try {
             const [
               serviceData, vehiclesData, usersData, inventoryData,
-              serviceTypesData, categoriesData, suppliersData
+              serviceTypesData, categoriesData, suppliersData, allServicesData
             ] = await Promise.all([
               serviceService.getDocById('serviceRecords', serviceId),
               inventoryService.onVehiclesUpdatePromise(),
@@ -82,6 +83,7 @@ export default function EditarServicioPage() {
               inventoryService.onServiceTypesUpdatePromise(),
               inventoryService.onCategoriesUpdatePromise(),
               inventoryService.onSuppliersUpdatePromise(),
+              serviceService.onServicesUpdatePromise(),
             ]);
 
             if (!serviceData) {
@@ -97,6 +99,7 @@ export default function EditarServicioPage() {
             setServiceTypes(serviceTypesData);
             setCategories(categoriesData);
             setSuppliers(suppliersData);
+            setAllServices(allServicesData);
             
             reset({
                 ...serviceData,
