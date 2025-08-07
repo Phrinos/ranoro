@@ -1,190 +1,133 @@
-
-
 "use client";
 
-import React, { useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import type { SaleReceipt, InventoryItem, Payment, User } from '@/types';
-import { format, isValid } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Edit, Printer, TrendingUp, User as UserIcon, DollarSign, Trash2, Repeat } from 'lucide-react';
-import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
-import { parseDate } from '@/lib/forms';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect } from "react";
+import { FormProvider, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { calculateSaleProfit } from '@/lib/placeholder-data';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { SaleReceipt, InventoryItem, User, InventoryCategory, Supplier } from "@/types";
+import { format, parseISO } from "date-fns";
+import { es } from 'date-fns/locale';
+import { Ban, Save, Trash2, MessageSquare, Repeat } from "lucide-react";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { PosForm } from "./pos-form";
+import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
+import { useToast } from "@/hooks/use-toast";
+import { saleService } from "@/lib/services";
+import { PaymentDetailsDialog } from "@/components/shared/PaymentDetailsDialog";
 
-interface SaleCardProps {
-    sale: SaleReceipt;
-    inventoryItems: InventoryItem[];
-    users: User[];
-    currentUser: User | null;
-    onViewSale: () => void;
-    onReprintTicket: () => void;
-    onEditPayment: () => void;
-    onDeleteSale: () => void;
+interface ViewSaleDialogProps {
+  open: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  sale: SaleReceipt;
+  inventory: InventoryItem[];
+  users: User[];
+  categories: InventoryCategory[];
+  suppliers: Supplier[];
+  onCancelSale: (saleId: string, reason: string) => void;
+  onDeleteSale: (saleId: string) => void;
+  onPaymentUpdate: (saleId: string, paymentDetails: any) => Promise<void>;
+  onSendWhatsapp: (sale: SaleReceipt) => void;
 }
 
-export const SaleCard = React.memo(({
-    sale,
-    inventoryItems,
-    users,
-    currentUser,
-    onViewSale,
-    onReprintTicket,
-    onEditPayment,
-    onDeleteSale,
-}: SaleCardProps) => {
+export function ViewSaleDialog({ 
+  open, 
+  onOpenChange, 
+  sale, 
+  inventory,
+  categories,
+  suppliers,
+  onCancelSale,
+  onDeleteSale,
+  onPaymentUpdate,
+  onSendWhatsapp,
+}: ViewSaleDialogProps) {
+  const { toast } = useToast();
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
-    const saleDate = parseDate(sale.saleDate);
-    const isCancelled = sale.status === 'Cancelado';
+  const methods = useForm<POSFormValues>({
+    resolver: zodResolver(posFormSchema),
+    defaultValues: sale,
+  });
 
-    const profit = useMemo(() => calculateSaleProfit(sale, inventoryItems), [sale, inventoryItems]);
+  useEffect(() => {
+    if (open && sale) {
+      methods.reset(sale);
+    }
+  }, [open, sale, methods]);
 
-    const itemsDescription = useMemo(() => {
-        const itemsToDescribe = sale.items.filter(item => item.inventoryItemId !== 'COMMISSION_FEE');
-        const firstItem = itemsToDescribe[0];
-        if (!firstItem) return 'Venta sin artículos';
+  const handleUpdateSale = async (data: POSFormValues) => {
+    await onPaymentUpdate(sale.id, { payments: data.payments });
+    onOpenChange(false);
+  };
+  
+  if (!sale) return null;
+
+  const isCancelled = sale.status === 'Cancelado';
+  const saleDate = parseISO(sale.saleDate);
+  const formattedDate = format(saleDate, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
+
+  return (
+    <>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle>Detalle de Venta: {sale.id}</DialogTitle>
+          <DialogDescription>
+            Información detallada de la venta realizada el {formattedDate}.
+          </DialogDescription>
+        </DialogHeader>
         
-        const inventoryItem = inventoryItems.find(i => i.id === firstItem.inventoryItemId);
-        const category = inventoryItem?.category?.toUpperCase() || 'ARTÍCULO';
-        const otherItemsCount = itemsToDescribe.length - 1;
-        
-        return `${category}: ${firstItem.itemName}${otherItemsCount > 0 ? ` y ${otherItemsCount} más` : ''}`;
-    }, [sale.items, inventoryItems]);
-    
-    const paymentBadges = useMemo(() => {
-        if (isCancelled) {
-            return [<Badge key="cancelled" variant="destructive" className="font-bold">CANCELADO</Badge>];
-        }
-        
-        if (Array.isArray(sale.payments) && sale.payments.length > 0) {
-            return sale.payments.map((p, index) => (
-                <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
-                    {formatCurrency(p.amount)} <span className="font-normal ml-1 opacity-80">({p.method})</span>
-                </Badge>
-            ));
-        }
+        <div className="flex-grow overflow-y-auto px-6 py-4">
+          <FormProvider {...methods}>
+            <PosForm 
+              inventoryItems={inventory} 
+              categories={categories}
+              suppliers={suppliers}
+              onSaleComplete={() => {}} // onSubmit is handled by the footer button
+              initialData={sale}
+            />
+          </FormProvider>
+        </div>
 
-        // Fallback for older records
-        if (typeof sale.paymentMethod === 'string') {
-            const methods = sale.paymentMethod.split(/[+/]/);
-            const totalAmount = sale.totalAmount || 0;
-            const amountPerMethod = totalAmount / methods.length;
-            
-            return methods.map((method, index) => (
-                 <Badge key={index} variant={getPaymentMethodVariant(method.trim() as Payment['method'])} className="text-xs">
-                    {formatCurrency(amountPerMethod)} <span className="font-normal ml-1 opacity-80">({method.trim()})</span>
-                </Badge>
-            ));
-        }
-        
-        return [<Badge key="no-payment" variant="outline">Sin Pago</Badge>];
-    }, [sale.payments, sale.paymentMethod, sale.totalAmount, isCancelled]);
-    
-    const sellerName = useMemo(() => {
-        if (sale.registeredByName) return sale.registeredByName;
-        if (sale.registeredById) {
-            const seller = users.find(u => u.id === sale.registeredById);
-            return seller?.name || 'Usuario no disponible';
-        }
-        return 'Usuario no disponible';
-    }, [sale.registeredById, sale.registeredByName, users]);
-
-    return (
-        <Card className={cn("shadow-sm overflow-hidden", isCancelled && "bg-muted/60 opacity-80")}>
-            <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row text-sm">
-                    {/* Bloque 1: Fecha e ID venta */}
-                    <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-card">
-                        <p className="text-muted-foreground text-sm">{saleDate && isValid(saleDate) ? format(saleDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
-                        <p className="font-bold text-lg text-foreground">{saleDate && isValid(saleDate) ? format(saleDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
-                        <p className="text-muted-foreground text-xs mt-1">{sale.id}</p>
-                    </div>
-
-                    {/* Bloque 2: Artículos y Cliente */}
-                    <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-y md:border-y-0 md:border-x">
-                       <TooltipProvider>
-                           <Tooltip>
-                             <TooltipTrigger asChild>
-                               <div className="font-bold text-lg">
-                                 <p className="whitespace-normal">{itemsDescription}</p>
-                               </div>
-                             </TooltipTrigger>
-                             <TooltipContent>
-                               {sale.items.map(i => <p key={i.inventoryItemId}>{i.quantity} x {i.itemName}</p>)}
-                             </TooltipContent>
-                           </Tooltip>
-                       </TooltipProvider>
-                       <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                            <UserIcon className="h-3 w-3" />
-                            <span>{sale.customerName || 'Cliente Mostrador'}</span>
-                       </div>
-                    </div>
-                    
-                    {/* Bloque 3: Costo y Atendio */}
-                    <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-2 border-t md:border-0">
-                         <div>
-                           <p className="text-xs text-muted-foreground mb-1 text-right">Costo Cliente</p>
-                           <p className="font-bold text-xl text-primary text-right">{formatCurrency(sale.totalAmount)}</p>
-                        </div>
-                        <div>
-                           <p className="text-xs text-muted-foreground">Ganancia</p>
-                           <p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end">
-                              <TrendingUp className="h-4 w-4" /> {formatCurrency(profit)}
-                           </p>
-                        </div>
-                    </div>
-
-                    {/* Bloque 4: Método de Pago */}
-                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-48 flex-shrink-0 space-y-2">
-                        <p className="text-xs text-muted-foreground">Métodos de Pago</p>
-                        <div className="flex flex-wrap gap-1 justify-center">
-                            {paymentBadges}
-                         </div>
-                    </div>
-
-                    {/* Bloque 5: Acciones y Vendedor */}
-                    <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-auto flex-shrink-0 space-y-2">
-                        <div className="text-center">
-                            <p className="text-xs text-muted-foreground">Atendió</p>
-                            <p className="text-xs">{sellerName}</p>
-                        </div>
-                        <div className="flex justify-center items-center gap-1 flex-wrap">
-                            <Button variant="ghost" size="icon" onClick={onViewSale} title="Ver / Editar Venta">
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={onEditPayment} title="Editar Pago">
-                                <Repeat className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={onReprintTicket} title="Reimprimir Ticket" disabled={isCancelled}>
-                                <Printer className="h-4 w-4" />
-                            </Button>
-                             <ConfirmDialog
-                                triggerButton={
-                                    <Button variant="ghost" size="icon" title="Eliminar Venta Permanentemente" disabled={isCancelled}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                }
-                                title={`¿Eliminar Venta #${sale.id.slice(-6)}?`}
-                                description="Esta acción no se puede deshacer. Se eliminará el registro de la venta permanentemente y el stock se restaurará (si la venta no estaba ya cancelada)."
-                                onConfirm={onDeleteSale}
-                            />
-                        </div>
-                    </div>
-
-                </div>
-            </CardContent>
-        </Card>
-    );
-});
-
-SaleCard.displayName = 'SaleCard';
+        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-row justify-between items-center w-full gap-2">
+          <div>
+            <ConfirmDialog
+              triggerButton={<Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isCancelled}><Ban className="mr-2 h-4 w-4" />Cancelar Venta</Button>}
+              title="¿Está seguro de cancelar esta venta?"
+              description="Esta acción no se puede deshacer. El stock de los artículos vendidos será restaurado al inventario. Se requiere un motivo para la cancelación."
+              onConfirm={() => onCancelSale(sale.id, prompt("Motivo de la cancelación:") || "Sin motivo especificado")}
+              confirmText="Sí, Cancelar Venta"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onSendWhatsapp(sale)} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200">
+                <MessageSquare className="mr-2 h-4 w-4"/> Enviar por WhatsApp
+            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    {isPaymentDialogOpen && (
+       <PaymentDetailsDialog
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+          record={sale}
+          onConfirm={handleUpdateSale}
+          recordType="sale"
+        />
+    )}
+    </>
+  );
+}

@@ -1,26 +1,24 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, Copy, MessageSquare, Share2, Wallet } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, User } from '@/types'; 
+import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 import { operationsService, inventoryService, adminService, saleService } from '@/lib/services';
-import { Loader2 } from 'lucide-react';
-import { cn, formatCurrency } from "@/lib/utils";
+import { Loader2, Copy, Share2, Printer } from 'lucide-react';
 import { ViewSaleDialog } from "./components/view-sale-dialog";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { VentasPosContent } from './components/ventas-pos-content';
-import { isToday, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 
-export default function PosPageComponent() {
+export default function PosPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
   // States for data from Firestore
@@ -203,6 +201,7 @@ Total: ${formatCurrency(sale.totalAmount)}
         onCancelSale={handleCancelSale}
         onDeleteSale={handleDeleteSale}
         onPaymentUpdate={handleUpdatePaymentDetails} 
+        onSendWhatsapp={handleCopySaleForWhatsapp} 
       />}
 
       {saleToEditPayment && (

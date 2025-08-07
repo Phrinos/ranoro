@@ -24,6 +24,7 @@ import { PosForm } from "./pos-form";
 import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
 import { useToast } from "@/hooks/use-toast";
 import { saleService } from "@/lib/services";
+import { PaymentDetailsDialog } from "@/components/shared/PaymentDetailsDialog";
 
 interface ViewSaleDialogProps {
   open: boolean;
@@ -52,6 +53,8 @@ export function ViewSaleDialog({
   onSendWhatsapp,
 }: ViewSaleDialogProps) {
   const { toast } = useToast();
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
     defaultValues: sale,
@@ -64,7 +67,7 @@ export function ViewSaleDialog({
   }, [open, sale, methods]);
 
   const handleUpdateSale = async (data: POSFormValues) => {
-    await onPaymentUpdate(sale.id, data);
+    await onPaymentUpdate(sale.id, { payments: data.payments });
     onOpenChange(false);
   };
   
@@ -75,6 +78,7 @@ export function ViewSaleDialog({
   const formattedDate = format(saleDate, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-2">
@@ -90,7 +94,7 @@ export function ViewSaleDialog({
               inventoryItems={inventory} 
               categories={categories}
               suppliers={suppliers}
-              onSaleComplete={handleUpdateSale} 
+              onSaleComplete={() => {}} // onSubmit is handled by the footer button
               initialData={sale}
             />
           </FormProvider>
@@ -113,12 +117,19 @@ export function ViewSaleDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cerrar
             </Button>
-            <Button type="submit" form="pos-form" disabled={isCancelled}>
-              <Save className="mr-2 h-4 w-4"/> Guardar Cambios
-            </Button>
           </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {isPaymentDialogOpen && (
+       <PaymentDetailsDialog
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+          record={sale}
+          onConfirm={handleUpdateSale}
+          recordType="sale"
+        />
+    )}
+    </>
   );
 }
