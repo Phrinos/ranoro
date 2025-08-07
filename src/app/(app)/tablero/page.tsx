@@ -14,9 +14,9 @@ import { Button } from '@/components/ui/button';
 import { isToday, parseISO, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { operationsService } from '@/lib/services/operations.service';
 import { inventoryService } from '@/lib/services/inventory.service';
 import { personnelService } from '@/lib/services/personnel.service';
+import { serviceService } from '@/lib/services/service.service';
 
 
 type KanbanColumnId = 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado';
@@ -105,7 +105,7 @@ export default function TableroPage() {
   useEffect(() => {
     setIsLoading(true);
     const unsubs = [
-      operationsService.onServicesUpdate(setServices),
+      serviceService.onServicesUpdate(setServices),
       inventoryService.onVehiclesUpdate(setVehicles),
       personnelService.onPersonnelUpdate(setPersonnel),
       inventoryService.onItemsUpdate(setInventoryItems),
@@ -193,7 +193,7 @@ export default function TableroPage() {
             }
         }
         
-        await operationsService.updateService(serviceId, updatedService);
+        await serviceService.updateService(serviceId, updatedService);
         
         toast({
             title: 'Servicio Movido',
