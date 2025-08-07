@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -24,6 +23,7 @@ import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, isValid,
 import { es } from 'date-fns/locale';
 import { DashboardCharts } from './components/dashboard-charts';
 import { formatCurrency } from '@/lib/utils';
+import Link from 'next/link';
 
 
 const ChartLoadingSkeleton = () => (
@@ -422,6 +422,28 @@ export default function DashboardPage() {
       <PageHeader
         title={userName ? `¡Bienvenido, ${userName}!` : 'Panel Principal de Taller'}
         description="Vista del estado actual de los servicios y herramientas de IA."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href="/servicios/nuevo">
+                <Wrench className="mr-2 h-4 w-4" />
+                Nuevo Servicio
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="bg-card">
+              <Link href="/pos/nuevo">
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                Nueva Venta
+              </Link>
+            </Button>
+             <Button asChild variant="secondary">
+              <Link href="/rentas?action=registrar">
+                <DollarSign className="mr-2 h-4 w-4" />
+                Registrar Pago
+              </Link>
+            </Button>
+          </div>
+        }
       />
 
        <div className="mb-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
