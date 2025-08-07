@@ -5,24 +5,17 @@
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer } from "lucide-react";
-import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo, SaleReceipt, ServiceRecord, PayableAccount } from '@/types'; 
-import type { InventoryItemFormValues } from "./inventory-item-form";
+import type { InventoryItem, InventoryCategory, Supplier, SaleReceipt, ServiceRecord, PayableAccount, InventoryMovement } from '@/types'; 
+import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
 import { inventoryService } from '@/lib/services/inventory.service';
 import { saleService } from '@/lib/services/sale.service';
 import { serviceService } from '@/lib/services/service.service';
 import { purchaseService } from '@/lib/services/purchase.service';
-import { adminService } from '@/lib/services/admin.service';
-import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
-import type { InventoryMovement } from '@/types';
 
 // Lazy load components
 const RegisterPurchaseDialog = lazy(() => import('./register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
@@ -45,18 +38,14 @@ export default function InventarioPageComponent({
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [sales, setSales] = useState<SaleReceipt[]>([]);
-  const [services, setServices] = useState<ServiceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [payableAccounts, setPayableAccounts] = useState<PayableAccount[]>([]); 
 
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
-  const printContentRef = useRef<HTMLDivElement>(null);
-
+  const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -64,25 +53,41 @@ export default function InventarioPageComponent({
     
     unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
     unsubs.push(inventoryService.onCategoriesUpdate(setCategories));
-    unsubs.push(saleService.onSalesUpdate(setSales));
-    unsubs.push(serviceService.onServicesUpdate(setServices));
-    unsubs.push(inventoryService.onPayableAccountsUpdate(setPayableAccounts));
     unsubs.push(inventoryService.onSuppliersUpdate((data) => {
       setSuppliers(data);
-      setIsLoading(false); // Mark loading as false after the last required dataset is fetched
+      setIsLoading(false); 
     }));
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
 
-  const handlePrint = useCallback((itemsToPrint: InventoryItem[]) => {
-      setInventoryItems(itemsToPrint); // Pass the currently filtered/sorted items to the print component
+  const inventorySummary = useMemo(() => {
+    let cost = 0, sellingPriceValue = 0, lowStock = 0, products = 0, services = 0;
+    inventoryItems.forEach(item => {
+      if (item.isService) services++;
+      else {
+        products++;
+        cost += (item.quantity || 0) * (item.unitPrice || 0);
+        sellingPriceValue += (item.quantity || 0) * (item.sellingPrice || 0);
+        if ((item.quantity || 0) <= (item.lowStockThreshold || 0)) lowStock++;
+      }
+    });
+    return { 
+        totalInventoryCost: cost, 
+        totalInventorySellingPrice: sellingPriceValue, 
+        lowStockItemsCount: lowStock, 
+        productsCount: products, 
+        servicesCount: services, 
+    };
+  }, [inventoryItems]);
+
+  const handlePrint = useCallback((items: InventoryItem[]) => {
+      setItemsToPrint(items);
       setIsPrintDialogOpen(true);
   }, []);
 
-
   const handleOpenItemDialog = useCallback(() => {
-    setEditingItem(null); // Ensure we're creating a new item
+    setEditingItem(null);
     setIsItemDialogOpen(true);
   }, []);
 
@@ -93,14 +98,12 @@ export default function InventarioPageComponent({
   }, [toast]);
   
   const handleSaveItem = useCallback(async (itemData: InventoryItemFormValues) => {
-    // This is for new items from the "Productos" tab
     await inventoryService.addItem(itemData);
     toast({ title: "Producto Creado", description: `"${itemData.name}" ha sido agregado al inventario.` });
-    setIsItemDialogOpen(false); // Close dialog on success
+    setIsItemDialogOpen(false);
   }, [toast]);
   
   const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
-      // This is for items created during a purchase registration
       const newItem = await inventoryService.addItem(formData);
       toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
       return newItem;
@@ -148,6 +151,7 @@ export default function InventarioPageComponent({
           <Suspense fallback={<Loader2 className="animate-spin" />}>
             <ProductosContent 
                 inventoryItems={inventoryItems} 
+                summaryData={inventorySummary}
                 onNewItem={handleOpenItemDialog}
                 onPrint={handlePrint}
             />
@@ -190,7 +194,7 @@ export default function InventarioPageComponent({
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
                 <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
                   <Suspense fallback={<Loader2 className="animate-spin" />}>
-                    <InventoryReportContent ref={printContentRef} items={inventoryItems} />
+                    <InventoryReportContent items={itemsToPrint} />
                   </Suspense>
                 </div>
                  <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">

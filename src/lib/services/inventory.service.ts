@@ -14,7 +14,7 @@ import {
   DocumentReference,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList, ServiceTypeRecord, MonthlyFixedExpense, PayableAccount } from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList, ServiceTypeRecord, MonthlyFixedExpense, PayableAccount, InventoryMovement, SaleReceipt, ServiceRecord } from "@/types";
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import type { VehicleFormValues } from "@/schemas/vehicle-form-schema";
 import type { PriceListFormValues } from "@/app/(app)/precios/components/price-list-form";
@@ -300,8 +300,60 @@ const savePayableAccount = async (data: Partial<PayableAccount>, id?: string): P
   }
 };
 
+// --- Inventory Movements ---
+const getInventoryMovements = (
+  inventoryItems: InventoryItem[],
+  sales: SaleReceipt[],
+  services: ServiceRecord[],
+  payableAccounts: PayableAccount[]
+): InventoryMovement[] => {
+  const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
+
+  const saleMovements: InventoryMovement[] = sales.flatMap(sale => 
+    sale.items.map(item => {
+      const invItem = inventoryMap.get(item.inventoryItemId);
+      return {
+        id: `${sale.id}-${item.inventoryItemId}`, date: sale.saleDate, type: 'Venta',
+        relatedId: sale.id, itemName: item.itemName, quantity: item.quantity,
+        unitCost: invItem?.unitPrice || 0, totalCost: item.quantity * (invItem?.unitPrice || 0),
+      };
+    })
+  );
+
+  const serviceMovements: InventoryMovement[] = services
+    .filter(s => s.status === 'Completado' || s.status === 'Entregado')
+    .flatMap(service => {
+      const date = service.deliveryDateTime || service.serviceDate;
+      if (!date) return [];
+      return (service.serviceItems || []).flatMap(sItem => 
+        (sItem.suppliesUsed || []).map(supply => {
+          const invItem = inventoryMap.get(supply.supplyId);
+          if (!invItem || invItem.isService) return null;
+          return {
+            id: `${service.id}-${supply.supplyId}-${sItem.id}`, date: date, type: 'Servicio',
+            relatedId: service.id, itemName: supply.supplyName, quantity: supply.quantity,
+            unitCost: invItem.unitPrice, totalCost: supply.quantity * invItem.unitPrice
+          };
+        }).filter(Boolean) as InventoryMovement[]
+      );
+  });
+
+  const purchaseMovements: InventoryMovement[] = payableAccounts
+    .filter(pa => pa.invoiceDate)
+    .map(pa => ({
+    id: pa.id, date: pa.invoiceDate, type: 'Compra',
+    relatedId: pa.supplierName, itemName: `Factura ${pa.invoiceId}`, quantity: 1,
+    unitCost: pa.totalAmount, totalCost: pa.totalAmount,
+  }));
+
+  return [...saleMovements, ...serviceMovements, ...purchaseMovements];
+};
+
 
 export const inventoryService = {
+    getDocById,
+    deleteDoc: deleteDocById,
+    // Items
     onItemsUpdate,
     onItemsUpdatePromise,
     addItem,
@@ -309,19 +361,22 @@ export const inventoryService = {
         if (!db) throw new Error("Database not initialized.");
         await updateDoc(doc(db, 'inventory', id), cleanObjectForFirestore(data));
     },
-    deleteDoc: deleteDocById,
+    // Categories
     onCategoriesUpdate,
     onCategoriesUpdatePromise,
     saveCategory,
     deleteCategory,
+    // Service Types
     onServiceTypesUpdate,
     onServiceTypesUpdatePromise,
     saveServiceType,
     deleteServiceType,
+    // Suppliers
     onSuppliersUpdate,
     onSuppliersUpdatePromise,
     saveSupplier,
     deleteSupplier,
+    // Vehicles
     onVehiclesUpdate,
     onVehiclesUpdatePromise,
     getVehicleById,
@@ -329,11 +384,16 @@ export const inventoryService = {
     addVehicle,
     saveVehicle,
     updateVehicle,
+    // Price Lists
     onPriceListsUpdate,
     savePriceList,
     deletePriceList,
+    // Fixed Expenses
     onFixedExpensesUpdate,
     onFixedExpensesUpdatePromise,
+    // Payable Accounts
     onPayableAccountsUpdate,
-    savePayableAccount
+    savePayableAccount,
+    // Movements
+    getInventoryMovements,
 };

@@ -2,34 +2,26 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer } from "lucide-react";
-import { InventoryItemDialog } from "./inventory-item-dialog";
-import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo, SaleReceipt, ServiceRecord, PayableAccount } from '@/types'; 
-import type { InventoryItemFormValues } from "./inventory-item-form";
+import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo, SaleReceipt, ServiceRecord, PayableAccount, InventoryMovement } from '@/types'; 
+import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RegisterPurchaseDialog } from './register-purchase-dialog';
-import type { PurchaseFormValues } from './register-purchase-dialog';
-import { InformeContent } from './informe-content';
-import { ProductosContent } from './productos-content';
-import { CategoriasContent } from './categorias-content';
-import { ProveedoresContent } from '../../proveedores/components/proveedores-content';
-import { AnalisisIaContent } from './analisis-ia-content';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
 import { inventoryService } from '@/lib/services/inventory.service';
-import { operationsService } from '@/lib/services/operations.service';
-import { adminService } from '@/lib/services/admin.service';
-import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient';
+import { purchaseService } from '@/lib/services/purchase.service';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
-import { InventoryReportContent } from './inventory-report-content';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
-import type { InventoryMovement } from '@/types';
+
+// Lazy load components
+const RegisterPurchaseDialog = lazy(() => import('./register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
+const InventoryItemDialog = lazy(() => import('./inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
+const ProductosContent = lazy(() => import('./productos-content').then(module => ({ default: module.ProductosContent })));
+const CategoriasContent = lazy(() => import('./categorias-content').then(module => ({ default: module.CategoriasContent })));
+const AnalisisIaContent = lazy(() => import('./analisis-ia-content').then(module => ({ default: module.AnalisisIaContent })));
+const InventoryReportContent = lazy(() => import('./inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
 
 
 export default function InventarioPageComponent({
@@ -44,18 +36,14 @@ export default function InventarioPageComponent({
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [sales, setSales] = useState<SaleReceipt[]>([]);
-  const [services, setServices] = useState<ServiceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [payableAccounts, setPayableAccounts] = useState<PayableAccount[]>([]); 
 
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
-  const printContentRef = useRef<HTMLDivElement>(null);
-
+  const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -63,88 +51,58 @@ export default function InventarioPageComponent({
     
     unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
     unsubs.push(inventoryService.onCategoriesUpdate(setCategories));
-    unsubs.push(operationsService.onSalesUpdate(setSales));
-    unsubs.push(operationsService.onServicesUpdate(setServices));
-    unsubs.push(inventoryService.onPayableAccountsUpdate(setPayableAccounts));
     unsubs.push(inventoryService.onSuppliersUpdate((data) => {
       setSuppliers(data);
-      setIsLoading(false); // Mark loading as false after the last required dataset is fetched
+      setIsLoading(false); 
     }));
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
 
-  const inventoryMovements = useMemo((): InventoryMovement[] => {
-      if (isLoading) return [];
-      
-      const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
+  const inventorySummary = useMemo(() => {
+    let cost = 0, sellingPriceValue = 0, lowStock = 0, products = 0, services = 0;
+    inventoryItems.forEach(item => {
+      if (item.isService) services++;
+      else {
+        products++;
+        cost += (item.quantity || 0) * (item.unitPrice || 0);
+        sellingPriceValue += (item.quantity || 0) * (item.sellingPrice || 0);
+        if ((item.quantity || 0) <= (item.lowStockThreshold || 0)) lowStock++;
+      }
+    });
+    return { 
+        totalInventoryCost: cost, 
+        totalInventorySellingPrice: sellingPriceValue, 
+        lowStockItemsCount: lowStock, 
+        productsCount: products, 
+        servicesCount: services, 
+    };
+  }, [inventoryItems]);
 
-      const saleMovements: InventoryMovement[] = sales.flatMap(sale => 
-        sale.items.map(item => {
-          const invItem = inventoryMap.get(item.inventoryItemId);
-          return {
-            id: `${sale.id}-${item.inventoryItemId}`, date: sale.saleDate, type: 'Venta',
-            relatedId: sale.id, itemName: item.itemName, quantity: item.quantity,
-            unitCost: invItem?.unitPrice || 0, totalCost: item.quantity * (invItem?.unitPrice || 0),
-          };
-        })
-      );
-      
-      const serviceMovements: InventoryMovement[] = services
-        .filter(s => s.status === 'Completado' || s.status === 'Entregado')
-        .flatMap(service => {
-          const date = service.deliveryDateTime || service.serviceDate;
-          if (!date) return [];
-          return (service.serviceItems || []).flatMap(sItem => 
-            (sItem.suppliesUsed || []).map(supply => {
-              const invItem = inventoryMap.get(supply.supplyId);
-              if (!invItem || invItem.isService) return null;
-              return {
-                id: `${service.id}-${supply.supplyId}-${sItem.id}`, date: date, type: 'Servicio',
-                relatedId: service.id, itemName: supply.supplyName, quantity: supply.quantity,
-                unitCost: invItem.unitPrice, totalCost: supply.quantity * invItem.unitPrice
-              };
-            }).filter(Boolean) as InventoryMovement[]
-          );
-      });
-      
-      const purchaseMovements: InventoryMovement[] = payableAccounts
-        .filter(pa => pa.invoiceDate)
-        .map(pa => ({
-        id: pa.id, date: pa.invoiceDate, type: 'Compra',
-        relatedId: pa.supplierName, itemName: `Factura ${pa.invoiceId}`, quantity: 1, // Simplified view for now
-        unitCost: pa.totalAmount, totalCost: pa.totalAmount,
-      }));
-
-      return [...saleMovements, ...serviceMovements, ...purchaseMovements];
-    }, [isLoading, sales, services, inventoryItems, payableAccounts]);
-  
-  const handlePrint = useCallback((itemsToPrint: InventoryItem[]) => {
-      setInventoryItems(itemsToPrint); // Pass the currently filtered/sorted items to the print component
+  const handlePrint = useCallback((items: InventoryItem[]) => {
+      setItemsToPrint(items);
       setIsPrintDialogOpen(true);
   }, []);
 
 
   const handleOpenItemDialog = useCallback(() => {
-    setEditingItem(null); // Ensure we're creating a new item
+    setEditingItem(null);
     setIsItemDialogOpen(true);
   }, []);
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
-    await operationsService.registerPurchase(data);
+    await purchaseService.registerPurchase(data);
     toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
     setIsRegisterPurchaseOpen(false);
   }, [toast]);
   
   const handleSaveItem = useCallback(async (itemData: InventoryItemFormValues) => {
-    // This is for new items from the "Productos" tab
     await inventoryService.addItem(itemData);
     toast({ title: "Producto Creado", description: `"${itemData.name}" ha sido agregado al inventario.` });
-    setIsItemDialogOpen(false); // Close dialog on success
+    setIsItemDialogOpen(false);
   }, [toast]);
   
   const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
-      // This is for items created during a purchase registration
       const newItem = await inventoryService.addItem(formData);
       toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
       return newItem;
@@ -189,43 +147,54 @@ export default function InventarioPageComponent({
         </div>
         
         <TabsContent value="productos" className="mt-6">
+          <Suspense fallback={<Loader2 className="animate-spin" />}>
             <ProductosContent 
                 inventoryItems={inventoryItems} 
+                summaryData={inventorySummary}
                 onNewItem={handleOpenItemDialog}
                 onPrint={handlePrint}
             />
+          </Suspense>
         </TabsContent>
         <TabsContent value="categorias" className="mt-6">
+          <Suspense fallback={<Loader2 className="animate-spin" />}>
             <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
+          </Suspense>
         </TabsContent>
         <TabsContent value="analisis" className="mt-6">
+          <Suspense fallback={<Loader2 className="animate-spin" />}>
             <AnalisisIaContent inventoryItems={inventoryItems} />
+          </Suspense>
         </TabsContent>
       </Tabs>
       
-      <RegisterPurchaseDialog
-        open={isRegisterPurchaseOpen}
-        onOpenChange={setIsRegisterPurchaseOpen}
-        suppliers={suppliers}
-        inventoryItems={inventoryItems}
-        onSave={handleSavePurchase}
-        onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
-        categories={categories}
-      />
+      <Suspense fallback={null}>
+        <RegisterPurchaseDialog
+          open={isRegisterPurchaseOpen}
+          onOpenChange={setIsRegisterPurchaseOpen}
+          suppliers={suppliers}
+          inventoryItems={inventoryItems}
+          onSave={handleSavePurchase}
+          onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
+          categories={categories}
+        />
 
-      <InventoryItemDialog
-        open={isItemDialogOpen}
-        onOpenChange={setIsItemDialogOpen}
-        onSave={handleSaveItem}
-        item={editingItem}
-        categories={categories}
-        suppliers={suppliers}
-      />
+        <InventoryItemDialog
+          open={isItemDialogOpen}
+          onOpenChange={setIsItemDialogOpen}
+          onSave={handleSaveItem}
+          item={editingItem}
+          categories={categories}
+          suppliers={suppliers}
+        />
+      </Suspense>
 
        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
                 <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
-                    <InventoryReportContent ref={printContentRef} items={inventoryItems} />
+                  <Suspense fallback={<Loader2 className="animate-spin" />}>
+                    <InventoryReportContent items={itemsToPrint} />
+                  </Suspense>
                 </div>
                  <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
                     <Button onClick={() => window.print()}>

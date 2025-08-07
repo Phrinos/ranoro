@@ -10,6 +10,7 @@ import { InventoryTable } from './inventory-table';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { InventoryItem } from '@/types';
+import { formatCurrency } from '@/lib/utils';
 
 const getSortPriority = (item: InventoryItem): number => {
     // Services have the lowest priority to appear at the end unless specifically sorted.
@@ -27,28 +28,14 @@ interface SummaryData {
     servicesCount: number;
 }
 
-const calculateSummary = (items: InventoryItem[]): SummaryData => {
-    let cost = 0, sellingPriceValue = 0, lowStock = 0, products = 0, services = 0;
-    items.forEach(item => {
-      if (item.isService) services++;
-      else {
-        products++;
-        cost += (item.quantity || 0) * (item.unitPrice || 0);
-        sellingPriceValue += (item.quantity || 0) * (item.sellingPrice || 0);
-        if ((item.quantity || 0) <= (item.lowStockThreshold || 0)) lowStock++;
-      }
-    });
-    return { 
-        totalInventoryCost: cost, 
-        totalInventorySellingPrice: sellingPriceValue, 
-        lowStockItemsCount: lowStock, 
-        productsCount: products, 
-        servicesCount: services, 
-    };
-};
+interface ProductosContentProps {
+  inventoryItems: InventoryItem[];
+  summaryData: SummaryData;
+  onNewItem: () => void;
+  onPrint: (items: InventoryItem[]) => void;
+}
 
-
-export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inventoryItems: InventoryItem[], onNewItem: () => void, onPrint: (items: InventoryItem[]) => void }) {
+export function ProductosContent({ inventoryItems, summaryData, onNewItem, onPrint }: ProductosContentProps) {
   
   const { 
     filteredData, 
@@ -77,8 +64,6 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
     return items; 
   }, [filteredData, tableManager.sortOption]);
 
-  const summary = React.useMemo(() => calculateSummary(inventoryItems), [inventoryItems]);
-
   const handlePrint = () => {
     onPrint(customSortedItems);
   };
@@ -96,9 +81,9 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
   return (
     <div className="space-y-4">
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-3">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Costo Total del Inventario</CardTitle><DollarSign className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">${summary.totalInventoryCost.toLocaleString('es-ES')}</div><p className="text-xs text-muted-foreground">Valor de venta: ${summary.totalInventorySellingPrice.toLocaleString('es-ES')}</p></CardContent></Card>
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summary.lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summary.productsCount + summary.servicesCount}</div><p className="text-xs text-muted-foreground">{summary.productsCount} Productos y {summary.servicesCount} Servicios.</p></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Costo Total del Inventario</CardTitle><DollarSign className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalInventoryCost)}</div><p className="text-xs text-muted-foreground">Valor de venta: {formatCurrency(summaryData.totalInventorySellingPrice)}</p></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.productsCount + summaryData.servicesCount}</div><p className="text-xs text-muted-foreground">{summaryData.productsCount} Productos y {summaryData.servicesCount} Servicios.</p></CardContent></Card>
         </div>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -115,12 +100,7 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
         </div>
 
         <TableToolbar
-            searchTerm={tableManager.searchTerm}
-            onSearchTermChange={tableManager.setSearchTerm}
-            dateRange={tableManager.dateRange}
-            onDateRangeChange={tableManager.setDateRange}
-            sortOption={tableManager.sortOption}
-            onSortOptionChange={tableManager.setSortOption}
+            {...tableManager}
             sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre, SKU, marca..."
         />
