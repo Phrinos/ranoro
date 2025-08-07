@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useMemo, useCallback, useState } from 'react';
@@ -45,7 +44,7 @@ export default function CotizacionesTabContent({
     router.push(`/servicios/${quoteId}`);
   }, [router]);
   
-  const handleDeleteQuote = async (quoteId: string) {
+  const handleDeleteQuote = async (quoteId: string) => {
     try {
         await serviceService.deleteService(quoteId);
         toast({ title: 'Cotización Eliminada', description: `La cotización ha sido eliminada permanentemente.` });
