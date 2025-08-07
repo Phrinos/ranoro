@@ -16,16 +16,8 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { CashDrawerTransaction, InitialCashBalance } from "@/types";
+import type { CashDrawerTransaction } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
-
-const setInitialCashBalance = async (balanceData: Omit<InitialCashBalance, 'id'>): Promise<void> => {
-    if (!db) throw new Error("Database not initialized.");
-    const { date, ...restData } = balanceData;
-    const docId = new Date(date).toISOString().split('T')[0];
-    const docRef = doc(db, 'initialCashBalances', docId);
-    await setDoc(docRef, { date, ...restData }, { merge: true });
-};
 
 const addCashTransaction = async (transactionData: Omit<CashDrawerTransaction, 'id' | 'date'> & { date?: string }): Promise<CashDrawerTransaction> => {
     if (!db) throw new Error("Database not initialized.");
@@ -56,7 +48,6 @@ const onCashTransactionsUpdate = (callback: (transactions: CashDrawerTransaction
 
 
 export const cashService = {
-  setInitialCashBalance,
   addCashTransaction,
   deleteCashTransaction,
   onCashTransactionsUpdate,

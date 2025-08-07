@@ -3,9 +3,9 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
-import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from '@/types'; 
+import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, User } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
-import { operationsService, inventoryService } from '@/lib/services';
+import { saleService, serviceService, cashService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { db } from '@/lib/firebaseClient';
@@ -14,7 +14,7 @@ import { format, startOfDay, isSameDay, startOfMonth, endOfMonth, isWithinInterv
 import { parseDate } from '@/lib/forms';
 
 const CajaPosContent = lazy(() => import('./caja-pos-content').then(module => ({ default: module.CajaPosContent })));
-const MovimientosCajaContent = lazy(() => import('../../caja/components/movimientos-caja-content').then(module => ({ default: module.MovimientosCajaContent })));
+const MovimientosCajaContent = lazy(() => import('../../../caja/components/movimientos-caja-content').then(module => ({ default: module.MovimientosCajaContent })));
 
 
 export function CajaPageComponent({ tab }: { tab?: string }) {
@@ -26,7 +26,6 @@ export function CajaPageComponent({ tab }: { tab?: string }) {
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [allCashTransactions, setAllCashTransactions] = useState<CashDrawerTransaction[]>([]);
-  const [initialCashBalance, setInitialCashBalance] = useState<InitialCashBalance | null>(null); // For selected day
   
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
 
@@ -34,18 +33,12 @@ export function CajaPageComponent({ tab }: { tab?: string }) {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
 
-    unsubs.push(operationsService.onSalesUpdate(setAllSales));
-    unsubs.push(operationsService.onServicesUpdate(setAllServices));
-    unsubs.push(operationsService.onCashTransactionsUpdate(setAllCashTransactions));
-
-    // Listener for today's initial balance
-    const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
-    const todayBalanceRef = doc(db, "initialCashBalances", todayStr);
-    unsubs.push(onSnapshot(todayBalanceRef, (snapshot) => {
-        setInitialCashBalance(snapshot.exists() ? snapshot.data() as InitialCashBalance : null);
+    unsubs.push(saleService.onSalesUpdate(setAllSales));
+    unsubs.push(serviceService.onServicesUpdate(setAllServices));
+    unsubs.push(cashService.onCashTransactionsUpdate((data) => {
+        setAllCashTransactions(data);
+        setIsLoading(false);
     }));
-
-    setIsLoading(false);
 
     const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
     if (storedWorkshopInfo) {
@@ -58,9 +51,43 @@ export function CajaPageComponent({ tab }: { tab?: string }) {
   const allCashOperations = useMemo(() => {
     return [...allCashTransactions].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
   }, [allCashTransactions]);
+  
+  const cajaSummaryData = useMemo(() => {
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+
+    const transactionsInMonth = allCashOperations.filter(t => {
+      const transactionDate = parseDate(t.date);
+      return transactionDate && isValid(transactionDate) && isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
+    });
+    
+    const totalCashInMonth = transactionsInMonth.reduce((sum, t) => {
+      if (t.type === 'Entrada') return sum + t.amount;
+      if (t.type === 'Salida') return sum - t.amount;
+      return sum;
+    }, 0);
+    
+    const dailyStart = startOfDay(new Date());
+    const dailyEnd = endOfDay(new Date());
+    
+    const transactionsToday = allCashOperations.filter(t => {
+       const transactionDate = parseDate(t.date);
+       return transactionDate && isValid(transactionDate) && isWithinInterval(transactionDate, { start: dailyStart, end: dailyEnd });
+    });
+    
+    const dailyCashIn = transactionsToday.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
+    const dailyCashOut = transactionsToday.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+        totalCashInMonth,
+        dailyCashIn,
+        dailyCashOut,
+    }
+  }, [allCashOperations]);
 
   const posTabs = [
-    { value: "caja", label: "Caja", content: <CajaPosContent allCashOperations={allCashOperations} initialCashBalance={initialCashBalance} /> },
+    { value: "caja", label: "Caja", content: <CajaPosContent allCashOperations={allCashOperations} cajaSummaryData={cajaSummaryData} /> },
     { value: "movimientos", label: "Movimientos", content: <MovimientosCajaContent allCashTransactions={allCashOperations} allSales={allSales} allServices={allServices} /> },
   ];
 

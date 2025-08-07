@@ -1,4 +1,5 @@
 
+
 // src/types/index.ts
 import { type VariantProps } from "class-variance-authority"
 import { sidebarMenuButtonVariants } from './sidebar.types';
@@ -178,34 +179,34 @@ export interface SafetyCheckValue {
 }
 
 export interface SafetyInspection {
-  luces_altas_bajas_niebla?: SafetyCheckValue;
-  luces_cuartos?: SafetyCheckValue;
-  luces_direccionales?: SafetyCheckValue;
-  luces_frenos_reversa?: SafetyCheckValue;
-  luces_interiores?: SafetyCheckValue;
-  fugas_refrigerante?: SafetyCheckValue;
-  fugas_limpiaparabrisas?: SafetyCheckValue;
-  fugas_frenos_embrague?: SafetyCheckValue;
-  fugas_transmision?: SafetyCheckValue;
-  fugas_direccion_hidraulica?: SafetyCheckValue;
-  carroceria_cristales_espejos?: SafetyCheckValue;
-  carroceria_puertas_cofre?: SafetyCheckValue;
-  carroceria_asientos_tablero?: SafetyCheckValue;
-  carroceria_plumas?: SafetyCheckValue;
-  suspension_rotulas?: SafetyCheckValue;
-  suspension_amortiguadores?: SafetyCheckValue;
-  suspension_caja_direccion?: SafetyCheckValue;
-  suspension_terminales?: SafetyCheckValue;
-  llantas_delanteras_traseras?: SafetyCheckValue;
-  llantas_refaccion?: SafetyCheckValue;
-  frenos_discos_delanteros?: SafetyCheckValue;
-  frenos_discos_traseros?: SafetyCheckValue;
-  otros_tuberia_escape?: SafetyCheckValue;
-  otros_soportes_motor?: SafetyCheckValue;
-  otros_claxon?: SafetyCheckValue;
-  otros_inspeccion_sdb?: SafetyCheckValue;
-  inspectionNotes?: string;
-  technicianSignature?: string; 
+    luces_altas_bajas_niebla?: SafetyCheckValue;
+    luces_cuartos?: SafetyCheckValue;
+    luces_direccionales?: SafetyCheckValue;
+    luces_frenos_reversa?: SafetyCheckValue;
+    luces_interiores?: SafetyCheckValue;
+    fugas_refrigerante?: SafetyCheckValue;
+    fugas_limpiaparabrisas?: SafetyCheckValue;
+    fugas_frenos_embrague?: SafetyCheckValue;
+    fugas_transmision?: SafetyCheckValue;
+    fugas_direccion_hidraulica?: SafetyCheckValue;
+    carroceria_cristales_espejos?: SafetyCheckValue;
+    carroceria_puertas_cofre?: SafetyCheckValue;
+    carroceria_asientos_tablero?: SafetyCheckValue;
+    carroceria_plumas?: SafetyCheckValue;
+    suspension_rotulas?: SafetyCheckValue;
+    suspension_amortiguadores?: SafetyCheckValue;
+    suspension_caja_direccion?: SafetyCheckValue;
+    suspension_terminales?: SafetyCheckValue;
+    llantas_delanteras_traseras?: SafetyCheckValue;
+    llantas_refaccion?: SafetyCheckValue;
+    frenos_discos_delanteros?: SafetyCheckValue;
+    frenos_discos_traseros?: SafetyCheckValue;
+    otros_tuberia_escape?: SafetyCheckValue;
+    otros_soportes_motor?: SafetyCheckValue;
+    otros_claxon?: SafetyCheckValue;
+    otros_inspeccion_sdb?: SafetyCheckValue;
+    inspectionNotes?: string;
+    technicianSignature?: string; 
 }
 
 
@@ -462,14 +463,6 @@ export interface CashDrawerTransaction {
   relatedType?: 'Venta' | 'Servicio' | 'Compra' | 'InitialBalance';
   relatedId?: string;
 }
-
-export interface InitialCashBalance {
-  date: string; // ISO String
-  amount: number;
-  userId: string;
-  userName:string;
-}
-
 
 export interface PurchaseRecommendation {
   supplier: string;

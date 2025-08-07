@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Wallet, ArrowUpCircle, ArrowDownCircle, Printer, Pencil, Trash2, CalendarIcon as CalendarDateIcon, DollarSign } from "lucide-react";
-import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from "@/types";
+import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, User } from "@/types";
 import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, isSameDay, subDays, startOfWeek, startOfMonth, compareDesc, endOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
@@ -119,14 +118,12 @@ function TransactionsList({ transactions, onDelete, currentUser }: { transaction
 
 interface CajaPosContentProps {
   allCashOperations: CashDrawerTransaction[];
-  initialCashBalance: InitialCashBalance | null;
+  cajaSummaryData: any;
 }
 
-export function CajaPosContent({ allCashOperations, initialCashBalance: dailyInitialBalance }: CajaPosContentProps) {
+export function CajaPosContent({ allCashOperations, cajaSummaryData }: CajaPosContentProps) {
   const { toast } = useToast();
   const [date, setDate] = useState(startOfDay(new Date()));
-  const [isInitialBalanceDialogOpen, setIsInitialBalanceDialogOpen] = useState(false);
-  const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
   const [isCorteDialogOpen, setIsCorteDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -140,59 +137,6 @@ export function CajaPosContent({ allCashOperations, initialCashBalance: dailyIni
       }
     }
   }, []);
-
-  const cajaSummaryData = useMemo(() => {
-    const startOfSelectedDate = startOfDay(date);
-    const endOfSelectedDate = endOfDay(date);
-    
-    const transactionsInSelectedDay = allCashOperations.filter(t => {
-      const transactionDate = parseDate(t.date);
-      return transactionDate && isValid(transactionDate) && isWithinInterval(transactionDate, { start: startOfSelectedDate, end: endOfSelectedDate });
-    });
-
-    const dailyBalanceDoc = dailyInitialBalance && isSameDay(parseDate(dailyInitialBalance.date)!, startOfSelectedDate) ? dailyInitialBalance : null;
-    const dailyInitial = dailyBalanceDoc?.amount || 0;
-    
-    const dailyCashIn = transactionsInSelectedDay.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
-    const dailyCashOut = transactionsInSelectedDay.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
-    
-    const finalDailyBalance = dailyInitial + dailyCashIn - dailyCashOut;
-    
-    const salesByPaymentMethod: Record<string, number> = {};
-    transactionsInSelectedDay.forEach(t => {
-        if(t.type === 'Entrada') {
-            const method = t.relatedType === 'Venta' ? 'Venta POS' : t.relatedType === 'Servicio' ? 'Servicio' : 'Manual';
-            salesByPaymentMethod[method] = (salesByPaymentMethod[method] || 0) + t.amount;
-        }
-    });
-
-    return { 
-        initialBalance: dailyInitial,
-        totalCashIn: dailyCashIn, 
-        totalCashOut: dailyCashOut, 
-        finalCashBalance: finalDailyBalance,
-        salesByPaymentMethod: salesByPaymentMethod,
-        totalSales: transactionsInSelectedDay.filter(t=>t.relatedType === 'Venta').length,
-        totalServices: transactionsInSelectedDay.filter(t=>t.relatedType === 'Servicio').length,
-    };
-  }, [date, allCashOperations, dailyInitialBalance]);
-  
-  const totalCashInMonth = useMemo(() => {
-    const now = new Date();
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
-
-    const transactionsInMonth = allCashOperations.filter(t => {
-      const transactionDate = parseDate(t.date);
-      return transactionDate && isValid(transactionDate) && isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
-    });
-    
-    const cashIn = transactionsInMonth.filter(t => t.type === 'Entrada').reduce((sum, t) => sum + t.amount, 0);
-    const cashOut = transactionsInMonth.filter(t => t.type === 'Salida').reduce((sum, t) => sum + t.amount, 0);
-
-    return cashIn - cashOut;
-
-  }, [allCashOperations]);
   
   const manualCashMovements = useMemo(() => {
     const start = startOfDay(date);
@@ -217,39 +161,6 @@ export function CajaPosContent({ allCashOperations, initialCashBalance: dailyIni
   }, [date, allCashOperations]);
 
 
-  const handleSetInitialBalance = useCallback(async () => {
-    if (initialBalanceAmount === '' || Number(initialBalanceAmount) < 0) return;
-    
-    const balanceData = {
-      date: startOfDay(date).toISOString(),
-      amount: Number(initialBalanceAmount),
-      userId: currentUser?.id || 'system',
-      userName: currentUser?.name || 'Sistema',
-    };
-    
-    // We create a separate transaction for the initial balance to ensure it appears in the log
-    // and contributes to the daily total.
-    const transactionData = {
-        date: startOfDay(date).toISOString(), // Make sure it's at the beginning of the day
-        type: 'Entrada' as const,
-        amount: Number(initialBalanceAmount),
-        concept: 'Saldo Inicial de Caja',
-        userId: currentUser?.id || 'system',
-        userName: currentUser?.name || 'Sistema',
-        relatedType: 'InitialBalance' as const,
-        relatedId: format(date, 'yyyy-MM-dd')
-    };
-
-    await Promise.all([
-      cashService.setInitialCashBalance(balanceData),
-      cashService.addCashTransaction(transactionData)
-    ]);
-
-    setIsInitialBalanceDialogOpen(false);
-    setInitialBalanceAmount('');
-    toast({ title: 'Saldo Inicial Guardado' });
-  }, [initialBalanceAmount, toast, date, currentUser]);
-  
   const handleAddTransaction = useCallback(async (type: 'Entrada' | 'Salida', values: CashTransactionFormValues) => {
     
     await cashService.addCashTransaction({
@@ -308,18 +219,11 @@ export function CajaPosContent({ allCashOperations, initialCashBalance: dailyIni
           <CardContent className="space-y-4">
             <div className="p-4 rounded-lg bg-muted border text-center">
               <p className="text-sm font-medium text-muted-foreground">DINERO EN CAJA (ESTE MES)</p>
-              <p className="text-4xl font-bold text-primary">{formatCurrency(totalCashInMonth)}</p>
+              <p className="text-4xl font-bold text-primary">{formatCurrency(cajaSummaryData.totalCashInMonth)}</p>
             </div>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Saldo Inicial del día:</span> 
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">{formatCurrency(cajaSummaryData.initialBalance)}</span>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsInitialBalanceDialogOpen(true)}><Pencil className="h-3 w-3"/></Button>
-                </div>
-              </div>
-              <div className="flex justify-between items-center text-green-600"><span>(+) Entradas del día:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashIn)}</span></div>
-              <div className="flex justify-between items-center text-red-600"><span>(-) Salidas del día:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashOut)}</span></div>
+              <div className="flex justify-between items-center text-green-600"><span>(+) Entradas del día:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.dailyCashIn)}</span></div>
+              <div className="flex justify-between items-center text-red-600"><span>(-) Salidas del día:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.dailyCashOut)}</span></div>
             </div>
           </CardContent>
         </Card>
@@ -337,29 +241,6 @@ export function CajaPosContent({ allCashOperations, initialCashBalance: dailyIni
             </Card>
         </div>
       </div>
-
-      <Dialog open={isInitialBalanceDialogOpen} onOpenChange={setIsInitialBalanceDialogOpen}>
-        <DialogContent className="sm:max-w-md p-6 space-y-4">
-          <DialogHeader className="text-left">
-            <DialogTitle>Saldo Inicial de Caja</DialogTitle>
-            <DialogDescription>
-              Ingrese la cantidad de efectivo con la que inicia la caja para el día{" "}
-              <strong>{format(date, "dd/MM/yyyy", { locale: es })}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-2">
-            <Label htmlFor="initial-balance">Monto Inicial</Label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input id="initial-balance" type="number" placeholder="500.00" value={initialBalanceAmount} onChange={(e) => setInitialBalanceAmount(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8"/>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsInitialBalanceDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSetInitialBalance}>Guardar Saldo Inicial</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       
       <PrintTicketDialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen} title="Corte de Caja">
          <CorteDiaContent
@@ -371,14 +252,3 @@ export function CajaPosContent({ allCashOperations, initialCashBalance: dailyIni
     </>
   );
 }
-
-
-
-    
-
-
-
-
-
-
-
