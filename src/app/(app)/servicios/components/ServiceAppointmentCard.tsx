@@ -149,6 +149,7 @@ export const ServiceAppointmentCard = React.memo(({
                                 <p className="font-bold text-2xl text-primary text-right">{formatCurrency(service.totalCost)}</p>
                             </div>
                             <div>
+                                <p className="text-xs text-muted-foreground text-right">Ganancia</p>
                                 <p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end">
                                     <TrendingUp className="h-4 w-4" /> {formatCurrency(service.serviceProfit)}
                                 </p>
@@ -168,7 +169,9 @@ export const ServiceAppointmentCard = React.memo(({
                             <Badge variant={getStatusBadgeVariant(service.status)} className="mb-1">{service.status}</Badge>
                         ) : !isQuote ? (
                             <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>
-                        ) : null}
+                        ) : (
+                             <Badge variant="outline" className="mb-1">{service.status}</Badge>
+                        )}
                         
                         <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                         {technicianName && <p className="text-xs text-muted-foreground">Técnico: {technicianName}</p>}
