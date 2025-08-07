@@ -38,12 +38,6 @@ import {
   Printer,
   Copy,
   CalendarCheck,
-  Car,
-  User as UserIcon,
-  Fingerprint,
-  Phone,
-  Mail,
-  StickyNote,
 } from "lucide-react";
 import {
   Table,
@@ -142,22 +136,17 @@ export default function VehicleDetailPage() {
                         <CardTitle>Datos del Vehículo y Propietario</CardTitle>
                         <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4" />Editar</Button>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Car className="h-4 w-4"/>Marca</p><p>{vehicle.make}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Car className="h-4 w-4"/>Modelo</p><p>{vehicle.model}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><CalendarCheck className="h-4 w-4"/>Año</p><p>{vehicle.year}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Car className="h-4 w-4"/>Color</p><p>{vehicle.color || 'N/A'}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Car className="h-4 w-4"/>Placa</p><p>{vehicle.licensePlate}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Fingerprint className="h-4 w-4"/>VIN</p><p className="font-mono">{vehicle.vin || 'N/A'}</p></div>
-                        </div>
-                        <Separator className="my-4" />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><UserIcon className="h-4 w-4"/>Propietario</p><p className="font-semibold">{vehicle.ownerName}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Phone className="h-4 w-4"/>Teléfono</p><p>{vehicle.ownerPhone || 'N/A'}</p></div>
-                            <div className="space-y-1 md:col-span-2"><p className="font-medium text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4"/>Email</p><p>{vehicle.ownerEmail || 'N/A'}</p></div>
-                        </div>
-                         {vehicle.notes && (<><Separator className="my-4" /><div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><StickyNote className="h-4 w-4"/>Notas</p><p className="text-sm text-foreground whitespace-pre-wrap">{vehicle.notes}</p></div></>)}
+                    <CardContent className="space-y-3">
+                        <p className="font-bold text-xl">{vehicle.licensePlate}</p>
+                        <p className="text-muted-foreground">{vehicle.make} {vehicle.model} ({vehicle.year})</p>
+                        <p className="text-sm text-muted-foreground">Color: {vehicle.color || 'N/A'} | VIN: {vehicle.vin || 'N/A'}</p>
+                        
+                        <Separator className="my-4"/>
+
+                        <p className="font-semibold">{vehicle.ownerName}</p>
+                        <p className="text-sm text-muted-foreground">{vehicle.ownerPhone || 'N/A'} | {vehicle.ownerEmail || 'N/A'}</p>
+                        
+                        {vehicle.notes && (<><Separator className="my-4" /><div className="space-y-1"><p className="font-medium text-muted-foreground">Notas</p><p className="text-sm text-foreground whitespace-pre-wrap">{vehicle.notes}</p></div></>)}
                     </CardContent>
                 </Card>
             </div>
