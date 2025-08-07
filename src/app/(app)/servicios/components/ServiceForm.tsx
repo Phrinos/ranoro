@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { SignatureDialog } from './signature-dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { PaymentDetailsDialog } from './PaymentDetailsDialog';
+import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import { serviceService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch } from 'firebase/firestore';
@@ -363,6 +363,7 @@ function ServiceFormContent({
           onOpenChange={setIsPaymentDialogOpen}
           record={serviceToComplete}
           onConfirm={(id, details) => handleCompleteService(details)}
+          recordType="service"
           isCompletionFlow={true}
           />
       )}
