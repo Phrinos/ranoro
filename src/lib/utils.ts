@@ -2,6 +2,7 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle } from 'lucide-react';
+import type { PaymentMethod } from '@/types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -25,16 +26,18 @@ export function normalizeDataUrl(dataUrl: string): string {
 }
 
 
-export const calculateDriverDebt = (driverId: string, allPayments: any[], allExpenses: any[]): number => {
-    const totalPayments = allPayments
-        .filter(p => p.driverId === driverId)
-        .reduce((sum, p) => sum + p.amount, 0);
+export const calculateDriverDebt = (driver: any, allPayments: any[], allVehicles: any[]): { totalDebt: number; rentalDebt: number; depositDebt: number; manualDebt: number } => {
+    // This is a placeholder function. The actual logic might be more complex.
+    const rentalDebt = 0; // Placeholder
+    const depositDebt = (driver.requiredDepositAmount || 0) - (driver.depositAmount || 0);
+    const manualDebt = (driver.manualDebts || []).reduce((sum: number, debt: any) => sum + debt.amount, 0);
 
-    const totalExpenses = allExpenses
-        .filter(e => e.driverId === driverId)
-        .reduce((sum, e) => sum + e.amount, 0);
-
-    return totalPayments - totalExpenses;
+    return { 
+        totalDebt: rentalDebt + depositDebt + manualDebt, 
+        rentalDebt, 
+        depositDebt, 
+        manualDebt 
+    };
 };
 
 export const capitalizeWords = (str: string | null | undefined): string => {
@@ -47,34 +50,48 @@ export function getStatusInfo(status: string, subStatus?: string, appointmentSta
     switch (status) {
         case 'Agendado':
             if (appointmentStatus === 'Confirmada') {
-                return { color: 'blue-500', icon: Clock, label: 'Cita Confirmada' };
+                return { color: 'blue', icon: Clock, label: 'Cita Confirmada' };
             }
-            return { color: 'blue-400', icon: Clock, label: 'Agendado' };
+            return { color: 'blue', icon: Clock, label: 'Agendado' };
         case 'En Taller':
             switch (subStatus) {
                 case 'En Espera de Refacciones':
-                    return { color: 'yellow-500', icon: Package, label: 'Esperando Refacciones' };
+                    return { color: 'waiting', icon: Package, label: 'Esperando Refacciones' };
                 case 'Reparando':
-                    return { color: 'orange-500', icon: Wrench, label: 'Reparando' };
+                    return { color: 'purple', icon: Wrench, label: 'Reparando' };
                 case 'Completado':
-                     return { color: 'green-500', icon: CheckCircle, label: 'Listo para Entrega' };
+                     return { color: 'success', icon: CheckCircle, label: 'Listo para Entrega' };
                 default:
-                    return { color: 'orange-400', icon: Wrench, label: 'En Taller' };
+                    return { color: 'purple', icon: Wrench, label: 'En Taller' };
             }
         case 'Entregado':
-            return { color: 'green-600', icon: CheckCircle, label: 'Entregado' };
+            return { color: 'success', icon: CheckCircle, label: 'Entregado' };
         case 'Cancelado':
-            return { color: 'red-500', icon: XCircle, label: 'Cancelado' };
+            return { color: 'destructive', icon: XCircle, label: 'Cancelado' };
         case 'Cotizacion':
-            return { color: 'gray-500', icon: AlertCircle, label: 'Cotización' };
+            return { color: 'outline', icon: AlertCircle, label: 'Cotización' };
         default:
-            return { color: 'gray-400', icon: AlertCircle, label: 'Desconocido' };
+            return { color: 'secondary', icon: AlertCircle, label: 'Desconocido' };
     }
 }
 
-export const optimizeImage = (file: File, maxWidthOrHeight: number, quality = 0.9): Promise<string> => {
+export function getPaymentMethodVariant(method?: PaymentMethod): 'success' | 'purple' | 'lightPurple' {
+    if (!method) return 'success';
+    switch(method) {
+        case 'Efectivo': return 'success';
+        case 'Tarjeta': return 'purple';
+        case 'Tarjeta MSI': return 'purple';
+        case 'Transferencia': return 'lightPurple';
+        default: return 'success';
+    }
+}
+
+
+export const optimizeImage = (file: File | string, maxWidthOrHeight: number, quality = 0.9): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    const isFile = file instanceof File;
+
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
@@ -110,6 +127,12 @@ export const optimizeImage = (file: File, maxWidthOrHeight: number, quality = 0.
       }
     };
     reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(file);
+    
+    if (isFile) {
+      reader.readAsDataURL(file);
+    } else {
+      // It's already a data URL string
+      img.src = file;
+    }
   });
 };

@@ -68,8 +68,8 @@ export default function HistorialTabContent({
     <ServiceAppointmentCard 
       key={record.id}
       service={record}
-      vehicles={vehicles}
-      technicians={personnel}
+      vehicle={vehicles.find(v => v.id === record.vehicleId)}
+      personnel={personnel}
       onEdit={() => handleEditService(record.id)}
       onView={() => onShowPreview(record)}
       onEditPayment={() => onEditPayment(record)}

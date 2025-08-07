@@ -12,6 +12,8 @@ import { isToday, parseISO, isValid, compareAsc, compareDesc } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { formatCurrency } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { serviceService } from '@/lib/services';
+import { useToast } from '@/hooks/use-toast';
 
 interface ActivosTabContentProps {
   allServices: ServiceRecord[];
@@ -42,6 +44,7 @@ export default function ActivosTabContent({
   onCompleteService
 }: ActivosTabContentProps) {
   const router = useRouter();
+  const { toast } = useToast();
 
   const activeServices = useMemo(() => {
     return allServices.sort((a, b) => {
@@ -56,26 +59,48 @@ export default function ActivosTabContent({
   }, [allServices]);
 
   const totalEarningsToday = useMemo(() => {
-    return activeServices
-      .filter(s => s.status === 'Entregado')
+    return allServices
+      .filter(s => {
+          if (s.status !== 'Entregado') return false;
+          const deliveryDate = parseDate(s.deliveryDateTime);
+          return deliveryDate && isValid(deliveryDate) && isToday(deliveryDate);
+      })
       .reduce((sum, s) => sum + (s.totalCost || 0), 0);
-  }, [activeServices]);
+  }, [allServices]);
   
   const handleEditService = (serviceId: string) => {
     router.push(`/servicios/${serviceId}`);
+  };
+
+  const handleEditPayment = (service: ServiceRecord) => {
+    // Logic to open payment dialog
+  };
+  
+  const handleCancelService = async (serviceId: string) => {
+      const reason = prompt("Motivo de la cancelación:");
+      if (reason) {
+          try {
+              await serviceService.cancelService(serviceId, reason);
+              toast({ title: 'Servicio Cancelado' });
+          } catch(e) {
+              toast({ title: 'Error', description: 'No se pudo cancelar el servicio.', variant: 'destructive'});
+          }
+      }
   };
 
   const renderServiceCard = useCallback((service: ServiceRecord) => (
     <ServiceAppointmentCard 
       key={service.id}
       service={service}
-      vehicles={vehicles}
-      technicians={personnel}
+      vehicle={vehicles.find(v => v.id === service.vehicleId)}
+      personnel={personnel}
       onEdit={() => handleEditService(service.id)}
       onView={() => onShowPreview(service)}
       onComplete={() => onCompleteService(service)}
+      onEditPayment={() => onEditPayment(service)}
+      onCancel={() => handleCancelService(service.id)}
     />
-  ), [vehicles, personnel, onShowPreview, onCompleteService, router]);
+  ), [vehicles, personnel, onShowPreview, onCompleteService, router, handleCancelService]);
 
   return (
     <Card>

@@ -16,7 +16,7 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
         success:
-          "border-transparent bg-green-600 text-primary-foreground hover:bg-green-600/80",
+          "border-transparent bg-green-600 text-white hover:bg-green-600/80",
         waiting:
           "border-transparent bg-orange-500 text-white hover:bg-orange-500/80",
         delivered:
@@ -28,7 +28,7 @@ const badgeVariants = cva(
         lightGreen:
           "border-transparent bg-green-300 text-green-800 hover:bg-green-300/80 dark:bg-green-700 dark:text-green-100 dark:hover:bg-green-700/80",
         lightPurple:
-          "border-transparent bg-purple-300 text-purple-800 hover:bg-purple-300/80 dark:bg-purple-700 dark:text-purple-100 dark:hover:bg-purple-700/80",
+          "border-transparent bg-purple-200 text-purple-800 hover:bg-purple-300/80 dark:bg-purple-700 dark:text-purple-100 dark:hover:bg-purple-700/80",
         lightRed:
           "border-transparent bg-red-100 text-red-800 hover:bg-red-100/80 dark:bg-red-900/50 dark:text-red-300",
         teal:

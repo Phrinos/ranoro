@@ -7,11 +7,9 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
-import { startOfDay, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,20 +28,12 @@ export default function CotizacionesTabContent({
 }: CotizacionesTabContentProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const quotes = useMemo(
-    () => services
-      .filter(s => (s.status ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes('cotizacion'))
-      .map(s => ({ ...s, serviceDate: parseDate(s.serviceDate) as Date })),
-    [services]
-  );
   
   const { 
     filteredData, 
     ...tableManager 
   } = useTableManager<ServiceRecord>({
-    initialData: quotes,
+    initialData: services,
     searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
     dateFilterKey: 'serviceDate',
     initialSortOption: "serviceDate_desc",
@@ -55,14 +45,11 @@ export default function CotizacionesTabContent({
   }, [router]);
   
   const handleDeleteQuote = async (quoteId: string) => {
-    setIsDeleting(true);
     try {
         await serviceService.deleteService(quoteId);
         toast({ title: 'Cotización Eliminada', description: `La cotización ha sido eliminada permanentemente.` });
     } catch (e) {
         toast({ title: 'Error', description: 'No se pudo eliminar la cotización.', variant: 'destructive' });
-    } finally {
-        setIsDeleting(false);
     }
   };
 
@@ -96,10 +83,11 @@ export default function CotizacionesTabContent({
                   <ServiceAppointmentCard 
                     key={quote.id}
                     service={quote}
-                    vehicles={vehicles}
-                    technicians={personnel}
+                    vehicle={vehicles.find(v => v.id === quote.vehicleId)}
+                    personnel={personnel}
                     onEdit={() => handleEditQuote(quote.id)}
                     onView={() => onShowPreview(quote)}
+                    onDelete={() => handleDeleteQuote(quote.id)}
                   />
               ))}
           </div>

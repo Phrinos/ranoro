@@ -1,44 +1,51 @@
 
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import React, { useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Car, Wrench, User as UserIcon, Calendar, CheckCircle, XCircle, Clock, Ellipsis, Eye, Edit, Check, DollarSign, TrendingUp, Copy } from 'lucide-react';
-import type { ServiceRecord, Vehicle, User } from '@/types';
+import { Car, User as UserIcon, Calendar, CheckCircle, XCircle, Clock, Ellipsis, Eye, Edit, Check, DollarSign, TrendingUp, Copy, Printer, Trash2, Phone } from 'lucide-react';
+import type { ServiceRecord, Vehicle, User, Payment } from '@/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { formatCurrency, getStatusInfo } from '@/lib/utils';
+import { formatCurrency, getStatusInfo, getPaymentMethodVariant, cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { parseDate } from '@/lib/forms';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface ServiceAppointmentCardProps {
   service: ServiceRecord;
-  vehicles: Vehicle[];
-  technicians: User[];
+  vehicle?: Vehicle;
+  personnel?: User[];
   onView: () => void;
   onEdit: () => void;
   onComplete?: () => void;
   onEditPayment?: () => void;
+  onDelete?: () => void;
+  onCancel?: () => void;
 }
 
 export function ServiceAppointmentCard({
   service,
-  vehicles,
-  technicians,
+  vehicle,
+  personnel = [],
   onView,
   onEdit,
   onComplete,
   onEditPayment,
+  onDelete,
+  onCancel,
 }: ServiceAppointmentCardProps) {
   const { toast } = useToast();
-  const vehicle = vehicles.find(v => v.id === service.vehicleId);
-  const technician = technicians.find(u => u.id === service.technicianId);
   const { color, icon: Icon, label } = getStatusInfo(service.status, service.subStatus, service.appointmentStatus);
 
+  const technician = useMemo(() => personnel.find(u => u.id === service.technicianId), [personnel, service.technicianId]);
+  const advisor = useMemo(() => personnel.find(u => u.id === service.serviceAdvisorId), [personnel, service.serviceAdvisorId]);
+  
   const displayDate = service.appointmentDateTime || service.deliveryDateTime || service.receptionDateTime || service.serviceDate;
-  const dateLabel = service.status === 'Entregado' || service.status === 'Cancelado' ? 'Fecha de Entrega/Cierre' : 'Fecha de Cita/Recepción';
+  const parsedDate = displayDate ? parseDate(displayDate) : null;
 
   const copyToClipboard = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -48,75 +55,108 @@ export function ServiceAppointmentCard({
     });
   };
 
+  const getServiceDescriptionText = (service: ServiceRecord) => {
+    if (service.serviceItems && service.serviceItems.length > 0) {
+      return service.serviceItems.map(item => item.name).join(', ');
+    }
+    return service.description || 'Servicio sin descripción';
+  };
+  
+  const getPrimaryPaymentMethod = (): Payment | undefined => {
+    if (service.payments && service.payments.length > 0) {
+      if (service.payments.length === 1) return service.payments[0];
+      // If multiple, maybe return the one with the largest amount, or just the first.
+      return service.payments.reduce((prev, current) => ((prev.amount ?? 0) > (current.amount ?? 0)) ? prev : current);
+    }
+    // Fallback for old data structure
+    if (service.paymentMethod) {
+      return { method: service.paymentMethod as any, amount: service.totalCost };
+    }
+    return undefined;
+  };
+
+  const primaryPayment = getPrimaryPaymentMethod();
+
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow duration-200">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Car className="h-5 w-5" />
-              {vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.year})` : 'Vehículo no asignado'}
-            </CardTitle>
-            <CardDescription className="flex items-center gap-2 mt-1">
-              <span>{vehicle?.licensePlate || service.vehicleIdentifier}</span>
-              <button onClick={() => copyToClipboard(service.id, 'Folio')} className="ml-2 p-1 rounded-full hover:bg-muted">
-                <Copy className="h-3 w-3" />
-              </button>
-              <span className="text-xs text-gray-500">Folio: ...{service.id.slice(-6)}</span>
-            </CardDescription>
+    <Card className={cn("shadow-sm overflow-hidden", service.status === 'Cancelado' && "bg-muted/60 opacity-80")}>
+      <CardContent className="p-0">
+        <div className="flex flex-col md:flex-row text-sm">
+          {/* Col 1: Date & Folio */}
+          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-card border-b md:border-b-0 md:border-r">
+            <p className="font-bold text-lg text-foreground">{parsedDate ? format(parsedDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
+            <p className="text-muted-foreground text-sm">{parsedDate ? format(parsedDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
+            <p className="text-muted-foreground text-xs mt-2">Folio: ...{service.id.slice(-6)}</p>
           </div>
-          <Badge variant="outline" className={`border-${color} text-${color} bg-${color}/10`}>
-            <Icon className="mr-2 h-4 w-4" />
-            {label}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Wrench className="mr-2 h-4 w-4" />
-          <span>{service.description || "Sin descripción"}</span>
-        </div>
-        <div className="flex justify-between items-center text-sm">
-          <div className="flex items-center text-muted-foreground">
-            <UserIcon className="mr-2 h-4 w-4" />
-            <span>{technician?.name || 'Técnico no asignado'}</span>
-          </div>
-          <div className="flex items-center text-muted-foreground">
-            <Calendar className="mr-2 h-4 w-4" />
-            <span>
-              {displayDate ? format(new Date(displayDate), 'dd MMM yyyy, hh:mm a', { locale: es }) : 'Fecha no disponible'}
-            </span>
-          </div>
-        </div>
-        {/* Financial Summary - Now visible for Quotes as well */}
-        <div className="border-t pt-3 mt-3 flex justify-around text-center">
-            <div className="flex flex-col items-center space-y-1">
-                <span className="text-xs text-muted-foreground">Costo Cliente</span>
-                <p className="font-bold text-primary flex items-center gap-1"><DollarSign className="h-4 w-4"/>{formatCurrency(service.totalCost)}</p>
+
+          {/* Col 2: Client & Vehicle */}
+          <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-b md:border-b-0 md:border-r">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <UserIcon className="h-3 w-3" />
+              <span>{vehicle?.ownerName || 'Cliente no asignado'}</span>
+              <Phone className="h-3 w-3 ml-2"/>
+              <span>{vehicle?.ownerPhone || 'N/A'}</span>
             </div>
-            <div className="flex flex-col items-center space-y-1">
-                <span className="text-xs text-muted-foreground">Ganancia</span>
-                <p className="font-bold text-green-600 flex items-center gap-1"><TrendingUp className="h-4 w-4"/>{formatCurrency(service.serviceProfit)}</p>
+            <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : service.vehicleIdentifier}</p>
+            <p className="text-muted-foreground text-xs truncate" title={getServiceDescriptionText(service)}>{getServiceDescriptionText(service)}</p>
+          </div>
+
+          {/* Col 3: Cost & Profit */}
+          <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-1 border-b md:border-b-0 md:border-r">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Costo Cliente</p>
+              <p className="font-bold text-xl text-destructive">{formatCurrency(service.totalCost)}</p>
             </div>
+            <div>
+              <p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end">
+                <TrendingUp className="h-4 w-4" /> {formatCurrency(service.serviceProfit)}
+              </p>
+            </div>
+            {primaryPayment && (
+              <Badge variant={getPaymentMethodVariant(primaryPayment.method)} className="mt-1">
+                {primaryPayment.method} {service.payments && service.payments.length > 1 ? `(+${service.payments.length - 1})` : ''}
+              </Badge>
+            )}
+          </div>
+
+          {/* Col 4: Status & Actions */}
+          <div className="p-4 flex flex-col justify-between items-center text-center w-full md:w-48 flex-shrink-0">
+            <Badge variant={color as any} className="w-full justify-center">
+              <Icon className="mr-2 h-4 w-4" />
+              {label}
+            </Badge>
+            <div className="text-xs text-muted-foreground mt-2 w-full text-center">
+              <p>Asesor: {advisor?.name || 'N/A'}</p>
+              <p>Técnico: {technician?.name || 'N/A'}</p>
+            </div>
+             <div className="flex justify-center items-center gap-1 flex-wrap mt-2">
+                <Button variant="ghost" size="icon" onClick={onEditPayment} title="Editar Pago">
+                  <DollarSign className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={onView} title="Ver Detalles">
+                    <Eye className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={onEdit} title="Editar Servicio">
+                    <Edit className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" title="Imprimir" onClick={() => toast({title: "Función no implementada"})}>
+                    <Printer className="h-4 w-4" />
+                </Button>
+                 <ConfirmDialog
+                    triggerButton={
+                        <Button variant="ghost" size="icon" title={service.status === 'Cotizacion' ? 'Eliminar Cotización' : 'Cancelar Servicio'} disabled={service.status === 'Cancelado' || service.status === 'Entregado'}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    }
+                    title={service.status === 'Cotizacion' ? '¿Eliminar Cotización?' : '¿Cancelar Servicio?'}
+                    description={service.status === 'Cotizacion' ? 'Esta acción eliminará permanentemente el registro.' : 'Esta acción marcará el servicio como cancelado.'}
+                    onConfirm={service.status === 'Cotizacion' ? onDelete! : onCancel!}
+                    confirmText="Sí, Continuar"
+                  />
+            </div>
+          </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-end gap-2">
-        <Button variant="outline" size="sm" onClick={onView}><Eye className="mr-2 h-4 w-4" />Ver</Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm"><Ellipsis className="h-4 w-4" /></Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={onEdit}><Edit className="mr-2 h-4 w-4" />Editar</DropdownMenuItem>
-            {onComplete && service.status !== 'Entregado' && (
-              <DropdownMenuItem onClick={onComplete}><CheckCircle className="mr-2 h-4 w-4" />Marcar como Completado</DropdownMenuItem>
-            )}
-            {onEditPayment && service.status === 'Entregado' && (
-              <DropdownMenuItem onClick={onEditPayment}><DollarSign className="mr-2 h-4 w-4" />Editar Pago</DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardFooter>
     </Card>
   );
 }
+
