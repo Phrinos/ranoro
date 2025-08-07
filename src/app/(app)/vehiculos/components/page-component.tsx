@@ -20,9 +20,10 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Loader2 } from 'lucide-react';
 import { useTableManager } from '@/hooks/useTableManager';
 import { inventoryService } from '@/lib/services';
-import { differenceInMonths, parseISO, isValid } from 'date-fns';
+import { differenceInMonths, isValid } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
+import { parseDate } from '@/lib/forms';
 
 const vehicleSortOptions = [
     { value: 'lastServiceDate_desc', label: 'Último Servicio (Más Reciente)' },
@@ -95,7 +96,7 @@ export function VehiculosPageComponent({ isFleet }: { isFleet?: boolean }) {
 
         allVehicles.forEach(v => {
             if (v.lastServiceDate) {
-                const lastService = parseISO(v.lastServiceDate);
+                const lastService = parseDate(v.lastServiceDate);
                 if (isValid(lastService)) {
                     const monthsSinceService = differenceInMonths(now, lastService);
                     if (monthsSinceService <= 1) recent++;
