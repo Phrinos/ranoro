@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from "react";
@@ -13,9 +12,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Vehicle } from "@/types";
-import { format, parseISO, isValid } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Car } from "lucide-react";
+import { parseDate } from "@/lib/forms";
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
@@ -53,25 +53,28 @@ export const VehiclesTable = React.memo(({ vehicles }: VehiclesTableProps) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {vehicles.map((vehicle) => (
-            <TableRow 
-              key={vehicle.id} 
-              onClick={() => handleRowClick(vehicle.id)}
-              className="cursor-pointer hover:bg-muted/50"
-            >
-              <TableCell className="font-semibold">{vehicle.licensePlate}</TableCell>
-              <TableCell>{vehicle.make}</TableCell>
-              <TableCell>{vehicle.model}</TableCell>
-              <TableCell>{vehicle.year}</TableCell>
-              <TableCell>{vehicle.ownerName}</TableCell>
-              <TableCell>{vehicle.ownerPhone}</TableCell>
-              <TableCell>
-                {vehicle.lastServiceDate && isValid(parseISO(vehicle.lastServiceDate))
-                  ? format(parseISO(vehicle.lastServiceDate), "dd MMM yyyy", { locale: es }) 
-                  : 'N/A'}
-              </TableCell>
-            </TableRow>
-          ))}
+          {vehicles.map((vehicle) => {
+            const lastServiceDate = parseDate(vehicle.lastServiceDate);
+            return (
+              <TableRow 
+                key={vehicle.id} 
+                onClick={() => handleRowClick(vehicle.id)}
+                className="cursor-pointer hover:bg-muted/50"
+              >
+                <TableCell className="font-semibold">{vehicle.licensePlate}</TableCell>
+                <TableCell>{vehicle.make}</TableCell>
+                <TableCell>{vehicle.model}</TableCell>
+                <TableCell>{vehicle.year}</TableCell>
+                <TableCell>{vehicle.ownerName}</TableCell>
+                <TableCell>{vehicle.ownerPhone}</TableCell>
+                <TableCell>
+                  {lastServiceDate && isValid(lastServiceDate)
+                    ? format(lastServiceDate, "dd MMM yyyy", { locale: es }) 
+                    : 'N/A'}
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
     </div>
