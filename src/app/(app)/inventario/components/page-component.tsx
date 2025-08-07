@@ -11,11 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from 'lucide-react';
 import { inventoryService } from '@/lib/services/inventory.service';
-import { saleService } from '@/lib/services/sale.service';
-import { serviceService } from '@/lib/services/service.service';
 import { purchaseService } from '@/lib/services/purchase.service';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from "@/lib/utils";
+import { useTableManager } from '@/hooks/useTableManager';
 
 // Lazy load components
 const RegisterPurchaseDialog = lazy(() => import('./register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
@@ -46,6 +45,17 @@ export default function InventarioPageComponent({
 
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
+  
+  const { 
+    filteredData, 
+    ...tableManager 
+  } = useTableManager<InventoryItem>({
+    initialData: inventoryItems,
+    searchKeys: ['name', 'sku', 'brand', 'category'],
+    dateFilterKey: '', 
+    initialSortOption: 'default_order',
+    itemsPerPage: 100,
+  });
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -151,10 +161,12 @@ export default function InventarioPageComponent({
         <TabsContent value="productos" className="mt-6">
           <Suspense fallback={<Loader2 className="animate-spin" />}>
             <ProductosContent 
-                inventoryItems={inventoryItems} 
                 summaryData={inventorySummary}
                 onNewItem={handleOpenItemDialog}
                 onPrint={handlePrint}
+                tableManager={tableManager}
+                filteredItems={filteredData}
+                onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
             />
           </Suspense>
         </TabsContent>
@@ -193,7 +205,7 @@ export default function InventarioPageComponent({
 
        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
-                <DialogHeader className="p-6 pb-2 flex-shrink-0 no-print border-b">
+                <DialogHeader className="p-6 pb-2 border-b">
                   <DialogTitle>Reporte de Inventario</DialogTitle>
                   <DialogDescription>Vista previa del reporte para imprimir.</DialogDescription>
                 </DialogHeader>

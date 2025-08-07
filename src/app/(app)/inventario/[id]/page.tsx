@@ -32,6 +32,7 @@ import { Separator } from '@/components/ui/separator';
 import { inventoryService, saleService, serviceService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { formatCurrency } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface InventoryMovement {
     date: string;
@@ -180,7 +181,7 @@ export default function InventoryItemDetailPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-4">
-        <Button variant="outline" onClick={() => router.back()}>
+        <Button variant="outline" onClick={() => router.back()} className="bg-gray-800 text-white hover:bg-gray-700">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Volver
         </Button>
@@ -205,15 +206,13 @@ export default function InventoryItemDetailPage() {
                   Detalles del Producto/Servicio
                 </CardTitle>
                  <div className="flex items-center gap-2">
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm"><Archive className="mr-2 h-4 w-4" />Eliminar</Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader><AlertDialogTitle>¿Estás seguro de eliminar este ítem?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer y eliminará permanentemente el ítem {item.name} del inventario.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDeleteItem} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <ConfirmDialog
+                      triggerButton={<Button variant="destructive" size="sm"><Archive className="mr-2 h-4 w-4" />Eliminar</Button>}
+                      title={`¿Estás seguro de eliminar "${item.name}"?`}
+                      description="Esta acción no se puede deshacer y eliminará permanentemente el ítem del inventario."
+                      onConfirm={handleDeleteItem}
+                      confirmText="Sí, Eliminar"
+                    />
                     <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
                       <Edit className="mr-2 h-4 w-4" />
                       Editar
@@ -221,14 +220,16 @@ export default function InventoryItemDetailPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm font-medium text-primary">{item.isService ? 'Servicio' : 'Producto'}</p>
-                <div className="flex items-baseline gap-2">
-                    <h2 className="text-2xl font-bold">{item.name}</h2>
-                    <p className="text-sm text-muted-foreground">(SKU: {item.sku || 'N/A'})</p>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold">Categoría:</span> {item.category} | <span className="font-semibold">Marca:</span> {item.brand || 'N/A'} | <span className="font-semibold">Proveedor:</span> {item.supplier}
-                </p>
+                  <div>
+                    <p className="text-sm font-medium text-primary">{item.isService ? 'Servicio' : 'Producto'}</p>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <h2 className="text-2xl font-bold">{item.name}</h2>
+                        <p className="text-sm text-muted-foreground">(SKU: {item.sku || 'N/A'})</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        {item.category} | {item.brand || 'N/A'} | {item.supplier}
+                    </p>
+                  </div>
                 {item.description && (
                   <div className="pt-2">
                       <p className="text-sm text-foreground whitespace-pre-wrap mt-1">{item.description}</p>
@@ -238,7 +239,7 @@ export default function InventoryItemDetailPage() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 <Card>
+                <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-muted-foreground"/>Precios</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div>
