@@ -1,4 +1,3 @@
-
 // src/app/(app)/pos/components/ventas-pos-content.tsx
 "use client";
 
@@ -10,12 +9,12 @@ import type { SaleReceipt, InventoryItem, Payment, User } from "@/types";
 import Link from "next/link";
 import { useTableManager } from '@/hooks/useTableManager';
 import { Receipt } from 'lucide-react';
-import { startOfMonth, endOfMonth, parseISO, isValid, format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { startOfMonth, endOfMonth, parseISO, isValid, format as formatLocale } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getPaymentMethodVariant, cn } from '@/lib/utils';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import { Badge } from '@/components/ui/badge';
-import { format as formatLocale, es } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -174,6 +173,8 @@ export function VentasPosContent({
             searchPlaceholder="Buscar por ID, cliente, artículo..."
             sortOptions={sortOptions}
             filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
+            dateRange={tableManager.dateRange}
+            onDateRangeChange={tableManager.onDateRangeChange}
         />
         
         {filteredData.length > 0 ? (
