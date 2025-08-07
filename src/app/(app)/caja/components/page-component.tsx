@@ -9,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { db } from '@/lib/firebaseClient';
 import { query, collection, orderBy, limit, onSnapshot, where, doc } from 'firebase/firestore';
-import { format, startOfDay, isSameDay, startOfMonth, endOfMonth, isWithinInterval, isValid, parseISO } from 'date-fns';
+import { format, startOfDay, endOfDay, isSameDay, startOfMonth, endOfMonth, isWithinInterval, isValid, parseISO } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 
 const CajaPosContent = lazy(() => import('../../pos/caja/components/caja-pos-content').then(module => ({ default: module.CajaPosContent })));
