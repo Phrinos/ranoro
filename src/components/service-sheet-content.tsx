@@ -275,15 +275,19 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
         <main className="flex-grow">
           <section className="mb-2 text-sm border-b-2 border-black pb-2">
-            <p className="font-bold">{vehicle ? `${vehicle.licensePlate} - ${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
-            <p className="text-xs">{capitalizeWords(vehicle?.ownerName || '')} - {vehicle?.ownerPhone || ''}</p>
+            <p className="font-bold text-lg">{capitalizeWords(vehicle?.ownerName || '')}</p>
+            <p className="font-semibold text-base">{vehicle?.ownerPhone || ''}</p>
+            <div className="mt-1 flex justify-between items-end">
+                <p className="font-bold text-lg">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                <p className="font-bold text-xl px-2 py-1 bg-gray-200 rounded-md">{vehicle?.licensePlate || 'N/A'}</p>
+            </div>
           </section>
 
           {driverDebt.totalDebt > 0 && (
             <div className="my-2 p-2 border-2 border-red-500 bg-red-50 rounded-md text-red-800">
                 <h4 className="font-bold text-sm flex items-center gap-2"><AlertCircle className="h-4 w-4"/>AVISO DE ADEUDO</h4>
                 <p className="text-xs mt-1">
-                    Este conductor presenta un adeudo con la flotilla por <strong>{formatCurrency(driverDebt.totalDebt)}</strong>.
+                    Este conductor presenta un adeudo con la flotilla por un total de <strong>{formatCurrency(driverDebt.totalDebt)}</strong>.
                 </p>
             </div>
           )}
