@@ -1,26 +1,165 @@
 
-
+// src/app/(app)/servicios/page.tsx
 "use client";
 
-import { Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { serviceService, inventoryService, adminService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { ServiceForm } from './components/service-form';
+import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
+import type { VehicleFormValues } from '../vehiculos/components/vehicle-form';
+import type { ServiceFormValues } from '@/schemas/service-form';
+import { PageHeader } from '@/components/page-header';
 
-const ServiciosPageComponent = lazy(() => 
-  import('./components/page-component').then(module => ({ default: module.ServiciosPageComponent }))
-);
+export default function ServicioPage() {
+  const { toast } = useToast(); 
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams()
+  const serviceId = params.id as string | undefined;
 
-function ServiciosPage() {
-    const searchParams = useSearchParams();
-    const tab = searchParams.get('tab');
+  const [initialData, setInitialData] = useState<ServiceRecord | null>(null);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
+  const [categories, setCategories] = useState<InventoryCategory[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
+  
+  const isEditMode = !!serviceId;
+
+  useEffect(() => {
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [
+              serviceData, vehiclesData, usersData, inventoryData,
+              serviceTypesData, categoriesData, suppliersData, allServicesData
+            ] = await Promise.all([
+              isEditMode ? serviceService.getDocById('serviceRecords', serviceId) : Promise.resolve(null),
+              inventoryService.onVehiclesUpdatePromise(),
+              adminService.onUsersUpdatePromise(),
+              inventoryService.onItemsUpdatePromise(),
+              inventoryService.onServiceTypesUpdatePromise(),
+              inventoryService.onCategoriesUpdatePromise(),
+              inventoryService.onSuppliersUpdatePromise(),
+              serviceService.onServicesUpdatePromise(),
+            ]);
+
+            if (isEditMode && !serviceData) {
+              toast({ title: 'Error', description: 'Servicio no encontrado.', variant: 'destructive' });
+              router.push('/servicios/historial');
+              return;
+            }
+
+            if(serviceData) setInitialData(serviceData);
+            setVehicles(vehiclesData);
+            setUsers(usersData);
+            setInventoryItems(inventoryData);
+            setServiceTypes(serviceTypesData);
+            setCategories(categoriesData);
+            setSuppliers(suppliersData);
+            setServiceHistory(allServicesData);
+            
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            toast({ title: 'Error', description: 'No se pudieron cargar los datos.', variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    fetchData();
+  }, [serviceId, isEditMode, router, toast]);
+
+  const handleSaveService = async (values: ServiceFormValues) => {
+    try {
+      const savedRecord = await serviceService.saveService(values as ServiceRecord);
+      toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id.slice(-6)} se ha guardado.` });
+      
+      const targetTab = savedRecord.status === 'Cotizacion' ? 'cotizaciones' : 'activos';
+      router.push(`/servicios?tab=${targetTab}`);
+        
+    } catch(e) {
+      console.error(e);
+      toast({ title: 'Error al Registrar', variant: 'destructive'});
+    }
+  };
+
+  const handleUpdateService = async (values: ServiceFormValues) => {
+    if (!initialData) return;
+    try {
+      await serviceService.saveService({ ...values, id: serviceId });
+      toast({ title: 'Servicio Actualizado', description: `El registro #${serviceId?.slice(-6)} ha sido actualizado.` });
+      const targetTab = values.status === 'Cotizacion' ? 'cotizaciones' : 'historial';
+      router.push(`/servicios?tab=${targetTab}`);
+    } catch(e) {
+      console.error(e);
+      toast({ title: 'Error al Actualizar', variant: 'destructive'});
+    }
+  };
+  
+  const handleVehicleCreated = async (data: VehicleFormValues) => {
+      await inventoryService.addVehicle(data);
+      toast({ title: "Vehículo Creado" });
+  };
+
+  const handleCancelService = async (id: string, reason: string) => {
+      await serviceService.cancelService(id, reason);
+      toast({ title: "Servicio Cancelado" });
+      router.push('/servicios?tab=historial');
+  };
+  
+  const handleDeleteQuote = async (id: string) => {
+      await serviceService.deleteService(id);
+      toast({ title: "Cotización Eliminada", variant: "destructive" });
+      router.push('/servicios?tab=cotizaciones');
+  };
+  
+  if (isLoading || (isEditMode && !initialData)) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+        {isEditMode ? 'Cargando servicio...' : 'Cargando...'}
+      </div>
+    );
+  }
+
+  const isQuoteModeParam = searchParams.get('mode') === 'quote';
+  const isQuote = isEditMode ? initialData?.status === 'Cotizacion' : isQuoteModeParam;
+  
+  const pageTitle = isEditMode 
+    ? `Editar ${isQuote ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`
+    : `Nueva ${isQuote ? 'Cotización' : 'Servicio'}`;
     
-    return <ServiciosPageComponent tab={tab || "activos"} />;
-}
+  const pageDescription = isEditMode 
+    ? `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`
+    : "Completa los datos para crear un nuevo registro.";
 
-export default function ServiciosPageWrapper() {
+
   return (
-    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <ServiciosPage />
-    </Suspense>
+    <>
+      <PageHeader title={pageTitle} description={pageDescription} />
+      <ServiceForm
+        initialDataService={initialData}
+        vehicles={vehicles}
+        technicians={users}
+        inventoryItems={inventoryItems}
+        serviceTypes={serviceTypes}
+        categories={categories}
+        suppliers={suppliers}
+        serviceHistory={serviceHistory}
+        onSubmit={isEditMode ? handleUpdateService : handleSaveService}
+        onClose={() => router.back()}
+        onDelete={handleDeleteQuote}
+        onCancelService={handleCancelService}
+        onVehicleCreated={handleVehicleCreated}
+        mode={isQuote ? 'quote' : 'service'}
+      />
+    </>
   );
 }
