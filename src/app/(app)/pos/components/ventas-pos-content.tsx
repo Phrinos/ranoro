@@ -167,12 +167,12 @@ export function VentasPosContent({
         
         <TableToolbar
             searchTerm={tableManager.searchTerm}
-            onSearchTermChange={tableManager.setSearchTerm}
-            searchPlaceholder="Buscar por ID, cliente, artículo..."
+            onSearchTermChange={tableManager.onSearchTermChange}
             dateRange={tableManager.dateRange}
-            onDateRangeChange={tableManager.setDateRange}
+            onDateRangeChange={tableManager.onDateRangeChange}
             sortOption={tableManager.sortOption}
-            onSortOptionChange={tableManager.setSortOption}
+            onSortOptionChange={tableManager.onSortOptionChange}
+            searchPlaceholder="Buscar por ID, cliente, artículo..."
             sortOptions={sortOptions}
             otherFilters={tableManager.otherFilters}
             onFilterChange={tableManager.setOtherFilters}
