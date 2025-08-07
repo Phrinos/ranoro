@@ -14,7 +14,7 @@ import { es } from 'date-fns/locale';
 import { CalendarIcon as CalendarDateIcon, Wallet } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
-import { operationsService, inventoryService, adminService } from '@/lib/services';
+import { saleService, serviceService, inventoryService, adminService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from "@/components/ui/badge";
@@ -55,8 +55,8 @@ export function RendimientoPersonalContent() {
     setIsLoading(true);
     const unsubs: (() => void)[] = [
       adminService.onUsersUpdate(setAllUsers),
-      operationsService.onSalesUpdate(setAllSales),
-      operationsService.onServicesUpdate(setAllServices),
+      saleService.onSalesUpdate(setAllSales),
+      serviceService.onServicesUpdate(setAllServices),
       inventoryService.onItemsUpdate(setAllInventory),
       inventoryService.onFixedExpensesUpdate((expenses) => {
           setFixedExpenses(expenses);
