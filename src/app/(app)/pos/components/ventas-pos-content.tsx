@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -86,9 +87,9 @@ export function VentasPosContent({
         });
       } else if (sale.paymentMethod) { // Fallback for older records
         const methods = sale.paymentMethod.split(/[+\/]/).map(m => m.trim()) as Payment['method'][];
-        const totalAmount = sale.totalAmount || 0;
         
         let paymentBreakdown: { method: Payment['method']; amount: number }[] = [];
+        const totalAmount = sale.totalAmount || 0;
         
         if (methods.length > 1 && (sale.amountInCash !== undefined || sale.amountInCard !== undefined || sale.amountInTransfer !== undefined)) {
             if (sale.amountInCash) paymentBreakdown.push({ method: 'Efectivo', amount: sale.amountInCash });
@@ -165,13 +166,17 @@ export function VentasPosContent({
         </Button>
         
         <TableToolbar
-            {...tableManager}
+            searchTerm={tableManager.searchTerm}
+            onSearchTermChange={tableManager.setSearchTerm}
             searchPlaceholder="Buscar por ID, cliente, artículo..."
-            sortOptions={sortOptions}
-            filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
-            onFilterChange={tableManager.setOtherFilters}
             dateRange={tableManager.dateRange}
             onDateRangeChange={tableManager.setDateRange}
+            sortOption={tableManager.sortOption}
+            onSortOptionChange={tableManager.setSortOption}
+            sortOptions={sortOptions}
+            otherFilters={tableManager.otherFilters}
+            onFilterChange={tableManager.setOtherFilters}
+            filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
             paginationSummary={tableManager.paginationSummary}
             canGoPrevious={tableManager.canGoPrevious}
             canGoNext={tableManager.canGoNext}

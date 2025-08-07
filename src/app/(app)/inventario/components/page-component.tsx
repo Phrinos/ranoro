@@ -6,15 +6,16 @@ import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, laz
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer } from "lucide-react";
 import type { InventoryItem, InventoryCategory, Supplier } from '@/types'; 
-import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from 'lucide-react';
-import { inventoryService, purchaseService } from '@/lib/services';
+import { inventoryService } from '@/lib/services/inventory.service';
+import { purchaseService } from '@/lib/services/purchase.service';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from "@/lib/utils";
 import type { PurchaseFormValues } from './register-purchase-dialog';
 import { DashboardCards } from './DashboardCards';
+import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 
 // Lazy load components
 const RegisterPurchaseDialog = lazy(() => import('./register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
@@ -91,6 +92,14 @@ export default function InventarioPageComponent({
     setEditingItem(null);
     setIsItemDialogOpen(true);
   }, []);
+  
+  const handleItemUpdated = async (data: InventoryItemFormValues) => {
+    if (!editingItem || !('id' in editingItem)) return;
+    await inventoryService.saveItem(data, editingItem.id!);
+    toast({ title: "Producto Actualizado" });
+    setIsItemDialogOpen(false);
+  };
+  
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
     await purchaseService.registerPurchase(data);
@@ -138,7 +147,6 @@ export default function InventarioPageComponent({
   const tabsConfig = [
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
-    { value: "analisis", label: "Análisis IA" },
   ];
 
   return (
@@ -194,11 +202,6 @@ export default function InventarioPageComponent({
             />
           </Suspense>
         </TabsContent>
-        <TabsContent value="analisis" className="mt-6">
-          <Suspense fallback={<Loader2 className="animate-spin" />}>
-            <AnalisisIaContent inventoryItems={inventoryItems} />
-          </Suspense>
-        </TabsContent>
       </Tabs>
       
       <Suspense fallback={null}>
@@ -215,7 +218,7 @@ export default function InventarioPageComponent({
         <InventoryItemDialog
           open={isItemDialogOpen}
           onOpenChange={setIsItemDialogOpen}
-          onSave={handleSaveItem}
+          onSave={editingItem ? handleItemUpdated : handleSaveItem}
           item={editingItem}
           categories={categories}
           suppliers={suppliers}
@@ -224,10 +227,10 @@ export default function InventarioPageComponent({
 
        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
-                <DialogHeader className="p-6 pb-2 border-b">
-                  <DialogTitle>Reporte de Inventario</DialogTitle>
-                  <DialogDescription>Vista previa del reporte para imprimir.</DialogDescription>
-                </DialogHeader>
+                 <DialogHeader className="p-6 pb-2 border-b">
+                    <DialogTitle>Reporte de Inventario</DialogTitle>
+                    <DialogDescription>Vista previa del reporte para imprimir.</DialogDescription>
+                 </DialogHeader>
                 <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
                   <Suspense fallback={<Loader2 className="animate-spin" />}>
                     <InventoryReportContent items={itemsToPrint} />

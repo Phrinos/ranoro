@@ -29,10 +29,10 @@ interface TableToolbarProps {
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   dateRange?: DateRange;
-  onDateRangeChange?: (range?: DateRange) => void;
+  onDateRangeChange: (range?: DateRange) => void;
   sortOption: string;
   onSortOptionChange: (value: string) => void;
-  sortOptions?: Option[];
+  sortOptions: Option[];
   otherFilters?: Record<string, string | 'all'>;
   onFilterChange?: (filters: Record<string, string | 'all'>) => void;
   filterOptions?: FilterGroup[];
@@ -51,10 +51,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   onDateRangeChange,
   sortOption,
   onSortOptionChange,
-  sortOptions = [
-    { value: 'date_desc', label: 'Más Reciente' },
-    { value: 'date_asc', label: 'Más Antiguo' }
-  ],
+  sortOptions,
   otherFilters = {},
   onFilterChange,
   filterOptions = [],
@@ -100,6 +97,8 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     const setDateToThisMonth = () => setPresetDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
     
     const showPagination = paginationSummary && onPreviousPage && onNextPage;
+    const showDatePicker = dateRange !== undefined && onDateRangeChange !== undefined;
+
     
   return (
     <div className="space-y-4">
@@ -129,7 +128,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                 )}
 
                 {/* Filters Dropdown */}
-                {filterOptions && filterOptions.length > 0 && onFilterChange && (
+                {filterOptions.length > 0 && onFilterChange && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><Filter className="mr-2 h-4 w-4" /><span>Filtros</span></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -147,7 +146,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                 )}
 
                 {/* Date Picker */}
-                {dateRange && onDateRangeChange && (
+                {showDatePicker && (
                     <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                         <PopoverTrigger asChild>
                         <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
