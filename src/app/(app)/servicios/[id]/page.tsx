@@ -297,7 +297,7 @@ export default function EditarServicioPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
                         <div className="lg:col-span-3">
                           <Suspense fallback={<Loader2 className="animate-spin" />}>
-                            <ServiceItemsList isReadOnly={false} inventoryItems={inventoryItems} mode={'service'} onNewInventoryItemCreated={handleNewInventoryItemCreated} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/>
+                            <ServiceItemsList isReadOnly={false} inventoryItems={inventoryItems} mode={'service'} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/>
                           </Suspense>
                         </div>
                         <div className="lg:col-span-2 space-y-6">
@@ -326,17 +326,11 @@ export default function EditarServicioPage() {
             ) : (
               // Vista sin pestañas para Cotizacion/Agendado
               <>
-                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start mt-6">
                     <div className="lg:col-span-3">
-                      <Suspense fallback={<Loader2 className="animate-spin" />}>
-                        <ServiceItemsList isReadOnly={false} inventoryItems={inventoryItems} mode={initialData.status === 'Cotizacion' ? 'quote' : 'service'} onNewInventoryItemCreated={handleNewInventoryItemCreated} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/>
-                      </Suspense>
+                      <Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={false} inventoryItems={inventoryItems} mode={initialData.status === 'Cotizacion' ? 'quote' : 'service'} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense>
                     </div>
-                    <div className="lg:col-span-2 space-y-6">
-                      <Suspense fallback={<Loader2 className="animate-spin" />}>
-                        <PaymentSection />
-                      </Suspense>
-                    </div>
+                    <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><PaymentSection /></Suspense></div>
                  </div>
               </>
             )}
@@ -399,11 +393,10 @@ export default function EditarServicioPage() {
               <div className="relative aspect-video w-full">
                 <Image
                   src={viewingImageUrl}
-                  alt="Vista ampliada de evidencia"
+                  alt="Vista ampliada"
                   fill
                   style={{ objectFit: 'contain' }}
                   sizes="(max-width: 768px) 100vw, 1024px"
-                  crossOrigin="anonymous"
                 />
               </div>
             )}
