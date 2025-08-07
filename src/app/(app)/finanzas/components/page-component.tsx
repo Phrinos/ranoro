@@ -273,7 +273,6 @@ export function FinanzasPageComponent({
             )
         },
         { value: "egresos", label: "Egresos", content:  <Suspense fallback={<Loader2 className="animate-spin" />}><div className="space-y-6"><div className="mb-6">{dateFilterComponent}</div><EgresosContent financialSummary={financialSummary} fixedExpenses={fixedExpenses} personnel={allPersonnel} onExpensesUpdated={(updated) => setFixedExpenses([...updated])} /></div></Suspense> },
-        { value: "operaciones", label: "Operaciones", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ReporteOperacionesContent allSales={allSales} allServices={allServices} allInventory={allInventory} serviceTypes={serviceTypes} /></Suspense> },
     ];
     
     return (
