@@ -23,7 +23,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PosForm } from "./pos-form";
 import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
 import { useToast } from "@/hooks/use-toast";
-import { operationsService } from "@/lib/services";
+import { saleService } from "@/lib/services";
 
 interface ViewSaleDialogProps {
   open: boolean;

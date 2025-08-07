@@ -6,15 +6,12 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { PlusCircle, ChevronLeft, ChevronRight } from "lucide-react";
-import type { SaleReceipt, InventoryItem, Payment, User, InventoryCategory, Supplier } from "@/types";
+import type { SaleReceipt, InventoryItem, Payment, User } from "@/types";
 import Link from "next/link";
 import { useTableManager } from '@/hooks/useTableManager';
 import { SaleCard } from './SaleCard';
 import { Receipt } from 'lucide-react';
 import { startOfMonth, endOfMonth } from 'date-fns';
-import { ViewSaleDialog } from './view-sale-dialog';
-import { saleService } from '@/lib/services';
-import { useToast } from '@/hooks/use-toast';
 
 const sortOptions = [
     { value: 'date_desc', label: 'Más Reciente' },
@@ -34,12 +31,9 @@ interface VentasPosContentProps {
   allSales: SaleReceipt[];
   allInventory: InventoryItem[];
   allUsers: User[];
-  allCategories: InventoryCategory[];
-  allSuppliers: Supplier[];
   currentUser: User | null;
   onReprintTicket: (sale: SaleReceipt) => void;
   onViewSale: (sale: SaleReceipt) => void;
-  onDeleteSale: (saleId: string) => void;
 }
 
 
@@ -48,18 +42,12 @@ export function VentasPosContent({
   allInventory, 
   allUsers, 
   currentUser,
-  allCategories,
-  allSuppliers,
   onReprintTicket,
   onViewSale,
-  onDeleteSale
 }: VentasPosContentProps) {
-  const { toast } = useToast();
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [selectedSale, setSelectedSale] = useState<SaleReceipt | null>(null);
 
   const { 
-    filteredData: filteredAndSortedSales,
+    filteredData: filteredAndSortedSales, 
     ...tableManager 
   } = useTableManager<SaleReceipt>({
     initialData: allSales,
@@ -69,21 +57,6 @@ export function VentasPosContent({
     itemsPerPage: 10,
     initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
   });
-  
-  const handleCancelSale = useCallback(async (saleId: string, reason: string) => {
-    try {
-        await saleService.cancelSale(saleId, reason, currentUser);
-        toast({ title: 'Venta Cancelada', description: 'El stock ha sido restaurado.' });
-        setIsViewDialogOpen(false);
-    } catch(e) {
-        toast({ title: "Error", description: "No se pudo cancelar la venta.", variant: "destructive"});
-    }
-  }, [currentUser, toast]);
-  
-  const handleUpdatePaymentDetails = useCallback(async (saleId: string, paymentDetails: any) => {
-    await saleService.updateSale(saleId, paymentDetails);
-    toast({ title: "Detalles de Pago Actualizados" });
-  }, [toast]);
 
   return (
     <div className="space-y-4">
@@ -127,7 +100,7 @@ export function VentasPosContent({
                           users={allUsers}
                           currentUser={currentUser}
                           onReprintTicket={() => onReprintTicket(sale)}
-                          onViewSale={() => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
+                          onViewSale={() => onViewSale(sale)}
                       />
                   );
               })}
@@ -139,19 +112,6 @@ export function VentasPosContent({
               <p className="text-sm">Intente cambiar su búsqueda o el rango de fechas.</p>
           </div>
         )}
-        
-        {selectedSale && <ViewSaleDialog
-            open={isViewDialogOpen} 
-            onOpenChange={setIsViewDialogOpen} 
-            sale={selectedSale} 
-            inventory={allInventory}
-            users={allUsers}
-            categories={allCategories}
-            suppliers={allSuppliers}
-            onCancelSale={handleCancelSale}
-            onDeleteSale={onDeleteSale}
-            onPaymentUpdate={handleUpdatePaymentDetails}
-        />}
     </div>
   );
 }

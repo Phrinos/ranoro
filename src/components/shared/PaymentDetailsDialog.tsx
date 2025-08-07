@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,6 +54,7 @@ const paymentDetailsSchema = z.object({
     folio: z.string().optional(),
   })).min(1, "Debe agregar al menos un método de pago."),
 }).superRefine((data, ctx) => {
+    // Total amount charged to the customer
     const totalPayments = data.payments.reduce((acc, p) => acc + (p.amount || 0), 0);
     // This validation is tricky without the total amount. It will be done in the parent component.
     
@@ -75,6 +77,7 @@ interface PaymentDetailsDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   record: ServiceRecord | SaleReceipt;
   onConfirm: (recordId: string, paymentDetails: PaymentDetailsFormValues) => void;
+  recordType: 'service' | 'sale';
   isCompletionFlow?: boolean;
 }
 
@@ -83,6 +86,7 @@ export function PaymentDetailsDialog({
   onOpenChange,
   record,
   onConfirm,
+  recordType,
   isCompletionFlow = false,
 }: PaymentDetailsDialogProps) {
   const { toast } = useToast();

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
@@ -9,22 +10,20 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { inventoryService, adminService, serviceService } from '@/lib/services';
-import { quoteService } from '@/lib/services/quote.service';
-import { agendaService } from '@/lib/services/agenda.service';
-import { historyService } from '@/lib/services/history.service';
+import { inventoryService, adminService, serviceService, quoteService, historyService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { isToday } from 'date-fns';
 import { parseDate } from '@/lib/forms';
+import { agendaService } from '@/lib/services/agenda.service';
 
 const ActivosTabContent = lazy(() => import('./tab-activos'));
 const HistorialTabContent = lazy(() => import('./tab-historial'));
 const AgendaTabContent = lazy(() => import('./tab-agenda'));
 const CotizacionesTabContent = lazy(() => import('./tab-cotizaciones'));
 const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
-const PaymentDetailsDialog = lazy(() => import('../components/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
+const PaymentDetailsDialog = lazy(() => import('@/components/shared/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 
 export function ServiciosPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
