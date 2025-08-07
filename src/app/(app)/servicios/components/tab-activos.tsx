@@ -24,16 +24,20 @@ interface ActivosTabContentProps {
 }
 
 const getStatusPriority = (service: ServiceRecord): number => {
-    if (service.status === 'En Taller' && service.subStatus === 'En Espera de Refacciones') return 1;
-    if (service.status === 'En Taller' && service.subStatus === 'Proveedor Externo') return 2;
-    if (service.status === 'Agendado' && service.appointmentStatus === 'Confirmada') return 3;
-    if (service.status === 'En Taller' && service.subStatus === 'Reparando') return 4;
-    if (service.status === 'En Taller' && !service.subStatus) return 4; // Default for 'En Taller'
-    if (service.status === 'Agendado' && service.appointmentStatus !== 'Confirmada') return 5;
-    if (service.status === 'En Taller' && service.subStatus === 'Completado') return 6;
-    if (service.status === 'Entregado') return 7;
-    if (service.status === 'Cancelado') return 8;
-    return 99; // Default case
+    if (service.status === 'Agendado') {
+        return service.appointmentStatus === 'Confirmada' ? 1 : 2;
+    }
+    if (service.status === 'En Taller') {
+        switch (service.subStatus) {
+            case 'En Espera de Refacciones': return 3;
+            case 'Reparando': return 4;
+            case 'Completado': return 5;
+            default: return 4; // Default for 'En Taller' without substatus
+        }
+    }
+    if (service.status === 'Entregado') return 6;
+    if (service.status === 'Cancelado') return 8; // Should not appear here but good to have
+    return 7; // Others
 };
 
 export default function ActivosTabContent({
@@ -48,13 +52,21 @@ export default function ActivosTabContent({
 
   const activeServices = useMemo(() => {
     return allServices.sort((a, b) => {
-        const priorityA = getStatusPriority(a);
-        const priorityB = getStatusPriority(b);
-        if (priorityA !== priorityB) return priorityA - priorityB;
         const dateA = parseDate(a.receptionDateTime) || parseDate(a.serviceDate);
         const dateB = parseDate(b.receptionDateTime) || parseDate(b.serviceDate);
-        if (!dateA) return 1; if (!dateB) return -1;
-        return compareDesc(dateA, dateB);
+
+        if (dateA && dateB) {
+            const dateComparison = compareDesc(dateA, dateB);
+            if (dateComparison !== 0) return dateComparison;
+        } else if (dateA) {
+            return -1;
+        } else if (dateB) {
+            return 1;
+        }
+        
+        const priorityA = getStatusPriority(a);
+        const priorityB = getStatusPriority(b);
+        return priorityA - priorityB;
     });
   }, [allServices]);
 
