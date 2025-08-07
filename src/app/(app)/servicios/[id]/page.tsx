@@ -146,7 +146,7 @@ export default function ServicioPage() {
     );
   }
 
-  const isQuote = initialData?.status === 'Cotizacion' || mode === 'quote';
+  const isQuote = initialData?.status === 'Cotizacion' || isQuoteModeParam;
   
   const pageTitle = isEditMode 
     ? `Editar ${initialData?.status === 'Cotizacion' ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`

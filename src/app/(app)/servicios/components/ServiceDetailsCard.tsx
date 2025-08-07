@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 
 "use client";
@@ -64,7 +65,7 @@ export function ServiceDetailsCard({
 
   const showAppointmentFields = useMemo(() => watchedStatus === 'Agendado', [watchedStatus]);
   const showWorkshopFields = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
-  const showTechnicianField = useMemo(() => watchedStatus !== 'Cotizacion', [watchedStatus]);
+  const showTechnicianField = useMemo(() => watchedStatus !== 'Cotizacion' && watchedStatus !== 'Agendado', [watchedStatus]);
   const showQuoteDateField = useMemo(() => watchedStatus === 'Cotizacion', [watchedStatus]);
 
 
