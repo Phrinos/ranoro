@@ -47,7 +47,7 @@ export function EgresosContent({ financialSummary, fixedExpenses, personnel, onE
             </Button>
           </div>
           <CardDescription>
-            Detalle de gastos fijos (nómina, servicios) del mes. Las comisiones se calculan aparte sobre la utilidad.
+            Detalle de gastos fijos (nómina, servicios) del mes.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
