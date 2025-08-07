@@ -1,6 +1,5 @@
 
-
-// src/app/(app)/servicios/components/service-dialog.tsx
+// src/app/(app)/vehiculos/[id]/page.tsx
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -39,6 +38,12 @@ import {
   Printer,
   Copy,
   CalendarCheck,
+  Car,
+  User as UserIcon,
+  Fingerprint,
+  Phone,
+  Mail,
+  StickyNote,
 } from "lucide-react";
 import {
   Table,
@@ -60,6 +65,7 @@ import { inventoryService, adminService, serviceService } from "@/lib/services";
 import { parseDate } from "@/lib/forms";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 import { capitalizeWords } from '@/lib/utils';
+import { Separator } from "@/components/ui/separator";
 
 export default function VehicleDetailPage() {
   const params = useParams();
@@ -137,18 +143,21 @@ export default function VehicleDetailPage() {
                         <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4" />Editar</Button>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Marca</p><p>{vehicle.make}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Modelo</p><p>{vehicle.model}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Año</p><p>{vehicle.year}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Color</p><p>{vehicle.color || 'N/A'}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Placa</p><p>{vehicle.licensePlate}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground">VIN</p><p className="font-mono">{vehicle.vin || 'N/A'}</p></div>
-                            <div className="space-y-1 pt-4 border-t md:col-span-2"><p className="font-medium text-muted-foreground">Propietario</p><p className="font-semibold">{vehicle.ownerName}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Teléfono</p><p>{vehicle.ownerPhone || 'N/A'}</p></div>
-                            <div className="space-y-1"><p className="font-medium text-muted-foreground">Email</p><p>{vehicle.ownerEmail || 'N/A'}</p></div>
-                            {vehicle.notes && (<div className="pt-2 md:col-span-2"><p className="font-semibold">Notas del Vehículo:</p><p className="text-sm text-muted-foreground whitespace-pre-wrap">{vehicle.notes}</p></div>)}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Car className="h-4 w-4"/>Marca</p><p>{vehicle.make}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Car className="h-4 w-4"/>Modelo</p><p>{vehicle.model}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><CalendarCheck className="h-4 w-4"/>Año</p><p>{vehicle.year}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Car className="h-4 w-4"/>Color</p><p>{vehicle.color || 'N/A'}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Car className="h-4 w-4"/>Placa</p><p>{vehicle.licensePlate}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Fingerprint className="h-4 w-4"/>VIN</p><p className="font-mono">{vehicle.vin || 'N/A'}</p></div>
                         </div>
+                        <Separator className="my-4" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><UserIcon className="h-4 w-4"/>Propietario</p><p className="font-semibold">{vehicle.ownerName}</p></div>
+                            <div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><Phone className="h-4 w-4"/>Teléfono</p><p>{vehicle.ownerPhone || 'N/A'}</p></div>
+                            <div className="space-y-1 md:col-span-2"><p className="font-medium text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4"/>Email</p><p>{vehicle.ownerEmail || 'N/A'}</p></div>
+                        </div>
+                         {vehicle.notes && (<><Separator className="my-4" /><div className="space-y-1"><p className="font-medium text-muted-foreground flex items-center gap-2"><StickyNote className="h-4 w-4"/>Notas</p><p className="text-sm text-foreground whitespace-pre-wrap">{vehicle.notes}</p></div></>)}
                     </CardContent>
                 </Card>
             </div>
