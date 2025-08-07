@@ -36,6 +36,14 @@ const paymentMethodOptions: { value: PaymentMethod | 'all'; label: string }[] = 
     { value: 'Transferencia', label: 'Transferencia' },
 ];
 
+const sortOptions = [
+    { value: 'deliveryDateTime_desc', label: 'Fecha (Más Reciente)' },
+    { value: 'deliveryDateTime_asc', label: 'Fecha (Más Antiguo)' },
+    { value: 'totalCost_desc', label: 'Costo (Mayor a Menor)' },
+    { value: 'totalCost_asc', label: 'Costo (Menor a Mayor)' },
+    { value: 'vehicleIdentifier_asc', label: 'Placa (A-Z)' },
+];
+
 
 export default function HistorialTabContent({
   services,
@@ -96,6 +104,7 @@ export default function HistorialTabContent({
       <TableToolbar
         {...tableManager}
         searchPlaceholder="Buscar por folio, placa..."
+        sortOptions={sortOptions}
         filterOptions={[
           {
             value: 'status',
