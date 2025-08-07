@@ -14,7 +14,7 @@ import { inventoryService } from '@/lib/services/inventory.service';
 import { saleService } from '@/lib/services/sale.service';
 import { serviceService } from '@/lib/services/service.service';
 import { purchaseService } from '@/lib/services/purchase.service';
-import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from "@/lib/utils";
 
 // Lazy load components
@@ -85,6 +85,7 @@ export default function InventarioPageComponent({
       setItemsToPrint(items);
       setIsPrintDialogOpen(true);
   }, []);
+
 
   const handleOpenItemDialog = useCallback(() => {
     setEditingItem(null);
@@ -192,6 +193,10 @@ export default function InventarioPageComponent({
 
        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
+                <DialogHeader className="p-6 pb-2 flex-shrink-0 no-print border-b">
+                  <DialogTitle>Reporte de Inventario</DialogTitle>
+                  <DialogDescription>Vista previa del reporte para imprimir.</DialogDescription>
+                </DialogHeader>
                 <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
                   <Suspense fallback={<Loader2 className="animate-spin" />}>
                     <InventoryReportContent items={itemsToPrint} />
