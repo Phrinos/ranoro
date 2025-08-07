@@ -31,6 +31,7 @@ export default function ServicioPage() {
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
   
   const isEditMode = !!serviceId;
+  const isQuoteModeParam = searchParams.get('mode') === 'quote';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,7 +57,16 @@ export default function ServicioPage() {
               return;
             }
 
-            if(serviceData) setInitialData(serviceData);
+            if(serviceData) {
+              setInitialData(serviceData);
+            } else if (!isEditMode) {
+                // Set default values for new service/quote
+                setInitialData({
+                    status: isQuoteModeParam ? 'Cotizacion' : 'En Taller',
+                    serviceDate: new Date().toISOString(), // Ensure new records have a date
+                } as ServiceRecord);
+            }
+
             setVehicles(vehiclesData);
             setUsers(usersData);
             setInventoryItems(inventoryData);
@@ -74,7 +84,7 @@ export default function ServicioPage() {
     };
 
     fetchData();
-  }, [serviceId, isEditMode, router, toast]);
+  }, [serviceId, isEditMode, isQuoteModeParam, router, toast]);
 
   const handleSaveService = async (values: ServiceFormValues) => {
     try {
@@ -129,7 +139,6 @@ export default function ServicioPage() {
     );
   }
 
-  const isQuoteModeParam = searchParams.get('mode') === 'quote';
   const isQuote = isEditMode ? initialData?.status === 'Cotizacion' : isQuoteModeParam;
   
   const pageTitle = isEditMode 
@@ -154,7 +163,6 @@ export default function ServicioPage() {
         suppliers={suppliers}
         serviceHistory={serviceHistory}
         onSubmit={isEditMode ? handleUpdateService : handleSaveService}
-        onClose={() => router.back()}
         onDelete={handleDeleteQuote}
         onCancelService={handleCancelService}
         onVehicleCreated={handleVehicleCreated}

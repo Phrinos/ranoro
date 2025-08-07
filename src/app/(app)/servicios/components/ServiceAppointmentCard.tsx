@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Car, User as UserIcon, Calendar, CheckCircle, XCircle, Clock, Ellipsis, Eye, Edit, Check, DollarSign, TrendingUp, Copy, Printer, Trash2, Phone } from 'lucide-react';
 import type { ServiceRecord, Vehicle, User, Payment } from '@/types';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency, getStatusInfo, getPaymentMethodVariant, cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +46,7 @@ export function ServiceAppointmentCard({
   const technician = useMemo(() => personnel.find(u => u.id === service.technicianId), [personnel, service.technicianId]);
   const advisor = useMemo(() => personnel.find(u => u.id === service.serviceAdvisorId), [personnel, service.serviceAdvisorId]);
   
-  const displayDate = service.appointmentDateTime || service.deliveryDateTime || service.receptionDateTime || service.serviceDate;
+  const displayDate = service.appointmentDateTime || service.receptionDateTime || service.deliveryDateTime || service.serviceDate;
   const parsedDate = displayDate ? parseDate(displayDate) : null;
 
   // Recalculate totals directly from serviceItems for display accuracy, especially for quotes
@@ -96,8 +96,8 @@ export function ServiceAppointmentCard({
         <div className="flex flex-col md:flex-row text-sm">
           {/* Col 1: Date & Folio */}
           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-card border-b md:border-b-0 md:border-r">
-            <p className="font-bold text-lg text-foreground">{parsedDate ? format(parsedDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
-            <p className="text-muted-foreground text-sm">{parsedDate ? format(parsedDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
+            <p className="text-muted-foreground text-sm">{parsedDate && isValid(parsedDate) ? format(parsedDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
+            <p className="font-bold text-lg text-foreground">{parsedDate && isValid(parsedDate) ? format(parsedDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
             <p className="text-muted-foreground text-xs mt-2">Folio: ...{service.id.slice(-6)}</p>
           </div>
 
@@ -117,9 +117,10 @@ export function ServiceAppointmentCard({
           <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-1 border-b md:border-b-0 md:border-r">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Costo Cliente</p>
-              <p className="font-bold text-xl text-destructive">{formatCurrency(calculatedTotals.totalCost)}</p>
+              <p className="font-bold text-xl text-primary">{formatCurrency(calculatedTotals.totalCost)}</p>
             </div>
             <div>
+              <p className="text-xs text-muted-foreground">Ganancia</p>
               <p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end">
                 <TrendingUp className="h-4 w-4" /> {formatCurrency(calculatedTotals.serviceProfit)}
               </p>
@@ -161,7 +162,7 @@ export function ServiceAppointmentCard({
                         </Button>
                     }
                     title={service.status === 'Cotizacion' ? '¿Eliminar Cotización?' : '¿Cancelar Servicio?'}
-                    description={service.status === 'Cotizacion' ? 'Esta acción eliminará permanentemente el registro.' : 'Esta acción marcará el servicio como cancelado.'}
+                    description={service.status === 'Cotizacion' ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.' : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'}
                     onConfirm={service.status === 'Cotizacion' ? onDelete! : onCancel!}
                     confirmText="Sí, Continuar"
                   />
