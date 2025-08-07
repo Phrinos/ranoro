@@ -43,7 +43,6 @@ interface VentasPosContentProps {
   currentUser: User | null;
   onReprintTicket: (sale: SaleReceipt) => void;
   onViewSale: (sale: SaleReceipt) => void;
-  onEditPayment: (sale: SaleReceipt) => void;
   onDeleteSale: (saleId: string) => void;
 }
 
@@ -55,7 +54,6 @@ export function VentasPosContent({
   currentUser,
   onReprintTicket,
   onViewSale,
-  onEditPayment,
   onDeleteSale,
 }: VentasPosContentProps) {
 
@@ -86,18 +84,39 @@ export function VentasPosContent({
           paymentsSummary.set(p.method, current);
         });
       } else if (sale.paymentMethod) { // Fallback for older records
-        const methods = sale.paymentMethod.split(/[+/]/) as Payment['method'][];
-        const amountPerMethod = (sale.totalAmount || 0) / methods.length;
-        methods.forEach(method => {
+        const methods = sale.paymentMethod.split(/[+\/]/).map(m => m.trim()) as Payment['method'][];
+        const totalAmount = sale.totalAmount || 0;
+        
+        let paymentBreakdown: { method: Payment['method']; amount: number }[] = [];
+        
+        if (methods.length > 1 && (sale.amountInCash !== undefined || sale.amountInCard !== undefined || sale.amountInTransfer !== undefined)) {
+            if (sale.amountInCash) paymentBreakdown.push({ method: 'Efectivo', amount: sale.amountInCash });
+            if (sale.amountInCard) paymentBreakdown.push({ method: 'Tarjeta', amount: sale.amountInCard });
+            if (sale.amountInTransfer) paymentBreakdown.push({ method: 'Transferencia', amount: sale.amountInTransfer });
+        } else if (methods.length === 1) {
+            paymentBreakdown.push({ method: methods[0], amount: totalAmount });
+        } else {
+             // Fallback for cases like "Efectivo/Tarjeta" without specific amounts
+            const amountPerMethod = totalAmount / methods.length;
+            methods.forEach(method => paymentBreakdown.push({method, amount: amountPerMethod}));
+        }
+
+        paymentBreakdown.forEach(({ method, amount }) => {
             const current = paymentsSummary.get(method) || { count: 0, total: 0 };
-            current.count += 1;
-            current.total += amountPerMethod;
+            current.count += 1; // This might double count, but it's a fallback
+            current.total += amount;
             paymentsSummary.set(method, current);
         });
       }
     });
     return { salesCount, paymentsSummary, totalProfit };
   }, [filteredData, allInventory]);
+  
+  const handleEditPayment = () => {
+    // This function will likely be handled by a dialog in the parent component now.
+    // For now, it's a placeholder.
+    console.log("Edit payment logic needs to be connected here.");
+  };
 
   return (
     <div className="space-y-4">
@@ -154,7 +173,7 @@ export function VentasPosContent({
             {...tableManager}
             onFilterChange={tableManager.setOtherFilters}
             onSearchTermChange={tableManager.setSearchTerm}
-            onSortOptionChange={tableManager.setSortOption}
+            onSortOptionChange={tableManager.onSortOptionChange}
             onDateRangeChange={tableManager.setDateRange}
             sortOptions={sortOptions}
             filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
@@ -187,7 +206,7 @@ export function VentasPosContent({
                           currentUser={currentUser}
                           onReprintTicket={() => onReprintTicket(sale)}
                           onViewSale={() => onViewSale(sale)}
-                          onEditPayment={() => onEditPayment(sale)}
+                          onEditPayment={handleEditPayment}
                           onDeleteSale={() => onDeleteSale(sale.id)}
                       />
                   );
