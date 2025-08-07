@@ -22,7 +22,6 @@ interface ServiceAppointmentCardProps {
   onView: () => void;
   onEdit: () => void;
   onComplete?: () => void;
-  onEditPayment?: () => void;
   onDelete?: () => void;
   onCancel?: () => void;
 }
@@ -36,7 +35,6 @@ export function ServiceAppointmentCard({
   onView,
   onEdit,
   onComplete,
-  onEditPayment,
   onDelete,
   onCancel,
 }: ServiceAppointmentCardProps) {
@@ -143,9 +141,6 @@ export function ServiceAppointmentCard({
               <p>Técnico: {technician?.name || 'N/A'}</p>
             </div>
              <div className="flex justify-center items-center gap-1 flex-wrap mt-2">
-                <Button variant="ghost" size="icon" onClick={onEditPayment} title="Editar Pago">
-                  <DollarSign className="h-4 w-4" />
-                </Button>
                 <Button variant="ghost" size="icon" onClick={onView} title="Ver Detalles">
                     <Eye className="h-4 w-4" />
                 </Button>

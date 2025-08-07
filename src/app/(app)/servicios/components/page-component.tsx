@@ -46,7 +46,7 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
   
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [serviceToEditPayment, setServiceToEditPayment] = useState<ServiceRecord | null>(null);
+  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
@@ -87,17 +87,11 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
     setRecordForPreview(service);
     setIsPreviewOpen(true);
   }, []);
-  
-  const handleOpenPaymentDialog = useCallback((service: ServiceRecord) => {
-    setServiceToEditPayment(service);
+
+  const handleOpenCompletionDialog = useCallback((service: ServiceRecord) => {
+    setServiceToComplete(service);
     setIsPaymentDialogOpen(true);
   }, []);
-
-  const handleUpdatePaymentDetails = useCallback(async (serviceId: string, paymentDetails: any) => {
-    await serviceService.updateService(serviceId, paymentDetails);
-    toast({ title: "Detalles de Pago Actualizados" });
-    setIsPaymentDialogOpen(false);
-  }, [toast]);
   
   const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
     if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
@@ -129,10 +123,10 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   );
 
   const tabs = [
-    { value: 'activos', label: 'Activos (Hoy)', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenPaymentDialog} /> },
+    { value: 'activos', label: 'Activos (Hoy)', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} /> },
     { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={agendaServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
     { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
-    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historyServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onEditPayment={handleOpenPaymentDialog} /> }
+    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historyServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> }
   ];
 
   return (
@@ -149,13 +143,13 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
         {isPreviewOpen && recordForPreview && (
           <UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={recordForPreview} />
         )}
-        {serviceToEditPayment && (
+        {serviceToComplete && (
           <PaymentDetailsDialog
             open={isPaymentDialogOpen}
             onOpenChange={setIsPaymentDialogOpen}
-            record={serviceToEditPayment}
-            onConfirm={(id, details) => handleUpdatePaymentDetails(id, details)}
-            isCompletionFlow={serviceToEditPayment.status !== 'Entregado'}
+            record={serviceToComplete}
+            onConfirm={(id, details) => handleConfirmCompletion(serviceToComplete, details, serviceToComplete.nextServiceInfo)}
+            isCompletionFlow={true}
           />
         )}
       </Suspense>

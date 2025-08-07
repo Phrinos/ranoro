@@ -83,10 +83,6 @@ export default function ActivosTabContent({
   const handleEditService = (serviceId: string) => {
     router.push(`/servicios/${serviceId}`);
   };
-
-  const handleEditPayment = (service: ServiceRecord) => {
-    // Logic to open payment dialog
-  };
   
   const handleCancelService = async (serviceId: string) => {
       const reason = prompt("Motivo de la cancelación:");
@@ -109,7 +105,6 @@ export default function ActivosTabContent({
       onEdit={() => handleEditService(service.id)}
       onView={() => onShowPreview(service)}
       onComplete={() => onCompleteService(service)}
-      onEditPayment={() => onEditPayment(service)}
       onCancel={() => handleCancelService(service.id)}
     />
   ), [vehicles, personnel, onShowPreview, onCompleteService, router, handleCancelService]);
