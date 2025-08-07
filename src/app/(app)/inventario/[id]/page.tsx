@@ -197,54 +197,48 @@ export default function InventoryItemDetailPage() {
         </TabsList>
 
         <TabsContent value="details">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-muted-foreground"/>
-                    Detalles del {item.isService ? 'Servicio' : 'Producto'}
-                  </CardTitle>
-                   <div className="flex items-center gap-2">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm"><Archive className="mr-2 h-4 w-4" />Eliminar</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader><AlertDialogTitle>¿Estás seguro de eliminar este ítem?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer y eliminará permanentemente el ítem {item.name} del inventario.</AlertDialogDescription></AlertDialogHeader>
-                          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDeleteItem} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                      <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
-                      </Button>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-muted-foreground"/>
+                  Detalles del Producto/Servicio
+                </CardTitle>
+                 <div className="flex items-center gap-2">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm"><Archive className="mr-2 h-4 w-4" />Eliminar</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>¿Estás seguro de eliminar este ítem?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer y eliminará permanentemente el ítem {item.name} del inventario.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDeleteItem} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Editar
+                    </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm font-medium text-primary">{item.isService ? 'Servicio' : 'Producto'}</p>
+                <div className="flex items-baseline gap-2">
+                    <h2 className="text-2xl font-bold">{item.name}</h2>
+                    <p className="text-sm text-muted-foreground">(SKU: {item.sku || 'N/A'})</p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold">Categoría:</span> {item.category} | <span className="font-semibold">Marca:</span> {item.brand || 'N/A'} | <span className="font-semibold">Proveedor:</span> {item.supplier}
+                </p>
+                {item.description && (
+                  <div className="pt-2">
+                      <p className="text-sm text-foreground whitespace-pre-wrap mt-1">{item.description}</p>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <p className="text-sm font-medium text-primary">{item.isService ? 'Servicio' : 'Producto'}</p>
-                    <h2 className="text-xl font-bold">{item.name}</h2>
-                    <p className="text-sm text-muted-foreground">SKU: {item.sku || 'N/A'}</p>
-                    
-                    <div className="text-sm space-y-1 pt-2">
-                        <p><span className="font-semibold">Categoría:</span> {item.category}</p>
-                        <p><span className="font-semibold">Marca:</span> {item.brand || 'N/A'}</p>
-                        <p><span className="font-semibold">Proveedor:</span> {item.supplier}</p>
-                    </div>
+                )}
+              </CardContent>
+            </Card>
 
-                    {item.description && (
-                      <div className="pt-2">
-                          <p className="text-sm font-medium text-muted-foreground">Descripción</p>
-                          <p className="text-sm text-foreground whitespace-pre-wrap mt-1">{item.description}</p>
-                      </div>
-                    )}
-                </CardContent>
-              </Card>
-
-            </div>
-
-            <div className="lg:col-span-1 space-y-6">
-                <Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-muted-foreground"/>Precios</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div>
@@ -273,6 +267,7 @@ export default function InventoryItemDetailPage() {
                     </Card>
                 )}
             </div>
+
           </div>
         </TabsContent>
 
