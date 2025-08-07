@@ -62,7 +62,7 @@ export default function ServicioPage() {
             } else if (!isEditMode) {
                 // Set default values for new service/quote
                 setInitialData({
-                    status: isQuoteModeParam ? 'Cotizacion' : 'En Taller',
+                    status: 'Cotizacion', // Default to Cotizacion
                     serviceDate: new Date().toISOString(), // Ensure new records have a date
                 } as ServiceRecord);
             }
@@ -139,10 +139,10 @@ export default function ServicioPage() {
     );
   }
 
-  const isQuote = isEditMode ? initialData?.status === 'Cotizacion' : isQuoteModeParam;
+  const isQuote = isEditMode ? initialData?.status === 'Cotizacion' : isQuoteModeParam || !isEditMode;
   
   const pageTitle = isEditMode 
-    ? `Editar ${isQuote ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`
+    ? `Editar ${initialData?.status === 'Cotizacion' ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`
     : `Nueva ${isQuote ? 'Cotización' : 'Servicio'}`;
     
   const pageDescription = isEditMode 
