@@ -26,7 +26,7 @@ interface ServiceItemsListProps {
   categories: InventoryCategory[];
   suppliers: Supplier[];
   isEnhancingText?: string | null;
-  handleEnhanceText?: (fieldName: keyof ServiceFormValues | `serviceItems.${number}.suppliesUsed.${number}.description` | 'notes') => void;
+  handleEnhanceText?: (fieldName: keyof ServiceFormValues | `serviceItems.${number}.suppliesUsed.${number}.description` | 'notes' | `serviceItems.${number}.description`) => void;
 }
 
 export function ServiceItemsList({

@@ -34,20 +34,9 @@ const SafetyChecklist = lazy(() => import('./SafetyChecklist').then(module => ({
 const PhotoReportTab = lazy(() => import('./PhotoReportTab').then(module => ({ default: module.PhotoReportTab })));
 const ReceptionAndDelivery = lazy(() => import('./ReceptionAndDelivery').then(module => ({ default: module.ReceptionAndDelivery })));
 
-// Define the PaymentDetails schema here or import it if defined elsewhere
-const PaymentDetailsFormSchema = z.object({
-    paymentMethod: z.string().min(1, "El método de pago es requerido"),
-    paymentStatus: z.string().min(1, "El estado de pago es requerido"),
-    total: z.number(),
-    subtotal: z.number(),
-    tax: z.number(),
-    notes: z.string().optional(),
-});
-type PaymentDetailsFormValues = z.infer<typeof PaymentDetailsFormSchema>;
-
 
 interface ServiceFormWrapperProps {
-  initialDataService: ServiceRecord | null;
+  initialData: ServiceRecord | null;
   vehicles: Vehicle[];
   technicians: User[];
   inventoryItems: InventoryItem[];
@@ -55,8 +44,7 @@ interface ServiceFormWrapperProps {
   categories: InventoryCategory[];
   suppliers: Supplier[];
   serviceHistory: ServiceRecord[];
-  onSubmit: (data: ServiceFormValues) => Promise<void>;
-  onClose?: () => void;
+  onSave: (data: ServiceFormValues) => Promise<void>;
   onDelete?: (id: string) => void;
   onCancelService?: (id: string, reason: string) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
@@ -65,7 +53,7 @@ interface ServiceFormWrapperProps {
 }
 
 export function ServiceForm({
-  initialDataService,
+  initialData,
   vehicles,
   technicians,
   inventoryItems,
@@ -73,7 +61,7 @@ export function ServiceForm({
   categories,
   suppliers,
   serviceHistory,
-  onSubmit,
+  onSave,
   onDelete,
   onCancelService,
   onVehicleCreated,
@@ -83,8 +71,8 @@ export function ServiceForm({
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
-      ...initialDataService,
-      status: initialDataService?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
+      ...initialData,
+      status: initialData?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
       // Pass all vehicles to the form context for use in child components
       allVehiclesForDialog: vehicles, 
     },
@@ -97,7 +85,7 @@ export function ServiceForm({
   return (
     <FormProvider {...methods}>
       <ServiceFormContent
-        initialData={initialDataService}
+        initialData={initialData}
         vehicles={vehicles}
         technicians={technicians}
         inventoryItems={inventoryItems}
@@ -105,7 +93,7 @@ export function ServiceForm({
         categories={categories}
         suppliers={suppliers}
         serviceHistory={serviceHistory}
-        onSubmit={onSubmit}
+        onSubmit={onSave}
         onClose={handleClose}
         isReadOnly={false}
         mode={mode}
@@ -117,7 +105,7 @@ export function ServiceForm({
   );
 }
 
-interface ServiceFormProps {
+interface ServiceFormContentProps {
   initialData: ServiceRecord | null;
   vehicles: Vehicle[];
   technicians: User[];
@@ -135,7 +123,7 @@ interface ServiceFormProps {
   onCancelService?: (id: string, reason: string) => void;
 }
 
-export function ServiceFormContent({
+function ServiceFormContent({
   initialData,
   vehicles,
   technicians,
@@ -151,7 +139,7 @@ export function ServiceFormContent({
   onVehicleCreated,
   onDelete,
   onCancelService,
-}: ServiceFormProps) {
+}: ServiceFormContentProps) {
   const { toast } = useToast();
   const methods = useFormContext<ServiceFormValues>();
   

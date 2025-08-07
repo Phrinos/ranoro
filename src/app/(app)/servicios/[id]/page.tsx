@@ -154,7 +154,7 @@ export default function ServicioPage() {
     <>
       <PageHeader title={pageTitle} description={pageDescription} />
       <ServiceForm
-        initialDataService={initialData}
+        initialData={initialData}
         vehicles={vehicles}
         technicians={users}
         inventoryItems={inventoryItems}
@@ -162,7 +162,7 @@ export default function ServicioPage() {
         categories={categories}
         suppliers={suppliers}
         serviceHistory={serviceHistory}
-        onSubmit={isEditMode ? handleUpdateService : handleSaveService}
+        onSave={isEditMode ? handleUpdateService : handleSaveService}
         onDelete={handleDeleteQuote}
         onCancelService={handleCancelService}
         onVehicleCreated={handleVehicleCreated}
