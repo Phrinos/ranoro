@@ -132,9 +132,11 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                 );
            })}
            {!isReadOnly && availablePaymentMethods.length > 0 && (
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: undefined, folio: '' })}>
-                    <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
-                </Button>
+                <div className="flex justify-end">
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: undefined, folio: '' })}>
+                        <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
+                    </Button>
+                </div>
            )}
            <div className="flex justify-end font-semibold pt-2 border-t">
                 Total Pagado: {formatCurrency(totalPaid)}

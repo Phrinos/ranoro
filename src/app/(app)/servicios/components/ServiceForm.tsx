@@ -73,7 +73,6 @@ export function ServiceForm({
     defaultValues: {
       ...initialData,
       status: initialData?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
-      // Pass all vehicles to the form context for use in child components
       allVehiclesForDialog: vehicles, 
     },
   });
@@ -164,14 +163,12 @@ function ServiceFormContent({
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
     
-    // Check for 'Entregado' status transition to show payment dialog
     if (values.status === 'Entregado' && initialData?.status !== 'Entregado') {
         setServiceToComplete({ ...(initialData || {}), ...values } as ServiceRecord);
         setIsPaymentDialogOpen(true);
         return;
     }
     
-    // Direct submission for other cases
     await onSubmit(values);
   };
   
@@ -184,7 +181,7 @@ function ServiceFormContent({
         toast({ title: "Servicio Completado" });
         setIsPaymentDialogOpen(false);
         setServiceToComplete(null);
-        onClose(); // Close the main dialog
+        onClose();
     } catch(e) {
         toast({ title: "Error al completar", variant: "destructive"});
     }
@@ -260,17 +257,16 @@ function ServiceFormContent({
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
 
   return (
-      <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 flex-grow overflow-y-auto px-6 py-4">
-        <div className="space-y-4">
-          <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
-          <VehicleSelectionCard 
-            isReadOnly={isReadOnly} 
-            localVehicles={vehicles} 
-            serviceHistory={serviceHistory}
-            onVehicleSelected={(v) => setValue('vehicleId', v?.id)} 
-            onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
-          />
-        </div>
+    <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
+      <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
+        <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
+        <VehicleSelectionCard 
+          isReadOnly={isReadOnly} 
+          localVehicles={vehicles} 
+          serviceHistory={serviceHistory}
+          onVehicleSelected={(v) => setValue('vehicleId', v?.id)} 
+          onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+        />
 
         {showTabs ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -296,73 +292,74 @@ function ServiceFormContent({
                 <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><PaymentSection isReadOnly={isReadOnly}/></Suspense></div>
              </div>
         )}
+      </div>
 
-        <div className="flex-shrink-0 flex justify-between items-center mt-6 pt-4 border-t px-6 pb-6 -mx-6 -mb-6 bg-background sticky bottom-0 z-10">
-          <div>
-            {(onDelete || onCancelService) && initialData?.id && (
-              <ConfirmDialog
-                  triggerButton={
-                      <Button variant="destructive" type="button" disabled={isReadOnly || initialData?.status === 'Cancelado'}>
-                          {isQuote ? <Trash2 className="mr-2 h-4 w-4"/> : <Ban className="mr-2 h-4 w-4"/>}
-                          {isQuote ? 'Eliminar Cotización' : 'Cancelar Servicio'}
-                      </Button>
-                  }
-                  title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
-                  description={
-                      isQuote 
-                      ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
-                      : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'
-                  }
-                  onConfirm={() => {
-                      if (isQuote && onDelete && initialData?.id) {
-                          onDelete(initialData.id);
-                      } else if (!isQuote && onCancelService && initialData?.id) {
-                          const reason = prompt("Motivo de la cancelación:");
-                          if(reason) onCancelService(initialData.id, reason);
-                      }
-                  }}
-              />
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button type="submit" form="service-form" disabled={isReadOnly || formState.isSubmitting}>
-              {formState.isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-              {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
-            </Button>
-          </div>
-        </div>
-
-        <VehicleDialog
-            open={isNewVehicleDialogOpen}
-            onOpenChange={setIsNewVehicleDialogOpen}
-            onSave={handleVehicleCreated}
-            vehicle={{ licensePlate: newVehicleInitialPlate }}
-        />
-        <SignatureDialog
-            open={isSignatureDialogOpen}
-            onOpenChange={setIsSignatureDialogOpen}
-            onSave={handleSaveSignature}
-        />
-        <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-          <DialogContent className="max-w-4xl p-2 bg-transparent border-none shadow-none">
-            {viewingImageUrl && (
-              <div className="relative aspect-video w-full">
-                <Image src={viewingImageUrl} alt="Vista ampliada" fill style={{ objectFit: 'contain' }} sizes="(max-width: 768px) 100vw, 1024px" />
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-        
-        {serviceToComplete && (
-            <PaymentDetailsDialog
-            open={isPaymentDialogOpen}
-            onOpenChange={setIsPaymentDialogOpen}
-            record={serviceToComplete}
-            onConfirm={handleCompleteService as any}
-            isCompletionFlow={true}
+      <div className="flex-shrink-0 flex justify-between items-center mt-6 pt-4 border-t px-6 pb-6 bg-background sticky bottom-0 z-10">
+        <div>
+          {(onDelete || onCancelService) && initialData?.id && (
+            <ConfirmDialog
+                triggerButton={
+                    <Button variant="destructive" type="button" disabled={isReadOnly || initialData?.status === 'Cancelado'}>
+                        {isQuote ? <Trash2 className="mr-2 h-4 w-4"/> : <Ban className="mr-2 h-4 w-4"/>}
+                        {isQuote ? 'Eliminar Cotización' : 'Cancelar Servicio'}
+                    </Button>
+                }
+                title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
+                description={
+                    isQuote 
+                    ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
+                    : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'
+                }
+                onConfirm={() => {
+                    if (isQuote && onDelete && initialData?.id) {
+                        onDelete(initialData.id);
+                    } else if (!isQuote && onCancelService && initialData?.id) {
+                        const reason = prompt("Motivo de la cancelación:");
+                        if(reason) onCancelService(initialData.id, reason);
+                    }
+                }}
             />
-        )}
-      </form>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" disabled={isReadOnly || formState.isSubmitting}>
+            {formState.isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
+            {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
+          </Button>
+        </div>
+      </div>
+
+      <VehicleDialog
+          open={isNewVehicleDialogOpen}
+          onOpenChange={setIsNewVehicleDialogOpen}
+          onSave={handleVehicleCreated}
+          vehicle={{ licensePlate: newVehicleInitialPlate }}
+      />
+      <SignatureDialog
+          open={isSignatureDialogOpen}
+          onOpenChange={setIsSignatureDialogOpen}
+          onSave={handleSaveSignature}
+      />
+      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+        <DialogContent className="max-w-4xl p-2 bg-transparent border-none shadow-none">
+          {viewingImageUrl && (
+            <div className="relative aspect-video w-full">
+              <Image src={viewingImageUrl} alt="Vista ampliada" fill style={{ objectFit: 'contain' }} sizes="(max-width: 768px) 100vw, 1024px" />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {serviceToComplete && (
+          <PaymentDetailsDialog
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+          record={serviceToComplete}
+          onConfirm={handleCompleteService}
+          isCompletionFlow={true}
+          />
+      )}
+    </form>
   );
 }
