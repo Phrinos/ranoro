@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, X, Ban, Trash2 } from 'lucide-react';
 import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
-import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types';
+import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Image from 'next/image';
@@ -176,14 +176,14 @@ export function ServiceFormContent({
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
     
-    const serviceRecordValues = values as ServiceRecord;
-
-    if (serviceRecordValues.status === 'Entregado' && initialData?.status !== 'Entregado') {
-        setServiceToComplete({ ...(initialData || {}), ...serviceRecordValues } as ServiceRecord);
+    // Check for 'Entregado' status transition to show payment dialog
+    if (values.status === 'Entregado' && initialData?.status !== 'Entregado') {
+        setServiceToComplete({ ...(initialData || {}), ...values } as ServiceRecord);
         setIsPaymentDialogOpen(true);
         return;
     }
     
+    // Direct submission for other cases
     await onSubmit(values);
   };
   

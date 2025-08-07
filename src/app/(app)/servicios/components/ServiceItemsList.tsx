@@ -89,7 +89,7 @@ export function ServiceItemsList({
                   append({
                     id: `item_${nanoid()}`,
                     name: '',
-                    price: 0,
+                    price: undefined, // Set to undefined
                     suppliesUsed: [],
                   })
                 }
