@@ -63,8 +63,10 @@ export function ServiceDetailsCard({
   }, [users]);
 
   const showAppointmentFields = useMemo(() => watchedStatus === 'Agendado', [watchedStatus]);
-  const showTechnicianField = useMemo(() => watchedStatus !== 'Cotizacion' && watchedStatus !== 'Agendado', [watchedStatus]);
+  const showTechnicianField = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
   const showQuoteDateField = useMemo(() => watchedStatus === 'Cotizacion', [watchedStatus]);
+  const showWorkshopFields = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
+
   
   const handleStatusChange = (newStatus: ServiceFormValues['status']) => {
     setValue('status', newStatus);
@@ -246,4 +248,3 @@ export function ServiceDetailsCard({
     </Card>
   );
 }
-    
