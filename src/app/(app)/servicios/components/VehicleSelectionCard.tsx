@@ -59,6 +59,11 @@ export function VehicleSelectionCard({
   
   useEffect(() => {
     const findVehicleData = (vId: string) => {
+      if (!vId) {
+        setSelectedVehicle(null);
+        setLastService(null);
+        return;
+      }
       const vehicle = localVehicles.find(v => v.id === vId);
       if (vehicle) {
         setSelectedVehicle(vehicle);
@@ -78,9 +83,7 @@ export function VehicleSelectionCard({
         setLastService(null);
       }
     };
-    if (vehicleId) {
-      findVehicleData(vehicleId);
-    }
+    findVehicleData(vehicleId);
   }, [vehicleId, localVehicles, serviceHistory]);
 
   const handleSelectVehicle = (vehicle: Vehicle) => {

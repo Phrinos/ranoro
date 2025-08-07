@@ -82,9 +82,11 @@ export function ServiceForm({
   const router = useRouter();
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
-    defaultValues: initialDataService || {
-      status: mode === 'quote' ? 'Cotizacion' : 'Activo',
-      // Set other default values as needed
+    defaultValues: {
+      ...initialDataService,
+      status: initialDataService?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
+      // Pass all vehicles to the form context for use in child components
+      allVehiclesForDialog: vehicles, 
     },
   });
 
@@ -277,7 +279,7 @@ export function ServiceFormContent({
             isReadOnly={isReadOnly} 
             localVehicles={vehicles} 
             serviceHistory={serviceHistory}
-            onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)} 
+            onVehicleSelected={(v) => setValue('vehicleId', v?.id)} 
             onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
           />
         </div>
