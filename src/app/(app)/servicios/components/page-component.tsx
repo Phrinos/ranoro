@@ -59,13 +59,21 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
       quoteService.onQuotesUpdate(setQuotes),
       agendaService.onAgendaUpdate(agendaData => {
         setAgendaServices(agendaData);
-        // Derive active services for today from the agenda list
-        const todayServices = agendaData.filter(s => {
+        
+        // Derive active services from the agenda list
+        const servicesForToday = agendaData.filter(s => {
+          if (s.status === 'En Taller') {
+              return true; // Always include services currently in the workshop
+          }
+          if (s.status === 'Agendado') {
             const serviceDate = parseDate(s.appointmentDateTime || s.serviceDate);
-            return serviceDate && isToday(serviceDate);
+            return serviceDate && isToday(serviceDate); // Include if scheduled for today
+          }
+          return false;
         });
-        setActiveServices(todayServices);
-        setIsLoading(false); // Consider loading finished when agenda is ready
+        
+        setActiveServices(servicesForToday);
+        setIsLoading(false);
       }),
       historyService.onHistoryUpdate(setHistoryServices),
       inventoryService.onVehiclesUpdate(setVehicles),
