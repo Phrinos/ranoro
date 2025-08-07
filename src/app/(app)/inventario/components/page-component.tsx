@@ -10,11 +10,10 @@ import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-sche
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from 'lucide-react';
-import { inventoryService } from '@/lib/services/inventory.service';
-import { purchaseService } from '@/lib/services/purchase.service';
+import { inventoryService, purchaseService } from '@/lib/services';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from "@/lib/utils";
-import { useTableManager } from '@/hooks/useTableManager';
+import type { PurchaseFormValues } from './register-purchase-dialog';
 
 // Lazy load components
 const RegisterPurchaseDialog = lazy(() => import('./register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
@@ -46,16 +45,6 @@ export default function InventarioPageComponent({
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
   
-  const { 
-    filteredData, 
-    ...tableManager 
-  } = useTableManager<InventoryItem>({
-    initialData: inventoryItems,
-    searchKeys: ['name', 'sku', 'brand', 'category'],
-    dateFilterKey: '', 
-    initialSortOption: 'default_order',
-    itemsPerPage: 100,
-  });
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -119,6 +108,27 @@ export default function InventarioPageComponent({
       toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
       return newItem;
   }, [toast]);
+  
+  const handleSaveCategory = useCallback(async (name: string, id?: string) => {
+    try {
+      await inventoryService.saveCategory({ name }, id);
+      toast({ title: `Categoría ${id ? 'Actualizada' : 'Agregada'}` });
+    } catch (error) {
+      console.error("Error saving category:", error);
+      toast({ title: "Error al guardar", description: "No se pudo guardar la categoría.", variant: "destructive" });
+    }
+  }, [toast]);
+
+  const handleDeleteCategory = useCallback(async (id: string) => {
+    try {
+      await inventoryService.deleteCategory(id);
+      toast({ title: "Categoría Eliminada" });
+    } catch (error) {
+       console.error("Error deleting category:", error);
+       toast({ title: "Error al eliminar", description: "No se pudo eliminar la categoría.", variant: "destructive" });
+    }
+  }, [toast]);
+
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -161,18 +171,22 @@ export default function InventarioPageComponent({
         <TabsContent value="productos" className="mt-6">
           <Suspense fallback={<Loader2 className="animate-spin" />}>
             <ProductosContent 
+                inventoryItems={inventoryItems}
                 summaryData={inventorySummary}
                 onNewItem={handleOpenItemDialog}
                 onPrint={handlePrint}
-                tableManager={tableManager}
-                filteredItems={filteredData}
                 onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
             />
           </Suspense>
         </TabsContent>
         <TabsContent value="categorias" className="mt-6">
           <Suspense fallback={<Loader2 className="animate-spin" />}>
-            <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
+            <CategoriasContent 
+                categories={categories} 
+                inventoryItems={inventoryItems} 
+                onSaveCategory={handleSaveCategory}
+                onDeleteCategory={handleDeleteCategory}
+            />
           </Suspense>
         </TabsContent>
         <TabsContent value="analisis" className="mt-6">
