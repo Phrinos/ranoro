@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo } from 'react';
@@ -21,7 +22,6 @@ interface ServiceAppointmentCardProps {
   personnel?: User[];
   onView: () => void;
   onEdit: () => void;
-  onComplete?: () => void;
   onDelete?: () => void;
   onCancel?: () => void;
 }
@@ -34,7 +34,6 @@ export function ServiceAppointmentCard({
   personnel = [],
   onView,
   onEdit,
-  onComplete,
   onDelete,
   onCancel,
 }: ServiceAppointmentCardProps) {
@@ -87,6 +86,15 @@ export function ServiceAppointmentCard({
   };
 
   const primaryPayment = getPrimaryPaymentMethod();
+
+  const handleConfirmAction = () => {
+    if (service.status === 'Cotizacion' && onDelete) {
+        onDelete();
+    } else if (onCancel) {
+        onCancel();
+    }
+  };
+
 
   return (
     <Card className={cn("shadow-sm overflow-hidden", service.status === 'Cancelado' && "bg-muted/60 opacity-80")}>
@@ -158,7 +166,7 @@ export function ServiceAppointmentCard({
                     }
                     title={service.status === 'Cotizacion' ? '¿Eliminar Cotización?' : '¿Cancelar Servicio?'}
                     description={service.status === 'Cotizacion' ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.' : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'}
-                    onConfirm={service.status === 'Cotizacion' ? onDelete! : onCancel!}
+                    onConfirm={handleConfirmAction}
                     confirmText="Sí, Continuar"
                   />
             </div>

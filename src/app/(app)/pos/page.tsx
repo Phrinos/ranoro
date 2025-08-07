@@ -119,6 +119,20 @@ Total: ${formatCurrency(sale.totalAmount)}
       toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado.' });
     });
   }, [toast, workshopInfo]);
+
+  const handleDeleteSale = useCallback(async (saleId: string) => {
+    try {
+        await saleService.deleteSale(saleId, currentUser);
+        toast({ title: 'Venta Eliminada', description: 'La venta se ha eliminado permanentemente.' });
+    } catch(e) {
+        toast({ title: "Error", description: "No se pudo eliminar la venta.", variant: "destructive"});
+    }
+  }, [currentUser, toast]);
+  
+  const handleViewSale = useCallback((sale: SaleReceipt) => {
+    // This function will be handled inside the VentasPosContent component now
+    // to open the ViewSaleDialog. We are passing it as a prop.
+  }, []);
   
   if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
   
@@ -136,6 +150,8 @@ Total: ${formatCurrency(sale.totalAmount)}
         onReprintTicket={handleReprintSale}
         allCategories={allCategories}
         allSuppliers={allSuppliers}
+        onViewSale={handleViewSale}
+        onDeleteSale={handleDeleteSale}
       />
 
       <PrintTicketDialog

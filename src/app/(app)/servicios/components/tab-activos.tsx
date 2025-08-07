@@ -1,4 +1,5 @@
 
+
 // src/app/(app)/servicios/components
 "use client";
 
@@ -104,10 +105,9 @@ export default function ActivosTabContent({
       personnel={personnel}
       onEdit={() => handleEditService(service.id)}
       onView={() => onShowPreview(service)}
-      onComplete={() => onCompleteService(service)}
       onCancel={() => handleCancelService(service.id)}
     />
-  ), [vehicles, personnel, onShowPreview, onCompleteService, router, handleCancelService]);
+  ), [vehicles, personnel, onShowPreview, router, handleCancelService]);
 
   return (
     <Card>

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -11,6 +12,8 @@ import { startOfMonth, endOfMonth, subDays, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
+import { serviceService } from '@/lib/services';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface HistorialTabContentProps {
@@ -41,6 +44,7 @@ export default function HistorialTabContent({
   onShowPreview,
 }: HistorialTabContentProps) {
   const router = useRouter();
+  const { toast } = useToast();
   
   const getRelevantDate = (service: ServiceRecord): Date | null => {
       return parseDate(service.deliveryDateTime) || parseDate(service.serviceDate);
@@ -62,6 +66,18 @@ export default function HistorialTabContent({
     router.push(`/servicios/${serviceId}`);
   };
 
+  const handleCancelService = async (serviceId: string) => {
+    const reason = prompt("Motivo de la cancelación:");
+    if (reason) {
+        try {
+            await serviceService.cancelService(serviceId, reason);
+            toast({ title: 'Servicio Cancelado' });
+        } catch(e) {
+            toast({ title: 'Error', description: 'No se pudo cancelar el servicio.', variant: 'destructive'});
+        }
+    }
+  };
+
   const renderServiceCard = useCallback((record: ServiceRecord) => (
     <ServiceAppointmentCard 
       key={record.id}
@@ -70,8 +86,9 @@ export default function HistorialTabContent({
       personnel={personnel}
       onEdit={() => handleEditService(record.id)}
       onView={() => onShowPreview(record)}
+      onCancel={() => handleCancelService(record.id)}
     />
-  ), [vehicles, personnel, onShowPreview, router]);
+  ), [vehicles, personnel, onShowPreview, router, handleCancelService]);
 
 
   return (

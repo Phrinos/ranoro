@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -37,6 +38,8 @@ interface VentasPosContentProps {
   allSuppliers: Supplier[];
   currentUser: User | null;
   onReprintTicket: (sale: SaleReceipt) => void;
+  onViewSale: (sale: SaleReceipt) => void;
+  onDeleteSale: (saleId: string) => void;
 }
 
 
@@ -48,6 +51,8 @@ export function VentasPosContent({
   allCategories,
   allSuppliers,
   onReprintTicket,
+  onViewSale,
+  onDeleteSale
 }: VentasPosContentProps) {
   const { toast } = useToast();
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -75,16 +80,6 @@ export function VentasPosContent({
     }
   }, [currentUser, toast]);
   
-  const handleDeleteSale = useCallback(async (saleId: string) => {
-    try {
-        await saleService.deleteSale(saleId, currentUser);
-        toast({ title: 'Venta Eliminada', description: 'La venta se ha eliminado permanentemente.' });
-        setIsViewDialogOpen(false);
-    } catch(e) {
-        toast({ title: "Error", description: "No se pudo eliminar la venta.", variant: "destructive"});
-    }
-  }, [currentUser, toast]);
-
   const handleUpdatePaymentDetails = useCallback(async (saleId: string, paymentDetails: any) => {
     await saleService.updateSale(saleId, paymentDetails);
     toast({ title: "Detalles de Pago Actualizados" });
@@ -154,7 +149,7 @@ export function VentasPosContent({
             categories={allCategories}
             suppliers={allSuppliers}
             onCancelSale={handleCancelSale}
-            onDeleteSale={handleDeleteSale}
+            onDeleteSale={onDeleteSale}
             onPaymentUpdate={handleUpdatePaymentDetails}
         />}
     </div>
