@@ -27,6 +27,8 @@ interface ServiceAppointmentCardProps {
   onCancel?: () => void;
 }
 
+const IVA_RATE = 0.16;
+
 export function ServiceAppointmentCard({
   service,
   vehicle,
@@ -47,6 +49,19 @@ export function ServiceAppointmentCard({
   const displayDate = service.appointmentDateTime || service.deliveryDateTime || service.receptionDateTime || service.serviceDate;
   const parsedDate = displayDate ? parseDate(displayDate) : null;
 
+  // Recalculate totals directly from serviceItems for display accuracy, especially for quotes
+  const calculatedTotals = useMemo(() => {
+    const total = (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0);
+    const cost = (service.serviceItems ?? [])
+      .flatMap((i) => i.suppliesUsed ?? [])
+      .reduce((s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0), 0);
+    
+    return {
+      totalCost: total,
+      serviceProfit: total - cost,
+    };
+  }, [service.serviceItems]);
+
   const copyToClipboard = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text).then(() => {
       toast({ title: "Copiado", description: `${fieldName} copiado al portapapeles.` });
@@ -65,10 +80,8 @@ export function ServiceAppointmentCard({
   const getPrimaryPaymentMethod = (): Payment | undefined => {
     if (service.payments && service.payments.length > 0) {
       if (service.payments.length === 1) return service.payments[0];
-      // If multiple, maybe return the one with the largest amount, or just the first.
       return service.payments.reduce((prev, current) => ((prev.amount ?? 0) > (current.amount ?? 0)) ? prev : current);
     }
-    // Fallback for old data structure
     if (service.paymentMethod) {
       return { method: service.paymentMethod as any, amount: service.totalCost };
     }
@@ -104,11 +117,11 @@ export function ServiceAppointmentCard({
           <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-1 border-b md:border-b-0 md:border-r">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Costo Cliente</p>
-              <p className="font-bold text-xl text-destructive">{formatCurrency(service.totalCost)}</p>
+              <p className="font-bold text-xl text-destructive">{formatCurrency(calculatedTotals.totalCost)}</p>
             </div>
             <div>
               <p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end">
-                <TrendingUp className="h-4 w-4" /> {formatCurrency(service.serviceProfit)}
+                <TrendingUp className="h-4 w-4" /> {formatCurrency(calculatedTotals.serviceProfit)}
               </p>
             </div>
             {primaryPayment && (
@@ -159,4 +172,3 @@ export function ServiceAppointmentCard({
     </Card>
   );
 }
-
