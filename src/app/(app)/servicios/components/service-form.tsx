@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/service-form.tsx
 "use client";
 
@@ -331,7 +332,7 @@ export function ServiceForm({
             open={isPaymentDialogOpen}
             onOpenChange={setIsPaymentDialogOpen}
             record={serviceToComplete}
-            onConfirm={(id, details) => handleCompleteService(details)}
+            onConfirm={handleCompleteService as any}
             isCompletionFlow={true}
             />
         )}
