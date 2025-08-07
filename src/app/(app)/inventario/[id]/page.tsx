@@ -187,7 +187,7 @@ export default function InventoryItemDetailPage() {
       </div>
       <PageHeader
         title={item.name}
-        description={`Marca: ${item.brand || 'N/A'} | SKU: ${item.sku || 'N/A'} | ID: ${item.id}`}
+        description={`ID: ${item.id}`}
       />
 
       <Tabs defaultValue="details" className="w-full">
@@ -222,43 +222,25 @@ export default function InventoryItemDetailPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Nombre</p>
-                            <h2 className="text-lg font-bold">{item.name}</h2>
-                        </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Marca</p>
-                            <p className="font-semibold">{item.brand || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">SKU / Código</p>
-                            <p className="font-semibold">{item.sku || 'N/A'}</p>
-                        </div>
-                        {item.rendimiento != null && item.rendimiento > 0 && (
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Rendimiento</p>
-                                <p className="font-semibold">{item.rendimiento.toLocaleString('es-ES')} km</p>
-                            </div>
-                        )}
+                    <p className="text-sm font-medium text-primary">{item.isService ? 'Servicio' : 'Producto'}</p>
+                    <h2 className="text-xl font-bold">{item.name}</h2>
+                    <p className="text-sm text-muted-foreground">SKU: {item.sku || 'N/A'}</p>
+                    
+                    <div className="text-sm space-y-1 pt-2">
+                        <p><span className="font-semibold">Categoría:</span> {item.category}</p>
+                        <p><span className="font-semibold">Marca:</span> {item.brand || 'N/A'}</p>
+                        <p><span className="font-semibold">Proveedor:</span> {item.supplier}</p>
                     </div>
+
                     {item.description && (
-                        <div className="pt-2">
-                            <p className="text-sm font-medium text-muted-foreground">Descripción</p>
-                            <p className="text-base text-foreground whitespace-pre-wrap mt-1">{item.description}</p>
-                        </div>
+                      <div className="pt-2">
+                          <p className="text-sm font-medium text-muted-foreground">Descripción</p>
+                          <p className="text-sm text-foreground whitespace-pre-wrap mt-1">{item.description}</p>
+                      </div>
                     )}
                 </CardContent>
               </Card>
 
-              <Card>
-                  <CardHeader><CardTitle className="flex items-center gap-2"><List className="h-5 w-5 text-muted-foreground"/>Clasificación</CardTitle></CardHeader>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
-                     <div><p className="text-sm font-medium text-muted-foreground">Categoría</p><p className="font-semibold">{item.category}</p></div>
-                     <div><p className="text-sm font-medium text-muted-foreground">Proveedor</p><p className="font-semibold">{item.supplier}</p></div>
-                     <div><p className="text-sm font-medium text-muted-foreground">Tipo</p><p className="font-semibold">{item.isService ? 'Servicio' : 'Producto'}</p></div>
-                  </CardContent>
-              </Card>
             </div>
 
             <div className="lg:col-span-1 space-y-6">
