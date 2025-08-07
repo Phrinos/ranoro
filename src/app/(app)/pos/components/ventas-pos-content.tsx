@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -13,7 +12,7 @@ import { SaleCard } from './SaleCard';
 import { Receipt } from 'lucide-react';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 
 const sortOptions = [
@@ -44,6 +43,7 @@ interface VentasPosContentProps {
   onReprintTicket: (sale: SaleReceipt) => void;
   onViewSale: (sale: SaleReceipt) => void;
   onDeleteSale: (saleId: string) => void;
+  onEditPayment: (sale: SaleReceipt) => void;
 }
 
 
@@ -55,6 +55,7 @@ export function VentasPosContent({
   onReprintTicket,
   onViewSale,
   onDeleteSale,
+  onEditPayment
 }: VentasPosContentProps) {
 
   const { 
@@ -111,12 +112,6 @@ export function VentasPosContent({
     });
     return { salesCount, paymentsSummary, totalProfit };
   }, [filteredData, allInventory]);
-  
-  const handleEditPayment = () => {
-    // This function will likely be handled by a dialog in the parent component now.
-    // For now, it's a placeholder.
-    console.log("Edit payment logic needs to be connected here.");
-  };
 
   return (
     <div className="space-y-4">
@@ -171,28 +166,18 @@ export function VentasPosContent({
         
         <TableToolbar
             {...tableManager}
-            onFilterChange={tableManager.setOtherFilters}
-            onSearchTermChange={tableManager.setSearchTerm}
-            onSortOptionChange={tableManager.onSortOptionChange}
-            onDateRangeChange={tableManager.setDateRange}
+            searchPlaceholder="Buscar por ID, cliente, artículo..."
             sortOptions={sortOptions}
             filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
-            searchPlaceholder="Buscar por ID, cliente, artículo..."
+            onFilterChange={tableManager.setOtherFilters}
+            dateRange={tableManager.dateRange}
+            onDateRangeChange={tableManager.setDateRange}
+            paginationSummary={tableManager.paginationSummary}
+            canGoPrevious={tableManager.canGoPrevious}
+            canGoNext={tableManager.canGoNext}
+            onPreviousPage={tableManager.goToPreviousPage}
+            onNextPage={tableManager.goToNextPage}
         />
-
-        <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
-            <div className="flex items-center space-x-2">
-                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
-                    <ChevronLeft className="h-4 w-4" />
-                    Anterior
-                </Button>
-                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
-                    Siguiente
-                    <ChevronRight className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
         
         {filteredData.length > 0 ? (
           <div className="space-y-4">
@@ -206,7 +191,7 @@ export function VentasPosContent({
                           currentUser={currentUser}
                           onReprintTicket={() => onReprintTicket(sale)}
                           onViewSale={() => onViewSale(sale)}
-                          onEditPayment={handleEditPayment}
+                          onEditPayment={() => onEditPayment(sale)}
                           onDeleteSale={() => onDeleteSale(sale.id)}
                       />
                   );
