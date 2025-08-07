@@ -10,12 +10,12 @@ import type { SaleReceipt, InventoryItem, Payment, User } from "@/types";
 import Link from "next/link";
 import { useTableManager } from '@/hooks/useTableManager';
 import { Receipt } from 'lucide-react';
-import { startOfMonth, endOfMonth, parseISO, isValid } from 'date-fns';
+import { startOfMonth, endOfMonth, parseISO, isValid, format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency, getPaymentMethodVariant, cn } from '@/lib/utils';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import { Badge } from '@/components/ui/badge';
-import { format, es } from 'date-fns/locale';
+import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -111,7 +111,7 @@ export function VentasPosContent({
             const current = paymentsSummary.get(method) || { count: 0, total: 0 };
             current.count += 1; // This might double count, but it's a fallback
             current.total += amount;
-            paymentsSummary.set(method, current);
+            paymentsSummary.set(p.method, current);
         });
       }
     });
