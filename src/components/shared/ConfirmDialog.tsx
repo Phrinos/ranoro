@@ -46,12 +46,14 @@ export function ConfirmDialog({
 
   const handleConfirm = async () => {
     setInternalLoading(true);
-    await onConfirm();
+    if (typeof onConfirm === 'function') {
+      await onConfirm();
+    }
     setInternalLoading(false);
-    // Parent component should be responsible for closing the dialog
-    // by changing the 'open' state if it's controlled.
-    // If not controlled, we might close it here.
-    // setIsOpen(false); // Uncomment if the dialog should always close on confirm
+    // Parent component is responsible for closing the dialog
+    // by changing its own state, which will re-render and pass a new 'open' prop.
+    // However, if it's not controlled, we might want to close it here.
+    // For simplicity and control, we let the parent handle it.
   };
 
   return (
