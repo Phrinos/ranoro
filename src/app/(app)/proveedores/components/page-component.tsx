@@ -18,9 +18,13 @@ import { Button } from '@/components/ui/button';
 import { RegisterPurchaseDialog } from '../../inventario/components/register-purchase-dialog';
 import type { PurchaseFormValues } from '../../inventario/components/register-purchase-dialog';
 import type { InventoryItem, InventoryCategory } from '@/types';
+import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
+import { SupplierDialog } from './supplier-dialog';
+
 
 export default function ProveedoresPageComponent() {
   const { toast } = useToast();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('proveedores');
   
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -33,6 +37,9 @@ export default function ProveedoresPageComponent() {
   const [selectedAccount, setSelectedAccount] = useState<PayableAccount | null>(null);
   
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
+
+  const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
@@ -77,12 +84,43 @@ export default function ProveedoresPageComponent() {
       return newItem;
   }, [toast]);
 
+  const handleOpenSupplierDialog = useCallback((supplier: Supplier | null = null) => {
+    setEditingSupplier(supplier);
+    setIsSupplierDialogOpen(true);
+  }, []);
+  
+  const handleSaveSupplier = useCallback(async (formData: SupplierFormValues) => {
+    try {
+      await inventoryService.saveSupplier(formData, editingSupplier?.id);
+      toast({ title: `Proveedor ${editingSupplier ? 'Actualizado' : 'Agregado'}` });
+      setIsSupplierDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving supplier:", error);
+      toast({ title: "Error al guardar", description: "No se pudo guardar el proveedor.", variant: "destructive" });
+    }
+  }, [editingSupplier, toast]);
+
+  const handleDeleteSupplier = useCallback(async (supplierId: string) => {
+    try {
+      await inventoryService.deleteSupplier(supplierId);
+      toast({ title: "Proveedor Eliminado" });
+    } catch (error) {
+      console.error("Error deleting supplier:", error);
+      toast({ title: "Error al eliminar", description: "No se pudo eliminar el proveedor.", variant: "destructive" });
+    }
+  }, [toast]);
+  
+  const handleRowClick = useCallback((supplier: Supplier) => {
+    router.push(`/proveedores/${supplier.id}`);
+  }, [router]);
+
+
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   const tabs = [
-    { value: 'proveedores', label: 'Proveedores', content: <ProveedoresContent suppliers={suppliers} /> },
+    { value: 'proveedores', label: 'Proveedores', content: <ProveedoresContent suppliers={suppliers} onEdit={handleOpenSupplierDialog} onDelete={handleDeleteSupplier} onRowClick={handleRowClick} onAdd={handleOpenSupplierDialog}/> },
     { value: 'cuentas_por_pagar', label: 'Cuentas por Pagar', content: <CuentasPorPagarContent accounts={payableAccounts} onRegisterPayment={handleOpenPaymentDialog} /> },
   ];
   
@@ -119,6 +157,12 @@ export default function ProveedoresPageComponent() {
           onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
           categories={categories}
         />
+      <SupplierDialog
+        open={isSupplierDialogOpen}
+        onOpenChange={setIsSupplierDialogOpen}
+        supplier={editingSupplier}
+        onSave={handleSaveSupplier}
+      />
     </>
   );
 }

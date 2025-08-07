@@ -1,8 +1,8 @@
 
+
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -23,14 +23,10 @@ interface SuppliersTableProps {
   suppliers: Supplier[];
   onEdit: (supplier: Supplier) => void;
   onDelete: (supplierId: string) => void;
+  onRowClick: (supplier: Supplier) => void;
 }
 
-export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: SuppliersTableProps) => {
-    const router = useRouter();
-    
-    const handleRowClick = (supplier: Supplier) => {
-        router.push(`/proveedores/${supplier.id}`);
-    };
+export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowClick }: SuppliersTableProps) => {
     
   if (!suppliers.length) {
     return (
@@ -56,7 +52,7 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
         </TableHeader>
         <TableBody>
           {suppliers.map((supplier) => (
-            <TableRow key={supplier.id} onClick={() => handleRowClick(supplier)} className="cursor-pointer hover:bg-muted/50">
+            <TableRow key={supplier.id} onClick={() => onRowClick(supplier)} className="cursor-pointer hover:bg-muted/50">
               <TableCell className="font-medium">
                   <p>{supplier.name}</p>
                   {supplier.description && <p className="text-xs text-muted-foreground">{supplier.description}</p>}
