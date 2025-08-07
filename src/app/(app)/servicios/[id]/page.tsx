@@ -30,7 +30,7 @@ export default function ServicioPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
   
-  const isEditMode = !!serviceId;
+  const isEditMode = serviceId !== 'nuevo';
   const isQuoteModeParam = searchParams.get('mode') === 'quote';
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function ServicioPage() {
               serviceData, vehiclesData, usersData, inventoryData,
               serviceTypesData, categoriesData, suppliersData, allServicesData
             ] = await Promise.all([
-              isEditMode ? serviceService.getDocById('serviceRecords', serviceId) : Promise.resolve(null),
+              isEditMode && serviceId ? serviceService.getDocById('serviceRecords', serviceId) : Promise.resolve(null),
               inventoryService.onVehiclesUpdatePromise(),
               adminService.onUsersUpdatePromise(),
               inventoryService.onItemsUpdatePromise(),

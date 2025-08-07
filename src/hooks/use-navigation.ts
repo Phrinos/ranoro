@@ -132,14 +132,14 @@ const useNavigation = (): NavigationEntry[] => {
 
   const entriesWithActiveState = filteredNavStructure.map(entry => {
     let isActive = pathname === entry.path.split('?')[0];
-    const isParentRoute = pathname.startsWith(`${entry.path.split('?')[0]}/`);
 
-    if (pathname.startsWith('/servicios')) {
-        isActive = entry.path === '/servicios';
-    } else if (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios')) {
+    // Special handling for parent routes
+    if (pathname.startsWith('/servicios') && entry.path === '/servicios') {
+        isActive = !pathname.startsWith('/servicios/nuevo');
+    } else if (pathname.startsWith('/vehiculos')) {
         isActive = entry.path === '/vehiculos';
     } else if (pathname.startsWith('/pos')) {
-        isActive = entry.path === '/pos';
+        isActive = !pathname.startsWith('/pos/nuevo');
     } else if (pathname.startsWith('/caja')) {
         isActive = entry.path === '/caja';
     } else if (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos')) {
@@ -154,20 +154,12 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = entry.path === '/flotilla' || entry.path === '/rentas';
         if (pathname.startsWith('/flotilla') && entry.path === '/rentas') isActive = false;
         if (pathname.startsWith('/rentas') && entry.path === '/flotilla') isActive = false;
-    } else if (isParentRoute) {
-        const isMoreSpecificActive = filteredNavStructure.some(otherEntry => 
-            pathname.startsWith(`${otherEntry.path.split('?')[0]}/`) && otherEntry.path.length > entry.path.length
-        );
-        if (!isMoreSpecificActive) {
-            isActive = true;
-        }
     }
-    
-    // Specific deactivations
-    if (entry.path === '/servicios' && (pathname.startsWith('/servicios/nuevo'))) isActive = false;
-    if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
-    if (pathname.startsWith('/inventario')) isActive = entry.path === '/inventario';
-    if (pathname.startsWith('/proveedores')) isActive = entry.path === '/proveedores';
+
+    // Specific activation for "Nuevo Servicio"
+    if (entry.path === '/servicios/nuevo' && pathname === '/servicios/nuevo') {
+      isActive = true;
+    }
     
     return { ...entry, isActive };
   });
