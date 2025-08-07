@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 
 "use client";
@@ -13,7 +12,7 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import type { User, ServiceTypeRecord } from "@/types";
 import { cn } from "@/lib/utils";
-import { format, setHours, setMinutes, isValid } from 'date-fns';
+import { format, setHours, setMinutes, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState, useMemo } from 'react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -50,7 +49,7 @@ export function ServiceDetailsCard({
   users,
   serviceTypes
 }: ServiceDetailsCardProps) {
-  const { control, watch, formState: { errors } } = useFormContext<ServiceFormValues>();
+  const { control, watch, formState: { errors }, setValue } = useFormContext<ServiceFormValues>();
   
   const watchedStatus = watch('status');
   const watchedAdvisorName = watch('serviceAdvisorName');
@@ -64,9 +63,17 @@ export function ServiceDetailsCard({
   }, [users]);
 
   const showAppointmentFields = useMemo(() => watchedStatus === 'Agendado', [watchedStatus]);
-  const showWorkshopFields = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
   const showTechnicianField = useMemo(() => watchedStatus !== 'Cotizacion' && watchedStatus !== 'Agendado', [watchedStatus]);
   const showQuoteDateField = useMemo(() => watchedStatus === 'Cotizacion', [watchedStatus]);
+  
+  const handleStatusChange = (newStatus: ServiceFormValues['status']) => {
+    setValue('status', newStatus);
+    if (newStatus === 'Agendado') {
+      const tomorrow = addDays(new Date(), 1);
+      const defaultAppointmentTime = setMinutes(setHours(tomorrow, 8), 30);
+      setValue('appointmentDateTime', defaultAppointmentTime, { shouldValidate: true });
+    }
+  };
 
 
   return (
@@ -85,8 +92,16 @@ export function ServiceDetailsCard({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className={cn(errors.status && "text-destructive")}>Estado</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly || initialStatus === 'Entregado'}>
-                  <FormControl><SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl>
+                <Select
+                  onValueChange={(value) => handleStatusChange(value as ServiceFormValues['status'])}
+                  value={field.value || ''}
+                  disabled={isReadOnly || initialStatus === 'Entregado'}
+                >
+                  <FormControl>
+                    <SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}>
+                      <SelectValue placeholder="Seleccione un estado" />
+                    </SelectTrigger>
+                  </FormControl>
                   <SelectContent>{statusOptions.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                 </Select>
               </FormItem>
