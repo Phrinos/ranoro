@@ -72,6 +72,7 @@ export const ReceptionAndDelivery = ({
   const customerSignatureDelivery = watch("customerSignatureDelivery");
 
   const [isEditingDelivery, setIsEditingDelivery] = useState(false);
+  const [isEditingReception, setIsEditingReception] = useState(false);
 
   const receptionDateTime = watch("receptionDateTime");
   const deliveryDateTime = watch("deliveryDateTime");
@@ -96,10 +97,34 @@ export const ReceptionAndDelivery = ({
         </CardHeader>
         <CardContent className="space-y-6">
            <div className="space-y-2">
-              <FormLabel>Fecha y Hora de Ingreso</FormLabel>
-              <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
-                  {formattedReceptionDate || 'Pendiente'}
-              </div>
+               <div className="flex justify-between items-center">
+                  <FormLabel>Fecha y Hora de Ingreso</FormLabel>
+                  {!isReadOnly && (
+                      <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingReception(!isEditingReception)}>
+                          <Edit className="h-4 w-4" />
+                      </Button>
+                  )}
+               </div>
+               {isEditingReception ? (
+                  <FormField
+                    control={control}
+                    name="receptionDateTime"
+                    render={({ field }) => (
+                      <FormControl>
+                         <Input
+                              type="datetime-local"
+                              value={field.value ? format(field.value, "yyyy-MM-dd'T'HH:mm") : ''}
+                              onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                              disabled={isReadOnly}
+                          />
+                      </FormControl>
+                    )}
+                  />
+               ) : (
+                  <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
+                      {formattedReceptionDate || 'Pendiente'}
+                  </div>
+               )}
           </div>
           <FormField
               control={control}
