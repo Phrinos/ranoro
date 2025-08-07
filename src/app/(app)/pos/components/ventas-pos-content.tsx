@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { formatCurrency, getPaymentMethodVariant, cn } from '@/lib/utils';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import { Badge } from '@/components/ui/badge';
-import { es } from 'date-fns/locale';
+import { format as formatLocale, es } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -170,22 +170,10 @@ export function VentasPosContent({
         </Button>
         
         <TableToolbar
-            searchTerm={tableManager.searchTerm}
-            onSearchTermChange={tableManager.setSearchTerm}
-            dateRange={tableManager.dateRange}
-            onDateRangeChange={tableManager.onDateRangeChange}
-            sortOption={tableManager.sortOption}
-            onSortOptionChange={tableManager.onSortOptionChange}
+            {...tableManager}
             searchPlaceholder="Buscar por ID, cliente, artículo..."
             sortOptions={sortOptions}
-            otherFilters={tableManager.otherFilters}
-            onFilterChange={tableManager.setOtherFilters}
             filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
-            paginationSummary={tableManager.paginationSummary}
-            canGoPrevious={tableManager.canGoPrevious}
-            canGoNext={tableManager.canGoNext}
-            onPreviousPage={tableManager.goToPreviousPage}
-            onNextPage={tableManager.goToNextPage}
         />
         
         {filteredData.length > 0 ? (
@@ -216,16 +204,16 @@ export function VentasPosContent({
                       <Card key={sale.id} className={cn("shadow-sm overflow-hidden", isCancelled && "bg-muted/60 opacity-80")}>
                           <CardContent className="p-0">
                               <div className="flex flex-col md:flex-row text-sm">
-                                  <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-card">
-                                      <p className="text-muted-foreground text-sm">{saleDate && isValid(saleDate) ? format(saleDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
-                                      <p className="font-bold text-lg text-foreground">{saleDate && isValid(saleDate) ? format(saleDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
+                                  <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-card border-b md:border-b-0 md:border-r">
+                                      <p className="text-muted-foreground text-sm">{saleDate && isValid(saleDate) ? formatLocale(saleDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
+                                      <p className="font-bold text-lg text-foreground">{saleDate && isValid(saleDate) ? formatLocale(saleDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
                                       <p className="text-muted-foreground text-xs mt-1">{sale.id}</p>
                                   </div>
-                                  <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-y md:border-y-0 md:border-x">
-                                     <TooltipProvider><Tooltip><TooltipTrigger asChild><p className="font-bold text-lg truncate">{itemsDescription}</p></TooltipTrigger><TooltipContent><p>{itemsDescription}</p></TooltipContent></Tooltip></TooltipProvider>
+                                  <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-b md:border-b-0 md:border-r">
+                                     <TooltipProvider><Tooltip><TooltipTrigger asChild><p className="font-bold text-base leading-tight">{itemsDescription}</p></TooltipTrigger><TooltipContent><p>{itemsDescription}</p></TooltipContent></Tooltip></TooltipProvider>
                                      <div className="flex items-center gap-2 text-muted-foreground text-xs"><UserIcon className="h-3 w-3" /><span>{sale.customerName || 'Cliente Mostrador'}</span></div>
                                   </div>
-                                  <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-2 border-t md:border-0">
+                                  <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-2 border-b md:border-b-0 md:border-r">
                                        <div><p className="text-xs text-muted-foreground mb-1 text-right">Costo Cliente</p><p className="font-bold text-xl text-primary text-right">{formatCurrency(sale.totalAmount)}</p></div>
                                        <div><p className="text-xs text-muted-foreground">Ganancia</p><p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end"><TrendingUp className="h-4 w-4" /> {formatCurrency(profit)}</p></div>
                                   </div>
@@ -260,6 +248,17 @@ export function VentasPosContent({
               <p className="text-sm">Intente cambiar su búsqueda o el rango de fechas.</p>
           </div>
         )}
+        <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
+            <div className="flex items-center space-x-2">
+                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
+                    <ChevronLeft className="h-4 w-4" /> Anterior
+                </Button>
+                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
+                    Siguiente <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
     </div>
   );
 }
