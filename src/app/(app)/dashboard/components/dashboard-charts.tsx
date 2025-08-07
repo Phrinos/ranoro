@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
               <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: pld.color }}></div>
               <span>{`${pld.name}: `}</span>
               <span className="font-semibold ml-1">
-                {pld.dataKey === 'ingresos' || pld.dataKey === 'ganancia' || pld.dataKey === 'costos' || pld.dataKey === 'gastos' || pld.dataKey === 'Mes Anterior' || pld.dataKey === 'Mes Actual' || pld.dataKey === 'Utilidad Neta'
+                {pld.dataKey === 'ingresos' || pld.dataKey === 'Ganancia Bruta' || pld.dataKey === 'costos' || pld.dataKey === 'gastos' || pld.dataKey === 'Mes Anterior' || pld.dataKey === 'Mes Actual'
                   ? formatCurrency(pld.value)
                   : pld.value.toLocaleString('es-MX')}
               </span>
@@ -56,16 +56,16 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 
 
 interface DashboardChartsProps {
-    financialChartData: { name: string; ingresos: number; ganancia: number; gastos: number; }[];
+    financialChartData: { name: string; ingresos: number; 'Ganancia Bruta': number; gastos: number; }[];
     operationalChartData: { name: string; 'Ventas POS': number; [key: string]: number | string; }[];
     serviceTypeDistribution: { name: string; value: number }[];
-    monthlyComparisonData: { name: string; 'Mes Anterior': number; 'Mes Actual': number; 'Utilidad Neta': number }[];
+    monthlyComparisonData: { name: string; 'Mes Anterior': number; 'Mes Actual': number; }[];
     allServiceTypes: ServiceTypeRecord[];
 }
 
 
 export function DashboardCharts({ financialChartData, operationalChartData, serviceTypeDistribution, monthlyComparisonData, allServiceTypes }: DashboardChartsProps) {
-  const [activeFinancialKeys, setActiveFinancialKeys] = useState<string[]>(['ingresos', 'ganancia', 'gastos']);
+  const [activeFinancialKeys, setActiveFinancialKeys] = useState<string[]>(['ingresos', 'Ganancia Bruta', 'gastos']);
   
   const allOperationalKeys = ['Ventas POS', ...allServiceTypes.map(st => st.name)];
   const [activeOperationalKeys, setActiveOperationalKeys] = useState<string[]>(allOperationalKeys);
@@ -84,7 +84,7 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
   
   const financialLineData = [
       { key: 'ingresos', name: 'Ingresos', color: '#3b82f6' }, // blue
-      { key: 'ganancia', name: 'Ganancia', color: '#22c55e' }, // green-500
+      { key: 'Ganancia Bruta', name: 'Ganancia Bruta', color: '#22c55e' }, // green-500
       { key: 'gastos', name: 'Gastos', color: '#ef4444' }, // red-500
   ];
   
@@ -117,7 +117,7 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
                       <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--muted))' }}/>
                       <Legend />
                       {activeFinancialKeys.includes('ingresos') && <Line yAxisId="left" type="monotone" dataKey="ingresos" stroke={financialLineData.find(d=>d.key==='ingresos')?.color} strokeWidth={2} name="Ingresos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                      {activeFinancialKeys.includes('ganancia') && <Line yAxisId="left" type="monotone" dataKey="ganancia" stroke={financialLineData.find(d=>d.key==='ganancia')?.color} strokeWidth={2} name="Ganancia" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                      {activeFinancialKeys.includes('Ganancia Bruta') && <Line yAxisId="left" type="monotone" dataKey="Ganancia Bruta" stroke={financialLineData.find(d=>d.key==='Ganancia Bruta')?.color} strokeWidth={2} name="Ganancia Bruta" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                       {activeFinancialKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke={financialLineData.find(d=>d.key==='gastos')?.color} strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                   </LineChart>
                 </ResponsiveContainer>
@@ -150,7 +150,6 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
                     <Legend />
                     <Bar dataKey="Mes Anterior" fill="hsl(var(--secondary-foreground))" radius={[0, 4, 4, 0]} />
                     <Bar dataKey="Mes Actual" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
-                    <Bar dataKey="Utilidad Neta" fill="#22c55e" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -226,3 +225,5 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
     </Tabs>
   );
 }
+
+    

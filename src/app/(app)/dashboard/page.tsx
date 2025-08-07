@@ -336,7 +336,7 @@ export default function DashboardPage() {
       return { 
         name: format(monthDate, 'MMM yy', { locale: es }), 
         ingresos: serviceRevenue + salesRevenue, 
-        ganancia: totalOperationalProfit, 
+        'Ganancia Bruta': totalOperationalProfit, 
         gastos: totalMonthlyFixedExpenses + totalVariableCommissions
       };
     });
@@ -404,8 +404,8 @@ export default function DashboardPage() {
     const lastMonthMetrics = calculateMetricsForPeriod(startOfMonth(subMonths(today, 1)), endOfMonth(subMonths(today, 1)));
     
     const monthlyComparisonDataResult = [
-        { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos, 'Utilidad Neta': 0 },
-        { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta, 'Utilidad Neta': currentMonthMetrics.utilidadNeta },
+        { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos },
+        { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta },
     ];
 
     return {
@@ -626,3 +626,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
