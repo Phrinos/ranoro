@@ -70,36 +70,13 @@ export function ServiceForm({
 }: ServiceFormWrapperProps) {
   const router = useRouter();
 
-  // Function to get current user from localStorage
-  const getCurrentUser = (): User | null => {
-      if (typeof window === 'undefined') return null;
-      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-      if (authUserString) {
-          try {
-              return JSON.parse(authUserString);
-          } catch (e) {
-              console.error("Could not parse user from localStorage", e);
-              return null;
-          }
-      }
-      return null;
-  };
-  
-  const currentUser = getCurrentUser();
-
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
       ...initialData,
       status: initialData?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
-      serviceDate: initialData?.serviceDate ? new Date(initialData.serviceDate) : new Date(), // Set default date
+      serviceDate: initialData?.serviceDate ? new Date(initialData.serviceDate) : new Date(), 
       allVehiclesForDialog: vehicles, 
-      // Set default advisor only for new records
-      ...(!initialData?.id && currentUser && {
-        serviceAdvisorId: currentUser.id,
-        serviceAdvisorName: currentUser.name,
-        serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
-      }),
     },
   });
 
@@ -281,7 +258,7 @@ function ServiceFormContent({
   
   const watchedStatus = watch('status');
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
-  const isSubmitDisabled = isReadOnly || formState.isSubmitting;
+  const isSubmitDisabled = isReadOnly || formState.isSubmitting || !formState.isValid;
 
   return (
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">

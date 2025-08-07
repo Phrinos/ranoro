@@ -64,6 +64,8 @@ export function ServiceDetailsCard({
 
   const showAppointmentFields = useMemo(() => watchedStatus === 'Agendado', [watchedStatus]);
   const showWorkshopFields = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
+  const showTechnicianField = useMemo(() => watchedStatus !== 'Cotizacion', [watchedStatus]);
+
 
   return (
     <Card>
@@ -90,12 +92,11 @@ export function ServiceDetailsCard({
           />
 
           {showWorkshopFields && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 items-end">
-              <FormField
+             <FormField
                 control={control}
                 name="subStatus"
                 render={({ field }) => (
-                  <FormItem className="md:col-span-1">
+                  <FormItem>
                     <FormLabel>Sub-Estado Taller</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
@@ -106,26 +107,28 @@ export function ServiceDetailsCard({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={control}
-                name="technicianId"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Técnico Asignado</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {technicians.filter((t) => !t.isArchived).map((technician) => (
-                          <SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
           )}
         </div>
+        
+        {showTechnicianField && (
+            <FormField
+              control={control}
+              name="technicianId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Técnico Asignado</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {technicians.filter((t) => !t.isArchived).map((technician) => (
+                        <SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+        )}
 
         {showAppointmentFields && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t items-end">

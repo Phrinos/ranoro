@@ -12,6 +12,7 @@ import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, In
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import type { ServiceFormValues } from '@/schemas/service-form';
 import { PageHeader } from '@/components/page-header';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -38,10 +39,9 @@ export default function ServicioPage() {
         setIsLoading(true);
         try {
             const [
-              serviceData, vehiclesData, usersData, inventoryData,
+              vehiclesData, usersData, inventoryData,
               serviceTypesData, categoriesData, suppliersData, allServicesData
             ] = await Promise.all([
-              isEditMode && serviceId ? serviceService.getDocById('serviceRecords', serviceId) : Promise.resolve(null),
               inventoryService.onVehiclesUpdatePromise(),
               adminService.onUsersUpdatePromise(),
               inventoryService.onItemsUpdatePromise(),
@@ -50,23 +50,7 @@ export default function ServicioPage() {
               inventoryService.onSuppliersUpdatePromise(),
               serviceService.onServicesUpdatePromise(),
             ]);
-
-            if (isEditMode && !serviceData) {
-              toast({ title: 'Error', description: 'Servicio no encontrado.', variant: 'destructive' });
-              router.push('/servicios/historial');
-              return;
-            }
-
-            if(serviceData) {
-              setInitialData(serviceData);
-            } else if (!isEditMode) {
-                // Set default values for new service/quote
-                setInitialData({
-                    status: 'Cotizacion', // Default to Cotizacion
-                    serviceDate: new Date(), // Ensure new records have a date
-                } as ServiceRecord);
-            }
-
+            
             setVehicles(vehiclesData);
             setUsers(usersData);
             setInventoryItems(inventoryData);
@@ -75,6 +59,29 @@ export default function ServicioPage() {
             setSuppliers(suppliersData);
             setServiceHistory(allServicesData);
             
+            if (isEditMode && serviceId) {
+                const serviceData = await serviceService.getDocById('serviceRecords', serviceId);
+                if (!serviceData) {
+                  toast({ title: 'Error', description: 'Servicio no encontrado.', variant: 'destructive' });
+                  router.push('/servicios/historial');
+                  return;
+                }
+                setInitialData(serviceData);
+            } else {
+                const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+                const currentUser = authUserString ? JSON.parse(authUserString) : null;
+
+                setInitialData({
+                    status: 'Cotizacion',
+                    serviceDate: new Date(),
+                    ...(currentUser && {
+                        serviceAdvisorId: currentUser.id,
+                        serviceAdvisorName: currentUser.name,
+                        serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
+                    }),
+                } as ServiceRecord);
+            }
+
         } catch (error) {
             console.error("Error fetching data:", error);
             toast({ title: 'Error', description: 'No se pudieron cargar los datos.', variant: 'destructive' });
@@ -139,7 +146,7 @@ export default function ServicioPage() {
     );
   }
 
-  const isQuote = isEditMode ? initialData?.status === 'Cotizacion' : isQuoteModeParam || !isEditMode;
+  const isQuote = initialData?.status === 'Cotizacion' || mode === 'quote';
   
   const pageTitle = isEditMode 
     ? `Editar ${initialData?.status === 'Cotizacion' ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`
