@@ -21,7 +21,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem } from "@/types";
-import { cleanObjectForFirestore } from '../forms';
+import { cleanObjectForFirestore, IVA_RATE } from '../forms';
 import { logAudit } from '../placeholder-data';
 import { nanoid } from 'nanoid';
 import { savePublicDocument } from '../public-document';
@@ -132,14 +132,32 @@ const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<
 
 const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
+
+    // Recalculate totals before saving
+    const serviceItems = data.serviceItems || [];
+    const totalCost = serviceItems.reduce((acc, item) => acc + (item.price || 0), 0);
+    const totalSuppliesWorkshopCost = serviceItems.flatMap(item => item.suppliesUsed || []).reduce((acc, supply) => acc + (supply.unitPrice || 0) * (supply.quantity || 0), 0);
+    const serviceProfit = totalCost - totalSuppliesWorkshopCost;
+    const subTotal = totalCost / (1 + IVA_RATE);
+    const taxAmount = totalCost - subTotal;
+
+    const dataWithCalculatedTotals = {
+        ...data,
+        totalCost,
+        totalSuppliesWorkshopCost,
+        serviceProfit,
+        subTotal,
+        taxAmount,
+    };
+
     const isEditing = !!data.id;
     
     if (isEditing) {
-        await updateService(data.id!, data);
+        await updateService(data.id!, dataWithCalculatedTotals);
         const updatedDoc = await getDoc(doc(db, 'serviceRecords', data.id!));
         return { id: updatedDoc.id, ...updatedDoc.data() } as ServiceRecord;
     } else {
-        return await addService(data as Omit<ServiceRecord, 'id'>);
+        return await addService(dataWithCalculatedTotals as Omit<ServiceRecord, 'id'>);
     }
 };
 
