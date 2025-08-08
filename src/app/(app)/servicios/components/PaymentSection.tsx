@@ -1,16 +1,15 @@
-
+// src/app/(app)/servicios/components/PaymentSection.tsx
 "use client";
 
 import React from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Wallet, CreditCard, Send, CheckCircle } from 'lucide-react';
 import type { Payment } from '@/types';
 import { Button } from '@/components/ui/button';
-import { capitalizeWords, formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import { DollarSign, PlusCircle, Trash2 } from 'lucide-react';
 
 const paymentMethods: Payment['method'][] = ['Efectivo', 'Tarjeta', 'Tarjeta MSI', 'Transferencia'];
@@ -27,7 +26,6 @@ interface PaymentSectionProps {
   validatedFolios: Record<number, boolean>;
 }
 
-
 export function PaymentSection({ onOpenValidateDialog, validatedFolios }: PaymentSectionProps) {
   const { control, watch } = useFormContext();
   const { fields, append, remove } = useFieldArray({
@@ -41,23 +39,17 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
   const availablePaymentMethods = paymentMethods.filter(
     method => !watchedPayments?.some((p: Payment) => p.method === method)
   );
-  
-  const totalPaid = watchedPayments?.reduce((acc: number, p: Payment) => acc + (Number(p.amount) || 0), 0) || 0;
-  const totalItemsAmount = watchedItems?.reduce((sum: number, item: any) => sum + (item.price || 0), 0) || 0;
-
 
   return (
-    <div className="space-y-4 rounded-md border p-4">
-        <FormLabel>Métodos de Pago</FormLabel>
+    <div className="space-y-4">
         {fields.map((field, index) => {
             const selectedMethod = watchedPayments[index]?.method;
             const showFolio = selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI' || selectedMethod === 'Transferencia';
             const folioLabel = selectedMethod === 'Transferencia' ? 'Folio de Transferencia' : 'Folio de Voucher';
             const isFolioValidated = validatedFolios[index];
 
-
             return (
-                <div key={field.id} className="space-y-2">
+                <div key={field.id} className="space-y-2 p-3 border rounded-md bg-background">
                     <div className="flex gap-2 items-end">
                         <FormField
                             control={control}
@@ -130,14 +122,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
                 <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
             </Button>
         )}
-        <div className="flex justify-between font-semibold pt-2 border-t">
-            <span>Total Pagado:</span>
-            <span>{formatCurrency(totalPaid)}</span>
-        </div>
-        <div className="flex justify-between font-semibold text-destructive">
-            <span>Faltante por Pagar:</span>
-            <span>{formatCurrency(Math.max(0, totalItemsAmount - totalPaid))}</span>
-        </div>
+        
         <FormField
             control={control}
             name="payments"
