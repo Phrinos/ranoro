@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from '../ui/button';
 import { Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -45,7 +45,7 @@ export function DocumentPreviewDialog({
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto px-6 bg-muted/30 print:bg-white print:p-0">
-            <div className="printable-area print-format-letter bg-white mx-auto my-4 shadow-lg">
+            <div className="printable-area print-format-letter bg-white mx-auto my-4 shadow-lg print:shadow-none print:m-0 print:p-0">
                  {children}
             </div>
         </div>

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from 'lucide-react';
 import { inventoryService } from '@/lib/services/inventory.service';
 import { purchaseService } from '@/lib/services/purchase.service';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
 import { cn } from "@/lib/utils";
 import type { PurchaseFormValues } from './register-purchase-dialog';
 import { DashboardCards } from './DashboardCards';
@@ -147,6 +147,7 @@ export default function InventarioPageComponent({
   const tabsConfig = [
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
+    { value: "analisis", label: "Análisis IA" },
   ];
 
   return (
@@ -202,6 +203,11 @@ export default function InventarioPageComponent({
             />
           </Suspense>
         </TabsContent>
+        <TabsContent value="analisis" className="mt-6">
+          <Suspense fallback={<Loader2 className="animate-spin" />}>
+            <AnalisisIaContent inventoryItems={inventoryItems} />
+          </Suspense>
+        </TabsContent>
       </Tabs>
       
       <Suspense fallback={null}>
@@ -218,31 +224,23 @@ export default function InventarioPageComponent({
         <InventoryItemDialog
           open={isItemDialogOpen}
           onOpenChange={setIsItemDialogOpen}
-          onSave={editingItem ? handleItemUpdated : handleSaveItem}
+          onSave={handleSaveItem}
           item={editingItem}
           categories={categories}
           suppliers={suppliers}
         />
       </Suspense>
 
-       <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
-                 <DialogHeader className="p-6 pb-2 border-b">
-                    <DialogTitle>Reporte de Inventario</DialogTitle>
-                    <DialogDescription>Vista previa del reporte para imprimir.</DialogDescription>
-                 </DialogHeader>
-                <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
-                  <Suspense fallback={<Loader2 className="animate-spin" />}>
-                    <InventoryReportContent items={itemsToPrint} />
-                  </Suspense>
-                </div>
-                 <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
-                    <Button onClick={() => window.print()}>
-                        <Printer className="mr-2 h-4 w-4" /> Imprimir
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+       <DocumentPreviewDialog
+            open={isPrintDialogOpen}
+            onOpenChange={setIsPrintDialogOpen}
+            title="Reporte de Inventario"
+            description="Vista previa del reporte para imprimir."
+        >
+          <Suspense fallback={<Loader2 className="animate-spin" />}>
+            <InventoryReportContent items={itemsToPrint} />
+          </Suspense>
+        </DocumentPreviewDialog>
     </>
   );
 }

@@ -14,7 +14,7 @@ import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-r
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
 import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
@@ -214,16 +214,11 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
       </FormProvider>
 
       {saleForTicket && (
-        <PrintTicketDialog
+        <DocumentPreviewDialog
           open={isTicketDialogOpen}
           onOpenChange={handleDialogClose}
           title="Venta Completada"
           description={`Ticket para la venta #${saleForTicket.id}`}
-          footerActions={<>
-            <Button onClick={() => handleCopyAsImage()} size="icon" title="Copiar Imagen" className="bg-blue-600 hover:bg-blue-700 text-white"><Copy className="h-4 w-4"/></Button>
-            <Button onClick={handleShare} size="icon" title="Compartir Ticket" className="bg-green-600 hover:bg-green-700 text-white"><Share2 className="h-4 w-4" /></Button>
-            <Button onClick={handlePrint} size="icon" title="Imprimir" className="bg-red-600 hover:bg-red-700 text-white"><Printer className="h-4 w-4"/></Button>
-          </>}
         >
           <div id="printable-ticket">
             <TicketContent
@@ -232,7 +227,7 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
                 previewWorkshopInfo={workshopInfo || undefined}
             />
           </div>
-        </PrintTicketDialog>
+        </DocumentPreviewDialog>
       )}
     </>
   );

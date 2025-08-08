@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { formatCurrency, optimizeImage } from '@/lib/utils';
 import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
 import { ContractContent } from '../components/contract-content';
 import Image from "next/image";
 import { RegisterPaymentDialog } from '../components/register-payment-dialog';
@@ -628,19 +628,13 @@ const handleAssignVehicle = useCallback(async (newVehicleId: string | null) => {
     )}
 
     {assignedVehicle && (
-      <PrintTicketDialog
+      <DocumentPreviewDialog
         open={isContractDialogOpen}
         onOpenChange={setIsContractDialogOpen}
         title="Contrato de Arrendamiento"
-        dialogContentClassName="printable-quote-dialog max-w-4xl"
-        footerActions={
-          <Button onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4"/> Imprimir Contrato
-          </Button>
-        }
       >
         <ContractContent ref={contractContentRef} driver={driver} vehicle={assignedVehicle} />
-      </PrintTicketDialog>
+      </DocumentPreviewDialog>
     )}
     </>
   );

@@ -1,20 +1,27 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { PlusCircle, Printer, Copy, MessageSquare, Share2, Wallet } from "lucide-react";
+import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
 import { TicketContent } from '@/components/ticket-content';
 import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { operationsService, inventoryService, adminService, saleService } from '@/lib/services';
-import { Loader2, Copy, Share2, Printer } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { cn, formatCurrency } from "@/lib/utils";
 import { ViewSaleDialog } from "./components/view-sale-dialog";
+import { writeBatch, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { VentasPosContent } from './components/ventas-pos-content';
-import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
+import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+import { isToday, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../../servicios/components/PaymentDetailsDialog';
 
 export default function PosPage() {
   const { toast } = useToast();
@@ -175,20 +182,15 @@ Total: ${formatCurrency(sale.totalAmount)}
         onDeleteSale={handleDeleteSale}
       />
 
-      <PrintTicketDialog
+      <DocumentPreviewDialog
         open={isReprintDialogOpen && !!selectedSaleForReprint}
         onOpenChange={setIsReprintDialogOpen}
         title="Reimprimir Ticket"
-        footerActions={<>
-          <Button onClick={() => handleCopyAsImage()} variant="outline" size="icon" title="Copiar Imagen"><Copy className="h-4 w-4"/></Button>
-          <Button onClick={handleShare} variant="outline" size="icon" title="Compartir Ticket"><Share2 className="h-4 w-4" /></Button>
-          <Button onClick={handlePrint} variant="outline" size="icon" title="Imprimir"><Printer className="h-4 w-4"/></Button>
-        </>}
       >
         <div id="printable-ticket">
           {selectedSaleForReprint && <TicketContent ref={ticketContentRef} sale={selectedSaleForReprint} previewWorkshopInfo={workshopInfo || undefined} />}
         </div>
-      </PrintTicketDialog>
+      </DocumentPreviewDialog>
       
       {selectedSale && <ViewSaleDialog
         open={isViewDialogOpen} 

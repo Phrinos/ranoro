@@ -10,7 +10,7 @@ import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, Do
 import { useToast } from '@/hooks/use-toast';
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
-import { PrintLetterDialog } from '@/components/ui/print-letter-dialog';
+import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
 import { PurchaseOrderContent } from './components/purchase-order-content';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -612,7 +612,7 @@ export default function DashboardPage() {
       </div>
 
       {purchaseRecommendations && workshopInfo && (
-        <PrintLetterDialog
+        <DocumentPreviewDialog
             open={isPurchaseOrderDialogOpen}
             onOpenChange={setIsPurchaseOrderDialogOpen}
             title="Orden de Compra Sugerida por IA"
@@ -621,7 +621,7 @@ export default function DashboardPage() {
               recommendations={purchaseRecommendations}
               workshopInfo={workshopInfo}
             />
-        </PrintLetterDialog>
+        </DocumentPreviewDialog>
       )}
     </div>
   );
