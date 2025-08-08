@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, X, Ban, Trash2 } from 'lucide-react';
+import { Loader2, Save, X, Ban, Trash2, BrainCircuit } from 'lucide-react';
 import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,6 +30,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ServiceSummary } from './ServiceSummary';
+import { FormField, FormItem, FormLabel, FormControl, Textarea } from '@/components/ui/form';
+
 
 // Lazy load complex components
 const ServiceItemsList = lazy(() => import('./ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
@@ -76,6 +78,7 @@ export function ServiceForm({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
       ...initialData,
+      notes: initialData?.notes ?? '',
       serviceDate: initialData?.serviceDate ? new Date(initialData.serviceDate) : new Date(),
       appointmentDateTime: initialData?.appointmentDateTime ? new Date(initialData.appointmentDateTime) : undefined,
       receptionDateTime: initialData?.receptionDateTime ? new Date(initialData.receptionDateTime) : undefined,
@@ -330,6 +333,31 @@ function ServiceFormContent({
                 <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceSummary onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense></div>
              </div>
         )}
+        <FormField
+          control={control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem className="mt-6">
+              <FormLabel className="flex justify-between items-center w-full">
+                  <span>Notas Adicionales del Servicio (Opcional)</span>
+                  {!isReadOnly && (
+                      <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEnhanceText("notes")}
+                          disabled={isEnhancingText === "notes" || !watch("notes")}
+                      >
+                          {isEnhancingText === "notes" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                      </Button>
+                  )}
+              </FormLabel>
+              <FormControl>
+                  <Textarea placeholder="Observaciones generales sobre el servicio..." {...field} className="min-h-[100px]" disabled={isReadOnly} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
       </div>
 
       <div className="flex-shrink-0 flex justify-between items-center mt-6 pt-4 border-t px-6 pb-6 bg-background sticky bottom-0 z-10">
@@ -394,7 +422,7 @@ function ServiceFormContent({
             open={isPaymentDialogOpen}
             onOpenChange={setIsPaymentDialogOpen}
             record={serviceToComplete}
-            onConfirm={(id, details) => handleCompleteService(serviceToComplete, details)}
+            onConfirm={(id, details) => handleCompleteService(serviceToComplete, details as PaymentDetailsFormValues)}
             recordType="service"
             isCompletionFlow={true}
           />

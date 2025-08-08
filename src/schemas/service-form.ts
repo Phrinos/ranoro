@@ -90,6 +90,7 @@ export const serviceFormSchema = z.object({
     vehicleConditions: z.string().optional(),
     fuelLevel: z.string().optional(),
     customerItems: z.string().optional(),
+    notes: z.string().max(2000, 'Máximo 2000 caracteres').optional().or(z.literal('')),
     customerSignatureReception: z.string().nullable().optional(),
     customerSignatureDelivery: z.string().nullable().optional(),
     receptionSignatureViewed: z.boolean().optional(),
