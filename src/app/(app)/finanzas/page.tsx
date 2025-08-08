@@ -36,7 +36,7 @@ import { Tooltip, TooltipTrigger, TooltipProvider, TooltipContent } from '@/comp
 
 
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
-const MovimientosTabContent = lazy(() => import('./components/movimientos-content').then(m => ({ default: m.MovimientosContent })));
+const MovimientosTabContent = lazy(() => import('./components/movimientos-content'));
 
 
 // --- Componente principal de la página de Finanzas ---
@@ -279,7 +279,7 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
             label: 'Movimientos', 
             content: (
                 <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
-                    <MovimientosTabContent 
+                    <MovimientosTabContent
                         allSales={allSales} 
                         allServices={allServices} 
                         allInventory={allInventory} 
