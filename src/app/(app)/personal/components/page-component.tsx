@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
@@ -14,7 +13,7 @@ import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
 const RendimientoPersonalContent = lazy(() => import('./rendimiento-content').then(m => ({ default: m.RendimientoPersonalContent })));
 const UsuariosPageContent = lazy(() => import('./usuarios-content').then(m => ({ default: m.UsuariosPageContent })));
-const RolesPageContent = lazy(() => import('../../administracion/components/roles-content').then(m => ({ default: m.RolesPageContent })));
+const RolesPageContent = lazy(() => import('./roles-content').then(m => ({ default: m.RolesPageContent })));
 
 export function PersonalPageComponent({ tab }: { tab?: string }) {
   const { toast } = useToast();
