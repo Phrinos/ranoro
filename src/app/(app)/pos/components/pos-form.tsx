@@ -1,3 +1,4 @@
+// src/app/(app)/pos/components/pos-form.tsx
 
 "use client";
 
@@ -37,6 +38,7 @@ export function PosForm({
   const { setValue, getValues, control } = methods;
   
   const watchedPayments = useWatch({ control, name: 'payments' });
+  const watchedItems = useWatch({ control, name: 'items' });
 
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
@@ -76,38 +78,22 @@ export function PosForm({
   };
   
     useEffect(() => {
-        const currentItems = getValues('items') || [];
-        
-        let newItems = currentItems.filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE');
-        
-        const totalWithoutCommission = newItems.reduce((acc: number, item: any) => acc + (item.totalPrice || 0), 0);
+        const totalAmount = watchedItems?.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0) || 0;
 
         let commissionAmount = 0;
         const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
         const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
         
         if (hasCardPayment) {
-          commissionAmount += totalWithoutCommission * 0.041;
+          commissionAmount += totalAmount * 0.041;
         }
         if (hasMSIPayment) {
-          commissionAmount += totalWithoutCommission * 0.12;
+          commissionAmount += totalAmount * 0.12;
         }
         
-        if (commissionAmount > 0) {
-            newItems.push({
-                inventoryItemId: 'COMMISSION_FEE',
-                itemName: 'Comisión de Tarjeta',
-                quantity: 1,
-                unitPrice: commissionAmount,
-                totalPrice: commissionAmount, // Commission is added to the total
-                isService: true,
-            });
-        }
-        
-        if (JSON.stringify(newItems) !== JSON.stringify(currentItems)) {
-            setValue('items', newItems, { shouldDirty: true });
-        }
-    }, [watchedPayments, getValues, setValue]);
+        setValue('cardCommission', commissionAmount, { shouldDirty: true });
+
+    }, [watchedPayments, watchedItems, setValue]);
 
 
   return (

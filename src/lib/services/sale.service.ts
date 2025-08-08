@@ -72,20 +72,13 @@ const registerSale = async (
         registeredById: currentUser.id,
         registeredByName: currentUser.name,
         status: 'Completado',
-        cardCommission: 0,
+        cardCommission: saleData.cardCommission || 0,
     };
-    
-    let totalCommission = 0;
-    const commissionItem = saleData.items.find(item => item.inventoryItemId === 'COMMISSION_FEE');
-    if (commissionItem) {
-        totalCommission = commissionItem.unitPrice;
-    }
-    newSale.cardCommission = totalCommission;
 
     workBatch.set(saleRef, cleanObjectForFirestore(newSale));
 
     for (const item of saleData.items) {
-        if (!item.isService && item.inventoryItemId !== 'COMMISSION_FEE') {
+        if (!item.isService) {
             const inventoryItem = inventoryMap.get(item.inventoryItemId);
             if (inventoryItem) {
                 const itemRef = doc(db, 'inventory', item.inventoryItemId);
@@ -130,7 +123,7 @@ const cancelSale = async (saleId: string, reason: string, currentUser: User | nu
     
     // Restore inventory
     for (const item of saleData.items) {
-        if (!item.isService && item.inventoryItemId !== 'COMMISSION_FEE') {
+        if (!item.isService) {
             const itemRef = doc(db, 'inventory', item.inventoryItemId);
             const inventoryDoc = await getDoc(itemRef);
             if (inventoryDoc.exists()) {
@@ -164,7 +157,7 @@ const deleteSale = async (saleId: string, currentUser: User | null): Promise<voi
     if (saleData.status !== 'Cancelado') {
         const batch = writeBatch(db);
         for (const item of saleData.items) {
-            if (!item.isService && item.inventoryItemId !== 'COMMISSION_FEE') {
+            if (!item.isService) {
                 const itemRef = doc(db, 'inventory', item.inventoryItemId);
                 const invDoc = await getDoc(itemRef);
                 if (invDoc.exists()) {
