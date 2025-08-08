@@ -7,7 +7,7 @@ import type { ServiceRecord, Vehicle, User } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { serviceService } from '@/lib/services';
-import { isToday, isTomorrow, isAfter, addDays, format, startOfDay } from 'date-fns';
+import { isToday, isTomorrow, isAfter, addDays, format, startOfDay, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { capitalizeWords } from '@/lib/utils';
