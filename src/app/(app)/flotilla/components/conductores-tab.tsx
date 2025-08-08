@@ -81,7 +81,10 @@ export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps)
       </div>
 
       <TableToolbar
-        {...tableManager}
+        searchTerm={tableManager.searchTerm}
+        onSearchTermChange={tableManager.onSearchTermChange}
+        sortOption={tableManager.sortOption}
+        onSortOptionChange={tableManager.onSortOptionChange}
         searchPlaceholder="Buscar por nombre o teléfono..."
         sortOptions={[
           { value: 'name_asc', label: 'Nombre (A-Z)' },

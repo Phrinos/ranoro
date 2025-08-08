@@ -1,5 +1,5 @@
 
-
+// src/app/(app)/proveedores/components/proveedores-content.tsx
 "use client";
 
 import React from 'react';

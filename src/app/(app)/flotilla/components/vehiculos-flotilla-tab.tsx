@@ -90,6 +90,7 @@ export function VehiculosFlotillaTab({ allVehicles, allDrivers }: VehiculosFloti
 
       <TableToolbar
         {...tableManager}
+        onSearchTermChange={tableManager.onSearchTermChange}
         searchPlaceholder="Buscar por placa, marca o modelo..."
         sortOptions={[
           { value: 'licensePlate_asc', label: 'Placa (A-Z)' },
