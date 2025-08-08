@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from 'lucide-react';
 import { inventoryService } from '@/lib/services/inventory.service';
 import { purchaseService } from '@/lib/services/purchase.service';
-import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { cn } from "@/lib/utils";
 import type { PurchaseFormValues } from './register-purchase-dialog';
 import { DashboardCards } from './DashboardCards';
