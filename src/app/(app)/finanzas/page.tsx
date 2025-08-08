@@ -96,7 +96,7 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
           const dateToParse = s.deliveryDateTime || s.serviceDate;
           if (!dateToParse) return false;
           const parsedDate = parseDate(dateToParse);
-          return (s.status === 'Completado' || s.status === 'Entregado') && isValid(parsedDate) && isWithinInterval(parsedDate, interval);
+          return (s.status === 'Completado' || s.status === 'Entregado') && parsedDate && isValid(parsedDate) && isWithinInterval(parsedDate, interval);
         });
 
         // --- INGRESOS Y GANANCIA BRUTA ---
