@@ -182,7 +182,7 @@ function ServiceFormContent({
   const canEditAll = userRole === 'Admin' || userRole === 'Superadministrador';
   
   // Logic to determine if fields should be read-only
-  const isReadOnly = (initialData?.status === 'Cancelado') && !canEditAll;
+  const isReadOnly = (initialData?.status === 'Cancelado' || initialData?.status === 'Entregado') && !canEditAll;
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
