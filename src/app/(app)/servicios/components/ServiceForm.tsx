@@ -334,31 +334,6 @@ function ServiceFormContent({
                 <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceSummary onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense></div>
              </div>
         )}
-        <FormField
-          control={control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem className="mt-6">
-              <FormLabel className="flex justify-between items-center w-full">
-                  <span>Notas Adicionales del Servicio (Opcional)</span>
-                  {!isReadOnly && (
-                      <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEnhanceText("notes")}
-                          disabled={isEnhancingText === "notes" || !watch("notes")}
-                      >
-                          {isEnhancingText === "notes" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                      </Button>
-                  )}
-              </FormLabel>
-              <FormControl>
-                  <Textarea placeholder="Observaciones generales sobre el servicio..." {...field} className="min-h-[100px]" disabled={isReadOnly} value={field.value ?? ''} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
       </div>
 
       <div className="flex-shrink-0 flex justify-between items-center mt-6 pt-4 border-t px-6 pb-6 bg-background sticky bottom-0 z-10">

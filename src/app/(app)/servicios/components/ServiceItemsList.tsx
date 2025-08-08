@@ -39,7 +39,7 @@ export function ServiceItemsList({
   isEnhancingText,
   handleEnhanceText
 }: ServiceItemsListProps) {
-  const { control, getValues, setValue } = useFormContext<ServiceFormValues>();
+  const { control, getValues, setValue, watch } = useFormContext<ServiceFormValues>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "serviceItems",
@@ -98,6 +98,31 @@ export function ServiceItemsList({
               </Button>
             </div>
           )}
+           <FormField
+              control={control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex justify-between items-center w-full">
+                      <span>Notas Adicionales del Servicio (Opcional)</span>
+                      {!isReadOnly && handleEnhanceText && (
+                          <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEnhanceText("notes")}
+                              disabled={isEnhancingText === "notes" || !watch("notes")}
+                          >
+                              {isEnhancingText === "notes" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                          </Button>
+                      )}
+                  </FormLabel>
+                  <FormControl>
+                      <Textarea placeholder="Observaciones generales sobre el servicio..." {...field} className="min-h-[100px]" disabled={isReadOnly} value={field.value ?? ''} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
         </div>
       </CardContent>
     </Card>
