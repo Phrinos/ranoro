@@ -5,7 +5,7 @@
 import React, { useMemo } from 'react';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { useTableManager } from '@/hooks/useTableManager';
-import type { SaleReceipt, ServiceRecord, InventoryItem, PaymentMethod } from '@/types';
+import type { SaleReceipt, ServiceRecord, InventoryItem, PaymentMethod, Payment } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,8 @@ import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
-import { Wrench, ShoppingCart, DollarSign, TrendingUp, LineChart } from 'lucide-react';
+import { Wrench, ShoppingCart, DollarSign, TrendingUp, LineChart, Wallet, CreditCard, Send } from 'lucide-react';
+import type { DateRange } from 'react-day-picker';
 
 interface Movement {
   id: string;
@@ -23,7 +24,7 @@ interface Movement {
   folio: string;
   type: 'Venta' | 'Servicio';
   client: string;
-  paymentMethods: PaymentMethod[];
+  payments: Payment[];
   total: number;
   profit: number;
 }
@@ -32,6 +33,8 @@ interface MovimientosContentProps {
   allSales: SaleReceipt[];
   allServices: ServiceRecord[];
   allInventory: InventoryItem[];
+  dateRange: DateRange | undefined;
+  onDateRangeChange: (range?: DateRange) => void;
 }
 
 const sortOptions = [
@@ -58,7 +61,7 @@ const paymentMethodOptions: { value: PaymentMethod | 'all', label: string }[] = 
 ];
 
 
-export default function MovimientosContent({ allSales, allServices, allInventory }: MovimientosContentProps) {
+export default function MovimientosContent({ allSales, allServices, allInventory, dateRange, onDateRangeChange }: MovimientosContentProps) {
   
   const mergedMovements = useMemo((): Movement[] => {
     const saleMovements: Movement[] = allSales
@@ -69,7 +72,7 @@ export default function MovimientosContent({ allSales, allServices, allInventory
         folio: s.id,
         type: 'Venta',
         client: s.customerName || 'Cliente Mostrador',
-        paymentMethods: s.payments ? s.payments.map(p => p.method) : (s.paymentMethod ? [s.paymentMethod as PaymentMethod] : []),
+        payments: s.payments || [],
         total: s.totalAmount,
         profit: calculateSaleProfit(s, allInventory),
       }));
@@ -82,7 +85,7 @@ export default function MovimientosContent({ allSales, allServices, allInventory
         folio: s.id,
         type: 'Servicio',
         client: s.customerName || 'N/A',
-        paymentMethods: s.payments ? s.payments.map(p => p.method) : (s.paymentMethod ? [s.paymentMethod as PaymentMethod] : []),
+        payments: s.payments || [],
         total: s.totalCost || 0,
         profit: s.serviceProfit || 0,
       }));
@@ -98,18 +101,32 @@ export default function MovimientosContent({ allSales, allServices, allInventory
     searchKeys: ['folio', 'client'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
+    initialDateRange: dateRange,
   });
   
+  // Propagate date changes from the toolbar up to the parent page
+  React.useEffect(() => {
+    onDateRangeChange(tableManager.dateRange);
+  }, [tableManager.dateRange, onDateRangeChange]);
+  
+  const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
+    "Efectivo": Wallet,
+    "Tarjeta": CreditCard,
+    "Tarjeta MSI": CreditCard,
+    "Transferencia": Send,
+  };
+
+
   const summary = useMemo(() => {
     const movements = tableManager.fullFilteredData;
     const totalMovements = movements.length;
     const grossProfit = movements.reduce((sum, m) => sum + m.total, 0);
     const netProfit = movements.reduce((sum, m) => sum + m.profit, 0);
-    const paymentsSummary = new Map<PaymentMethod, number>();
+    const paymentsSummary = new Map<Payment['method'], number>();
 
     movements.forEach(m => {
-        m.paymentMethods.forEach(method => {
-            paymentsSummary.set(method, (paymentsSummary.get(method) || 0) + (m.total / (m.paymentMethods.length || 1)));
+        m.payments.forEach(p => {
+            paymentsSummary.set(p.method, (paymentsSummary.get(p.method) || 0) + (p.amount || m.total));
         });
     });
 
@@ -118,8 +135,16 @@ export default function MovimientosContent({ allSales, allServices, allInventory
 
   return (
     <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium"># Movimientos</CardTitle><LineChart className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{summary.totalMovements}</div></CardContent></Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium"># Movimientos</CardTitle>
+                    <LineChart className="h-4 w-4 text-muted-foreground"/>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{summary.totalMovements}</div>
+                </CardContent>
+            </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Ingresos / Utilidad (Bruta)</CardTitle>
@@ -137,7 +162,7 @@ export default function MovimientosContent({ allSales, allServices, allInventory
             sortOptions={sortOptions}
             filterOptions={[
                 { value: 'type', label: 'Tipo', options: typeOptions },
-                { value: 'paymentMethods', label: 'Método de Pago', options: paymentMethodOptions }
+                { value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }
             ]}
         />
         <Card>
@@ -149,7 +174,7 @@ export default function MovimientosContent({ allSales, allServices, allInventory
                             {filteredMovements.length > 0 ? (
                                 filteredMovements.map(m => (
                                     <TableRow key={m.id}>
-                                        <TableCell>{m.date && isValid(m.date) ? format(m.date, "dd MMM yyyy", { locale: es }) : 'N/A'}</TableCell>
+                                        <TableCell>{m.date && isValid(m.date) ? format(m.date, "dd MMM yyyy, HH:mm", { locale: es }) : 'N/A'}</TableCell>
                                         <TableCell className="font-mono">{m.folio.slice(-6)}</TableCell>
                                         <TableCell>
                                           <Badge variant={m.type === 'Venta' ? 'secondary' : 'outline'}>
@@ -160,7 +185,12 @@ export default function MovimientosContent({ allSales, allServices, allInventory
                                         <TableCell>{m.client}</TableCell>
                                         <TableCell>
                                           <div className="flex flex-wrap gap-1">
-                                            {m.paymentMethods.map(pm => <Badge key={pm} variant={getPaymentMethodVariant(pm)} className="text-xs">{pm}</Badge>)}
+                                            {m.payments.map((p, index) => {
+                                                const Icon = paymentMethodIcons[p.method] || DollarSign;
+                                                return (<Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
+                                                  <Icon className="h-3 w-3 mr-1"/>{p.method}
+                                                </Badge>)
+                                            })}
                                           </div>
                                         </TableCell>
                                         <TableCell className="text-right font-semibold">{formatCurrency(m.total)}</TableCell>

@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/page.tsx
 
 "use client";
@@ -11,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import {
   calculateSaleProfit,
 } from '@/lib/placeholder-data';
-import type { MonthlyFixedExpense, InventoryItem, FinancialOperation, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord, Technician, AdministrativeStaff, InventoryMovement, Personnel } from '@/types';
+import type { MonthlyFixedExpense, InventoryItem, FinancialOperation, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord, Technician, AdministrativeStaff, InventoryMovement, Personnel, Payment } from '@/types';
 import {
   format,
   parseISO,
@@ -269,7 +270,7 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
                 </div>
             )
         },
-        { value: 'movimientos', label: 'Movimientos', content: <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}><MovimientosContent allSales={allSales} allServices={allServices} allInventory={allInventory}/></Suspense>}
+        { value: 'movimientos', label: 'Movimientos', content: <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}><MovimientosContent allSales={allSales} allServices={allServices} allInventory={allInventory} dateRange={dateRange} onDateRangeChange={setDateRange} /></Suspense>}
     ];
     
     return (
