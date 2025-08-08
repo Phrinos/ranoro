@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["https://*-firebase-studio-*.dev"],
+    "origin": ["*"],
     "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     "responseHeader": [
       "Content-Type",

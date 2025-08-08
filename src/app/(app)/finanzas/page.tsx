@@ -1,5 +1,3 @@
-
-
 // src/app/(app)/finanzas/page.tsx
 
 "use client";
@@ -35,12 +33,8 @@ const ReporteOperacionesContent = lazy(() => import('./components/reporte-operac
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
 
 
-export default function FinanzasPageComponent({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-    const defaultTab = (searchParams?.tab as string) || 'resumen';
+function FinanzasPageComponent({ tab }: { tab?: string }) {
+    const defaultTab = tab || 'resumen';
     
     const [activeTab, setActiveTab] = useState(defaultTab);
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -294,4 +288,19 @@ export default function FinanzasPageComponent({
           tabs={tabs}
         />
     );
+}
+
+function FinanzasPageWrapper() {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get('tab') as string | undefined;
+
+  return <FinanzasPageComponent tab={tab} />;
+}
+
+export default function FinanzasPage() {
+    return (
+        <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <FinanzasPageWrapper />
+        </Suspense>
+    )
 }
