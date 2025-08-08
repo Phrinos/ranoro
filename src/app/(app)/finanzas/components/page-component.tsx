@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/page-component.tsx
 
 "use client";
@@ -211,7 +212,7 @@ export function FinanzasPageComponent({
 
     const tabs = [
         {
-            value: "resumen", label: "Resumen",
+            value: "resumen", label: "Resumen Financiero",
             content: (
                  <div className="space-y-6">
                     <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">{dateFilterComponent}</div>
@@ -236,7 +237,7 @@ export function FinanzasPageComponent({
                                 {!financialSummary.isProfitableForCommissions && (<p className="text-xs text-right text-muted-foreground pt-1">Las comisiones no se aplican porque la ganancia no cubrió los gastos fijos.</p>)}
                                 <hr className="my-2 border-dashed"/>
                                 <div className="flex justify-between items-center font-bold text-2xl pt-1">
-                                    <span className="text-foreground">(=) Resultado Neto del Periodo:</span>
+                                    <span className="text-foreground">(=) Utilidad Neta del Periodo:</span>
                                     <span className={cn('text-2xl', financialSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(financialSummary.netProfit)}</span>
                                 </div>
                             </div>
@@ -270,6 +271,14 @@ export function FinanzasPageComponent({
                         </Suspense>
                     </div>
                 </div>
+            )
+        },
+         {
+            value: "reporte_operaciones", label: "Reporte de Operaciones",
+            content: (
+                 <Suspense fallback={<Loader2 className="animate-spin" />}>
+                    <ReporteOperacionesContent allSales={allSales} allServices={allServices} allInventory={allInventory} serviceTypes={serviceTypes}/>
+                 </Suspense>
             )
         },
     ];

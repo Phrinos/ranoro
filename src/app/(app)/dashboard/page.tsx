@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -323,7 +324,6 @@ export default function DashboardPage() {
       const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
       const totalMonthlyFixedExpenses = totalBaseSalaries + totalFixedExp;
 
-      // Make expenses proportional for the current month
       const isCurrentMonth = isSameDay(monthStart, startOfMonth(today));
       const daysInCurrentMonth = getDaysInMonth(today);
       const dayOfMonth = today.getDate();
@@ -341,12 +341,15 @@ export default function DashboardPage() {
             return sum + (netProfitBeforeCommissions * ((person.commissionRate || 0) / 100));
           }, 0);
       }
+      
+      const totalExpenses = proportionalBaseExpenses + totalVariableCommissions;
+      const netProfit = totalOperationalProfit - totalExpenses;
 
       return { 
         name: format(monthDate, 'MMM yy', { locale: es }), 
-        ingresos: serviceRevenue + salesRevenue, 
-        'Ganancia Bruta': totalOperationalProfit, 
-        gastos: proportionalBaseExpenses + totalVariableCommissions
+        'Ingresos': serviceRevenue + salesRevenue, 
+        'Utilidad Neta': netProfit,
+        'Gastos': totalExpenses
       };
     });
 
@@ -640,5 +643,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
               <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: pld.color }}></div>
               <span>{`${pld.name}: `}</span>
               <span className="font-semibold ml-1">
-                {pld.dataKey === 'ingresos' || pld.dataKey === 'Ganancia Bruta' || pld.dataKey === 'costos' || pld.dataKey === 'gastos' || pld.dataKey === 'Mes Anterior' || pld.dataKey === 'Mes Actual'
+                {pld.dataKey === 'Ingresos' || pld.dataKey === 'Utilidad Neta' || pld.dataKey === 'Gastos' || pld.dataKey === 'Mes Anterior' || pld.dataKey === 'Mes Actual'
                   ? formatCurrency(pld.value)
                   : pld.value.toLocaleString('es-MX')}
               </span>
@@ -56,7 +56,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 
 
 interface DashboardChartsProps {
-    financialChartData: { name: string; ingresos: number; 'Ganancia Bruta': number; gastos: number; }[];
+    financialChartData: { name: string; 'Ingresos': number; 'Utilidad Neta': number; 'Gastos': number; }[];
     operationalChartData: { name: string; 'Ventas POS': number; [key: string]: number | string; }[];
     serviceTypeDistribution: { name: string; value: number }[];
     monthlyComparisonData: { name: string; 'Mes Anterior': number; 'Mes Actual': number; }[];
@@ -65,7 +65,7 @@ interface DashboardChartsProps {
 
 
 export function DashboardCharts({ financialChartData, operationalChartData, serviceTypeDistribution, monthlyComparisonData, allServiceTypes }: DashboardChartsProps) {
-  const [activeFinancialKeys, setActiveFinancialKeys] = useState<string[]>(['ingresos', 'Ganancia Bruta', 'gastos']);
+  const [activeFinancialKeys, setActiveFinancialKeys] = useState<string[]>(['Ingresos', 'Utilidad Neta', 'Gastos']);
   
   const allOperationalKeys = ['Ventas POS', ...allServiceTypes.map(st => st.name)];
   const [activeOperationalKeys, setActiveOperationalKeys] = useState<string[]>(allOperationalKeys);
@@ -83,9 +83,9 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
   };
   
   const financialLineData = [
-      { key: 'ingresos', name: 'Ingresos', color: '#3b82f6' }, // blue
-      { key: 'Ganancia Bruta', name: 'Ganancia Bruta', color: '#22c55e' }, // green-500
-      { key: 'gastos', name: 'Gastos', color: '#ef4444' }, // red-500
+      { key: 'Ingresos', name: 'Ingresos', color: '#3b82f6' }, // blue-500
+      { key: 'Utilidad Neta', name: 'Utilidad Neta', color: '#22c55e' }, // green-500
+      { key: 'Gastos', name: 'Gastos', color: '#ef4444' }, // red-500
   ];
   
   const operationalLineColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -116,9 +116,9 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
                       <YAxis yAxisId="left" fontSize={12} tickLine={false} axisLine={false} tickFormatter={formatCurrencyForChart} />
                       <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--muted))' }}/>
                       <Legend />
-                      {activeFinancialKeys.includes('ingresos') && <Line yAxisId="left" type="monotone" dataKey="ingresos" stroke={financialLineData.find(d=>d.key==='ingresos')?.color} strokeWidth={2} name="Ingresos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                      {activeFinancialKeys.includes('Ganancia Bruta') && <Line yAxisId="left" type="monotone" dataKey="Ganancia Bruta" stroke={financialLineData.find(d=>d.key==='Ganancia Bruta')?.color} strokeWidth={2} name="Ganancia Bruta" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
-                      {activeFinancialKeys.includes('gastos') && <Line yAxisId="left" type="monotone" dataKey="gastos" stroke={financialLineData.find(d=>d.key==='gastos')?.color} strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                      {activeFinancialKeys.includes('Ingresos') && <Line yAxisId="left" type="monotone" dataKey="Ingresos" stroke={financialLineData.find(d=>d.key==='Ingresos')?.color} strokeWidth={2} name="Ingresos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                      {activeFinancialKeys.includes('Utilidad Neta') && <Line yAxisId="left" type="monotone" dataKey="Utilidad Neta" stroke={financialLineData.find(d=>d.key==='Utilidad Neta')?.color} strokeWidth={2} name="Utilidad Neta" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
+                      {activeFinancialKeys.includes('Gastos') && <Line yAxisId="left" type="monotone" dataKey="Gastos" stroke={financialLineData.find(d=>d.key==='Gastos')?.color} strokeWidth={2} name="Gastos" dot={{ r: 4 }} activeDot={{ r: 6 }} />}
                   </LineChart>
                 </ResponsiveContainer>
                 <div className="flex items-center justify-center gap-4 mt-4 text-sm flex-wrap">
@@ -225,5 +225,3 @@ export function DashboardCharts({ financialChartData, operationalChartData, serv
     </Tabs>
   );
 }
-
-    
