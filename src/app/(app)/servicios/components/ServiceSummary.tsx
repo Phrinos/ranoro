@@ -6,12 +6,16 @@ import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks';
-import { PaymentSection } from './PaymentSection';
-import type { PaymentSectionProps } from './PaymentSection';
+import { PaymentSection } from '@/components/shared/PaymentSection';
+
+interface ServiceSummaryProps {
+  onOpenValidateDialog: (index: number) => void;
+  validatedFolios: Record<number, boolean>;
+}
 
 const IVA_RATE = 0.16;
 
-export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: PaymentSectionProps) {
+export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: ServiceSummaryProps) {
   const form = useFormContext();
   const { totalCost, subTotal, taxAmount } = useServiceTotals(form);
   
@@ -34,11 +38,7 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Paymen
             <span className="text-muted-foreground">IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
             <span className="font-medium">{formatCurrency(taxAmount)}</span>
           </div>
-          <div className="flex justify-between font-semibold text-destructive">
-            <span>Faltante por Pagar:</span>
-            <span>{formatCurrency(Math.max(0, totalCost - totalPaid))}</span>
-          </div>
-          <div className="flex justify-between items-center text-lg font-bold pt-1 mt-1 border-t">
+          <div className="flex justify-between items-center text-lg font-bold pt-1 mt-1 border-t border-gray-300">
             <span>Total:</span>
             <span className="text-primary">{formatCurrency(totalCost)}</span>
           </div>

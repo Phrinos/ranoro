@@ -2,27 +2,16 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useFormContext, useFieldArray } from 'react-hook-form';
+import React, { useMemo } from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Receipt, Save, Loader2, PlusCircle, Trash2, DollarSign, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { formatCurrency, capitalizeWords } from '@/lib/utils';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Label } from '@/components/ui/label';
-import { PaymentSection } from './payment-section';
+import { PaymentSection } from '@/components/shared/PaymentSection';
+
 
 const IVA_RATE = 0.16;
 
@@ -32,7 +21,7 @@ interface SaleSummaryProps {
 }
 
 export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSummaryProps) {
-  const { control, watch, formState, getValues, setValue } = useFormContext();
+  const { control, watch, formState } = useFormContext();
   
   const watchedItems = watch("items");
 

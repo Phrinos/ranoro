@@ -1,4 +1,4 @@
-// src/app/(app)/pos/components/payment-section.tsx
+// src/components/shared/PaymentSection.tsx
 
 "use client";
 
@@ -36,7 +36,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
   });
   
   const watchedPayments = watch('payments');
-  const watchedItems = watch('items');
+  const watchedItems = watch('items') || watch('serviceItems');
 
   const availablePaymentMethods = paymentMethods.filter(
     method => !watchedPayments?.some((p: Payment) => p.method === method)
@@ -44,7 +44,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
   
   const totalPaid = watchedPayments?.reduce((acc: number, p: Payment) => acc + (Number(p.amount) || 0), 0) || 0;
   
-  const totalItemsAmount = watchedItems?.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0) || 0;
+  const totalItemsAmount = watchedItems?.reduce((sum: number, item: any) => sum + (item.totalPrice || item.price || 0), 0) || 0;
 
   return (
     <Card className="p-4">
