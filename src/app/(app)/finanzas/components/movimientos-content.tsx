@@ -72,7 +72,7 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
       }));
 
     const serviceMovements: Movement[] = allServices
-      .filter(s => s.status === 'Entregado')
+      .filter(s => s.status === 'Entregado' || s.status === 'Completado')
       .map(s => ({
         id: s.id,
         date: parseDate(s.deliveryDateTime) || parseDate(s.serviceDate),
@@ -102,7 +102,9 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
   
   // Sync external date changes with the hook's internal state
   useEffect(() => {
-    tableManager.onDateRangeChange(externalDateRange);
+    if(tableManager.onDateRangeChange) {
+      tableManager.onDateRangeChange(externalDateRange);
+    }
   }, [externalDateRange, tableManager]);
 
 
