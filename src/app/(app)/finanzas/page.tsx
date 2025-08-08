@@ -30,7 +30,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
-const MovimientosContent = lazy(() => import('./components/movimientos-content').then(m => ({ default: m.MovimientosContent })));
+const MovimientosContent = lazy(() => import('./components/movimientos-content'));
 
 
 function FinanzasPageComponent({ tab }: { tab?: string }) {
