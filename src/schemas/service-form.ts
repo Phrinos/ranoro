@@ -140,7 +140,7 @@ export const serviceFormSchema = z.object({
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: 'Folio obligatorio para pagos con tarjeta.',
-                path: [`payments`, index, 'folio'],
+                path: [`payments.${index}.folio`],
             });
         }
     });
