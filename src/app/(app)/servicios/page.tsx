@@ -1,4 +1,5 @@
 
+
 "use client";
 import { ServiciosPageComponent } from "./components/page-component";
 import { useSearchParams } from 'next/navigation';
@@ -12,7 +13,7 @@ function ServiciosPageContent() {
 
 export default function ServiciosPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="flex justify-center items-center h-64"><p>Loading...</p></div>}>
       <ServiciosPageContent />
     </Suspense>
   );

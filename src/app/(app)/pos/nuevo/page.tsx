@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, saleService } from '@/lib/services';
 import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-react';
-import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
+import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
 import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
