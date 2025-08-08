@@ -101,7 +101,7 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
   
   // Sync external date changes with the hook's internal state
   useEffect(() => {
-    tableManager.setDateRange(externalDateRange);
+    tableManager.onDateRangeChange(externalDateRange);
   }, [externalDateRange, tableManager]);
 
 
