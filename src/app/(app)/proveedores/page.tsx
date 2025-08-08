@@ -14,8 +14,8 @@ import { CuentasPorPagarContent } from './components/cuentas-por-pagar-content';
 import { PayableAccountDialog } from './components/payable-account-dialog';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
-import { RegisterPurchaseDialog } from '../pos/components/add-item-dialog';
-import type { PurchaseFormValues } from '../pos/components/add-item-dialog';
+import { AddItemDialog as RegisterPurchaseDialog } from '../pos/components/add-item-dialog';
+import type { POSFormValues as PurchaseFormValues } from '@/schemas/pos-form-schema';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { SupplierDialog } from './components/supplier-dialog';
 
@@ -150,11 +150,13 @@ export default function ProveedoresPageComponent() {
          <RegisterPurchaseDialog
             open={isRegisterPurchaseOpen}
             onOpenChange={setIsRegisterPurchaseOpen}
-            suppliers={suppliers}
             inventoryItems={inventoryItems}
-            onSave={handleSavePurchase}
-            onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
-            categories={categories}
+            onItemSelected={(item, quantity) => {
+                // This component is being reused. The logic for adding to a sale needs to be adapted or disabled.
+                console.log("Item selected for purchase:", item, quantity);
+                toast({title: "Función en desarrollo", description: "La lógica para añadir a una compra se está implementando."});
+            }}
+            onNewItemRequest={handleInventoryItemCreatedFromPurchase}
           />
        </Suspense>
       <SupplierDialog
