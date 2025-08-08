@@ -19,7 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { serviceService, saleService, inventoryService, personnelService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, isValid, isToday, isSameDay, endOfDay } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, isValid, isToday, isSameDay, endOfDay, getDaysInMonth, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DashboardCharts } from './components/dashboard-charts';
 import { formatCurrency } from '@/lib/utils';
@@ -297,15 +297,16 @@ export default function DashboardPage() {
     const financialData = months.map(monthDate => {
       const monthStart = startOfMonth(monthDate);
       const monthEnd = endOfMonth(monthDate);
-      
+      const interval = { start: monthStart, end: monthEnd };
+
       const servicesInMonth = allServices.filter(s => {
-        const d = parseDate(s.deliveryDateTime);
-        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, { start: monthStart, end: monthEnd });
+        const d = parseDate(s.deliveryDateTime); // Use delivery date for revenue recognition
+        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, interval);
       });
 
       const salesInMonth = allSales.filter(s => {
           const d = parseDate(s.saleDate);
-          return s.status !== 'Cancelado' && d && isValid(d) && isWithinInterval(d, {start: monthStart, end: monthEnd});
+          return s.status !== 'Cancelado' && d && isValid(d) && isWithinInterval(d, interval);
       });
       
       const serviceRevenue = servicesInMonth.reduce((sum, s) => sum + (s.totalCost || 0), 0);
@@ -321,8 +322,16 @@ export default function DashboardPage() {
       
       const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
       const totalMonthlyFixedExpenses = totalBaseSalaries + totalFixedExp;
+
+      // Make expenses proportional for the current month
+      const isCurrentMonth = isSameDay(monthStart, startOfMonth(today));
+      const daysInCurrentMonth = getDaysInMonth(today);
+      const dayOfMonth = today.getDate();
+      const expenseFactor = isCurrentMonth ? dayOfMonth / daysInCurrentMonth : 1;
       
-      const netProfitBeforeCommissions = totalOperationalProfit - totalMonthlyFixedExpenses;
+      const proportionalBaseExpenses = totalMonthlyFixedExpenses * expenseFactor;
+      
+      const netProfitBeforeCommissions = totalOperationalProfit - proportionalBaseExpenses;
       
       let totalVariableCommissions = 0;
       if (netProfitBeforeCommissions > 0) {
@@ -337,22 +346,23 @@ export default function DashboardPage() {
         name: format(monthDate, 'MMM yy', { locale: es }), 
         ingresos: serviceRevenue + salesRevenue, 
         'Ganancia Bruta': totalOperationalProfit, 
-        gastos: totalMonthlyFixedExpenses + totalVariableCommissions
+        gastos: proportionalBaseExpenses + totalVariableCommissions
       };
     });
 
     const operationalData = months.map(monthDate => {
       const monthStart = startOfMonth(monthDate);
       const monthEnd = endOfMonth(monthDate);
+      const interval = { start: monthStart, end: monthEnd };
       
       const servicesInMonth = allServices.filter(s => {
         const d = parseDate(s.deliveryDateTime);
-        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, { start: monthStart, end: monthEnd });
+        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, interval);
       });
 
       const salesInMonth = allSales.filter(s => {
           const d = parseDate(s.saleDate);
-          return s.status !== 'Cancelado' && d && isValid(d) && isWithinInterval(d, {start: monthStart, end: monthEnd});
+          return s.status !== 'Cancelado' && d && isValid(d) && isWithinInterval(d, interval);
       });
       
       const serviceCountsByType = uniqueServiceTypes.reduce((acc, type) => {
@@ -369,7 +379,9 @@ export default function DashboardPage() {
 
     const serviceTypeDist = allServices.filter(s => {
         const d = parseDate(s.deliveryDateTime);
-        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, { start: startOfMonth(months[0]), end: endOfMonth(today) });
+        const reportStartDate = subMonths(today, monthsToProcess - 1);
+        const interval = { start: startOfMonth(reportStartDate), end: endOfMonth(today) };
+        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, interval);
     }).reduce((acc, s) => {
         const type = s.serviceType || 'Servicio General';
         acc[type] = (acc[type] || 0) + 1;
@@ -377,8 +389,9 @@ export default function DashboardPage() {
     }, {} as Record<string, number>);
 
     const calculateMetricsForPeriod = (start: Date, end: Date) => {
-        const services = allServices.filter(s => s.status === 'Entregado' && parseDate(s.deliveryDateTime) && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, { start, end }));
-        const sales = allSales.filter(s => s.status !== 'Cancelado' && parseDate(s.saleDate) && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, { start, end }));
+        const interval = { start, end };
+        const services = allServices.filter(s => s.status === 'Entregado' && parseDate(s.deliveryDateTime) && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, interval));
+        const sales = allSales.filter(s => s.status !== 'Cancelado' && parseDate(s.saleDate) && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, interval));
         
         const ingresos = services.reduce((sum, s) => sum + (s.totalCost || 0), 0) + sales.reduce((sum, s) => sum + s.totalAmount, 0);
         const utilidadBruta = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
@@ -616,6 +629,7 @@ export default function DashboardPage() {
             open={isPurchaseOrderDialogOpen}
             onOpenChange={setIsPurchaseOrderDialogOpen}
             title="Orden de Compra Sugerida por IA"
+            description="Vista previa del documento para imprimir."
           >
             <PurchaseOrderContent
               recommendations={purchaseRecommendations}
@@ -626,3 +640,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
