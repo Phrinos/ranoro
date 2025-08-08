@@ -168,7 +168,7 @@ export default function AiPageComponent({ tab }: { tab?: string }) {
   return (
     <>
       <TabbedPageLayout
-        title="Inteligencia Artificial"
+        title="I.A."
         description="Herramientas inteligentes para optimizar las operaciones de tu taller."
         activeTab={activeTab}
         onTabChange={setActiveTab}
