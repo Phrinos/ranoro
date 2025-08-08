@@ -16,7 +16,6 @@ import { PayableAccountDialog } from './payable-account-dialog';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { RegisterPurchaseDialog } from '../../inventario/components/register-purchase-dialog';
-import type { PurchaseFormValues } from '../../inventario/components/register-purchase-dialog';
 import type { InventoryItem, InventoryCategory } from '@/types';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { SupplierDialog } from './supplier-dialog';
@@ -72,7 +71,7 @@ export default function ProveedoresPageComponent() {
     }
   }, [toast]);
   
-  const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
+  const handleSavePurchase = useCallback(async (data: any) => {
     await purchaseService.registerPurchase(data);
     toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
     setIsRegisterPurchaseOpen(false);
@@ -148,15 +147,17 @@ export default function ProveedoresPageComponent() {
             onSave={handleRegisterPayment}
         />
       )}
-       <RegisterPurchaseDialog
-          open={isRegisterPurchaseOpen}
-          onOpenChange={setIsRegisterPurchaseOpen}
-          suppliers={suppliers}
-          inventoryItems={inventoryItems}
-          onSave={handleSavePurchase}
-          onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
-          categories={categories}
-        />
+       <Suspense fallback={null}>
+         <RegisterPurchaseDialog
+            open={isRegisterPurchaseOpen}
+            onOpenChange={setIsRegisterPurchaseOpen}
+            suppliers={suppliers}
+            inventoryItems={inventoryItems}
+            onSave={handleSavePurchase}
+            onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
+            categories={categories}
+          />
+       </Suspense>
       <SupplierDialog
         open={isSupplierDialogOpen}
         onOpenChange={setIsSupplierDialogOpen}

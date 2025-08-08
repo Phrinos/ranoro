@@ -13,7 +13,6 @@ import { inventoryService } from '@/lib/services/inventory.service';
 import { purchaseService } from '@/lib/services/purchase.service';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { cn } from "@/lib/utils";
-import type { PurchaseFormValues } from './register-purchase-dialog';
 import { DashboardCards } from './DashboardCards';
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 
@@ -100,7 +99,7 @@ export default function InventarioPageComponent({
   };
   
 
-  const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
+  const handleSavePurchase = useCallback(async (data: any) => {
     await purchaseService.registerPurchase(data);
     toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
     setIsRegisterPurchaseOpen(false);
@@ -180,7 +179,7 @@ export default function InventarioPageComponent({
           <Suspense fallback={<Loader2 className="animate-spin" />}>
             <DashboardCards 
                 summaryData={inventorySummary} 
-                onRegisterPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
+                onNewItemClick={handleOpenItemDialog}
             />
             <div className="mt-6">
               <ProductosContent 
