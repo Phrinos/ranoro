@@ -179,10 +179,9 @@ function ServiceFormContent({
   const isQuote = watchedStatus === 'Cotizacion' || (mode === 'quote' && !isEditing);
 
   const userRole = currentUser?.role;
-  const canEditAll = userRole === 'Admin' || userRole === 'Superadministrador';
   
   // Logic to determine if fields should be read-only
-  const isReadOnly = (initialData?.status === 'Cancelado') && !canEditAll;
+  const isReadOnly = false;
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
