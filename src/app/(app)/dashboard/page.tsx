@@ -22,33 +22,8 @@ import { parseDate } from '@/lib/forms';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, isValid, isToday, isSameDay, endOfDay, getDaysInMonth, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { DashboardCharts } from './components/dashboard-charts';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
-
-
-const ChartLoadingSkeleton = () => (
-    <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-5 mt-6">
-        <Card className="lg:col-span-3">
-            <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2 mt-2" />
-            </CardHeader>
-            <CardContent className="flex items-center justify-center h-[300px] text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin" />
-            </CardContent>
-        </Card>
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2 mt-2" />
-            </CardHeader>
-            <CardContent className="flex items-center justify-center h-[300px] text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin" />
-            </CardContent>
-        </Card>
-    </div>
-);
 
 const handleAiError = (error: any, toast: any, context: string): string => {
     console.error(`AI Error in ${context}:`, error);
@@ -287,151 +262,6 @@ export default function DashboardPage() {
         setIsAnalysisLoading(false);
     }
 };
-  
-  const chartData = useMemo(() => {
-    const today = new Date();
-    const monthsToProcess = 6;
-    const months = Array.from({ length: monthsToProcess }, (_, i) => subMonths(today, i)).reverse();
-    
-    const uniqueServiceTypes = Array.from(new Set(allServiceTypes.map(st => st.name)));
-
-    const financialData = months.map(monthDate => {
-      const monthStart = startOfMonth(monthDate);
-      const monthEnd = endOfMonth(monthDate);
-      const interval = { start: monthStart, end: monthEnd };
-
-      const servicesInMonth = allServices.filter(s => {
-        const d = parseDate(s.deliveryDateTime); // Use delivery date for revenue recognition
-        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, interval);
-      });
-
-      const salesInMonth = allSales.filter(s => {
-          const d = parseDate(s.saleDate);
-          return s.status !== 'Cancelado' && d && isValid(d) && isWithinInterval(d, interval);
-      });
-      
-      const serviceRevenue = servicesInMonth.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-      const serviceProfit = servicesInMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-      const salesRevenue = salesInMonth.reduce((sum, s) => sum + s.totalAmount, 0);
-      const salesProfit = salesInMonth.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
-      
-      const totalOperationalProfit = serviceProfit + salesProfit;
-      
-      const totalBaseSalaries = allPersonnel
-        .filter(p => !p.isArchived)
-        .reduce((sum, person) => sum + (person.monthlySalary || 0), 0);
-      
-      const totalFixedExp = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-      const totalMonthlyFixedExpenses = totalBaseSalaries + totalFixedExp;
-
-      const isCurrentMonth = isSameDay(monthStart, startOfMonth(today));
-      const daysInCurrentMonth = getDaysInMonth(today);
-      const dayOfMonth = today.getDate();
-      const expenseFactor = isCurrentMonth ? dayOfMonth / daysInCurrentMonth : 1;
-      
-      const proportionalBaseExpenses = totalMonthlyFixedExpenses * expenseFactor;
-      
-      const netProfitBeforeCommissions = totalOperationalProfit - proportionalBaseExpenses;
-      
-      let totalVariableCommissions = 0;
-      if (netProfitBeforeCommissions > 0) {
-        totalVariableCommissions = allPersonnel
-          .filter(p => !p.isArchived)
-          .reduce((sum, person) => {
-            return sum + (netProfitBeforeCommissions * ((person.commissionRate || 0) / 100));
-          }, 0);
-      }
-      
-      const totalExpenses = proportionalBaseExpenses + totalVariableCommissions;
-      const netProfit = totalOperationalProfit - totalExpenses;
-
-      return { 
-        name: format(monthDate, 'MMM yy', { locale: es }), 
-        'Ingresos': serviceRevenue + salesRevenue, 
-        'Utilidad Neta': netProfit,
-        'Gastos': totalExpenses
-      };
-    });
-
-    const operationalData = months.map(monthDate => {
-      const monthStart = startOfMonth(monthDate);
-      const monthEnd = endOfMonth(monthDate);
-      const interval = { start: monthStart, end: monthEnd };
-      
-      const servicesInMonth = allServices.filter(s => {
-        const d = parseDate(s.deliveryDateTime);
-        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, interval);
-      });
-
-      const salesInMonth = allSales.filter(s => {
-          const d = parseDate(s.saleDate);
-          return s.status !== 'Cancelado' && d && isValid(d) && isWithinInterval(d, interval);
-      });
-      
-      const serviceCountsByType = uniqueServiceTypes.reduce((acc, type) => {
-        acc[type] = servicesInMonth.filter(s => s.serviceType === type).length;
-        return acc;
-      }, {} as Record<string, number>);
-
-      return {
-        name: format(monthDate, 'MMM yy', { locale: es }),
-        'Ventas POS': salesInMonth.length,
-        ...serviceCountsByType
-      };
-    });
-
-    const serviceTypeDist = allServices.filter(s => {
-        const d = parseDate(s.deliveryDateTime);
-        const reportStartDate = subMonths(today, monthsToProcess - 1);
-        const interval = { start: startOfMonth(reportStartDate), end: endOfMonth(today) };
-        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, interval);
-    }).reduce((acc, s) => {
-        const type = s.serviceType || 'Servicio General';
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-
-    const calculateMetricsForPeriod = (start: Date, end: Date) => {
-        const interval = { start, end };
-        const services = allServices.filter(s => s.status === 'Entregado' && parseDate(s.deliveryDateTime) && isValid(parseDate(s.deliveryDateTime)!) && isWithinInterval(parseDate(s.deliveryDateTime)!, interval));
-        const sales = allSales.filter(s => s.status !== 'Cancelado' && parseDate(s.saleDate) && isValid(parseDate(s.saleDate)!) && isWithinInterval(parseDate(s.saleDate)!, interval));
-        
-        const ingresos = services.reduce((sum, s) => sum + (s.totalCost || 0), 0) + sales.reduce((sum, s) => sum + s.totalAmount, 0);
-        const utilidadBruta = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
-        
-        const totalBaseSalaries = allPersonnel
-            .filter(p => !p.isArchived)
-            .reduce((sum, person) => sum + (person.monthlySalary || 0), 0);
-            
-        const gastosFijos = totalBaseSalaries + fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-
-        let utilidadNeta = utilidadBruta - gastosFijos;
-        if (utilidadNeta > 0) {
-           const totalCommissions = allPersonnel
-            .filter(p => !p.isArchived)
-            .reduce((sum, person) => sum + (utilidadNeta * ((person.commissionRate || 0) / 100)), 0);
-           utilidadNeta -= totalCommissions;
-        }
-
-        return { ingresos, utilidadNeta };
-    };
-
-    const currentMonthMetrics = calculateMetricsForPeriod(startOfMonth(today), endOfDay(today));
-    const lastMonthMetrics = calculateMetricsForPeriod(startOfMonth(subMonths(today, 1)), endOfMonth(subMonths(today, 1)));
-    
-    const monthlyComparisonDataResult = [
-        { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos },
-        { name: 'Utilidad Neta', 'Mes Anterior': lastMonthMetrics.utilidadNeta, 'Mes Actual': currentMonthMetrics.utilidadNeta },
-    ];
-
-    return {
-      financialChartData: financialData,
-      operationalChartData: operationalData,
-      serviceTypeDistribution: Object.entries(serviceTypeDist).map(([name, value]) => ({ name, value })),
-      monthlyComparisonData: monthlyComparisonDataResult,
-    };
-  }, [allServices, allSales, allInventory, allPersonnel, fixedExpenses, allServiceTypes]);
-
 
   return (
     <div className="container mx-auto py-8 flex flex-col">
@@ -524,8 +354,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      
-      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts financialChartData={chartData.financialChartData} operationalChartData={chartData.operationalChartData} serviceTypeDistribution={chartData.serviceTypeDistribution} monthlyComparisonData={chartData.monthlyComparisonData} allServiceTypes={allServiceTypes.map(st => st as ServiceTypeRecord)} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <Card className="shadow-lg">
