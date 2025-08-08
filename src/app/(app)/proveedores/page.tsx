@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from 'react';
@@ -15,8 +14,8 @@ import { CuentasPorPagarContent } from './components/cuentas-por-pagar-content';
 import { PayableAccountDialog } from './components/payable-account-dialog';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
-import { RegisterPurchaseDialog } from '../inventario/components/register-purchase-dialog';
-import type { PurchaseFormValues } from '../inventario/components/register-purchase-dialog';
+import { RegisterPurchaseDialog } from '../pos/components/add-item-dialog';
+import type { PurchaseFormValues } from '../pos/components/add-item-dialog';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { SupplierDialog } from './components/supplier-dialog';
 
