@@ -1,4 +1,3 @@
-
 // src/app/(app)/pos/components/sale-summary.tsx
 
 "use client";
@@ -178,9 +177,7 @@ export function SaleSummary() {
                             <SelectContent>
                               {paymentMethods.map(method => {
                                 const Icon = paymentMethodIcons[method];
-                                return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method as any) === -1 && method !== selectedMethod}>
-                                  <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
-                                </SelectItem>);
+                                return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method as any) === -1 && method !== selectedMethod}><div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div></SelectItem>);
                               })}
                             </SelectContent>
                           </Select>
