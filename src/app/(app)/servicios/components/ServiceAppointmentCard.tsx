@@ -23,6 +23,7 @@ interface ServiceAppointmentCardProps {
   onEdit: () => void;
   onDelete?: () => void;
   onCancel?: () => void;
+  onConfirm?: () => void;
 }
 
 const IVA_RATE = 0.16;
@@ -35,6 +36,7 @@ export function ServiceAppointmentCard({
   onEdit,
   onDelete,
   onCancel,
+  onConfirm,
 }: ServiceAppointmentCardProps) {
   const { toast } = useToast();
   const { color, icon: Icon, label } = getStatusInfo(service.status, service.subStatus, service.appointmentStatus);
@@ -156,6 +158,11 @@ export function ServiceAppointmentCard({
                 <Button variant="ghost" size="icon" onClick={onEdit} title="Editar Servicio">
                     <Edit className="h-4 w-4" />
                 </Button>
+                {onConfirm && service.status === 'Agendado' && service.appointmentStatus !== 'Confirmada' && (
+                  <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirmar Cita">
+                    <Check className="h-4 w-4 text-green-600" />
+                  </Button>
+                )}
                 <Button variant="ghost" size="icon" title="Imprimir" onClick={() => toast({title: "Función no implementada"})}>
                     <Printer className="h-4 w-4" />
                 </Button>
@@ -165,7 +172,7 @@ export function ServiceAppointmentCard({
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                     }
-                    title={service.status === 'Cotizacion' ? '¿Eliminar Cotización?' : '¿Cancelar Servicio?'}
+                    title={service.status === 'Cotizacion' ? '¿Eliminar Cotización?' : '¿Cancelar este servicio?'}
                     description={service.status === 'Cotizacion' ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.' : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'}
                     onConfirm={handleConfirmAction}
                     confirmText="Sí, Continuar"

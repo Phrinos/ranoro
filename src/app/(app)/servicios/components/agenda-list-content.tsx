@@ -124,7 +124,7 @@ export default function AgendaListContent({ services, vehicles, personnel, onSho
                                         personnel={personnel}
                                         onEdit={() => handleEditService(service.id)}
                                         onView={() => onShowPreview(service)}
-                                        onComplete={() => handleConfirmAppointment(service)}
+                                        onConfirm={() => handleConfirmAppointment(service)}
                                     />
                                 ))}
                             </div>
