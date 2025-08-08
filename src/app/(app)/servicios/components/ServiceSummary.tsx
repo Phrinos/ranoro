@@ -1,8 +1,8 @@
 // src/app/(app)/servicios/components/ServiceSummary.tsx
 "use client";
 
-import React from 'react';
-import { useFormContext } from 'react-hook-form';
+import React, { useMemo } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks';
@@ -18,8 +18,36 @@ const IVA_RATE = 0.16;
 
 export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: ServiceSummaryProps) {
   const form = useFormContext();
-  const { totalCost, subTotal, taxAmount, serviceProfit } = useServiceTotals(form);
   
+  const watchedItems = useWatch({ control: form.control, name: 'serviceItems' });
+  
+  const { totalCost, subTotal, taxAmount, serviceProfit } = useMemo(() => {
+    const total = (watchedItems ?? []).reduce(
+      (s, i) => s + (Number(i.price) || 0),
+      0
+    );
+    
+    // Updated cost calculation to include card commission
+    let cost = (watchedItems ?? [])
+      .flatMap((i) => i.suppliesUsed ?? [])
+      .reduce(
+        (s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0),
+        0
+      );
+    
+    const cardCommissionItem = (watchedItems ?? []).find(i => i.id === 'COMMISSION_FEE');
+    if (cardCommissionItem) {
+        cost += cardCommissionItem.price || 0;
+    }
+
+    return {
+      totalCost: total,
+      serviceProfit: total - cost,
+      subTotal: total / (1 + IVA_RATE),
+      taxAmount: total - total / (1 + IVA_RATE),
+    };
+  }, [watchedItems]);
+
   const totalPaid = (form.watch('payments') || []).reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) || 0;
 
   return (

@@ -58,6 +58,8 @@ interface ServiceFormWrapperProps {
   mode: 'service' | 'quote';
 }
 
+const COMMISSION_ITEM_ID = 'COMMISSION_FEE_SERVICE';
+
 export function ServiceForm({
   initialData,
   vehicles,
@@ -169,16 +171,60 @@ function ServiceFormContent({
 
   const [originalLockedStatus, setOriginalLockedStatus] = useState<'Completado' | 'Entregado' | null>(null);
 
+  const watchedPayments = watch('payments');
+  const watchedServiceItems = watch('serviceItems');
+
+
+   useEffect(() => {
+    const allItems = getValues('serviceItems') || [];
+    const totalAmount = allItems
+      .filter((item: any) => item.id !== COMMISSION_ITEM_ID)
+      .reduce((sum: number, item: any) => sum + (item.price || 0), 0) || 0;
+
+    const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
+    const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
+    
+    let commissionAmount = 0;
+    if (hasCardPayment) commissionAmount += totalAmount * 0.041;
+    if (hasMSIPayment) commissionAmount += totalAmount * 0.12;
+
+    const commissionIndex = allItems.findIndex((item: any) => item.id === COMMISSION_ITEM_ID);
+
+    if (commissionAmount > 0) {
+      const commissionItem = {
+        id: COMMISSION_ITEM_ID,
+        name: 'Comisión de Tarjeta',
+        price: 0, // No se suma al total del cliente
+        suppliesUsed: [{
+            supplyId: 'COMMISSION_COST',
+            supplyName: 'Costo de Comisión',
+            quantity: 1,
+            unitPrice: commissionAmount, // Este es el costo para el taller
+            isService: true
+        }],
+      };
+      if (commissionIndex > -1) {
+        setValue(`serviceItems.${commissionIndex}`, commissionItem, { shouldDirty: true });
+      } else {
+        const { ...fields } = methods.control._fields;
+        const currentItems = getValues('serviceItems');
+        setValue('serviceItems', [...currentItems, commissionItem]);
+      }
+    } else if (commissionIndex > -1) {
+      const currentItems = getValues('serviceItems');
+      const newItems = currentItems.filter((item: any) => item.id !== COMMISSION_ITEM_ID);
+      setValue('serviceItems', newItems);
+    }
+  }, [watchedPayments, watchedServiceItems, setValue, getValues]);
+
+
   useEffect(() => {
-    // Detecta el estado actual del registro al montar/cambiar de servicio
     const current = getValues('status') ?? initialData?.status;
     if (current === 'Completado' || current === 'Entregado') {
       setOriginalLockedStatus(current);
-      // Desbloquea la UI: cambia el status SOLO en el form, no en la BD
       setValue('status', 'En Taller', { shouldDirty: false, shouldValidate: false });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialData?.id]);
+  }, [initialData?.id, getValues, setValue]);
 
 
   useEffect(() => {
@@ -192,19 +238,16 @@ function ServiceFormContent({
   const watchedStatus = watch('status');
   const isQuote = watchedStatus === 'Cotizacion' || (mode === 'quote' && !isEditing);
 
-  // This is now always false to allow editing in any state as requested
   const isReadOnly = false; 
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
   
-    // Restaura el status real si lo habíamos “disfrazado” como En Taller
     const finalValues = { ...values };
     if (originalLockedStatus) {
       finalValues.status = originalLockedStatus;
     }
   
-    // Tu lógica de completado/entrega se mantiene igual
     if (finalValues.status === 'Entregado' && initialData?.status !== 'Entregado') {
       setServiceToComplete({ ...(initialData || {}), ...finalValues } as ServiceRecord);
       setIsPaymentDialogOpen(true);

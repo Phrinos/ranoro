@@ -170,10 +170,17 @@ export const calculateSaleProfit = (
     const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
     const isService = saleItem.isService || (inventoryItem && inventoryItem.isService);
     
+    // For physical products, the cost is the unitPrice from inventory.
     if (!isService && inventoryItem) {
       totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
-    } else if (isService && inventoryItem) { // Service with an associated cost
+    } 
+    // For cataloged services that might have a fixed cost associated.
+    else if (isService && inventoryItem) {
       totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
+    }
+    // For manually added items in a sale, their cost was already captured in unitPrice.
+    else if (!inventoryItem) { 
+       totalCostOfGoods += (saleItem.unitPrice || 0) * saleItem.quantity;
     }
   }
 

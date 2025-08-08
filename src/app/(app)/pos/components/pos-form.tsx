@@ -100,8 +100,8 @@ export function PosForm({
                 inventoryItemId: COMMISSION_ITEM_ID,
                 itemName: 'Comisión de Tarjeta',
                 quantity: 1,
-                unitPrice: commissionAmount, // Costo
-                totalPrice: 0, // No suma al total del cliente
+                unitPrice: commissionAmount, // Costo para el taller
+                totalPrice: 0, // No se suma al total del cliente
                 isService: true,
             };
             if (commissionIndex > -1) {
@@ -130,7 +130,7 @@ export function PosForm({
 
           {/* Columna Derecha: Pago y Resumen */}
           <div className="lg:col-span-2 space-y-6">
-            <SaleSummary onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios}/>
+            <SaleSummary onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios} />
           </div>
         </div>
       </form>
