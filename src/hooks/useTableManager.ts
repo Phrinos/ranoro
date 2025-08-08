@@ -167,6 +167,7 @@ export function useTableManager<T extends { [key: string]: any }>({
     otherFilters,
     setOtherFilters,
     paginatedData,
+    filteredData: paginatedData, // Maintain filteredData for backward compatibility if needed
     fullFilteredData, // Expose the full filtered data
     currentPage,
     totalPages,
