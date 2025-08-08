@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 "use client";
 
@@ -116,17 +115,19 @@ export default function MovimientosContent({ allSales, allServices, allInventory
     "Transferencia": Send,
   };
 
-
   const summary = useMemo(() => {
     const movements = tableManager.fullFilteredData;
     const totalMovements = movements.length;
     const grossProfit = movements.reduce((sum, m) => sum + m.total, 0);
     const netProfit = movements.reduce((sum, m) => sum + m.profit, 0);
-    const paymentsSummary = new Map<Payment['method'], number>();
+    const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();
 
     movements.forEach(m => {
         m.payments.forEach(p => {
-            paymentsSummary.set(p.method, (paymentsSummary.get(p.method) || 0) + (p.amount || m.total));
+            const current = paymentsSummary.get(p.method) || { count: 0, total: 0 };
+            current.count += 1;
+            current.total += (p.amount || 0);
+            paymentsSummary.set(p.method, current);
         });
     });
 
@@ -135,8 +136,8 @@ export default function MovimientosContent({ allSales, allServices, allInventory
 
   return (
     <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-            <Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="lg:col-span-1">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium"># Movimientos</CardTitle>
                     <LineChart className="h-4 w-4 text-muted-foreground"/>
@@ -145,7 +146,7 @@ export default function MovimientosContent({ allSales, allServices, allInventory
                     <div className="text-2xl font-bold">{summary.totalMovements}</div>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="lg:col-span-1">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Ingresos / Utilidad (Bruta)</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground"/>
@@ -154,6 +155,30 @@ export default function MovimientosContent({ allSales, allServices, allInventory
                 <div className="text-2xl font-bold">{formatCurrency(summary.grossProfit)}</div>
                 <p className="text-xs text-muted-foreground">Utilidad: <span className="font-semibold text-green-600">{formatCurrency(summary.netProfit)}</span></p>
               </CardContent>
+            </Card>
+             <Card className="lg:col-span-2">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Ingresos por Método de Pago</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {Array.from(summary.paymentsSummary.entries()).length > 0 ? (
+                        <div className="flex flex-wrap gap-x-4 gap-y-2">
+                        {Array.from(summary.paymentsSummary.entries()).map(([method, data]) => {
+                            const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || Wallet;
+                            return (
+                                <div key={method} className="flex items-center gap-2 text-sm">
+                                    <Icon className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-semibold">{method}:</span>
+                                    <span className="text-foreground">{formatCurrency(data.total)}</span>
+                                    <span className="text-muted-foreground text-xs">({data.count})</span>
+                                </div>
+                            )
+                        })}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">No hay pagos registrados.</p>
+                    )}
+                </CardContent>
             </Card>
         </div>
         <TableToolbar
