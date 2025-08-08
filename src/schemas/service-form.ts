@@ -1,3 +1,4 @@
+
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -115,15 +116,6 @@ export const serviceFormSchema = z.object({
       path: ['appointmentDateTime'],
     }
 ).superRefine((data, ctx) => {
-    // Make 'notes' required only if status is 'En Taller' or 'Entregado'
-    if ((data.status === 'En Taller' || data.status === 'Entregado') && (!data.notes || data.notes.trim().length < 5)) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Las notas son obligatorias y deben tener al menos 5 caracteres cuando el servicio está en el taller o entregado.",
-            path: ['notes'],
-        });
-    }
-
     // Existing refinements
     if (data.status === 'Entregado' && (!data.payments || data.payments.length === 0)) {
         ctx.addIssue({
