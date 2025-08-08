@@ -146,6 +146,7 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
     <div className="space-y-6">
         <TableToolbar
             {...tableManager}
+            onSearchTermChange={tableManager.onSearchTermChange}
             searchPlaceholder="Buscar por folio o cliente..."
             sortOptions={sortOptions}
             dateRange={dateRange} // Pass state to toolbar
@@ -245,3 +246,5 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
         </div>
     </div>
   );
+
+}
