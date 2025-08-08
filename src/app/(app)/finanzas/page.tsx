@@ -44,10 +44,7 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
     const defaultTab = tab || 'resumen';
     
     const [activeTab, setActiveTab] = useState(defaultTab);
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
-        const now = new Date();
-        return { from: startOfMonth(now), to: endOfMonth(now) };
-    });
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     
     const [isLoading, setIsLoading] = useState(true);
     const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
@@ -84,7 +81,12 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
             totalInventoryValue: 0, totalUnitsSold: 0
         };
 
-        if (isLoading || !dateRange?.from) return emptyState;
+        if (isLoading || !dateRange?.from) {
+             const allTimeSales = allSales.filter(s => s.status !== 'Cancelado');
+             const allTimeServices = allServices.filter(s => s.status === 'Completado' || s.status === 'Entregado');
+             const totalIncome = allTimeSales.reduce((sum, s) => sum + s.totalAmount, 0) + allTimeServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+             return { ...emptyState, monthYearLabel: 'Todo el Historial', totalOperationalIncome: totalIncome };
+        }
         
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);

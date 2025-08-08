@@ -48,7 +48,7 @@ const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
 };
 
 // --- Componente de la pestaña Movimientos ---
-export default function MovimientosTabContent({ allSales, allServices, allInventory, dateRange: externalDateRange, onDateRangeChange: setExternalDateRange }: {
+export default function MovimientosTabContent({ allSales, allServices, allInventory, dateRange, onDateRangeChange }: {
   allSales: SaleReceipt[];
   allServices: ServiceRecord[];
   allInventory: InventoryItem[];
@@ -97,15 +97,15 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
     searchKeys: ['folio', 'client'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
-    initialDateRange: externalDateRange, // Use external state
+    initialDateRange: dateRange,
   });
   
   // Sync external date changes with the hook's internal state
   useEffect(() => {
-    if(tableManager.onDateRangeChange) {
-      tableManager.onDateRangeChange(externalDateRange);
+    if (tableManager.onDateRangeChange) {
+      tableManager.onDateRangeChange(dateRange);
     }
-  }, [externalDateRange, tableManager]);
+  }, [dateRange, tableManager]);
 
 
   const summary = useMemo(() => {
@@ -143,8 +143,8 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
             {...tableManager}
             searchPlaceholder="Buscar por folio o cliente..."
             sortOptions={sortOptions}
-            dateRange={externalDateRange} // Pass state to toolbar
-            onDateRangeChange={setExternalDateRange} // Pass handler to toolbar
+            dateRange={dateRange} // Pass state to toolbar
+            onDateRangeChange={onDateRangeChange} // Pass handler to toolbar
         />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="lg:col-span-1">
