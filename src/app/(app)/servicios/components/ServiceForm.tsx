@@ -25,6 +25,7 @@ import { writeBatch } from 'firebase/firestore';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
 
 // Lazy load complex components
 const ServiceItemsList = lazy(() => import('./ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
@@ -168,7 +169,9 @@ function ServiceFormContent({
 
   const userRole = currentUser?.role;
   const canEditAll = userRole === 'Admin' || userRole === 'Superadministrador';
-  const isReadOnly = (initialData?.status === 'Cancelado') && !canEditAll;
+  
+  // Logic to determine if fields should be read-only
+  const isReadOnly = (initialData?.status === 'Cancelado' || initialData?.status === 'Entregado') && !canEditAll;
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
@@ -183,7 +186,7 @@ function ServiceFormContent({
     await onSubmit(values);
   };
   
-  const handleCompleteService = async (paymentDetails: PaymentDetailsFormValues) => {
+  const handleCompleteService = async (service: ServiceRecord, paymentDetails: PaymentDetailsFormValues) => {
     if (!serviceToComplete || !db) return;
     try {
         const batch = writeBatch(db);
@@ -285,7 +288,7 @@ function ServiceFormContent({
                 <TabsContent value="servicio" className="mt-6">
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
                         <div className="lg:col-span-3"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense></div>
-                        <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><PaymentSection isReadOnly={isReadOnly}/></Suspense></div>
+                        <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><PaymentSection/></Suspense></div>
                     </div>
                 </TabsContent>
                 <TabsContent value="entrega" className="mt-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature}/></Suspense></TabsContent>
@@ -295,7 +298,7 @@ function ServiceFormContent({
         ) : (
              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start mt-6">
                 <div className="lg:col-span-3"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense></div>
-                <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><PaymentSection isReadOnly={isReadOnly}/></Suspense></div>
+                <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><PaymentSection/></Suspense></div>
              </div>
         )}
       </div>
@@ -359,11 +362,12 @@ function ServiceFormContent({
       
       {serviceToComplete && (
           <PaymentDetailsDialog
-          open={isPaymentDialogOpen}
-          onOpenChange={setIsPaymentDialogOpen}
-          record={serviceToComplete}
-          onConfirm={(id, details) => handleCompleteService(serviceToComplete, details as any)}
-          isCompletionFlow={true}
+            open={isPaymentDialogOpen}
+            onOpenChange={setIsPaymentDialogOpen}
+            record={serviceToComplete}
+            onConfirm={(id, details) => handleCompleteService(serviceToComplete, details)}
+            recordType="service"
+            isCompletionFlow={true}
           />
       )}
     </form>

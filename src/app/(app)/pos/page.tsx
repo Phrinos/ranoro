@@ -21,7 +21,9 @@ import { VentasPosContent } from './components/ventas-pos-content';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { isToday, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { PaymentDetailsDialog, type PaymentDetailsFormValues } from '../../servicios/components/PaymentDetailsDialog';
+import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
+import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
+
 
 export default function PosPage() {
   const { toast } = useToast();

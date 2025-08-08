@@ -25,6 +25,8 @@ import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
 import { useToast } from "@/hooks/use-toast";
 import { saleService } from "@/lib/services";
 import { PaymentDetailsDialog } from "@/components/shared/PaymentDetailsDialog";
+import { PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
+
 
 interface ViewSaleDialogProps {
   open: boolean;
@@ -126,7 +128,7 @@ export function ViewSaleDialog({
           open={isPaymentDialogOpen}
           onOpenChange={setIsPaymentDialogOpen}
           record={sale}
-          onConfirm={handleUpdateSale}
+          onConfirm={onPaymentUpdate as any}
           recordType="sale"
         />
     )}
