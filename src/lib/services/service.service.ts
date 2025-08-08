@@ -26,9 +26,9 @@ import { logAudit } from '../placeholder-data';
 import { nanoid } from 'nanoid';
 import { savePublicDocument } from '../public-document';
 import { cashService } from './cash.service';
-import type { PaymentDetailsFormValues } from '@/app/(app)/servicios/components/PaymentDetailsDialog';
+import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
 import { inventoryService } from './inventory.service';
-import { format, isValid, compareDesc } from 'date-fns';
+import { format, isValid, compareDesc, parse } from 'date-fns';
 
 // --- Generic Document Getter ---
 const getDocById = async (collectionName: string, id: string): Promise<any> => {
@@ -312,6 +312,3 @@ export const serviceService = {
     deleteService,
     completeService,
 };
-
-
-
