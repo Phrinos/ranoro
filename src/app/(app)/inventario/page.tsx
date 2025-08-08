@@ -1,7 +1,8 @@
-
+// src/app/(app)/inventario/page.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2 } from "lucide-react";
@@ -31,8 +32,7 @@ const RegisterPurchaseDialog = lazy(() => import('../pos/components/add-item-dia
 const InventoryItemDialog = lazy(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
 const InventoryReportContent = lazy(() => import('./components/inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
 
-
-// --- DashboardCards Component Logic (Integrated) ---
+// --- DashboardCards Component ---
 const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { summaryData: any, onNewItemClick: () => void, onNewPurchaseClick: () => void }) => {
   return (
     <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -52,7 +52,7 @@ const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { s
 };
 
 
-// --- ProductosContent Component Logic (Integrated) ---
+// --- ProductosContent Component ---
 const itemSortOptions = [
     { value: 'default_order', label: 'Orden Personalizado' },
     { value: 'name_asc', label: 'Nombre (A-Z)' },
@@ -80,7 +80,7 @@ const ProductosContent = ({ inventoryItems, onPrint }: { inventoryItems: Invento
   });
 
   const customSortedItems = React.useMemo(() => {
-    const items = [...tableManager.fullFilteredData];
+    const items = [...tableManager.fullFilteredData]; // Use the full filtered data
     if (tableManager.sortOption === 'default_order') {
         return items.sort((a, b) => {
             const priorityA = getSortPriority(a);
@@ -145,7 +145,7 @@ const ProductosContent = ({ inventoryItems, onPrint }: { inventoryItems: Invento
 };
 
 
-// --- CategoriasContent Component Logic (Integrated) ---
+// --- CategoriasContent Component ---
 const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDeleteCategory }: { categories: InventoryCategory[], inventoryItems: InventoryItem[], onSaveCategory: (name: string, id?: string) => void, onDeleteCategory: (id: string) => void }) => {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<InventoryCategory | null>(null);
@@ -228,7 +228,7 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
 
 
 // Main Page Component
-export default function InventarioPage() {
+function InventarioPageComponent() {
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab');
   const { toast } = useToast();
@@ -441,6 +441,14 @@ export default function InventarioPage() {
             </DialogContent>
         </Dialog>
         </>
+    </Suspense>
+  );
+}
+
+export default function InventarioPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <InventarioPageComponent />
     </Suspense>
   );
 }
