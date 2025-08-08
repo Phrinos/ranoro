@@ -71,8 +71,14 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
         profit: calculateSaleProfit(s, allInventory),
       }));
 
-    const serviceMovements: Movement[] = allServices
-      .filter(s => s.status === 'Entregado' || s.status === 'Completado')
+      const serviceMovements: Movement[] = allServices
+      .filter(s => {
+        const isCancelled = s.status === 'Cancelado';
+        const isQuote = s.status === 'Cotizacion';
+        const hasNewPayments = s.payments && s.payments.length > 0 && s.payments.some(p => p.amount && p.amount > 0);
+        const hasOldPayments = s.paymentMethod && s.totalCost > 0;
+        return !isCancelled && !isQuote && (hasNewPayments || hasOldPayments);
+      })
       .map(s => ({
         id: s.id,
         date: parseDate(s.deliveryDateTime) || parseDate(s.serviceDate),
@@ -100,12 +106,11 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
     initialDateRange: dateRange,
   });
   
-  // Sync external date changes with the hook's internal state
   useEffect(() => {
     if (tableManager.onDateRangeChange) {
       tableManager.onDateRangeChange(dateRange);
     }
-  }, [dateRange, tableManager]);
+  }, [dateRange, tableManager.onDateRangeChange]);
 
 
   const summary = useMemo(() => {
@@ -208,7 +213,7 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
                                                     const Icon = paymentMethodIcons[p.method] || DollarSign;
                                                     return (<Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
                                                     <Icon className="h-3 w-3 mr-1"/>{p.method}
-                                                    </Badge>)
+                                                    </Badge>);
                                                 })
                                             ) : (
                                                 m.paymentMethod_legacy ? <Badge variant={getPaymentMethodVariant(m.paymentMethod_legacy as any)}>{m.paymentMethod_legacy}</Badge> : <Badge variant="outline">N/A</Badge>
@@ -240,4 +245,3 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
         </div>
     </div>
   );
-}
