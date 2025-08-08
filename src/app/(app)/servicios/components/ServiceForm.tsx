@@ -165,7 +165,7 @@ function ServiceFormContent({
   const [validationFolio, setValidationFolio] = useState('');
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
   
-  const { handleSubmit, getValues, setValue, watch, formState, reset } = methods;
+  const { control, handleSubmit, getValues, setValue, watch, formState, reset } = methods;
 
   useEffect(() => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -354,7 +354,7 @@ function ServiceFormContent({
                   )}
               </FormLabel>
               <FormControl>
-                  <Textarea placeholder="Observaciones generales sobre el servicio..." {...field} className="min-h-[100px]" disabled={isReadOnly} />
+                  <Textarea placeholder="Observaciones generales sobre el servicio..." {...field} className="min-h-[100px]" disabled={isReadOnly} value={field.value ?? ''} />
               </FormControl>
             </FormItem>
           )}
