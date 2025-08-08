@@ -212,12 +212,17 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
 
                                                     return (
                                                         <AccordionItem value={group.groupName} key={group.groupName}>
-                                                            <AccordionTrigger className="px-4 py-2 hover:no-underline hover:bg-muted/50">
-                                                                <div className="flex items-center gap-4">
-                                                                     <Checkbox checked={areAllSelected} onCheckedChange={handleSelectAll} onClick={(e) => e.stopPropagation()}/>
+                                                            <div className="flex items-center px-4 py-2 hover:bg-muted/50">
+                                                                <Checkbox 
+                                                                    id={`select-all-${group.groupName}`}
+                                                                    checked={areAllSelected} 
+                                                                    onCheckedChange={handleSelectAll}
+                                                                    className="mr-4"
+                                                                />
+                                                                <AccordionTrigger className="w-full p-0 hover:no-underline">
                                                                     <span className="font-semibold text-base">{group.groupName}</span>
-                                                                </div>
-                                                            </AccordionTrigger>
+                                                                </AccordionTrigger>
+                                                            </div>
                                                             <AccordionContent className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 border-t">
                                                                 {group.permissions.map((permission) => (
                                                                     <FormField key={permission.id} control={form.control} name="permissions" render={({ field }) => (
