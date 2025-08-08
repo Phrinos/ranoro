@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, X, Ban, Trash2 } from 'lucide-react';
+import { Loader2, Save, X, Ban, Trash2, Bug } from 'lucide-react';
 import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -298,6 +298,15 @@ function ServiceFormContent({
         }
         setIsValidationDialogOpen(false);
     };
+    
+    const handleDebug = () => {
+        const values = getValues();
+        console.log("DEBUG SERVICE DATA:", values);
+        toast({
+            title: "Datos en Consola",
+            description: "Los datos del formulario actual se han enviado a la consola del desarrollador (F12).",
+        });
+    };
 
 
   const watchedStatus = watch('status');
@@ -337,7 +346,7 @@ function ServiceFormContent({
       </div>
 
       <div className="flex-shrink-0 flex justify-between items-center mt-6 pt-4 border-t px-6 pb-6 bg-background sticky bottom-0 z-10">
-        <div>
+        <div className="flex gap-2">
           {(onDelete || onCancelService) && initialData?.id && (
             <ConfirmDialog
                 triggerButton={
@@ -362,6 +371,10 @@ function ServiceFormContent({
                 }}
             />
           )}
+           <Button type="button" variant="secondary" onClick={handleDebug}>
+              <Bug className="mr-2 h-4 w-4" />
+              Debug
+            </Button>
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>

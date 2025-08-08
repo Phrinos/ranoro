@@ -77,9 +77,9 @@ export const serviceFormSchema = z.object({
     vehicleIdentifier: z.string().optional(),
     vehicleLicensePlateSearch: z.string().optional(),
     serviceDate: z.date({ required_error: 'La fecha de creación es obligatoria.' }),
-    appointmentDateTime: z.date().optional(), // Specific for the appointment
-    receptionDateTime: z.date().optional(),
-    deliveryDateTime: z.date().optional(),
+    appointmentDateTime: z.date().optional().nullable(),
+    receptionDateTime: z.date().optional().nullable(),
+    deliveryDateTime: z.date().optional().nullable(),
     mileage: z.coerce.number({ invalid_type_error: 'El kilometraje debe ser numérico.' }).int('El kilometraje debe ser un número entero.').min(0, 'El kilometraje no puede ser negativo.').optional(),
     notes: z.string().optional(),
     technicianId: z.string().optional(),
