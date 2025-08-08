@@ -30,7 +30,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ServiceSummary } from './ServiceSummary';
-import { FormField, FormItem, FormLabel, FormControl, Textarea } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 
 
 // Lazy load complex components
