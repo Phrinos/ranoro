@@ -45,6 +45,7 @@ interface Movement {
   type: 'Venta' | 'Servicio';
   client: string;
   payments: Payment[];
+  paymentMethod_legacy?: string; // For old records
   total: number;
   profit: number;
 }
@@ -89,6 +90,7 @@ function MovimientosTabContent({ allSales, allServices, allInventory }: {
         type: 'Venta',
         client: s.customerName || 'Cliente Mostrador',
         payments: s.payments || [],
+        paymentMethod_legacy: s.paymentMethod,
         total: s.totalAmount,
         profit: calculateSaleProfit(s, allInventory),
       }));
@@ -102,6 +104,7 @@ function MovimientosTabContent({ allSales, allServices, allInventory }: {
         type: 'Servicio',
         client: s.customerName || 'N/A',
         payments: s.payments || [],
+        paymentMethod_legacy: s.paymentMethod,
         total: s.totalCost || 0,
         profit: s.serviceProfit || 0,
       }));
@@ -117,7 +120,7 @@ function MovimientosTabContent({ allSales, allServices, allInventory }: {
     searchKeys: ['folio', 'client'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
-    initialDateRange: undefined, // Start with no date filter
+    initialDateRange: undefined, 
   });
   
   const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
@@ -128,19 +131,29 @@ function MovimientosTabContent({ allSales, allServices, allInventory }: {
   };
 
   const summary = useMemo(() => {
-    const movements = tableManager.fullFilteredData; // Use full filtered data for summary
+    const movements = tableManager.fullFilteredData;
     const totalMovements = movements.length;
     const grossProfit = movements.reduce((sum, m) => sum + m.total, 0);
     const netProfit = movements.reduce((sum, m) => sum + m.profit, 0);
     const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();
 
     movements.forEach(m => {
-        (m.payments || []).forEach(p => {
-            const current = paymentsSummary.get(p.method) || { count: 0, total: 0 };
-            current.count += 1;
-            current.total += (p.amount || 0);
-            paymentsSummary.set(p.method, current);
-        });
+        if (m.payments && m.payments.length > 0) {
+            m.payments.forEach(p => {
+                const current = paymentsSummary.get(p.method) || { count: 0, total: 0 };
+                current.count += 1;
+                current.total += p.amount || 0;
+                paymentsSummary.set(p.method, current);
+            });
+        } else if (m.paymentMethod_legacy) { // Fallback for old records
+             const methods = m.paymentMethod_legacy.split(/[+\/]/).map(m => m.trim()) as Payment['method'][];
+             methods.forEach(method => {
+                const current = paymentsSummary.get(method) || { count: 0, total: 0 };
+                current.count += 1; // This might overcount transactions with multiple methods
+                current.total += m.total / methods.length; // Approximates amount per method
+                paymentsSummary.set(method, current);
+             });
+        }
     });
 
     return { totalMovements, grossProfit, netProfit, paymentsSummary };
@@ -152,7 +165,6 @@ function MovimientosTabContent({ allSales, allServices, allInventory }: {
             {...tableManager}
             searchPlaceholder="Buscar por folio o cliente..."
             sortOptions={sortOptions}
-            filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
             dateRange={tableManager.dateRange}
             onDateRangeChange={tableManager.setDateRange}
         />
@@ -213,12 +225,16 @@ function MovimientosTabContent({ allSales, allServices, allInventory }: {
                                         </TableCell>
                                         <TableCell>
                                           <div className="flex flex-wrap gap-1">
-                                            {(m.payments || []).map((p, index) => {
-                                                const Icon = paymentMethodIcons[p.method] || DollarSign;
-                                                return (<Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
-                                                  <Icon className="h-3 w-3 mr-1"/>{p.method}
-                                                </Badge>)
-                                            })}
+                                            {(m.payments && m.payments.length > 0) ? (
+                                                m.payments.map((p, index) => {
+                                                    const Icon = paymentMethodIcons[p.method] || DollarSign;
+                                                    return (<Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
+                                                    <Icon className="h-3 w-3 mr-1"/>{p.method}
+                                                    </Badge>)
+                                                })
+                                            ) : (
+                                                m.paymentMethod_legacy ? <Badge variant={getPaymentMethodVariant(m.paymentMethod_legacy as any)}>{m.paymentMethod_legacy}</Badge> : <Badge variant="outline">N/A</Badge>
+                                            )}
                                           </div>
                                         </TableCell>
                                         <TableCell className="text-right font-semibold">{formatCurrency(m.total)}</TableCell>
@@ -271,18 +287,20 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
 
     useEffect(() => {
         setIsLoading(true);
-        const unsubs: (() => void)[] = [
-            saleService.onSalesUpdatePromise().then(setAllSales),
-            serviceService.onServicesUpdatePromise().then(setAllServices),
-            inventoryService.onItemsUpdatePromise().then(setAllInventory),
-            personnelService.onPersonnelUpdatePromise().then(setAllPersonnel),
-            inventoryService.onFixedExpensesUpdatePromise().then((expenses) => {
-                setFixedExpenses(expenses);
-                setIsLoading(false);
-            })
-        ].map(p => () => p); // Convert promises to no-op unsubscribes
-
-        return () => unsubs.forEach(unsub => unsub());
+        Promise.all([
+          saleService.onSalesUpdatePromise(),
+          serviceService.onServicesUpdatePromise(),
+          inventoryService.onItemsUpdatePromise(),
+          personnelService.onPersonnelUpdatePromise(),
+          inventoryService.onFixedExpensesUpdatePromise()
+        ]).then(([sales, services, inventory, personnel, expenses]) => {
+          setAllSales(sales);
+          setAllServices(services);
+          setAllInventory(inventory);
+          setAllPersonnel(personnel);
+          setFixedExpenses(expenses);
+          setIsLoading(false);
+        });
     }, []);
 
     const financialSummary = useMemo(() => {
@@ -510,4 +528,3 @@ export default function FinanzasPage() {
         </Suspense>
     )
 }
-
