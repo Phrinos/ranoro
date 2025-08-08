@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/page.tsx
 
 "use client";
@@ -18,10 +17,10 @@ import {
   parseISO,
   isWithinInterval,
   isValid,
-  startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc, isAfter, differenceInDays, getDaysInMonth
+  startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc, isAfter, differenceInDays, getDaysInMonth, subDays
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon, Wrench, ShoppingCart, Wallet, CreditCard, Send, FileText } from 'lucide-react';
+import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon, Wrench, ShoppingCart, Wallet, CreditCard, Send, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn, formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
 import { serviceService, saleService, inventoryService, personnelService } from '@/lib/services';
@@ -33,6 +32,7 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import { useTableManager } from '@/hooks/useTableManager';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipProvider, TooltipContent } from '@/components/ui/tooltip';
 
 
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
@@ -73,12 +73,10 @@ const paymentMethodOptions: { value: PaymentMethod | 'all', label: string }[] = 
 ];
 
 // --- Componente de la pestaña Movimientos ---
-function MovimientosTabContent({ allSales, allServices, allInventory, dateRange, onDateRangeChange }: {
+function MovimientosTabContent({ allSales, allServices, allInventory }: {
   allSales: SaleReceipt[];
   allServices: ServiceRecord[];
   allInventory: InventoryItem[];
-  dateRange: DateRange | undefined;
-  onDateRangeChange: (range?: DateRange) => void;
 }) {
   
   const mergedMovements = useMemo((): Movement[] => {
@@ -112,20 +110,15 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
   }, [allSales, allServices, allInventory]);
 
   const { 
-    filteredData: filteredMovements, 
+    filteredData, 
     ...tableManager 
   } = useTableManager<Movement>({
     initialData: mergedMovements,
     searchKeys: ['folio', 'client'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
-    initialDateRange: dateRange,
+    initialDateRange: undefined, // Start with no date filter
   });
-  
-  // Propagate date changes from the toolbar up to the parent page
-  React.useEffect(() => {
-    onDateRangeChange(tableManager.dateRange);
-  }, [tableManager.dateRange, onDateRangeChange]);
   
   const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
     "Efectivo": Wallet,
@@ -135,14 +128,14 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
   };
 
   const summary = useMemo(() => {
-    const movements = tableManager.fullFilteredData;
+    const movements = tableManager.fullFilteredData; // Use full filtered data for summary
     const totalMovements = movements.length;
     const grossProfit = movements.reduce((sum, m) => sum + m.total, 0);
     const netProfit = movements.reduce((sum, m) => sum + m.profit, 0);
     const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();
 
     movements.forEach(m => {
-        m.payments.forEach(p => {
+        (m.payments || []).forEach(p => {
             const current = paymentsSummary.get(p.method) || { count: 0, total: 0 };
             current.count += 1;
             current.total += (p.amount || 0);
@@ -155,30 +148,26 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
 
   return (
     <div className="space-y-6">
+        <TableToolbar
+            {...tableManager}
+            searchPlaceholder="Buscar por folio o cliente..."
+            sortOptions={sortOptions}
+            filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="lg:col-span-1">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium"># Movimientos</CardTitle>
-                    <LineChart className="h-4 w-4 text-muted-foreground"/>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{summary.totalMovements}</div>
-                </CardContent>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium"># Movimientos</CardTitle><LineChart className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold">{summary.totalMovements}</div></CardContent>
             </Card>
             <Card className="lg:col-span-1">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Ingresos / Utilidad (Bruta)</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground"/>
-              </CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ingresos / Utilidad (Bruta)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{formatCurrency(summary.grossProfit)}</div>
                 <p className="text-xs text-muted-foreground">Utilidad: <span className="font-semibold text-green-600">{formatCurrency(summary.netProfit)}</span></p>
               </CardContent>
             </Card>
              <Card className="lg:col-span-2">
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Ingresos por Método de Pago</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Ingresos por Método de Pago</CardTitle></CardHeader>
                 <CardContent>
                     {Array.from(summary.paymentsSummary.entries()).length > 0 ? (
                         <div className="flex flex-wrap gap-x-4 gap-y-2">
@@ -194,29 +183,18 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
                             )
                         })}
                         </div>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">No hay pagos registrados.</p>
-                    )}
+                    ) : ( <p className="text-sm text-muted-foreground">No hay pagos registrados.</p> )}
                 </CardContent>
             </Card>
         </div>
-        <TableToolbar
-            {...tableManager}
-            searchPlaceholder="Buscar por folio o cliente..."
-            sortOptions={sortOptions}
-            filterOptions={[
-                { value: 'type', label: 'Tipo', options: movementTypeOptions },
-                { value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }
-            ]}
-        />
         <Card>
             <CardContent className="p-0">
                 <div className="overflow-x-auto rounded-md border">
                     <Table>
                         <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Folio</TableHead><TableHead>Tipo</TableHead><TableHead>Cliente</TableHead><TableHead>Método Pago</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Utilidad</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {filteredMovements.length > 0 ? (
-                                filteredMovements.map(m => (
+                            {filteredData.length > 0 ? (
+                                filteredData.map(m => (
                                     <TableRow key={m.id}>
                                         <TableCell>{m.date && isValid(m.date) ? format(m.date, "dd MMM yyyy, HH:mm", { locale: es }) : 'N/A'}</TableCell>
                                         <TableCell className="font-mono">{m.folio.slice(-6)}</TableCell>
@@ -226,10 +204,14 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
                                             {m.type}
                                           </Badge>
                                         </TableCell>
-                                        <TableCell>{m.client}</TableCell>
+                                        <TableCell>
+                                             <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                                                <span className="truncate">{m.client.length > 25 ? `${m.client.substring(0, 25)}...` : m.client}</span>
+                                            </TooltipTrigger><TooltipContent><p>{m.client}</p></TooltipContent></Tooltip></TooltipProvider>
+                                        </TableCell>
                                         <TableCell>
                                           <div className="flex flex-wrap gap-1">
-                                            {m.payments.map((p, index) => {
+                                            {(m.payments || []).map((p, index) => {
                                                 const Icon = paymentMethodIcons[p.method] || DollarSign;
                                                 return (<Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
                                                   <Icon className="h-3 w-3 mr-1"/>{p.method}
@@ -249,6 +231,17 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
                 </div>
             </CardContent>
         </Card>
+         <div className="flex items-center justify-between pt-2">
+            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
+            <div className="flex items-center space-x-2">
+                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
+                    <ChevronLeft className="h-4 w-4" /> Anterior
+                </Button>
+                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
+                    Siguiente <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
     </div>
   );
 }
@@ -259,7 +252,10 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
     const defaultTab = tab || 'resumen';
     
     const [activeTab, setActiveTab] = useState(defaultTab);
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+        const now = new Date();
+        return { from: startOfMonth(now), to: endOfMonth(now) };
+    });
     
     const [isLoading, setIsLoading] = useState(true);
     const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
@@ -274,20 +270,15 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
     useEffect(() => {
         setIsLoading(true);
         const unsubs: (() => void)[] = [
-            saleService.onSalesUpdate(setAllSales),
-            serviceService.onServicesUpdate(setAllServices),
-            inventoryService.onItemsUpdate(setAllInventory),
-            personnelService.onPersonnelUpdate(setAllPersonnel),
-            inventoryService.onFixedExpensesUpdate((expenses) => {
+            saleService.onSalesUpdatePromise().then(setAllSales),
+            serviceService.onServicesUpdatePromise().then(setAllServices),
+            inventoryService.onItemsUpdatePromise().then(setAllInventory),
+            personnelService.onPersonnelUpdatePromise().then(setAllPersonnel),
+            inventoryService.onFixedExpensesUpdatePromise().then((expenses) => {
                 setFixedExpenses(expenses);
                 setIsLoading(false);
             })
-        ];
-        
-        const now = new Date();
-        const initialRange = { from: startOfMonth(now), to: endOfMonth(now) };
-        setDateRange(initialRange);
-        setTempDateRange(initialRange);
+        ].map(p => () => p); // Convert promises to no-op unsubscribes
 
         return () => unsubs.forEach(unsub => unsub());
     }, []);
@@ -489,7 +480,7 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
                 </div>
             )
         },
-        { value: 'movimientos', label: 'Movimientos', content: <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}><MovimientosTabContent allSales={allSales} allServices={allServices} allInventory={allInventory} dateRange={dateRange} onDateRangeChange={setDateRange} /></Suspense>}
+        { value: 'movimientos', label: 'Movimientos', content: <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}><MovimientosTabContent allSales={allSales} allServices={allServices} allInventory={allInventory} /></Suspense>}
     ];
     
     return (
@@ -517,3 +508,4 @@ export default function FinanzasPage() {
         </Suspense>
     )
 }
+
