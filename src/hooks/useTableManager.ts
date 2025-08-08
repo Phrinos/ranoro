@@ -42,7 +42,7 @@ export function useTableManager<T extends { [key: string]: any }>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array ensures this runs only once on mount
 
-  const processedAndSortedData = useMemo(() => {
+  const fullFilteredData = useMemo(() => {
     let data = [...initialData];
 
     if (searchTerm) {
@@ -141,13 +141,13 @@ export function useTableManager<T extends { [key: string]: any }>({
     setCurrentPage(1);
   }, [searchTerm, sortOption, dateRange, otherFilters]);
   
-  const totalItems = processedAndSortedData.length;
+  const totalItems = fullFilteredData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return processedAndSortedData.slice(startIndex, startIndex + itemsPerPage);
-  }, [processedAndSortedData, currentPage, itemsPerPage]);
+    return fullFilteredData.slice(startIndex, startIndex + itemsPerPage);
+  }, [fullFilteredData, currentPage, itemsPerPage]);
 
   const goToNextPage = () => {
     setCurrentPage(prev => Math.min(prev + 1, totalPages));
@@ -166,7 +166,8 @@ export function useTableManager<T extends { [key: string]: any }>({
     onDateRangeChange: setDateRange,
     otherFilters,
     setOtherFilters,
-    filteredData: paginatedData,
+    paginatedData,
+    fullFilteredData, // Expose the full filtered data
     currentPage,
     totalPages,
     totalItems,

@@ -58,7 +58,8 @@ export default function HistorialTabContent({
   const { toast } = useToast();
   
   const {
-    filteredData,
+    paginatedData,
+    fullFilteredData,
     ...tableManager
   } = useTableManager<ServiceRecord>({
     initialData: services,
@@ -70,13 +71,14 @@ export default function HistorialTabContent({
   });
 
   const summaryData = useMemo(() => {
-    const servicesCount = filteredData.length;
-    const totalRevenue = filteredData.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-    const totalProfit = filteredData.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    const servicesToSummarize = fullFilteredData; // Use the full filtered data for summary
+    const servicesCount = servicesToSummarize.length;
+    const totalRevenue = servicesToSummarize.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+    const totalProfit = servicesToSummarize.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
 
     const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();
 
-    filteredData.forEach(service => {
+    servicesToSummarize.forEach(service => {
         if (service.payments && service.payments.length > 0) {
             service.payments.forEach(p => {
                 const current = paymentsSummary.get(p.method) || { count: 0, total: 0 };
@@ -93,7 +95,7 @@ export default function HistorialTabContent({
     });
 
     return { servicesCount, totalRevenue, totalProfit, paymentsSummary };
-  }, [filteredData]);
+  }, [fullFilteredData]);
   
   const handleEditService = (serviceId: string) => {
     router.push(`/servicios/${serviceId}`);
@@ -193,9 +195,9 @@ export default function HistorialTabContent({
           </Button>
         </div>
       </div>
-      {filteredData.length > 0 ? (
+      {paginatedData.length > 0 ? (
         <div className="space-y-4">
-          {filteredData.map(renderServiceCard)}
+          {paginatedData.map(renderServiceCard)}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
@@ -207,4 +209,3 @@ export default function HistorialTabContent({
     </div>
   );
 }
-
