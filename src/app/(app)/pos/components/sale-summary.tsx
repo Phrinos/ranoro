@@ -14,6 +14,7 @@ import { PaymentSection } from '@/components/shared/PaymentSection';
 
 
 const IVA_RATE = 0.16;
+const COMMISSION_ITEM_ID = 'COMMISSION_FEE';
 
 interface SaleSummaryProps {
   onOpenValidateDialog: (index: number) => void;
@@ -25,14 +26,19 @@ export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSumma
   
   const watchedItems = watch("items");
 
-  const { subTotal, tax, total } = useMemo(() => {
-    const newTotalAmount = watchedItems?.reduce((sum: number, item: any) => sum + item.totalPrice || 0, 0) || 0;
+  const { subTotal, tax, total, commission } = useMemo(() => {
+    const regularItems = (watchedItems || []).filter((item: any) => item.inventoryItemId !== COMMISSION_ITEM_ID);
+    const commissionItem = (watchedItems || []).find((item: any) => item.inventoryItemId === COMMISSION_ITEM_ID);
+    
+    const newTotalAmount = regularItems.reduce((sum: number, item: any) => sum + item.totalPrice || 0, 0) || 0;
     const newSubTotal = newTotalAmount / (1 + IVA_RATE);
     const newTax = newTotalAmount - newSubTotal;
-    return { subTotal: newSubTotal, tax: newTax, total: newTotalAmount };
+    const commissionCost = commissionItem ? commissionItem.unitPrice : 0;
+    
+    return { subTotal: newSubTotal, tax: newTax, total: newTotalAmount, commission: commissionCost };
   }, [watchedItems]);
 
-  const hasItems = watchedItems && watchedItems.length > 0;
+  const hasItems = watchedItems && watchedItems.some((item: any) => item.inventoryItemId !== COMMISSION_ITEM_ID);
 
   return (
     <>
@@ -75,6 +81,12 @@ export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSumma
                   <span>Total:</span>
                   <span className="text-primary">{formatCurrency(total)}</span>
               </div>
+              {commission > 0 && (
+                <div className="flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground">Costo Comisión Tarjeta:</span>
+                    <span className="font-medium text-destructive">-{formatCurrency(commission)}</span>
+                </div>
+              )}
           </div>
 
           <Button

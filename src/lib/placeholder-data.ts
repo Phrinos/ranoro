@@ -24,6 +24,7 @@ import type {
 
 export const IVA_RATE = 0.16;
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
+const COMMISSION_ITEM_ID = 'COMMISSION_FEE';
 
 // =======================================
 // ===    DEFAULT SUPERADMIN CONFIG    ===
@@ -155,13 +156,20 @@ export const calculateSaleProfit = (
   );
 
   const totalRevenue = sale.totalAmount || 0;
-
+  
   let totalCostOfGoods = 0;
   for (const saleItem of sale.items) {
+    const isCommission = saleItem.inventoryItemId === COMMISSION_ITEM_ID;
+
+    if (isCommission) {
+        // The commission itself is a cost
+        totalCostOfGoods += saleItem.unitPrice || 0;
+        continue;
+    }
+    
     const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
     const isService = saleItem.isService || (inventoryItem && inventoryItem.isService);
-
-    // Only subtract cost if it's a physical product. Services have a cost of 0 in this context.
+    
     if (!isService && inventoryItem) {
       totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
     } else if (isService && inventoryItem) { // Service with an associated cost
@@ -169,9 +177,7 @@ export const calculateSaleProfit = (
     }
   }
 
-  const cardCommission = sale.cardCommission || 0;
-
-  const finalProfit = totalRevenue - totalCostOfGoods - cardCommission;
+  const finalProfit = totalRevenue - totalCostOfGoods;
 
   return isFinite(finalProfit) ? finalProfit : 0;
 };

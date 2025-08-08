@@ -1,4 +1,3 @@
-
 // src/app/(app)/pos/components/pos-form.tsx
 
 "use client";
@@ -24,6 +23,7 @@ interface POSFormProps {
 }
 
 const IVA_RATE = 0.16;
+const COMMISSION_ITEM_ID = 'COMMISSION_FEE';
 
 export function PosForm({ 
   inventoryItems, 
@@ -36,7 +36,8 @@ export function PosForm({
   validatedFolios,
 }: POSFormProps) {
   const methods = useFormContext();
-  const { setValue, getValues, control } = methods;
+  const { control, getValues, setValue } = methods;
+  const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   
   const watchedPayments = useWatch({ control, name: 'payments' });
   const watchedItems = useWatch({ control, name: 'items' });
@@ -79,22 +80,43 @@ export function PosForm({
   };
   
     useEffect(() => {
-        const totalAmount = watchedItems?.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0) || 0;
+        const allItems = getValues('items') || [];
+        // Exclude commission from total calculation to prevent feedback loop
+        const totalAmount = allItems
+            .filter((item: any) => item.inventoryItemId !== COMMISSION_ITEM_ID)
+            .reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0) || 0;
 
-        let commissionAmount = 0;
         const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
         const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
         
-        if (hasCardPayment) {
-          commissionAmount += totalAmount * 0.041;
-        }
-        if (hasMSIPayment) {
-          commissionAmount += totalAmount * 0.12;
-        }
-        
-        setValue('cardCommission', commissionAmount, { shouldDirty: true });
+        let commissionAmount = 0;
+        if (hasCardPayment) commissionAmount += totalAmount * 0.041;
+        if (hasMSIPayment) commissionAmount += totalAmount * 0.12;
 
-    }, [watchedPayments, watchedItems, setValue]);
+        const commissionIndex = allItems.findIndex((item: any) => item.inventoryItemId === COMMISSION_ITEM_ID);
+
+        if (commissionAmount > 0) {
+            const commissionItem = {
+                inventoryItemId: COMMISSION_ITEM_ID,
+                itemName: 'Comisión de Tarjeta',
+                quantity: 1,
+                unitPrice: commissionAmount, // Costo
+                totalPrice: 0, // No suma al total del cliente
+                isService: true,
+            };
+            if (commissionIndex > -1) {
+                // Update existing commission
+                setValue(`items.${commissionIndex}`, commissionItem, { shouldDirty: true });
+            } else {
+                // Add new commission item
+                append(commissionItem);
+            }
+        } else if (commissionIndex > -1) {
+            // Remove commission if no card payment
+            remove(commissionIndex);
+        }
+
+    }, [watchedPayments, watchedItems, setValue, getValues, append, remove]);
 
 
   return (
