@@ -16,8 +16,15 @@ const nextConfig = {
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com', pathname: '/**' },
     ],
   },
-
-  // 4. CORS global
+  
+  // 4. Configuración de desarrollo
+  experimental: {
+    allowedDevOrigins: [
+      "https://*.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
+    ],
+  },
+  
+  // 5. CORS global (ajustado para desarrollo)
   async headers() {
     return [
       {
@@ -32,7 +39,7 @@ const nextConfig = {
     ];
   },
 
-  // 5. Webpack config
+  // 6. Webpack config
   webpack: (config) => {
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),
@@ -42,4 +49,4 @@ const nextConfig = {
   }
 };
 
-export default nextConfig;
+module.exports = nextConfig;
