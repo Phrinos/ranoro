@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks';
 import { PaymentSection } from '@/components/shared/PaymentSection';
+import { Separator } from '@/components/ui/separator';
 
 interface ServiceSummaryProps {
   onOpenValidateDialog: (index: number) => void;
@@ -17,7 +18,7 @@ const IVA_RATE = 0.16;
 
 export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: ServiceSummaryProps) {
   const form = useFormContext();
-  const { totalCost, subTotal, taxAmount } = useServiceTotals(form);
+  const { totalCost, subTotal, taxAmount, serviceProfit } = useServiceTotals(form);
   
   const totalPaid = (form.watch('payments') || []).reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) || 0;
 
@@ -38,7 +39,12 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
             <span className="text-muted-foreground">IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
             <span className="font-medium">{formatCurrency(taxAmount)}</span>
           </div>
-          <div className="flex justify-between items-center text-lg font-bold pt-1 mt-1 border-t border-gray-300">
+           <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Ganancia:</span>
+              <span className="font-medium text-green-600">{formatCurrency(serviceProfit)}</span>
+          </div>
+          <Separator className="my-2"/>
+          <div className="flex justify-between items-center text-lg font-bold pt-1">
             <span>Total:</span>
             <span className="text-primary">{formatCurrency(totalCost)}</span>
           </div>
