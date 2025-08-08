@@ -235,7 +235,10 @@ export function ServiceDetailsCard({
                       type="time"
                       value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
                       onChange={(e) => {
-                        if (!e.target.value) return;
+                        if (!e.target.value) {
+                            field.onChange(null);
+                            return;
+                        };
                         const [h, m] = e.target.value.split(':').map(Number);
                         field.onChange(setMinutes(setHours(field.value || new Date(), h), m));
                       }}
