@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/service-form.tsx
 "use client";
 
@@ -18,7 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { SignatureDialog } from './signature-dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import { serviceService } from '@/lib/services';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch } from 'firebase/firestore';
@@ -158,8 +158,6 @@ function ServiceFormContent({
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
-  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
@@ -189,37 +187,8 @@ function ServiceFormContent({
     if (hasCardPayment) commissionAmount += totalAmount * 0.041;
     if (hasMSIPayment) commissionAmount += totalAmount * 0.12;
     
-    const commissionIndex = (allItems || []).findIndex((item: any) => item.id === COMMISSION_ITEM_ID);
-
-    const currentItems = getValues('serviceItems') || [];
-
-    if (commissionAmount > 0) {
-        const commissionItem = {
-            id: COMMISSION_ITEM_ID,
-            name: 'Comisión de Tarjeta',
-            price: 0, // This is the cost to the CUSTOMER, which is 0.
-            suppliesUsed: [{
-                supplyId: 'COMMISSION_COST',
-                supplyName: 'Costo de Comisión',
-                quantity: 1,
-                unitPrice: commissionAmount, // This is the cost to the WORKSHOP.
-                isService: true
-            }],
-        };
-        if (commissionIndex > -1) {
-            // Update existing commission item if it's different
-            if (JSON.stringify(currentItems[commissionIndex]) !== JSON.stringify(commissionItem)) {
-                setValue(`serviceItems.${commissionIndex}`, commissionItem, { shouldDirty: true });
-            }
-        } else {
-            // Add new commission item if it doesn't exist
-            setValue('serviceItems', [...currentItems, commissionItem]);
-        }
-    } else if (commissionIndex > -1) {
-        // Remove commission item if no card payment is selected
-        const newItems = currentItems.filter((item: any, index: number) => index !== commissionIndex);
-        setValue('serviceItems', newItems);
-    }
+    setValue('cardCommission', commissionAmount, { shouldDirty: true });
+    
   }, [watchedPayments, watchedServiceItems, setValue, getValues]);
 
 
@@ -260,33 +229,10 @@ function ServiceFormContent({
       finalValues.status = originalLockedStatus;
     }
   
-    // If the service is being marked as 'Entregado' for the first time,
-    // open the payment dialog instead of saving directly.
-    if (finalValues.status === 'Entregado' && initialData?.status !== 'Entregado') {
-      setServiceToComplete({ ...(initialData || {}), ...finalValues } as ServiceRecord);
-      setIsPaymentDialogOpen(true);
-      return;
-    }
-  
     // For all other cases, proceed with the standard save operation.
     await onSubmit(finalValues);
   };
   
-  const handleCompleteService = async (service: ServiceRecord, paymentDetails: PaymentDetailsFormValues) => {
-    if (!serviceToComplete || !db) return;
-    try {
-        const batch = writeBatch(db);
-        await serviceService.completeService(serviceToComplete, { ...paymentDetails, nextServiceInfo: serviceToComplete.nextServiceInfo }, batch);
-        await batch.commit();
-        toast({ title: "Servicio Completado" });
-        setIsPaymentDialogOpen(false);
-        setServiceToComplete(null);
-        onClose();
-    } catch(e) {
-        toast({ title: "Error al completar", variant: "destructive"});
-    }
-  };
-
   const handleOpenNewVehicleDialog = (plate?: string) => {
     setNewVehicleInitialPlate(plate);
     setIsNewVehicleDialogOpen(true);
@@ -474,17 +420,6 @@ function ServiceFormContent({
         </DialogContent>
       </Dialog>
       
-      {serviceToComplete && (
-          <PaymentDetailsDialog
-            open={isPaymentDialogOpen}
-            onOpenChange={setIsPaymentDialogOpen}
-            record={serviceToComplete}
-            onConfirm={(id, details) => handleCompleteService(serviceToComplete, details as PaymentDetailsFormValues)}
-            recordType="service"
-            isCompletionFlow={true}
-          />
-      )}
-
       <AlertDialog open={isValidationDialogOpen} onOpenChange={setIsValidationDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1,5 +1,4 @@
 
-
 // src/types/index.ts
 import { type VariantProps } from "class-variance-authority"
 import { sidebarMenuButtonVariants } from './sidebar.types';
@@ -266,6 +265,7 @@ export interface ServiceRecord {
   serviceAdvisorSignatureDataUrl?: string; 
   workshopInfo?: WorkshopInfo;
   payments?: Payment[]; // <-- New payment structure
+  cardCommission?: number;
   // Deprecated payment fields
   paymentMethod?: string;
   cardFolio?: string;

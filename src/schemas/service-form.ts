@@ -1,3 +1,4 @@
+
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -100,6 +101,7 @@ export const serviceFormSchema = z.object({
     serviceAdvisorName: z.string().optional(),
     serviceAdvisorSignatureDataUrl: z.string().optional(), 
     payments: z.array(paymentSchema).optional(),
+    cardCommission: z.number().optional(),
     nextServiceInfo: z.object({
         date: z.string().optional(),
         mileage: z.number().optional(), 

@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceSummary.tsx
 "use client";
 
@@ -15,44 +16,33 @@ interface ServiceSummaryProps {
 }
 
 const IVA_RATE = 0.16;
-const COMMISSION_ITEM_ID = 'COMMISSION_FEE_SERVICE';
 
 export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: ServiceSummaryProps) {
   const form = useFormContext();
   
   const watchedItems = useWatch({ control: form.control, name: 'serviceItems' });
+  const cardCommission = useWatch({ control: form.control, name: 'cardCommission' }) || 0;
   
   const { totalCost, subTotal, taxAmount, serviceProfit } = useMemo(() => {
-    // Separate commission from regular service items
-    const regularItems = (watchedItems || []).filter((item: any) => item.id !== COMMISSION_ITEM_ID);
-    const commissionItem = (watchedItems || []).find((item: any) => item.id === COMMISSION_ITEM_ID);
-
-    // Calculate total revenue from regular items only
-    const total = regularItems.reduce(
+    const total = (watchedItems || []).reduce(
       (s, i) => s + (Number(i.price) || 0),
       0
     );
     
-    // Calculate total cost of supplies from regular items
-    let costOfSupplies = regularItems
+    const costOfSupplies = (watchedItems || [])
       .flatMap((i) => i.suppliesUsed ?? [])
       .reduce(
         (s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0),
         0
       );
-
-    // Add the commission cost, if it exists, to the total costs
-    if (commissionItem && commissionItem.suppliesUsed && commissionItem.suppliesUsed.length > 0) {
-      costOfSupplies += (commissionItem.suppliesUsed[0].unitPrice || 0);
-    }
     
     return {
       totalCost: total,
-      serviceProfit: total - costOfSupplies,
+      serviceProfit: total - costOfSupplies - cardCommission,
       subTotal: total / (1 + IVA_RATE),
       taxAmount: total - total / (1 + IVA_RATE),
     };
-  }, [watchedItems]);
+  }, [watchedItems, cardCommission]);
 
   const totalPaid = (form.watch('payments') || []).reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) || 0;
 
@@ -73,6 +63,12 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
             <span className="text-muted-foreground">IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
             <span className="font-medium">{formatCurrency(taxAmount)}</span>
           </div>
+           {cardCommission > 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Comisión Tarjeta:</span>
+              <span className="font-medium text-red-600">-{formatCurrency(cardCommission)}</span>
+            </div>
+          )}
            <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Ganancia:</span>
               <span className="font-medium text-green-600">{formatCurrency(serviceProfit)}</span>
