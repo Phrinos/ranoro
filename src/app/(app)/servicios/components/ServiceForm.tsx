@@ -167,6 +167,20 @@ function ServiceFormContent({
   
   const { control, handleSubmit, getValues, setValue, watch, formState, reset } = methods;
 
+  const [originalLockedStatus, setOriginalLockedStatus] = useState<'Completado' | 'Entregado' | null>(null);
+
+  useEffect(() => {
+    // Detecta el estado actual del registro al montar/cambiar de servicio
+    const current = getValues('status') ?? initialData?.status;
+    if (current === 'Completado' || current === 'Entregado') {
+      setOriginalLockedStatus(current);
+      // Desbloquea la UI: cambia el status SOLO en el form, no en la BD
+      setValue('status', 'En Taller', { shouldDirty: false, shouldValidate: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData?.id]);
+
+
   useEffect(() => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     if(authUserString) {
@@ -178,22 +192,26 @@ function ServiceFormContent({
   const watchedStatus = watch('status');
   const isQuote = watchedStatus === 'Cotizacion' || (mode === 'quote' && !isEditing);
 
-  const userRole = currentUser?.role;
-  
-  // Logic to determine if fields should be read-only
-  const isReadOnly = false;
+  // This is now always false to allow editing in any state as requested
+  const isReadOnly = false; 
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
-    
-    // If user tries to save while status is "Entregado", trigger the completion dialog instead.
-    if (values.status === 'Entregado' && initialData?.status !== 'Entregado') {
-        setServiceToComplete({ ...(initialData || {}), ...values } as ServiceRecord);
-        setIsPaymentDialogOpen(true);
-        return;
+  
+    // Restaura el status real si lo habíamos “disfrazado” como En Taller
+    const finalValues = { ...values };
+    if (originalLockedStatus) {
+      finalValues.status = originalLockedStatus;
     }
-    
-    await onSubmit(values);
+  
+    // Tu lógica de completado/entrega se mantiene igual
+    if (finalValues.status === 'Entregado' && initialData?.status !== 'Entregado') {
+      setServiceToComplete({ ...(initialData || {}), ...finalValues } as ServiceRecord);
+      setIsPaymentDialogOpen(true);
+      return;
+    }
+  
+    await onSubmit(finalValues);
   };
   
   const handleCompleteService = async (service: ServiceRecord, paymentDetails: PaymentDetailsFormValues) => {
@@ -308,6 +326,12 @@ function ServiceFormContent({
       <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
         <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
         <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
+        {originalLockedStatus && (
+          <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-900">
+            Estás editando un servicio marcado como <b>{originalLockedStatus}</b>. Solo se habilitó la edición para corregir insumos/notas.
+            Al guardar se conservará el estado original.
+          </div>
+        )}
 
         {showTabs ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
