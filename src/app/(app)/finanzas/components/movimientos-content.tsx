@@ -89,7 +89,8 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
   }, [allSales, allServices, allInventory]);
 
   const { 
-    filteredData, 
+    paginatedData,
+    fullFilteredData,
     ...tableManager 
   } = useTableManager<Movement>({
     initialData: mergedMovements,
@@ -106,7 +107,7 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
 
 
   const summary = useMemo(() => {
-    const movements = tableManager.fullFilteredData;
+    const movements = fullFilteredData;
     const totalMovements = movements.length;
     const grossProfit = movements.reduce((sum, m) => sum + m.total, 0);
     const netProfit = movements.reduce((sum, m) => sum + m.profit, 0);
@@ -132,7 +133,7 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
     });
 
     return { totalMovements, grossProfit, netProfit, paymentsSummary };
-  }, [tableManager.fullFilteredData]);
+  }, [fullFilteredData]);
 
   return (
     <div className="space-y-6">
@@ -182,8 +183,8 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
                     <Table>
                         <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Folio</TableHead><TableHead>Tipo</TableHead><TableHead>Cliente</TableHead><TableHead>Método Pago</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Utilidad</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {filteredData.length > 0 ? (
-                                filteredData.map(m => (
+                            {paginatedData.length > 0 ? (
+                                paginatedData.map(m => (
                                     <TableRow key={m.id}>
                                         <TableCell>{m.date && isValid(m.date) ? format(m.date, "dd MMM yyyy, HH:mm", { locale: es }) : 'N/A'}</TableCell>
                                         <TableCell className="font-mono">{m.folio.slice(-6)}</TableCell>

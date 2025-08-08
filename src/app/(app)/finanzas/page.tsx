@@ -61,20 +61,18 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
 
     useEffect(() => {
         setIsLoading(true);
-        Promise.all([
-          saleService.onSalesUpdatePromise(),
-          serviceService.onServicesUpdatePromise(),
-          inventoryService.onItemsUpdatePromise(),
-          personnelService.onPersonnelUpdatePromise(),
-          inventoryService.onFixedExpensesUpdatePromise()
-        ]).then(([sales, services, inventory, personnel, expenses]) => {
-          setAllSales(sales);
-          setAllServices(services);
-          setAllInventory(inventory);
-          setAllPersonnel(personnel);
-          setFixedExpenses(expenses);
-          setIsLoading(false);
-        });
+        const unsubs: (() => void)[] = [
+            saleService.onSalesUpdate(setAllSales),
+            serviceService.onServicesUpdate(setAllServices),
+            inventoryService.onItemsUpdate(setAllInventory),
+            personnelService.onPersonnelUpdate(setAllPersonnel),
+            inventoryService.onFixedExpensesUpdate((expenses) => {
+                setFixedExpenses(expenses);
+                setIsLoading(false);
+            })
+        ];
+
+        return () => unsubs.forEach(unsub => unsub());
     }, []);
 
     const financialSummary = useMemo(() => {
