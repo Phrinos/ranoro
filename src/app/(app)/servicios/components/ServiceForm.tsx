@@ -177,9 +177,10 @@ function ServiceFormContent({
 
    useEffect(() => {
     const allItems = getValues('serviceItems') || [];
-    const totalAmount = allItems
-      .filter((item: any) => item.id !== COMMISSION_ITEM_ID)
-      .reduce((sum: number, item: any) => sum + (item.price || 0), 0) || 0;
+    // Recalculate total amount excluding any existing commission
+    const totalAmount = (allItems || [])
+        .filter((item: any) => item.id !== COMMISSION_ITEM_ID)
+        .reduce((sum, item) => sum + (item.price || 0), 0) || 0;
 
     const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
     const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
@@ -187,44 +188,52 @@ function ServiceFormContent({
     let commissionAmount = 0;
     if (hasCardPayment) commissionAmount += totalAmount * 0.041;
     if (hasMSIPayment) commissionAmount += totalAmount * 0.12;
+    
+    const commissionIndex = (allItems || []).findIndex((item: any) => item.id === COMMISSION_ITEM_ID);
 
-    const commissionIndex = allItems.findIndex((item: any) => item.id === COMMISSION_ITEM_ID);
+    const currentItems = getValues('serviceItems') || [];
 
     if (commissionAmount > 0) {
-      const commissionItem = {
-        id: COMMISSION_ITEM_ID,
-        name: 'Comisión de Tarjeta',
-        price: 0, // No se suma al total del cliente
-        suppliesUsed: [{
-            supplyId: 'COMMISSION_COST',
-            supplyName: 'Costo de Comisión',
-            quantity: 1,
-            unitPrice: commissionAmount, // Este es el costo para el taller
-            isService: true
-        }],
-      };
-      if (commissionIndex > -1) {
-        setValue(`serviceItems.${commissionIndex}`, commissionItem, { shouldDirty: true });
-      } else {
-        const { ...fields } = methods.control._fields;
-        const currentItems = getValues('serviceItems');
-        setValue('serviceItems', [...currentItems, commissionItem]);
-      }
+        const commissionItem = {
+            id: COMMISSION_ITEM_ID,
+            name: 'Comisión de Tarjeta',
+            price: 0, // This is the cost to the CUSTOMER, which is 0.
+            suppliesUsed: [{
+                supplyId: 'COMMISSION_COST',
+                supplyName: 'Costo de Comisión',
+                quantity: 1,
+                unitPrice: commissionAmount, // This is the cost to the WORKSHOP.
+                isService: true
+            }],
+        };
+        if (commissionIndex > -1) {
+            // Update existing commission item if it's different
+            if (JSON.stringify(currentItems[commissionIndex]) !== JSON.stringify(commissionItem)) {
+                setValue(`serviceItems.${commissionIndex}`, commissionItem, { shouldDirty: true });
+            }
+        } else {
+            // Add new commission item if it doesn't exist
+            setValue('serviceItems', [...currentItems, commissionItem]);
+        }
     } else if (commissionIndex > -1) {
-      const currentItems = getValues('serviceItems');
-      const newItems = currentItems.filter((item: any) => item.id !== COMMISSION_ITEM_ID);
-      setValue('serviceItems', newItems);
+        // Remove commission item if no card payment is selected
+        const newItems = currentItems.filter((item: any, index: number) => index !== commissionIndex);
+        setValue('serviceItems', newItems);
     }
   }, [watchedPayments, watchedServiceItems, setValue, getValues]);
 
 
   useEffect(() => {
-    const current = getValues('status') ?? initialData?.status;
-    if (current === 'Completado' || current === 'Entregado') {
-      setOriginalLockedStatus(current);
+    // This effect runs when the component mounts or when initialData changes.
+    // It temporarily sets the status to 'En Taller' for editing purposes
+    // if the original status was 'Completado' or 'Entregado'.
+    const currentStatus = getValues('status') ?? initialData?.status;
+    if (currentStatus === 'Completado' || currentStatus === 'Entregado') {
+      setOriginalLockedStatus(currentStatus);
       setValue('status', 'En Taller', { shouldDirty: false, shouldValidate: false });
     }
-  }, [initialData?.id, getValues, setValue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData?.id]);
 
 
   useEffect(() => {
@@ -243,17 +252,23 @@ function ServiceFormContent({
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
   
+    // Create a mutable copy of the form values.
     const finalValues = { ...values };
+    
+    // If the service was originally locked, restore its true status before saving.
     if (originalLockedStatus) {
       finalValues.status = originalLockedStatus;
     }
   
+    // If the service is being marked as 'Entregado' for the first time,
+    // open the payment dialog instead of saving directly.
     if (finalValues.status === 'Entregado' && initialData?.status !== 'Entregado') {
       setServiceToComplete({ ...(initialData || {}), ...finalValues } as ServiceRecord);
       setIsPaymentDialogOpen(true);
       return;
     }
   
+    // For all other cases, proceed with the standard save operation.
     await onSubmit(finalValues);
   };
   

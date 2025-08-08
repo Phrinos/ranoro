@@ -15,6 +15,7 @@ interface ServiceSummaryProps {
 }
 
 const IVA_RATE = 0.16;
+const COMMISSION_ITEM_ID = 'COMMISSION_FEE_SERVICE';
 
 export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: ServiceSummaryProps) {
   const form = useFormContext();
@@ -22,27 +23,32 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
   const watchedItems = useWatch({ control: form.control, name: 'serviceItems' });
   
   const { totalCost, subTotal, taxAmount, serviceProfit } = useMemo(() => {
-    const total = (watchedItems ?? []).reduce(
+    // Separate commission from regular service items
+    const regularItems = (watchedItems || []).filter((item: any) => item.id !== COMMISSION_ITEM_ID);
+    const commissionItem = (watchedItems || []).find((item: any) => item.id === COMMISSION_ITEM_ID);
+
+    // Calculate total revenue from regular items only
+    const total = regularItems.reduce(
       (s, i) => s + (Number(i.price) || 0),
       0
     );
     
-    // Updated cost calculation to include card commission
-    let cost = (watchedItems ?? [])
+    // Calculate total cost of supplies from regular items
+    let costOfSupplies = regularItems
       .flatMap((i) => i.suppliesUsed ?? [])
       .reduce(
         (s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0),
         0
       );
-    
-    const cardCommissionItem = (watchedItems ?? []).find(i => i.id === 'COMMISSION_FEE');
-    if (cardCommissionItem) {
-        cost += cardCommissionItem.price || 0;
-    }
 
+    // Add the commission cost, if it exists, to the total costs
+    if (commissionItem && commissionItem.suppliesUsed && commissionItem.suppliesUsed.length > 0) {
+      costOfSupplies += (commissionItem.suppliesUsed[0].unitPrice || 0);
+    }
+    
     return {
       totalCost: total,
-      serviceProfit: total - cost,
+      serviceProfit: total - costOfSupplies,
       subTotal: total / (1 + IVA_RATE),
       taxAmount: total - total / (1 + IVA_RATE),
     };
