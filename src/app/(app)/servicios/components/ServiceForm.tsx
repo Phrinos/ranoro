@@ -49,7 +49,6 @@ interface ServiceFormWrapperProps {
   onCancelService?: (id: string, reason: string) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
   mode: 'service' | 'quote';
-  isReadOnly?: boolean;
 }
 
 export function ServiceForm({
@@ -96,7 +95,6 @@ export function ServiceForm({
         serviceHistory={serviceHistory}
         onSubmit={onSave}
         onClose={handleClose}
-        isReadOnly={initialData?.status === 'Cancelado'} // Only cancelled services are truly read-only
         mode={mode}
         onVehicleCreated={onVehicleCreated}
         onDelete={onDelete}
@@ -117,7 +115,6 @@ interface ServiceFormContentProps {
   serviceHistory: ServiceRecord[];
   onSubmit: (data: ServiceFormValues) => Promise<void>;
   onClose: () => void;
-  isReadOnly?: boolean;
   mode: 'service' | 'quote';
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
   onDelete?: (id: string) => void;
@@ -135,7 +132,6 @@ function ServiceFormContent({
   serviceHistory,
   onSubmit,
   onClose,
-  isReadOnly,
   mode,
   onVehicleCreated,
   onDelete,
@@ -156,11 +152,23 @@ function ServiceFormContent({
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   
   const { handleSubmit, getValues, setValue, watch, formState } = methods;
 
+  useEffect(() => {
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    if(authUserString) {
+      setCurrentUser(JSON.parse(authUserString));
+    }
+  }, []);
+
   const isEditing = !!initialData?.id;
   const isQuote = initialData?.status === 'Cotizacion' || mode === 'quote';
+
+  const userRole = currentUser?.role;
+  const canEditAll = userRole === 'Admin' || userRole === 'Superadministrador';
+  const isReadOnly = initialData?.status === 'Cancelado' && !canEditAll;
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
@@ -264,15 +272,7 @@ function ServiceFormContent({
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
       <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
         <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
-        <Suspense fallback={<Loader2 className="animate-spin" />}>
-          <VehicleSelectionCard 
-            isReadOnly={isReadOnly} 
-            localVehicles={vehicles} 
-            serviceHistory={serviceHistory}
-            onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} 
-            onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
-          />
-        </Suspense>
+        <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
 
         {showTabs ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -305,7 +305,7 @@ function ServiceFormContent({
           {(onDelete || onCancelService) && initialData?.id && (
             <ConfirmDialog
                 triggerButton={
-                    <Button variant="destructive" type="button" disabled={initialData?.status === 'Cancelado'}>
+                    <Button variant="destructive" type="button" disabled={isReadOnly}>
                         {isQuote ? <Trash2 className="mr-2 h-4 w-4"/> : <Ban className="mr-2 h-4 w-4"/>}
                         {isQuote ? 'Eliminar Cotización' : 'Cancelar Servicio'}
                     </Button>

@@ -55,7 +55,7 @@ export function ServiceDetailsCard({
   const watchedStatus = watch('status');
   const watchedAdvisorName = watch('serviceAdvisorName');
   
-  const isFinalStatus = watchedStatus === 'Entregado' || watchedStatus === 'Cancelado';
+  const isFinalStatus = watchedStatus === 'Cancelado' && !isReadOnly;
   
   const relevantSubStatusOptions = subStatusOptions[watchedStatus] || [];
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -100,7 +100,7 @@ export function ServiceDetailsCard({
                 <Select
                   onValueChange={(value) => handleStatusChange(value as ServiceFormValues['status'])}
                   value={field.value || ''}
-                  disabled={isFinalStatus || isReadOnly}
+                  disabled={isFinalStatus}
                 >
                   <FormControl>
                     <SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}>

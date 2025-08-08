@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -244,7 +245,7 @@ export function ServiceItemCard({
                                 <div className="flex-1">
                                     <p className="text-xs font-medium">{currentName}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {`Costo: ${formatCurrency(supplyField.unitPrice)}`}
+                                        {`Costo: ${formatCurrency(supplyField.unitPrice || 0)}`}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-1">

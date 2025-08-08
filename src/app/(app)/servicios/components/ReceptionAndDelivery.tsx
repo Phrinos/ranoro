@@ -99,11 +99,13 @@ export const ReceptionAndDelivery = ({
            <div className="space-y-2">
                <div className="flex justify-between items-center">
                   <FormLabel>Fecha y Hora de Ingreso</FormLabel>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingReception(!isEditingReception)}>
-                      <Edit className="h-4 w-4" />
-                  </Button>
+                   {!isReadOnly && (
+                    <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingReception(!isEditingReception)}>
+                        <Edit className="h-4 w-4" />
+                    </Button>
+                   )}
                </div>
-               {isEditingReception ? (
+               {isEditingReception && !isReadOnly ? (
                   <FormField
                     control={control}
                     name="receptionDateTime"
@@ -132,6 +134,7 @@ export const ReceptionAndDelivery = ({
                   <Select
                   onValueChange={field.onChange}
                   value={field.value}
+                  disabled={isReadOnly}
                   >
                   <FormControl>
                       <SelectTrigger>
@@ -157,12 +160,14 @@ export const ReceptionAndDelivery = ({
               <FormItem>
                 <FormLabel className="flex justify-between items-center w-full">
                   <span>Condiciones del Vehículo</span>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}>
-                      {isEnhancingText === "vehicleConditions" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                  </Button>
+                   {!isReadOnly && (
+                    <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}>
+                        {isEnhancingText === "vehicleConditions" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                    </Button>
+                   )}
                 </FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} className="min-h-[100px]" />
+                  <Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} className="min-h-[100px]" disabled={isReadOnly} />
                 </FormControl>
               </FormItem>
             )}
@@ -174,12 +179,14 @@ export const ReceptionAndDelivery = ({
               <FormItem>
                 <FormLabel className="flex justify-between items-center w-full">
                   <span>Pertenencias del Cliente</span>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}>
-                      {isEnhancingText === "customerItems" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                  </Button>
+                   {!isReadOnly && (
+                    <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}>
+                        {isEnhancingText === "customerItems" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                    </Button>
+                   )}
                 </FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} className="min-h-[100px]" />
+                  <Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} className="min-h-[100px]" disabled={isReadOnly} />
                 </FormControl>
               </FormItem>
             )}
@@ -204,9 +211,11 @@ export const ReceptionAndDelivery = ({
                     </div>
                 )}
             </div>
-             <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('reception')}>
-                <Signature className="mr-2 h-4 w-4" />{customerSignatureReception ? 'Cambiar Firma de Ingreso' : 'Capturar Firma de Ingreso'}
-              </Button>
+             {!isReadOnly && (
+                <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('reception')}>
+                    <Signature className="mr-2 h-4 w-4" />{customerSignatureReception ? 'Cambiar Firma de Ingreso' : 'Capturar Firma de Ingreso'}
+                </Button>
+             )}
           </div>
         </CardContent>
       </Card>
@@ -223,11 +232,13 @@ export const ReceptionAndDelivery = ({
             <div className="space-y-2">
                  <div className="flex justify-between items-center">
                     <FormLabel>Fecha y Hora de Salida</FormLabel>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingDelivery(!isEditingDelivery)}>
-                        <Edit className="h-4 w-4" />
-                    </Button>
+                     {!isReadOnly && (
+                        <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingDelivery(!isEditingDelivery)}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                     )}
                  </div>
-                 {isEditingDelivery ? (
+                 {isEditingDelivery && !isReadOnly ? (
                     <FormField
                       control={control}
                       name="deliveryDateTime"
@@ -267,9 +278,11 @@ export const ReceptionAndDelivery = ({
                   </div>
                 )}
               </div>
-              <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('delivery')}>
-                  <Signature className="mr-2 h-4 w-4" />{customerSignatureDelivery ? 'Cambiar Firma de Salida' : 'Capturar Firma de Salida'}
+               {!isReadOnly && (
+                <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('delivery')}>
+                    <Signature className="mr-2 h-4 w-4" />{customerSignatureDelivery ? 'Cambiar Firma de Salida' : 'Capturar Firma de Salida'}
                 </Button>
+               )}
             </div>
         </CardContent>
       </Card>
