@@ -28,7 +28,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 // Lazy load complex components
 const ServiceItemsList = lazy(() => import('./ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
-const PaymentSection = lazy(() => import('./PaymentSection').then(module => ({ default: module.PaymentSection })));
+const PaymentSection = lazy(() => import('@/app/(app)/pos/components/payment-section').then(module => ({ default: module.PaymentSection })));
 const VehicleSelectionCard = lazy(() => import('./VehicleSelectionCard').then(module => ({ default: module.VehicleSelectionCard })));
 const SafetyChecklist = lazy(() => import('./SafetyChecklist').then(module => ({ default: module.SafetyChecklist })));
 const PhotoReportTab = lazy(() => import('./PhotoReportTab').then(module => ({ default: module.PhotoReportTab })));
@@ -168,7 +168,7 @@ function ServiceFormContent({
 
   const userRole = currentUser?.role;
   const canEditAll = userRole === 'Admin' || userRole === 'Superadministrador';
-  const isReadOnly = initialData?.status === 'Cancelado' && !canEditAll;
+  const isReadOnly = (initialData?.status === 'Cancelado') && !canEditAll;
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
@@ -271,7 +271,7 @@ function ServiceFormContent({
   return (
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
       <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
-        <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
+        <ServiceDetailsCard isReadOnly={isReadOnly || !canEditAll} users={technicians} serviceTypes={serviceTypes} />
         <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
 
         {showTabs ? (
