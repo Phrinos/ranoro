@@ -6,21 +6,16 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
-import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation, ServiceTypeRecord, MonthlyFixedExpense, AdministrativeStaff, WorkshopInfo, Personnel } from '@/types';
-import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle, Package } from 'lucide-react'; 
+import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel } from '@/types';
+import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
-import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
-import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
-import { PurchaseOrderContent } from '@/app/(app)/ai/components/purchase-order-content';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { analyzeInventory } from '@/ai/flows/inventory-analysis-flow';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { serviceService, saleService, inventoryService, personnelService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, isValid, isToday, isSameDay, endOfDay, getDaysInMonth, differenceInDays } from 'date-fns';
+import { isValid, isToday, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
@@ -160,18 +155,6 @@ export default function DashboardPage() {
               <Link href="/servicios/nuevo">
                 <Wrench className="mr-2 h-4 w-4" />
                 Nuevo Servicio
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="bg-card">
-              <Link href="/pos/nuevo">
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Nueva Venta
-              </Link>
-            </Button>
-             <Button asChild variant="secondary">
-              <Link href="/rentas?action=registrar">
-                <DollarSign className="mr-2 h-4 w-4" />
-                Registrar Pago
               </Link>
             </Button>
           </div>
