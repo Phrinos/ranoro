@@ -1,4 +1,3 @@
-
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -115,6 +114,36 @@ export const serviceFormSchema = z.object({
       message: "La fecha de la cita es obligatoria para el estado 'Agendado'.",
       path: ['appointmentDateTime'],
     }
-);
+).superRefine((data, ctx) => {
+    if (data.status === 'Entregado' && (!data.payments || data.payments.length === 0)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Debe registrar al menos un método de pago para un servicio entregado.',
+            path: ['payments'],
+        });
+    }
+
+    const totalCost = data.serviceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
+    const totalPaid = data.payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+
+    if (data.status === 'Entregado' && Math.abs(totalCost - totalPaid) > 0.01) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `El monto pagado (${totalPaid.toFixed(2)}) no coincide con el total del servicio (${totalCost.toFixed(2)}).`,
+            path: ['payments'],
+        });
+    }
+
+     data.payments?.forEach((payment, index) => {
+        if ((payment.method === 'Tarjeta' || payment.method === 'Tarjeta MSI') && !payment.folio) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Folio obligatorio para pagos con tarjeta.',
+                path: [`payments`, index, 'folio'],
+            });
+        }
+    });
+});
+
 
 export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
