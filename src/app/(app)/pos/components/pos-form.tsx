@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/components/pos-form.tsx
 
 "use client";
@@ -7,7 +8,7 @@ import type { InventoryItem, SaleReceipt, InventoryCategory, Supplier } from "@/
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AddItemDialog } from "./add-item-dialog";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
-import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
+import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { SaleItemsList } from './sale-items-list';
 import { SaleSummary } from './sale-summary';
 

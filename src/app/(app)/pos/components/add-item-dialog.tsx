@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -12,6 +13,7 @@ import type { InventoryItem } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
 
 interface AddItemDialogProps {
   open: boolean;

@@ -16,7 +16,7 @@ import { AddSupplyDialog } from './add-supply-dialog';
 import { capitalizeWords, formatCurrency, cn } from '@/lib/utils';
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
-import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
+import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
 import { inventoryService } from "@/lib/services";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -309,3 +309,4 @@ export function ServiceItemCard({
         </Card>
     );
 }
+
