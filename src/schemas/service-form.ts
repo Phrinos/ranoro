@@ -81,7 +81,6 @@ export const serviceFormSchema = z.object({
     receptionDateTime: z.date().optional().nullable(),
     deliveryDateTime: z.date().optional().nullable(),
     mileage: z.coerce.number({ invalid_type_error: 'El kilometraje debe ser numérico.' }).int('El kilometraje debe ser un número entero.').min(0, 'El kilometraje no puede ser negativo.').optional(),
-    notes: z.string().optional(),
     technicianId: z.string().optional(),
     technicianName: z.string().nullable().optional(),
     serviceItems: z.array(serviceItemSchema).min(1, 'Debe agregar al menos un ítem de servicio.'),

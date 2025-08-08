@@ -248,7 +248,6 @@ function ServiceFormContent({
       if (fieldName.includes('vehicleConditions')) context = 'Condiciones del Vehículo';
       if (fieldName.includes('customerItems')) context = 'Pertenencias del Cliente';
       if (fieldName.includes('safetyInspection.inspectionNotes')) context = 'Observaciones de Inspección';
-      if (fieldName.includes('notes')) context = 'Notas Adicionales';
       const result = await enhanceText({ text: currentValue, context });
       setValue(fieldName, result, { shouldDirty: true });
       toast({ title: "Texto Mejorado", description: "La IA ha optimizado la redacción." });

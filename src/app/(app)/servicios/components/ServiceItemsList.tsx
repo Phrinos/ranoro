@@ -98,32 +98,6 @@ export function ServiceItemsList({
               </Button>
             </div>
           )}
-          
-          <FormField
-            control={control}
-            name="notes"
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="flex justify-between items-center w-full">
-                        <span>Notas Adicionales del Servicio</span>
-                        {!isReadOnly && handleEnhanceText && (
-                            <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("notes")} disabled={isEnhancingText === "notes" || !field.value}>
-                                {isEnhancingText === "notes" ? <Loader2 className="animate-spin h-4 w-4" /> : <BrainCircuit className="h-4 w-4" />}
-                                <span className="ml-2 hidden sm:inline">Mejorar</span>
-                            </Button>
-                        )}
-                    </FormLabel>
-                    <FormControl>
-                        <Textarea
-                            placeholder="Notas internas, para el cliente, o detalles adicionales..."
-                            disabled={isReadOnly}
-                            {...field}
-                            value={field.value ?? ''}
-                        />
-                    </FormControl>
-                </FormItem>
-            )}
-        />
         </div>
       </CardContent>
     </Card>
