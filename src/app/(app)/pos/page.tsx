@@ -5,9 +5,8 @@
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, Copy, MessageSquare, Share2, Wallet } from "lucide-react";
-import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
 import { TicketContent } from '@/components/ticket-content';
-import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, User, Payment } from '@/types'; 
+import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User, Payment } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { operationsService, inventoryService, adminService, saleService } from '@/lib/services';
@@ -21,13 +20,12 @@ import { VentasPosContent } from './components/ventas-pos-content';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { isToday, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 
 
-export default function PosPage() {
+export default function PosPageComponent() {
   const { toast } = useToast();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
   // States for data from Firestore
@@ -94,54 +92,7 @@ export default function PosPage() {
 
   const handleReprintSale = useCallback((sale: SaleReceipt) => { setSelectedSaleForReprint(sale); setIsReprintDialogOpen(true); }, []);
   
-  const handleCopyAsImage = useCallback(async (isForSharing: boolean = false) => {
-    if (!ticketContentRef.current || !selectedSaleForReprint) return null;
-    const html2canvas = (await import('html2canvas')).default;
-    try {
-      const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error("Could not create blob from canvas.");
-      
-      if (isForSharing) {
-        return new File([blob], `ticket_${selectedSaleForReprint.id}.png`, { type: 'image/png' });
-      } else {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        toast({ title: "Copiado", description: "La imagen ha sido copiada." });
-        return null;
-      }
-    } catch (e) {
-      console.error('Error handling image:', e);
-      toast({ title: "Error", description: "No se pudo procesar la imagen del ticket.", variant: "destructive" });
-      return null;
-    }
-  }, [selectedSaleForReprint, toast]);
-  
-  const handleShare = async () => {
-    const imageFile = await handleCopyAsImage(true);
-    if (imageFile && navigator.share) {
-      try {
-        await navigator.share({
-          files: [imageFile],
-          title: 'Ticket de Venta',
-          text: `Ticket de tu compra en ${workshopInfo?.name || 'nuestro taller'}.`,
-        });
-      } catch (error) {
-        if(!String(error).includes('AbortError')) {
-           toast({ title: 'No se pudo compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
-           handleCopySaleForWhatsapp(selectedSaleForReprint!);
-        }
-      }
-    } else {
-        // Fallback for desktop browsers that don't support navigator.share with files
-        handleCopySaleForWhatsapp(selectedSaleForReprint!);
-    }
-  };
-
-  const handlePrint = () => {
-    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
-  };
-
-  const handleCopySaleForWhatsapp = useCallback((sale: SaleReceipt) => {
+  const handleCopyServiceForWhatsapp = useCallback((sale: SaleReceipt) => {
     const workshopName = workshopInfo?.name || 'nuestro taller';
     const message = `Hola ${sale.customerName || 'Cliente'}, aquí tienes los detalles de tu compra en ${workshopName}.
 Folio de Venta: ${sale.id}
@@ -158,8 +109,8 @@ Total: ${formatCurrency(sale.totalAmount)}
     setIsPaymentDialogOpen(true);
   }, []);
 
-  const handleUpdatePaymentDetails = useCallback(async (saleId: string, paymentDetails: any) => {
-    await saleService.updateSale(saleId, paymentDetails);
+  const handleUpdatePaymentDetails = useCallback(async (saleId: string, paymentDetails: PaymentDetailsFormValues) => {
+    await saleService.updateSale(saleId, { payments: paymentDetails.payments });
     toast({ title: "Detalles de Pago Actualizados" });
     setIsPaymentDialogOpen(false);
   }, [toast]);
@@ -183,16 +134,20 @@ Total: ${formatCurrency(sale.totalAmount)}
         onEditPayment={handleOpenPaymentDialog}
         onDeleteSale={handleDeleteSale}
       />
-
-      <DocumentPreviewDialog
-        open={isReprintDialogOpen && !!selectedSaleForReprint}
-        onOpenChange={setIsReprintDialogOpen}
-        title="Reimprimir Ticket"
-      >
-        <div id="printable-ticket">
-          {selectedSaleForReprint && <TicketContent ref={ticketContentRef} sale={selectedSaleForReprint} previewWorkshopInfo={workshopInfo || undefined} />}
-        </div>
-      </DocumentPreviewDialog>
+      
+      {selectedSaleForReprint && (
+          <UnifiedPreviewDialog
+            open={isReprintDialogOpen}
+            onOpenChange={setIsReprintDialogOpen}
+            title="Reimprimir Ticket"
+            documentType="text"
+            textContent={
+              ReactDOMServer.renderToString(
+                <TicketContent sale={selectedSaleForReprint} previewWorkshopInfo={workshopInfo || undefined} />
+              )
+            }
+          />
+      )}
       
       {selectedSale && <ViewSaleDialog
         open={isViewDialogOpen} 
@@ -205,7 +160,7 @@ Total: ${formatCurrency(sale.totalAmount)}
         onCancelSale={handleCancelSale}
         onDeleteSale={handleDeleteSale}
         onPaymentUpdate={handleUpdatePaymentDetails} 
-        onSendWhatsapp={handleCopySaleForWhatsapp} 
+        onSendWhatsapp={handleCopyServiceForWhatsapp} 
       />}
 
       {saleToEditPayment && (
@@ -213,7 +168,7 @@ Total: ${formatCurrency(sale.totalAmount)}
           open={isPaymentDialogOpen}
           onOpenChange={setIsPaymentDialogOpen}
           record={saleToEditPayment}
-          onConfirm={handleUpdatePaymentDetails}
+          onConfirm={(id, details) => handleUpdatePaymentDetails(id, details as PaymentDetailsFormValues)}
           recordType="sale"
         />
       )}
