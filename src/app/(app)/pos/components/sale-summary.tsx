@@ -72,16 +72,27 @@ export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSumma
         </CardHeader>
         <CardContent className="pt-0 flex flex-col space-y-4 flex-grow">
           <PaymentSection onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios} />
-          <div className="w-full mt-auto space-y-2">
-            <div className="text-lg w-full flex justify-between pt-4 border-t"><span>Subtotal:</span> <span className="font-semibold">{formatCurrency(subTotal)}</span></div>
-            <div className="text-sm text-muted-foreground w-full flex justify-between"><span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span> <span className="font-semibold">{formatCurrency(tax)}</span></div>
-            <div className="text-2xl font-bold w-full flex justify-between pt-2 border-t"><span>Total:</span> <span className="text-primary">{formatCurrency(total)}</span></div>
+          
+          <div className="w-full mt-auto space-y-2 text-sm border-t pt-4">
+              <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Subtotal:</span>
+                  <span className="font-medium">{formatCurrency(subTotal)}</span>
+              </div>
+               <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
+                  <span className="font-medium">{formatCurrency(tax)}</span>
+              </div>
+               <div className="flex justify-between items-center text-lg font-bold pt-1 mt-1 border-t">
+                  <span>Total:</span>
+                  <span className="text-primary">{formatCurrency(total)}</span>
+              </div>
           </div>
+
           <Button
             type="submit"
             form="pos-form"
             disabled={formState.isSubmitting || !hasItems}
-            className="w-full h-12 text-lg"
+            className="w-full h-12 text-lg mt-4"
           >
             {formState.isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
             Completar Venta ({formatCurrency(total)})

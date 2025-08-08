@@ -16,7 +16,7 @@ import { AddSupplyDialog } from './add-supply-dialog';
 import { capitalizeWords, formatCurrency, cn } from '@/lib/utils';
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
-import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
+import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
 import { inventoryService } from "@/lib/services";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -174,26 +174,8 @@ export function ServiceItemCard({
                     </div>
                 )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="space-y-4">
                 <FormField
-                    control={control}
-                    name={`serviceItems.${serviceIndex}.name`}
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>Nombre del Servicio</FormLabel>
-                            <FormControl>
-                                <Input
-                                    placeholder="Afinación Mayor"
-                                    {...field}
-                                    disabled={isReadOnly}
-                                    onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
-                                    className={cn("bg-white", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
-                                />
-                            </FormControl>
-                        </FormItem>
-                    )}
-                />
-                 <FormField
                     control={control}
                     name={`serviceItems.${serviceIndex}.serviceType`}
                     render={({ field }) => (
@@ -210,28 +192,46 @@ export function ServiceItemCard({
                     </FormItem>
                     )}
                 />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <FormField
-                    control={control}
-                    name={`serviceItems.${serviceIndex}.price`}
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Precio Cliente (IVA Inc.)</FormLabel>
-                            <FormControl>
-                                <Input
-                                    type="number"
-                                    placeholder="0.00"
-                                    {...field}
-                                    value={field.value ?? ''}
-                                    onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                                    disabled={isReadOnly}
-                                    className="bg-white"
-                                />
-                            </FormControl>
-                        </FormItem>
-                    )}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                        control={control}
+                        name={`serviceItems.${serviceIndex}.name`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>Nombre del Servicio</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="Afinación Mayor"
+                                        {...field}
+                                        disabled={isReadOnly}
+                                        onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
+                                        className={cn("bg-white", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
+                                    />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={control}
+                        name={`serviceItems.${serviceIndex}.price`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Precio Cliente (IVA Inc.)</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        placeholder="0.00"
+                                        {...field}
+                                        value={field.value ?? ''}
+                                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                        disabled={isReadOnly}
+                                        className="bg-white"
+                                    />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                </div>
             </div>
 
             <div className="mt-4">
@@ -277,10 +277,12 @@ export function ServiceItemCard({
                             </div>
                         )
                     })}
-                    {!isReadOnly && (
-                        <Button type="button" variant="outline" size="sm" className="bg-white hover:bg-gray-100" onClick={() => setIsAddSupplyDialogOpen(true) }>
-                            <PlusCircle className="mr-2 h-4 w-4"/> Añadir Insumo
-                        </Button>
+                     {!isReadOnly && (
+                        <div className="flex justify-end">
+                            <Button type="button" variant="outline" size="sm" className="bg-white hover:bg-gray-100" onClick={() => setIsAddSupplyDialogOpen(true) }>
+                                <PlusCircle className="mr-2 h-4 w-4"/> Añadir Insumo
+                            </Button>
+                        </div>
                     )}
                 </div>
             </div>

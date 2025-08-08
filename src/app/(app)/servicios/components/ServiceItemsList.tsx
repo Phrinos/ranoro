@@ -25,7 +25,7 @@ interface ServiceItemsListProps {
   categories: InventoryCategory[];
   suppliers: Supplier[];
   isEnhancingText?: string | null;
-  handleEnhanceText?: (fieldName: keyof ServiceFormValues | `serviceItems.${number}.suppliesUsed.${number}.description` | 'notes' | `serviceItems.${number}.description`) => void;
+  handleEnhanceText?: (fieldName: any) => void;
 }
 
 export function ServiceItemsList({
@@ -94,7 +94,7 @@ export function ServiceItemsList({
                 }
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Trabajo/Concepto
+                Añadir Trabajo
               </Button>
             </div>
           )}
