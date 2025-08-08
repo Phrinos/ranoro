@@ -5,7 +5,7 @@ import { onSnapshot, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebaseClient";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { SidebarProvider } from "@/hooks/use-sidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
