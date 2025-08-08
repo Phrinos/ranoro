@@ -26,10 +26,13 @@ import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 // Lazy load complex components
 const ServiceItemsList = lazy(() => import('./ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
-const PaymentSection = lazy(() => import('@/app/(app)/pos/components/payment-section').then(module => ({ default: module.PaymentSection })));
+const PaymentSection = lazy(() => import('./PaymentSection').then(module => ({ default: module.PaymentSection })));
 const VehicleSelectionCard = lazy(() => import('./VehicleSelectionCard').then(module => ({ default: module.VehicleSelectionCard })));
 const SafetyChecklist = lazy(() => import('./SafetyChecklist').then(module => ({ default: module.SafetyChecklist })));
 const PhotoReportTab = lazy(() => import('./PhotoReportTab').then(module => ({ default: module.PhotoReportTab })));
@@ -154,6 +157,11 @@ function ServiceFormContent({
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
+  const [validationIndex, setValidationIndex] = useState<number | null>(null);
+  const [validationFolio, setValidationFolio] = useState('');
+  const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
   
   const { handleSubmit, getValues, setValue, watch, formState } = methods;
 
@@ -171,7 +179,7 @@ function ServiceFormContent({
   const canEditAll = userRole === 'Admin' || userRole === 'Superadministrador';
   
   // Logic to determine if fields should be read-only
-  const isReadOnly = (initialData?.status === 'Cancelado' || initialData?.status === 'Entregado') && !canEditAll;
+  const isReadOnly = (initialData?.status === 'Cancelado') && !canEditAll;
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
@@ -267,6 +275,31 @@ function ServiceFormContent({
     setIsImageViewerOpen(true);
   };
   
+    const handleOpenValidateDialog = (index: number) => {
+        setValidationIndex(index);
+        setValidationFolio('');
+        setIsValidationDialogOpen(true);
+    };
+
+    const handleConfirmValidation = () => {
+        if (validationIndex === null) return;
+        const originalFolio = watch(`payments.${validationIndex}.folio`);
+        
+        if (validationFolio === originalFolio) {
+        setValidatedFolios(prev => ({ ...prev, [validationIndex]: true }));
+        toast({ title: "Folio Validado", description: "El folio coincide correctamente." });
+        } else {
+        setValidatedFolios(prev => {
+            const newValidated = { ...prev };
+            delete newValidated[validationIndex];
+            return newValidated;
+        });
+        toast({ title: "Error de Validación", description: "Los folios no coinciden. Por favor, verifique.", variant: "destructive" });
+        }
+        setIsValidationDialogOpen(false);
+    };
+
+
   const watchedStatus = watch('status');
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
   const isSubmitDisabled = isReadOnly || formState.isSubmitting;
@@ -274,7 +307,7 @@ function ServiceFormContent({
   return (
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
       <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
-        <ServiceDetailsCard isReadOnly={isReadOnly || !canEditAll} users={technicians} serviceTypes={serviceTypes} />
+        <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
         <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
 
         {showTabs ? (
@@ -288,7 +321,7 @@ function ServiceFormContent({
                 <TabsContent value="servicio" className="mt-6">
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
                         <div className="lg:col-span-3"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense></div>
-                        <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><PaymentSection/></Suspense></div>
+                        <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><PaymentSection onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense></div>
                     </div>
                 </TabsContent>
                 <TabsContent value="entrega" className="mt-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature}/></Suspense></TabsContent>
@@ -298,7 +331,7 @@ function ServiceFormContent({
         ) : (
              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start mt-6">
                 <div className="lg:col-span-3"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense></div>
-                <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><PaymentSection/></Suspense></div>
+                <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><PaymentSection onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense></div>
              </div>
         )}
       </div>
@@ -370,6 +403,31 @@ function ServiceFormContent({
             isCompletionFlow={true}
           />
       )}
+
+      <AlertDialog open={isValidationDialogOpen} onOpenChange={setIsValidationDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Validar Folio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Para evitar errores, por favor ingrese nuevamente el folio del voucher o referencia.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="folio-validation-input">Reingresar Folio</Label>
+            <Input
+              id="folio-validation-input"
+              value={validationFolio}
+              onChange={(e) => setValidationFolio(e.target.value)}
+              className="mt-2"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmValidation}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }

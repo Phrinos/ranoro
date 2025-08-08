@@ -1,8 +1,8 @@
-
+// src/app/(app)/pos/nuevo/page.tsx
 
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PosForm } from '../components/pos-form';
@@ -22,7 +22,10 @@ import { nanoid } from 'nanoid';
 import html2canvas from 'html2canvas';
 import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export default function NuevaVentaPage() {
   const { toast } = useToast(); 
@@ -38,6 +41,10 @@ export default function NuevaVentaPage() {
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
 
+  const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
+  const [validationIndex, setValidationIndex] = useState<number | null>(null);
+  const [validationFolio, setValidationFolio] = useState('');
+  const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
@@ -47,6 +54,8 @@ export default function NuevaVentaPage() {
       payments: [{ method: 'Efectivo', amount: undefined }],
     },
   });
+
+  const { watch } = methods;
 
   useEffect(() => {
     const unsubs = [
@@ -187,6 +196,29 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
   
+  const handleOpenValidateDialog = (index: number) => {
+    setValidationIndex(index);
+    setValidationFolio('');
+    setIsValidationDialogOpen(true);
+  };
+
+  const handleConfirmValidation = () => {
+    if (validationIndex === null) return;
+    const originalFolio = watch(`payments.${validationIndex}.folio`);
+    
+    if (validationFolio === originalFolio) {
+      setValidatedFolios(prev => ({ ...prev, [validationIndex]: true }));
+      toast({ title: "Folio Validado", description: "El folio coincide correctamente." });
+    } else {
+      setValidatedFolios(prev => {
+          const newValidated = { ...prev };
+          delete newValidated[validationIndex];
+          return newValidated;
+      });
+      toast({ title: "Error de Validación", description: "Los folios no coinciden. Por favor, verifique.", variant: "destructive" });
+    }
+    setIsValidationDialogOpen(false);
+  };
 
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
@@ -210,6 +242,8 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           onInventoryItemCreated={handleNewInventoryItemCreated}
           categories={allCategories}
           suppliers={allSuppliers}
+          onOpenValidateDialog={handleOpenValidateDialog}
+          validatedFolios={validatedFolios}
         />
       </FormProvider>
 
@@ -229,6 +263,31 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           </div>
         </DocumentPreviewDialog>
       )}
+
+      <AlertDialog open={isValidationDialogOpen} onOpenChange={setIsValidationDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Validar Folio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Para evitar errores, por favor ingrese nuevamente el folio del voucher o referencia.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="folio-validation-input">Reingresar Folio</Label>
+            <Input
+              id="folio-validation-input"
+              value={validationFolio}
+              onChange={(e) => setValidationFolio(e.target.value)}
+              className="mt-2"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmValidation}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -26,7 +26,12 @@ import { PaymentSection } from './payment-section';
 
 const IVA_RATE = 0.16;
 
-export function SaleSummary() {
+interface SaleSummaryProps {
+  onOpenValidateDialog: (index: number) => void;
+  validatedFolios: Record<number, boolean>;
+}
+
+export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSummaryProps) {
   const { control, watch, formState, getValues, setValue } = useFormContext();
   
   const watchedItems = watch("items");
@@ -66,7 +71,7 @@ export function SaleSummary() {
         </div>
         </CardHeader>
         <CardContent className="pt-0 flex flex-col space-y-4 flex-grow">
-          <PaymentSection />
+          <PaymentSection onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios} />
           <div className="w-full mt-auto space-y-2">
             <div className="text-lg w-full flex justify-between pt-4 border-t"><span>Subtotal:</span> <span className="font-semibold">{formatCurrency(subTotal)}</span></div>
             <div className="text-sm text-muted-foreground w-full flex justify-between"><span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span> <span className="font-semibold">{formatCurrency(tax)}</span></div>

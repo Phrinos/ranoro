@@ -16,7 +16,9 @@ interface POSFormProps {
   suppliers: Supplier[];
   onSaleComplete: (saleData: any) => void;
   onInventoryItemCreated?: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
-  initialData?: SaleReceipt | null; // Added to support editing
+  initialData?: SaleReceipt | null;
+  onOpenValidateDialog: (index: number) => void;
+  validatedFolios: Record<number, boolean>;
 }
 
 const IVA_RATE = 0.16;
@@ -27,7 +29,9 @@ export function PosForm({
   suppliers, 
   onSaleComplete, 
   onInventoryItemCreated,
-  initialData, // Added prop
+  initialData,
+  onOpenValidateDialog,
+  validatedFolios,
 }: POSFormProps) {
   const methods = useFormContext();
   const { setValue, getValues, control } = methods;
@@ -73,40 +77,33 @@ export function PosForm({
   
     useEffect(() => {
         const currentItems = getValues('items') || [];
-        const totalWithoutCommission = currentItems.reduce((acc: number, item: any) => {
-            if (item.inventoryItemId !== 'COMMISSION_FEE') {
-                return acc + (item.totalPrice || 0);
-            }
-            return acc;
-        }, 0) || 0;
         
+        let newItems = currentItems.filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE');
+        
+        const totalWithoutCommission = newItems.reduce((acc: number, item: any) => acc + (item.totalPrice || 0), 0);
+
         let commissionAmount = 0;
         const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
         const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
         
-        // Corrected commission calculation
         if (hasCardPayment) {
-          commissionAmount += totalWithoutCommission * 0.041; // 4.1% for regular card
+          commissionAmount += totalWithoutCommission * 0.041;
         }
         if (hasMSIPayment) {
-          commissionAmount += totalWithoutCommission * 0.12; // 12% for MSI card
+          commissionAmount += totalWithoutCommission * 0.12;
         }
         
-        // Remove existing commission to recalculate
-        let newItems = currentItems.filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE');
-
-        if (hasCardPayment || hasMSIPayment) {
+        if (commissionAmount > 0) {
             newItems.push({
                 inventoryItemId: 'COMMISSION_FEE',
                 itemName: 'Comisión de Tarjeta',
                 quantity: 1,
                 unitPrice: commissionAmount,
-                totalPrice: 0,
+                totalPrice: commissionAmount, // Commission is added to the total
                 isService: true,
             });
         }
         
-        // Use a simple JSON comparison to avoid infinite loops
         if (JSON.stringify(newItems) !== JSON.stringify(currentItems)) {
             setValue('items', newItems, { shouldDirty: true });
         }
@@ -115,7 +112,7 @@ export function PosForm({
 
   return (
     <>
-      <div id="pos-form" className="space-y-6">
+      <form id="pos-form" onSubmit={methods.handleSubmit(onSaleComplete)} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           {/* Columna Izquierda: Lista de Artículos */}
           <div className="lg:col-span-3">
@@ -124,10 +121,10 @@ export function PosForm({
 
           {/* Columna Derecha: Pago y Resumen */}
           <div className="lg:col-span-2 space-y-6">
-            <SaleSummary />
+            <SaleSummary onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios}/>
           </div>
         </div>
-      </div>
+      </form>
 
       <AddItemDialog
         open={isAddItemDialogOpen}

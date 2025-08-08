@@ -1,5 +1,3 @@
-
-
 // src/schemas/pos-form-schema.ts
 import * as z from 'zod';
 
@@ -26,17 +24,8 @@ export const posFormSchema = z.object({
   payments: z.array(paymentSchema).min(1, 'Debe agregar al menos un método de pago.'),
   cardCommission: z.number().optional(), // Add this field
 }).superRefine((data, ctx) => {
-    // Total amount charged to the customer
     const totalItems = data.items.reduce((acc, item) => acc + item.totalPrice, 0);
     const totalPayments = data.payments.reduce((acc, payment) => acc + (payment.amount || 0), 0);
-
-    if (totalPayments > totalItems + 0.01) { // Allow for tiny float discrepancies
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `El pago (${totalPayments.toFixed(2)}) no puede ser mayor al total (${totalItems.toFixed(2)}).`,
-            path: ['payments'],
-        });
-    }
 
     if (Math.abs(totalItems - totalPayments) > 0.01) {
         ctx.addIssue({
@@ -51,12 +40,10 @@ export const posFormSchema = z.object({
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: 'El folio es obligatorio para pagos con tarjeta.',
-                path: [`payments`, index, 'folio'],
+                path: [`payments.${index}.folio`],
             });
         }
     });
 });
 
 export type POSFormValues = z.infer<typeof posFormSchema>;
-
-    
