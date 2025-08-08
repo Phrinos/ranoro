@@ -30,7 +30,7 @@ export default function CotizacionesTabContent({
   const { toast } = useToast();
   
   const { 
-    filteredData, 
+    paginatedData, 
     ...tableManager 
   } = useTableManager<ServiceRecord>({
     initialData: services,
@@ -77,9 +77,9 @@ export default function CotizacionesTabContent({
               </Button>
           </div>
       </div>
-       {filteredData.length > 0 ? (
+       {paginatedData.length > 0 ? (
           <div className="space-y-4">
-              {filteredData.map(quote => (
+              {paginatedData.map(quote => (
                   <ServiceAppointmentCard 
                     key={quote.id}
                     service={quote}
