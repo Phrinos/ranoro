@@ -97,7 +97,7 @@ export function ServiceForm({
         serviceHistory={serviceHistory}
         onSubmit={onSave}
         onClose={handleClose}
-        isReadOnly={false}
+        isReadOnly={initialData?.status === 'Entregado' || initialData?.status === 'Cancelado'}
         mode={mode}
         onVehicleCreated={onVehicleCreated}
         onDelete={onDelete}
@@ -164,6 +164,10 @@ function ServiceFormContent({
   const isQuote = initialData?.status === 'Cotizacion' || mode === 'quote';
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
+    if (isReadOnly && values.status === 'Entregado') { // Allow saving changes on delivered services
+      await onSubmit(values);
+      return;
+    }
     if (isReadOnly) return;
     
     if (values.status === 'Entregado' && initialData?.status !== 'Entregado') {
@@ -258,7 +262,7 @@ function ServiceFormContent({
   
   const watchedStatus = watch('status');
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
-  const isSubmitDisabled = isReadOnly || formState.isSubmitting || !formState.isValid;
+  const isSubmitDisabled = (isReadOnly && initialData?.status !== 'Entregado') || formState.isSubmitting;
 
   return (
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
@@ -363,7 +367,6 @@ function ServiceFormContent({
           onOpenChange={setIsPaymentDialogOpen}
           record={serviceToComplete}
           onConfirm={(id, details) => handleCompleteService(details)}
-          recordType="service"
           isCompletionFlow={true}
           />
       )}

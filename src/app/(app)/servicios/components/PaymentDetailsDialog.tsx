@@ -79,7 +79,6 @@ interface PaymentDetailsDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   record: ServiceRecord | SaleReceipt;
   onConfirm: (recordId: string, paymentDetails: PaymentDetailsFormValues) => void;
-  recordType?: 'service' | 'sale';
   isCompletionFlow?: boolean;
 }
 
@@ -88,7 +87,6 @@ export function PaymentDetailsDialog({
   onOpenChange,
   record,
   onConfirm,
-  recordType,
   isCompletionFlow = false,
 }: PaymentDetailsDialogProps) {
   const { toast } = useToast();
@@ -208,12 +206,12 @@ export function PaymentDetailsDialog({
                               <FormField control={control} name={`payments.${index}.method`} render={({ field }) => (<FormItem className="w-48"><FormLabel>Método</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(method => (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method as any) === -1 && method !== selectedMethod}><div className="flex items-center gap-2">{React.createElement(paymentMethodIcons[method], {className: "h-4 w-4"})}<span>{method}</span></div></SelectItem>))}</SelectContent></Select></FormItem>)}/>
                               {fields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
                           </div>
-                          {showFolio && (
-                              <div className="flex items-end gap-2 mt-2">
-                                <FormField control={control} name={`payments.${index}.folio`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><div className="relative"><Input placeholder={folioLabel} {...field} value={field.value ?? ''} /><FormMessage />{isFolioValidated && <CheckCircle className="absolute right-2 top-2.5 h-5 w-5 text-green-500" />}</div></FormControl></FormItem>)} />
-                                {(selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI') && (
-                                  <Button type="button" variant="secondary" size="sm" onClick={() => handleOpenValidateDialog(index)}>Validar</Button>
-                                )}
+                           {showFolio && (
+                               <div className="flex items-end gap-2 mt-2">
+                                  <FormField control={control} name={`payments.${index}.folio`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><div className="relative"><Input placeholder={folioLabel} {...field} value={field.value ?? ''} /><FormMessage />{isFolioValidated && <CheckCircle className="absolute right-2 top-2.5 h-5 w-5 text-green-500" />}</div></FormControl></FormItem>)} />
+                                  {(selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI') && (
+                                    <Button type="button" variant="secondary" size="sm" onClick={() => handleOpenValidateDialog(index)}>Validar</Button>
+                                  )}
                               </div>
                           )}
                            <FormMessage className="mt-2 text-red-500">{form.formState.errors?.payments?.[index]?.amount?.message}</FormMessage>
