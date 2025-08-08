@@ -30,6 +30,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
+const MovimientosContent = lazy(() => import('./components/movimientos-content').then(m => ({ default: m.MovimientosContent })));
 
 
 function FinanzasPageComponent({ tab }: { tab?: string }) {
@@ -268,6 +269,7 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
                 </div>
             )
         },
+        { value: 'movimientos', label: 'Movimientos', content: <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}><MovimientosContent allSales={allSales} allServices={allServices} allInventory={allInventory}/></Suspense>}
     ];
     
     return (
