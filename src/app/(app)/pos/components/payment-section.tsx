@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from 'react';
@@ -86,7 +85,7 @@ export function PaymentSection() {
                         {fields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
                     </div>
                     {showFolio && (
-                            <FormField
+                        <FormField
                             control={control}
                             name={`payments.${index}.folio`}
                             render={({ field }) => (
@@ -96,7 +95,8 @@ export function PaymentSection() {
                                     </FormControl>
                                 </FormItem>
                             )}
-                        )}
+                        />
+                    )}
                     <FormField
                         control={control}
                         name={`payments.${index}.amount`}
