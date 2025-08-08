@@ -50,7 +50,7 @@ export function ServiceItemsList({
       <CardHeader>
         <CardTitle>Trabajos y Refacciones</CardTitle>
         <CardDescription>
-          Añade los trabajos a realizar y los insumos necesarios para cada uno.
+          Añade trabajos e insumos
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col flex-grow space-y-4 pt-0">
