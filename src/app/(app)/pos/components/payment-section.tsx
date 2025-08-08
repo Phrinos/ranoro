@@ -97,11 +97,12 @@ export function PaymentSection() {
                             )}
                         />
                     )}
-                    <FormField
-                        control={control}
-                        name={`payments.${index}.amount`}
-                        render={() => <FormMessage />}
-                    />
+                     <FormMessage>
+                        {control.getFieldState(`payments.${index}.amount`).error?.message}
+                    </FormMessage>
+                    <FormMessage>
+                         {control.getFieldState(`payments.${index}.folio`).error?.message}
+                    </FormMessage>
                 </div>
             );
         })}

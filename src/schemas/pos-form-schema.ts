@@ -47,7 +47,7 @@ export const posFormSchema = z.object({
     }
 
     data.payments.forEach((payment, index) => {
-        if ((payment.method === 'Tarjeta' || payment.method === 'Tarjeta MSI') && !payment.folio) {
+        if ((payment.method === 'Tarjeta' || payment.method === 'Tarjeta MSI') && (!payment.folio || payment.folio.trim() === '')) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: 'El folio es obligatorio para pagos con tarjeta.',
