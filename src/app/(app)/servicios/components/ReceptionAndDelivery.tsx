@@ -99,11 +99,9 @@ export const ReceptionAndDelivery = ({
            <div className="space-y-2">
                <div className="flex justify-between items-center">
                   <FormLabel>Fecha y Hora de Ingreso</FormLabel>
-                  {!isReadOnly && (
-                      <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingReception(!isEditingReception)}>
-                          <Edit className="h-4 w-4" />
-                      </Button>
-                  )}
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingReception(!isEditingReception)}>
+                      <Edit className="h-4 w-4" />
+                  </Button>
                </div>
                {isEditingReception ? (
                   <FormField
@@ -115,7 +113,6 @@ export const ReceptionAndDelivery = ({
                               type="datetime-local"
                               value={field.value ? format(field.value, "yyyy-MM-dd'T'HH:mm") : ''}
                               onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
-                              disabled={isReadOnly}
                           />
                       </FormControl>
                     )}
@@ -135,7 +132,6 @@ export const ReceptionAndDelivery = ({
                   <Select
                   onValueChange={field.onChange}
                   value={field.value}
-                  disabled={isReadOnly}
                   >
                   <FormControl>
                       <SelectTrigger>
@@ -161,14 +157,12 @@ export const ReceptionAndDelivery = ({
               <FormItem>
                 <FormLabel className="flex justify-between items-center w-full">
                   <span>Condiciones del Vehículo</span>
-                  {!isReadOnly && (
-                    <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}>
                       {isEnhancingText === "vehicleConditions" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                    </Button>
-                  )}
+                  </Button>
                 </FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} disabled={isReadOnly} className="min-h-[100px]" />
+                  <Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} className="min-h-[100px]" />
                 </FormControl>
               </FormItem>
             )}
@@ -180,14 +174,12 @@ export const ReceptionAndDelivery = ({
               <FormItem>
                 <FormLabel className="flex justify-between items-center w-full">
                   <span>Pertenencias del Cliente</span>
-                  {!isReadOnly && (
-                    <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}>
                       {isEnhancingText === "customerItems" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                    </Button>
-                  )}
+                  </Button>
                 </FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} disabled={isReadOnly} className="min-h-[100px]" />
+                  <Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} className="min-h-[100px]" />
                 </FormControl>
               </FormItem>
             )}
@@ -212,11 +204,9 @@ export const ReceptionAndDelivery = ({
                     </div>
                 )}
             </div>
-             {!isReadOnly && (
-              <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('reception')}>
+             <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('reception')}>
                 <Signature className="mr-2 h-4 w-4" />{customerSignatureReception ? 'Cambiar Firma de Ingreso' : 'Capturar Firma de Ingreso'}
               </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -233,11 +223,9 @@ export const ReceptionAndDelivery = ({
             <div className="space-y-2">
                  <div className="flex justify-between items-center">
                     <FormLabel>Fecha y Hora de Salida</FormLabel>
-                    {!isReadOnly && (
-                        <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingDelivery(!isEditingDelivery)}>
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                    )}
+                    <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingDelivery(!isEditingDelivery)}>
+                        <Edit className="h-4 w-4" />
+                    </Button>
                  </div>
                  {isEditingDelivery ? (
                     <FormField
@@ -249,7 +237,6 @@ export const ReceptionAndDelivery = ({
                                 type="datetime-local"
                                 value={field.value ? format(field.value, "yyyy-MM-dd'T'HH:mm") : ''}
                                 onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
-                                disabled={isReadOnly}
                             />
                         </FormControl>
                       )}
@@ -280,11 +267,9 @@ export const ReceptionAndDelivery = ({
                   </div>
                 )}
               </div>
-              {!isReadOnly && (
-                <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('delivery')}>
+              <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('delivery')}>
                   <Signature className="mr-2 h-4 w-4" />{customerSignatureDelivery ? 'Cambiar Firma de Salida' : 'Capturar Firma de Salida'}
                 </Button>
-              )}
             </div>
         </CardContent>
       </Card>

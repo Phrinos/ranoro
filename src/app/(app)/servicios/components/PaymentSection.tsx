@@ -149,7 +149,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
                                           <div className="relative">
                                               <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                               <FormControl>
-                                                  <Input type="number" step="0.01" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} placeholder="0.00" className="pl-8" />
+                                                  <Input type="number" step="0.01" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} placeholder="0.00" className="pl-8" disabled={isReadOnly} />
                                               </FormControl>
                                           </div>
                                       </FormItem>

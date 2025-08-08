@@ -34,11 +34,11 @@ export function PhotoReportTab({ isReadOnly, serviceId, onPhotoUploaded, onViewI
                      <Card key={field.id} className="p-4 bg-muted/30">
                          <div className="flex justify-between items-start mb-4">
                             <h4 className="text-base font-semibold">Reporte #{index + 1}</h4>
-                            {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>}
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>
                         </div>
                         <div className="space-y-4">
                             <FormField control={control} name={`photoReports.${index}.description`} render={({ field }) => (
-                                <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea placeholder="Describa el propósito de estas fotos..." {...field} disabled={isReadOnly}/></FormControl></FormItem>
+                                <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea placeholder="Describa el propósito de estas fotos..." {...field} /></FormControl></FormItem>
                             )}/>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 {(watch(`photoReports.${index}.photos`) || []).map((photoUrl: string, pIndex: number) => (
@@ -48,14 +48,12 @@ export function PhotoReportTab({ isReadOnly, serviceId, onPhotoUploaded, onViewI
                                     </button>
                                 ))}
                             </div>
-                            {!isReadOnly && <PhotoUploader reportIndex={index} serviceId={serviceId} onUploadComplete={onPhotoUploaded} photosLength={(watch(`photoReports.${index}.photos`) || []).length} maxPhotos={10} />}
+                            <PhotoUploader reportIndex={index} serviceId={serviceId} onUploadComplete={onPhotoUploaded} photosLength={(watch(`photoReports.${index}.photos`) || []).length} maxPhotos={10} />
                         </div>
                      </Card>
                 ))}
-                {!isReadOnly && <Button type="button" variant="outline" onClick={() => append({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: []})}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Reporte</Button>}
+                <Button type="button" variant="outline" onClick={() => append({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: []})}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Reporte</Button>
             </CardContent>
         </Card>
     );
 };
-
-    

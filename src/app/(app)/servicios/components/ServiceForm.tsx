@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/service-form.tsx
 "use client";
 
@@ -97,7 +96,7 @@ export function ServiceForm({
         serviceHistory={serviceHistory}
         onSubmit={onSave}
         onClose={handleClose}
-        isReadOnly={initialData?.status === 'Cancelado'}
+        isReadOnly={initialData?.status === 'Cancelado'} // Only cancelled services are truly read-only
         mode={mode}
         onVehicleCreated={onVehicleCreated}
         onDelete={onDelete}
@@ -166,6 +165,7 @@ function ServiceFormContent({
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) return;
     
+    // If user tries to save while status is "Entregado", trigger the completion dialog instead.
     if (values.status === 'Entregado' && initialData?.status !== 'Entregado') {
         setServiceToComplete({ ...(initialData || {}), ...values } as ServiceRecord);
         setIsPaymentDialogOpen(true);
@@ -305,7 +305,7 @@ function ServiceFormContent({
           {(onDelete || onCancelService) && initialData?.id && (
             <ConfirmDialog
                 triggerButton={
-                    <Button variant="destructive" type="button" disabled={isReadOnly || initialData?.status === 'Cancelado'}>
+                    <Button variant="destructive" type="button" disabled={initialData?.status === 'Cancelado'}>
                         {isQuote ? <Trash2 className="mr-2 h-4 w-4"/> : <Ban className="mr-2 h-4 w-4"/>}
                         {isQuote ? 'Eliminar Cotización' : 'Cancelar Servicio'}
                     </Button>
@@ -362,7 +362,7 @@ function ServiceFormContent({
           open={isPaymentDialogOpen}
           onOpenChange={setIsPaymentDialogOpen}
           record={serviceToComplete}
-          onConfirm={(id, details) => handleCompleteService(details as any)}
+          onConfirm={(id, details) => handleCompleteService(serviceToComplete, details as any)}
           isCompletionFlow={true}
           />
       )}

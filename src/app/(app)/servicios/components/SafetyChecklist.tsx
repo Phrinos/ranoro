@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/SafetyChecklist.tsx
 "use client";
 
@@ -103,7 +102,7 @@ const ChecklistItemPhotoUploader = ({
                     </button>
                 ))}
             </div>
-            {!isReadOnly && photos.length < 2 && (
+            {photos.length < 2 && (
                  <PhotoUploader
                     reportIndex={0} // Not used here, but required by prop
                     serviceId={serviceId}
@@ -157,7 +156,7 @@ const SafetyCheckRow = ({
                   type="button"
                   key={status.value}
                   title={status.title}
-                  onClick={() => !isReadOnly && field.onChange({ ...(field.value || { photos: [], notes: '' }), status: status.value })}
+                  onClick={() => field.onChange({ ...(field.value || { photos: [], notes: '' }), status: status.value })}
                   disabled={isReadOnly}
                   className={cn(
                     "h-7 w-7 rounded-full border-2 transition-all",
@@ -249,7 +248,7 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
       </CardHeader>
       
        <div className="px-6 pb-6">
-          <Button type="button" className="w-full" size="lg" variant="outline" disabled={isReadOnly} onClick={() => setIsWizardOpen(true)}>
+          <Button type="button" className="w-full" size="lg" variant="outline" onClick={() => setIsWizardOpen(true)}>
               <PlayCircle className="mr-2 h-5 w-5"/>
               Iniciar Revisión Guiada
           </Button>

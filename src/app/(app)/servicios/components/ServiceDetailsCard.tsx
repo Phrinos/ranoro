@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 
 "use client";
@@ -24,6 +23,7 @@ const statusOptions: { value: ServiceFormValues['status'], label: string }[] = [
     { value: 'Agendado', label: 'Agendado' },
     { value: 'En Taller', label: 'En Taller' },
     { value: 'Entregado', label: 'Entregado' },
+    { value: 'Cancelado', label: 'Cancelado' },
 ];
 
 const subStatusOptions: Record<string, { value: ServiceFormValues['subStatus'], label: string }[]> = {
@@ -55,8 +55,7 @@ export function ServiceDetailsCard({
   const watchedStatus = watch('status');
   const watchedAdvisorName = watch('serviceAdvisorName');
   
-  // The 'initialStatus' field will be set when the form loads to lock down the status field if needed.
-  const initialStatus = watch('initialStatus'); 
+  const isFinalStatus = watchedStatus === 'Entregado' || watchedStatus === 'Cancelado';
   
   const relevantSubStatusOptions = subStatusOptions[watchedStatus] || [];
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -101,7 +100,7 @@ export function ServiceDetailsCard({
                 <Select
                   onValueChange={(value) => handleStatusChange(value as ServiceFormValues['status'])}
                   value={field.value || ''}
-                  disabled={isReadOnly || initialStatus === 'Entregado' || initialStatus === 'Cancelado'}
+                  disabled={isFinalStatus || isReadOnly}
                 >
                   <FormControl>
                     <SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}>
