@@ -1,7 +1,7 @@
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { DateRange } from "react-day-picker";
 import type { SaleReceipt, ServiceRecord, InventoryItem, Payment } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -102,7 +102,7 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
   // Sync external date changes with the hook's internal state
   useEffect(() => {
     tableManager.setDateRange(externalDateRange);
-  }, [externalDateRange, tableManager.setDateRange]);
+  }, [externalDateRange, tableManager]);
 
 
   const summary = useMemo(() => {
