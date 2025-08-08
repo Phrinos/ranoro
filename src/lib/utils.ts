@@ -50,7 +50,7 @@ export function getStatusInfo(status: string, subStatus?: string, appointmentSta
     switch (status) {
         case 'Agendado':
             if (appointmentStatus === 'Confirmada') {
-                return { color: 'blue', icon: Clock, label: 'Cita Confirmada' };
+                return { color: 'teal', icon: Clock, label: 'Cita Confirmada' };
             }
             return { color: 'blue', icon: Clock, label: 'Agendado' };
         case 'En Taller':
