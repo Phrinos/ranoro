@@ -29,7 +29,6 @@ import { parseDate } from '@/lib/forms';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
-const ReporteOperacionesContent = lazy(() => import('./components/reporte-operaciones-content').then(m => ({ default: m.ReporteOperacionesContent })));
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
 
 
@@ -267,14 +266,6 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
                         </Suspense>
                     </div>
                 </div>
-            )
-        },
-         {
-            value: "reporte_operaciones", label: "Reporte de Operaciones",
-            content: (
-                 <Suspense fallback={<Loader2 className="animate-spin" />}>
-                    <ReporteOperacionesContent allSales={allSales} allServices={allServices} allInventory={allInventory} serviceTypes={serviceTypes}/>
-                 </Suspense>
             )
         },
     ];
