@@ -70,7 +70,7 @@ export function VehicleSelectionCard({
         setVehicleLicensePlateSearch(vehicle.licensePlate);
         if (serviceHistory && serviceHistory.length > 0) {
             const vehicleServices = serviceHistory
-              .filter(s => s.vehicleId === vehicle.id)
+              .filter(s => s.vehicleId === vehicle.id && (s.status === 'Entregado' || s.status === 'Completado'))
               .sort((a, b) => {
                   const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate) || new Date(0);
                   const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate) || new Date(0);
