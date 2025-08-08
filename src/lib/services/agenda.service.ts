@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -15,7 +16,7 @@ const onAgendaUpdate = (callback: (services: ServiceRecord[]) => void): (() => v
     // 1. Query for all potentially relevant statuses.
     const q = query(
         collection(db, "serviceRecords"), 
-        where("status", "in", ["Agendado", "En Taller", "Cotizacion"])
+        where("status", "in", ["Agendado", "En Taller", "Cotizacion", "Entregado"])
     );
 
     return onSnapshot(q, (snapshot) => {
@@ -26,7 +27,8 @@ const onAgendaUpdate = (callback: (services: ServiceRecord[]) => void): (() => v
             .filter(s => {
                 // An item belongs in the agenda if it's scheduled, in the workshop,
                 // OR if it's a quote that has a specific appointment date set.
-                return s.status === 'Agendado' || s.status === 'En Taller' || (s.status === 'Cotizacion' && !!s.appointmentDateTime);
+                // Or if it has been delivered (for the active tab to pick it up)
+                return s.status === 'Agendado' || s.status === 'En Taller' || (s.status === 'Cotizacion' && !!s.appointmentDateTime) || s.status === 'Entregado';
             })
             .sort((a, b) => {
                 const dateA = a.appointmentDateTime ? new Date(a.appointmentDateTime) : (a.serviceDate ? new Date(a.serviceDate) : null);

@@ -68,6 +68,10 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
             const serviceDate = parseDate(s.appointmentDateTime || s.serviceDate);
             return serviceDate && isToday(serviceDate); // Include if scheduled for today
           }
+           if (s.status === 'Entregado') {
+            const deliveryDate = parseDate(s.deliveryDateTime);
+            return deliveryDate && isToday(deliveryDate); // Include if delivered today
+          }
           return false;
         });
         
@@ -148,6 +152,7 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
             onOpenChange={setIsPaymentDialogOpen}
             record={serviceToComplete}
             onConfirm={(id, details) => handleConfirmCompletion(serviceToComplete, details, serviceToComplete.nextServiceInfo)}
+            recordType="service"
             isCompletionFlow={true}
           />
         )}
