@@ -23,7 +23,7 @@ const getSortPriority = (item: InventoryItem): number => {
 export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inventoryItems: InventoryItem[], onNewItem: () => void, onPrint: (items: InventoryItem[]) => void }) {
   
   const { 
-    fullFilteredData: filteredData, 
+    filteredData, 
     ...tableManager 
   } = useTableManager<InventoryItem>({
     initialData: inventoryItems,
@@ -70,19 +70,6 @@ export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inven
 
   return (
     <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
-                <p className="text-muted-foreground">Administra productos, servicios y niveles de stock.</p>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-                <Button onClick={handlePrint} variant="outline" className="w-full sm:w-auto bg-card"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>
-                <Button onClick={onNewItem} className="w-full sm:w-auto">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Ítem
-                </Button>
-            </div>
-        </div>
-
         <TableToolbar
             {...tableManager}
             sortOptions={sortOptions}

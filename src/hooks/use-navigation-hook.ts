@@ -1,3 +1,4 @@
+
 // src/hooks/use-navigation.ts
 "use client";
 
@@ -6,7 +7,7 @@ import React from 'react';
 import {
   LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, 
   Truck, LineChart, Shield, PlusCircle, Landmark, LayoutGrid, CalendarDays, 
-  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3, Wallet
+  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3, Wallet, BrainCircuit
 } from 'lucide-react';
 import type { User, AppRole, NavigationEntry } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
@@ -48,6 +49,10 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   {
     label: 'Finanzas', path: '/finanzas', icon: LineChart, groupTag: 'Operaciones',
     permissions: ['finances:view_report']
+  },
+  {
+    label: 'Inteligencia Artificial', path: '/ai', icon: BrainCircuit, groupTag: 'Operaciones',
+    permissions: ['dashboard:view'] // General permission to view AI tools
   },
   
   // Mi Flotilla
@@ -130,7 +135,7 @@ const useNavigation = (): NavigationEntry[] => {
     }
 
     // Special handling for parent routes where sub-routes should also activate the parent
-    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/finanzas', '/rentas', '/flotilla', '/personal', '/opciones', '/facturacion-admin', '/administracion'];
+    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/finanzas', '/rentas', '/flotilla', '/personal', '/opciones', '/facturacion-admin', '/administracion', '/ai'];
     
     if (parentRoutes.includes(cleanEntryPath) && cleanPathname.startsWith(cleanEntryPath)) {
         // Only set to active if it's the base path or a sub-path, BUT not a more specific entry

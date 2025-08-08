@@ -22,7 +22,6 @@ const RegisterPurchaseDialog = lazy(() => import('./register-purchase-dialog').t
 const InventoryItemDialog = lazy(() => import('./inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
 const ProductosContent = lazy(() => import('./productos-content').then(module => ({ default: module.ProductosContent })));
 const CategoriasContent = lazy(() => import('./categorias-content').then(module => ({ default: module.CategoriasContent })));
-const AnalisisIaContent = lazy(() => import('@/app/(app)/ai/components/analisis-ia-content').then(module => ({ default: module.AnalisisIaContent })));
 const InventoryReportContent = lazy(() => import('./inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
 
 
@@ -147,7 +146,6 @@ export default function InventarioPageComponent({
   const tabsConfig = [
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
-    { value: "analisis", label: "Análisis IA" },
   ];
 
   return (
@@ -201,11 +199,6 @@ export default function InventarioPageComponent({
                 onSaveCategory={handleSaveCategory}
                 onDeleteCategory={handleDeleteCategory}
             />
-          </Suspense>
-        </TabsContent>
-        <TabsContent value="analisis" className="mt-6">
-          <Suspense fallback={<Loader2 className="animate-spin" />}>
-            <AnalisisIaContent inventoryItems={inventoryItems} />
           </Suspense>
         </TabsContent>
       </Tabs>

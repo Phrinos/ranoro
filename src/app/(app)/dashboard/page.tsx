@@ -25,47 +25,20 @@ import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 
-const handleAiError = (error: any, toast: any, context: string): string => {
-    console.error(`AI Error in ${context}:`, error);
-    let message = `La IA no pudo completar la acción de ${context}.`;
-    if (error instanceof Error && error.message.includes('503')) {
-        message = 'El modelo de IA está sobrecargado. Por favor, inténtelo de nuevo más tarde.';
-    }
-    toast({ title: 'Error de IA', description: message, variant: 'destructive' });
-    return message; // Return the user-friendly message
-};
-
-type TimeRange = 'thisMonth' | 'last6Months' | 'last12Months';
-
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
   const { toast } = useToast();
   
-  const [purchaseRecommendations, setPurchaseRecommendations] = useState<PurchaseRecommendation[] | null>(null);
-  const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
-  const [purchaseError, setPurchaseError] = useState<string | null>(null);
-  const [isPurchaseOrderDialogOpen, setIsPurchaseOrderDialogOpen] = useState(false);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
-  
-  const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<InventoryRecommendation[] | null>(null);
-
   // States for real-time data
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
-  const [allAdminStaff, setAllAdminStaff] = useState<AdministrativeStaff[]>([]);
-  const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
-  const [allServiceTypes, setAllServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(false);
   const [capacityError, setCapacityError] = useState<string | null>(null);
-
-  const [chartTimeRange, setChartTimeRange] = useState<TimeRange>('last6Months');
   
   // Real-time data subscriptions
   useEffect(() => {
@@ -74,20 +47,11 @@ export default function DashboardPage() {
       serviceService.onServicesUpdate(setAllServices),
       saleService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
-      personnelService.onPersonnelUpdate(setAllPersonnel),
-      inventoryService.onFixedExpensesUpdate(setFixedExpenses),
-      inventoryService.onServiceTypesUpdate(setAllServiceTypes),
+      personnelService.onPersonnelUpdate((personnel) => {
+        setAllPersonnel(personnel);
+        setIsLoading(false);
+      }),
     ];
-    
-    // Check when all initial data loads are complete
-    Promise.all([
-        serviceService.onServicesUpdatePromise(),
-        saleService.onSalesUpdatePromise(),
-        inventoryService.onItemsUpdatePromise(),
-        personnelService.onPersonnelUpdatePromise(),
-        inventoryService.onFixedExpensesUpdatePromise(),
-        inventoryService.onServiceTypesUpdatePromise(),
-    ]).then(() => setIsLoading(false));
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
@@ -138,13 +102,6 @@ export default function DashboardPage() {
           console.error('Failed to parse authUser for dashboard welcome message:', e);
         }
       }
-      const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
-      if (storedWorkshopInfo) {
-        try {
-          const info = JSON.parse(storedWorkshopInfo);
-          setWorkshopInfo(info);
-        } catch (e) { console.error('Failed to parse workshop info', e); }
-      }
     }
   }, []);
   
@@ -183,85 +140,14 @@ export default function DashboardPage() {
               }),
         });
         setCapacityInfo(result);
-      } catch (e) {
-        setCapacityError(handleAiError(e, toast, 'análisis de capacidad'));
+      } catch (e: any) {
+        setCapacityError(e.message || 'Error en análisis de capacidad');
       } finally {
         setIsCapacityLoading(false);
       }
     };
     runCapacityAnalysis();
   }, [allServices, allPersonnel, isLoading, toast]);
-  
-  const handleGeneratePurchaseOrder = async () => {
-    setIsPurchaseLoading(true);
-    setPurchaseError(null);
-    setPurchaseRecommendations(null);
-
-    try {
-      const servicesForToday = allServices.filter(s => {
-        const serviceDay = parseDate(s.serviceDate);
-        return serviceDay && isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Entregado' && s.status !== 'Cancelado';
-      });
-
-      if (servicesForToday.length === 0) {
-        toast({ title: 'No hay servicios', description: 'No hay servicios agendados para hoy que requieran compras.', variant: 'default' });
-        setIsPurchaseLoading(false);
-        return;
-      }
-      
-      const input = {
-        scheduledServices: servicesForToday.map(s => ({ id: s.id, description: s.description || '' })),
-        inventoryItems: allInventory.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, supplier: i.supplier })),
-        serviceHistory: allServices.map(s => ({
-            description: s.description || '',
-            suppliesUsed: (s.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(sup => ({ supplyName: sup.supplyName || allInventory.find(i => i.id === sup.supplyId)?.name || 'Unknown' }))
-        }))
-      };
-
-      const result = await getPurchaseRecommendations(input);
-      setPurchaseRecommendations(result.recommendations);
-      toast({ title: 'Orden de Compra Generada', description: result.reasoning, duration: 6000 });
-      if (result.recommendations.length > 0) {
-        setIsPurchaseOrderDialogOpen(true);
-      }
-    } catch (e) {
-      setPurchaseError(handleAiError(e, toast, 'recomendación de compra'));
-    } finally {
-      setIsPurchaseLoading(false);
-    }
-  };
-  
-  const handleRunAnalysis = async () => {
-    setIsAnalysisLoading(true);
-    setAnalysisError(null);
-    setAnalysisResult(null);
-
-    try {
-        const inventoryForAI = allInventory.map(item => ({
-            id: item.id,
-            name: item.name,
-            sku: item.sku,
-            quantity: item.quantity,
-            lowStockThreshold: item.lowStockThreshold,
-        }));
-        
-        const result = await analyzeInventory({
-            inventoryItems: inventoryForAI,
-        });
-
-        setAnalysisResult(result.recommendations);
-        toast({
-            title: 'Análisis Completado',
-            description: `La IA ha generado ${result.recommendations.length} recomendaciones.`,
-            variant: 'default'
-        });
-
-    } catch (e) {
-        setAnalysisError(handleAiError(e, toast, 'análisis de inventario'));
-    } finally {
-        setIsAnalysisLoading(false);
-    }
-};
 
   return (
     <div className="container mx-auto py-8 flex flex-col">
@@ -354,120 +240,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <Card className="shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <BrainCircuit className="h-5 w-5 text-purple-500" />
-                Asistente de Compras IA
-              </CardTitle>
-              <CardDescription>
-                Genera una orden de compra consolidada para los servicios de hoy.
-              </CardDescription>
-            </div>
-            <Button onClick={handleGeneratePurchaseOrder} disabled={isPurchaseLoading}>
-              {isPurchaseLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
-              {isPurchaseLoading ? 'Analizando...' : 'Generar Orden'}
-            </Button>
-          </CardHeader>
-          {purchaseError && (
-            <CardContent>
-              <div className="flex items-center gap-2 text-destructive">
-                  <AlertTriangle className="h-5 w-5" />
-                  <span className="text-sm">{purchaseError}</span>
-              </div>
-            </CardContent>
-          )}
-        </Card>
-         <Card className="shadow-lg flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between gap-4">
-                <div>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                    <BrainCircuit className="h-5 w-5 text-purple-500" />
-                    Análisis de Inventario IA
-                </CardTitle>
-                <CardDescription>
-                    Obtén recomendaciones inteligentes sobre qué reordenar.
-                </CardDescription>
-                </div>
-                <Button onClick={handleRunAnalysis} disabled={isAnalysisLoading}>
-                {isAnalysisLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                {isAnalysisLoading ? 'Analizando...' : 'Analizar'}
-                </Button>
-            </CardHeader>
-            <CardContent className="flex-grow">
-                {isAnalysisLoading ? (
-                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                    <p>La IA está revisando tu inventario...</p>
-                </div>
-                ) : analysisError ? (
-                <div className="flex flex-col items-center justify-center h-full text-center text-destructive-foreground bg-destructive/10 p-8 rounded-lg">
-                    <AlertTriangle className="h-12 w-12 mb-4"/>
-                    <p className="font-medium">Ocurrió un Error</p>
-                    <p className="text-sm mt-1">{analysisError}</p>
-                </div>
-                ) : analysisResult ? (
-                    analysisResult.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-green-50/50 border-green-200 rounded-lg">
-                        <CheckCircle className="h-12 w-12 text-green-600 mb-4"/>
-                        <p className="font-bold text-green-800">¡Todo en orden!</p>
-                        <p className="text-sm text-green-700 mt-1">
-                            Tu inventario está saludable. No se requieren compras inmediatas.
-                        </p>
-                    </div>
-                    ) : (
-                    <ScrollArea className="h-[200px] pr-3">
-                        <div className="space-y-3">
-                            {analysisResult.map((rec) => (
-                                <Card key={rec.itemId} className="bg-muted/30">
-                                    <CardHeader className="p-3">
-                                        <CardTitle className="flex items-center gap-2 text-base">
-                                            <AlertTriangle className="h-5 w-5 text-orange-500" />
-                                            {rec.itemName} {rec.itemSku && `(${rec.itemSku})`}
-                                        </CardTitle>
-                                        <CardDescription className="text-xs">{rec.recommendation}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="p-3 pt-0">
-                                        <p className="text-xs text-muted-foreground mb-2">{rec.reasoning}</p>
-                                        <div className="flex justify-between items-center bg-background p-2 rounded-md">
-                                            <span className="font-medium text-xs">Sugerencia de compra:</span>
-                                            <span className="font-bold text-base text-primary flex items-center gap-1">
-                                                <ShoppingCart className="h-4 w-4"/>
-                                                {rec.suggestedReorderQuantity}
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                    )
-                ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
-                    <PackageSearch className="h-12 w-12 mb-4"/>
-                    <p>Listo para analizar tu inventario.</p>
-                </div>
-                )}
-            </CardContent>
-            </Card>
-      </div>
-
-      {purchaseRecommendations && workshopInfo && (
-        <DocumentPreviewDialog
-            open={isPurchaseOrderDialogOpen}
-            onOpenChange={setIsPurchaseOrderDialogOpen}
-            title="Orden de Compra Sugerida por IA"
-            description="Vista previa del documento para imprimir."
-          >
-            <PurchaseOrderContent
-              recommendations={purchaseRecommendations}
-              workshopInfo={workshopInfo}
-            />
-        </DocumentPreviewDialog>
-      )}
     </div>
   );
 }
