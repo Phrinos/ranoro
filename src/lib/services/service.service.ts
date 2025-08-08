@@ -172,6 +172,33 @@ const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<
     }
 };
 
+const saveIndividualMigratedService = async (data: any) => {
+    if (!db) throw new Error("Database not initialized.");
+    
+    const serviceDate = data.serviceDate ? new Date(data.serviceDate).toISOString() : new Date().toISOString();
+    const totalCost = Number(data.totalCost) || 0;
+    const suppliesCost = Number(data.suppliesCost) || 0;
+
+    const newService = {
+        vehicleId: data.vehicleId,
+        vehicleIdentifier: data.licensePlate,
+        description: data.description,
+        serviceDate: serviceDate,
+        receptionDateTime: serviceDate,
+        deliveryDateTime: serviceDate,
+        status: 'Entregado',
+        paymentMethod: data.paymentMethod,
+        totalCost: totalCost,
+        totalSuppliesWorkshopCost: suppliesCost,
+        serviceProfit: totalCost - suppliesCost,
+        subTotal: totalCost / (1 + IVA_RATE),
+        taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
+    };
+    
+    return await addService(newService);
+};
+
+
 const saveMigratedServices = async (services: any[], vehicles: any[]) => {
     if (!db) throw new Error("Database not initialized.");
     const batch = writeBatch(db);
@@ -307,6 +334,7 @@ export const serviceService = {
     addService,
     updateService,
     saveService,
+    saveIndividualMigratedService,
     saveMigratedServices,
     cancelService,
     deleteService,

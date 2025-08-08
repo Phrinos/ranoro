@@ -15,7 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Car, User, Search, AlertCircle, Save, CalendarIcon, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { operationsService, inventoryService } from '@/lib/services';
+import { serviceService, inventoryService } from '@/lib/services';
 import type { Vehicle, PaymentMethod } from '@/types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -113,7 +113,7 @@ export function RegistroIndividualContent() {
   
   const onSubmit = async (data: FormValues) => {
     try {
-      await operationsService.saveIndividualMigratedService(data);
+      await serviceService.saveIndividualMigratedService(data);
       toast({ title: 'Servicio Registrado', description: `El servicio para ${data.licensePlate} ha sido guardado.` });
       form.reset({ 
           serviceDate: new Date(), 
