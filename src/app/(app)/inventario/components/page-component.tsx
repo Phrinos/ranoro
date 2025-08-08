@@ -22,7 +22,7 @@ const RegisterPurchaseDialog = lazy(() => import('./register-purchase-dialog').t
 const InventoryItemDialog = lazy(() => import('./inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
 const ProductosContent = lazy(() => import('./productos-content').then(module => ({ default: module.ProductosContent })));
 const CategoriasContent = lazy(() => import('./categorias-content').then(module => ({ default: module.CategoriasContent })));
-const AnalisisIaContent = lazy(() => import('./analisis-ia-content').then(module => ({ default: module.AnalisisIaContent })));
+const AnalisisIaContent = lazy(() => import('@/app/(app)/ai/components/analisis-ia-content').then(module => ({ default: module.AnalisisIaContent })));
 const InventoryReportContent = lazy(() => import('./inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
 
 
@@ -231,16 +231,20 @@ export default function InventarioPageComponent({
         />
       </Suspense>
 
-       <DocumentPreviewDialog
-            open={isPrintDialogOpen}
-            onOpenChange={setIsPrintDialogOpen}
-            title="Reporte de Inventario"
-            description="Vista previa del reporte para imprimir."
-        >
-          <Suspense fallback={<Loader2 className="animate-spin" />}>
-            <InventoryReportContent items={itemsToPrint} />
-          </Suspense>
-        </DocumentPreviewDialog>
+       <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
+                <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
+                  <Suspense fallback={<Loader2 className="animate-spin" />}>
+                    <InventoryReportContent items={itemsToPrint} />
+                  </Suspense>
+                </div>
+                 <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
+                    <Button onClick={() => window.print()}>
+                        <Printer className="mr-2 h-4 w-4" /> Imprimir
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </>
   );
 }

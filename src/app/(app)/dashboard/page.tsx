@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
-import { PurchaseOrderContent } from './components/purchase-order-content';
+import { PurchaseOrderContent } from '@/app/(app)/ai/components/purchase-order-content';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { analyzeInventory } from '@/ai/flows/inventory-analysis-flow';
