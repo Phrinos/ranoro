@@ -118,6 +118,7 @@ export function ServiceItemsList({
                             placeholder="Notas internas, para el cliente, o detalles adicionales..."
                             disabled={isReadOnly}
                             {...field}
+                            value={field.value ?? ''}
                         />
                     </FormControl>
                 </FormItem>

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, X, Ban, Trash2, Bug } from 'lucide-react';
+import { Loader2, Save, X, Ban, Trash2 } from 'lucide-react';
 import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -76,15 +76,13 @@ export function ServiceForm({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
       ...initialData,
-      status: initialData?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
-      serviceDate: initialData?.serviceDate ? new Date(initialData.serviceDate) : new Date(), 
+      serviceDate: initialData?.serviceDate ? new Date(initialData.serviceDate) : new Date(),
+      appointmentDateTime: initialData?.appointmentDateTime ? new Date(initialData.appointmentDateTime) : undefined,
+      receptionDateTime: initialData?.receptionDateTime ? new Date(initialData.receptionDateTime) : undefined,
+      deliveryDateTime: initialData?.deliveryDateTime ? new Date(initialData.deliveryDateTime) : undefined,
       allVehiclesForDialog: vehicles, 
     },
   });
-
-  const handleClose = () => {
-    router.back();
-  }
 
   return (
     <FormProvider {...methods}>
@@ -98,7 +96,7 @@ export function ServiceForm({
         suppliers={suppliers}
         serviceHistory={serviceHistory}
         onSubmit={onSave}
-        onClose={handleClose}
+        onClose={() => router.back()}
         mode={mode}
         onVehicleCreated={onVehicleCreated}
         onDelete={onDelete}
@@ -163,7 +161,7 @@ function ServiceFormContent({
   const [validationFolio, setValidationFolio] = useState('');
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
   
-  const { handleSubmit, getValues, setValue, watch, formState } = methods;
+  const { handleSubmit, getValues, setValue, watch, formState, reset } = methods;
 
   useEffect(() => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -173,7 +171,8 @@ function ServiceFormContent({
   }, []);
 
   const isEditing = !!initialData?.id;
-  const isQuote = initialData?.status === 'Cotizacion' || mode === 'quote';
+  const watchedStatus = watch('status');
+  const isQuote = watchedStatus === 'Cotizacion' || (mode === 'quote' && !isEditing);
 
   const userRole = currentUser?.role;
   const canEditAll = userRole === 'Admin' || userRole === 'Superadministrador';
@@ -298,18 +297,7 @@ function ServiceFormContent({
         }
         setIsValidationDialogOpen(false);
     };
-    
-    const handleDebug = () => {
-        const values = getValues();
-        console.log("DEBUG SERVICE DATA:", values);
-        toast({
-            title: "Datos en Consola",
-            description: "Los datos del formulario actual se han enviado a la consola del desarrollador (F12).",
-        });
-    };
 
-
-  const watchedStatus = watch('status');
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
   const isSubmitDisabled = isReadOnly || formState.isSubmitting;
 
@@ -346,7 +334,7 @@ function ServiceFormContent({
       </div>
 
       <div className="flex-shrink-0 flex justify-between items-center mt-6 pt-4 border-t px-6 pb-6 bg-background sticky bottom-0 z-10">
-        <div className="flex gap-2">
+        <div>
           {(onDelete || onCancelService) && initialData?.id && (
             <ConfirmDialog
                 triggerButton={
@@ -371,10 +359,6 @@ function ServiceFormContent({
                 }}
             />
           )}
-           <Button type="button" variant="secondary" onClick={handleDebug}>
-              <Bug className="mr-2 h-4 w-4" />
-              Debug
-            </Button>
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
