@@ -23,7 +23,7 @@ const getSortPriority = (item: InventoryItem): number => {
 export function ProductosContent({ inventoryItems, onNewItem, onPrint }: { inventoryItems: InventoryItem[], onNewItem: () => void, onPrint: (items: InventoryItem[]) => void }) {
   
   const { 
-    filteredData, 
+    fullFilteredData: filteredData, 
     ...tableManager 
   } = useTableManager<InventoryItem>({
     initialData: inventoryItems,
