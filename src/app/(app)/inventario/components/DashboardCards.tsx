@@ -1,11 +1,10 @@
 
-
 "use client";
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DollarSign, AlertTriangle, Package, ShoppingCart } from 'lucide-react';
+import { DollarSign, AlertTriangle, Package, ShoppingCart, PlusCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
