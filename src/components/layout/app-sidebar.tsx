@@ -17,7 +17,7 @@ import {
   SidebarGroupContent,
 } from "@/components/ui/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar"; // Updated import
-import useNavigation from "@/hooks/use-navigation";
+import useNavigation from "@/hooks/use-navigation-hook";
 import { Button } from "@/components/ui/button";
 import {
   Settings,
