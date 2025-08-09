@@ -27,8 +27,8 @@ import { es } from 'date-fns/locale';
 
 // Lazy load dialogs that are not immediately visible
 const RegisterPurchaseDialog = lazy(() => import('../pos/components/add-item-dialog').then(module => ({ default: module.AddItemDialog })));
-const InventoryItemDialog = lazy(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
-const InventoryReportContent = lazy(() => import('./components/inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
+const InventoryItemDialog = lazy(() => import('./inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
+const InventoryReportContent = lazy(() => import('./inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
 
 
 // --- DashboardCards Component Logic (Integrated) ---
@@ -183,7 +183,13 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
             <CardContent className="pt-6">
                 <div className="rounded-md border">
                     <Table>
-                        <TableHeader><TableRow><TableHead>Nombre de Categoría</TableHead><TableHead className="text-right"># de Productos</TableHead><TableHead className="text-right w-[100px]">Acciones</TableHead></TableRow></TableHeader>
+                        <TableHeader className="bg-black">
+                            <TableRow>
+                                <TableHead className="text-white">Nombre de Categoría</TableHead>
+                                <TableHead className="text-right text-white"># de Productos</TableHead>
+                                <TableHead className="text-right w-[100px] text-white">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
                         <TableBody>
                             {categories.map(cat => (
                                 <TableRow key={cat.id}>
