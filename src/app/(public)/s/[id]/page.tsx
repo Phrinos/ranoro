@@ -1,3 +1,4 @@
+
 // src/app/(public)/s/[id]/page.tsx
 
 "use client";
@@ -61,9 +62,11 @@ const InfoCards = ({ vehicle, service }: { vehicle?: Vehicle | null, service: Se
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="h-4 w-4"/><span>{vehicle?.ownerPhone || 'N/A'}</span>
                 </div>
-                 <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="h-4 w-4"/><span>{vehicle?.ownerEmail || 'N/A'}</span>
-                </div>
+                 {vehicle?.ownerEmail && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="h-4 w-4"/><span>{vehicle.ownerEmail}</span>
+                    </div>
+                 )}
             </CardContent>
         </Card>
          <Card>
@@ -75,9 +78,11 @@ const InfoCards = ({ vehicle, service }: { vehicle?: Vehicle | null, service: Se
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Fingerprint className="h-4 w-4"/><span>{vehicle?.licensePlate || 'N/A'}</span>
                 </div>
-                 <div className="flex items-center gap-2 text-muted-foreground">
-                    <span>VIN: {vehicle?.vin || 'N/A'}</span>
-                </div>
+                 {vehicle?.vin && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <span>VIN: {vehicle.vin}</span>
+                    </div>
+                 )}
                  {typeof service.mileage === 'number' && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <span>Kilometraje: {service.mileage.toLocaleString('es-MX')} km</span>
@@ -98,7 +103,7 @@ const ServiceDetailsContent = ({ service }: { service: ServiceRecord }) => (
             <div>
               <p className="font-semibold">{item.name}</p>
               {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                <p className="text-xs text-muted-foreground">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>
+                <p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>
               )}
             </div>
             <p className="font-semibold">{formatCurrency(item.price)}</p>
