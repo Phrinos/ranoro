@@ -22,7 +22,7 @@ import {
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem } from "@/types";
 import { cleanObjectForFirestore, IVA_RATE, parseDate } from '../forms';
-import { logAudit } from '../placeholder-data';
+import { logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '../placeholder-data';
 import { nanoid } from 'nanoid';
 import { savePublicDocument } from '../public-document';
 import { cashService } from './cash.service';
@@ -281,7 +281,7 @@ const completeService = async (
     }
 
     // 3. Register cash transactions if applicable
-    const authUserString = localStorage.getItem('authUser');
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
     
     for (const payment of paymentDetails.payments) {

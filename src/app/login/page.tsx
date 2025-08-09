@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState } from 'react';
@@ -17,9 +16,10 @@ import { auth, db } from '@/lib/firebaseClient';
 import { 
   signInWithEmailAndPassword, 
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  type User as FirebaseUser
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import type { User } from '@/types';
 
@@ -29,14 +29,46 @@ const GoogleIcon = () => (
   </svg>
 );
 
-
 export default function LoginPage() {
   const [emailLogin, setEmailLogin] = useState('');
   const [passwordLogin, setPasswordLogin] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
+  const [googleIsLoading, setGoogleIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  const handleUserSession = async (firebaseUser: FirebaseUser) => {
+    if (!db) throw new Error("Firestore is not initialized.");
+    
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const userDoc = await getDoc(userDocRef);
+    
+    let userData: User;
+    if (userDoc.exists()) {
+      userData = { id: firebaseUser.uid, ...userDoc.data() } as User;
+    } else {
+      // Create a new user profile in Firestore
+      userData = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Nuevo Usuario',
+        email: firebaseUser.email!,
+        role: 'Admin', // Default role for new sign-ups
+      };
+      await setDoc(userDocRef, { 
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        createdAt: serverTimestamp() 
+      });
+      toast({ title: 'Perfil Creado', description: 'Hemos creado tu perfil de usuario en Ranoro.' });
+    }
+    
+    localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
+    
+    toast({ title: 'Inicio de Sesión Exitoso', description: `¡Bienvenido de nuevo, ${userData.name}!` });
+    router.push('/dashboard');
+  };
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -45,7 +77,7 @@ export default function LoginPage() {
     if (!emailLogin.trim() || !passwordLogin.trim()) {
       toast({
         title: "Campos Incompletos",
-        description: "Por favor, ingrese su correo electrónico y contraseña.",
+        description: "Por favor, ingrese su correo y contraseña.",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -53,102 +85,42 @@ export default function LoginPage() {
     }
 
     try {
-      if (!auth || !db) throw new Error("Firebase no está inicializado.");
+      if (!auth) throw new Error("Firebase Auth no está inicializado.");
       const userCredential = await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
-      const user = userCredential.user;
-
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      let userData: User;
-      if (userDoc.exists()) {
-        userData = { id: user.uid, ...userDoc.data() } as User;
-      } else {
-        // Si el usuario existe en Auth pero no en Firestore, crea su perfil
-        userData = {
-          id: user.uid,
-          name: user.displayName || user.email?.split('@')[0] || 'Usuario',
-          email: user.email!,
-          role: 'Admin', // Asigna un rol por defecto
-        };
-        await setDoc(userDocRef, { 
-          name: userData.name,
-          email: userData.email,
-          role: userData.role,
-          createdAt: new Date() 
-        });
-        toast({ title: 'Perfil Creado', description: 'Hemos creado tu perfil de usuario.' });
-      }
-      
-      localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
-      
-      toast({ title: 'Inicio de Sesión Exitoso' });
-      router.push('/dashboard');
+      await handleUserSession(userCredential.user);
     } catch (error: any) {
       console.error("Error en inicio de sesión:", error);
       const errorMessage = error.code === 'auth/invalid-credential' 
-          ? 'Las credenciales son incorrectas.'
-          : 'Ocurrió un error inesperado.';
-      toast({
-        title: 'Error al Iniciar Sesión',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+          ? 'Las credenciales son incorrectas. Verifique su correo y contraseña.'
+          : 'Ocurrió un error inesperado al intentar iniciar sesión.';
+      toast({ title: 'Error al Iniciar Sesión', description: errorMessage, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
   
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
+    setGoogleIsLoading(true);
     try {
-      if (!auth || !db) throw new Error("Firebase no está inicializado.");
+      if (!auth) throw new Error("Firebase Auth no está inicializado.");
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      let userData: User;
-      if (!userDoc.exists()) {
-        userData = {
-          id: user.uid,
-          name: user.displayName || 'Usuario de Google',
-          email: user.email!,
-          role: 'Admin', // Default role
-        };
-        await setDoc(userDocRef, { ...userData, createdAt: new Date() });
-      } else {
-        userData = { id: user.uid, ...userDoc.data() } as User;
-      }
-      
-      localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
-
-      toast({ title: "Inicio de Sesión Exitoso", description: `Bienvenido, ${user.displayName}.` });
-      router.push('/dashboard');
-    } catch (error) {
+      await handleUserSession(result.user);
+    } catch (error: any) {
       console.error("Error con Google Sign-In:", error);
-      toast({ title: "Error", description: "No se pudo iniciar sesión con Google.", variant: "destructive" });
+      // Handle cases where the user closes the popup
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({ title: "Error", description: "No se pudo iniciar sesión con Google.", variant: "destructive" });
+      }
     } finally {
-      setIsLoading(false);
+      setGoogleIsLoading(false);
     }
   };
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
-      <div className="hidden bg-muted lg:block relative overflow-hidden">
-        <Image
-          src="/login.png"
-          alt="Ranoro Login"
-          fill
-          className="object-cover object-center"
-          sizes="50vw"
-          
-        />
-      </div>
-      <div className="flex items-center justify-center py-12 bg-gray-50 dark:bg-gray-900">
-        <Card className="mx-4 w-full sm:mx-auto sm:w-[420px] max-w-full animate-fade-in-up shadow-xl transition-all">
+      <div className="flex items-center justify-center py-12">
+        <Card className="mx-4 w-full sm:mx-auto sm:w-[420px] max-w-full animate-fade-in-up shadow-xl">
           <CardHeader className="text-center">
             <Link href="/" className="mb-4 inline-block relative w-[180px] h-[45px] mx-auto">
               <Image
@@ -162,13 +134,13 @@ export default function LoginPage() {
                   data-ai-hint="ranoro logo"
               />
             </Link>
-            <p className="text-lg italic text-foreground -mt-2">Tu Taller en un App</p>
+            <p className="text-lg italic text-muted-foreground -mt-2">Tu Taller en una App</p>
           </CardHeader>
           <CardContent>
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Iniciar Sesión</TabsTrigger>
-                  <TabsTrigger value="register" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Registrarse</TabsTrigger>
+                  <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
+                  <TabsTrigger value="register">Registrarse</TabsTrigger>
                 </TabsList>
                 <TabsContent value="login">
                     <CardDescription className="text-center pt-4">
@@ -177,22 +149,22 @@ export default function LoginPage() {
                     <form onSubmit={handleLogin} className="space-y-4 pt-4">
                         <div className="grid gap-2 text-left">
                             <Label htmlFor="email-login">Correo Electrónico</Label>
-                            <Input id="email-login" type="email" placeholder="usuario@ranoro.mx" required value={emailLogin} onChange={(e) => setEmailLogin(e.target.value)} disabled={isLoading} />
+                            <Input id="email-login" type="email" placeholder="usuario@ranoro.mx" required value={emailLogin} onChange={(e) => setEmailLogin(e.target.value)} disabled={isLoading || googleIsLoading} />
                         </div>
                         <div className="grid gap-2 text-left">
                             <Label htmlFor="password-login">Contraseña</Label>
-                            <Input id="password-login" type="password" required value={passwordLogin} onChange={(e) => setPasswordLogin(e.target.value)} disabled={isLoading} />
+                            <Input id="password-login" type="password" required value={passwordLogin} onChange={(e) => setPasswordLogin(e.target.value)} disabled={isLoading || googleIsLoading} />
                         </div>
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {isLoading ? 'Ingresando...' : 'Ingresar al Sistema'}
+                        <Button type="submit" className="w-full" disabled={isLoading || googleIsLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Ingresar al Sistema
                         </Button>
-                         <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-                            <GoogleIcon />
+                         <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || googleIsLoading}>
+                            {googleIsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />}
                             <span>Continuar con Google</span>
                         </Button>
                     </form>
-                    <div className="mt-4 text-center text-sm">
+                    <div className="mt-4 text-center text-sm text-muted-foreground">
                       Al iniciar sesión aceptas nuestros{" "}
                       <Link href="/legal/terminos" className="underline hover:text-primary">
                         Términos de Servicio
@@ -206,40 +178,17 @@ export default function LoginPage() {
                    <CardDescription className="text-center pt-4">
                       Crea tu cuenta para empezar a optimizar tu taller.
                    </CardDescription>
-                   <form className="space-y-4 pt-4">
-                        <fieldset disabled className="space-y-4 opacity-50 cursor-not-allowed">
-                            <div className="grid gap-2 text-left">
-                                <Label htmlFor="name-register">Nombre Completo</Label>
-                                <Input id="name-register" type="text" placeholder="Ej: Juan Pérez" required disabled />
-                            </div>
-                            <div className="grid gap-2 text-left">
-                                <Label htmlFor="email-register">Correo Electrónico</Label>
-                                <Input id="email-register" type="email" placeholder="nuevo.usuario@ranoro.mx" required disabled />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="grid gap-2 text-left">
-                                  <Label htmlFor="password-register">Contraseña</Label>
-                                  <Input id="password-register" type="password" required disabled />
-                              </div>
-                               <div className="grid gap-2 text-left">
-                                  <Label htmlFor="confirm-password-register">Confirmar Contraseña</Label>
-                                  <Input id="confirm-password-register" type="password" required disabled />
-                              </div>
-                            </div>
-                            <div className="flex items-center p-3 text-sm text-amber-800 bg-amber-100 rounded-md border border-amber-200">
-                                <AlertTriangle className="h-4 w-4 mr-2" />
-                                <span>El registro por correo está en desarrollo.</span>
-                            </div>
-                            <Button type="button" className="w-full" disabled>
-                                Crear Cuenta
-                            </Button>
-                        </fieldset>
-                         <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-                          <GoogleIcon />
-                          Registrarse con Google
-                        </Button>
-                    </form>
-                     <div className="mt-4 text-center text-sm">
+                   <div className="space-y-4 pt-4">
+                       <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || googleIsLoading}>
+                        {googleIsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />}
+                        Registrarse con Google
+                       </Button>
+                       <div className="flex items-center p-3 text-sm text-amber-800 bg-amber-100 rounded-md border border-amber-200">
+                           <AlertTriangle className="h-4 w-4 mr-2" />
+                           <span>El registro por correo está en desarrollo.</span>
+                       </div>
+                    </div>
+                     <div className="mt-4 text-center text-sm text-muted-foreground">
                         Al registrarte, aceptas nuestros{" "}
                         <Link href="/legal/terminos" className="underline hover:text-primary">
                           Términos de Servicio
@@ -252,6 +201,18 @@ export default function LoginPage() {
               </Tabs>
           </CardContent>
         </Card>
+      </div>
+      <div className="hidden bg-muted lg:block relative overflow-hidden">
+        <Image
+          src="/login.png"
+          alt="Ranoro Login"
+          fill
+          className="object-cover object-center"
+          sizes="50vw"
+          priority
+          data-ai-hint="mechanic tools"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent"></div>
       </div>
     </div>
   );

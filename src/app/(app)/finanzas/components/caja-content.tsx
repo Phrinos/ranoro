@@ -2,9 +2,9 @@
 // src/app/(app)/finanzas/components/caja-content.tsx
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import type { DateRange } from "react-day-picker";
-import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment } from '@/types';
+import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment, WorkshopInfo, Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 import { format, isValid, isSameDay, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { FileText, ShoppingCart, Wrench, Wallet, CreditCard, Send, LineChart, DollarSign, ArrowDown, ArrowUp, Calendar as CalendarIcon } from 'lucide-react';
+import { FileText, ShoppingCart, Wrench, Wallet, CreditCard, Send, LineChart, DollarSign, ArrowDown, ArrowUp, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { parseDate } from '@/lib/forms';
@@ -23,11 +23,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { cashService } from '@/lib/services';
+import { cashService, saleService, serviceService, inventoryService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { cn } from '@/lib/utils';
-
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { TicketContent } from '@/components/ticket-content';
+import { ServiceSheetContent } from '@/components/service-sheet-content';
+import ReactDOMServer from 'react-dom/server';
 
 const cashTransactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -35,6 +38,11 @@ const cashTransactionSchema = z.object({
 });
 type CashTransactionFormValues = z.infer<typeof cashTransactionSchema>;
 
+// Extend the existing CashDrawerTransaction type for local use
+type EnhancedCashDrawerTransaction = CashDrawerTransaction & {
+    licensePlate?: string;
+    fullConcept?: string;
+};
 
 interface CajaContentProps {
   allSales: SaleReceipt[];
@@ -51,19 +59,38 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
     return { from: startOfMonth(now), to: endOfMonth(now) };
   });
 
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<SaleReceipt | ServiceRecord | null>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [isLoadingDocument, setIsLoadingDocument] = useState(false);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+  const ticketContentRef = useRef<HTMLDivElement>(null);
+  const serviceSheetContentRef = useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
+     if (storedWorkshopInfo) {
+      try {
+        setWorkshopInfo(JSON.parse(storedWorkshopInfo));
+      } catch (e) {
+        console.error("Failed to parse workshop info from localStorage", e);
+      }
+    }
+  }, []);
+  
   const form = useForm<CashTransactionFormValues>({
     resolver: zodResolver(cashTransactionSchema),
   });
 
   const mergedCashMovements = useMemo(() => {
-    const posCashMovements = allSales.reduce((acc, sale) => {
+    const posCashMovements: EnhancedCashDrawerTransaction[] = allSales.reduce((acc, sale) => {
       if (sale.status === 'Cancelado') return acc;
 
       let cashAmount = 0;
       if (sale.payments && sale.payments.length > 0) {
         const cashPayment = sale.payments.find(p => p.method === 'Efectivo');
         cashAmount = cashPayment?.amount || 0;
-      } else if (sale.amountInCash) { // Fallback for deprecated field
+      } else if (sale.amountInCash) {
         cashAmount = sale.amountInCash;
       }
       
@@ -73,15 +100,18 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
           date: sale.saleDate,
           type: 'Entrada',
           amount: cashAmount,
-          concept: `Venta POS #${sale.id.slice(-6)}`,
+          concept: sale.id,
+          fullConcept: sale.items.map(i => `${i.quantity}x ${i.itemName}`).join(', ') || 'Venta de mostrador',
           userId: sale.registeredById || 'system',
-          userName: sale.registeredByName || 'Sistema'
+          userName: sale.registeredByName || 'Sistema',
+          relatedId: sale.id,
+          relatedType: 'Venta',
         });
       }
       return acc;
-    }, [] as CashDrawerTransaction[]);
+    }, [] as EnhancedCashDrawerTransaction[]);
 
-    const serviceCashMovements = allServices.reduce((acc, service) => {
+    const serviceCashMovements: EnhancedCashDrawerTransaction[] = allServices.reduce((acc, service) => {
       const relevantStatus = service.status === 'Entregado' || service.status === 'Completado';
       if (!relevantStatus) return acc;
       
@@ -89,25 +119,37 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
       if (service.payments && service.payments.length > 0) {
         const cashPayment = service.payments.find(p => p.method === 'Efectivo');
         cashAmount = cashPayment?.amount || 0;
-      } else if (service.amountInCash) { // Fallback for deprecated field
+      } else if (service.amountInCash) {
         cashAmount = service.amountInCash;
       }
 
       if (cashAmount > 0) {
+        const serviceItemsConcept = service.serviceItems?.map(i => i.name).join(', ');
         acc.push({
           id: `service-${service.id}`,
           date: service.deliveryDateTime!,
           type: 'Entrada',
           amount: cashAmount,
-          concept: `Servicio #${service.id.slice(-6)}`,
+          concept: service.id,
+          fullConcept: serviceItemsConcept || service.description || 'Servicio General',
           userId: service.serviceAdvisorId || 'system',
-          userName: service.serviceAdvisorName || 'Sistema'
+          userName: service.serviceAdvisorName || 'Asesor no asignado',
+          relatedId: service.id,
+          relatedType: 'Servicio',
+          licensePlate: service.vehicleIdentifier || 'N/A',
         });
       }
       return acc;
-    }, [] as CashDrawerTransaction[]);
+    }, [] as EnhancedCashDrawerTransaction[]);
         
-    return [...posCashMovements, ...serviceCashMovements, ...cashTransactions]
+    const enhancedManualTransactions: EnhancedCashDrawerTransaction[] = cashTransactions.map(t => ({
+        ...t,
+        id: t.id, // The original object already has the ID
+        concept: t.id, // For the ID column
+        fullConcept: t.concept, // For the descriptive concept column
+    }));
+
+    return [...posCashMovements, ...serviceCashMovements, ...enhancedManualTransactions]
       .sort((a,b) => (parseDate(b.date)?.getTime() ?? 0) - (parseDate(a.date)?.getTime() ?? 0));
   }, [allSales, allServices, cashTransactions]);
 
@@ -144,6 +186,38 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
     form.reset();
     setIsDialogOpen(true);
   };
+  
+  const handleRowClick = async (movement: EnhancedCashDrawerTransaction) => {
+    if (!movement.relatedId || !movement.relatedType) return;
+    
+    setIsLoadingDocument(true);
+    setSelectedVehicle(null);
+    try {
+      let docData;
+      if (movement.relatedType === 'Venta') {
+        docData = await saleService.getDocById('saleReceipts', movement.relatedId);
+        setSelectedDocument(docData);
+      } else if (movement.relatedType === 'Servicio') {
+        docData = await serviceService.getDocById('serviceRecords', movement.relatedId) as ServiceRecord;
+        if (docData && docData.vehicleId) {
+            const vehicleData = await inventoryService.getVehicleById(docData.vehicleId);
+            setSelectedVehicle(vehicleData);
+        }
+        setSelectedDocument(docData);
+      }
+      
+      if (docData) {
+        setIsPreviewOpen(true);
+      } else {
+        toast({ title: "No encontrado", description: "No se pudo encontrar el documento asociado.", variant: "warning" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Hubo un problema al cargar el documento.", variant: "destructive" });
+      console.error(error);
+    } finally {
+      setIsLoadingDocument(false);
+    }
+  };
 
   const handleTransactionSubmit = async (values: CashTransactionFormValues) => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -179,6 +253,30 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
         case 'month':
             setDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
             break;
+    }
+  };
+
+  const renderPreviewContent = () => {
+    if (!selectedDocument) return '';
+
+    if ('saleDate' in selectedDocument) { // It's a SaleReceipt
+        return ReactDOMServer.renderToString(
+            <TicketContent
+                ref={ticketContentRef}
+                sale={selectedDocument as SaleReceipt}
+                previewWorkshopInfo={workshopInfo || undefined}
+            />
+        );
+    } else { // It's a ServiceRecord
+        return ReactDOMServer.renderToString(
+            <ServiceSheetContent
+                ref={serviceSheetContentRef}
+                service={selectedDocument as ServiceRecord}
+                vehicle={selectedVehicle || undefined}
+                workshopInfo={workshopInfo || undefined}
+                activeTab="order"
+            />
+        );
     }
   };
 
@@ -245,22 +343,41 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
             <CardContent className="p-0">
                 <div className="overflow-x-auto rounded-md border">
                     <Table>
-                        <TableHeader><TableRow><TableHead>Hora</TableHead><TableHead>Tipo</TableHead><TableHead>Concepto</TableHead><TableHead>Usuario</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Hora</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Origen</TableHead>
+                                <TableHead>ID Movimiento</TableHead>
+                                <TableHead>Concepto</TableHead>
+                                <TableHead>Usuario</TableHead>
+                                <TableHead className="text-right">Monto</TableHead>
+                            </TableRow>
+                        </TableHeader>
                         <TableBody>
-                            {periodData.movements.length > 0 ? (
-                                periodData.movements.map(m => (
-                                    <TableRow key={m.id}>
+                            {isLoadingDocument && <TableRow><TableCell colSpan={7} className="h-24 text-center"><Loader2 className="mr-2 h-5 w-5 animate-spin inline-block" /> Cargando documento...</TableCell></TableRow>}
+                            {!isLoadingDocument && periodData.movements.length > 0 ? (
+                                periodData.movements.map((m: EnhancedCashDrawerTransaction) => (
+                                    <TableRow 
+                                        key={m.id}
+                                        onClick={() => handleRowClick(m)}
+                                        className={m.relatedId ? "cursor-pointer hover:bg-muted/50" : ""}
+                                    >
                                         <TableCell>{m.date && isValid(parseDate(m.date)!) ? format(parseDate(m.date)!, "dd MMM, HH:mm", { locale: es }) : 'N/A'}</TableCell>
                                         <TableCell>
                                           <Badge variant={m.type === 'Entrada' ? 'success' : 'destructive'}>{m.type}</Badge>
                                         </TableCell>
-                                        <TableCell>{m.concept}</TableCell>
+                                        <TableCell>
+                                          <Badge variant="outline">{m.relatedType || 'Manual'}</Badge>
+                                        </TableCell>
+                                        <TableCell className="font-mono text-xs">{m.concept}</TableCell>
+                                        <TableCell className="max-w-[250px] truncate">{m.fullConcept}</TableCell>
                                         <TableCell>{m.userName}</TableCell>
                                         <TableCell className="text-right font-semibold">{formatCurrency(m.amount)}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={5} className="h-24 text-center">No se encontraron movimientos de caja para este periodo.</TableCell></TableRow>
+                                !isLoadingDocument && <TableRow><TableCell colSpan={7} className="h-24 text-center">No se encontraron movimientos de caja para este periodo.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>
@@ -307,12 +424,24 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
                         />
                     </form>
                 </Form>
-                <DialogFooter>
+                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={form.handleSubmit(handleTransactionSubmit)}>Registrar</Button>
+                    <Button type="submit" form="cash-transaction-form" disabled={form.formState.isSubmitting}>
+                        {form.formState.isSubmitting ? 'Guardando...' : `Registrar ${dialogType}`}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        
+        {selectedDocument && (
+          <UnifiedPreviewDialog
+            open={isPreviewOpen}
+            onOpenChange={setIsPreviewOpen}
+            title={`Vista Previa - ${'saleDate' in selectedDocument ? 'Venta' : 'Servicio'}`}
+            documentType={'saleDate' in selectedDocument ? 'text' : 'html'}
+            textContent={renderPreviewContent()}
+          />
+        )}
     </div>
   );
 }
