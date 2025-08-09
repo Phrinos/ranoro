@@ -5,7 +5,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import type { DateRange } from "react-day-picker";
 import type { SaleReceipt, ServiceRecord, CashDrawerTransaction } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -80,6 +80,7 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
 
   const { 
     paginatedData,
+    fullFilteredData,
     ...tableManager 
   } = useTableManager<CashDrawerTransaction>({
     initialData: mergedCashMovements,
@@ -87,6 +88,23 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
   });
+
+    const summary = useMemo(() => {
+    const movements = fullFilteredData; // Use the already filtered data from the hook
+    let totalIn = 0;
+    let totalOut = 0;
+
+    movements.forEach(m => {
+      if (m.type === 'Entrada') {
+        totalIn += m.amount;
+      } else if (m.type === 'Salida') {
+        totalOut += m.amount;
+      }
+    });
+
+    return { totalIn, totalOut, netBalance: totalIn - totalOut };
+  }, [fullFilteredData]);
+
 
   const handleOpenDialog = (type: 'Entrada' | 'Salida') => {
     setDialogType(type);
@@ -114,6 +132,20 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
 
   return (
     <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-green-600">Entradas Totales</CardTitle><ArrowUp className="h-4 w-4 text-green-500"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(summary.totalIn)}</div></CardContent>
+            </Card>
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-red-600">Salidas Totales</CardTitle><ArrowDown className="h-4 w-4 text-red-500"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold text-red-600">{formatCurrency(summary.totalOut)}</div></CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance Neto (Periodo)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold">{formatCurrency(summary.netBalance)}</div></CardContent>
+            </Card>
+        </div>
         <div className="flex justify-end gap-2">
             <Button onClick={() => handleOpenDialog('Entrada')} variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700">
                 <ArrowUp className="mr-2 h-4 w-4"/> Registrar Entrada
@@ -223,3 +255,4 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
     </div>
   );
 }
+  
