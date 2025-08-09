@@ -52,9 +52,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             <Card>
                 <CardHeader>
                     <CardTitle>Detalles de la Cotización</CardTitle>
-                    <CardDescription>
-                        Esta cotización es válida hasta el {validityDate}. Los precios incluyen IVA.
-                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
@@ -95,7 +92,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                          <Separator />
                          <p className="text-sm text-muted-foreground">¡Gracias por su preferencia!</p>
                          <p className="text-xs">Para dudas o aclaraciones, no dude en contactarnos.</p>
-                         <p className="text-sm font-semibold flex items-center justify-center gap-2"><Phone className="h-4 w-4"/> {workshopInfo.phone || '4491234567'}</p>
+                         <p className="text-sm font-semibold flex items-center justify-center gap-2"><Phone className="h-4 w-4"/> {workshopInfo.phone || '4491425323'}</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -121,30 +118,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     </CardContent>
                 </Card>
             </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Aprobación del Cliente</CardTitle>
-                    <CardDescription>
-                        Si está de acuerdo con esta cotización, por favor firme a continuación para autorizar el trabajo.
-                    </CardDescription>
-                </CardHeader>
-                 <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
-                    {quote.customerSignatureReception ? (
-                        <div className="p-4 border rounded-md bg-muted/50">
-                            <Image src={normalizeDataUrl(quote.customerSignatureReception)} alt="Firma de autorización" width={300} height={150} style={{ objectFit: 'contain' }} className="mx-auto" />
-                            <p className="text-xs text-green-600 font-semibold mt-2">Trabajo Autorizado</p>
-                        </div>
-                    ) : isPublicView && onSignClick ? (
-                        <Button onClick={onSignClick} disabled={isSigning} className="w-full sm:w-auto">
-                            {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
-                            Firmar y Autorizar Trabajos
-                        </Button>
-                    ) : (
-                        <p className="text-muted-foreground py-8">Firma pendiente.</p>
-                    )}
-                </CardContent>
-            </Card>
         </div>
     );
 });
