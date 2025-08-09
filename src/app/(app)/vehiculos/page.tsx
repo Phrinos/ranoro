@@ -1,5 +1,4 @@
-
-
+// src/app/(app)/vehiculos/page.tsx
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -76,7 +75,7 @@ function VehiculosPage() {
     }, []);
 
     const {
-      filteredData: filteredVehicles,
+      paginatedData: filteredVehicles,
       ...tableManager
     } = useTableManager<Vehicle>({
       initialData: allVehicles,
@@ -160,7 +159,6 @@ function VehiculosPage() {
     }
     
     const tabs = [
-        { value: "resumen", label: "Resumen" },
         { value: "vehiculos", label: "Lista de Vehículos" },
         { value: "precotizaciones", label: "Precotizaciones" },
     ];
@@ -193,28 +191,23 @@ function VehiculosPage() {
                     </div>
                 </div>
 
-                <TabsContent value="resumen" className="mt-6">
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total de Vehículos</CardTitle><Car className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{vehicleSummary.total}</div><p className="text-xs text-muted-foreground">Vehículos en la base de datos.</p></CardContent></Card>
-                        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Actividad Reciente</CardTitle><Activity className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{vehicleSummary.recent}</div><p className="text-xs text-muted-foreground">Visitaron el taller en los últimos 30 días.</p></CardContent></Card>
-                        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos Inactivos</CardTitle><CalendarX className="h-4 w-4 text-orange-500"/></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{vehicleSummary.inactive6Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 6 meses.</p></CardContent></Card>
-                        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos en Riesgo</CardTitle><AlertTriangle className="h-4 w-4 text-red-500"/></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{vehicleSummary.inactive12Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 12 meses.</p></CardContent></Card>
-                    </div>
-                </TabsContent>
-
                 <TabsContent value="vehiculos" className="mt-6">
                     <div className="space-y-4">
+                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+                            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total de Vehículos</CardTitle><Car className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{vehicleSummary.total}</div><p className="text-xs text-muted-foreground">Vehículos en la base de datos.</p></CardContent></Card>
+                            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Actividad Reciente</CardTitle><Activity className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{vehicleSummary.recent}</div><p className="text-xs text-muted-foreground">Visitaron el taller en los últimos 30 días.</p></CardContent></Card>
+                            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos Inactivos</CardTitle><CalendarX className="h-4 w-4 text-orange-500"/></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{vehicleSummary.inactive6Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 6 meses.</p></CardContent></Card>
+                            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos en Riesgo</CardTitle><AlertTriangle className="h-4 w-4 text-red-500"/></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{vehicleSummary.inactive12Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 12 meses.</p></CardContent></Card>
+                        </div>
                         <div className="flex justify-end">
                             <Button onClick={() => handleOpenVehicleDialog()} className="w-full sm:w-auto">
                                 <PlusCircle className="mr-2 h-4 w-4" /> Registrar Vehículo
                             </Button>
                         </div>
                          <TableToolbar
-                            searchTerm={tableManager.searchTerm}
-                            onSearchTermChange={tableManager.onSearchTermChange}
-                            sortOption={tableManager.sortOption}
-                            onSortOptionChange={tableManager.onSortOptionChange}
+                            {...tableManager}
                             sortOptions={vehicleSortOptions}
+                            onSearchTermChange={tableManager.onSearchTermChange}
                             searchPlaceholder="Buscar por placa, marca, modelo..."
                         />
                         <Card>

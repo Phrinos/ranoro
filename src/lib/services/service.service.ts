@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -43,8 +42,9 @@ const getDocById = async (collectionName: string, id: string): Promise<any> => {
 
 const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
     if (!db) return () => {};
-    // Sort by serviceDate to show scheduled services in the correct order.
-    const q = query(collection(db, "serviceRecords"), orderBy("serviceDate", "desc"));
+    // Remove the orderBy clause to ensure all documents are fetched, even if they lack a serviceDate.
+    // Client-side components will handle sorting.
+    const q = query(collection(db, "serviceRecords"));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord)));
     }, (error) => console.error("Error listening to services:", error.message));
@@ -52,7 +52,8 @@ const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() =>
 
 const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
     if (!db) return [];
-    const q = query(collection(db, "serviceRecords"), orderBy("serviceDate", "desc"));
+    // Remove the orderBy clause here as well for consistency.
+    const q = query(collection(db, "serviceRecords"));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
 };

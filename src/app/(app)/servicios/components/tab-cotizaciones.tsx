@@ -2,7 +2,7 @@
 // src/app/(app)/servicios/components/tab-cotizaciones.tsx
 "use client";
 
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, User } from '@/types';
@@ -10,7 +10,6 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
-import { parseDate } from '@/lib/forms';
 import { serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,24 +19,28 @@ interface CotizacionesTabContentProps {
   personnel: User[];
   currentUser: User | null;
   onShowPreview: (service: ServiceRecord) => void;
+  onDelete: (serviceId: string) => void;
 }
 
-export default function CotizacionesTabContent({
+function CotizacionesTabContent({
   services,
   vehicles,
   personnel,
   currentUser,
   onShowPreview,
+  onDelete,
 }: CotizacionesTabContentProps) {
   const router = useRouter();
   const { toast } = useToast();
   
+  const quotes = useMemo(() => services.filter(s => s.status === 'Cotizacion'), [services]);
+  
   const { 
-    paginatedData, 
+    paginatedData,
     ...tableManager 
   } = useTableManager<ServiceRecord>({
-    initialData: services,
-    searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
+    initialData: quotes,
+    searchKeys: ["id", "vehicleIdentifier", "customerName", "description", "serviceItems.name"],
     dateFilterKey: 'serviceDate',
     initialSortOption: "serviceDate_desc",
     itemsPerPage: 10,
@@ -48,20 +51,40 @@ export default function CotizacionesTabContent({
   }, [router]);
   
   const handleDeleteQuote = async (quoteId: string) => {
-    try {
-        await serviceService.deleteService(quoteId);
-        toast({ title: 'Cotización Eliminada', description: `La cotización ha sido eliminada permanentemente.` });
-    } catch (e) {
-        toast({ title: 'Error', description: 'No se pudo eliminar la cotización.', variant: 'destructive' });
+    if (window.confirm('¿Está seguro de que desea eliminar esta cotización? Esta acción no se puede deshacer.')) {
+        try {
+            await serviceService.deleteService(quoteId);
+            toast({ title: 'Cotización Eliminada', description: `La cotización ha sido eliminada permanentemente.` });
+        } catch (e) {
+            toast({ title: 'Error', description: 'No se pudo eliminar la cotización.', variant: 'destructive' });
+        }
     }
   };
 
+  const renderServiceCard = useCallback(
+    (quote: ServiceRecord) => (
+      <ServiceAppointmentCard 
+        key={quote.id}
+        service={quote}
+        vehicle={vehicles.find(v => v.id === quote.vehicleId)}
+        personnel={personnel}
+        currentUser={currentUser}
+        onEdit={() => handleEditQuote(quote.id)}
+        onView={() => onShowPreview(quote)}
+        onDelete={() => handleDeleteQuote(quote.id)}
+      />
+    ),
+    [vehicles, personnel, currentUser, onShowPreview, handleEditQuote, handleDeleteQuote]
+  );
 
   return (
     <div className="space-y-4">
       <TableToolbar
-        {...tableManager}
-        searchPlaceholder="Buscar por folio, placa o descripción..."
+        searchTerm={tableManager.searchTerm}
+        onSearchTermChange={tableManager.onSearchTermChange}
+        sortOption={tableManager.sortOption}
+        onSortOptionChange={tableManager.onSortOptionChange}
+        searchPlaceholder="Buscar por folio, placa, cliente..."
         sortOptions={[
             { value: 'serviceDate_desc', label: 'Más Reciente' },
             { value: 'serviceDate_asc', label: 'Más Antiguo' },
@@ -69,39 +92,35 @@ export default function CotizacionesTabContent({
             { value: 'totalCost_asc', label: 'Monto (Menor a Mayor)' },
         ]}
       />
-      <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
-          <div className="flex items-center space-x-2">
-              <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
-                  <ChevronLeft className="h-4 w-4" /> Anterior
-              </Button>
-              <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
-                  Siguiente <ChevronRight className="h-4 w-4" />
-              </Button>
-          </div>
-      </div>
-       {paginatedData.length > 0 ? (
+      
+      {paginatedData.length > 0 ? (
+        <>
           <div className="space-y-4">
-              {paginatedData.map(quote => (
-                  <ServiceAppointmentCard 
-                    key={quote.id}
-                    service={quote}
-                    vehicle={vehicles.find(v => v.id === quote.vehicleId)}
-                    personnel={personnel}
-                    currentUser={currentUser}
-                    onEdit={() => handleEditQuote(quote.id)}
-                    onView={() => onShowPreview(quote)}
-                    onDelete={() => handleDeleteQuote(quote.id)}
-                  />
-              ))}
+              {paginatedData.map(renderServiceCard)}
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
-            <FileText className="h-12 w-12 mb-2" />
-            <h3 className="text-lg font-semibold text-foreground">No se encontraron cotizaciones</h3>
-            <p className="text-sm">Intente cambiar su búsqueda o el rango de fechas.</p>
+          <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
+              <div className="flex items-center space-x-2">
+                  <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
+                      <ChevronLeft className="h-4 w-4" /> Anterior
+                  </Button>
+                  <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
+                      Siguiente <ChevronRight className="h-4 w-4" />
+                  </Button>
+              </div>
           </div>
-        )}
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+          <FileText className="h-12 w-12 mb-2" />
+          <h3 className="text-lg font-semibold text-foreground">No se encontraron cotizaciones</h3>
+          <p className="text-sm">Intente cambiar su búsqueda o el rango de fechas.</p>
+        </div>
+      )}
     </div>
   );
 }
+
+CotizacionesTabContent.displayName = 'CotizacionesTabContent';
+
+export default CotizacionesTabContent;

@@ -1,5 +1,5 @@
 
-
+// src/app/(app)/servicios/components/tab-agenda.tsx
 "use client";
 
 import React, { useState, useMemo, useCallback, Suspense, lazy } from "react";
@@ -28,6 +28,8 @@ export default function AgendaTabContent({
   const router = useRouter();
   const [activeView, setActiveView] = useState('lista');
 
+  const agendaServices = useMemo(() => services.filter(s => s.status === 'Agendado'), [services]);
+
   return (
     <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
       <div className="flex justify-end mb-4">
@@ -40,7 +42,7 @@ export default function AgendaTabContent({
       <TabsContent value="lista">
         <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>}>
           <AgendaListContent 
-            services={services} 
+            services={agendaServices} 
             vehicles={vehicles}
             personnel={personnel}
             onShowPreview={onShowPreview}
@@ -50,7 +52,7 @@ export default function AgendaTabContent({
       <TabsContent value="calendario">
         <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>}>
           <ServiceCalendar 
-            services={services} 
+            services={agendaServices} 
             vehicles={vehicles}
             technicians={personnel}
             onServiceClick={(s) => router.push(`/servicios/${s.id}`)} 

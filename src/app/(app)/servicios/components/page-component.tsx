@@ -1,8 +1,8 @@
 
-
+// src/app/(app)/servicios/components/page-component.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense, lazy, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Loader2, PlusCircle } from 'lucide-react';
@@ -14,8 +14,6 @@ import { inventoryService, adminService, serviceService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
-import { isToday } from 'date-fns';
-import { parseDate } from '@/lib/forms';
 
 const ActivosTabContent = lazy(() => import('./tab-activos'));
 const HistorialTabContent = lazy(() => import('./tab-historial'));
@@ -61,20 +59,6 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
 
-  // Memoized filtering for each tab
-  const activeServices = useMemo(() => allServices.filter(s => {
-    if (s.status === 'En Taller') return true;
-    
-    const deliveryDate = parseDate(s.deliveryDateTime);
-    if (s.status === 'Entregado' && deliveryDate && isToday(deliveryDate)) return true;
-
-    return false;
-  }), [allServices]);
-  
-  const agendaServices = useMemo(() => allServices.filter(s => s.status === 'Agendado'), [allServices]);
-  const quotes = useMemo(() => allServices.filter(s => s.status === 'Cotizacion'), [allServices]);
-  const historyServices = useMemo(() => allServices.filter(s => s.status === 'Entregado' || s.status === 'Cancelado'), [allServices]);
-  
   const handleShowPreview = useCallback((service: ServiceRecord) => {
     setRecordForPreview(service);
     setIsPreviewOpen(true);
@@ -124,10 +108,10 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   );
 
   const tabs = [
-    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} /> },
-    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={agendaServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
-    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService}/> },
-    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historyServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService} /> }
+    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} /> },
+    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
+    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService}/> },
+    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService} /> }
   ];
 
   return (
