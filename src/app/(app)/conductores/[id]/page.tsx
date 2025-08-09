@@ -18,7 +18,6 @@ import { Label } from '@/components/ui/label';
 import { formatCurrency, optimizeImage } from '@/lib/utils';
 import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
 import { ContractContent } from '../components/contract-content';
 import Image from "next/image";
 import { RegisterPaymentDialog } from '../components/register-payment-dialog';
@@ -39,6 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
+import { PrintLetterDialog } from "@/components/ui/print-letter-dialog";
+
 
 type DocType = 'ineFrontUrl' | 'ineBackUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl';
 
@@ -628,13 +629,13 @@ const handleAssignVehicle = useCallback(async (newVehicleId: string | null) => {
     )}
 
     {assignedVehicle && (
-      <DocumentPreviewDialog
+      <PrintLetterDialog
         open={isContractDialogOpen}
         onOpenChange={setIsContractDialogOpen}
         title="Contrato de Arrendamiento"
       >
         <ContractContent ref={contractContentRef} driver={driver} vehicle={assignedVehicle} />
-      </DocumentPreviewDialog>
+      </PrintLetterDialog>
     )}
     </>
   );

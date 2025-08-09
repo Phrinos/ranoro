@@ -1,2 +1,2 @@
-// This component is no longer used and has been replaced by UnifiedPreviewDialog or ShareServiceDialog.
-// It can be safely deleted.
+// This file is no longer used and can be safely deleted.
+// It was replaced by PrintLetterDialog and ShareServiceDialog.
