@@ -14,7 +14,7 @@ import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-r
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
-import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
@@ -26,6 +26,8 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import ReactDOMServer from 'react-dom/server';
+
 
 export default function NuevaVentaPage() {
   const { toast } = useToast(); 
@@ -248,20 +250,21 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
       </FormProvider>
 
       {saleForTicket && (
-        <DocumentPreviewDialog
-          open={isTicketDialogOpen}
-          onOpenChange={handleDialogClose}
-          title="Venta Completada"
-          description={`Ticket para la venta #${saleForTicket.id}`}
-        >
-          <div id="printable-ticket">
-            <TicketContent
-                ref={ticketContentRef}
-                sale={saleForTicket}
-                previewWorkshopInfo={workshopInfo || undefined}
-            />
-          </div>
-        </DocumentPreviewDialog>
+          <UnifiedPreviewDialog
+            open={isTicketDialogOpen}
+            onOpenChange={handleDialogClose}
+            title="Venta Completada"
+            documentType="text"
+            textContent={
+              ReactDOMServer.renderToString(
+                <TicketContent
+                    ref={ticketContentRef}
+                    sale={saleForTicket}
+                    previewWorkshopInfo={workshopInfo || undefined}
+                />
+              )
+            }
+          />
       )}
 
       <AlertDialog open={isValidationDialogOpen} onOpenChange={setIsValidationDialogOpen}>
