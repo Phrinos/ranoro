@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -37,7 +38,7 @@ import { Textarea } from '@/components/ui/textarea';
 const ServiceItemsList = lazy(() => import('./ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
 const VehicleSelectionCard = lazy(() => import('./VehicleSelectionCard').then(module => ({ default: module.VehicleSelectionCard })));
 const SafetyChecklist = lazy(() => import('./SafetyChecklist').then(module => ({ default: module.SafetyChecklist })));
-const PhotoReportTab = lazy(() => import('./PhotoReportTab').then(module => ({ default: module.PhotoReportTab })));
+const PhotoReportTab = lazy(() => import('./PhotoReportTab'));
 const ReceptionAndDelivery = lazy(() => import('./ReceptionAndDelivery').then(module => ({ default: module.ReceptionAndDelivery })));
 
 
