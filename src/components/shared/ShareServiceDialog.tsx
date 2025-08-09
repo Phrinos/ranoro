@@ -29,9 +29,6 @@ export function ShareServiceDialog({
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const contentRef = useRef<HTMLDivElement>(null);
-
-  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(null);
   const [service, setService] = useState<ServiceRecord | undefined | null>(initialService);
@@ -50,13 +47,7 @@ export function ShareServiceDialog({
     
   const defaultTabValue = service && (service.status === 'Cotizacion' || service.status === 'Agendado') ? 'quote' : 'order';
   const [activeTab, setActiveTab] = useState(defaultTabValue);
-
-  const gridColsClass = 
-    tabs.length === 4 ? 'grid-cols-4' :
-    tabs.length === 3 ? 'grid-cols-3' :
-    tabs.length === 2 ? 'grid-cols-2' :
-    'grid-cols-1';
-
+  const [isRendering, setIsRendering] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -68,12 +59,10 @@ export function ShareServiceDialog({
         
         const fetchData = async () => {
             setIsLoading(true);
-
             if (initialService?.vehicleId) {
               const fetchedVehicle = await inventoryService.getVehicleById(initialService.vehicleId);
               setVehicle(fetchedVehicle || null);
             }
-            
             if (initialService) {
                 const inventoryItems = await inventoryService.onItemsUpdatePromise();
                 const inventoryMap = new Map(inventoryItems.map(i => [i.id, i.name]));
@@ -89,18 +78,26 @@ export function ShareServiceDialog({
                 };
                 setService(updatedService);
             }
-
             setIsLoading(false);
         };
-        
         fetchData();
     }
   }, [open, initialService, defaultTabValue]);
 
+   const renderContentForCapture = async () => {
+    setIsRendering(true);
+    // Give React a moment to render the off-screen div
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const imageFile = await handleCopyAsImage(true);
+    setIsRendering(false);
+    return imageFile;
+  };
+
   const handleCopyAsImage = useCallback(async (isForSharing: boolean = false) => {
-    if (!contentRef.current || !service) return null;
+    const elementToCapture = document.getElementById('offscreen-printable-area');
+    if (!elementToCapture || !service) return null;
     try {
-      const canvas = await html2canvas(contentRef.current, { scale: 2.5, backgroundColor: null, useCORS: true });
+      const canvas = await html2canvas(elementToCapture, { scale: 2.5, backgroundColor: null, useCORS: true });
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
       if (!blob) throw new Error("Could not create blob from canvas.");
       
@@ -120,26 +117,22 @@ export function ShareServiceDialog({
 
   const handleCopyServiceForWhatsapp = useCallback(() => {
     if (!service || !vehicle) return;
-    
     const workshopName = (workshopInfo as WorkshopInfo)?.name || 'nuestro taller';
     let message = `Hola ${vehicle.ownerName || 'Cliente'}, aquí tienes los detalles de tu servicio en ${workshopName}.`;
-    
     if (service.publicId) {
         const shareUrl = `${window.location.origin}/s/${service.publicId}`;
         message += `\n\nPuedes ver los detalles y firmar de conformidad en el siguiente enlace:\n${shareUrl}`;
     } else {
         message += `\n\nFolio de Servicio: ${service.id}\nTotal: ${formatCurrency(service.totalCost)}`;
     }
-    
     message += `\n\n¡Agradecemos tu preferencia!`;
-
     navigator.clipboard.writeText(message).then(() => {
       toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
     });
   }, [service, vehicle, toast, workshopInfo]);
   
   const handleShare = async () => {
-    const imageFile = await handleCopyAsImage(true);
+    const imageFile = await renderContentForCapture();
     if (imageFile && navigator.share) {
       try {
         await navigator.share({
@@ -158,119 +151,119 @@ export function ShareServiceDialog({
     }
   };
 
-
-  const handleViewImage = (url: string) => {
-    setViewingImageUrl(url);
-    setIsImageViewerOpen(true);
-  };
-  
-  const handlePrint = () => {
-    const printableArea = contentRef.current;
+  const handlePrint = async () => {
+    setIsRendering(true);
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const printableArea = document.getElementById('offscreen-printable-area');
     if (printableArea) {
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        const stylesheets = Array.from(document.getElementsByTagName('link'));
-        let styles = '';
-        stylesheets.forEach(sheet => {
-          if (sheet.rel === 'stylesheet' && sheet.href) {
-            styles += `<link rel="stylesheet" href="${sheet.href}">`;
-          }
-        });
-        const customStyles = `
-          <style>
-            @page { margin: 0; size: letter; }
-            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: white !important; }
-            #printable-area-dialog { background-color: white !important; box-shadow: none !important; margin: 0 !important; padding: 1cm !important; width: 100% !important; height: auto !important; }
-          </style>
-        `;
-        printWindow.document.write(`<html><head><title>Imprimir</title>${styles}${customStyles}</head><body>`);
-        printWindow.document.write(printableArea.innerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
-      }
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write('<html><head><title>Imprimir</title>');
+            const stylesheets = Array.from(document.styleSheets);
+            stylesheets.forEach(sheet => {
+                try {
+                    if (sheet.href) {
+                        printWindow.document.write(`<link rel="stylesheet" href="${sheet.href}">`);
+                    } else if (sheet.cssRules) {
+                        printWindow.document.write(`<style>${Array.from(sheet.cssRules).map(rule => rule.cssText).join('')}</style>`);
+                    }
+                } catch (e) {
+                    console.warn("Could not read stylesheet for printing:", e);
+                }
+            });
+            printWindow.document.write('<style>@page { size: letter; margin: 0; } body { margin: 0; } .printable-content { box-shadow: none !important; border: none !important; } </style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(printableArea.innerHTML);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.onload = () => {
+                printWindow.focus();
+                printWindow.print();
+                printWindow.close();
+                setIsRendering(false);
+            };
+        } else {
+            setIsRendering(false);
+        }
+    } else {
+        setIsRendering(false);
     }
   };
-
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[95vh] flex flex-col p-0">
-          <DialogHeader className="p-6 pb-2 flex-shrink-0">
-            <DialogTitle>Compartir Documento de Servicio</DialogTitle>
-            <DialogDescription>
-              Folio: {service?.id || 'N/A'}. Utiliza las siguientes opciones para compartir o imprimir.
-            </DialogDescription>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Compartir Documento de Servicio</DialogTitle>
+                <DialogDescription>
+                  Folio: {service?.id || 'N/A'}. Selecciona una opción para compartir o imprimir.
+                </DialogDescription>
+            </DialogHeader>
+
             {tabs.length > 1 && (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full pt-2">
-                  <TabsList className={cn('grid w-full h-auto p-0 bg-transparent gap-2', gridColsClass)}>
+                  <TabsList className={cn('grid w-full h-auto p-1 bg-muted', gridColsClass)}>
                       {tabs.map(tab => (
-                          <button
-                            key={tab.value}
-                            onClick={() => setActiveTab(tab.value)}
-                            className={cn(
-                              'flex-1 min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug flex items-center justify-center',
-                              activeTab === tab.value
-                                ? 'bg-primary text-primary-foreground shadow'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                            )}
-                          >
+                          <TabsTrigger key={tab.value} value={tab.value} className="text-xs sm:text-sm">
                               {tab.label}
-                          </button>
+                          </TabsTrigger>
                       ))}
                   </TabsList>
               </Tabs>
             )}
-          </DialogHeader>
-          
-          <div className="flex-grow overflow-y-auto px-6 bg-muted/30 relative pb-[80px]">
-             <div id="printable-area-dialog" className="w-[8.5in] h-auto bg-white mx-auto my-4 shadow-lg p-8">
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-full"><Loader2 className="mr-2 h-8 w-8 animate-spin" /> Cargando...</div>
-                ) : service ? (
-                    <ServiceSheetContent
+
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <Button onClick={() => renderContentForCapture().then(handleShare)} disabled={isRendering}>
+                {isRendering ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-4 w-4"/>}
+                Compartir
+              </Button>
+              <Button onClick={handleCopyServiceForWhatsapp}>
+                <MessageSquare className="mr-2 h-4 w-4"/> WhatsApp
+              </Button>
+              <Button onClick={() => renderContentForCapture().then(() => handleCopyAsImage(false))} disabled={isRendering}>
+                <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
+              </Button>
+              <Button onClick={handlePrint} disabled={isRendering}>
+                 {isRendering ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Printer className="mr-2 h-4 w-4"/>}
+                 Imprimir
+              </Button>
+            </div>
+            
+            {service?.publicId && (
+              <div className="pt-4 border-t">
+                  <p className="text-sm font-medium mb-2">Enlace Público:</p>
+                   <div className="flex items-center gap-2">
+                       <Input value={`${window.location.origin}/s/${service.publicId}`} readOnly className="bg-muted"/>
+                       <Button size="icon" variant="outline" onClick={() => {
+                           navigator.clipboard.writeText(`${window.location.origin}/s/${service.publicId}`);
+                           toast({title: "Enlace copiado"});
+                       }}>
+                          <LinkIcon className="h-4 w-4"/>
+                       </Button>
+                   </div>
+              </div>
+            )}
+
+        </DialogContent>
+      </Dialog>
+      
+       {/* Off-screen container for rendering the printable content */}
+      <div id="offscreen-printable-area" className="printable-content" style={{ position: 'absolute', left: '-9999px', top: '0', width: '8.5in', height: 'auto', backgroundColor: 'white' }}>
+          {isRendering && service && (
+              <div className="p-8">
+                <ServiceSheetContent
                     ref={contentRef}
                     service={service}
                     vehicle={vehicle || undefined}
                     workshopInfo={workshopInfo as WorkshopInfo}
-                    onViewImage={handleViewImage}
+                    onViewImage={() => {}}
                     activeTab={activeTab}
-                    />
-                ) : (
-                    <p>No se pudo cargar la información del servicio.</p>
-                )}
-            </div>
-          </div>
-          
-          <DialogFooter className="p-4 border-t flex-shrink-0 bg-background sm:justify-end absolute bottom-0 left-0 right-0">
-            <div className="flex flex-col sm:flex-row gap-2">
-                <Button onClick={() => handleCopyAsImage()} className="bg-blue-600 hover:bg-blue-700 text-white"><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-                <Button onClick={handleCopyServiceForWhatsapp} className="bg-green-600 hover:bg-green-700 text-white"><MessageSquare className="mr-2 h-4 w-4" /> WhatsApp</Button>
-                <Button onClick={handleShare} variant="outline" className="bg-white hover:bg-gray-100 text-black border"><Share2 className="mr-2 h-4 w-4" /> Compartir</Button>
-                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-        <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
-            {viewingImageUrl && (
-              <div className="relative aspect-video w-full">
-                <Image
-                  src={viewingImageUrl}
-                  alt="Vista ampliada de evidencia"
-                  fill
-                  style={{ objectFit: 'contain' }}
-                  sizes="(max-width: 768px) 100vw, 1024px"
-                  crossOrigin="anonymous"
                 />
               </div>
-            )}
-        </DialogContent>
-      </Dialog>
+          )}
+      </div>
+
     </>
   );
 }
