@@ -200,6 +200,8 @@ function ServiceFormContent({
     if (currentStatus === 'Completado' || currentStatus === 'Entregado') {
       setOriginalLockedStatus(currentStatus);
       setValue('status', 'En Taller', { shouldDirty: false, shouldValidate: false });
+    } else {
+      setOriginalLockedStatus(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialData?.id]);
@@ -216,12 +218,23 @@ function ServiceFormContent({
   const watchedStatus = watch('status');
   const isQuote = watchedStatus === 'Cotizacion' || (mode === 'quote' && !isEditing);
 
-  const isReadOnly = false; 
+  const isReadOnly = originalLockedStatus !== null && currentUser?.role !== 'Superadministrador'; 
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
-    if (isReadOnly) return;
+    if (isReadOnly && originalLockedStatus) {
+      // For restricted edits, only allow saving notes and some non-critical fields.
+      // This part can be adjusted based on exact requirements.
+      const allowedUpdate = {
+        notes: values.notes,
+        vehicleConditions: values.vehicleConditions,
+        customerItems: values.customerItems,
+        // Potentially add other fields here if they should be editable
+      };
+      await onSubmit({ ...initialData, ...allowedUpdate } as ServiceFormValues);
+      return;
+    }
   
-    // Create a mutable copy of the form values.
+    // For full edits, create a mutable copy of the form values.
     const finalValues = { ...values };
     
     // If the service was originally locked, restore its true status before saving.
@@ -323,7 +336,7 @@ function ServiceFormContent({
     };
 
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
-  const isSubmitDisabled = isReadOnly || formState.isSubmitting;
+  const isSubmitDisabled = formState.isSubmitting;
 
   return (
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
