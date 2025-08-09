@@ -54,8 +54,8 @@ export function SignatureDialog({ open, onOpenChange, onSave }: SignatureDialogP
             penColor='black'
             canvasProps={{ 
               className: 'w-full h-full',
-              willReadFrequently: true 
-            }}
+              willreadfrequently: "true"
+            } as any}
           />
         </div>
         <DialogFooter className="gap-2 sm:gap-0">
