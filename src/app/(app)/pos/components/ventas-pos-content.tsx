@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/components/ventas-pos-content.tsx
 "use client";
 
@@ -48,6 +49,7 @@ interface VentasPosContentProps {
   onViewSale: (sale: SaleReceipt) => void;
   onDeleteSale: (saleId: string) => void;
   onEditPayment: (sale: SaleReceipt) => void;
+  onCancelSale: (saleId: string, reason: string) => void;
 }
 
 
@@ -59,11 +61,12 @@ export function VentasPosContent({
   onReprintTicket,
   onViewSale,
   onDeleteSale,
-  onEditPayment
+  onEditPayment,
+  onCancelSale,
 }: VentasPosContentProps) {
 
   const { 
-    filteredData, 
+    paginatedData, 
     ...tableManager 
   } = useTableManager<SaleReceipt>({
     initialData: allSales,
@@ -75,11 +78,11 @@ export function VentasPosContent({
   });
 
   const summaryData = useMemo(() => {
-    const salesCount = filteredData.length;
+    const salesCount = paginatedData.length;
     const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();
     let totalProfit = 0;
 
-    filteredData.forEach(sale => {
+    paginatedData.forEach(sale => {
       totalProfit += calculateSaleProfit(sale, allInventory);
       if (sale.payments && sale.payments.length > 0) {
         sale.payments.forEach(p => {
@@ -115,7 +118,7 @@ export function VentasPosContent({
       }
     });
     return { salesCount, paymentsSummary, totalProfit };
-  }, [filteredData, allInventory]);
+  }, [paginatedData, allInventory]);
 
   return (
     <div className="space-y-4">
@@ -177,9 +180,9 @@ export function VentasPosContent({
             onDateRangeChange={tableManager.onDateRangeChange}
         />
         
-        {filteredData.length > 0 ? (
+        {paginatedData.length > 0 ? (
           <div className="space-y-4">
-              {filteredData.map(sale => {
+              {paginatedData.map(sale => {
                   const saleDate = parseDate(sale.saleDate);
                   const isCancelled = sale.status === 'Cancelado';
                   const profit = calculateSaleProfit(sale, allInventory);
@@ -229,10 +232,14 @@ export function VentasPosContent({
                                           <Button variant="ghost" size="icon" onClick={() => onEditPayment(sale)} title="Editar Pago"><Repeat className="h-4 w-4" /></Button>
                                           <Button variant="ghost" size="icon" onClick={() => onReprintTicket(sale)} title="Reimprimir Ticket" disabled={isCancelled}><Printer className="h-4 w-4" /></Button>
                                            <ConfirmDialog
-                                              triggerButton={<Button variant="ghost" size="icon" title="Eliminar Venta Permanentemente" disabled={isCancelled}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
-                                              title={`¿Eliminar Venta #${sale.id.slice(-6)}?`}
-                                              description="Esta acción no se puede deshacer. Se eliminará el registro de la venta permanentemente y el stock se restaurará (si la venta no estaba ya cancelada)."
-                                              onConfirm={() => onDeleteSale(sale.id)}
+                                              triggerButton={
+                                                  <Button variant="ghost" size="icon" title={isCancelled ? "Venta ya cancelada" : "Cancelar Venta"} disabled={isCancelled}>
+                                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                                  </Button>
+                                              }
+                                              title={`¿Cancelar Venta #${sale.id.slice(-6)}?`}
+                                              description="Esta acción no se puede deshacer. El stock se restaurará y los movimientos de caja asociados se eliminarán."
+                                              onConfirm={() => onCancelSale(sale.id, prompt('Motivo de cancelación:') || 'Sin motivo especificado.')}
                                           />
                                       </div>
                                   </div>

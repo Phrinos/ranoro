@@ -32,6 +32,8 @@ export default function PosPageComponent() {
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allCategories, setAllCategories] = useState<any[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
   
   // States for UI control
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -56,6 +58,8 @@ export default function PosPageComponent() {
 
     unsubs.push(saleService.onSalesUpdate(setAllSales));
     unsubs.push(inventoryService.onItemsUpdate(setAllInventory));
+    unsubs.push(inventoryService.onCategoriesUpdate(setAllCategories));
+    unsubs.push(inventoryService.onSuppliersUpdate(setAllSuppliers));
     unsubs.push(adminService.onUsersUpdate((users) => {
         setAllUsers(users);
         setIsLoading(false);
@@ -133,6 +137,7 @@ Total: ${formatCurrency(sale.totalAmount)}
         onViewSale={(sale) => { setSelectedSale(sale); setIsViewDialogOpen(true); }}
         onEditPayment={handleOpenPaymentDialog}
         onDeleteSale={handleDeleteSale}
+        onCancelSale={handleCancelSale}
       />
       
       {selectedSaleForReprint && (
@@ -155,23 +160,13 @@ Total: ${formatCurrency(sale.totalAmount)}
         sale={selectedSale} 
         inventory={allInventory}
         users={allUsers}
-        categories={[]}
-        suppliers={[]}
+        categories={allCategories}
+        suppliers={allSuppliers}
         onCancelSale={handleCancelSale}
         onDeleteSale={handleDeleteSale}
         onPaymentUpdate={handleUpdatePaymentDetails} 
         onSendWhatsapp={handleCopyServiceForWhatsapp} 
       />}
-
-      {saleToEditPayment && (
-        <PaymentDetailsDialog
-          open={isPaymentDialogOpen}
-          onOpenChange={setIsPaymentDialogOpen}
-          record={saleToEditPayment}
-          onConfirm={(id, details) => handleUpdatePaymentDetails(id, details as PaymentDetailsFormValues)}
-          recordType="sale"
-        />
-      )}
     </>
   );
 }
