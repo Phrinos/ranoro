@@ -135,7 +135,7 @@ export function VehicleSelectionCard({
 
   if (selectedVehicle) {
     return (
-      <Card className="relative bg-muted">
+      <Card className="relative">
         <CardHeader>
           <CardTitle>Vehículo Seleccionado</CardTitle>
         </CardHeader>
