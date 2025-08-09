@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/page.tsx
 
 "use client";
@@ -37,7 +38,7 @@ import { Tooltip, TooltipTrigger, TooltipProvider, TooltipContent } from '@/comp
 
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
 const MovimientosTabContent = lazy(() => import('./components/movimientos-content').then(m => ({ default: m.default })));
-const CajaContent = lazy(() => import('./components/caja-content').then(m => ({ default: m.CajaContent })));
+const CajaContent = lazy(() => import('./components/caja-content'));
 
 // --- Tipos para la pestaña Movimientos ---
 interface Movement {
