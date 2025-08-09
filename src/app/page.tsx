@@ -19,7 +19,7 @@ import { GetStartedSection } from './(public)/landing/GetStartedSection';
 import { FaqSection } from './(public)/landing/FaqSection';
 import { CtaSection } from './(public)/landing/CtaSection';
 import { Footer } from './(public)/landing/Footer';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 
 
@@ -71,6 +71,10 @@ export default function LandingPage() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-full sm:w-3/4">
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Menú Principal</SheetTitle>
+                    <SheetDescription>Navegación principal del sitio</SheetDescription>
+                </SheetHeader>
                 <nav className="flex flex-col items-center justify-center h-full gap-6">
                   {navLinks.map(link => (
                       <Link key={link.href} href={link.href} className="text-xl font-medium" onClick={() => setIsMobileMenuOpen(false)}>
