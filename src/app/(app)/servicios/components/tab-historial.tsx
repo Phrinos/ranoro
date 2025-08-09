@@ -25,6 +25,7 @@ interface HistorialTabContentProps {
   personnel: User[];
   currentUser: User | null;
   onShowPreview: (service: ServiceRecord) => void;
+  onDelete: (serviceId: string) => void;
 }
 
 const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
@@ -55,6 +56,7 @@ export default function HistorialTabContent({
   personnel,
   currentUser,
   onShowPreview,
+  onDelete,
 }: HistorialTabContentProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -124,9 +126,9 @@ export default function HistorialTabContent({
       currentUser={currentUser}
       onEdit={() => handleEditService(record.id)}
       onView={() => onShowPreview(record)}
-      onCancel={() => handleCancelService(record.id)}
+      onDelete={() => onDelete(record.id)}
     />
-  ), [vehicles, personnel, currentUser, onShowPreview, router, handleCancelService]);
+  ), [vehicles, personnel, currentUser, onShowPreview, router, onDelete]);
 
 
   return (

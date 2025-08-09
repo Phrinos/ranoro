@@ -64,6 +64,7 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
             serviceService.onServicesUpdate((allServices) => {
                 const servicesForTodayOrActive = allServices.filter(s => {
                     if (s.status === 'En Taller' || s.status === 'Agendado') return true;
+                    // Also include services delivered today in the active tab for end-of-day review
                     if (s.status === 'Entregado') {
                         const deliveryDate = parseDate(s.deliveryDateTime);
                         return deliveryDate && isToday(deliveryDate);
@@ -106,6 +107,15 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
     }
   }, [toast]);
   
+  const handleDeleteService = async (serviceId: string) => {
+    try {
+        await serviceService.deleteService(serviceId);
+        toast({ title: "Servicio Eliminado", description: `El registro ha sido eliminado permanentemente.` });
+    } catch(e) {
+        toast({ title: "Error al Eliminar", description: `No se pudo eliminar el servicio. ${e instanceof Error ? e.message : ''}`, variant: "destructive"});
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -119,10 +129,10 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   );
 
   const tabs = [
-    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} /> },
-    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={agendaServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
-    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
-    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historyServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> }
+    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} /> },
+    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={agendaServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onDelete={handleDeleteService} /> },
+    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService}/> },
+    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historyServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService} /> }
   ];
 
   return (

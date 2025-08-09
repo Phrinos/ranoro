@@ -23,6 +23,7 @@ interface ActivosTabContentProps {
   currentUser: User | null;
   onShowPreview: (service: ServiceRecord) => void;
   onCompleteService: (service: ServiceRecord) => void;
+  onDelete: (serviceId: string) => void;
 }
 
 const getStatusPriority = (service: ServiceRecord): number => {
@@ -48,7 +49,8 @@ export default function ActivosTabContent({
   personnel,
   currentUser,
   onShowPreview,
-  onCompleteService
+  onCompleteService,
+  onDelete,
 }: ActivosTabContentProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -116,8 +118,9 @@ export default function ActivosTabContent({
       onEdit={() => handleEditService(service.id)}
       onView={() => onShowPreview(service)}
       onCancel={() => handleCancelService(service.id)}
+      onDelete={() => onDelete(service.id)}
     />
-  ), [vehicles, personnel, currentUser, onShowPreview, router, handleCancelService]);
+  ), [vehicles, personnel, currentUser, onShowPreview, router, handleCancelService, onDelete]);
 
   return (
     <Card>
