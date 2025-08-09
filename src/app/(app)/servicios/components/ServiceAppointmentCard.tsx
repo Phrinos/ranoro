@@ -1,4 +1,5 @@
 
+// src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 
 "use client";
 
@@ -167,17 +168,6 @@ export function ServiceAppointmentCard({
                 <Button variant="ghost" size="icon" title="Imprimir" onClick={() => toast({title: "Función no implementada"})}>
                     <Printer className="h-4 w-4" />
                 </Button>
-                 <ConfirmDialog
-                    triggerButton={
-                        <Button variant="ghost" size="icon" title={service.status === 'Cotizacion' ? 'Eliminar Cotización' : 'Cancelar Servicio'} disabled={service.status === 'Cancelado' || service.status === 'Entregado'}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                    }
-                    title={service.status === 'Cotizacion' ? '¿Eliminar Cotización?' : '¿Cancelar este servicio?'}
-                    description={service.status === 'Cotizacion' ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.' : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'}
-                    onConfirm={handleConfirmAction}
-                    confirmText="Sí, Continuar"
-                  />
             </div>
           </div>
         </div>
