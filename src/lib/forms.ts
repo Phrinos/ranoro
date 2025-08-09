@@ -4,8 +4,6 @@
 
 import { parseISO, isValid } from 'date-fns';
 
-export const IVA_RATE = 0.16;
-
 /**
  * Parses a date value that could be a Date object, an ISO string, a Firestore Timestamp, or a number (milliseconds).
  * @param d The date value to parse.

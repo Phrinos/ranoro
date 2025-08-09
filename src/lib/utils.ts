@@ -3,19 +3,10 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle } from 'lucide-react';
 import type { PaymentMethod } from '@/types';
+export { toNumber, formatMXN as formatCurrency, IVA_RATE } from './money';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
-}
-
-export function formatCurrency(amount: number | null | undefined): string {
-    if (amount === null || amount === undefined) {
-        return '$0.00';
-    }
-    return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN',
-    }).format(amount);
 }
 
 export function normalizeDataUrl(dataUrl: string): string {
