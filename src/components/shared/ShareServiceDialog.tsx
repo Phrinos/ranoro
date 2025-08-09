@@ -53,6 +53,8 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
     try { await navigator.clipboard.writeText(text); toast({ title: label }); }
     catch { toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manualmente.", variant: "destructive" }); }
   };
+  
+  const handleCopyWhatsApp = React.useCallback(() => copy(message, "Mensaje copiado"), [message, copy]);
 
   const handleNativeShare = React.useCallback(async () => {
     try {
@@ -62,7 +64,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
         await copy(message, "Mensaje copiado – pega en tu app");
       }
     } catch { /* cancel/share error */ }
-  }, [message, shareUrl]);
+  }, [message, shareUrl, copy]);
 
   if (!initialService) return null;
 
@@ -90,14 +92,13 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
 
         {/* Body */}
         <div className="p-6 space-y-6">
-          {/* Summary card */}
           <Card className="border-slate-200">
             <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
               <div className="h-9 w-9 rounded-lg bg-slate-100 grid place-items-center"><Car className="h-5 w-5 text-muted-foreground"/></div>
               <div className="min-w-0">
                 <p className="font-bold truncate">{initialService?.vehicleIdentifier}</p>
-                {vehicle && (
-                  <p className="text-xs text-muted-foreground truncate">
+                 {vehicle && (
+                  <p className="text-sm text-muted-foreground truncate">
                     {vehicle.make} {vehicle.model} ({vehicle.year}) - {vehicle.ownerName}
                   </p>
                 )}
@@ -115,8 +116,8 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
                     <div key={item.id} className="border rounded-lg p-3 border-slate-200 bg-white">
                       <div className="flex justify-between items-start gap-3">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">{item.name}</p>
-                          {!!(item.suppliesUsed && item.suppliesUsed.length) && (
+                           <p className="font-medium text-foreground truncate">{item.name}</p>
+                           {!!(item.suppliesUsed && item.suppliesUsed.length) && (
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                               Insumos: {item.suppliesUsed.map((s:any) => `${s.quantity}× ${s.supplyName}`).join(", ")}
                             </p>
@@ -140,7 +141,6 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
             </CardContent>
           </Card>
 
-          {/* Public link */}
           {initialService?.publicId && (
             <div className="space-y-2">
               <p className="text-sm font-medium">Enlace público</p>
@@ -155,6 +155,9 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
 
         {/* Footer actions */}
         <DialogFooter className="px-6 pb-6 pt-4 border-t flex-col sm:flex-row gap-2">
+           <Button onClick={handleCopyWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
+                <MessageSquare className="mr-2 h-4 w-4"/> Copiar para WhatsApp
+            </Button>
           <Button onClick={handleNativeShare} className="w-full sm:w-auto">
             <Share2 className="mr-2 h-4 w-4"/> Compartir
           </Button>
