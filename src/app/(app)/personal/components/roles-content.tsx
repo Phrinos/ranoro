@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -35,27 +36,37 @@ const PERMISSION_GROUPS = [
     {
         groupName: "Inventario y Ventas",
         permissions: [
-            { id: 'inventory:manage', label: 'Gestionar Inventario (Añadir/Editar/Borrar)' },
+            { id: 'inventory:manage', label: 'Gestionar Inventario' },
             { id: 'inventory:view', label: 'Ver Inventario' },
             { id: 'pos:create_sale', label: 'Registrar Ventas (POS)' },
             { id: 'pos:view_sales', label: 'Ver Registro de Ventas' },
         ]
     },
     {
-        groupName: "Administración",
+        groupName: "Flotilla y Rentas",
         permissions: [
-            { id: 'vehicles:manage', label: 'Gestionar Vehículos' },
-            { id: 'technicians:manage', label: 'Gestionar Personal (Técnicos/Admin)' },
-            { id: 'fleet:manage', label: 'Gestionar Flotilla (Vehículos y Conductores)' },
+             { id: 'fleet:manage', label: 'Gestionar Flotilla (Vehículos y Conductores)' },
+             { id: 'rentals:view', label: 'Ver Ingresos de Renta' },
+             { id: 'rentals:manage', label: 'Registrar Pagos y Gastos de Renta' },
+        ]
+    },
+    {
+        groupName: "Administración y Finanzas",
+        permissions: [
+            { id: 'vehicles:manage', label: 'Gestionar Vehículos (General)' },
+            { id: 'personnel:manage', label: 'Gestionar Personal (Técnicos/Asesores)' },
             { id: 'finances:view_report', label: 'Ver Reporte Financiero' },
+            { id: 'billing:manage', label: 'Gestionar Facturación (Admin)' },
+            { id: 'messaging:manage', label: 'Configurar Mensajería (Admin)' },
             { id: 'audits:view', label: 'Ver Auditoría de Acciones (Admin)' },
             { id: 'users:manage', label: 'Gestionar Usuarios (Admin)' },
             { id: 'roles:manage', label: 'Gestionar Roles y Permisos (Admin)' },
             { id: 'ticket_config:manage', label: 'Configurar Ticket (Admin)' },
-            { id: 'workshop:manage', label: 'Gestionar Información del Taller (Admin)' },
+            { id: 'workshop:manage', label: 'Configurar Datos del Taller (Admin)' },
         ]
     },
 ];
+
 
 const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap(group => group.permissions);
 
