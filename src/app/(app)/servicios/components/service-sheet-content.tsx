@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -15,6 +14,9 @@ import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder
 import Image from 'next/image';
 import { parseDate } from '@/lib/forms';
 import { Badge } from '@/components/ui/badge';
+import { GARANTIA_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
+import Link from 'next/link';
+
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -109,7 +111,7 @@ const SafetyChecklistDisplay = ({
             <header className="mb-4 pb-2 border-b-2 border-black">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div className="relative w-[150px] h-auto">
-                        <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} width={150} height={50} style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" />
+                        <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} width={150} height={50} style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" priority />
                     </div>
                     <div className="text-left sm:text-right">
                     <h1 className="text-base sm:text-lg font-bold">REVISIÓN DE PUNTOS DE SEGURIDAD</h1>
@@ -185,7 +187,7 @@ const SafetyChecklistDisplay = ({
             {inspection.technicianSignature && (
                  <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
                     <div className="relative w-full h-full max-w-[200px] aspect-video">
-                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" fill className="object-contain" crossOrigin="anonymous"/>
+                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" fill className="object-contain" crossOrigin="anonymous" priority />
                     </div>
                     <div className="mt-2 pt-1 w-64 text-center">
                         <p className="text-xs font-bold">FIRMA DEL TÉCNICO ({format(new Date(), "dd/MM/yyyy")})</p>
@@ -240,7 +242,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const shouldShowNextService = service.nextServiceInfo && service.status === 'Entregado';
 
     const ServiceOrderContent = (
-      <div className="flex flex-col min-h-full relative">
+      <div className="flex flex-col min-h-full relative print:p-0">
         {service.status === 'Cancelado' && (
           <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
             <span className="text-red-500 text-7xl md:text-9xl font-black opacity-20 transform -rotate-12 select-none">
@@ -251,7 +253,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <header className="mb-2 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-start gap-2">
             <div className="relative w-[150px] h-[50px]">
-                <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" />
+                <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" priority />
             </div>
             <div className="text-right">
               <h1 className="text-xl font-bold">ORDEN DE SERVICIO</h1>
@@ -273,45 +275,20 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </header>
 
         <main className="flex-grow">
-           <section className="grid grid-cols-3 gap-2 mb-2 text-xs">
-              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
-                <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
-                <div className="space-y-0.5 p-2 text-sm">
-                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{capitalizeWords(vehicle?.ownerName || '')}</span></p>
-                  <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
-                  {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
-                </div>
-              </div>
-              <div className={cn("border-2 border-black rounded-md overflow-hidden flex-1", shouldShowNextService ? "col-span-1" : "col-span-2")}>
-                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
-                  <div className="space-y-0.5 p-2 text-sm">
-                      <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
-                      <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span></p>
-                      {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
-                      {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
-                  </div>
-              </div>
-              {shouldShowNextService && (
-                  <div className="border-2 border-red-700 rounded-md overflow-hidden flex-1">
-                    <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
-                    <div className="p-2 space-y-1 text-center text-sm">
-                        <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
-                        {service.nextServiceInfo!.date && isValid(parseDate(service.nextServiceInfo!.date)) && (
-                            <p className="font-bold">Fecha: {format(parseDate(service.nextServiceInfo!.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
-                        )}
-                        {service.nextServiceInfo!.mileage && (
-                            <p className="font-bold">Kilometraje: {service.nextServiceInfo!.mileage.toLocaleString('es-MX')} km</p>
-                        )}
-                    </div>
-                  </div>
-              )}
+           <section className="mb-4 text-sm border-b-2 border-black pb-2">
+            <p className="font-bold text-lg">{capitalizeWords(vehicle?.ownerName || '')}</p>
+            <p className="font-semibold text-base">{vehicle?.ownerPhone || ''}</p>
+            <div className="mt-2 flex justify-between items-end">
+                <p className="font-bold text-lg">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                <p className="font-bold text-xl px-2 py-1 bg-gray-200 rounded-md">{vehicle?.licensePlate || 'N/A'}</p>
+            </div>
           </section>
-            
+
           {driverDebt.totalDebt > 0 && (
             <div className="my-2 p-2 border-2 border-red-500 bg-red-50 rounded-md text-red-800">
                 <h4 className="font-bold text-sm flex items-center gap-2"><AlertCircle className="h-4 w-4"/>AVISO DE ADEUDO</h4>
                 <p className="text-xs mt-1">
-                    Este conductor presenta un adeudo con la flotilla por <strong>{formatCurrency(driverDebt.totalDebt)}</strong>.
+                    Este conductor presenta un adeudo con la flotilla por un total de <strong>{formatCurrency(driverDebt.totalDebt)}</strong>.
                 </p>
             </div>
           )}
@@ -345,17 +322,17 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               </div>
           </section>
           
-          <section className="grid grid-cols-5 gap-2 mb-2 text-xs">
-              <div className="border-2 border-black rounded-md overflow-hidden col-span-3 flex flex-col">
+          <section className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-2 text-xs">
+              <div className="border-2 border-black rounded-md overflow-hidden md:col-span-3 flex flex-col">
                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">CONDICIONES DEL VEHÍCULO</h3>
                  <p className="whitespace-pre-wrap p-2 text-base flex-grow">{service.vehicleConditions || 'No especificado.'}</p>
               </div>
-              <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col">
+              <div className="border-2 border-black rounded-md overflow-hidden md:col-span-1 flex flex-col">
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">PERTENENCIAS</h3>
                   <p className="whitespace-pre-wrap p-2 text-base flex-grow">{service.customerItems || 'No especificado.'}</p>
               </div>
-              <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col justify-center min-h-[60px]">
-                  <h3 className="font-bold p-1 bg-gray-700 text-white text-center text-xs">COMBUSTIBLE</h3>
+              <div className="border-2 border-black rounded-md overflow-hidden md:col-span-1 flex flex-col justify-center min-h-[60px]">
+                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">COMBUSTIBLE</h3>
                   <div className="flex-grow flex flex-col items-center justify-center p-2">
                     <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300">
                         <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
@@ -368,7 +345,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   </div>
               </div>
           </section>
-           <section className="mt-auto pt-2 grid grid-cols-3 gap-2 text-xs">
+           <section className="mt-auto pt-2 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
                 <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px] col-span-1">
                     <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ASESOR</h3>
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
@@ -380,6 +357,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                                   fill
                                   style={{ objectFit: 'contain' }}
                                   crossOrigin="anonymous"
+                                  priority
                                 />
                             </div>
                         )}
@@ -393,7 +371,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.customerSignatureReception ? (
                             <div className="relative w-full h-full">
-                                <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" fill style={{objectFit: 'contain'}} unoptimized crossOrigin="anonymous" />
+                                <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" fill style={{objectFit: 'contain'}} unoptimized crossOrigin="anonymous" priority />
                             </div>
                         ) : (
                             isPublicView && showSignReception && onSignClick && (
@@ -406,7 +384,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
                         <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
-                        <p className="text-[7px] text-gray-600">Autorizo que se realicen estos servicios</p>
+                        <p className="text-[7px] text-gray-600">
+                          Al firmar, acepto los <Link href="/legal/terminos" target="_blank" className="underline">Términos y Condiciones</Link> y el <Link href="/legal/privacidad" target="_blank" className="underline">Aviso de Privacidad</Link> para la realización del servicio.
+                        </p>
                     </div>
                 </div>
                 <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px]">
@@ -414,7 +394,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.customerSignatureDelivery ? (
                             <div className="relative w-full h-full">
-                            <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" fill style={{objectFit: 'contain'}} unoptimized crossOrigin="anonymous"/>
+                            <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" fill style={{objectFit: 'contain'}} unoptimized crossOrigin="anonymous" priority />
                             </div>
                         ) : (
                             isPublicView && showSignDelivery && onSignClick && (
@@ -427,17 +407,17 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
                         <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
-                        <p className="text-[7px] text-gray-600">Recibo de conformidad</p>
+                        <p className="text-[7px] text-gray-600">{GARANTIA_CONDICIONES_TEXT}</p>
                     </div>
                 </div>
            </section>
         </main>
         
         <footer className="mt-auto pt-2 text-xs">
-           <section className="mt-2">
-                <p className="text-[6px] text-justify leading-snug">
-                    <span className="font-bold">TERMINOS Y CONDICIONES:</span> 1. En virtud de este contrato, Servicio Ranoro presta el servicio de reparación y/o mantenimiento al Cliente (Consumidor), del vehículo cuyas características se detallan en este contrato. 2. El Cliente expresa ser el dueño del vehículo y/o estar facultado para autorizar la reparación y/o mantenimiento del vehículo descrito en el presente contrato, por lo que acepta las condiciones y términos bajo los cuales se realizará la prestación del servicio descrita en dicho contrato. Asimismo, es sabedor de las posibles consecuencias que puede sufrir el vehículo con motivo de su reparación y/o mantenimiento y se responsabiliza de las mismas. 3. El consumidor acepta haber tenido a la vista los precios por mano de obra, partes y/o refacciones a emplear en las operaciones a efectuar por parte de Ranoro, y cuyas refacciones son nuevas y apropiadas para el funcionamiento del vehiculo. 4. Las condiciones generales del vehículo materia de reparación y/o mantenimiento, son señalados en el carátula del presente contrato. 5. Se otorga con garantía por un plazo de 90 días en mano de obra contados a partir de la entrega del vehículo. Para la garantía en partes, piezas, refacciones y accesorios, Ranoro transmitirá la otorgada por el fabricante y/o proveedor. la garantía deberá hacerse válida en las instalaciones de RANORO siempre y cuando no se haya efectuado una reparación por un tercero. El tiempo que dure la reparación y/o mantenimiento del vehículo, bajo la protección de la garantía, no es computable dentro del plazo de la misma. De igual forma, los gastos en que incurra el Cliente para hacer válida la garantía en un domicilio diverso al de Ranoro, deberán ser cubiertos por éste. 6. Ranoro será el responsable por las descomposturas, daños o pérdidas parciales o totales imputables a él mientras el vehículo se encuentre bajo su resguardo para llevar a cabo la prestación del servicio de reparación y/o mantenimiento, o como consecuencia de la prestación del servicio, o bien, en el cumplimiento de la garantía, de acuerdo a lo establecido en el presente contrato. Asimismo, el Cliente autoriza a Ranoro a usar el vehículo para efectos de prueba o verificación de las operaciones a realizar o realizadas. El Cliente libera a Ranoro de cualquier responsabilidad que hubiere surgido o pudiera surgir con relación al origen, propiedad o posesión del vehículo. 7. En caso de que el consumidor cancele la operación, está obligado a pagar de manera inmediata y previa a la entrega del vehículo, el importe de las operaciones efectuadas y partes y/o refacciones colocadas o adquiridas hasta el retiro del mismo. 8. El Consumidor deberá recoger el vehículo, no mas de 24 horas posteriores de haberse notificado, ya sea por teléfono, mensaje o aplicación móvil que el vehículo se encuentra listo, en caso contrario, se obliga a pagar a Ranoro, la cantidad de $300.00 (Trescientos pesos 00/100 M.N.) por concepto de almacenaje del vehículo por cada día que transcurra. Transcurrido un plazo de 15 días naturales a partir de la fecha señalada para la entrega del vehículo, y el Cliente no acuda a recoger el mismo, Ranoro sin responsabilidad alguna, pondrá a disposición de la autoridad correspondiente dicho vehículo. Sin perjuicio de lo anterior, Ranoro podrá realizar el cobro correspondiente por concepto de almacenaje. 9. Ranoro se obliga a expedir la factura o comprobante de pago por las operacionès efectuadas, en la cual se especificarán los precios por mano de obra, refacciones, materiales y accesorios empleados, asi como la garantía que en su caso se otorgue, conforme al artículo 62 de la Ley Federal de Protección al Consumidor.10. Ranoro se obliga a no ceder o transmitir a terceros, con fines mercadotécnicos o publicitarios, los datos e información proporcionada por el consumidor con motivo del presente contrato. 11. Las partes están de acuerdo en someterse a la competencia de la Procuraduría Federal del Consumidor en la vía administrativa para resolver cualquier controversia que se suscite sobre la interpretación o cumplimiento de los términos y condiciones del presente contrato y de las disposiciones de la Ley Federal de Protección al Consumidor, la Norma Oficial Mexicana NOM-17li-SCFI-2007, Prácticas comerciales-Elementos de información para la prestación de servicios en general y cualquier otra disposición aplicable, sin perjuicio del derecho que tienen las partes de someterse a la jurisdicción de los Tribunales competentes del estado de Aguascalientes, renunciando las partes expresamente a cualquier otra jurisdicción que pudiera corresponderles por razón de sus domicilios presentes o futuros. 12. El Cliente y Ranoro aceptan la realización de la prestación del servicio de reparación y/o mantenimiento, en los términos establecidos en este contrato, y sabedores de su alcance legal lo firman por duplicado.13. El Cliente y Ranoro aceptan la utilización de aplicaciones móviles (iOS-ANDROID) para enviar, recibir y en su caso aceptar información de trabajos adicionales que se han de realizar a los originalmente contratados por el Consumidor, así como autorizar los mismos por los medios tecnológicos con que se cuente.
-                </p>
+           <section className="mt-2 text-center text-gray-500 text-[10px] space-x-4">
+              <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+              <span>|</span>
+              <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
            </section>
            {effectiveWorkshopInfo.fixedFooterText && (
             <div className="text-center mt-2 pt-2 border-t border-gray-200">
@@ -460,7 +440,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           </div>
         </header>
         <div className="space-y-4">
-          {service.photoReports!.map((reportItem) => (
+          {service.photoReports?.map((reportItem) => (
             <div key={reportItem.id} className="break-inside-avoid border-b pb-4 last:border-none">
                 <p className="mb-2 text-sm">
                     <span className="font-bold">Fecha:</span>{" "}
@@ -502,7 +482,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         switch (activeTab) {
             case 'quote':
                 return service.status === 'Cotizacion' || service.status === 'Agendado'
-                  ? <QuoteContent quote={service} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} />
+                  ? <QuoteContent quote={service as QuoteRecord} />
                   : null;
             case 'order':
                 return ServiceOrderContent;
@@ -527,3 +507,5 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
+
+    
