@@ -31,11 +31,11 @@ export default function PublicPageLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
-        <header className="sticky top-0 z-40 w-full border-b bg-background print:hidden">
+        <header className="sticky top-0 z-40 w-full border-b border-gray-700 bg-gray-900 print:hidden">
              <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
                 <Link href="/" className="relative w-[140px] h-[40px]">
                     <Image
-                    src="/ranoro-logo.png"
+                    src="/ranoro-logo-negro.png"
                     alt="Ranoro Logo"
                     fill
                     style={{ objectFit: 'contain' }}
@@ -45,11 +45,11 @@ export default function PublicPageLayout({
                     />
                 </Link>
                 <div className="flex items-center gap-4 text-sm">
-                    <Link href="/legal/terminos">
-                        <Badge variant="outline" className="text-sm">Términos y Condiciones</Badge>
+                    <Link href="/legal/terminos" className="text-gray-300 hover:text-white transition-colors">
+                        Términos y Condiciones
                     </Link>
-                    <Link href="/legal/privacidad">
-                         <Badge variant="outline" className="text-sm">Aviso de Privacidad</Badge>
+                    <Link href="/legal/privacidad" className="text-gray-300 hover:text-white transition-colors">
+                         Aviso de Privacidad
                     </Link>
                 </div>
             </div>
