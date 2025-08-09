@@ -27,7 +27,7 @@ export function AiFeaturesSection() {
                     <AnimatedDiv>
                         <Card className="h-full">
                             <CardHeader>
-                                <Icon icon="mdi:brain" className="h-8 w-8 text-primary mb-2"/>
+                                <Icon icon="twemoji:brain" className="h-10 w-10 mb-2"/>
                                 <CardTitle>Análisis y Diagnóstico</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -38,7 +38,7 @@ export function AiFeaturesSection() {
                     <AnimatedDiv>
                         <Card className="h-full">
                             <CardHeader>
-                                <Icon icon="ion:rocket-sharp" className="h-8 w-8 text-primary mb-2"/>
+                                <Icon icon="emojione:rocket" className="h-10 w-10 mb-2"/>
                                 <CardTitle>Optimización de Operaciones</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -49,7 +49,7 @@ export function AiFeaturesSection() {
                     <AnimatedDiv>
                         <Card className="h-full">
                             <CardHeader>
-                                <Icon icon="material-symbols:check-circle" className="h-8 w-8 text-primary mb-2"/>
+                                <Icon icon="emojione:speaking-head" className="h-10 w-10 mb-2"/>
                                 <CardTitle>Comunicación Profesional</CardTitle>
                             </CardHeader>
                             <CardContent>

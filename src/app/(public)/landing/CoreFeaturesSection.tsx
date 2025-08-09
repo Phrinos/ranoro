@@ -15,10 +15,10 @@ export function CoreFeaturesSection() {
               <h2 className="text-3xl md:text-4xl font-extrabold">Funciones Diseñadas para Ti</h2>
             </AnimatedDiv>
             <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <AnimatedDiv><Card><CardHeader><Icon icon="mdi:wrench" className="h-8 w-8 text-primary"/><CardTitle>Gestión de Servicios</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Desde la cita hasta la entrega, todo en un solo flujo de trabajo.</p></CardContent></Card></AnimatedDiv>
-              <AnimatedDiv><Card><CardHeader><Icon icon="mdi:package-variant-closed" className="h-8 w-8 text-primary"/><CardTitle>Control de Inventario</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Maneja tu stock, proveedores y compras de forma inteligente.</p></CardContent></Card></AnimatedDiv>
-              <AnimatedDiv><Card><CardHeader><Icon icon="mdi:dollar" className="h-8 w-8 text-primary"/><CardTitle>Finanzas Claras</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Reportes de ingresos y rentabilidad para tomar decisiones informadas.</p></CardContent></Card></AnimatedDiv>
-              <AnimatedDiv><Card><CardHeader><Icon icon="mdi:truck" className="h-8 w-8 text-primary"/><CardTitle>Módulo de Flotillas</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Administra rentas, pagos y mantenimientos de tus flotillas de vehículos.</p></CardContent></Card></AnimatedDiv>
+              <AnimatedDiv><Card><CardHeader><Icon icon="noto:wrench" className="h-10 w-10"/><CardTitle>Gestión de Servicios</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Desde la cita hasta la facturación, todo en un solo flujo de trabajo.</p></CardContent></Card></AnimatedDiv>
+              <AnimatedDiv><Card><CardHeader><Icon icon="emojione:package" className="h-10 w-10"/><CardTitle>Control de Inventario</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Maneja tu stock, proveedores y compras de forma inteligente.</p></CardContent></Card></AnimatedDiv>
+              <AnimatedDiv><Card><CardHeader><Icon icon="emojione:dollar-banknote" className="h-10 w-10"/><CardTitle>Finanzas Claras</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Reportes de ingresos y rentabilidad para tomar decisiones informadas.</p></CardContent></Card></AnimatedDiv>
+              <AnimatedDiv><Card><CardHeader><Icon icon="noto:delivery-truck" className="h-10 w-10"/><CardTitle>Módulo de Flotillas</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Administra rentas, pagos y mantenimientos de tus flotillas de vehículos.</p></CardContent></Card></AnimatedDiv>
             </div>
           </div>
         </section>

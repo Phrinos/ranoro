@@ -86,7 +86,7 @@ export function PricingSection() {
                                         <ul className="space-y-4">
                                             {plan.features.map((feature, i) => (
                                                 <li key={i} className="flex items-start gap-3">
-                                                    <Icon icon="material-symbols:check-circle" className={`h-5 w-5 shrink-0 mt-1 ${feature.included ? 'text-green-500' : 'text-gray-300'}`} />
+                                                    <Icon icon="emojione:white-heavy-check-mark" className={`h-5 w-5 shrink-0 mt-1 ${!feature.included && 'opacity-30'}`} />
                                                     <span className={!feature.included ? 'text-muted-foreground line-through' : ''}>
                                                         {feature.text} {feature.limited && <span className="text-xs font-semibold">(Limitada)</span>}
                                                     </span>

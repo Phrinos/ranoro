@@ -13,22 +13,22 @@ export function WhyRanoroSection() {
                 </AnimatedDiv>
                  <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <AnimatedDiv className="text-center">
-                        <Icon icon="mdi:book-open-page-variant" className="mx-auto h-10 w-10 text-primary mb-2"/>
+                        <Icon icon="noto:open-book" className="mx-auto h-12 w-12 mb-2"/>
                         <h4 className="font-bold text-lg">Enfoque vertical</h4>
                         <p className="text-muted-foreground mt-1">Diseñado exclusivamente para talleres, con herramientas pensadas para tu día a día.</p>
                     </AnimatedDiv>
                     <AnimatedDiv className="text-center">
-                        <Icon icon="mdi:database-sync" className="mx-auto h-10 w-10 text-primary mb-2"/>
+                        <Icon icon="twemoji:hourglass-done" className="mx-auto h-12 w-12 mb-2"/>
                         <h4 className="font-bold text-lg">Migración rápida</h4>
                         <p className="text-muted-foreground mt-1">Migra tu información fácil de tus sistemas actuales con nuestro onboarding guiado.</p>
                     </AnimatedDiv>
                     <AnimatedDiv className="text-center">
-                        <Icon icon="mdi:dollar" className="mx-auto h-10 w-10 text-primary mb-2"/>
+                        <Icon icon="noto:money-with-wings" className="mx-auto h-12 w-12 mb-2"/>
                         <h4 className="font-bold text-lg">Precios accesibles</h4>
                         <p className="text-muted-foreground mt-1">Todo incluido sin compromisos ni aumento en nómina.</p>
                     </AnimatedDiv>
                     <AnimatedDiv className="text-center">
-                        <Icon icon="mdi:account-group" className="mx-auto h-10 w-10 text-primary mb-2"/>
+                        <Icon icon="flat-color-icons:support" className="mx-auto h-12 w-12 mb-2"/>
                         <h4 className="font-bold text-lg">Soporte continuo</h4>
                         <p className="text-muted-foreground mt-1">Estamos contigo siempre, con actualizaciones y mejoras constantes.</p>
                     </AnimatedDiv>
