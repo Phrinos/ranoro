@@ -1,5 +1,5 @@
 
-// src/app/(app)/servicios/components/service-form.tsx
+// src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
@@ -165,7 +165,7 @@ function ServiceFormContent({
   const [validationFolio, setValidationFolio] = useState('');
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
   
-  const { control, handleSubmit, getValues, setValue, watch, formState, reset } = methods;
+  const { control, handleSubmit, getValues, setValue, watch, formState: { errors }, reset } = methods;
 
   const [originalLockedStatus, setOriginalLockedStatus] = useState<'Completado' | 'Entregado' | null>(null);
 
@@ -175,7 +175,6 @@ function ServiceFormContent({
 
    useEffect(() => {
     const allItems = getValues('serviceItems') || [];
-    // Recalculate total amount excluding any existing commission
     const totalAmount = (allItems || [])
         .filter((item: any) => item.id !== COMMISSION_ITEM_ID)
         .reduce((sum, item) => sum + (item.price || 0), 0) || 0;
@@ -193,9 +192,6 @@ function ServiceFormContent({
 
 
   useEffect(() => {
-    // This effect runs when the component mounts or when initialData changes.
-    // It temporarily sets the status to 'En Taller' for editing purposes
-    // if the original status was 'Completado' or 'Entregado'.
     const currentStatus = getValues('status') ?? initialData?.status;
     if (currentStatus === 'Completado' || currentStatus === 'Entregado') {
       setOriginalLockedStatus(currentStatus);
@@ -203,8 +199,7 @@ function ServiceFormContent({
     } else {
       setOriginalLockedStatus(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialData?.id]);
+  }, [initialData?.id, getValues, setValue]);
 
 
   useEffect(() => {
@@ -222,30 +217,55 @@ function ServiceFormContent({
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly && originalLockedStatus) {
-      // For restricted edits, only allow saving notes and some non-critical fields.
-      // This part can be adjusted based on exact requirements.
       const allowedUpdate = {
         notes: values.notes,
         vehicleConditions: values.vehicleConditions,
         customerItems: values.customerItems,
-        // Potentially add other fields here if they should be editable
       };
       await onSubmit({ ...initialData, ...allowedUpdate } as ServiceFormValues);
       return;
     }
   
-    // For full edits, create a mutable copy of the form values.
     const finalValues = { ...values };
     
-    // If the service was originally locked, restore its true status before saving.
     if (originalLockedStatus) {
       finalValues.status = originalLockedStatus;
     }
   
-    // For all other cases, proceed with the standard save operation.
     await onSubmit(finalValues);
   };
   
+  const onValidationErrors = (errors: any) => {
+    toast({
+        title: "Error de Validación",
+        description: "Por favor, corrija los errores antes de guardar.",
+        variant: "destructive",
+    });
+
+    const getErrorMessages = (errorObject: any): string[] => {
+        let messages: string[] = [];
+        if (!errorObject) return messages;
+
+        for (const key in errorObject) {
+            if (key === 'message') {
+                messages.push(errorObject[key]);
+            } else if (typeof errorObject[key] === 'object') {
+                messages = messages.concat(getErrorMessages(errorObject[key]));
+            }
+        }
+        return messages;
+    };
+    
+    const errorMessages = getErrorMessages(errors);
+    errorMessages.forEach((msg, index) => {
+        toast({
+            title: `Error ${index + 1}`,
+            description: msg,
+            variant: "destructive",
+        });
+    });
+};
+
   const handleOpenNewVehicleDialog = (plate?: string) => {
     setNewVehicleInitialPlate(plate);
     setIsNewVehicleDialogOpen(true);
@@ -336,10 +356,10 @@ function ServiceFormContent({
     };
 
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
-  const isSubmitDisabled = formState.isSubmitting;
+  const isSubmitDisabled = methods.formState.isSubmitting;
 
   return (
-    <form id="service-form" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
+    <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)} className="flex flex-col h-full">
       <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
         <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
         <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
@@ -406,7 +426,7 @@ function ServiceFormContent({
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
           <Button type="submit" disabled={isSubmitDisabled}>
-            {formState.isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
+            {methods.formState.isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
             {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
           </Button>
         </div>

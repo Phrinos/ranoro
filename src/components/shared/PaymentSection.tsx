@@ -67,7 +67,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
                                         <div className="relative">
                                             <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                             <FormControl>
-                                                <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8"/>
+                                                <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8 bg-white"/>
                                             </FormControl>
                                         </div>
                                     </FormItem>
@@ -79,7 +79,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
                                 render={({ field }) => (
                                     <FormItem className="w-48">
                                         <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                            <FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl>
                                             <SelectContent>
                                                 {paymentMethods.map(method => {
                                                     const Icon = paymentMethodIcons[method];
@@ -104,7 +104,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
                                         <FormItem className="flex-grow">
                                             <FormControl>
                                                 <div className="relative">
-                                                    <Input placeholder={folioLabel} {...field} value={field.value ?? ''} />
+                                                    <Input placeholder={folioLabel} {...field} value={field.value ?? ''} className="bg-white"/>
                                                     {isFolioValidated && <CheckCircle className="absolute right-2 top-2.5 h-5 w-5 text-green-500" />}
                                                 </div>
                                             </FormControl>
@@ -113,7 +113,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
                                     )}
                                 />
                                 {(selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI') && (
-                                    <Button type="button" variant="secondary" size="sm" onClick={() => onOpenValidateDialog(index)}>
+                                    <Button type="button" variant="destructive" size="sm" onClick={() => onOpenValidateDialog(index)}>
                                         Validar
                                     </Button>
                                 )}

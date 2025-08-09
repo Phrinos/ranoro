@@ -1,8 +1,6 @@
 
-
 // src/schemas/service-form.ts
 import * as z from 'zod';
-import { useToast } from "@/hooks/use-toast";
 
 export const supplySchema = z.object({
   supplyId: z.string().min(1, 'Seleccione un insumo'),
@@ -89,11 +87,11 @@ export const serviceFormSchema = z.object({
     serviceItems: z.array(serviceItemSchema).min(1, 'Debe agregar al menos un ítem de servicio.'),
     status: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Proveedor Externo', 'Entregado', 'Cancelado']),
     subStatus: z.enum(['Cita Agendada', 'Cita Confirmada', 'Ingresado', 'En Espera de Refacciones', 'Reparando', 'Completado']).optional(),
-    serviceType: z.string().optional(), // This is now deprecated at root level but kept for compatibility.
-    vehicleConditions: z.string().optional(),
-    fuelLevel: z.string().optional(),
-    customerItems: z.string().optional(),
-    notes: z.string().max(2000, 'Máximo 2000 caracteres').optional().or(z.literal('')),
+    serviceType: z.string().optional(),
+    vehicleConditions: z.string().optional().nullable(),
+    fuelLevel: z.string().optional().nullable(),
+    customerItems: z.string().optional().nullable(),
+    notes: z.string().max(2000, 'Máximo 2000 caracteres').optional().nullable(),
     customerSignatureReception: z.string().nullable().optional(),
     customerSignatureDelivery: z.string().nullable().optional(),
     receptionSignatureViewed: z.boolean().optional(),
@@ -104,14 +102,6 @@ export const serviceFormSchema = z.object({
     serviceAdvisorSignatureDataUrl: z.string().optional(), 
     payments: z.array(paymentSchema).optional(),
     cardCommission: z.number().optional(),
-    // Deprecated payment fields
-    paymentMethod: z.string().optional(),
-    cardFolio: z.string().optional(),
-    transferFolio: z.string().optional(),
-    amountInCash: z.number().optional(),
-    amountInCard: z.number().optional(),
-    amountInTransfer: z.number().optional(),
-    
     nextServiceInfo: z.object({
         date: z.string().optional(),
         mileage: z.number().optional(), 
@@ -127,7 +117,9 @@ export const serviceFormSchema = z.object({
       path: ['appointmentDateTime'],
     }
 ).superRefine((data, ctx) => {
-    // Existing refinements
+    const totalCost = data.serviceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
+    const totalPaid = data.payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+
     if (data.status === 'Entregado') {
         if (!data.payments || data.payments.length === 0) {
             ctx.addIssue({
@@ -136,36 +128,25 @@ export const serviceFormSchema = z.object({
                 path: ['payments'],
             });
         }
-        if (!data.mileage || data.mileage <= 0) {
+
+        if (Math.abs(totalCost - totalPaid) > 0.01) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: 'El kilometraje actual es obligatorio para entregar el servicio.',
-                path: ['mileage'],
+                message: `El monto pagado (${totalPaid.toFixed(2)}) no coincide con el total del servicio (${totalCost.toFixed(2)}).`,
+                path: ['payments'],
             });
         }
-    }
-
-
-    const totalCost = data.serviceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
-    const totalPaid = data.payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-
-    if (data.status === 'Entregado' && Math.abs(totalCost - totalPaid) > 0.01) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `El monto pagado (${totalPaid.toFixed(2)}) no coincide con el total del servicio (${totalCost.toFixed(2)}).`,
-            path: ['payments'],
+        
+        data.payments?.forEach((payment, index) => {
+            if ((payment.method === 'Tarjeta' || payment.method === 'Tarjeta MSI' || payment.method === 'Transferencia') && (!payment.folio || payment.folio.trim() === '')) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'El folio es obligatorio para este método de pago al entregar el servicio.',
+                    path: [`payments.${index}.folio`],
+                });
+            }
         });
     }
-
-     data.payments?.forEach((payment, index) => {
-        if ((payment.method === 'Tarjeta' || payment.method === 'Tarjeta MSI') && !payment.folio) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: 'Folio obligatorio para pagos con tarjeta.',
-                path: [`payments.${index}.folio`],
-            });
-        }
-    });
 });
 
 

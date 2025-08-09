@@ -47,7 +47,7 @@ export function ServiceItemCard({
     suppliers
 }: ServiceItemCardProps) {
     const { control, getValues, setValue, formState: { errors }, watch } = useFormContext<ServiceFormValues>();
-    const { fields, append, remove } = useFieldArray({
+    const { fields, append, remove, update } = useFieldArray({
         control,
         name: `serviceItems.${serviceIndex}.suppliesUsed`
     });
@@ -241,7 +241,7 @@ export function ServiceItemCard({
                         const inventoryItem = inventoryItems.find(i => i.id === supplyField.supplyId);
                         const currentName = inventoryItem?.name || supplyField.supplyName;
                         return (
-                            <div key={supplyField.id} className="flex items-center gap-2 p-2 border rounded-md bg-background">
+                            <div key={supplyField.id} className="flex items-center gap-2 p-2 border rounded-md bg-white">
                                 <div className="flex-1">
                                     <p className="text-xs font-medium">{currentName}</p>
                                     <p className="text-xs text-muted-foreground">
@@ -263,7 +263,7 @@ export function ServiceItemCard({
                                                 {...field}
                                                 value={field.value ?? ''}
                                                 onChange={(e) => handleManualQuantitySet(supplyIndex, e.target.value)}
-                                                className="w-16 text-center h-7 text-sm"
+                                                className="w-16 text-center h-7 text-sm bg-white"
                                                 disabled={isReadOnly}
                                             />
                                         )}
@@ -311,4 +311,3 @@ export function ServiceItemCard({
         </Card>
     );
 }
-

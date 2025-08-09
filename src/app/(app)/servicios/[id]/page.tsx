@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -111,8 +112,7 @@ export default function ServicioPage() {
     try {
       await serviceService.saveService({ ...values, id: serviceId });
       toast({ title: 'Servicio Actualizado', description: `El registro #${serviceId?.slice(-6)} ha sido actualizado.` });
-      const targetTab = values.status === 'Cotizacion' ? 'cotizaciones' : 'historial';
-      router.push(`/servicios?tab=${targetTab}`);
+      router.push(`/servicios?tab=activos`);
     } catch(e) {
       console.error(e);
       toast({ title: 'Error al Actualizar', variant: 'destructive'});
