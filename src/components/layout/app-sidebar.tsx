@@ -1,3 +1,4 @@
+
 // src/components/layout/app-sidebar.tsx
 "use client";
 
@@ -37,6 +38,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { User, AppRole, NavigationEntry } from "@/types";
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
 import { adminService } from '@/lib/services';
+import { ALL_PERMISSIONS } from '@/lib/permissions';
 
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
@@ -83,13 +85,13 @@ const useNavigation = (): NavigationEntry[] => {
   }, []);
 
   const userPermissions = React.useMemo(() => {
-    if (!currentUser || roles.length === 0) return new Set<string>();
-    const userRole = roles.find(r => r && r.name === currentUser.role);
-    if (!userRole) {
-      const placeholderRole = placeholderAppRoles.find(r => r.name === currentUser.role);
-      return new Set(placeholderRole?.permissions || []);
+    if (!currentUser) return new Set<string>();
+    // Superadmin has all permissions, bypassing role lookup
+    if (currentUser.role === 'Superadministrador') {
+        return new Set(ALL_PERMISSIONS.map(p => p.id));
     }
-    return new Set(userRole.permissions || []);
+    const userRole = roles.find(r => r && r.name === currentUser.role);
+    return new Set(userRole?.permissions || []);
   }, [currentUser, roles]);
 
   const filteredNavStructure = React.useMemo(() => {

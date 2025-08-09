@@ -21,6 +21,7 @@ import type {
   ServiceTypeRecord,
   AuditLog
 } from '@/types';
+import { ALL_PERMISSIONS } from './permissions';
 
 export const IVA_RATE = 0.16;
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
@@ -55,23 +56,7 @@ export const placeholderAppRoles: AppRole[] = [
     {
     id: "superadmin_role",
     name: "Superadministrador",
-    permissions: [
-      'dashboard:view',
-      'services:create', 'services:edit', 'services:view_history',
-      'inventory:manage', 'inventory:view',
-      'pos:create_sale', 'pos:view_sales',
-      'fleet:manage', 'rentals:view', 'rentals:manage',
-      'finances:view_report',
-      'vehicles:manage',
-      'personnel:manage',
-      'billing:manage',
-      'messaging:manage',
-      'audits:view',
-      'users:manage',
-      'roles:manage',
-      'ticket_config:manage',
-      'workshop:manage',
-    ],
+    permissions: ALL_PERMISSIONS.map(p => p.id),
   },
   {
     id: "admin_role",
@@ -88,8 +73,6 @@ export const placeholderAppRoles: AppRole[] = [
       'billing:manage',
       'messaging:manage',
       'audits:view',
-      'users:manage',
-      'roles:manage',
       'ticket_config:manage',
       'workshop:manage',
     ],
