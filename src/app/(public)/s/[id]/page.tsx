@@ -183,10 +183,12 @@ const DeliveryContent = ({ service, onSignClick, isSigning, showSignDelivery }: 
 
 const SafetyChecklistDisplay = ({
   inspection,
-  onViewImage
+  onViewImage,
+  service
 }: {
   inspection: SafetyInspection;
   onViewImage: (url: string) => void;
+  service: ServiceRecord;
 }) => {
     return (
         <div className="mt-4 print:mt-0">
@@ -282,8 +284,6 @@ export default function PublicServicePage() {
   const { toast } = useToast();
 
   const [service, setService] = useState<ServiceRecord | null | undefined>(undefined);
-  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   const [isSigning, setIsSigning] = useState(false);
@@ -291,6 +291,10 @@ export default function PublicServicePage() {
   
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  
+  // Destructure embedded data
+  const vehicle = service?.vehicle;
+  const workshopInfo = service?.workshopInfo;
 
   useEffect(() => {
     if (!publicId || !db) {
@@ -302,10 +306,7 @@ export default function PublicServicePage() {
     
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
-            const data = docSnap.data();
-            setService(data as ServiceRecord);
-            setVehicle(data.vehicle as Vehicle);
-            setWorkshopInfo(data.workshopInfo as WorkshopInfo);
+            setService(docSnap.data() as ServiceRecord);
             setError(null);
         } else {
             setError(`El documento con ID "${publicId}" no fue encontrado.`);
@@ -402,7 +403,7 @@ export default function PublicServicePage() {
                 )}
                 <div className="mt-6">
                     <TabsContent value="quote">
-                        {showQuote && <QuoteContent quote={service as QuoteRecord} vehicle={vehicle} workshopInfo={workshopInfo || undefined} />}
+                        {showQuote && <QuoteContent quote={service as QuoteRecord} vehicle={vehicle || undefined} workshopInfo={workshopInfo || undefined} />}
                     </TabsContent>
                     <TabsContent value="details">
                         {showServiceDetails && <ServiceDetailsContent service={service} />}
@@ -414,7 +415,7 @@ export default function PublicServicePage() {
                         {showServiceDetails && <DeliveryContent service={service} onSignClick={(type) => setSignatureType(type)} isSigning={isSigning} showSignDelivery={!!service.customerSignatureReception && !service.customerSignatureDelivery} />}
                     </TabsContent>
                     <TabsContent value="checklist">
-                        {showChecklist && <SafetyChecklistDisplay inspection={service.safetyInspection!} onViewImage={(url) => { setViewingImageUrl(url); setIsImageViewerOpen(true); }} />}
+                        {showChecklist && <SafetyChecklistDisplay inspection={service.safetyInspection!} onViewImage={(url) => { setViewingImageUrl(url); setIsImageViewerOpen(true); }} service={service} />}
                     </TabsContent>
                     <TabsContent value="photoreport">
                         {showPhotoReport && <PhotoReportContent photoReports={service.photoReports!} onViewImage={(url) => { setViewingImageUrl(url); setIsImageViewerOpen(true); }} />}
