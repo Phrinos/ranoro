@@ -1,22 +1,95 @@
+// src/app/(public)/s/[id]/page.tsx
 
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
-import { Loader2, ShieldAlert, Eye, Wrench, ShieldCheck, Camera, Download } from 'lucide-react';
+import { Loader2, ShieldAlert, Eye, Wrench, ShieldCheck, Camera, Download, Signature, User, Phone, Mail, Link as LinkIcon, Printer } from 'lucide-react';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { ServiceSheetContent } from '@/components/service-sheet-content';
+import { ServiceSheetContent } from '@/components/service-sheet-content'; // Still used for its sub-components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { savePublicDocument } from '@/lib/public-document';
+import Link from 'next/link';
+
+// Component to render the page header
+const PageHeader = ({ workshopInfo, serviceId }: { workshopInfo: Partial<WorkshopInfo>, serviceId: string }) => (
+    <header className="mb-8 print:mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b-2 border-black">
+            <div className="relative w-[180px] h-[60px]">
+                 <Image
+                    src={workshopInfo.logoUrl || '/ranoro-logo.png'}
+                    alt={`${workshopInfo.name || 'Ranoro'} Logo`}
+                    fill
+                    style={{ objectFit: 'contain' }}
+                    data-ai-hint="workshop logo"
+                    priority
+                />
+            </div>
+            <div className="text-left sm:text-right">
+                <h1 className="text-2xl font-bold">Documento de Servicio</h1>
+                <p className="font-mono text-muted-foreground">Folio: {serviceId}</p>
+            </div>
+        </div>
+        <div className="flex flex-col sm:flex-row justify-between items-start text-xs text-muted-foreground mt-4 gap-2">
+            <div className="text-left">
+                <p className="font-bold text-sm text-foreground">{workshopInfo.name}</p>
+                <p>{workshopInfo.addressLine1}</p>
+                <p>{workshopInfo.cityState}</p>
+                <p>Tel: {workshopInfo.phone}</p>
+            </div>
+            <div className="text-left sm:text-right print:hidden">
+                 <p className="font-semibold">&copy; {new Date().getFullYear()} Ranoro Taller Inteligente</p>
+                 <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+                 {' | '}
+                 <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
+            </div>
+        </div>
+    </header>
+);
+
+// Component for Client and Vehicle info cards
+const InfoCards = ({ vehicle }: { vehicle?: Vehicle | null }) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 print:mb-4">
+        <Card>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Datos del Cliente</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-1">
+                <p className="font-semibold">{vehicle?.ownerName || 'N/A'}</p>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="h-4 w-4"/><span>{vehicle?.ownerPhone || 'N/A'}</span>
+                </div>
+                 <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-4 w-4"/><span>{vehicle?.ownerEmail || 'N/A'}</span>
+                </div>
+            </CardContent>
+        </Card>
+         <Card>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2"><Car className="h-5 w-5 text-primary"/>Datos del Vehículo</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-1">
+                <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : 'N/A'}</p>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Fingerprint className="h-4 w-4"/><span>{vehicle?.licensePlate || 'N/A'}</span>
+                </div>
+                 <div className="flex items-center gap-2 text-muted-foreground">
+                    <span>VIN: {vehicle?.vin || 'N/A'}</span>
+                </div>
+            </CardContent>
+        </Card>
+    </div>
+);
+
 
 export default function PublicServicePage() {
   const params = useParams();
@@ -34,6 +107,8 @@ export default function PublicServicePage() {
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
+  const sheetRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!publicId || !db) {
       setError("Enlace inválido o la base de datos no está disponible.");
@@ -46,7 +121,7 @@ export default function PublicServicePage() {
         if (docSnap.exists()) {
             const data = docSnap.data();
             setService(data as ServiceRecord);
-            setVehicle(data.vehicle as Vehicle); // Vehicle data is embedded
+            setVehicle(data.vehicle as Vehicle);
             setWorkshopInfo(data.workshopInfo as WorkshopInfo);
             setError(null);
         } else {
@@ -74,13 +149,11 @@ export default function PublicServicePage() {
         [fieldToUpdate]: signatureDataUrl,
       };
 
-      // Use the new centralized function to save the signature to the public collection
       const result = await savePublicDocument('service', dataToSave);
 
       if (result.success) {
           toast({ title: toastTitle });
       } else {
-          console.error("Error saving signature:", result.error);
           toast({ title: 'Error al Guardar Firma', description: result.error, variant: 'destructive' });
       }
 
@@ -89,15 +162,15 @@ export default function PublicServicePage() {
   };
 
 
-  const showOrder = service && service.status !== 'Cotizacion' && service.status !== 'Agendado';
   const showQuote = service && (service.status === 'Cotizacion' || service.status === 'Agendado');
+  const showServiceDetails = service && service.status !== 'Cotizacion' && service.status !== 'Agendado';
   const showChecklist = service && !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
   const showPhotoReport = service && !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
 
   const tabs = [];
   if (showQuote) tabs.push({ value: 'quote', label: 'Cotización', icon: Eye });
-  if (showOrder) tabs.push({ value: 'order', label: 'Orden', icon: Wrench });
-  if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión', icon: ShieldCheck });
+  if (showServiceDetails) tabs.push({ value: 'order', label: 'Detalles del Servicio', icon: Wrench });
+  if (showChecklist) tabs.push({ value: 'checklist', label: 'Puntos de Seguridad', icon: ShieldCheck });
   if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico', icon: Camera });
 
   const defaultTabValue = service && (service.status === 'Cotizacion' || service.status === 'Agendado') ? 'quote' : 'order';
@@ -115,61 +188,34 @@ export default function PublicServicePage() {
     'grid-cols-1';
 
   if (service === undefined) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
 
   if (!service || error) {
     return (
       <div className="container mx-auto py-8">
-        <Card className="max-w-xl mx-auto text-center">
-          <CardHeader>
-            <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-            <CardTitle className="text-2xl font-bold">Error al Cargar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{error || "No se pudo cargar el documento del servicio."}</p>
-          </CardContent>
-        </Card>
+        <Card className="max-w-xl mx-auto text-center"><CardHeader><ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" /><CardTitle className="text-2xl font-bold">Error al Cargar</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">{error || "No se pudo cargar el documento del servicio."}</p></CardContent></Card>
       </div>
     );
   }
 
   return (
      <>
-        <div className="container mx-auto px-2 sm:px-4">
-            <div className="bg-white md:mx-auto my-4 md:shadow-lg printable-content print-format-letter">
-              <div className="p-4 print:hidden">
-                  <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
-                      <div>
-                          <CardTitle>Documento de Servicio</CardTitle>
-                          <CardDescription>Folio: {service.id}</CardDescription>
-                      </div>
-                       {tabs.length > 1 && (
-                            <TabsList className={cn('grid w-full h-auto p-0 bg-transparent gap-2', gridColsClass)}>
-                                {tabs.map(tab => (
-                                    <button
-                                      key={tab.value}
-                                      onClick={() => setActiveTab(tab.value)}
-                                      className={cn(
-                                        'flex-1 min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug flex items-center justify-center',
-                                        activeTab === tab.value
-                                          ? 'bg-primary text-primary-foreground shadow'
-                                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                      )}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
-                            </TabsList>
-                      )}
-                  </div>
-              </div>
-              <div id="printable-area-public" className="bg-white p-4 md:p-8">
-                  <ServiceSheetContent
+        <div className="container mx-auto bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg my-8 printable-content print-format-letter">
+            <PageHeader workshopInfo={workshopInfo || {}} serviceId={service.id} />
+            <InfoCards vehicle={vehicle} />
+
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className={cn('grid w-full h-auto p-0 bg-transparent gap-2 print:hidden', gridColsClass)}>
+                    {tabs.map(tab => (
+                        <TabsTrigger key={tab.value} value={tab.value} className="flex-1 min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug flex items-center justify-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+                            <tab.icon className="mr-2 h-4 w-4 shrink-0"/>{tab.label}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+                 <div className="mt-6 print:mt-0">
+                    <ServiceSheetContent
+                      ref={sheetRef}
                       service={service}
                       vehicle={vehicle || undefined}
                       workshopInfo={workshopInfo || undefined}
@@ -180,8 +226,11 @@ export default function PublicServicePage() {
                       onSignClick={(type) => setSignatureType(type)}
                       isSigning={isSigning}
                       activeTab={activeTab}
-                  />
-              </div>
+                    />
+                 </div>
+            </Tabs>
+             <div className="mt-8 text-center print:hidden">
+                <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button>
             </div>
         </div>
         
@@ -193,18 +242,7 @@ export default function PublicServicePage() {
         
         <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
             <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
-                {viewingImageUrl && (
-                  <div className="relative aspect-video w-full">
-                    <Image
-                      src={viewingImageUrl}
-                      alt="Vista ampliada de evidencia"
-                      fill
-                      style={{ objectFit: 'contain' }}
-                      sizes="(max-width: 768px) 100vw, 1024px"
-                      crossOrigin="anonymous"
-                    />
-                  </div>
-                )}
+                {viewingImageUrl && (<div className="relative aspect-video w-full"><Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill style={{ objectFit: 'contain' }} sizes="(max-width: 768px) 100vw, 1024px" crossOrigin="anonymous"/></div>)}
             </DialogContent>
         </Dialog>
      </>
