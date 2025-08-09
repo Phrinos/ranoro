@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/components/register-purchase-dialog.tsx
 
 "use client";
@@ -134,7 +133,7 @@ export function RegisterPurchaseDialog({
                     <FormItem><FormLabel>Proveedor</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un proveedor" /></SelectTrigger></FormControl>
-                        <SelectContent><ScrollArea className="h-48">{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                        <SelectContent><ScrollArea className="h-48">{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</ScrollArea></SelectContent>
                       </Select><FormMessage />
                     </FormItem>
                   )}/>
