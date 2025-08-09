@@ -17,7 +17,7 @@ import type { InventoryItem, Supplier, InventoryCategory } from '@/types';
 import { formatCurrency, capitalizeWords } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
+import { InventoryItemDialog } from './inventory-item-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -64,7 +64,7 @@ interface RegisterPurchaseDialogProps {
   onInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
 }
 
-export function RegisterPurchaseDialog({ 
+export default function RegisterPurchaseDialog({ 
     open, onOpenChange, suppliers, inventoryItems, categories, onSave, onInventoryItemCreated 
 }: RegisterPurchaseDialogProps) {
   const { toast } = useToast();

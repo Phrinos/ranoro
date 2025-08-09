@@ -25,9 +25,10 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { AddItemDialog } from '../pos/components/add-item-dialog';
+import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
 
 // Lazy load dialogs that are not immediately visible
+const RegisterPurchaseDialog = lazy(() => import('./components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = lazy(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
 const InventoryReportContent = lazy(() => import('./components/inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
 
@@ -300,7 +301,7 @@ function InventarioPageComponent() {
   };
   
 
-  const handleSavePurchase = useCallback(async (data: any) => {
+  const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
     await purchaseService.registerPurchase(data);
     toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
     setIsRegisterPurchaseOpen(false);
@@ -405,15 +406,14 @@ function InventarioPageComponent() {
         
         <Suspense fallback={null}>
             {isRegisterPurchaseOpen && (
-              <AddItemDialog
+              <RegisterPurchaseDialog
                 open={isRegisterPurchaseOpen}
                 onOpenChange={setIsRegisterPurchaseOpen}
+                suppliers={suppliers}
                 inventoryItems={inventoryItems}
-                onItemSelected={(item, qty) => {
-                    /* This dialog is being reused; this specific handler might need adjustment if used for actual purchases */
-                    toast({ title: 'Item Selected', description: `${qty} x ${item.name}`});
-                }}
-                onNewItemRequest={handleInventoryItemCreatedFromPurchase as any}
+                onSave={handleSavePurchase}
+                onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
+                categories={categories}
               />
             )}
 

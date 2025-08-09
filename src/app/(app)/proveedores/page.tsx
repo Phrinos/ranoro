@@ -1,4 +1,4 @@
-
+// src/app/(app)/proveedores/page.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from 'react';
@@ -14,8 +14,8 @@ import { CuentasPorPagarContent } from './components/cuentas-por-pagar-content';
 import { PayableAccountDialog } from './components/payable-account-dialog';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
-import { AddItemDialog as RegisterPurchaseDialog } from '../pos/components/add-item-dialog';
-import type { POSFormValues as PurchaseFormValues } from '@/schemas/pos-form-schema';
+import { RegisterPurchaseDialog } from '@/app/(app)/inventario/components/register-purchase-dialog';
+import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { SupplierDialog } from './components/supplier-dialog';
 
@@ -58,7 +58,7 @@ export default function ProveedoresPageComponent() {
     setIsPaymentDialogOpen(true);
   }, []);
 
-  const handleRegisterPayment = useCallback(async (accountId: string, amount: number, paymentMethod: string, note?: string) => {
+  const handleRegisterPayment = useCallback(async (accountId: string, amount: number, paymentMethod: any, note?: string) => {
     try {
       const userString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
       const user: User | null = userString ? JSON.parse(userString) : null;
@@ -150,13 +150,11 @@ export default function ProveedoresPageComponent() {
          <RegisterPurchaseDialog
             open={isRegisterPurchaseOpen}
             onOpenChange={setIsRegisterPurchaseOpen}
+            suppliers={suppliers}
             inventoryItems={inventoryItems}
-            onItemSelected={(item, quantity) => {
-                // This component is being reused. The logic for adding to a sale needs to be adapted or disabled.
-                console.log("Item selected for purchase:", item, quantity);
-                toast({title: "Función en desarrollo", description: "La lógica para añadir a una compra se está implementando."});
-            }}
-            onNewItemRequest={handleInventoryItemCreatedFromPurchase}
+            onSave={handleSavePurchase}
+            onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
+            categories={categories}
           />
        </Suspense>
       <SupplierDialog

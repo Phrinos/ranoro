@@ -1,3 +1,4 @@
+// src/lib/services/purchase.service.ts
 
 import {
   collection,
@@ -21,22 +22,26 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   const userString = localStorage.getItem('authUser');
   const user: User | null = userString ? JSON.parse(userString) : null;
 
-  // 1. Update inventory quantities
-  data.items.forEach(item => {
+  // 1. Update inventory quantities for each item
+  for (const item of data.items) {
     const itemRef = doc(db, 'inventory', item.inventoryItemId);
-    // Note: We are not fetching the current quantity. We assume we are adding to it.
-    // Firestore transactions would be needed for a read-modify-write operation if it were critical.
-    // For simplicity, we are creating an inventory movement log instead.
-    // Let's assume the calling function has validated the data, and we just perform the writes.
-    // This is a simplified approach. A more robust solution might use cloud functions.
-  });
+    const itemSnap = await getDoc(itemRef);
+    if(itemSnap.exists()) {
+      const currentQuantity = itemSnap.data().quantity || 0;
+      batch.update(itemRef, { 
+        quantity: currentQuantity + item.quantity,
+        unitPrice: item.purchasePrice // Also update the cost price
+      });
+    }
+  }
 
   // 2. If it's a credit purchase, create or update a payable account
   if (data.paymentMethod === 'Crédito') {
+    const supplierDoc = await inventoryService.getDocById('suppliers', data.supplierId);
     const newPayableAccount: Omit<PayableAccount, 'id'> = {
       supplierId: data.supplierId,
-      supplierName: (await inventoryService.getDocById('suppliers', data.supplierId))?.name || 'N/A',
-      invoiceId: data.invoiceId!,
+      supplierName: supplierDoc?.name || 'N/A',
+      invoiceId: data.invoiceId || `COMPRA-${Date.now()}`,
       invoiceDate: new Date().toISOString(),
       dueDate: data.dueDate!.toISOString(),
       totalAmount: data.invoiceTotal,
@@ -48,15 +53,15 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     
      // 3. Update the supplier's debt amount
     const supplierRef = doc(db, 'suppliers', data.supplierId);
-    const supplierSnap = await getDoc(supplierRef);
-    if(supplierSnap.exists()){
-        const currentDebt = supplierSnap.data().debtAmount || 0;
+    if(supplierDoc){
+        const currentDebt = supplierDoc.debtAmount || 0;
         batch.update(supplierRef, { debtAmount: currentDebt + data.invoiceTotal });
     }
 
   } else {
     // If it's a cash/card/transfer purchase, it's considered an expense from cash drawer
-    const transactionConcept = `Compra a ${ (await inventoryService.getDocById('suppliers', data.supplierId))?.name || 'Proveedor' } (Factura: ${data.invoiceId || 'N/A'})`;
+    const supplierDoc = await inventoryService.getDocById('suppliers', data.supplierId);
+    const transactionConcept = `Compra a ${ supplierDoc?.name || 'Proveedor' } (Factura: ${data.invoiceId || 'N/A'})`;
     const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
     batch.set(cashTransactionRef, {
         date: new Date().toISOString(),
@@ -71,7 +76,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   }
   
   // Log the audit event
-  const description = `Registró compra al proveedor con factura #${data.invoiceId || 'N/A'} por un total de ${data.invoiceTotal}.`;
+  const description = `Registró compra al proveedor con factura #${data.invoiceId || 'N/A'} por un total de ${formatCurrency(data.invoiceTotal)}.`;
   await logAudit('Registrar', description, {
     entityType: 'Compra',
     entityId: data.supplierId,
