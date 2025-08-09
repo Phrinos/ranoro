@@ -1,9 +1,10 @@
+
 // src/app/(app)/finanzas/components/caja-content.tsx
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
 import type { DateRange } from "react-day-picker";
-import type { SaleReceipt, ServiceRecord, CashDrawerTransaction } from '@/types';
+import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -55,31 +56,58 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
   });
 
   const mergedCashMovements = useMemo(() => {
-    const saleMovements: CashDrawerTransaction[] = allSales
-        .filter(s => s.status !== 'Cancelado' && s.paymentMethod?.includes('Efectivo'))
-        .map(s => ({
-            id: `sale-${s.id}`,
-            date: s.saleDate,
-            type: 'Entrada',
-            amount: s.amountInCash || s.totalAmount, // Fallback for single payment
-            concept: `Venta POS #${s.id.slice(-6)}`,
-            userId: s.registeredById || 'system',
-            userName: s.registeredByName || 'Sistema'
-        }));
+    const posCashMovements = allSales.reduce((acc, sale) => {
+      if (sale.status === 'Cancelado') return acc;
+
+      let cashAmount = 0;
+      if (sale.payments && sale.payments.length > 0) {
+        const cashPayment = sale.payments.find(p => p.method === 'Efectivo');
+        cashAmount = cashPayment?.amount || 0;
+      } else if (sale.amountInCash) { // Fallback for deprecated field
+        cashAmount = sale.amountInCash;
+      }
+      
+      if (cashAmount > 0) {
+        acc.push({
+          id: `sale-${sale.id}`,
+          date: sale.saleDate,
+          type: 'Entrada',
+          amount: cashAmount,
+          concept: `Venta POS #${sale.id.slice(-6)}`,
+          userId: sale.registeredById || 'system',
+          userName: sale.registeredByName || 'Sistema'
+        });
+      }
+      return acc;
+    }, [] as CashDrawerTransaction[]);
+
+    const serviceCashMovements = allServices.reduce((acc, service) => {
+      const relevantStatus = service.status === 'Entregado' || service.status === 'Completado';
+      if (!relevantStatus) return acc;
+      
+      let cashAmount = 0;
+      if (service.payments && service.payments.length > 0) {
+        const cashPayment = service.payments.find(p => p.method === 'Efectivo');
+        cashAmount = cashPayment?.amount || 0;
+      } else if (service.amountInCash) { // Fallback for deprecated field
+        cashAmount = service.amountInCash;
+      }
+
+      if (cashAmount > 0) {
+        acc.push({
+          id: `service-${service.id}`,
+          date: service.deliveryDateTime!,
+          type: 'Entrada',
+          amount: cashAmount,
+          concept: `Servicio #${service.id.slice(-6)}`,
+          userId: service.serviceAdvisorId || 'system',
+          userName: service.serviceAdvisorName || 'Sistema'
+        });
+      }
+      return acc;
+    }, [] as CashDrawerTransaction[]);
         
-    const serviceMovements: CashDrawerTransaction[] = allServices
-        .filter(s => s.status === 'Entregado' && s.paymentMethod?.includes('Efectivo'))
-        .map(s => ({
-            id: `service-${s.id}`,
-            date: s.deliveryDateTime!,
-            type: 'Entrada',
-            amount: s.amountInCash || s.totalCost, // Fallback
-            concept: `Servicio #${s.id.slice(-6)}`,
-            userId: s.serviceAdvisorId || 'system',
-            userName: s.serviceAdvisorName || 'Sistema'
-        }));
-        
-    return [...saleMovements, ...serviceMovements, ...cashTransactions]
+    return [...posCashMovements, ...serviceCashMovements, ...cashTransactions]
       .sort((a,b) => (parseDate(b.date)?.getTime() ?? 0) - (parseDate(a.date)?.getTime() ?? 0));
   }, [allSales, allServices, cashTransactions]);
 
@@ -279,16 +307,12 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
                         />
                     </form>
                 </Form>
-                 <DialogFooter>
+                <DialogFooter>
                     <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                    <Button type="submit" form="cash-transaction-form" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting ? 'Guardando...' : `Registrar ${dialogType}`}
-                    </Button>
+                    <Button onClick={form.handleSubmit(handleTransactionSubmit)}>Registrar</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     </div>
   );
 }
-  
-
