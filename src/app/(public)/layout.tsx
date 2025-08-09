@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export const metadata: Metadata = {
   title: 'Detalle de Servicio - Ranoro',
@@ -44,8 +45,12 @@ export default function PublicPageLayout({
                     />
                 </Link>
                 <div className="flex items-center gap-4 text-sm">
-                    <Link href="/legal/terminos" className="text-muted-foreground hover:text-primary transition-colors">Términos</Link>
-                    <Link href="/legal/privacidad" className="text-muted-foreground hover:text-primary transition-colors">Privacidad</Link>
+                    <Link href="/legal/terminos">
+                        <Badge variant="outline">Términos y Condiciones</Badge>
+                    </Link>
+                    <Link href="/legal/privacidad">
+                         <Badge variant="outline">Aviso de Privacidad</Badge>
+                    </Link>
                 </div>
             </div>
         </header>
