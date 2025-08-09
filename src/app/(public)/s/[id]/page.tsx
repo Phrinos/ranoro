@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
-import { Loader2, ShieldAlert, Eye, Wrench, ShieldCheck, Camera, Download, Signature, User, Phone, Mail, Link as LinkIcon, Printer } from 'lucide-react';
+import { Loader2, ShieldAlert, Eye, Wrench, ShieldCheck, Camera, Download, Signature, User, Phone, Mail, Link as LinkIcon, Printer, Car, Fingerprint } from 'lucide-react';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { ServiceSheetContent } from '@/components/service-sheet-content'; // Still used for its sub-components
