@@ -1,3 +1,4 @@
+
 // src/components/shared/ShareServiceDialog.tsx
 
 "use client";
@@ -14,6 +15,7 @@ import Image from "next/image";
 import { inventoryService } from '@/lib/services';
 import { cn, formatCurrency } from '@/lib/utils';
 import html2canvas from 'html2canvas';
+import { Input } from '@/components/ui/input';
 
 interface ShareServiceDialogProps {
   open: boolean;
@@ -203,7 +205,7 @@ export function ShareServiceDialog({
 
             {tabs.length > 1 && (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full pt-2">
-                  <TabsList className={cn('grid w-full h-auto p-1 bg-muted', gridColsClass)}>
+                  <TabsList className={cn('grid w-full h-auto p-1 bg-muted', tabs.length === 4 ? 'grid-cols-4' : 'grid-cols-3')}>
                       {tabs.map(tab => (
                           <TabsTrigger key={tab.value} value={tab.value} className="text-xs sm:text-sm">
                               {tab.label}
