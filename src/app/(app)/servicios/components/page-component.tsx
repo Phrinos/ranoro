@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Loader2, PlusCircle } from 'lucide-react';
@@ -64,16 +64,16 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   // Memoized filtering for each tab
   const activeServices = useMemo(() => allServices.filter(s => {
     if (s.status === 'En Taller') return true;
-    if (s.status === 'Entregado' || s.status === 'Completado') {
+    if (s.status === 'Entregado') {
         const deliveryDate = parseDate(s.deliveryDateTime);
         return deliveryDate && isToday(deliveryDate);
     }
     return false;
   }), [allServices]);
-
+  
   const agendaServices = useMemo(() => allServices.filter(s => s.status === 'Agendado'), [allServices]);
   const quotes = useMemo(() => allServices.filter(s => s.status === 'Cotizacion'), [allServices]);
-  const historyServices = useMemo(() => allServices.filter(s => ['Entregado', 'Cancelado'].includes(s.status)), [allServices]);
+  const historyServices = useMemo(() => allServices.filter(s => s.status === 'Entregado' || s.status === 'Cancelado'), [allServices]);
   
   const handleShowPreview = useCallback((service: ServiceRecord) => {
     setRecordForPreview(service);
@@ -126,7 +126,7 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   const tabs = [
     { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} /> },
     { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={agendaServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
-    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} /> },
+    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService}/> },
     { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historyServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService} /> }
   ];
 
