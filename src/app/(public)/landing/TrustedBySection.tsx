@@ -1,4 +1,3 @@
-
 "use client";
 import React from 'react';
 import Image from "next/image";
@@ -18,9 +17,6 @@ export function TrustedBySection() {
         <section className="py-12 bg-white">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimatedDiv>
-                    <p className="text-center text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                        Con la confianza de los mejores talleres de LATAM
-                    </p>
                     <div className="mt-6 grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
                         {logos.map((logo) => (
                         <div key={logo.name} className="col-span-1 flex justify-center items-center">
