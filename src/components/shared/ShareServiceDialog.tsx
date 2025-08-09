@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer, MessageSquare, Link as LinkIcon, Car } from 'lucide-react';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
