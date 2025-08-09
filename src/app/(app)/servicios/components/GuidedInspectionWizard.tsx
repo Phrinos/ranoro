@@ -132,10 +132,6 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
                     <ArrowLeft className="mr-2 h-4 w-4"/>
                     Anterior
                 </Button>
-                 <Button type="button" variant="secondary" onClick={onClose}>
-                    <X className="mr-2 h-4 w-4" />
-                    Cerrar Asistente
-                </Button>
                 <Button type="button" onClick={goToNext}>
                     {currentIndex === inspectionItems.length - 1 ? 'Finalizar' : 'Siguiente'}
                     <ArrowRight className="ml-2 h-4 w-4"/>

@@ -1,6 +1,8 @@
 
+
 // src/schemas/service-form.ts
 import * as z from 'zod';
+import { useToast } from "@/hooks/use-toast";
 
 export const supplySchema = z.object({
   supplyId: z.string().min(1, 'Seleccione un insumo'),
@@ -102,6 +104,14 @@ export const serviceFormSchema = z.object({
     serviceAdvisorSignatureDataUrl: z.string().optional(), 
     payments: z.array(paymentSchema).optional(),
     cardCommission: z.number().optional(),
+    // Deprecated payment fields
+    paymentMethod: z.string().optional(),
+    cardFolio: z.string().optional(),
+    transferFolio: z.string().optional(),
+    amountInCash: z.number().optional(),
+    amountInCard: z.number().optional(),
+    amountInTransfer: z.number().optional(),
+    
     nextServiceInfo: z.object({
         date: z.string().optional(),
         mileage: z.number().optional(), 
@@ -118,13 +128,23 @@ export const serviceFormSchema = z.object({
     }
 ).superRefine((data, ctx) => {
     // Existing refinements
-    if (data.status === 'Entregado' && (!data.payments || data.payments.length === 0)) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Debe registrar al menos un método de pago para un servicio entregado.',
-            path: ['payments'],
-        });
+    if (data.status === 'Entregado') {
+        if (!data.payments || data.payments.length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Debe registrar al menos un método de pago para un servicio entregado.',
+                path: ['payments'],
+            });
+        }
+        if (!data.mileage || data.mileage <= 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'El kilometraje actual es obligatorio para entregar el servicio.',
+                path: ['mileage'],
+            });
+        }
     }
+
 
     const totalCost = data.serviceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
     const totalPaid = data.payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
