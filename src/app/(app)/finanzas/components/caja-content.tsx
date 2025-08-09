@@ -4,17 +4,16 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import type { DateRange } from "react-day-picker";
 import type { SaleReceipt, ServiceRecord, CashDrawerTransaction } from '@/types';
-import { useTableManager } from '@/hooks/useTableManager';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
-import { format, isValid } from 'date-fns';
+import { format, isValid, isSameDay, startOfDay, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { TableToolbar } from '@/components/shared/table-toolbar';
-import { FileText, ShoppingCart, Wrench, Wallet, CreditCard, Send, LineChart, DollarSign, ChevronLeft, ChevronRight, ArrowDown, ArrowUp } from 'lucide-react';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { FileText, ShoppingCart, Wrench, Wallet, CreditCard, Send, LineChart, DollarSign, ArrowDown, ArrowUp, Calendar as CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { parseDate } from '@/lib/forms';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -26,6 +25,7 @@ import * as z from 'zod';
 import { cashService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { cn } from '@/lib/utils';
 
 
 const cashTransactionSchema = z.object({
@@ -45,6 +45,7 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'Entrada' | 'Salida'>('Entrada');
+  const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
   const form = useForm<CashTransactionFormValues>({
     resolver: zodResolver(cashTransactionSchema),
   });
@@ -74,27 +75,23 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
             userName: s.serviceAdvisorName || 'Sistema'
         }));
         
-    return [...saleMovements, ...serviceMovements, ...cashTransactions];
+    return [...saleMovements, ...serviceMovements, ...cashTransactions]
+      .sort((a,b) => (parseDate(b.date)?.getTime() ?? 0) - (parseDate(a.date)?.getTime() ?? 0));
   }, [allSales, allServices, cashTransactions]);
 
 
-  const { 
-    paginatedData,
-    fullFilteredData,
-    ...tableManager 
-  } = useTableManager<CashDrawerTransaction>({
-    initialData: mergedCashMovements,
-    searchKeys: ['concept', 'userName'],
-    dateFilterKey: 'date',
-    initialSortOption: 'date_desc',
-  });
+  const dailyData = useMemo(() => {
+    const dayStart = startOfDay(selectedDate);
+    
+    const movementsToday = mergedCashMovements.filter(m => {
+        const mDate = parseDate(m.date);
+        return mDate && isValid(mDate) && isSameDay(mDate, dayStart);
+    });
 
-    const summary = useMemo(() => {
-    const movements = fullFilteredData; // Use the already filtered data from the hook
     let totalIn = 0;
     let totalOut = 0;
 
-    movements.forEach(m => {
+    movementsToday.forEach(m => {
       if (m.type === 'Entrada') {
         totalIn += m.amount;
       } else if (m.type === 'Salida') {
@@ -102,8 +99,8 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
       }
     });
 
-    return { totalIn, totalOut, netBalance: totalIn - totalOut };
-  }, [fullFilteredData]);
+    return { movementsToday, totalIn, totalOut, netBalance: totalIn - totalOut };
+  }, [mergedCashMovements, selectedDate]);
 
 
   const handleOpenDialog = (type: 'Entrada' | 'Salida') => {
@@ -132,18 +129,40 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
 
   return (
     <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h2 className="text-2xl font-semibold tracking-tight">Caja del Día</h2>
+            <div className="flex gap-2 items-center">
+              <Button variant="outline" size="sm" onClick={() => setSelectedDate(startOfDay(new Date()))}>Hoy</Button>
+              <Button variant="outline" size="sm" onClick={() => setSelectedDate(startOfDay(subDays(new Date(), 1)))}>Ayer</Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn("w-[240px] justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar mode="single" selected={selectedDate} onSelect={(d) => setSelectedDate(d || new Date())} initialFocus locale={es}/>
+                </PopoverContent>
+              </Popover>
+            </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-green-600">Entradas Totales</CardTitle><ArrowUp className="h-4 w-4 text-green-500"/></CardHeader>
-                <CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(summary.totalIn)}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(dailyData.totalIn)}</div></CardContent>
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-red-600">Salidas Totales</CardTitle><ArrowDown className="h-4 w-4 text-red-500"/></CardHeader>
-                <CardContent><div className="text-2xl font-bold text-red-600">{formatCurrency(summary.totalOut)}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold text-red-600">{formatCurrency(dailyData.totalOut)}</div></CardContent>
             </Card>
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance Neto (Periodo)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
-                <CardContent><div className="text-2xl font-bold">{formatCurrency(summary.netBalance)}</div></CardContent>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance del Día</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold">{formatCurrency(dailyData.netBalance)}</div></CardContent>
             </Card>
         </div>
         <div className="flex justify-end gap-2">
@@ -155,27 +174,17 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
             </Button>
         </div>
         
-        <TableToolbar
-            {...tableManager}
-            searchPlaceholder="Buscar por concepto o usuario..."
-            sortOptions={[
-                { value: 'date_desc', label: 'Más Reciente' },
-                { value: 'date_asc', label: 'Más Antiguo' },
-                { value: 'amount_desc', label: 'Monto (Mayor a Menor)' },
-                { value: 'amount_asc', label: 'Monto (Menor a Menor)' },
-            ]}
-        />
-        
         <Card>
+            <CardHeader><CardTitle>Movimientos de Caja del Día</CardTitle></CardHeader>
             <CardContent className="p-0">
                 <div className="overflow-x-auto rounded-md border">
                     <Table>
-                        <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Tipo</TableHead><TableHead>Concepto</TableHead><TableHead>Usuario</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead>Hora</TableHead><TableHead>Tipo</TableHead><TableHead>Concepto</TableHead><TableHead>Usuario</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {paginatedData.length > 0 ? (
-                                paginatedData.map(m => (
+                            {dailyData.movementsToday.length > 0 ? (
+                                dailyData.movementsToday.map(m => (
                                     <TableRow key={m.id}>
-                                        <TableCell>{m.date && isValid(parseDate(m.date)!) ? format(parseDate(m.date)!, "dd MMM yyyy, HH:mm", { locale: es }) : 'N/A'}</TableCell>
+                                        <TableCell>{m.date && isValid(parseDate(m.date)!) ? format(parseDate(m.date)!, "HH:mm", { locale: es }) : 'N/A'}</TableCell>
                                         <TableCell>
                                           <Badge variant={m.type === 'Entrada' ? 'success' : 'destructive'}>{m.type}</Badge>
                                         </TableCell>
@@ -185,25 +194,13 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={5} className="h-24 text-center">No se encontraron movimientos de caja.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={5} className="h-24 text-center">No se encontraron movimientos de caja para este día.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>
                 </div>
             </CardContent>
         </Card>
-        
-        <div className="flex items-center justify-between pt-2">
-            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
-            <div className="flex items-center space-x-2">
-                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
-                    <ChevronLeft className="h-4 w-4" /> Anterior
-                </Button>
-                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
-                    Siguiente <ChevronRight className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent className="sm:max-w-md">
