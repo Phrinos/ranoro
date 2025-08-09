@@ -39,7 +39,7 @@ export default function LandingPage() {
     <div className="bg-background text-foreground">
       <header className="sticky top-0 z-50 bg-white border-b">
         <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
-          <Link href="/" className="relative w-[140px] h-[40px]">
+          <Link href="/" className="relative w-[140px] h-[40px] flex-shrink-0">
             <Image
               src="/ranoro-logo.png"
               alt="Ranoro Logo"
@@ -51,19 +51,19 @@ export default function LandingPage() {
               priority
             />
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-1 lg:flex">
              {navLinks.map(link => (
                 <Button key={link.href} variant="ghost" asChild>
                     <Link href={link.href}>{link.label}</Link>
                 </Button>
             ))}
           </nav>
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2">
             <Button asChild>
                 <Link href="/login">Registrarte / Iniciar Sesión</Link>
             </Button>
           </div>
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon">
