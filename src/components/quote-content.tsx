@@ -44,7 +44,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
     
-    const termsText = `Precios en MXN. Esta cotización es válida hasta el ${validityDate}. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.`;
+    const termsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.`;
 
 
     return (
@@ -84,15 +84,11 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     </CardHeader>
                     <CardContent className="text-center space-y-3">
                          {quote.serviceAdvisorSignatureDataUrl && (
-                             <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center min-h-[100px]">
+                             <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center min-h-[75px] max-w-[188px] mx-auto">
                                 <Image src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={150} height={75} style={{ objectFit: 'contain' }} className="mx-auto" />
                             </div>
                          )}
                          <p className="font-semibold pt-2">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
-                         <Separator />
-                         <p className="text-sm text-muted-foreground">¡Gracias por su preferencia!</p>
-                         <p className="text-xs">Para dudas o aclaraciones, no dude en contactarnos.</p>
-                         <p className="text-sm font-semibold flex items-center justify-center gap-2"><Phone className="h-4 w-4"/> {workshopInfo.phone || '4491425323'}</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -118,6 +114,14 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     </CardContent>
                 </Card>
             </div>
+            
+            <Card>
+                <CardContent className="p-6 text-center">
+                    <p className="text-muted-foreground">¡Gracias por su preferencia!</p>
+                    <p className="text-sm mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
+                    <p className="text-lg font-semibold flex items-center justify-center gap-2 mt-2"><Phone className="h-5 w-5"/> {workshopInfo.phone || '4491425323'}</p>
+                </CardContent>
+            </Card>
         </div>
     );
 });
