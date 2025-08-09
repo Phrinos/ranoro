@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 import { cn } from '@/lib/utils';
 import { HeroSection } from './(public)/landing/HeroSection';
-import { TrustedBySection } from './(public)/landing/TrustedBySection';
+import { LatamWorkshops } from './(public)/landing/LatamWorkshops';
 import { AiFeaturesSection } from './(public)/landing/AiFeaturesSection';
 import { CoreFeaturesSection } from './(public)/landing/CoreFeaturesSection';
 import { BenefitsSection } from './(public)/landing/BenefitsSection';
@@ -89,7 +90,7 @@ export default function LandingPage() {
       <main>
         <HeroSection />
 
-        <TrustedBySection />
+        <LatamWorkshops />
 
         <AiFeaturesSection />
         <CoreFeaturesSection />
