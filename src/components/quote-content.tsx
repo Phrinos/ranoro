@@ -1,4 +1,3 @@
-
 // src/components/quote-content.tsx
 
 "use client";
@@ -121,7 +120,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 <CardContent className="p-6 text-center">
                     <p>¡Gracias por su preferencia!</p>
                     <p className="text-sm mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
-                    <p className="text-lg font-semibold flex items-center justify-center gap-2 mt-2"><Icon icon="logos:whatsapp-icon" className="h-5 w-5"/> {workshopInfo.phone || '4491425323'}</p>
+                    <a href={`tel:${workshopInfo.phone || '4491425323'}`} className="text-lg font-semibold flex items-center justify-center gap-2 mt-2 text-primary hover:underline">
+                        <Phone className="h-5 w-5"/> 
+                        <span>{workshopInfo.phone || '4491425323'}</span>
+                    </a>
                     <div className="flex justify-center items-center gap-4 mt-4">
                         <Link href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer" title="WhatsApp">
                             <Icon icon="logos:whatsapp-icon" className="h-7 w-7 transition-transform hover:scale-110"/>
