@@ -1,3 +1,4 @@
+
 // src/components/quote-content.tsx
 
 "use client";
@@ -14,31 +15,7 @@ import { formatCurrency, toNumber, IVA_RATE, capitalizeWords } from "@/lib/utils
 import { parseDate } from '@/lib/forms';
 import Image from "next/image";
 import Link from 'next/link';
-
-// --- SVG Icons for Social Media ---
-const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-    </svg>
-);
-const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M15.5 16.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/>
-        <path d="M22 12c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2s8.59 3.17 9.82 7.55"/>
-        <path d="M15 12a3 3 0 0 0-3-3"/>
-    </svg>
-);
-const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
-   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-    </svg>
-);
-const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-    </svg>
-);
+import { Icon } from '@iconify/react';
 
 
 interface QuoteContentProps {
@@ -110,7 +87,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     <CardContent className="text-center space-y-3">
                          {quote.serviceAdvisorSignatureDataUrl && (
                              <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center min-h-[60px] max-w-[150px] mx-auto">
-                                <Image src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={150} height={75} style={{ objectFit: 'contain' }} className="mx-auto" />
+                                <Image src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={112} height={56} style={{ objectFit: 'contain' }} className="mx-auto" />
                             </div>
                          )}
                          <p className="font-semibold pt-2">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
@@ -140,26 +117,26 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 </Card>
             </div>
             
-            <Card>
+             <Card>
                 <CardContent className="p-6 text-center">
                     <p>¡Gracias por su preferencia!</p>
                     <p className="text-sm mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
-                    <p className="text-lg font-semibold flex items-center justify-center gap-2 mt-2"><Phone className="h-5 w-5"/> {workshopInfo.phone || '4491425323'}</p>
+                    <p className="text-lg font-semibold flex items-center justify-center gap-2 mt-2"><Icon icon="logos:whatsapp-icon" className="h-5 w-5"/> {workshopInfo.phone || '4491425323'}</p>
                     <div className="flex justify-center items-center gap-4 mt-4">
                         <Link href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer" title="WhatsApp">
-                            <WhatsAppIcon className="h-7 w-7 text-gray-600 hover:text-green-500 transition-colors"/>
+                            <Icon icon="logos:whatsapp-icon" className="h-7 w-7 transition-transform hover:scale-110"/>
                         </Link>
                         <Link href="https://share.google/9RX1vzp5fAnam7PWy" target="_blank" rel="noopener noreferrer" title="Google">
-                             <GoogleIcon className="h-6 w-6 text-gray-600 hover:text-blue-600 transition-colors"/>
+                             <Icon icon="flat-color-icons:google" className="h-7 w-7 transition-transform hover:scale-110"/>
                         </Link>
                         <Link href="https://maps.app.goo.gl/dCixrtimpLDRakCC9" target="_blank" rel="noopener noreferrer" title="Google Maps">
-                            <MapPin className="h-7 w-7 text-gray-600 hover:text-red-500 transition-colors"/>
+                            <Icon icon="logos:google-maps" className="h-7 w-7 transition-transform hover:scale-110"/>
                         </Link>
                          <Link href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook">
-                            <FacebookIcon className="h-7 w-7 text-gray-600 hover:text-blue-800 transition-colors"/>
+                            <Icon icon="logos:facebook" className="h-7 w-7 transition-transform hover:scale-110"/>
                         </Link>
                         <Link href="https://www.instagram.com/ranoromx/" target="_blank" rel="noopener noreferrer" title="Instagram">
-                           <InstagramIcon className="h-7 w-7 text-gray-600 hover:text-pink-500 transition-colors"/>
+                           <Icon icon="skill-icons:instagram" className="h-7 w-7 transition-transform hover:scale-110"/>
                         </Link>
                     </div>
                 </CardContent>
