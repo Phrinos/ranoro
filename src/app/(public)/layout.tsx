@@ -30,10 +30,19 @@ export default function PublicPageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-muted/30 min-h-screen">
-        <main>
+    <div className="flex min-h-screen flex-col bg-muted/30">
+        <main className="flex-1">
             {children}
         </main>
+        <footer className="bg-gray-900 text-white print:hidden">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-500">
+            <p>&copy; 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914</p>
+            <div className="mt-4 flex justify-center gap-6">
+                <Link href="/legal/terminos" className="text-sm text-gray-400 hover:text-white">Términos y Condiciones</Link>
+                <Link href="/legal/privacidad" className="text-sm text-gray-400 hover:text-white">Aviso de Privacidad</Link>
+            </div>
+            </div>
+        </footer>
     </div>
   );
 }

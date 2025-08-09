@@ -9,7 +9,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Signature, Loader2 } from 'lucide-react';
+import { Signature, Loader2, Phone } from 'lucide-react';
 import { formatCurrency, toNumber, IVA_RATE, capitalizeWords, normalizeDataUrl } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
 import Image from "next/image";
@@ -76,22 +76,50 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 </CardContent>
             </Card>
 
-             <Card>
-                <CardHeader><CardTitle>Resumen de Costos</CardTitle></CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                    <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Subtotal:</span>
-                        <span className="font-medium">{formatCurrency(subTotal)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">IVA (16%):</span>
-                        <span className="font-medium">{formatCurrency(taxAmount)}</span>
-                    </div>
-                    <Separator className="my-2"/>
-                    <div className="flex justify-between items-center font-bold text-lg">
-                        <span>Total a Pagar:</span>
-                        <span className="text-primary">{formatCurrency(totalCost)}</span>
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Asesor de Servicio</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center space-y-3">
+                         {quote.serviceAdvisorSignatureDataUrl && (
+                             <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center min-h-[100px]">
+                                <Image src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" width={200} height={100} style={{ objectFit: 'contain' }} className="mx-auto" />
+                            </div>
+                         )}
+                         <p className="font-semibold pt-2">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
+                         <Separator />
+                         <p className="text-sm text-muted-foreground">¡Gracias por su preferencia!</p>
+                         <p className="text-xs">Para dudas o aclaraciones, no dude en contactarnos.</p>
+                         <p className="text-sm font-semibold flex items-center justify-center gap-2"><Phone className="h-4 w-4"/> {workshopInfo.phone || '4491234567'}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle>Resumen de Costos</CardTitle></CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Subtotal:</span>
+                            <span className="font-medium">{formatCurrency(subTotal)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">IVA (16%):</span>
+                            <span className="font-medium">{formatCurrency(taxAmount)}</span>
+                        </div>
+                        <Separator className="my-2"/>
+                        <div className="flex justify-between items-center font-bold text-lg">
+                            <span>Total a Pagar:</span>
+                            <span className="text-primary">{formatCurrency(totalCost)}</span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Términos y Condiciones</CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground">
+                    Precios en MXN. Esta cotización es válida hasta el {validityDate}. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
                 </CardContent>
             </Card>
 
