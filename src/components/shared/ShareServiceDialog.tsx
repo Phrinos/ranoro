@@ -153,18 +153,6 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
               </div>
             </div>
           )}
-
-          {/* WhatsApp message preview */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">Mensaje para WhatsApp</p>
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => copy(message, "Mensaje copiado")}> <Copy className="mr-2 h-4 w-4"/> Copiar </Button>
-                <Button size="sm" onClick={handleOpenWhatsApp}> <MessageSquare className="mr-2 h-4 w-4"/> Abrir WhatsApp </Button>
-              </div>
-            </div>
-            <pre className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm leading-6 whitespace-pre-wrap max-h-40 overflow-y-auto">{message}</pre>
-          </div>
         </div>
 
         {/* Footer actions */}
