@@ -1,18 +1,15 @@
-// src/components/shared/ShareServiceDialog.tsx
-
 "use client";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Printer, MessageSquare, Link as LinkIcon, Car } from 'lucide-react';
-import type { ServiceRecord, WorkshopInfo } from '@/types';
-import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Separator } from '../ui/separator';
-import { formatCurrency } from '@/lib/utils';
-
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
+import { Printer, MessageSquare, Link as LinkIcon, Car, Copy, ExternalLink, Share2 } from "lucide-react";
+import type { ServiceRecord, WorkshopInfo } from "@/types";
 
 interface ShareServiceDialogProps {
   open: boolean;
@@ -20,114 +17,166 @@ interface ShareServiceDialogProps {
   service: ServiceRecord;
 }
 
-export function ShareServiceDialog({ 
-  open, 
-  onOpenChange, 
-  service: initialService, 
-}: ShareServiceDialogProps) {
+// --- Helpers ---
+const buildShareUrl = (publicId?: string) => {
+  try { return publicId ? new URL(`/s/${publicId}`, window.location.origin).toString() : ""; } catch { return ""; }
+};
+
+const buildShareMessage = (svc: ServiceRecord, workshop?: Partial<WorkshopInfo>) => {
+  const name = workshop?.name || "nuestro taller";
+  const saludo = `Hola ${svc.customerName || "Cliente"}, aquí tienes los detalles de tu servicio en ${name}.`;
+  const url = buildShareUrl(svc.publicId);
+  const cuerpo = url
+    ? `\n\nPuedes ver el detalle y firmar de conformidad aquí:\n${url}`
+    : `\n\nFolio: ${svc.id}\nTotal: ${formatCurrency(svc.totalCost || 0)}`;
+  const cierre = "\n\n¡Gracias por tu preferencia!";
+  return `${saludo}${cuerpo}${cierre}`;
+};
+
+export function ShareServiceDialog({ open, onOpenChange, service: initialService }: ShareServiceDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = React.useState<Partial<WorkshopInfo>>({});
 
   React.useEffect(() => {
-    if (open) {
-      const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
-      if (storedWorkshopInfo) {
-        setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-      }
+    if (!open) return;
+    const stored = localStorage.getItem("workshopTicketInfo");
+    if (stored) {
+      try { setWorkshopInfo(JSON.parse(stored)); } catch { /* ignore */ }
     }
   }, [open]);
 
-  const handleCopyServiceForWhatsapp = React.useCallback(() => {
-    if (!initialService) return;
-    const workshopName = (workshopInfo as WorkshopInfo)?.name || 'nuestro taller';
-    let message = `Hola ${initialService.customerName || 'Cliente'}, aquí tienes los detalles de tu servicio en ${workshopName}.`;
-    if (initialService.publicId) {
-        const shareUrl = `${window.location.origin}/s/${initialService.publicId}`;
-        message += `\n\nPuedes ver los detalles y firmar de conformidad en el siguiente enlace:\n${shareUrl}`;
-    } else {
-        message += `\n\nFolio de Servicio: ${initialService.id}\nTotal: ${formatCurrency(initialService.totalCost)}`;
-    }
-    message += `\n\n¡Agradecemos tu preferencia!`;
-    navigator.clipboard.writeText(message).then(() => {
-      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
-    });
-  }, [initialService, toast, workshopInfo]);
-  
-  return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-                <DialogTitle>Compartir Documento de Servicio</DialogTitle>
-                <DialogDescription>
-                  Folio: {initialService?.id || 'N/A'}. Selecciona una opción para compartir o imprimir.
-                </DialogDescription>
-            </DialogHeader>
+  const shareUrl = React.useMemo(() => buildShareUrl(initialService?.publicId), [initialService?.publicId]);
+  const message = React.useMemo(() => buildShareMessage(initialService, workshopInfo), [initialService, workshopInfo]);
 
-            <div className="py-4 space-y-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
-                  <Car className="h-6 w-6 text-muted-foreground flex-shrink-0"/>
-                  <div>
-                    <p className="font-bold">{initialService?.vehicleIdentifier}</p>
-                    <p className="text-sm text-muted-foreground">{initialService?.customerName}</p>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="space-y-3">
-                    <p className="text-sm font-semibold mb-2">Trabajos a Realizar:</p>
-                    <div className="text-sm text-muted-foreground space-y-3 max-h-48 overflow-y-auto pr-3">
-                      {(initialService?.serviceItems || []).map(item => (
-                          <div key={item.id} className="border-b last:border-b-0 pb-2">
-                              <div className="flex justify-between items-start">
-                                  <div className="flex-1 pr-2">
-                                    <p className="font-medium text-foreground">{item.name}</p>
-                                    {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                                        <p className="text-xs text-muted-foreground pl-2">
-                                            Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
-                                        </p>
-                                    )}
-                                  </div>
-                                  <span className="font-semibold text-foreground">{formatCurrency(item.price)}</span>
-                              </div>
-                          </div>
-                      ))}
-                    </div>
-                  </div>
-                  <Separator className="my-4"/>
-                   <div className="flex justify-between items-center text-lg font-bold">
-                    <span>Total:</span>
-                    <span className="text-primary">{formatCurrency(initialService?.totalCost)}</span>
-                   </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {initialService?.publicId && (
-              <div className="space-y-2">
-                  <p className="text-sm font-medium">Enlace Público:</p>
-                   <div className="flex items-center gap-2">
-                       <Input value={`${window.location.origin}/s/${initialService.publicId}`} readOnly className="bg-muted"/>
-                       <Button size="icon" variant="outline" onClick={() => {
-                           navigator.clipboard.writeText(`${window.location.origin}/s/${initialService.publicId}`);
-                           toast({title: "Enlace copiado"});
-                       }}>
-                          <LinkIcon className="h-4 w-4"/>
-                       </Button>
-                   </div>
+  const copy = async (text: string, label = "Copiado al portapapeles") => {
+    try { await navigator.clipboard.writeText(text); toast({ title: label }); }
+    catch { toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manualmente.", variant: "destructive" }); }
+  };
+
+  const handleCopyWhatsApp = React.useCallback(() => copy(message, "Mensaje copiado"), [message]);
+
+  const handleOpenWhatsApp = React.useCallback(() => {
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, [message]);
+
+  const handleNativeShare = React.useCallback(async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Servicio Ranoro", text: message, url: shareUrl || undefined });
+      } else {
+        await copy(message, "Mensaje copiado – pega en tu app");
+      }
+    } catch { /* cancel/share error */ }
+  }, [message, shareUrl]);
+
+  if (!initialService) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-xl md:max-w-2xl p-0 overflow-hidden">
+        {/* Header visual */}
+        <div className="bg-gradient-to-r from-rose-600 to-rose-700 text-white px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-white/10 grid place-items-center"><Car className="h-5 w-5" /></div>
+              <div>
+                <DialogTitle className="text-white text-lg font-extrabold tracking-tight">Compartir documento de servicio</DialogTitle>
+                <DialogDescription className="text-white/80">
+                  Folio: <span className="font-semibold">{initialService?.id || "N/A"}</span>
+                </DialogDescription>
               </div>
-            )}
-            
-            <DialogFooter className="flex-col sm:flex-row gap-2 pt-4 border-t">
-               <Button onClick={handleCopyServiceForWhatsapp} className="w-full sm:w-auto">
-                <MessageSquare className="mr-2 h-4 w-4"/> WhatsApp
-              </Button>
-               <Button variant="outline" onClick={() => window.print()} className="w-full sm:w-auto">
-                 <Printer className="mr-2 h-4 w-4"/> Imprimir
-              </Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+            </div>
+            <div className="text-right">
+              <div className="text-xs uppercase tracking-wider text-white/70">Total</div>
+              <div className="text-2xl font-black">{formatCurrency(initialService?.totalCost || 0)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 space-y-6">
+          {/* Summary card */}
+          <Card className="border-slate-200">
+            <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
+              <div className="h-9 w-9 rounded-lg bg-slate-100 grid place-items-center"><Car className="h-5 w-5 text-muted-foreground"/></div>
+              <div className="min-w-0">
+                <p className="font-bold truncate">{initialService?.vehicleIdentifier}</p>
+                <p className="text-sm text-muted-foreground truncate">{initialService?.customerName}</p>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-semibold">Trabajos a realizar</span>
+                  <span className="text-muted-foreground">{(initialService?.serviceItems||[]).length} conceptos</span>
+                </div>
+
+                <div className="text-sm text-muted-foreground space-y-3 max-h-56 overflow-y-auto pr-3">
+                  {(initialService?.serviceItems || []).map((item) => (
+                    <div key={item.id} className="border rounded-lg p-3 border-slate-200 bg-white">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate">{item.name}</p>
+                          {!!(item.suppliesUsed && item.suppliesUsed.length) && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              Insumos: {item.suppliesUsed.map((s:any) => `${s.quantity}× ${s.supplyName}`).join(", ")}
+                            </p>
+                          )}
+                        </div>
+                        <span className="font-semibold text-foreground whitespace-nowrap">{formatCurrency(item.price || 0)}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {(!initialService?.serviceItems || initialService.serviceItems.length === 0) && (
+                    <div className="text-center text-xs py-6 text-muted-foreground">Sin conceptos por mostrar</div>
+                  )}
+                </div>
+              </div>
+
+              <Separator className="my-4"/>
+              <div className="flex justify-between items-center text-base font-bold">
+                <span>Total</span>
+                <span className="text-primary">{formatCurrency(initialService?.totalCost || 0)}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Public link */}
+          {initialService?.publicId && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Enlace público</p>
+              <div className="flex items-center gap-2">
+                <Input value={shareUrl} readOnly className="bg-muted"/>
+                <Button size="icon" variant="outline" onClick={() => copy(shareUrl, "Enlace copiado")}> <Copy className="h-4 w-4"/> </Button>
+                <Button size="icon" variant="outline" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}> <ExternalLink className="h-4 w-4"/> </Button>
+              </div>
+            </div>
+          )}
+
+          {/* WhatsApp message preview */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Mensaje para WhatsApp</p>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => copy(message, "Mensaje copiado")}> <Copy className="mr-2 h-4 w-4"/> Copiar </Button>
+                <Button size="sm" onClick={handleOpenWhatsApp}> <MessageSquare className="mr-2 h-4 w-4"/> Abrir WhatsApp </Button>
+              </div>
+            </div>
+            <pre className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm leading-6 whitespace-pre-wrap max-h-40 overflow-y-auto">{message}</pre>
+          </div>
+        </div>
+
+        {/* Footer actions */}
+        <DialogFooter className="px-6 pb-6 pt-4 border-t flex-col sm:flex-row gap-2">
+          <Button onClick={handleNativeShare} className="w-full sm:w-auto">
+            <Share2 className="mr-2 h-4 w-4"/> Compartir
+          </Button>
+          <Button variant="outline" onClick={() => window.print()} className="w-full sm:w-auto">
+            <Printer className="mr-2 h-4 w-4"/> Imprimir
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
