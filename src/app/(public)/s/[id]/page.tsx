@@ -332,17 +332,20 @@ export default function PublicServicePage() {
         [fieldToUpdate]: signatureDataUrl,
       };
 
+      // Use the new centralized function to save the signature to the public collection
       const result = await savePublicDocument('service', dataToSave);
 
       if (result.success) {
           toast({ title: toastTitle });
       } else {
+          console.error("Error saving signature:", result.error);
           toast({ title: 'Error al Guardar Firma', description: result.error, variant: 'destructive' });
       }
 
       setIsSigning(false);
       setSignatureType(null);
   };
+
 
   const showQuote = service && (service.status === 'Cotizacion' || service.status === 'Agendado');
   const showServiceDetails = service && service.status !== 'Cotizacion' && service.status !== 'Agendado';
@@ -366,6 +369,13 @@ export default function PublicServicePage() {
     setActiveTab(defaultTabValue);
   }, [defaultTabValue]);
 
+
+  const gridColsClass = 
+    tabs.length >= 4 ? 'grid-cols-2 sm:grid-cols-4' :
+    tabs.length === 3 ? 'grid-cols-3' :
+    tabs.length === 2 ? 'grid-cols-2' :
+    'grid-cols-1';
+
   if (service === undefined) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
@@ -378,12 +388,6 @@ export default function PublicServicePage() {
     );
   }
   
-  const gridColsClass = 
-    tabs.length >= 4 ? 'grid-cols-2 sm:grid-cols-4' :
-    tabs.length === 3 ? 'grid-cols-3' :
-    tabs.length === 2 ? 'grid-cols-2' :
-    'grid-cols-1';
-
   return (
      <>
         <div className="container mx-auto py-4 sm:py-8">
@@ -402,7 +406,7 @@ export default function PublicServicePage() {
                 )}
                 <div className="mt-6">
                     <TabsContent value="quote">
-                        {showQuote && <QuoteContent quote={service as QuoteRecord} vehicle={vehicle || undefined} workshopInfo={workshopInfo || undefined} />}
+                        {showQuote && <QuoteContent quote={service as QuoteRecord} />}
                     </TabsContent>
                     <TabsContent value="details">
                         {showServiceDetails && <ServiceDetailsContent service={service} />}

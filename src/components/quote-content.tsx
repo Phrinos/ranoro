@@ -1,251 +1,125 @@
+// src/components/quote-content.tsx
 
 "use client";
 
-import type { QuoteRecord, Vehicle, Technician, WorkshopInfo, Driver, RentalPayment } from '@/types';
-import { format, parseISO, isValid, addDays } from 'date-fns';
+import type { QuoteRecord, Vehicle, WorkshopInfo } from '@/types';
+import { format, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import React from 'react';
-import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt, formatCurrency, toNumber, IVA_RATE } from "@/lib/utils";
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, CalendarCheck } from 'lucide-react';
-import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
-import Image from 'next/image';
+import React, { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Signature, Loader2 } from 'lucide-react';
+import { formatCurrency, toNumber, IVA_RATE, capitalizeWords, normalizeDataUrl } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
-import Link from 'next/link';
-
-const initialWorkshopInfo: WorkshopInfo = {
-  name: "RANORO",
-  phone: "4491425323",
-  addressLine1: "Av. de la Convencion de 1914 No. 1421",
-  addressLine2: "Jardines de la Concepcion, C.P. 20267",
-  cityState: "Aguascalientes, Ags.",
-  logoUrl: "/ranoro-logo.png",
-  footerLine1: "¡Gracias por su preferencia!",
-  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
-};
-
+import Image from "next/image";
 
 interface QuoteContentProps {
   quote: QuoteRecord;
-  vehicle?: Vehicle; 
-  workshopInfo?: WorkshopInfo;
+  isPublicView?: boolean;
+  onSignClick?: () => void;
+  isSigning?: boolean;
 }
 
 export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
-  ({ quote, vehicle, workshopInfo: workshopInfoProp }, ref) => {
-    const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
+  ({ quote, isPublicView, onSignClick, isSigning }, ref) => {
     
-    const now = new Date();
-    const formattedPrintDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
-    const quoteDate = parseDate(quote.quoteDate) || now; // Fallback to now if quoteDate is not available
-    const formattedQuoteDate = isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
-    
-    const validityDays = 15; 
-    const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
-    
-    const driver: Driver | undefined = vehicle?.isFleetVehicle 
-        ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 
-        : undefined;
+    // Fallback for embedded data in public view
+    const vehicle = quote.vehicle || null;
+    const workshopInfo = quote.workshopInfo || { name: 'Ranoro' };
 
-    const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
+    const quoteDate = parseDate(quote.serviceDate) || new Date();
+    const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, 15), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
+    const items = useMemo(() => (quote?.serviceItems ?? []).map(it => ({
+        ...it,
+        price: toNumber(it?.price, 0),
+    })), [quote?.serviceItems]);
+
+    const { subTotal, taxAmount, totalCost } = useMemo(() => {
+        const total = items.reduce((acc, it) => acc + it.price, 0);
+        const sub = total / (1 + IVA_RATE);
+        const tax = total - sub;
+        return { subTotal: sub, taxAmount: tax, totalCost: total };
+    }, [items]);
 
     return (
-      <div 
-        ref={ref}
-        data-format="letter"
-        className="font-sans bg-white text-black shadow-lg mx-auto p-4 md:p-8 text-sm flex flex-col print:shadow-none"
-      >
-        <header className="mb-4 pb-2 border-b-2 border-black">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="relative w-[150px] h-[50px]">
-             <Image 
-              src={effectiveWorkshopInfo.logoUrl} 
-              alt={`${effectiveWorkshopInfo.name} Logo`} 
-              fill
-              style={{ objectFit: 'contain' }}
-              data-ai-hint="workshop logo"
-              crossOrigin="anonymous"
-            />
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-semibold text-primary text-left sm:text-right w-full sm:w-auto">COTIZACIÓN</h2>
-          </div>
-
-          <div className="flex flex-col sm:flex-row justify-between items-start mt-4 text-xs gap-4">
-            <div className="space-y-0 leading-tight">
-              <div className="font-bold text-sm mb-1">{effectiveWorkshopInfo.name}</div>
-              <div>{effectiveWorkshopInfo.addressLine1}</div>
-              {effectiveWorkshopInfo.addressLine2 && <div>{effectiveWorkshopInfo.addressLine2}</div>}
-              <div>{effectiveWorkshopInfo.cityState}</div>
-              <div>Tel: {effectiveWorkshopInfo.phone}</div>
-            </div>
-            <div className="text-left sm:text-right space-y-0 leading-tight">
-              <div>Folio: <span className="font-semibold">{quote.id}</span></div>
-              <div>Fecha: <span className="font-semibold">{formattedQuoteDate}</span></div>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-grow">
-          <section className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2 text-xs">
-              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
-                <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
-                <div className="space-y-0.5 p-2 text-sm">
-                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
-                  <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
-                  {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
-                </div>
-              </div>
-              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
-                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
-                  <div className="space-y-0.5 p-2 text-sm">
-                      <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
-                      <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span></p>
-                      {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
-                      {quote.mileage !== undefined && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{formatCurrency(quote.mileage)} km</span></p>}
-                  </div>
-              </div>
-              {quote.nextServiceInfo && quote.status === 'Entregado' && (
-                  <div className="border-2 border-red-700 rounded-md overflow-hidden flex-1">
-                    <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
-                    <div className="p-2 space-y-1 text-center text-sm">
-                        <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
-                        {quote.nextServiceInfo.date && isValid(parseDate(quote.nextServiceInfo.date)) && (
-                            <p className="font-bold">Fecha: {format(parseDate(quote.nextServiceInfo.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
-                        )}
-                        {quote.nextServiceInfo.mileage && (
-                            <p className="font-bold">Kilometraje: {formatCurrency(quote.nextServiceInfo.mileage)} km</p>
-                        )}
+        <div className="space-y-6" ref={ref}>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Detalles de la Cotización</CardTitle>
+                    <CardDescription>
+                        Esta cotización es válida hasta el {validityDate}. Los precios incluyen IVA.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        {items.map((item, index) => (
+                            <div key={item.id || index} className="p-4 border rounded-lg bg-background">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <p className="font-semibold">{item.name}</p>
+                                        {item.suppliesUsed && item.suppliesUsed.length > 0 && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <p className="font-bold text-lg">{formatCurrency(item.price)}</p>
+                                </div>
+                            </div>
+                        ))}
+                         {items.length === 0 && (
+                             <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
+                         )}
                     </div>
-                  </div>
-              )}
-          </section>
+                </CardContent>
+            </Card>
 
-          {driverDebt.totalDebt > 0 && (
-            <div className="my-4 p-3 border-2 border-red-500 bg-red-50 rounded-md text-red-800">
-                <h4 className="font-bold text-base flex items-center gap-2"><AlertCircle className="h-5 w-5"/>AVISO IMPORTANTE DE ADEUDO</h4>
-                <p className="text-sm mt-1">
-                    Este conductor presenta un adeudo con la flotilla por un total de <strong>{formatCurrency(driverDebt.totalDebt)}</strong>.
-                </p>
-                <ul className="text-xs list-disc pl-5 mt-1">
-                    {driverDebt.depositDebt > 0 && <li>Deuda de depósito: {formatCurrency(driverDebt.depositDebt)}</li>}
-                    {driverDebt.rentalDebt > 0 && <li>Deuda de renta: {formatCurrency(driverDebt.rentalDebt)}</li>}
-                    {driverDebt.manualDebt > 0 && <li>Deudas manuales: {formatCurrency(driverDebt.manualDebt)}</li>}
-                </ul>
-            </div>
-          )}
-
-          <Card className="mt-4 mb-4 border-2 border-gray-200 overflow-hidden">
-            <h3 className="font-semibold text-white bg-gray-700 p-2" style={{ fontSize: '14px' }}>TRABAJOS A REALIZAR (Precios con IVA)</h3>
-            <CardContent className="p-4 space-y-4">
-              <section>
-                <div className="space-y-2 pt-2" style={{ fontSize: '14px' }}>
-                  {quote.serviceItems && quote.serviceItems.length > 0 ? (
-                      quote.serviceItems.map((item, index) => (
-                          <div key={index} className="pb-2 border-b border-dashed last:border-b-0">
-                              <div className="flex justify-between items-center">
-                                  <span className="font-bold">{item.name}</span>
-                                  <span className="font-bold">{formatCurrency(item.price)}</span>
-                              </div>
-                              {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                                  <p className="text-gray-500 pl-4 mt-1">
-                                      Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
-                                  </p>
-                              )}
-                          </div>
-                      ))
-                  ) : (
-                      <p className="text-gray-500 italic">No se especificaron trabajos en esta cotización.</p>
-                  )}
-                </div>
-              </section>
-
-              <section className="flex flex-col sm:flex-row justify-end pt-4 border-t border-dashed">
-                  <div className="w-full sm:max-w-xs md:max-w-sm space-y-1 text-sm">
-                      {quote.subTotal !== undefined && (
-                          <div className="flex justify-between">
-                              <span>Subtotal:</span>
-                              <span className="font-medium">{formatCurrency(quote.subTotal)}</span>
-                          </div>
-                      )}
-                      {quote.taxAmount !== undefined && (
-                          <div className="flex justify-between">
-                              <span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
-                              <span className="font-medium">{formatCurrency(quote.taxAmount)}</span>
-                          </div>
-                      )}
-                      <div className="flex justify-between font-bold pt-1 mt-1 border-t border-gray-300">
-                          <span>Total Estimado:</span>
-                          <span>{formatCurrency(quote.totalCost)}</span>
-                      </div>
-                  </div>
-              </section>
-              
-              {quote.notes && (
-                <section className="w-full text-left pt-4 border-t border-dashed" style={{ fontSize: '14px' }}>
-                  <h4 className="font-semibold text-gray-700 mb-1">Notas Adicionales:</h4>
-                  <p className="whitespace-pre-wrap">{quote.notes}</p>
-                </section>
-              )}
-            </CardContent>
-          </Card>
-        </main>
-        
-        <footer className="mt-auto">
-          <Card className="mt-4 mb-4 border-gray-200">
-            <CardContent className="p-4 flex flex-col sm:flex-row justify-between min-h-[120px]" style={{ fontSize: '14px' }}>
-                <div className="text-left">
-                    <p className="font-semibold">¡Gracias por su preferencia!</p>
-                    <p>Para dudas o aclaraciones, no dude en contactarnos.</p>
-                    <p><b>WhatsApp:</b> 4491425323</p>
-                </div>
-                <div className="text-right flex flex-col items-center justify-end mt-4 sm:mt-0">
-                    <div className="relative flex justify-center items-center h-16 w-40 mb-1">
-                        {quote.serviceAdvisorSignatureDataUrl && (
-                           <div className="relative w-[200px] h-[80px]">
-                                <Image
-                                    src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)}
-                                    alt="Firma del asesor"
-                                    fill
-                                    style={{ objectFit: 'contain' }}
-                                    crossOrigin="anonymous"
-                                />
-                           </div>
-                        )}
+             <Card>
+                <CardHeader><CardTitle>Resumen de Costos</CardTitle></CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Subtotal:</span>
+                        <span className="font-medium">{formatCurrency(subTotal)}</span>
                     </div>
-                    <div className="border-t-2 border-gray-300/30 pt-1 w-56 text-center">
-                        <p className="font-bold text-sm">
-                           ASESOR: {capitalizeWords((quote.serviceAdvisorName || '').toLowerCase()) || '________________________________'}
-                        </p>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">IVA (16%):</span>
+                        <span className="font-medium">{formatCurrency(taxAmount)}</span>
                     </div>
-                </div>
-            </CardContent>
-          </Card>
+                    <Separator className="my-2"/>
+                    <div className="flex justify-between items-center font-bold text-lg">
+                        <span>Total a Pagar:</span>
+                        <span className="text-primary">{formatCurrency(totalCost)}</span>
+                    </div>
+                </CardContent>
+            </Card>
 
-          <section className="pt-4" style={{paddingBottom: '0'}}>
-            <h4 className="font-semibold text-sm text-gray-700 mb-1">Términos y Condiciones:</h4>
-            <p className="text-xs text-gray-600 leading-snug">
-                {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
-                No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
-            </p>
-            <div className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</div>
-          </section>
-          
-           <section className="mt-4 text-center text-gray-500 text-[10px] space-x-4">
-              <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
-              <span>|</span>
-              <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
-           </section>
-          {effectiveWorkshopInfo.fixedFooterText && (
-             <div className="text-center mt-2 pt-2 border-t border-gray-200">
-                <p className="text-[9px] text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
-            </div>
-          )}
-        </footer>
-      </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Aprobación del Cliente</CardTitle>
+                    <CardDescription>
+                        Si está de acuerdo con esta cotización, por favor firme a continuación para autorizar el trabajo.
+                    </CardDescription>
+                </CardHeader>
+                 <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
+                    {quote.customerSignatureReception ? (
+                        <div className="p-4 border rounded-md bg-muted/50">
+                            <Image src={normalizeDataUrl(quote.customerSignatureReception)} alt="Firma de autorización" width={300} height={150} style={{ objectFit: 'contain' }} className="mx-auto" />
+                            <p className="text-xs text-green-600 font-semibold mt-2">Trabajo Autorizado</p>
+                        </div>
+                    ) : isPublicView && onSignClick ? (
+                        <Button onClick={onSignClick} disabled={isSigning} className="w-full sm:w-auto">
+                            {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
+                            Firmar y Autorizar Trabajos
+                        </Button>
+                    ) : (
+                        <p className="text-muted-foreground py-8">Firma pendiente.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
-  }
-);
+});
 
 QuoteContent.displayName = "QuoteContent";
