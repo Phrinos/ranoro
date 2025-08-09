@@ -100,7 +100,7 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   }
   
   const pageActions = (
-    <Button asChild>
+    <Button asChild className="bg-white text-black hover:bg-gray-200">
       <Link href="/servicios/nuevo">
         <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Servicio
       </Link>
