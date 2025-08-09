@@ -53,8 +53,10 @@ export default function ActivosTabContent({
   const router = useRouter();
   const { toast } = useToast();
 
-  const activeServices = useMemo(() => {
-    return allServices
+  const sortedServices = useMemo(() => {
+    // The filtering is now done in the parent component.
+    // This component just sorts and displays the data it receives.
+    return [...allServices]
         .sort((a, b) => {
             const dateA = parseDate(a.receptionDateTime) || parseDate(a.serviceDate);
             const dateB = parseDate(b.receptionDateTime) || parseDate(b.serviceDate);
@@ -128,8 +130,8 @@ export default function ActivosTabContent({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {activeServices.length > 0 ? (
-          activeServices.map(renderServiceCard)
+        {sortedServices.length > 0 ? (
+          sortedServices.map(renderServiceCard)
         ) : (
           <p className="text-center text-muted-foreground py-10">
             No hay servicios activos.
