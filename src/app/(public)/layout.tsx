@@ -46,10 +46,14 @@ export default function PublicPageLayout({
                 </Link>
                 <div className="flex items-center gap-4 text-sm">
                     <Link href="/legal/terminos" className="text-gray-300 hover:text-white transition-colors">
-                        Términos y Condiciones
+                        <Badge variant="outline" className="text-sm border-white/50 text-white/90 hover:bg-white/10 px-3 py-1">
+                            Términos y Condiciones
+                        </Badge>
                     </Link>
                     <Link href="/legal/privacidad" className="text-gray-300 hover:text-white transition-colors">
-                         Aviso de Privacidad
+                         <Badge variant="outline" className="text-sm border-white/50 text-white/90 hover:bg-white/10 px-3 py-1">
+                            Aviso de Privacidad
+                        </Badge>
                     </Link>
                 </div>
             </div>
