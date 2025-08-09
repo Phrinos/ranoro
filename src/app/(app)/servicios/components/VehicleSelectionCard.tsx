@@ -1,4 +1,4 @@
-
+// src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 
 "use client";
 
@@ -135,12 +135,12 @@ export function VehicleSelectionCard({
 
   if (selectedVehicle) {
     return (
-      <Card className="relative">
+      <Card className="relative bg-muted">
         <CardHeader>
           <CardTitle>Vehículo Seleccionado</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-           <div className="p-3 border rounded-md bg-muted/30">
+           <div className="p-3 border rounded-md bg-background/30">
               <p className="text-xs text-muted-foreground">{selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
               <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
           </div>
@@ -156,6 +156,7 @@ export function VehicleSelectionCard({
                 <FormControl>
                   <Input type="number" placeholder="Ej: 55000 km" {...field} value={field.value ?? ''} disabled={isReadOnly} />
                 </FormControl>
+                 <FormMessage />
               </FormItem>
             )}
           />

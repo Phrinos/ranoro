@@ -1,4 +1,3 @@
-
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -102,11 +101,20 @@ export const serviceFormSchema = z.object({
     serviceAdvisorSignatureDataUrl: z.string().optional(), 
     payments: z.array(paymentSchema).optional(),
     cardCommission: z.number().optional(),
+    // Deprecated payment fields
+    paymentMethod: z.string().optional(),
+    cardFolio: z.string().optional(),
+    transferFolio: z.string().optional(),
+    amountInCash: z.number().optional(),
+    amountInCard: z.number().optional(),
+    amountInTransfer: z.number().optional(),
+    
     nextServiceInfo: z.object({
         date: z.string().optional(),
         mileage: z.number().optional(), 
     }).optional().nullable(),
     photoReports: z.array(photoReportSchema).optional(),
+    appointmentStatus: z.enum(['Creada', 'Confirmada']).optional(),
     customerName: z.string().optional(),
     totalCost: z.number().optional(),
     allVehiclesForDialog: z.array(z.any()).optional(), 
@@ -126,6 +134,14 @@ export const serviceFormSchema = z.object({
                 code: z.ZodIssueCode.custom,
                 message: 'Debe registrar al menos un método de pago para un servicio entregado.',
                 path: ['payments'],
+            });
+        }
+        
+        if (!data.mileage || data.mileage <= 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'El kilometraje es obligatorio para entregar un servicio.',
+                path: ['mileage'],
             });
         }
 
