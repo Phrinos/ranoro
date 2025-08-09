@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, PackagePlus, Plus, Minus, ArrowLeft, DollarSign, PlusCircle, Trash2, CalendarIcon } from 'lucide-react';
-import type { InventoryItem, Supplier, InventoryCategory } from '@/types';
+import type { InventoryItem, Supplier, InventoryCategory, PaymentMethod } from '@/types';
 import { formatCurrency, capitalizeWords } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -118,8 +118,8 @@ export function RegisterPurchaseDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl p-6">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl p-0">
+          <DialogHeader className="p-6 pb-4 border-b">
             <DialogTitle>Registrar Nueva Compra</DialogTitle>
             <DialogDescription>
               Seleccione un proveedor, añada los productos comprados y especifique los detalles del pago.
@@ -128,74 +128,83 @@ export function RegisterPurchaseDialog({
           <FormProvider {...form}>
             <Form {...form}>
               <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={control} name="supplierId" render={({ field }) => (
-                    <FormItem><FormLabel>Proveedor</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un proveedor" /></SelectTrigger></FormControl>
-                        <SelectContent><ScrollArea className="h-48">{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</ScrollArea></SelectContent>
-                      </Select><FormMessage />
-                    </FormItem>
-                  )}/>
-                   <FormField control={control} name="invoiceId" render={({ field }) => (
-                     <FormItem><FormLabel>Folio de Factura (Opcional)</FormLabel><FormControl><Input placeholder="F-12345" {...field} value={field.value ?? ''} /></FormControl></FormItem>
-                   )}/>
-                </div>
-                
-                <div>
-                    <FormLabel>Artículos Comprados</FormLabel>
-                    <div className="space-y-2 mt-2 rounded-md border p-2">
-                        {fields.map((field, index) => (
-                           <div key={field.id} className="flex items-center gap-2">
-                             <span className="flex-1 text-sm">{field.itemName}</span>
-                             <FormField control={control} name={`items.${index}.quantity`} render={({ field }) => (
-                                <Input type="number" step="1" className="w-20 h-8" placeholder="Cant." {...field}/>
-                             )}/>
-                             <FormField control={control} name={`items.${index}.purchasePrice`} render={({ field }) => (
-                                <div className="relative"><DollarSign className="absolute left-2.5 top-1.5 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" className="w-28 h-8 pl-8" placeholder="Costo U." {...field}/></div>
-                             )}/>
-                             <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                           </div>
-                        ))}
-                         <Button type="button" variant="outline" size="sm" onClick={() => setIsItemSearchOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/>Añadir Artículo</Button>
-                    </div>
-                    <FormMessage>{form.formState.errors.items?.message || form.formState.errors.items?.root?.message}</FormMessage>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField control={control} name="paymentMethod" render={({ field }) => (
-                        <FormItem><FormLabel>Método de Pago</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                            <SelectContent>
-                                <SelectItem value="Efectivo">Efectivo</SelectItem>
-                                <SelectItem value="Tarjeta">Tarjeta</SelectItem>
-                                <SelectItem value="Transferencia">Transferencia</SelectItem>
-                                <SelectItem value="Crédito">Crédito</SelectItem>
-                            </SelectContent>
+                <div className="px-6 py-4 max-h-[calc(80vh-150px)] overflow-y-auto space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField control={control} name="supplierId" render={({ field }) => (
+                        <FormItem><FormLabel>Proveedor</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un proveedor" /></SelectTrigger></FormControl>
+                            <SelectContent><ScrollArea className="h-48">{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</ScrollArea></SelectContent>
                           </Select><FormMessage />
                         </FormItem>
-                    )}/>
-                    {paymentMethod === 'Crédito' && (
-                        <FormField control={control} name="dueDate" render={({ field }) => (
-                            <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel>
-                                <Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value ? formatDate(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button></FormControl></PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent>
-                                </Popover><FormMessage/>
+                      )}/>
+                       <FormField control={control} name="invoiceId" render={({ field }) => (
+                         <FormItem><FormLabel>Folio de Factura (Opcional)</FormLabel><FormControl><Input placeholder="F-12345" {...field} value={field.value ?? ''} /></FormControl></FormItem>
+                       )}/>
+                    </div>
+                    
+                    <div>
+                        <FormLabel>Artículos Comprados</FormLabel>
+                        <div className="space-y-2 mt-2 rounded-md border p-4">
+                            <ScrollArea className="h-48 pr-3">
+                                <div className="space-y-3">
+                                    {fields.map((field, index) => (
+                                       <div key={field.id} className="flex items-center gap-2">
+                                         <span className="flex-1 text-sm font-medium truncate" title={field.itemName}>{field.itemName}</span>
+                                         <FormField control={control} name={`items.${index}.quantity`} render={({ field }) => (
+                                            <Input type="number" step="1" className="w-20 h-8" placeholder="Cant." {...field}/>
+                                         )}/>
+                                         <FormField control={control} name={`items.${index}.purchasePrice`} render={({ field }) => (
+                                            <div className="relative"><DollarSign className="absolute left-2.5 top-1.5 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" className="w-28 h-8 pl-8" placeholder="Costo U." {...field}/></div>
+                                         )}/>
+                                         <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                       </div>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                            <div className="pt-2 border-t">
+                                <Button type="button" variant="outline" size="sm" onClick={() => setIsItemSearchOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/>Añadir Artículo</Button>
+                            </div>
+                        </div>
+                        <FormMessage>{form.formState.errors.items?.message || form.formState.errors.items?.root?.message}</FormMessage>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <FormField control={control} name="paymentMethod" render={({ field }) => (
+                            <FormItem><FormLabel>Método de Pago</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Efectivo">Efectivo</SelectItem>
+                                    <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                                    <SelectItem value="Transferencia">Transferencia</SelectItem>
+                                    <SelectItem value="Crédito">Crédito</SelectItem>
+                                </SelectContent>
+                              </Select><FormMessage />
                             </FormItem>
                         )}/>
-                    )}
+                        {paymentMethod === 'Crédito' && (
+                            <FormField control={control} name="dueDate" render={({ field }) => (
+                                <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel>
+                                    <Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value ? formatDate(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button></FormControl></PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent>
+                                    </Popover><FormMessage/>
+                                </FormItem>
+                            )}/>
+                        )}
+                    </div>
                 </div>
-                 <div className="text-right font-bold text-lg">
-                    Total: {formatCurrency(watch('invoiceTotal'))}
-                </div>
-
+                <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 flex-col-reverse sm:flex-row sm:justify-between items-center w-full">
+                     <div className="text-right font-bold text-lg">
+                        Total: {formatCurrency(watch('invoiceTotal'))}
+                    </div>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                        <Button type="submit" form="purchase-form">Registrar Compra</Button>
+                    </div>
+                </DialogFooter>
               </form>
             </Form>
           </FormProvider>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" form="purchase-form">Registrar Compra</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
       
@@ -234,7 +243,7 @@ function SearchItemDialog({ open, onOpenChange, inventoryItems, onItemSelected, 
 
   const filteredItems = useMemo(() => {
     const physicalItems = inventoryItems.filter(item => !item.isService);
-    if (!searchTerm.trim()) return physicalItems;
+    if (!searchTerm.trim()) return physicalItems; // Show all items initially
     const lowerSearchTerm = searchTerm.toLowerCase();
     return physicalItems.filter(item => 
         item.name.toLowerCase().includes(lowerSearchTerm) || 
@@ -244,27 +253,40 @@ function SearchItemDialog({ open, onOpenChange, inventoryItems, onItemSelected, 
 
   return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
+          <DialogContent className="sm:max-w-lg p-0">
+              <DialogHeader className="p-6 pb-4 border-b">
                   <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
-                  <DialogDescription>Seleccione un artículo para añadir a la compra.</DialogDescription>
+                  <DialogDescription>Seleccione un artículo para añadir a la compra o cree uno nuevo.</DialogDescription>
               </DialogHeader>
-              <div className="relative my-4">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Buscar por nombre o SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+              <div className="px-6">
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Buscar por nombre o SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                </div>
               </div>
-              <ScrollArea className="h-72">
-                  <div className="p-2 space-y-1">
-                      {filteredItems.map(item => (
-                          <Button key={item.id} variant="ghost" className="w-full justify-start text-left h-auto" onClick={() => onItemSelected(item)}>
-                              <div><p className="font-medium">{item.name}</p><p className="text-xs text-muted-foreground">Stock: {item.quantity}</p></div>
-                          </Button>
-                      ))}
-                      {searchTerm && filteredItems.length === 0 && (
-                          <Button variant="link" onClick={() => onNewItemRequest(searchTerm)}><PackagePlus className="mr-2 h-4 w-4"/>Crear "{searchTerm}"</Button>
-                      )}
-                  </div>
-              </ScrollArea>
+              <div className="px-6 pb-6">
+                <ScrollArea className="h-72 border rounded-md">
+                    <div className="p-2 space-y-1">
+                        {filteredItems.map(item => (
+                            <Button key={item.id} variant="ghost" className="w-full justify-start text-left h-auto py-1.5 px-2" onClick={() => onItemSelected(item)}>
+                                <div>
+                                    <p className="font-medium">{item.name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Stock: {item.quantity} | Costo: {formatCurrency(item.unitPrice)}
+                                    </p>
+                                </div>
+                            </Button>
+                        ))}
+                        {searchTerm && filteredItems.length === 0 && (
+                            <div className="p-4 text-center">
+                                <Button variant="link" onClick={() => onNewItemRequest(searchTerm)}>
+                                    <PackagePlus className="mr-2 h-4 w-4"/>Crear Nuevo Artículo "{searchTerm}"
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+              </div>
           </DialogContent>
       </Dialog>
   )
