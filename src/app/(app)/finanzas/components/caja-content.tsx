@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
-import { format, isValid, isSameDay, startOfDay, subDays } from 'date-fns';
+import { format, isValid, isSameDay, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { FileText, ShoppingCart, Wrench, Wallet, CreditCard, Send, LineChart, DollarSign, ArrowDown, ArrowUp, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -45,7 +45,11 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'Entrada' | 'Salida'>('Entrada');
-  const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const now = new Date();
+    return { from: startOfMonth(now), to: endOfMonth(now) };
+  });
+
   const form = useForm<CashTransactionFormValues>({
     resolver: zodResolver(cashTransactionSchema),
   });
@@ -80,18 +84,22 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
   }, [allSales, allServices, cashTransactions]);
 
 
-  const dailyData = useMemo(() => {
-    const dayStart = startOfDay(selectedDate);
-    
-    const movementsToday = mergedCashMovements.filter(m => {
+  const periodData = useMemo(() => {
+    if (!dateRange?.from) {
+      return { movements: [], totalIn: 0, totalOut: 0, netBalance: 0 };
+    }
+    const from = startOfDay(dateRange.from);
+    const to = dateRange.to ? endOfDay(dateRange.to) : from;
+
+    const movements = mergedCashMovements.filter(m => {
         const mDate = parseDate(m.date);
-        return mDate && isValid(mDate) && isSameDay(mDate, dayStart);
+        return mDate && isValid(mDate) && isWithinInterval(mDate, { start: from, end: to });
     });
 
     let totalIn = 0;
     let totalOut = 0;
 
-    movementsToday.forEach(m => {
+    movements.forEach(m => {
       if (m.type === 'Entrada') {
         totalIn += m.amount;
       } else if (m.type === 'Salida') {
@@ -99,8 +107,8 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
       }
     });
 
-    return { movementsToday, totalIn, totalOut, netBalance: totalIn - totalOut };
-  }, [mergedCashMovements, selectedDate]);
+    return { movements, totalIn, totalOut, netBalance: totalIn - totalOut };
+  }, [mergedCashMovements, dateRange]);
 
 
   const handleOpenDialog = (type: 'Entrada' | 'Salida') => {
@@ -126,26 +134,56 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
         toast({ title: 'Error', description: 'No se pudo registrar la transacción.', variant: 'destructive'});
     }
   }
+  
+  const setPresetRange = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
+    const now = new Date();
+    switch (preset) {
+        case 'today':
+            setDateRange({ from: startOfDay(now), to: endOfDay(now) });
+            break;
+        case 'yesterday':
+            const yesterday = subDays(now, 1);
+            setDateRange({ from: startOfDay(yesterday), to: endOfDay(yesterday) });
+            break;
+        case 'week':
+            setDateRange({ from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) });
+            break;
+        case 'month':
+            setDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
+            break;
+    }
+  };
+
 
   return (
     <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h2 className="text-2xl font-semibold tracking-tight">Caja del Día</h2>
-            <div className="flex gap-2 items-center">
-              <Button variant="outline" size="sm" onClick={() => setSelectedDate(startOfDay(new Date()))}>Hoy</Button>
-              <Button variant="outline" size="sm" onClick={() => setSelectedDate(startOfDay(subDays(new Date(), 1)))}>Ayer</Button>
+            <h2 className="text-2xl font-semibold tracking-tight">Caja</h2>
+             <div className="flex gap-2 items-center flex-wrap">
+                <Button variant="outline" size="sm" onClick={() => setPresetRange('today')}>Hoy</Button>
+                <Button variant="outline" size="sm" onClick={() => setPresetRange('yesterday')}>Ayer</Button>
+                <Button variant="outline" size="sm" onClick={() => setPresetRange('week')}>Semana</Button>
+                <Button variant="outline" size="sm" onClick={() => setPresetRange('month')}>Mes</Button>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
-                    className={cn("w-[240px] justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}
+                    className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                    {dateRange?.from ? (
+                        dateRange.to ? (
+                            `${format(dateRange.from, "LLL dd, y", {locale: es})} - ${format(dateRange.to, "LLL dd, y", {locale: es})}`
+                        ) : (
+                            format(dateRange.from, "LLL dd, y", {locale: es})
+                        )
+                    ) : (
+                        <span>Seleccione rango</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar mode="single" selected={selectedDate} onSelect={(d) => setSelectedDate(d || new Date())} initialFocus locale={es}/>
+                  <Calendar mode="range" selected={dateRange} onSelect={setDateRange} initialFocus locale={es}/>
                 </PopoverContent>
               </Popover>
             </div>
@@ -154,15 +192,15 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-green-600">Entradas Totales</CardTitle><ArrowUp className="h-4 w-4 text-green-500"/></CardHeader>
-                <CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(dailyData.totalIn)}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(periodData.totalIn)}</div></CardContent>
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-red-600">Salidas Totales</CardTitle><ArrowDown className="h-4 w-4 text-red-500"/></CardHeader>
-                <CardContent><div className="text-2xl font-bold text-red-600">{formatCurrency(dailyData.totalOut)}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold text-red-600">{formatCurrency(periodData.totalOut)}</div></CardContent>
             </Card>
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance del Día</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
-                <CardContent><div className="text-2xl font-bold">{formatCurrency(dailyData.netBalance)}</div></CardContent>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance del Periodo</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                <CardContent><div className="text-2xl font-bold">{formatCurrency(periodData.netBalance)}</div></CardContent>
             </Card>
         </div>
         <div className="flex justify-end gap-2">
@@ -175,16 +213,16 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
         </div>
         
         <Card>
-            <CardHeader><CardTitle>Movimientos de Caja del Día</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Movimientos de Caja del Periodo</CardTitle></CardHeader>
             <CardContent className="p-0">
                 <div className="overflow-x-auto rounded-md border">
                     <Table>
                         <TableHeader><TableRow><TableHead>Hora</TableHead><TableHead>Tipo</TableHead><TableHead>Concepto</TableHead><TableHead>Usuario</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {dailyData.movementsToday.length > 0 ? (
-                                dailyData.movementsToday.map(m => (
+                            {periodData.movements.length > 0 ? (
+                                periodData.movements.map(m => (
                                     <TableRow key={m.id}>
-                                        <TableCell>{m.date && isValid(parseDate(m.date)!) ? format(parseDate(m.date)!, "HH:mm", { locale: es }) : 'N/A'}</TableCell>
+                                        <TableCell>{m.date && isValid(parseDate(m.date)!) ? format(parseDate(m.date)!, "dd MMM, HH:mm", { locale: es }) : 'N/A'}</TableCell>
                                         <TableCell>
                                           <Badge variant={m.type === 'Entrada' ? 'success' : 'destructive'}>{m.type}</Badge>
                                         </TableCell>
@@ -194,7 +232,7 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={5} className="h-24 text-center">No se encontraron movimientos de caja para este día.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={5} className="h-24 text-center">No se encontraron movimientos de caja para este periodo.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>
@@ -253,3 +291,4 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
   );
 }
   
+
