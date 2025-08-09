@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 
 "use client";
@@ -53,15 +54,17 @@ export function ServiceAppointmentCard({
   // Recalculate totals directly from serviceItems for display accuracy, especially for quotes
   const calculatedTotals = useMemo(() => {
     const total = (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0);
-    const cost = (service.serviceItems ?? [])
+    const costOfSupplies = (service.serviceItems ?? [])
       .flatMap((i) => i.suppliesUsed ?? [])
       .reduce((s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0), 0);
     
+    const commissionCost = service.cardCommission || 0;
+
     return {
       totalCost: total,
-      serviceProfit: total - cost,
+      serviceProfit: total - costOfSupplies - commissionCost,
     };
-  }, [service.serviceItems]);
+  }, [service.serviceItems, service.cardCommission]);
 
   const copyToClipboard = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text).then(() => {
