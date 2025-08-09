@@ -16,6 +16,7 @@ import { AddVehicleToFleetDialog } from './add-vehicle-to-fleet-dialog';
 import { FineCheckDialog } from './fine-check-dialog';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatNumber } from '@/lib/utils';
 
 interface VehiculosFlotillaTabProps {
   allVehicles: Vehicle[];
@@ -118,7 +119,7 @@ export function VehiculosFlotillaTab({ allVehicles, allDrivers }: VehiculosFloti
                       <TableRow key={vehicle.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/flotilla/${vehicle.id}`)}>
                         <TableCell className="font-semibold">{vehicle.licensePlate}</TableCell>
                         <TableCell>{vehicle.make} {vehicle.model}</TableCell>
-                        <TableCell>{vehicle.currentMileage ? `${vehicle.currentMileage.toLocaleString('es-ES')} km` : 'N/A'}</TableCell>
+                        <TableCell>{formatNumber(vehicle.currentMileage)} km</TableCell>
                         <TableCell>
                           {vehicle.lastServiceDate && isValid(parseISO(vehicle.lastServiceDate))
                             ? format(parseISO(vehicle.lastServiceDate), "dd MMM yyyy", { locale: es }) 

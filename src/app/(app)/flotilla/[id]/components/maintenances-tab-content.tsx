@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -12,6 +11,7 @@ import { format, parseISO, compareAsc, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { ServiceDialog } from '../../../servicios/components/service-dialog';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 
 interface GroupedServices {
   [monthYearKey: string]: { // key is "YYYY-MM"
@@ -93,7 +93,7 @@ export function MaintenancesTabContent({ vehicleId }: MaintenancesTabContentProp
                     <CardTitle className="capitalize">{monthData.displayMonthYear}</CardTitle>
                     <div className="text-right">
                         <p className="text-sm text-muted-foreground">Costo Total del Mes</p>
-                        <p className="text-lg font-bold text-destructive">-${monthData.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
+                        <p className="text-lg font-bold text-destructive">-{formatCurrency(monthData.totalCost)}</p>
                     </div>
                 </div>
             </CardHeader>
@@ -105,9 +105,9 @@ export function MaintenancesTabContent({ vehicleId }: MaintenancesTabContentProp
                     {monthData.services.sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate))).map(service => (
                       <TableRow key={service.id} onClick={() => handleOpenService(service)} className="cursor-pointer">
                         <TableCell>{format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })}</TableCell>
-                        <TableCell>{service.mileage?.toLocaleString('es-ES')} km</TableCell>
+                        <TableCell>{formatNumber(service.mileage)} km</TableCell>
                         <TableCell>{service.description}</TableCell>
-                        <TableCell className="text-right text-destructive">-${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
+                        <TableCell className="text-right text-destructive">-{formatCurrency(service.totalCost)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

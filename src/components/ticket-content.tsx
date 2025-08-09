@@ -5,7 +5,7 @@ import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem, Work
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, formatNumber } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
 import Image from 'next/image';
 
@@ -198,7 +198,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
                     {service.nextServiceInfo.mileage && typeof service.nextServiceInfo.mileage === 'number' && isFinite(service.nextServiceInfo.mileage) && (
                       <>
                         <br/>
-                        o a los {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km
+                        o a los {formatNumber(service.nextServiceInfo.mileage)} km
                       </>
                     )}
                 </p>

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useCallback, useMemo } from 'react';
@@ -10,7 +9,7 @@ import type { Vehicle, Driver } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseISO } from 'date-fns';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import Link from 'next/link';
 
@@ -34,7 +33,7 @@ export function DetailsTabContent({ vehicle, drivers, onEdit }: DetailsTabConten
     if (!parsedDate || !isValid(parsedDate)) return 'Fecha inválida.';
     
     const datePart = format(parsedDate, "dd MMM yyyy", { locale: es });
-    const mileagePart = mileage ? `${mileage.toLocaleString('es-ES')} km - ` : '';
+    const mileagePart = mileage ? `${formatNumber(mileage)} km - ` : '';
     
     return `${mileagePart}${datePart}`;
   };
@@ -66,7 +65,7 @@ export function DetailsTabContent({ vehicle, drivers, onEdit }: DetailsTabConten
 
             <div className="space-y-1">
                 <p className="font-medium text-muted-foreground flex items-center gap-2"><Gauge className="h-4 w-4" />Kilometraje Actual</p>
-                <p className="font-semibold text-base">{vehicle.currentMileage ? `${vehicle.currentMileage.toLocaleString('es-ES')} km` : 'N/A'}</p>
+                <p className="font-semibold text-base">{formatNumber(vehicle.currentMileage)} km</p>
                 {vehicle.lastMileageUpdate && <p className="text-xs text-muted-foreground">Últ. act: {format(parseISO(vehicle.lastMileageUpdate), "dd MMM yyyy", { locale: es })}</p>}
             </div>
 
