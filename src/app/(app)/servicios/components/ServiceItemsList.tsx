@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceItemsList.tsx
 "use client";
 
@@ -118,7 +119,7 @@ export function ServiceItemsList({
                       )}
                   </FormLabel>
                   <FormControl>
-                      <Textarea placeholder="Observaciones generales sobre el servicio..." {...field} className="min-h-[100px]" disabled={isReadOnly} value={field.value ?? ''} />
+                      <Textarea placeholder="Observaciones generales sobre el servicio..." {...field} className="min-h-[100px] bg-white" disabled={isReadOnly} value={field.value ?? ''} />
                   </FormControl>
                 </FormItem>
               )}

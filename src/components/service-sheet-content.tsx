@@ -274,10 +274,10 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </header>
 
         <main className="flex-grow">
-          <section className="mb-2 text-sm border-b-2 border-black pb-2">
+           <section className="mb-4 text-sm border-b-2 border-black pb-2">
             <p className="font-bold text-lg">{capitalizeWords(vehicle?.ownerName || '')}</p>
             <p className="font-semibold text-base">{vehicle?.ownerPhone || ''}</p>
-            <div className="mt-1 flex justify-between items-end">
+            <div className="mt-2 flex justify-between items-end">
                 <p className="font-bold text-lg">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
                 <p className="font-bold text-xl px-2 py-1 bg-gray-200 rounded-md">{vehicle?.licensePlate || 'N/A'}</p>
             </div>
@@ -292,9 +292,10 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </div>
           )}
 
-           <section className="mb-2">
-              <h3 className="font-bold text-xs text-center uppercase tracking-wider mb-1">Trabajos a Realizar</h3>
-              <div className="space-y-1 text-xs min-h-[5rem]">
+
+          <section className="border-2 border-black rounded-md overflow-hidden mb-2">
+              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">TRABAJOS A REALIZAR</h3>
+              <div className="p-2 space-y-1 text-xs min-h-[8rem]">
                 {service.serviceItems && service.serviceItems.length > 0 ? (
                   service.serviceItems.map((item, index) => {
                       const isLastItem = index === service.serviceItems.length - 1;

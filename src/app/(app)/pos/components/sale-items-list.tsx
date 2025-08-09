@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from 'react';
@@ -69,7 +68,7 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
               {fields.map((field: any, index) => {
                 const isCommissionItem = field.inventoryItemId?.startsWith('COMMISSION');
                 return (
-                  <div key={field.id} className="relative p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
+                  <div key={field.id} className="relative p-3 border rounded-md bg-white dark:bg-muted/50">
                       {!isCommissionItem && (
                         <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo" className="absolute top-1 right-1 h-7 w-7">
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -117,7 +116,7 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
           )}
         </ScrollArea>
         <div className="mt-4 flex justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={onAddItem} className="bg-white hover:bg-gray-100"><PlusCircle className="mr-2 h-4 w-4" />Añadir Artículo/Servicio</Button>
+            <Button type="button" variant="outline" size="sm" className="bg-white hover:bg-gray-100" onClick={onAddItem}><PlusCircle className="mr-2 h-4 w-4" />Añadir Artículo/Servicio</Button>
         </div>
       </CardContent>
     </Card>

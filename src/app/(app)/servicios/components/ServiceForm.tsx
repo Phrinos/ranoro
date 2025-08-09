@@ -195,11 +195,10 @@ function ServiceFormContent({
     const currentStatus = getValues('status') ?? initialData?.status;
     if (currentStatus === 'Completado' || currentStatus === 'Entregado') {
       setOriginalLockedStatus(currentStatus);
-      setValue('status', 'En Taller', { shouldDirty: false, shouldValidate: false });
     } else {
       setOriginalLockedStatus(null);
     }
-  }, [initialData?.id, getValues, setValue]);
+  }, [initialData?.id, getValues]);
 
 
   useEffect(() => {
@@ -221,8 +220,17 @@ function ServiceFormContent({
         notes: values.notes,
         vehicleConditions: values.vehicleConditions,
         customerItems: values.customerItems,
+        payments: values.payments, // Allow updating payments
+        deliveryDateTime: values.deliveryDateTime,
       };
-      await onSubmit({ ...initialData, ...allowedUpdate } as ServiceFormValues);
+      
+      const updatedData = {
+          ...initialData,
+          ...allowedUpdate,
+          status: originalLockedStatus,
+      } as ServiceFormValues;
+
+      await onSubmit(updatedData);
       return;
     }
   
@@ -373,7 +381,7 @@ function ServiceFormContent({
         {showTabs ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
-                    <button type="button" onClick={() => setActiveTab('servicio')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'servicio' ? 'active' : 'inactive'}>Servicio</button>
+                    <button type="button" onClick={() => setActiveTab('servicio')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'servicio' ? 'active' : 'inactive'}>Detalles del Servicio</button>
                     <button type="button" onClick={() => setActiveTab('entrega')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'entrega' ? 'active' : 'inactive'}>Recepción/Entrega</button>
                     <button type="button" onClick={() => setActiveTab('fotos')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'fotos' ? 'active' : 'inactive'}>Reporte Fotográfico</button>
                     <button type="button" onClick={() => setActiveTab('revision')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'revision' ? 'active' : 'inactive'}>Puntos Seguridad</button>

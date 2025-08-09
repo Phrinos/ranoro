@@ -1,3 +1,4 @@
+
 // src/components/shared/PaymentSection.tsx
 
 "use client";
@@ -124,9 +125,11 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
                 );
             })}
             {availablePaymentMethods.length > 0 && fields.length < paymentMethods.length && (
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: undefined, folio: '' })}>
-                    <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
-                </Button>
+                 <div className="flex justify-end">
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: undefined, folio: '' })}>
+                        <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
+                    </Button>
+                 </div>
             )}
             <div className="flex justify-between font-semibold pt-2 border-t">
                 <span>Total Pagado:</span>
