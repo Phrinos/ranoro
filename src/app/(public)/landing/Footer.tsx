@@ -10,12 +10,13 @@ export function Footer() {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
                     <div className="col-span-2 lg:col-span-2">
-                        <Link href="#" className="relative inline-block w-[140px] h-[40px]">
+                        <Link href="/" className="relative inline-block w-[140px] h-[40px]">
                             <Image
-                              src="/ranoro-logo-negro.png"
+                              src="/ranoro-logo.png"
                               alt="Ranoro Logo"
                               fill
                               style={{objectFit: 'contain'}}
+                              className="dark:invert"
                               sizes="140px"
                               data-ai-hint="ranoro logo"
                             />

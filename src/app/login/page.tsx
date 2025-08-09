@@ -114,8 +114,20 @@ export default function LoginPage() {
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
-      <div className="flex items-center justify-center py-12">
-        <Card className="mx-4 w-full sm:mx-auto sm:w-[420px] max-w-full animate-fade-in-up shadow-xl">
+      <div className="lg:hidden relative h-48 sm:h-64 w-full bg-muted">
+        <Image
+            src="/login.png"
+            alt="Ranoro Login"
+            fill
+            className="object-cover object-center"
+            sizes="100vw"
+            priority
+            data-ai-hint="mechanic tools"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent"></div>
+      </div>
+      <div className="flex items-center justify-center py-12 lg:py-0">
+        <Card className="mx-4 w-full sm:mx-auto sm:w-[420px] max-w-full animate-fade-in-up shadow-xl lg:shadow-none lg:border-none lg:animate-none">
           <CardHeader className="text-center">
             <Link href="/" className="mb-4 inline-block relative w-[180px] h-[45px] mx-auto">
               <Image
