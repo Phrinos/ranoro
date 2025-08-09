@@ -2,21 +2,17 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, from 'react';
 import { Button } from '@/components/ui/button';
-import { Printer, MessageSquare, Download, Loader2, Eye, Wrench, ShieldCheck, Camera, Copy, Share2, Link as LinkIcon, Car } from 'lucide-react';
+import { Printer, MessageSquare, Link as LinkIcon, Car } from 'lucide-react';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
-import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Image from "next/image";
-import { inventoryService } from '@/lib/services';
-import { cn, formatCurrency } from '@/lib/utils';
-import html2canvas from 'html2canvas';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '../ui/separator';
+import { formatCurrency } from '@/lib/utils';
+
 
 interface ShareServiceDialogProps {
   open: boolean;
@@ -30,62 +26,35 @@ export function ShareServiceDialog({
   service: initialService, 
 }: ShareServiceDialogProps) {
   const { toast } = useToast();
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
-  const contentRef = useRef<HTMLDivElement>(null);
-  
-  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(null);
-  const [service, setService] = useState<ServiceRecord | undefined | null>(initialService);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
+  const [workshopInfo, setWorkshopInfo] = React.useState<WorkshopInfo | {}>({});
+  const [vehicle, setVehicle] = React.useState<Vehicle | null>(null);
+
+  React.useEffect(() => {
     if (open) {
-        const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
-        if (storedWorkshopInfo) {
-          setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-        }
-        
-        const fetchData = async () => {
-            setIsLoading(true);
-            if (initialService?.vehicleId) {
-              const fetchedVehicle = await inventoryService.getVehicleById(initialService.vehicleId);
-              setVehicle(fetchedVehicle || null);
-            }
-            if (initialService) {
-                const inventoryItems = await inventoryService.onItemsUpdatePromise();
-                const inventoryMap = new Map(inventoryItems.map(i => [i.id, i.name]));
-                const updatedService = {
-                    ...initialService,
-                    serviceItems: (initialService.serviceItems || []).map(item => ({
-                        ...item,
-                        suppliesUsed: (item.suppliesUsed || []).map(supply => ({
-                            ...supply,
-                            supplyName: inventoryMap.get(supply.supplyId) || supply.supplyName,
-                        }))
-                    }))
-                };
-                setService(updatedService);
-            }
-            setIsLoading(false);
-        };
-        fetchData();
+      const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
+      if (storedWorkshopInfo) {
+        setWorkshopInfo(JSON.parse(storedWorkshopInfo));
+      }
+      // This assumes vehicle data might be passed differently or fetched.
+      // For now, let's keep it simple. This component might need vehicle prop passed.
     }
   }, [open, initialService]);
 
-  const handleCopyServiceForWhatsapp = useCallback(() => {
-    if (!service || !vehicle) return;
+  const handleCopyServiceForWhatsapp = React.useCallback(() => {
+    if (!initialService) return;
     const workshopName = (workshopInfo as WorkshopInfo)?.name || 'nuestro taller';
-    let message = `Hola ${vehicle.ownerName || 'Cliente'}, aquí tienes los detalles de tu servicio en ${workshopName}.`;
-    if (service.publicId) {
-        const shareUrl = `${window.location.origin}/s/${service.publicId}`;
+    let message = `Hola ${initialService.customerName || 'Cliente'}, aquí tienes los detalles de tu servicio en ${workshopName}.`;
+    if (initialService.publicId) {
+        const shareUrl = `${window.location.origin}/s/${initialService.publicId}`;
         message += `\n\nPuedes ver los detalles y firmar de conformidad en el siguiente enlace:\n${shareUrl}`;
     } else {
-        message += `\n\nFolio de Servicio: ${service.id}\nTotal: ${formatCurrency(service.totalCost)}`;
+        message += `\n\nFolio de Servicio: ${initialService.id}\nTotal: ${formatCurrency(initialService.totalCost)}`;
     }
     message += `\n\n¡Agradecemos tu preferencia!`;
     navigator.clipboard.writeText(message).then(() => {
       toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
     });
-  }, [service, vehicle, toast, workshopInfo]);
+  }, [initialService, toast, workshopInfo]);
   
   return (
     <>
@@ -94,31 +63,42 @@ export function ShareServiceDialog({
             <DialogHeader>
                 <DialogTitle>Compartir Documento de Servicio</DialogTitle>
                 <DialogDescription>
-                  Folio: {service?.id || 'N/A'}. Selecciona una opción para compartir o imprimir.
+                  Folio: {initialService?.id || 'N/A'}. Selecciona una opción para compartir o imprimir.
                 </DialogDescription>
             </DialogHeader>
 
             <div className="py-4 space-y-4">
               <Card>
-                <CardContent className="p-4 space-y-3">
+                <CardContent className="p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <Car className="h-5 w-5 text-muted-foreground"/>
                     <div>
-                      <p className="font-semibold">{vehicle?.make} {vehicle?.model}</p>
-                      <p className="text-sm text-muted-foreground">{vehicle?.licensePlate}</p>
+                      <p className="font-semibold">{initialService?.vehicleIdentifier}</p>
                     </div>
                   </div>
                   <Separator />
                    <div>
-                      <p className="text-sm font-semibold mb-1">Trabajos:</p>
-                      <ul className="text-sm text-muted-foreground list-disc pl-5">
-                        {(service?.serviceItems || []).map(item => <li key={item.id}>{item.name}</li>)}
-                      </ul>
+                      <p className="text-sm font-semibold mb-2">Trabajos a Realizar:</p>
+                      <div className="text-sm text-muted-foreground space-y-2">
+                        {(initialService?.serviceItems || []).map(item => (
+                            <div key={item.id} className="border-b last:border-b-0 pb-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-medium text-foreground">{item.name}</span>
+                                    <span className="font-medium text-foreground">{formatCurrency(item.price)}</span>
+                                </div>
+                                {item.suppliesUsed && item.suppliesUsed.length > 0 && (
+                                    <p className="text-xs text-muted-foreground pl-2">
+                                        Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
+                                    </p>
+                                )}
+                            </div>
+                        ))}
+                      </div>
                    </div>
                   <Separator />
                    <div className="flex justify-between items-center text-lg font-bold">
                     <span>Total:</span>
-                    <span>{formatCurrency(service?.totalCost)}</span>
+                    <span>{formatCurrency(initialService?.totalCost)}</span>
                    </div>
                 </CardContent>
               </Card>
@@ -132,13 +112,13 @@ export function ShareServiceDialog({
                  <Printer className="mr-2 h-4 w-4"/> Imprimir
               </Button>
             </DialogFooter>
-             {service?.publicId && (
+             {initialService?.publicId && (
               <div className="pt-4 border-t">
                   <p className="text-sm font-medium mb-2">Enlace Público:</p>
                    <div className="flex items-center gap-2">
-                       <Input value={`${window.location.origin}/s/${service.publicId}`} readOnly className="bg-muted"/>
+                       <Input value={`${window.location.origin}/s/${initialService.publicId}`} readOnly className="bg-muted"/>
                        <Button size="icon" variant="outline" onClick={() => {
-                           navigator.clipboard.writeText(`${window.location.origin}/s/${service.publicId}`);
+                           navigator.clipboard.writeText(`${window.location.origin}/s/${initialService.publicId}`);
                            toast({title: "Enlace copiado"});
                        }}>
                           <LinkIcon className="h-4 w-4"/>
