@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -23,15 +24,17 @@ const buildShareUrl = (publicId?: string) => {
   try { return publicId ? new URL(`/s/${publicId}`, window.location.origin).toString() : ""; } catch { return ""; }
 };
 
-const buildShareMessage = (svc: ServiceRecord, workshop?: Partial<WorkshopInfo>) => {
-  const name = workshop?.name || "nuestro taller";
-  const saludo = `Hola ${svc.customerName || "Cliente"}, aquí tienes los detalles de tu servicio en ${name}.`;
+const buildShareMessage = (svc: ServiceRecord, vehicle?: Vehicle, workshop?: Partial<WorkshopInfo>) => {
+  const customerName = svc.customerName || "Cliente";
+  const vehicleInfo = vehicle
+    ? `${vehicle.make} ${vehicle.model} ${vehicle.year} (${vehicle.licensePlate})`
+    : svc.vehicleIdentifier;
+  
+  const saludo = `Hola ${customerName} 👋\nTu ${vehicleInfo} ya está en proceso. Revisa el detalle y da seguimiento aquí:`;
   const url = buildShareUrl(svc.publicId);
-  const cuerpo = url
-    ? `\n\nPuedes ver el detalle y firmar de conformidad aquí:\n${url}`
-    : `\n\nFolio: ${svc.id}\nTotal: ${formatCurrency(svc.totalCost || 0)}`;
-  const cierre = "\n\n¡Gracias por tu preferencia!";
-  return `${saludo}${cuerpo}${cierre}`;
+  const cierre = `\nCuando estés de acuerdo, puedes firmar ahí mismo. ¡Gracias por confiar en nosotros!`;
+  
+  return `${saludo}\n${url}${cierre}`;
 };
 
 export function ShareServiceDialog({ open, onOpenChange, service: initialService, vehicle }: ShareServiceDialogProps) {
@@ -47,7 +50,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
   }, [open]);
 
   const shareUrl = React.useMemo(() => buildShareUrl(initialService?.publicId), [initialService?.publicId]);
-  const message = React.useMemo(() => buildShareMessage(initialService, workshopInfo), [initialService, workshopInfo]);
+  const message = React.useMemo(() => buildShareMessage(initialService, vehicle, workshopInfo), [initialService, vehicle, workshopInfo]);
 
   const copy = async (text: string, label = "Copiado al portapapeles") => {
     try { await navigator.clipboard.writeText(text); toast({ title: label }); }
