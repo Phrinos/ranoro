@@ -1,5 +1,3 @@
-
-
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -154,7 +152,7 @@ function ServiceFormContent({
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
   
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
-  const [signatureTarget, setSignatureTarget] = useState<'reception' | 'delivery' | 'technician' | null>(null);
+  const [signatureTarget, setSignatureTarget] = useState<'reception' | 'delivery' | null>(null);
 
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
@@ -172,6 +170,7 @@ function ServiceFormContent({
 
   const watchedPayments = watch('payments');
   const watchedServiceItems = watch('serviceItems');
+  const watchedTechnicianId = watch('technicianId');
 
 
    useEffect(() => {
@@ -208,6 +207,19 @@ function ServiceFormContent({
       setCurrentUser(JSON.parse(authUserString));
     }
   }, []);
+  
+  const technicianInfo = useMemo(() => {
+    const techId = getValues('technicianId');
+    if (!techId) return null;
+    return technicians.find(t => t.id === techId);
+  }, [getValues, technicians]);
+  
+  useEffect(() => {
+    // Automatically set the technician's signature if a technician is assigned
+    if (technicianInfo?.signatureDataUrl) {
+      setValue('safetyInspection.technicianSignature', technicianInfo.signatureDataUrl, { shouldDirty: true });
+    }
+  }, [technicianInfo, setValue]);
 
   const isEditing = !!initialData?.id;
   const watchedStatus = watch('status');
@@ -282,18 +294,14 @@ function ServiceFormContent({
     setIsNewVehicleDialogOpen(false);
   };
 
-  const handleOpenSignature = (type: 'reception' | 'delivery' | 'technician') => {
+  const handleOpenSignature = (type: 'reception' | 'delivery') => {
     setSignatureTarget(type);
     setIsSignatureDialogOpen(true);
   };
   
   const handleSaveSignature = (signatureDataUrl: string) => {
     if (signatureTarget) {
-      const fieldToUpdate: any = signatureTarget === 'technician' 
-        ? `safetyInspection.technicianSignature` 
-        : signatureTarget === 'delivery' 
-        ? "customerSignatureDelivery" 
-        : "customerSignatureReception";
+      const fieldToUpdate: any = signatureTarget === 'delivery' ? "customerSignatureDelivery" : "customerSignatureReception";
       setValue(fieldToUpdate, signatureDataUrl, { shouldDirty: true });
     }
     setIsSignatureDialogOpen(false);
@@ -392,7 +400,7 @@ function ServiceFormContent({
                     <Suspense fallback={<Loader2 className="animate-spin" />}><PhotoReportTab isReadOnly={isReadOnly} serviceId={initialData?.id || 'new'} onPhotoUploaded={handlePhotoUploaded} onViewImage={handleViewImage} reportType="Recepción" /></Suspense>
                     <Suspense fallback={<Loader2 className="animate-spin" />}><ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature} part="reception"/></Suspense>
                 </TabsContent>
-                <TabsContent value="revision" className="mt-6"><Suspense fallback={<Loader2 className="animate-spin" />}><SafetyChecklist isReadOnly={isReadOnly} onSignatureClick={() => handleOpenSignature('technician')} signatureDataUrl={watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} serviceId={initialData?.id || 'new'} onPhotoUploaded={handleChecklistPhotoUploaded} onViewImage={handleViewImage}/></Suspense></TabsContent>
+                <TabsContent value="revision" className="mt-6"><Suspense fallback={<Loader2 className="animate-spin" />}><SafetyChecklist isReadOnly={isReadOnly} signatureDataUrl={watch('safetyInspection.technicianSignature')} technicianName={technicianInfo?.name} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} serviceId={initialData?.id || 'new'} onPhotoUploaded={handleChecklistPhotoUploaded} onViewImage={handleViewImage}/></Suspense></TabsContent>
                 <TabsContent value="entrega" className="mt-6 space-y-6">
                     <Suspense fallback={<Loader2 className="animate-spin" />}><PhotoReportTab isReadOnly={isReadOnly} serviceId={initialData?.id || 'new'} onPhotoUploaded={handlePhotoUploaded} onViewImage={handleViewImage} reportType="Entrega" /></Suspense>
                     <Suspense fallback={<Loader2 className="animate-spin" />}><ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature} part="delivery"/></Suspense>

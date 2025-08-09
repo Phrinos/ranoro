@@ -1,5 +1,4 @@
-
-
+// src/app/(app)/servicios/components/GuidedInspectionWizard.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -11,7 +10,7 @@ import { Camera, Check, ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { PhotoUploader } from './PhotoUploader'; // Assuming it's adapted or a new one is made
+import { PhotoUploader } from './PhotoUploader'; 
 import { Card, CardContent } from '@/components/ui/card';
 
 

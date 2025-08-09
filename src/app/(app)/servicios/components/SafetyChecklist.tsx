@@ -19,6 +19,9 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { PhotoUploader } from './PhotoUploader';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { GuidedInspectionWizard } from './GuidedInspectionWizard';
+import { format, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { parseDate } from '@/lib/forms';
 
 
 const inspectionGroups = [
@@ -57,224 +60,65 @@ const inspectionGroups = [
     { name: "safetyInspection.frenos_discos_traseros", label: "22. DISCOS / BALATAS TRASERAS" },
   ]},
   { title: "OTROS", items: [
-    { name: "safetyInspection.otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
-    { name: "safetyInspection.otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
-    { name: "safetyInspection.otros_claxon", label: "25. CLAXON" },
-    { name: "safetyInspection.otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
+    { name: "otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
+    { name: "otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
+    { name: "otros_claxon", label: "25. CLAXON" },
+    { name: "otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
   ]},
 ];
 
-const ChecklistItemPhotoUploader = ({ 
-    fieldName,
-    serviceId, 
-    onUpload, 
-    photos, 
-    isReadOnly, 
-    onViewImage 
-}: { 
-    fieldName: `safetyInspection.${string}`,
-    serviceId: string, 
-    onUpload: (fieldName: `safetyInspection.${string}`, url: string) => void, 
-    photos: string[], 
-    isReadOnly?: boolean,
-    onViewImage: (url: string) => void 
-}) => {
+const StatusIndicator = ({ status }: { status?: SafetyCheckStatus }) => {
+  const statusInfo = {
+    ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
+    atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
+    inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" },
+    na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" },
+  };
+  const currentStatus = statusInfo[status || 'na'] || statusInfo.na;
 
-    const handleUploadComplete = (reportIndex: number, url: string) => {
-        // Here reportIndex is not really used, as we have the specific field name
-        onUpload(fieldName, url);
-    };
-
-    return (
-        <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-                {photos.map((url, index) => (
-                    <button
-                        type="button"
-                        onClick={() => onViewImage(url)}
-                        key={index}
-                        className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group"
-                    >
-                        <Image src={url} alt={`Foto ${index + 1}`} fill style={{objectFit:"cover"}} sizes="150px" className="transition-transform duration-300 group-hover:scale-105" crossOrigin="anonymous"/>
-                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                            <Eye className="h-6 w-6 text-white" />
-                        </div>
-                    </button>
-                ))}
-            </div>
-            {photos.length < 2 && (
-                 <PhotoUploader
-                    reportIndex={0} // Not used here, but required by prop
-                    serviceId={serviceId}
-                    onUploadComplete={handleUploadComplete}
-                    photosLength={photos.length}
-                    maxPhotos={2}
-                    disabled={isReadOnly}
-                 />
-            )}
-        </div>
-    );
-};
-
-
-const SafetyCheckRow = ({ 
-  name, 
-  label, 
-  isReadOnly, 
-  serviceId, 
-  onPhotoUploaded, 
-  onViewImage,
-  isEnhancingText,
-  handleEnhanceText,
-}: { 
-  name: string;
-  label: string;
-  isReadOnly?: boolean;
-  serviceId: string;
-  onPhotoUploaded: (itemName: `safetyInspection.${string}`, url: string) => void;
-  onViewImage: (url: string) => void;
-  isEnhancingText: string | null;
-  handleEnhanceText: (fieldName: any) => void;
-}) => {
-  const { control } = useFormContext<ServiceFormValues>();
   return (
-    <Controller
-      name={name as any}
-      control={control}
-      defaultValue={{ status: 'na', photos: [], notes: '' }}
-      render={({ field }) => (
-        <div className="py-2 border-b last:border-none">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium pr-4">{label}</span>
-            <div className="flex gap-2">
-              {[
-                { value: 'inmediata', color: 'bg-red-500', title: 'Requiere Reparación Inmediata' },
-                { value: 'atencion', color: 'bg-yellow-400', title: 'Requiere Atención' },
-                { value: 'ok', color: 'bg-green-500', title: 'Bien' },
-              ].map(status => (
-                <button
-                  type="button"
-                  key={status.value}
-                  title={status.title}
-                  onClick={() => field.onChange({ ...(field.value || { photos: [], notes: '' }), status: status.value })}
-                  disabled={isReadOnly}
-                  className={cn(
-                    "h-7 w-7 rounded-full border-2 transition-all",
-                    field.value?.status === status.value ? 'border-black dark:border-white scale-110' : 'border-transparent opacity-50',
-                    isReadOnly ? 'cursor-not-allowed' : 'cursor-pointer hover:opacity-100'
-                  )}
-                >
-                  <div className={cn("h-full w-full rounded-full flex items-center justify-center", status.color)}>
-                      {field.value?.status === status.value && <Check className="h-4 w-4 text-white" />}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-          {(field.value?.status === 'atencion' || field.value?.status === 'inmediata' || field.value?.status === 'ok') && (
-            <div className="pl-4 mt-2 space-y-2">
-              <FormField
-                control={control}
-                name={`${name}.notes` as any}
-                render={({ field: notesField }) => (
-                  <FormItem>
-                     <div className="flex justify-between items-center">
-                        <FormLabel className="text-xs">Notas de este punto</FormLabel>
-                        {!isReadOnly && (
-                            <Button type="button" size="xs" variant="ghost" onClick={() => handleEnhanceText(`${name}.notes` as const)} disabled={isEnhancingText === `${name}.notes` || !notesField.value}>
-                                {isEnhancingText === `${name}.notes` ? <Loader2 className="animate-spin h-3 w-3" /> : <BrainCircuit className="h-3 w-3" />}
-                            </Button>
-                        )}
-                    </div>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describa el hallazgo..."
-                        rows={2}
-                        className="text-xs"
-                        disabled={isReadOnly}
-                        {...notesField}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <ChecklistItemPhotoUploader
-                fieldName={name as `safetyInspection.${string}`}
-                serviceId={serviceId}
-                photos={field.value?.photos || []}
-                onUpload={onPhotoUploaded}
-                onViewImage={onViewImage}
-                isReadOnly={isReadOnly}
-              />
-            </div>
-          )}
-        </div>
-      )}
-    />
+    <div className="flex items-center gap-2">
+      <div className={`h-3 w-3 rounded-full ${currentStatus.color}`} />
+      <span className={cn("text-xs font-semibold", currentStatus.textColor)}>{currentStatus.label}</span>
+    </div>
   );
 };
 
-
-export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded, onViewImage }: { 
-  isReadOnly?: boolean; 
-  onSignatureClick: () => void;
-  signatureDataUrl?: string;
+const SafetyChecklistReport = ({ 
+  inspection,
+  isReadOnly,
+  handleEnhanceText,
+  isEnhancingText,
+  signatureDataUrl,
+  technicianName
+}: {
+  inspection: SafetyInspection,
+  isReadOnly?: boolean,
+  handleEnhanceText: (fieldName: any) => void;
   isEnhancingText: string | null;
-  handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description` | `safetyInspection.${string}.notes`) => void;
-  serviceId: string;
-  onPhotoUploaded: (fieldName: `safetyInspection.${string}`, url: string) => void;
-  onViewImage: (url: string) => void;
+  signatureDataUrl?: string;
+  technicianName?: string;
 }) => {
   const { control, getValues } = useFormContext();
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
   
   return (
-    <>
-    <Card>
-      <CardHeader>
-        <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
-        <CardDescription>Documenta el estado de los componentes clave. Si un punto requiere atención, podrás adjuntar fotos.</CardDescription>
-        <div className="flex flex-wrap gap-x-4 gap-y-2 pt-2 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="h-4 w-4 rounded-full bg-green-500" /><span>Bien</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-4 w-4 rounded-full bg-yellow-400" /><span>Requiere Atención</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-4 w-4 rounded-full bg-red-500" /><span>Reparación Inmediata</span>
-          </div>
-        </div>
-      </CardHeader>
-      
-       {!isReadOnly && (
-        <div className="px-6 pb-6">
-            <Button type="button" className="w-full" size="lg" variant="outline" onClick={() => setIsWizardOpen(true)}>
-                <PlayCircle className="mr-2 h-5 w-5"/>
-                Iniciar Revisión Guiada
-            </Button>
-        </div>
-       )}
-
-      <CardContent className="space-y-6 pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+    <div className="space-y-6">
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           {inspectionGroups.map(group => (
             <div key={group.title}>
               <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4>
               <div className="space-y-1">
-                {group.items.map(item => (
-                  <SafetyCheckRow 
-                    key={item.name} 
-                    name={item.name} 
-                    label={item.label} 
-                    isReadOnly={isReadOnly} 
-                    serviceId={serviceId}
-                    onPhotoUploaded={onPhotoUploaded}
-                    onViewImage={onViewImage}
-                    isEnhancingText={isEnhancingText}
-                    handleEnhanceText={handleEnhanceText}
-                  />
-                ))}
+                {group.items.map(item => {
+                  const checkItem = inspection[item.name.replace('safetyInspection.', '') as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
+                  return (
+                    <div key={item.name} className="py-1 border-b border-dashed last:border-none">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="pr-4">{item.label}</span>
+                        <StatusIndicator status={checkItem?.status} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -306,27 +150,76 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
         />
         <div>
             <FormLabel className="text-base font-semibold">Firma del Técnico</FormLabel>
-            <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
+            <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex flex-col items-center justify-center">
                 {signatureDataUrl ? (
-                    <div className="relative w-full h-full max-w-[200px] aspect-video">
+                    <div className="relative w-full max-w-[200px] aspect-[2/1]">
                         <Image src={signatureDataUrl} alt="Firma del técnico" fill style={{objectFit:"contain"}} sizes="200px" crossOrigin="anonymous"/>
                     </div>
                 ) : (
-                    <span className="text-sm text-muted-foreground">Firma pendiente</span>
+                    <span className="text-sm text-muted-foreground">Firma automática del técnico.</span>
                 )}
+                 <p className="text-xs text-muted-foreground mt-2 font-semibold">{technicianName || 'Técnico no asignado'}</p>
             </div>
-            {!isReadOnly && (
-                <Button type="button" variant="outline" onClick={onSignatureClick} className="w-full mt-2">
-                    <Signature className="mr-2 h-4 w-4" />
-                    {signatureDataUrl ? 'Cambiar Firma' : 'Capturar Firma del Técnico'}
-                </Button>
-            )}
         </div>
+    </div>
+  )
+}
+
+export const SafetyChecklist = ({ isReadOnly, signatureDataUrl, technicianName, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded, onViewImage }: { 
+  isReadOnly?: boolean; 
+  signatureDataUrl?: string;
+  technicianName?: string;
+  isEnhancingText: string | null;
+  handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description` | `safetyInspection.${string}.notes`) => void;
+  serviceId: string;
+  onPhotoUploaded: (fieldName: `safetyInspection.${string}`, url: string) => void;
+  onViewImage: (url: string) => void;
+}) => {
+  const { watch } = useFormContext();
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const inspectionData = watch('safetyInspection');
+  
+  const hasInspectionData = inspectionData && Object.values(inspectionData).some(v => v && v.status && v.status !== 'na');
+
+  return (
+    <>
+    <Card>
+      <CardHeader>
+        <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
+        <CardDescription>Documenta el estado de los componentes clave.</CardDescription>
+        <div className="flex flex-wrap gap-x-4 gap-y-2 pt-2 text-sm">
+          <div className="flex items-center gap-2"><div className="h-4 w-4 rounded-full bg-green-500" /><span>Bien</span></div>
+          <div className="flex items-center gap-2"><div className="h-4 w-4 rounded-full bg-yellow-400" /><span>Requiere Atención</span></div>
+          <div className="flex items-center gap-2"><div className="h-4 w-4 rounded-full bg-red-500" /><span>Reparación Inmediata</span></div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-6 pt-0">
+         {!hasInspectionData && !isReadOnly && (
+            <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+                <Button type="button" size="lg" onClick={() => setIsWizardOpen(true)}>
+                    <PlayCircle className="mr-2 h-5 w-5"/>
+                    Iniciar Revisión Guiada
+                </Button>
+                <p className="text-sm text-muted-foreground mt-4">Usa el asistente para una inspección rápida y estandarizada.</p>
+            </div>
+         )}
+
+         {hasInspectionData && (
+            <SafetyChecklistReport
+              inspection={inspectionData}
+              isReadOnly={isReadOnly}
+              handleEnhanceText={handleEnhanceText}
+              isEnhancingText={isEnhancingText}
+              signatureDataUrl={signatureDataUrl}
+              technicianName={technicianName}
+            />
+         )}
       </CardContent>
     </Card>
 
     <Dialog open={isWizardOpen} onOpenChange={setIsWizardOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-md p-0">
             <DialogHeader className="p-4 pb-0 sr-only">
               <DialogTitle>Asistente de Revisión de Seguridad</DialogTitle>
               <DialogDescription>Complete cada punto de la inspección de manera secuencial.</DialogDescription>
