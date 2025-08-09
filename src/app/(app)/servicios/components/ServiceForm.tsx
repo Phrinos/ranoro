@@ -1,4 +1,5 @@
 
+
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -215,29 +216,24 @@ function ServiceFormContent({
   const isReadOnly = originalLockedStatus !== null && currentUser?.role !== 'Superadministrador'; 
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
-    if (isReadOnly && originalLockedStatus) {
-      const allowedUpdate = {
-        notes: values.notes,
-        vehicleConditions: values.vehicleConditions,
-        customerItems: values.customerItems,
-        payments: values.payments, // Allow updating payments
-        deliveryDateTime: values.deliveryDateTime,
-      };
-      
-      const updatedData = {
-          ...initialData,
-          ...allowedUpdate,
-          status: originalLockedStatus,
-      } as ServiceFormValues;
-
-      await onSubmit(updatedData);
-      return;
-    }
-  
     const finalValues = { ...values };
     
+    if (finalValues.status === 'Entregado' && !finalValues.deliveryDateTime) {
+      finalValues.deliveryDateTime = new Date();
+    }
+
     if (originalLockedStatus) {
-      finalValues.status = originalLockedStatus;
+        const allowedUpdate = {
+          notes: finalValues.notes,
+          vehicleConditions: finalValues.vehicleConditions,
+          customerItems: finalValues.customerItems,
+          payments: finalValues.payments,
+          deliveryDateTime: finalValues.deliveryDateTime,
+          status: originalLockedStatus,
+        };
+        const updatedData = { ...initialData, ...allowedUpdate };
+        await onSubmit(updatedData as ServiceFormValues);
+        return;
     }
   
     await onSubmit(finalValues);
