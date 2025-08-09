@@ -64,10 +64,10 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   // Memoized filtering for each tab
   const activeServices = useMemo(() => allServices.filter(s => {
     if (s.status === 'En Taller') return true;
-    if (s.status === 'Entregado') {
-        const deliveryDate = parseDate(s.deliveryDateTime);
-        return deliveryDate && isToday(deliveryDate);
-    }
+    const appointmentDate = parseDate(s.appointmentDateTime);
+    if (s.status === 'Agendado' && appointmentDate && isToday(appointmentDate)) return true;
+    const deliveryDate = parseDate(s.deliveryDateTime);
+    if (s.status === 'Entregado' && deliveryDate && isToday(deliveryDate)) return true;
     return false;
   }), [allServices]);
   
