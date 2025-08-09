@@ -1,3 +1,4 @@
+
 // src/lib/services/purchase.service.ts
 
 import {
@@ -14,6 +15,7 @@ import type { User, PayableAccount, PaymentMethod } from '@/types';
 import { inventoryService } from './inventory.service';
 import { logAudit } from '../placeholder-data';
 import { cleanObjectForFirestore } from '../forms';
+import { formatCurrency } from '../utils';
 
 const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");

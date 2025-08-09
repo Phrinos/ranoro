@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/page.tsx
 "use client";
 
@@ -444,4 +445,10 @@ function InventarioPageComponent() {
         </>
     </Suspense>
   );
+}
+
+export default function InventarioPageWrapper() {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get('tab');
+  return <InventarioPageComponent />;
 }

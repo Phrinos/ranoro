@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/components/register-purchase-dialog.tsx
 
 "use client";
@@ -118,7 +119,7 @@ export function RegisterPurchaseDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl p-6">
           <DialogHeader>
             <DialogTitle>Registrar Nueva Compra</DialogTitle>
             <DialogDescription>
@@ -133,7 +134,7 @@ export function RegisterPurchaseDialog({
                     <FormItem><FormLabel>Proveedor</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un proveedor" /></SelectTrigger></FormControl>
-                        <SelectContent><ScrollArea className="h-48">{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</ScrollArea></SelectContent>
+                        <SelectContent><ScrollArea className="h-48">{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                       </Select><FormMessage />
                     </FormItem>
                   )}/>
@@ -233,9 +234,13 @@ function SearchItemDialog({ open, onOpenChange, inventoryItems, onItemSelected, 
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredItems = useMemo(() => {
-    if (!searchTerm.trim()) return inventoryItems.filter(item => !item.isService).slice(0, 15);
+    const physicalItems = inventoryItems.filter(item => !item.isService);
+    if (!searchTerm.trim()) return physicalItems;
     const lowerSearchTerm = searchTerm.toLowerCase();
-    return inventoryItems.filter(item => !item.isService && (item.name.toLowerCase().includes(lowerSearchTerm) || (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm))));
+    return physicalItems.filter(item => 
+        item.name.toLowerCase().includes(lowerSearchTerm) || 
+        (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm))
+    );
   }, [searchTerm, inventoryItems]);
 
   return (
