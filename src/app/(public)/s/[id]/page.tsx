@@ -1,3 +1,4 @@
+
 // src/app/(public)/s/[id]/page.tsx
 
 "use client";
@@ -50,7 +51,7 @@ const PageHeader = ({ workshopInfo, serviceId }: { workshopInfo: Partial<Worksho
 );
 
 // Component for Client and Vehicle info cards
-const InfoCards = ({ vehicle }: { vehicle?: Vehicle | null }) => (
+const InfoCards = ({ vehicle, service }: { vehicle?: Vehicle | null, service: ServiceRecord }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 print:mb-4">
         <Card>
             <CardHeader className="pb-2">
@@ -78,12 +79,15 @@ const InfoCards = ({ vehicle }: { vehicle?: Vehicle | null }) => (
                  <div className="flex items-center gap-2 text-muted-foreground">
                     <span>VIN: {vehicle?.vin || 'N/A'}</span>
                 </div>
+                 {typeof service.mileage === 'number' && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span>Kilometraje: {service.mileage.toLocaleString('es-MX')} km</span>
+                </div>
+                 )}
             </CardContent>
         </Card>
     </div>
 );
-
-// --- Sub-components for Tab Content ---
 
 const ServiceDetailsContent = ({ service }: { service: ServiceRecord }) => (
   <div className="space-y-4">
@@ -101,6 +105,9 @@ const ServiceDetailsContent = ({ service }: { service: ServiceRecord }) => (
             <p className="font-semibold">{formatCurrency(item.price)}</p>
           </div>
         ))}
+        {(!service.serviceItems || service.serviceItems.length === 0) && (
+            <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
+        )}
       </CardContent>
     </Card>
     
@@ -150,6 +157,121 @@ const ReceptionContent = ({ service, onSignClick, isSigning, showSignReception }
      </Card>
   </div>
 );
+
+const DeliveryContent = ({ service, onSignClick, isSigning, showSignDelivery }: {
+    service: ServiceRecord;
+    onSignClick?: (type: 'reception' | 'delivery') => void;
+    isSigning?: boolean;
+    showSignDelivery?: boolean;
+}) => (
+    <Card>
+        <CardHeader><CardTitle>Firma de Conformidad y Salida</CardTitle></CardHeader>
+        <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
+            {service.customerSignatureDelivery ? (
+                 <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de entrega" width={300} height={150} style={{ objectFit: 'contain' }} className="border rounded-md" />
+            ) : showSignDelivery && onSignClick ? (
+                 <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="w-full sm:w-auto">
+                    {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
+                    Firmar de Conformidad
+                </Button>
+            ) : ( <p className="text-muted-foreground">Firma pendiente.</p> )}
+            <p className="text-xs text-muted-foreground">{GARANTIA_CONDICIONES_TEXT}</p>
+        </CardContent>
+     </Card>
+);
+
+
+const SafetyChecklistDisplay = ({
+  inspection,
+  onViewImage
+}: {
+  inspection: SafetyInspection;
+  onViewImage: (url: string) => void;
+}) => {
+    return (
+        <div className="mt-4 print:mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                {inspectionGroups.map(group => (
+                    <div key={group.title} className="break-inside-avoid">
+                        <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4>
+                        <div className="space-y-1">
+                            {group.items.map(item => {
+                                const checkItem = inspection[item.name as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
+                                if (!checkItem || checkItem.status === 'na') return null;
+                                return (
+                                    <div key={item.name} className="py-2 border-b border-dashed last:border-none">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="pr-4">{item.label}</span>
+                                            <Badge variant={checkItem.status === 'ok' ? 'success' : checkItem.status === 'atencion' ? 'waiting' : 'destructive'}>{capitalizeWords(checkItem.status)}</Badge>
+                                        </div>
+                                        {checkItem.notes && <p className="text-xs text-muted-foreground mt-1 pl-2">{checkItem.notes}</p>}
+                                        {checkItem && checkItem.photos && checkItem.photos.length > 0 && (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 mt-2 pl-2">
+                                                {checkItem.photos.map((photoUrl, pIndex) => (
+                                                     <button type="button" onClick={() => onViewImage && onViewImage(photoUrl)} key={pIndex} className="relative aspect-video w-full bg-gray-100 rounded overflow-hidden border group">
+                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" crossOrigin="anonymous"/>
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"><Eye className="h-6 w-6 text-white" /></div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {inspection.inspectionNotes && (
+                <Card className="mt-6">
+                    <CardHeader><CardTitle>Observaciones Generales de la Inspección</CardTitle></CardHeader>
+                    <CardContent><p className="whitespace-pre-wrap">{inspection.inspectionNotes}</p></CardContent>
+                </Card>
+            )}
+        </div>
+    )
+}
+
+const PhotoReportContent = ({
+  photoReports,
+  onViewImage
+}: {
+  photoReports: PhotoReportGroup[];
+  onViewImage: (url: string) => void;
+}) => (
+  <div className="space-y-6">
+    {photoReports.map((report) => (
+      <Card key={report.id}>
+        <CardHeader>
+          <CardTitle>Reporte Fotográfico - {report.type}</CardTitle>
+          <CardDescription>
+            {report.description}
+            <span className="block text-xs mt-1">
+              Fecha: {format(parseISO(report.date), 'dd/MM/yyyy HH:mm', { locale: es })}
+            </span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {report.photos.map((photoUrl, photoIndex) => (
+              <button
+                key={photoIndex}
+                onClick={() => onViewImage(photoUrl)}
+                className="relative aspect-video w-full bg-gray-100 rounded-lg overflow-hidden border group"
+              >
+                <Image src={photoUrl} alt={`Foto ${photoIndex + 1}`} fill style={{objectFit:'cover'}} className="transition-transform duration-300 group-hover:scale-105" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Eye className="h-8 w-8 text-white" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+);
+
 
 
 // --- Main Page Component ---
@@ -222,7 +344,6 @@ export default function PublicServicePage() {
       setSignatureType(null);
   };
 
-
   const showQuote = service && (service.status === 'Cotizacion' || service.status === 'Agendado');
   const showServiceDetails = service && service.status !== 'Cotizacion' && service.status !== 'Agendado';
   const showChecklist = service && !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
@@ -233,6 +354,7 @@ export default function PublicServicePage() {
   if (showServiceDetails) {
       tabs.push({ value: 'details', label: 'Detalles del Servicio', icon: Wrench });
       tabs.push({ value: 'reception', label: 'Recepción', icon: Wrench });
+      tabs.push({ value: 'delivery', label: 'Entrega', icon: Wrench });
   }
   if (showChecklist) tabs.push({ value: 'checklist', label: 'Puntos de Seguridad', icon: ShieldCheck });
   if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico', icon: Camera });
@@ -255,21 +377,29 @@ export default function PublicServicePage() {
       </div>
     );
   }
+  
+  const gridColsClass = 
+    tabs.length >= 4 ? 'grid-cols-2 sm:grid-cols-4' :
+    tabs.length === 3 ? 'grid-cols-3' :
+    tabs.length === 2 ? 'grid-cols-2' :
+    'grid-cols-1';
 
   return (
      <>
         <div className="container mx-auto py-4 sm:py-8">
             <PageHeader workshopInfo={workshopInfo || {}} serviceId={service.id} />
-            <InfoCards vehicle={vehicle} />
+            <InfoCards vehicle={vehicle} service={service} />
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full h-auto p-0 bg-transparent gap-2 print:hidden">
-                    {tabs.map(tab => (
-                        <TabsTrigger key={tab.value} value={tab.value} className="flex-1 min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug flex items-center justify-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-card data-[state=inactive]:text-card-foreground hover:data-[state=inactive]:bg-muted/80">
-                            <tab.icon className="mr-2 h-4 w-4 shrink-0"/>{tab.label}
-                        </TabsTrigger>
-                    ))}
-                </TabsList>
+                {tabs.length > 1 && (
+                    <TabsList className={cn('grid w-full h-auto p-0 bg-transparent gap-2 print:hidden', gridColsClass)}>
+                        {tabs.map(tab => (
+                            <TabsTrigger key={tab.value} value={tab.value} className="flex-1 min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug flex items-center justify-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-card data-[state=inactive]:text-card-foreground hover:data-[state=inactive]:bg-muted/80">
+                                <tab.icon className="mr-2 h-4 w-4 shrink-0"/>{tab.label}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                )}
                 <div className="mt-6">
                     <TabsContent value="quote">
                         {showQuote && <QuoteContent quote={service as QuoteRecord} vehicle={vehicle} workshopInfo={workshopInfo || undefined} />}
@@ -280,9 +410,15 @@ export default function PublicServicePage() {
                      <TabsContent value="reception">
                         {showServiceDetails && <ReceptionContent service={service} onSignClick={(type) => setSignatureType(type)} isSigning={isSigning} showSignReception={!service.customerSignatureReception} />}
                     </TabsContent>
-                    {/* Placeholder for other tabs */}
-                    <TabsContent value="checklist"><p>Checklist content goes here.</p></TabsContent>
-                    <TabsContent value="photoreport"><p>Photo report content goes here.</p></TabsContent>
+                    <TabsContent value="delivery">
+                        {showServiceDetails && <DeliveryContent service={service} onSignClick={(type) => setSignatureType(type)} isSigning={isSigning} showSignDelivery={!!service.customerSignatureReception && !service.customerSignatureDelivery} />}
+                    </TabsContent>
+                    <TabsContent value="checklist">
+                        {showChecklist && <SafetyChecklistDisplay inspection={service.safetyInspection!} onViewImage={(url) => { setViewingImageUrl(url); setIsImageViewerOpen(true); }} />}
+                    </TabsContent>
+                    <TabsContent value="photoreport">
+                        {showPhotoReport && <PhotoReportContent photoReports={service.photoReports!} onViewImage={(url) => { setViewingImageUrl(url); setIsImageViewerOpen(true); }} />}
+                    </TabsContent>
                 </div>
             </Tabs>
         </div>
