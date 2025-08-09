@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 "use client";
 
@@ -48,7 +49,7 @@ const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
 };
 
 // --- Componente de la pestaña Movimientos ---
-export default function MovimientosTabContent({ allSales, allServices, allInventory, dateRange, onDateRangeChange }: {
+function MovimientosTabContent({ allSales, allServices, allInventory, dateRange, onDateRangeChange }: {
   allSales: SaleReceipt[];
   allServices: ServiceRecord[];
   allInventory: InventoryItem[];
@@ -146,7 +147,6 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
     <div className="space-y-6">
         <TableToolbar
             {...tableManager}
-            onSearchTermChange={tableManager.onSearchTermChange}
             searchPlaceholder="Buscar por folio o cliente..."
             sortOptions={sortOptions}
             dateRange={dateRange} // Pass state to toolbar
@@ -246,5 +246,8 @@ export default function MovimientosTabContent({ allSales, allServices, allInvent
         </div>
     </div>
   );
-
 }
+
+MovimientosTabContent.displayName = 'MovimientosTabContent';
+
+export default MovimientosTabContent;

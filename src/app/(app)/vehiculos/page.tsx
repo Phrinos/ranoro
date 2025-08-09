@@ -209,21 +209,6 @@ function VehiculosPage() {
                                 <PlusCircle className="mr-2 h-4 w-4" /> Registrar Vehículo
                             </Button>
                         </div>
-                        <TableToolbar 
-                            searchTerm={tableManager.searchTerm}
-                            onSearchTermChange={tableManager.setSearchTerm}
-                            searchPlaceholder="Buscar por placa, marca, modelo, propietario..."
-                            dateRange={tableManager.dateRange}
-                            onDateRangeChange={tableManager.setDateRange}
-                            sortOption={tableManager.sortOption}
-                            onSortOptionChange={tableManager.setSortOption}
-                            sortOptions={vehicleSortOptions}
-                            paginationSummary={tableManager.paginationSummary}
-                            canGoPrevious={tableManager.canGoPrevious}
-                            canGoNext={tableManager.canGoNext}
-                            onPreviousPage={tableManager.goToPreviousPage}
-                            onNextPage={tableManager.goToNextPage}
-                        />
                         <Card>
                             <CardContent className="pt-6">
                                 <VehiclesTable vehicles={filteredVehicles} />
