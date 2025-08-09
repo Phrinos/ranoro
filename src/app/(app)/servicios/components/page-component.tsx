@@ -130,6 +130,7 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
             open={isShareDialogOpen} 
             onOpenChange={setIsShareDialogOpen} 
             service={recordForSharing}
+            vehicle={vehicles.find(v => v.id === recordForSharing.vehicleId)}
           />
         )}
         {serviceToComplete && (

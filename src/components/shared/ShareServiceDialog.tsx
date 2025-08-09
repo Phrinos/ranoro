@@ -9,12 +9,13 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { Printer, MessageSquare, Link as LinkIcon, Car, Copy, ExternalLink, Share2 } from "lucide-react";
-import type { ServiceRecord, WorkshopInfo } from "@/types";
+import type { ServiceRecord, Vehicle, WorkshopInfo } from "@/types";
 
 interface ShareServiceDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
+  vehicle?: Vehicle;
 }
 
 // --- Helpers ---
@@ -33,7 +34,7 @@ const buildShareMessage = (svc: ServiceRecord, workshop?: Partial<WorkshopInfo>)
   return `${saludo}${cuerpo}${cierre}`;
 };
 
-export function ShareServiceDialog({ open, onOpenChange, service: initialService }: ShareServiceDialogProps) {
+export function ShareServiceDialog({ open, onOpenChange, service: initialService, vehicle }: ShareServiceDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = React.useState<Partial<WorkshopInfo>>({});
 
@@ -52,13 +53,6 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
     try { await navigator.clipboard.writeText(text); toast({ title: label }); }
     catch { toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manualmente.", variant: "destructive" }); }
   };
-
-  const handleCopyWhatsApp = React.useCallback(() => copy(message, "Mensaje copiado"), [message]);
-
-  const handleOpenWhatsApp = React.useCallback(() => {
-    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-  }, [message]);
 
   const handleNativeShare = React.useCallback(async () => {
     try {
@@ -102,7 +96,11 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
               <div className="h-9 w-9 rounded-lg bg-slate-100 grid place-items-center"><Car className="h-5 w-5 text-muted-foreground"/></div>
               <div className="min-w-0">
                 <p className="font-bold truncate">{initialService?.vehicleIdentifier}</p>
-                <p className="text-sm text-muted-foreground truncate">{initialService?.customerName}</p>
+                {vehicle && (
+                  <p className="text-xs text-muted-foreground truncate">
+                    {vehicle.make} {vehicle.model} ({vehicle.year}) - {vehicle.ownerName}
+                  </p>
+                )}
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-0">
