@@ -29,23 +29,19 @@ import { GARANTIA_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
 
 
 // Component to render the page header
-const PageHeader = ({ workshopInfo, serviceId }: { workshopInfo: Partial<WorkshopInfo>, serviceId: string }) => (
-    <header className="mb-8 print:mb-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b">
-            <div className="relative w-[180px] h-[60px]">
-                 <Image
-                    src={workshopInfo.logoUrl || '/ranoro-logo.png'}
-                    alt={`${workshopInfo.name || 'Ranoro'} Logo`}
-                    fill
-                    style={{ objectFit: 'contain' }}
-                    data-ai-hint="workshop logo"
-                    priority
-                />
-            </div>
-            <div className="text-left sm:text-right">
-                <h1 className="text-2xl font-bold">Documento de Servicio</h1>
+const PageHeader = ({ serviceId, creationDate }: { serviceId: string, creationDate: Date | null }) => (
+    <header className="mb-6 rounded-lg bg-card p-4 sm:p-6 border print:hidden">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+            <div>
+                <h1 className="text-2xl font-bold tracking-tight">Documento de Servicio</h1>
                 <p className="font-mono text-muted-foreground">Folio: {serviceId}</p>
             </div>
+            {creationDate && isValid(creationDate) && (
+                 <div className="text-left sm:text-right">
+                    <p className="text-sm text-muted-foreground">Fecha de Creación</p>
+                    <p className="font-semibold">{format(creationDate, "dd 'de' MMMM, yyyy", { locale: es })}</p>
+                </div>
+            )}
         </div>
     </header>
 );
@@ -83,7 +79,7 @@ const InfoCards = ({ vehicle, service }: { vehicle?: Vehicle | null, service: Se
                         <span>VIN: {vehicle.vin}</span>
                     </div>
                  )}
-                 {typeof service.mileage === 'number' && (
+                 {typeof service.mileage === 'number' && service.mileage > 0 && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <span>Kilometraje: {service.mileage.toLocaleString('es-MX')} km</span>
                 </div>
@@ -288,6 +284,7 @@ export default function PublicServicePage() {
   const { toast } = useToast();
 
   const [service, setService] = useState<ServiceRecord | null | undefined>(undefined);
+  
   const [error, setError] = useState<string | null>(null);
   
   const [isSigning, setIsSigning] = useState(false);
@@ -396,10 +393,10 @@ export default function PublicServicePage() {
   return (
      <>
         <div className="container mx-auto py-4 sm:py-8">
-            <PageHeader workshopInfo={workshopInfo || {}} serviceId={service.id} />
+            <PageHeader serviceId={service.id} creationDate={parseDate(service.serviceDate)} />
             <InfoCards vehicle={vehicle} service={service} />
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onOpenChange={setActiveTab} className="w-full">
                 {tabs.length > 1 && (
                     <TabsList className={cn('grid w-full h-auto p-0 bg-transparent gap-2 print:hidden', gridColsClass)}>
                         {tabs.map(tab => (

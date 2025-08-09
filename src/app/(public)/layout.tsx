@@ -44,9 +44,6 @@ export default function PublicPageLayout({
                     data-ai-hint="ranoro logo"
                     />
                 </Link>
-                <Button asChild variant="outline" className="border-border text-foreground hover:bg-accent">
-                    <Link href="/login">Acceso Taller</Link>
-                </Button>
             </div>
         </header>
         <main className="flex-1">
