@@ -21,7 +21,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem } from "@/types";
-import { cleanObjectForFirestore, IVA_RATE, parseDate } from '../forms';
+import { cleanObjectForFirestore, parseDate } from '../forms';
+import { IVA_RATE } from '../money';
 import { logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '../placeholder-data';
 import { nanoid } from 'nanoid';
 import { savePublicDocument } from '../public-document';
