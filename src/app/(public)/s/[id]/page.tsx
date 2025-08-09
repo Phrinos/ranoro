@@ -11,6 +11,7 @@ import { db } from '@/lib/firebasePublic.js';
 import { Loader2, ShieldAlert, Eye, Wrench, ShieldCheck, Camera, Download, Signature, User, Phone, Mail, Link as LinkIcon, Printer, Car, Fingerprint, CalendarCheck } from 'lucide-react';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo, SafetyInspection, SafetyCheckStatus, QuoteRecord, Payment, ServiceItem } from '@/types';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -396,7 +397,7 @@ export default function PublicServicePage() {
             <PageHeader serviceId={service.id} creationDate={parseDate(service.serviceDate)} />
             <InfoCards vehicle={vehicle} service={service} />
 
-            <Tabs value={activeTab} onOpenChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 {tabs.length > 1 && (
                     <TabsList className={cn('grid w-full h-auto p-0 bg-transparent gap-2 print:hidden', gridColsClass)}>
                         {tabs.map(tab => (

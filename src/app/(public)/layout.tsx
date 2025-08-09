@@ -1,5 +1,4 @@
 
-
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -44,6 +43,10 @@ export default function PublicPageLayout({
                     data-ai-hint="ranoro logo"
                     />
                 </Link>
+                <div className="flex items-center gap-4 text-sm">
+                    <Link href="/legal/terminos" className="text-muted-foreground hover:text-primary transition-colors">Términos</Link>
+                    <Link href="/legal/privacidad" className="text-muted-foreground hover:text-primary transition-colors">Privacidad</Link>
+                </div>
             </div>
         </header>
         <main className="flex-1">
@@ -51,11 +54,7 @@ export default function PublicPageLayout({
         </main>
         <footer className="bg-gray-900 text-white print:hidden">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-500">
-            <p>&copy; 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914</p>
-            <div className="mt-4 flex justify-center gap-6">
-                <Link href="/legal/terminos" className="text-sm text-gray-400 hover:text-white">Términos y Condiciones</Link>
-                <Link href="/legal/privacidad" className="text-sm text-gray-400 hover:text-white">Aviso de Privacidad</Link>
-            </div>
+                <p>&copy; 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914</p>
             </div>
         </footer>
     </div>
