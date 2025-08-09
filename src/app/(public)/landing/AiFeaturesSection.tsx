@@ -2,9 +2,9 @@
 "use client";
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BrainCircuit, Rocket, CheckCircle } from 'lucide-react';
 import { AnimatedDiv } from './AnimatedDiv';
 import { GeminiLogo } from './GeminiLogo';
+import { Icon } from '@iconify/react';
 
 export function AiFeaturesSection() {
     return (
@@ -27,7 +27,7 @@ export function AiFeaturesSection() {
                     <AnimatedDiv>
                         <Card className="h-full">
                             <CardHeader>
-                                <BrainCircuit className="h-8 w-8 text-primary mb-2"/>
+                                <Icon icon="mdi:brain" className="h-8 w-8 text-primary mb-2"/>
                                 <CardTitle>Análisis y Diagnóstico</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -38,7 +38,7 @@ export function AiFeaturesSection() {
                     <AnimatedDiv>
                         <Card className="h-full">
                             <CardHeader>
-                                <Rocket className="h-8 w-8 text-primary mb-2"/>
+                                <Icon icon="ion:rocket-sharp" className="h-8 w-8 text-primary mb-2"/>
                                 <CardTitle>Optimización de Operaciones</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -49,7 +49,7 @@ export function AiFeaturesSection() {
                     <AnimatedDiv>
                         <Card className="h-full">
                             <CardHeader>
-                                <CheckCircle className="h-8 w-8 text-primary mb-2"/>
+                                <Icon icon="material-symbols:check-circle" className="h-8 w-8 text-primary mb-2"/>
                                 <CardTitle>Comunicación Profesional</CardTitle>
                             </CardHeader>
                             <CardContent>

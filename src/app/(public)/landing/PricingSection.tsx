@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle } from 'lucide-react';
 import { AnimatedDiv } from './AnimatedDiv';
 import Link from 'next/link';
+import { Icon } from '@iconify/react';
 
 const plans = [
     {
@@ -86,7 +86,7 @@ export function PricingSection() {
                                         <ul className="space-y-4">
                                             {plan.features.map((feature, i) => (
                                                 <li key={i} className="flex items-start gap-3">
-                                                    <CheckCircle className={`h-5 w-5 shrink-0 mt-1 ${feature.included ? 'text-green-500' : 'text-gray-300'}`} />
+                                                    <Icon icon="material-symbols:check-circle" className={`h-5 w-5 shrink-0 mt-1 ${feature.included ? 'text-green-500' : 'text-gray-300'}`} />
                                                     <span className={!feature.included ? 'text-muted-foreground line-through' : ''}>
                                                         {feature.text} {feature.limited && <span className="text-xs font-semibold">(Limitada)</span>}
                                                     </span>
