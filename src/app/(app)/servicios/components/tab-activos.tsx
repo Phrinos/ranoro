@@ -1,5 +1,3 @@
-
-
 // src/app/(app)/servicios/components
 "use client";
 
@@ -57,7 +55,6 @@ export default function ActivosTabContent({
 
   const activeServices = useMemo(() => {
     return allServices
-        .filter(s => s.status === 'En Taller' || s.status === 'Agendado')
         .sort((a, b) => {
             const dateA = parseDate(a.receptionDateTime) || parseDate(a.serviceDate);
             const dateB = parseDate(b.receptionDateTime) || parseDate(b.serviceDate);
@@ -135,7 +132,7 @@ export default function ActivosTabContent({
           activeServices.map(renderServiceCard)
         ) : (
           <p className="text-center text-muted-foreground py-10">
-            No hay servicios activos para hoy.
+            No hay servicios activos.
           </p>
         )}
       </CardContent>
