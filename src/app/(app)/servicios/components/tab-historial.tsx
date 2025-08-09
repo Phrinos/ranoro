@@ -23,6 +23,7 @@ interface HistorialTabContentProps {
   services: ServiceRecord[];
   vehicles: Vehicle[];
   personnel: User[];
+  currentUser: User | null;
   onShowPreview: (service: ServiceRecord) => void;
 }
 
@@ -52,6 +53,7 @@ export default function HistorialTabContent({
   services,
   vehicles,
   personnel,
+  currentUser,
   onShowPreview,
 }: HistorialTabContentProps) {
   const router = useRouter();
@@ -119,11 +121,12 @@ export default function HistorialTabContent({
       service={record}
       vehicle={vehicles.find(v => v.id === record.vehicleId)}
       personnel={personnel}
+      currentUser={currentUser}
       onEdit={() => handleEditService(record.id)}
       onView={() => onShowPreview(record)}
       onCancel={() => handleCancelService(record.id)}
     />
-  ), [vehicles, personnel, onShowPreview, router, handleCancelService]);
+  ), [vehicles, personnel, currentUser, onShowPreview, router, handleCancelService]);
 
 
   return (

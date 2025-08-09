@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/tab-cotizaciones.tsx
 "use client";
 
@@ -18,6 +17,7 @@ interface CotizacionesTabContentProps {
   services: ServiceRecord[];
   vehicles: Vehicle[];
   personnel: User[];
+  currentUser: User | null;
   onShowPreview: (service: ServiceRecord) => void;
 }
 
@@ -25,6 +25,7 @@ export default function CotizacionesTabContent({
   services,
   vehicles,
   personnel,
+  currentUser,
   onShowPreview,
 }: CotizacionesTabContentProps) {
   const router = useRouter();
@@ -86,6 +87,7 @@ export default function CotizacionesTabContent({
                     service={quote}
                     vehicle={vehicles.find(v => v.id === quote.vehicleId)}
                     personnel={personnel}
+                    currentUser={currentUser}
                     onEdit={() => handleEditQuote(quote.id)}
                     onView={() => onShowPreview(quote)}
                     onDelete={() => handleDeleteQuote(quote.id)}

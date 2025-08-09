@@ -119,7 +119,7 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   );
 
   const tabs = [
-    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} /> },
+    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} /> },
     { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={agendaServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
     { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
     { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historyServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> }

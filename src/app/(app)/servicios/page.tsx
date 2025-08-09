@@ -13,7 +13,7 @@ function ServiciosPageContent() {
 
 export default function ServiciosPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center h-64"><p>Loading...</p></div>}>
+    <Suspense fallback={<div className="flex justify-center items-center h-64"><p>Cargando...</p></div>}>
       <ServiciosPageContent />
     </Suspense>
   );

@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 
 "use client";
@@ -12,7 +11,7 @@ import { Car, User as UserIcon, Calendar, CheckCircle, XCircle, Clock, Ellipsis,
 import type { ServiceRecord, Vehicle, User, Payment } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { formatCurrency, getStatusInfo, getPaymentMethodVariant, cn } from '@/lib/utils';
+import { formatCurrency, getStatusInfo, getPaymentMethodVariant, cn } from "@/lib/utils";
 import { useToast } from '@/hooks/use-toast';
 import { parseDate } from '@/lib/forms';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -21,6 +20,7 @@ interface ServiceAppointmentCardProps {
   service: ServiceRecord;
   vehicle?: Vehicle;
   personnel?: User[];
+  currentUser?: User | null;
   onView: () => void;
   onEdit: () => void;
   onDelete?: () => void;
@@ -34,6 +34,7 @@ export function ServiceAppointmentCard({
   service,
   vehicle,
   personnel = [],
+  currentUser,
   onView,
   onEdit,
   onDelete,
@@ -168,6 +169,15 @@ export function ServiceAppointmentCard({
                 <Button variant="ghost" size="icon" title="Imprimir" onClick={() => toast({title: "Función no implementada"})}>
                     <Printer className="h-4 w-4" />
                 </Button>
+                {currentUser?.role === 'Superadministrador' && onDelete && (
+                    <ConfirmDialog
+                        triggerButton={<Button variant="ghost" size="icon" title="Eliminar Permanentemente"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                        title="¿Eliminar Servicio Permanentemente?"
+                        description="Esta acción eliminará el registro de la base de datos y no se podrá recuperar. Úselo solo si el registro se creó por error."
+                        onConfirm={onDelete}
+                        confirmText="Sí, Eliminar"
+                    />
+                )}
             </div>
           </div>
         </div>

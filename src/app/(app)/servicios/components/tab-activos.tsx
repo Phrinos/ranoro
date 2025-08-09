@@ -20,6 +20,7 @@ interface ActivosTabContentProps {
   allServices: ServiceRecord[];
   vehicles: Vehicle[];
   personnel: User[];
+  currentUser: User | null;
   onShowPreview: (service: ServiceRecord) => void;
   onCompleteService: (service: ServiceRecord) => void;
 }
@@ -45,6 +46,7 @@ export default function ActivosTabContent({
   allServices,
   vehicles,
   personnel,
+  currentUser,
   onShowPreview,
   onCompleteService
 }: ActivosTabContentProps) {
@@ -110,11 +112,12 @@ export default function ActivosTabContent({
       service={service}
       vehicle={vehicles.find(v => v.id === service.vehicleId)}
       personnel={personnel}
+      currentUser={currentUser}
       onEdit={() => handleEditService(service.id)}
       onView={() => onShowPreview(service)}
       onCancel={() => handleCancelService(service.id)}
     />
-  ), [vehicles, personnel, onShowPreview, router, handleCancelService]);
+  ), [vehicles, personnel, currentUser, onShowPreview, router, handleCancelService]);
 
   return (
     <Card>
