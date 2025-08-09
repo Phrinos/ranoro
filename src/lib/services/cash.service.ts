@@ -30,11 +30,6 @@ const addCashTransaction = async (transactionData: Omit<CashDrawerTransaction, '
     return { id: docRef.id, ...dataToSave } as CashDrawerTransaction;
 };
 
-const deleteCashTransaction = async (transactionId: string): Promise<void> => {
-    if (!db) throw new Error("Database not initialized.");
-    await deleteDoc(doc(db, 'cashDrawerTransactions', transactionId));
-};
-
 const onCashTransactionsUpdate = (callback: (transactions: CashDrawerTransaction[]) => void): (() => void) => {
     if (!db) return () => {};
     const q = query(collection(db, 'cashDrawerTransactions'), orderBy("date", "desc"));
@@ -49,6 +44,5 @@ const onCashTransactionsUpdate = (callback: (transactions: CashDrawerTransaction
 
 export const cashService = {
   addCashTransaction,
-  deleteCashTransaction,
   onCashTransactionsUpdate,
 };

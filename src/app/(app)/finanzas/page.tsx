@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/page.tsx
 
 "use client";
@@ -12,7 +11,7 @@ import { Calendar } from '@/components/ui/calendar';
 import {
   calculateSaleProfit,
 } from '@/lib/placeholder-data';
-import type { MonthlyFixedExpense, InventoryItem, FinancialOperation, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord, Technician, AdministrativeStaff, InventoryMovement, Personnel, Payment } from '@/types';
+import type { MonthlyFixedExpense, InventoryItem, FinancialOperation, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord, Technician, AdministrativeStaff, InventoryMovement, Personnel, Payment, CashDrawerTransaction } from '@/types';
 import {
   format,
   parseISO,
@@ -24,7 +23,7 @@ import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon, Wrench, ShoppingCart, Wallet, CreditCard, Send, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn, formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
-import { serviceService, saleService, inventoryService, personnelService } from '@/lib/services';
+import { serviceService, saleService, inventoryService, personnelService, cashService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -38,6 +37,7 @@ import { Tooltip, TooltipTrigger, TooltipProvider, TooltipContent } from '@/comp
 
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
 const MovimientosTabContent = lazy(() => import('./components/movimientos-content').then(m => ({ default: m.default })));
+const CajaContent = lazy(() => import('./components/caja-content').then(m => ({ default: m.CajaContent })));
 
 // --- Tipos para la pestaña Movimientos ---
 interface Movement {
@@ -86,6 +86,7 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
     const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
     const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
     const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
+    const [cashTransactions, setCashTransactions] = useState<CashDrawerTransaction[]>([]);
     
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
@@ -97,6 +98,7 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
             serviceService.onServicesUpdate(setAllServices),
             inventoryService.onItemsUpdate(setAllInventory),
             personnelService.onPersonnelUpdate(setAllPersonnel),
+            cashService.onCashTransactionsUpdate(setCashTransactions),
             inventoryService.onFixedExpensesUpdate((expenses) => {
                 setFixedExpenses(expenses);
                 setIsLoading(false);
@@ -325,6 +327,19 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
                         onDateRangeChange={setDateRange}
                     />
                 </Suspense>
+            )
+        },
+        {
+            value: 'caja',
+            label: 'Caja',
+            content: (
+                 <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
+                    <CajaContent 
+                      allSales={allSales} 
+                      allServices={allServices}
+                      cashTransactions={cashTransactions}
+                    />
+                 </Suspense>
             )
         }
     ];

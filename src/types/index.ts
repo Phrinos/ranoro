@@ -453,6 +453,13 @@ export interface MonthlyFixedExpense {
   createdAt?: string; // ISO String
 }
 
+export interface InitialCashBalance {
+  date: string;
+  amount: number;
+  userId: string;
+  userName: string;
+}
+
 export interface CashDrawerTransaction {
   id: string;
   date: string; // ISO String
@@ -573,15 +580,3 @@ export type SidebarMenuButtonProps = React.ComponentProps<"button"> & {
   tooltipLabel?: string;
   tooltipClassName?: string;
 } & VariantProps<typeof sidebarMenuButtonVariants>
-
-export interface PayableAccount {
-    id: string;
-    supplierId: string;
-    supplierName: string;
-    invoiceId: string; // The supplier's invoice number
-    invoiceDate: string; // ISO String
-    dueDate: string; // ISO String
-    totalAmount: number;
-    paidAmount: number;
-    status: 'Pendiente' | 'Pagado Parcialmente' | 'Pagado';
-}
