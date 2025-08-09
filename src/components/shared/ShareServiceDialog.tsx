@@ -2,10 +2,10 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer, MessageSquare, Link as LinkIcon, Car } from 'lucide-react';
-import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
+import type { ServiceRecord, WorkshopInfo } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -26,8 +26,7 @@ export function ShareServiceDialog({
   service: initialService, 
 }: ShareServiceDialogProps) {
   const { toast } = useToast();
-  const [workshopInfo, setWorkshopInfo] = React.useState<WorkshopInfo | {}>({});
-  const [vehicle, setVehicle] = React.useState<Vehicle | null>(null);
+  const [workshopInfo, setWorkshopInfo] = React.useState<Partial<WorkshopInfo>>({});
 
   React.useEffect(() => {
     if (open) {
@@ -35,10 +34,8 @@ export function ShareServiceDialog({
       if (storedWorkshopInfo) {
         setWorkshopInfo(JSON.parse(storedWorkshopInfo));
       }
-      // This assumes vehicle data might be passed differently or fetched.
-      // For now, let's keep it simple. This component might need vehicle prop passed.
     }
-  }, [open, initialService]);
+  }, [open]);
 
   const handleCopyServiceForWhatsapp = React.useCallback(() => {
     if (!initialService) return;
@@ -59,7 +56,7 @@ export function ShareServiceDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
             <DialogHeader>
                 <DialogTitle>Compartir Documento de Servicio</DialogTitle>
                 <DialogDescription>
@@ -69,52 +66,46 @@ export function ShareServiceDialog({
 
             <div className="py-4 space-y-4">
               <Card>
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Car className="h-5 w-5 text-muted-foreground"/>
-                    <div>
-                      <p className="font-semibold">{initialService?.vehicleIdentifier}</p>
+                <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
+                  <Car className="h-6 w-6 text-muted-foreground flex-shrink-0"/>
+                  <div>
+                    <p className="font-bold">{initialService?.vehicleIdentifier}</p>
+                    <p className="text-sm text-muted-foreground">{initialService?.customerName}</p>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <div className="space-y-3">
+                    <p className="text-sm font-semibold mb-2">Trabajos a Realizar:</p>
+                    <div className="text-sm text-muted-foreground space-y-3 max-h-48 overflow-y-auto pr-3">
+                      {(initialService?.serviceItems || []).map(item => (
+                          <div key={item.id} className="border-b last:border-b-0 pb-2">
+                              <div className="flex justify-between items-start">
+                                  <div className="flex-1 pr-2">
+                                    <p className="font-medium text-foreground">{item.name}</p>
+                                    {item.suppliesUsed && item.suppliesUsed.length > 0 && (
+                                        <p className="text-xs text-muted-foreground pl-2">
+                                            Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
+                                        </p>
+                                    )}
+                                  </div>
+                                  <span className="font-semibold text-foreground">{formatCurrency(item.price)}</span>
+                              </div>
+                          </div>
+                      ))}
                     </div>
                   </div>
-                  <Separator />
-                   <div>
-                      <p className="text-sm font-semibold mb-2">Trabajos a Realizar:</p>
-                      <div className="text-sm text-muted-foreground space-y-2">
-                        {(initialService?.serviceItems || []).map(item => (
-                            <div key={item.id} className="border-b last:border-b-0 pb-2">
-                                <div className="flex justify-between items-center">
-                                    <span className="font-medium text-foreground">{item.name}</span>
-                                    <span className="font-medium text-foreground">{formatCurrency(item.price)}</span>
-                                </div>
-                                {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                                    <p className="text-xs text-muted-foreground pl-2">
-                                        Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
-                                    </p>
-                                )}
-                            </div>
-                        ))}
-                      </div>
-                   </div>
-                  <Separator />
+                  <Separator className="my-4"/>
                    <div className="flex justify-between items-center text-lg font-bold">
                     <span>Total:</span>
-                    <span>{formatCurrency(initialService?.totalCost)}</span>
+                    <span className="text-primary">{formatCurrency(initialService?.totalCost)}</span>
                    </div>
                 </CardContent>
               </Card>
             </div>
             
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-               <Button onClick={handleCopyServiceForWhatsapp} className="w-full sm:w-auto">
-                <MessageSquare className="mr-2 h-4 w-4"/> WhatsApp
-              </Button>
-               <Button variant="outline" onClick={() => window.print()} className="w-full sm:w-auto">
-                 <Printer className="mr-2 h-4 w-4"/> Imprimir
-              </Button>
-            </DialogFooter>
-             {initialService?.publicId && (
-              <div className="pt-4 border-t">
-                  <p className="text-sm font-medium mb-2">Enlace Público:</p>
+            {initialService?.publicId && (
+              <div className="space-y-2">
+                  <p className="text-sm font-medium">Enlace Público:</p>
                    <div className="flex items-center gap-2">
                        <Input value={`${window.location.origin}/s/${initialService.publicId}`} readOnly className="bg-muted"/>
                        <Button size="icon" variant="outline" onClick={() => {
@@ -126,6 +117,15 @@ export function ShareServiceDialog({
                    </div>
               </div>
             )}
+            
+            <DialogFooter className="flex-col sm:flex-row gap-2 pt-4 border-t">
+               <Button onClick={handleCopyServiceForWhatsapp} className="w-full sm:w-auto">
+                <MessageSquare className="mr-2 h-4 w-4"/> WhatsApp
+              </Button>
+               <Button variant="outline" onClick={() => window.print()} className="w-full sm:w-auto">
+                 <Printer className="mr-2 h-4 w-4"/> Imprimir
+              </Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
