@@ -1,3 +1,4 @@
+
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -24,6 +25,7 @@ export const photoReportSchema = z.object({
   date: z.string(),
   description: z.string().optional(),
   photos: z.array(z.string().url('URL de foto inválida.')),
+  type: z.enum(['Recepción', 'Entrega', 'General']).optional(), // Added type
 });
 
 export const safetyCheckValueSchema = z.object({

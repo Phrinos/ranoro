@@ -215,6 +215,7 @@ export interface PhotoReportGroup {
   date: string; // ISO string
   description: string;
   photos: string[];
+  type?: 'Recepción' | 'Entrega' | 'General';
 }
 
 export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Proveedor Externo' | 'Entregado' | 'Cancelado';
