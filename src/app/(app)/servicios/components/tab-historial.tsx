@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -24,7 +23,7 @@ interface HistorialTabContentProps {
   vehicles: Vehicle[];
   personnel: User[];
   currentUser: User | null;
-  onShowPreview: (service: ServiceRecord) => void;
+  onShowShareDialog: (service: ServiceRecord) => void;
   onDelete: (serviceId: string) => void;
 }
 
@@ -55,7 +54,7 @@ export default function HistorialTabContent({
   vehicles,
   personnel,
   currentUser,
-  onShowPreview,
+  onShowShareDialog,
   onDelete,
 }: HistorialTabContentProps) {
   const router = useRouter();
@@ -125,10 +124,10 @@ export default function HistorialTabContent({
       personnel={personnel}
       currentUser={currentUser}
       onEdit={() => handleEditService(record.id)}
-      onView={() => onShowPreview(record)}
+      onView={() => onShowShareDialog(record)}
       onDelete={() => onDelete(record.id)}
     />
-  ), [vehicles, personnel, currentUser, onShowPreview, router, onDelete]);
+  ), [vehicles, personnel, currentUser, onShowShareDialog, router, onDelete]);
 
 
   return (

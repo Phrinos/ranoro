@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/tab-activos.tsx
 "use client";
 
@@ -26,7 +25,7 @@ interface ActivosTabContentProps {
   vehicles: Vehicle[];
   personnel: User[];
   currentUser: User | null;
-  onShowPreview: (service: ServiceRecord) => void;
+  onShowShareDialog: (service: ServiceRecord) => void;
   onCompleteService: (service: ServiceRecord) => void;
   onDelete: (serviceId: string) => void;
 }
@@ -53,7 +52,7 @@ export default function ActivosTabContent({
   vehicles,
   personnel,
   currentUser,
-  onShowPreview,
+  onShowShareDialog,
   onCompleteService,
   onDelete,
 }: ActivosTabContentProps) {
@@ -137,12 +136,12 @@ export default function ActivosTabContent({
         personnel={personnel}
         currentUser={currentUser}
         onEdit={() => handleEditService(service.id)}
-        onView={() => onShowPreview(service)}
+        onView={() => onShowShareDialog(service)}
         onCancel={() => handleCancelService(service.id)}
         onDelete={() => onDelete(service.id)}
       />
     ),
-    [vehicles, personnel, currentUser, onShowPreview, onDelete, handleEditService, handleCancelService]
+    [vehicles, personnel, currentUser, onShowShareDialog, onDelete, handleEditService, handleCancelService]
   );
 
   return (

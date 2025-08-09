@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/tab-cotizaciones.tsx
 "use client";
 
@@ -18,7 +17,7 @@ interface CotizacionesTabContentProps {
   vehicles: Vehicle[];
   personnel: User[];
   currentUser: User | null;
-  onShowPreview: (service: ServiceRecord) => void;
+  onShowShareDialog: (service: ServiceRecord) => void;
   onDelete: (serviceId: string) => void;
 }
 
@@ -27,7 +26,7 @@ function CotizacionesTabContent({
   vehicles,
   personnel,
   currentUser,
-  onShowPreview,
+  onShowShareDialog,
   onDelete,
 }: CotizacionesTabContentProps) {
   const router = useRouter();
@@ -70,11 +69,11 @@ function CotizacionesTabContent({
         personnel={personnel}
         currentUser={currentUser}
         onEdit={() => handleEditQuote(quote.id)}
-        onView={() => onShowPreview(quote)}
+        onView={() => onShowShareDialog(quote)}
         onDelete={() => handleDeleteQuote(quote.id)}
       />
     ),
-    [vehicles, personnel, currentUser, onShowPreview, handleEditQuote, handleDeleteQuote]
+    [vehicles, personnel, currentUser, onShowShareDialog, handleEditQuote, handleDeleteQuote]
   );
 
   return (
@@ -89,7 +88,7 @@ function CotizacionesTabContent({
             { value: 'serviceDate_desc', label: 'Más Reciente' },
             { value: 'serviceDate_asc', label: 'Más Antiguo' },
             { value: 'totalCost_desc', label: 'Monto (Mayor a Menor)' },
-            { value: 'totalCost_asc', label: 'Monto (Menor a Mayor)' },
+            { value: 'totalCost_asc', label: 'Monto (Menor a Menor)' },
         ]}
       />
       

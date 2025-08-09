@@ -1,6 +1,4 @@
-
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
-
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -8,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Car, User as UserIcon, Calendar, CheckCircle, XCircle, Clock, Ellipsis, Eye, Edit, Check, DollarSign, TrendingUp, Copy, Printer, Trash2, Phone } from 'lucide-react';
+import { Car, User as UserIcon, Calendar, CheckCircle, XCircle, Clock, Ellipsis, Eye, Edit, Check, DollarSign, TrendingUp, Copy, Printer, Trash2, Phone, Share2 } from 'lucide-react';
 import type { ServiceRecord, Vehicle, User, Payment } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -158,8 +156,8 @@ export function ServiceAppointmentCard({
               )}
             </div>
              <div className="flex justify-center items-center gap-1 flex-wrap mt-2">
-                <Button variant="ghost" size="icon" onClick={onView} title="Ver Detalles">
-                    <Eye className="h-4 w-4" />
+                <Button variant="ghost" size="icon" onClick={onView} title="Compartir Documento">
+                    <Share2 className="h-4 w-4" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={onEdit} title="Editar Servicio">
                     <Edit className="h-4 w-4" />

@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/page-component.tsx
 "use client";
 
@@ -14,12 +13,13 @@ import { inventoryService, adminService, serviceService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
+import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
+
 
 const ActivosTabContent = lazy(() => import('./tab-activos'));
 const HistorialTabContent = lazy(() => import('./tab-historial'));
 const AgendaTabContent = lazy(() => import('./tab-agenda'));
 const CotizacionesTabContent = lazy(() => import('./tab-cotizaciones'));
-const UnifiedPreviewDialog = lazy(() => import('@/components/shared/unified-preview-dialog').then(module => ({ default: module.UnifiedPreviewDialog })));
 const PaymentDetailsDialog = lazy(() => import('@/components/shared/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 
 export function ServiciosPageComponent({ tab }: { tab?: string }) {
@@ -35,8 +35,8 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [recordForSharing, setRecordForSharing] = useState<ServiceRecord | null>(null);
   
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
@@ -59,9 +59,9 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
 
-  const handleShowPreview = useCallback((service: ServiceRecord) => {
-    setRecordForPreview(service);
-    setIsPreviewOpen(true);
+  const handleShowShareDialog = useCallback((service: ServiceRecord) => {
+    setRecordForSharing(service);
+    setIsShareDialogOpen(true);
   }, []);
 
   const handleOpenCompletionDialog = useCallback((service: ServiceRecord) => {
@@ -77,8 +77,8 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
       await batch.commit();
       toast({ title: "Servicio Completado" });
       const updatedService = { ...service, ...paymentDetails, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
-      setRecordForPreview(updatedService);
-      setIsPreviewOpen(true);
+      setRecordForSharing(updatedService);
+      setIsShareDialogOpen(true);
     } catch (e) {
       toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
     } finally {
@@ -108,10 +108,10 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   );
 
   const tabs = [
-    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} /> },
-    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
-    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService}/> },
-    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService} /> }
+    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={allServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} /> },
+    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} /> },
+    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService}/> },
+    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService} /> }
   ];
 
   return (
@@ -125,8 +125,12 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
         actions={pageActions}
       />
       <Suspense fallback={null}>
-        {isPreviewOpen && recordForPreview && (
-          <UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={recordForPreview} />
+        {recordForSharing && (
+          <ShareServiceDialog 
+            open={isShareDialogOpen} 
+            onOpenChange={setIsShareDialogOpen} 
+            service={recordForSharing}
+          />
         )}
         {serviceToComplete && (
           <PaymentDetailsDialog
