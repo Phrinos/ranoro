@@ -22,12 +22,7 @@ import {
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import type { User } from '@/types';
-
-const GoogleIcon = () => (
-  <svg className="mr-3 h-5 w-5" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-    <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 61.9l-69.2 69.2c-20.3-19.6-48.8-31.8-79.7-31.8-62.3 0-113.5 51.6-113.5 115.6s51.2 115.6 113.5 115.6c69.2 0 98.6-46.4 103.3-72.2h-103.3v-91.1h199.1c1.2 10.8 1.8 22.3 1.8 34.9z"></path>
-  </svg>
-);
+import { Icon } from '@iconify/react';
 
 export default function LoginPage() {
   const [emailLogin, setEmailLogin] = useState('');
@@ -160,7 +155,7 @@ export default function LoginPage() {
                             Ingresar al Sistema
                         </Button>
                          <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || googleIsLoading}>
-                            {googleIsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />}
+                            {googleIsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Icon icon="flat-color-icons:google" className="h-5 w-5 mr-3" />}
                             <span>Continuar con Google</span>
                         </Button>
                     </form>
@@ -180,7 +175,7 @@ export default function LoginPage() {
                    </CardDescription>
                    <div className="space-y-4 pt-4">
                        <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || googleIsLoading}>
-                        {googleIsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />}
+                        {googleIsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Icon icon="flat-color-icons:google" className="h-5 w-5 mr-3"/>}
                         Registrarse con Google
                        </Button>
                        <div className="flex items-center p-3 text-sm text-amber-800 bg-amber-100 rounded-md border border-amber-200">

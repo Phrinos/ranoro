@@ -1,3 +1,4 @@
+
 // src/components/quote-content.tsx
 
 "use client";
@@ -85,7 +86,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     </CardHeader>
                     <CardContent className="text-center space-y-3">
                          {quote.serviceAdvisorSignatureDataUrl && (
-                             <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center min-h-[60px] max-w-[150px] mx-auto">
+                             <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center min-h-[60px] max-w-[112px] mx-auto">
                                 <Image src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={112} height={56} style={{ objectFit: 'contain' }} className="mx-auto" />
                             </div>
                          )}
@@ -121,7 +122,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     <p>¡Gracias por su preferencia!</p>
                     <p className="text-sm mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
                     <a href={`tel:${workshopInfo.phone || '4491425323'}`} className="text-lg font-semibold flex items-center justify-center gap-2 mt-2 text-primary hover:underline">
-                        <Phone className="h-5 w-5"/> 
+                        <Icon icon="solar:phone-bold" className="h-5 w-5"/>
                         <span>{workshopInfo.phone || '4491425323'}</span>
                     </a>
                     <div className="flex justify-center items-center gap-4 mt-4">
