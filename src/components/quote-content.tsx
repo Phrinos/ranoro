@@ -5,7 +5,7 @@ import type { QuoteRecord, Vehicle, Technician, WorkshopInfo, Driver, RentalPaym
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
-import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt, formatCurrency } from "@/lib/utils";
+import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt, formatCurrency, toNumber, IVA_RATE } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, CalendarCheck } from 'lucide-react';
 import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
@@ -31,8 +31,6 @@ interface QuoteContentProps {
   vehicle?: Vehicle; 
   workshopInfo?: WorkshopInfo;
 }
-
-const IVA_RATE = 0.16; 
 
 export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
   ({ quote, vehicle, workshopInfo: workshopInfoProp }, ref) => {
@@ -105,7 +103,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                       <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
                       <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span></p>
                       {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
-                      {quote.mileage !== undefined && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{quote.mileage.toLocaleString('es-ES')} km</span></p>}
+                      {quote.mileage !== undefined && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{formatCurrency(quote.mileage)} km</span></p>}
                   </div>
               </div>
               {quote.nextServiceInfo && quote.status === 'Entregado' && (
@@ -117,7 +115,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                             <p className="font-bold">Fecha: {format(parseDate(quote.nextServiceInfo.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
                         )}
                         {quote.nextServiceInfo.mileage && (
-                            <p className="font-bold">Kilometraje: {quote.nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
+                            <p className="font-bold">Kilometraje: {formatCurrency(quote.nextServiceInfo.mileage)} km</p>
                         )}
                     </div>
                   </div>
