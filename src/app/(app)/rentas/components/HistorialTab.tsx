@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Edit, Printer, Copy, Share2 } from 'lucide-react';
-import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { RentalReceiptContent } from './rental-receipt-content';
 import { EditPaymentNoteDialog } from './edit-payment-note-dialog';
 import type { RentalPayment, WorkshopInfo, Driver, Vehicle } from '@/types';
@@ -19,6 +19,7 @@ import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
 import { fleetService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
+import ReactDOMServer from 'react-dom/server';
 
 interface HistorialTabProps {
   allPayments: RentalPayment[];
@@ -162,24 +163,25 @@ export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: H
         onSave={handleUpdatePaymentNote}
       />
       
-      <DocumentPreviewDialog
-        open={!!paymentForReceipt}
-        onOpenChange={(isOpen) => !isOpen && setPaymentForReceipt(null)}
-        title="Recibo de Pago de Renta"
-      >
-        <div className="max-h-[85vh] overflow-y-auto">
-          {paymentForReceipt && (
-            <RentalReceiptContent 
-              ref={receiptRef} 
-              payment={paymentForReceipt} 
-              workshopInfo={workshopInfo} 
-              driver={drivers.find(d => d.id === paymentForReceipt.driverId)}
-              allPaymentsForDriver={allPayments.filter(p => p.driverId === paymentForReceipt.driverId)}
-              vehicle={vehicles.find(v => v.licensePlate === paymentForReceipt.vehicleLicensePlate)}
-            />
-          )}
-        </div>
-      </DocumentPreviewDialog>
+      {paymentForReceipt && (
+        <UnifiedPreviewDialog
+            open={!!paymentForReceipt}
+            onOpenChange={(isOpen) => !isOpen && setPaymentForReceipt(null)}
+            title="Recibo de Pago de Renta"
+            documentType="text"
+            textContent={ReactDOMServer.renderToString(
+                <RentalReceiptContent 
+                  ref={receiptRef} 
+                  payment={paymentForReceipt} 
+                  workshopInfo={workshopInfo} 
+                  driver={drivers.find(d => d.id === paymentForReceipt.driverId)}
+                  allPaymentsForDriver={allPayments.filter(p => p.driverId === paymentForReceipt.driverId)}
+                  vehicle={vehicles.find(v => v.licensePlate === paymentForReceipt.vehicleLicensePlate)}
+                />
+            )}
+        >
+        </UnifiedPreviewDialog>
+      )}
     </>
   );
 }
