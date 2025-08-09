@@ -35,7 +35,7 @@ export default function PublicPageLayout({
              <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
                 <Link href="/" className="relative w-[140px] h-[40px]">
                     <Image
-                    src="/ranoro-logo-negro.png"
+                    src="/ranoro-logo.png"
                     alt="Ranoro Logo"
                     fill
                     style={{ objectFit: 'contain' }}
