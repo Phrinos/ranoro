@@ -53,30 +53,28 @@ export default function ActivosTabContent({
 
   const activeServices = useMemo(() => {
     return allServices
-        .filter(s => {
-            if (s.status === 'En Taller' || s.status === 'Agendado') return true;
-            if (s.status === 'Entregado') {
-                const deliveryDate = parseDate(s.deliveryDateTime);
-                return deliveryDate && isValid(deliveryDate) && isToday(deliveryDate);
-            }
-            return false;
-        })
+        .filter(s => s.status === 'En Taller' || s.status === 'Agendado')
         .sort((a, b) => {
             const dateA = parseDate(a.receptionDateTime) || parseDate(a.serviceDate);
             const dateB = parseDate(b.receptionDateTime) || parseDate(b.serviceDate);
 
+            // Sort by priority first
+            const priorityA = getStatusPriority(a);
+            const priorityB = getStatusPriority(b);
+            if (priorityA !== priorityB) {
+                return priorityA - priorityB;
+            }
+
+            // Then sort by date
             if (dateA && dateB) {
-                const dateComparison = compareDesc(dateA, dateB);
-                if (dateComparison !== 0) return dateComparison;
+                return compareDesc(dateA, dateB); // Newer first
             } else if (dateA) {
                 return -1;
             } else if (dateB) {
                 return 1;
             }
             
-            const priorityA = getStatusPriority(a);
-            const priorityB = getStatusPriority(b);
-            return priorityA - priorityB;
+            return 0;
         });
   }, [allServices]);
 

@@ -53,34 +53,27 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
       try { setCurrentUser(JSON.parse(authUserString)); } catch (e) { console.error("Error parsing auth user", e); }
     }
 
-    // Subscribe to each specialized service
     const unsubs = [
-      quoteService.onQuotesUpdate(setQuotes),
-      agendaService.onAgendaUpdate(agendaData => {
-        setAgendaServices(agendaData);
-        
-        // Derive active services from the agenda list
-        const servicesForToday = agendaData.filter(s => {
-          if (s.status === 'En Taller') {
-              return true; // Always include services currently in the workshop
-          }
-          if (s.status === 'Agendado') {
-            const serviceDate = parseDate(s.appointmentDateTime || s.serviceDate);
-            return serviceDate && isToday(serviceDate); // Include if scheduled for today
-          }
-           if (s.status === 'Entregado') {
-            const deliveryDate = parseDate(s.deliveryDateTime);
-            return deliveryDate && isToday(deliveryDate); // Include if delivered today
-          }
-          return false;
-        });
-        
-        setActiveServices(servicesForToday);
-        setIsLoading(false);
-      }),
-      historyService.onHistoryUpdate(setHistoryServices),
-      inventoryService.onVehiclesUpdate(setVehicles),
-      adminService.onUsersUpdate(setPersonnel),
+        quoteService.onQuotesUpdate(setQuotes),
+        agendaService.onAgendaUpdate(setAgendaServices),
+        historyService.onHistoryUpdate(setHistoryServices),
+        inventoryService.onVehiclesUpdate(setVehicles),
+        adminService.onUsersUpdate((personnelData) => {
+            setPersonnel(personnelData);
+            // Derive active services here, after all data is available
+            serviceService.onServicesUpdate((allServices) => {
+                const servicesForTodayOrActive = allServices.filter(s => {
+                    if (s.status === 'En Taller' || s.status === 'Agendado') return true;
+                    if (s.status === 'Entregado') {
+                        const deliveryDate = parseDate(s.deliveryDateTime);
+                        return deliveryDate && isToday(deliveryDate);
+                    }
+                    return false;
+                });
+                setActiveServices(servicesForTodayOrActive);
+                setIsLoading(false);
+            });
+        }),
     ];
     
     return () => unsubs.forEach((unsub) => unsub());
@@ -126,7 +119,7 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   );
 
   const tabs = [
-    { value: 'activos', label: 'Activos (Hoy)', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} /> },
+    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} /> },
     { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={agendaServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
     { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
     { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historyServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> }
