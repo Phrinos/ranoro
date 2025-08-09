@@ -17,7 +17,6 @@ interface AgendaTabContentProps {
   vehicles: Vehicle[];
   personnel: User[];
   onShowPreview: (service: ServiceRecord) => void;
-  onDelete: (serviceId: string) => void;
 }
 
 export default function AgendaTabContent({
@@ -25,7 +24,6 @@ export default function AgendaTabContent({
   vehicles,
   personnel,
   onShowPreview,
-  onDelete,
 }: AgendaTabContentProps) {
   const router = useRouter();
   const [activeView, setActiveView] = useState('lista');

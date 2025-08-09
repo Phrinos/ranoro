@@ -10,13 +10,12 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { inventoryService, adminService, serviceService, quoteService, historyService } from '@/lib/services';
+import { inventoryService, adminService, serviceService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { isToday } from 'date-fns';
 import { parseDate } from '@/lib/forms';
-import { agendaService } from '@/lib/services/agenda.service';
 
 const ActivosTabContent = lazy(() => import('./tab-activos'));
 const HistorialTabContent = lazy(() => import('./tab-historial'));
@@ -30,12 +29,9 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(tab || 'activos');
 
-  // States for each data category
-  const [quotes, setQuotes] = useState<ServiceRecord[]>([]);
-  const [agendaServices, setAgendaServices] = useState<ServiceRecord[]>([]);
-  const [historyServices, setHistoryServices] = useState<ServiceRecord[]>([]);
-  const [activeServices, setActiveServices] = useState<ServiceRecord[]>([]);
-
+  // Unified state for all services
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [personnel, setPersonnel] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,31 +50,30 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
     }
 
     const unsubs = [
-        quoteService.onQuotesUpdate(setQuotes),
-        agendaService.onAgendaUpdate(setAgendaServices),
-        historyService.onHistoryUpdate(setHistoryServices),
-        inventoryService.onVehiclesUpdate(setVehicles),
-        adminService.onUsersUpdate((personnelData) => {
-            setPersonnel(personnelData);
-            // Derive active services here, after all data is available
-            serviceService.onServicesUpdate((allServices) => {
-                const servicesForTodayOrActive = allServices.filter(s => {
-                    if (s.status === 'En Taller' || s.status === 'Agendado') return true;
-                    // Also include services delivered today in the active tab for end-of-day review
-                    if (s.status === 'Entregado') {
-                        const deliveryDate = parseDate(s.deliveryDateTime);
-                        return deliveryDate && isToday(deliveryDate);
-                    }
-                    return false;
-                });
-                setActiveServices(servicesForTodayOrActive);
-                setIsLoading(false);
-            });
+        serviceService.onServicesUpdate((services) => {
+            setAllServices(services);
+            setIsLoading(false);
         }),
+        inventoryService.onVehiclesUpdate(setVehicles),
+        adminService.onUsersUpdate(setPersonnel),
     ];
     
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
+
+  // Memoized filtering for each tab
+  const activeServices = useMemo(() => allServices.filter(s => {
+    if (s.status === 'En Taller') return true;
+    if (s.status === 'Entregado' || s.status === 'Completado') {
+        const deliveryDate = parseDate(s.deliveryDateTime);
+        return deliveryDate && isToday(deliveryDate);
+    }
+    return false;
+  }), [allServices]);
+
+  const agendaServices = useMemo(() => allServices.filter(s => s.status === 'Agendado'), [allServices]);
+  const quotes = useMemo(() => allServices.filter(s => s.status === 'Cotizacion'), [allServices]);
+  const historyServices = useMemo(() => allServices.filter(s => ['Entregado', 'Cancelado'].includes(s.status)), [allServices]);
   
   const handleShowPreview = useCallback((service: ServiceRecord) => {
     setRecordForPreview(service);
@@ -130,8 +125,8 @@ export function ServiciosPageComponent({ tab }: { tab?: string }) {
 
   const tabs = [
     { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} /> },
-    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={agendaServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} onDelete={handleDeleteService} /> },
-    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService}/> },
+    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={agendaServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} /> },
+    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quotes} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} /> },
     { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historyServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowPreview} currentUser={currentUser} onDelete={handleDeleteService} /> }
   ];
 

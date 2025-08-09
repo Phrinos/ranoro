@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -8,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord } from "@/types";
+import { parseDate } from '../forms';
 
 const onHistoryUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
     if (!db) return () => {};
@@ -23,9 +25,11 @@ const onHistoryUpdate = (callback: (services: ServiceRecord[]) => void): (() => 
         
         // 2. Sort on the client-side.
         services.sort((a, b) => {
-            const dateA = a.deliveryDateTime ? new Date(a.deliveryDateTime) : 0;
-            const dateB = b.deliveryDateTime ? new Date(b.deliveryDateTime) : 0;
+            const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate) || new Date(0);
+            const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate) || new Date(0);
             if (dateA && dateB) return dateB.getTime() - dateA.getTime(); // Descending for history
+            if(dateA) return -1;
+            if(dateB) return 1;
             return 0;
         });
 
