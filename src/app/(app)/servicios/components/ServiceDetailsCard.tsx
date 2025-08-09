@@ -2,6 +2,7 @@
 
 "use client";
 
+import React, { useMemo, useCallback } from 'react';
 import { useFormContext, Controller } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -14,7 +15,7 @@ import type { User, ServiceTypeRecord } from "@/types";
 import { cn } from "@/lib/utils";
 import { format, setHours, setMinutes, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 
@@ -54,6 +55,7 @@ export function ServiceDetailsCard({
   
   const watchedStatus = watch('status');
   const watchedAdvisorName = watch('serviceAdvisorName');
+  const watchedTechnicianId = watch('technicianId');
   
   const isFinalStatus = watchedStatus === 'Cancelado' && !isReadOnly;
   
@@ -69,6 +71,11 @@ export function ServiceDetailsCard({
   const showTechnicianField = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
   const showQuoteDateField = useMemo(() => watchedStatus === 'Cotizacion', [watchedStatus]);
   const showWorkshopFields = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
+  
+  const technicianName = useMemo(() => {
+    if (!watchedTechnicianId) return null;
+    return users.find(u => u.id === watchedTechnicianId)?.name || null;
+  }, [watchedTechnicianId, users]);
 
   
   const handleStatusChange = (newStatus: ServiceFormValues['status']) => {
@@ -86,7 +93,10 @@ export function ServiceDetailsCard({
       <CardHeader>
         <div className="flex justify-between items-center">
             <CardTitle className="text-lg">Detalles Generales</CardTitle>
-            {watchedAdvisorName && <span className="text-sm text-muted-foreground">Asesor: {watchedAdvisorName}</span>}
+            <div className="text-right text-sm text-muted-foreground">
+              {watchedAdvisorName && <p>Asesor: {watchedAdvisorName}</p>}
+              {watchedStatus === 'Entregado' && technicianName && <p>Técnico: {technicianName}</p>}
+            </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
