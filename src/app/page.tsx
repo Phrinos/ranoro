@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 import { cn } from '@/lib/utils';
 import { HeroSection } from './(public)/landing/HeroSection';
+import { TrustedBySection } from './(public)/landing/TrustedBySection';
 import { AiFeaturesSection } from './(public)/landing/AiFeaturesSection';
 import { CoreFeaturesSection } from './(public)/landing/CoreFeaturesSection';
 import { BenefitsSection } from './(public)/landing/BenefitsSection';
@@ -89,13 +90,7 @@ export default function LandingPage() {
       <main>
         <HeroSection />
 
-        <section className="py-12 bg-white">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <p className="text-center text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                    Con la confianza de los mejores talleres de LATAM
-                </p>
-            </div>
-        </section>
+        <TrustedBySection />
 
         <AiFeaturesSection />
         <CoreFeaturesSection />
