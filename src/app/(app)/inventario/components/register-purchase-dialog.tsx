@@ -64,7 +64,7 @@ interface RegisterPurchaseDialogProps {
   onInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
 }
 
-export default function RegisterPurchaseDialog({ 
+export function RegisterPurchaseDialog({ 
     open, onOpenChange, suppliers, inventoryItems, categories, onSave, onInventoryItemCreated 
 }: RegisterPurchaseDialogProps) {
   const { toast } = useToast();

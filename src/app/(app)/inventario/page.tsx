@@ -25,7 +25,7 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
+import type { PurchaseFormValues } from './components/register-purchase-dialog';
 
 // Lazy load dialogs that are not immediately visible
 const RegisterPurchaseDialog = lazy(() => import('./components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
@@ -442,14 +442,6 @@ function InventarioPageComponent() {
             </DialogContent>
         </Dialog>
         </>
-    </Suspense>
-  );
-}
-
-export default function InventarioPageWrapper() {
-  return (
-    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <InventarioPageComponent />
     </Suspense>
   );
 }
