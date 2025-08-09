@@ -31,6 +31,24 @@ export default function PublicPageLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
+        <header className="sticky top-0 z-40 w-full border-b bg-primary text-primary-foreground print:hidden">
+             <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
+                <Link href="/" className="relative w-[140px] h-[40px]">
+                    <Image
+                    src="/ranoro-logo.png"
+                    alt="Ranoro Logo"
+                    fill
+                    style={{ objectFit: 'contain' }}
+                    sizes="140px"
+                    priority
+                    data-ai-hint="ranoro logo"
+                    />
+                </Link>
+                <Button asChild variant="outline" className="border-white/50 text-white hover:bg-white/10 hover:text-white">
+                    <Link href="/login">Acceso Taller</Link>
+                </Button>
+            </div>
+        </header>
         <main className="flex-1">
             {children}
         </main>

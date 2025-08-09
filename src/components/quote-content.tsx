@@ -13,6 +13,7 @@ import { Signature, Loader2, Phone } from 'lucide-react';
 import { formatCurrency, toNumber, IVA_RATE, capitalizeWords, normalizeDataUrl } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
 import Image from "next/image";
+import Link from 'next/link';
 
 interface QuoteContentProps {
   quote: QuoteRecord;
@@ -42,6 +43,9 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         const tax = total - sub;
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
+    
+    const termsText = `Precios en MXN. Esta cotización es válida hasta el ${validityDate}. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.`;
+
 
     return (
         <div className="space-y-6" ref={ref}>
@@ -110,18 +114,13 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                             <span>Total a Pagar:</span>
                             <span className="text-primary">{formatCurrency(totalCost)}</span>
                         </div>
+                        <Separator className="my-2"/>
+                        <p className="text-xs text-muted-foreground pt-2">
+                           {termsText}
+                        </p>
                     </CardContent>
                 </Card>
             </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Términos y Condiciones</CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground">
-                    Precios en MXN. Esta cotización es válida hasta el {validityDate}. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
-                </CardContent>
-            </Card>
 
             <Card>
                 <CardHeader>
