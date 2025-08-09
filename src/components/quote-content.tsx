@@ -85,7 +85,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     <CardContent className="text-center space-y-3">
                          {quote.serviceAdvisorSignatureDataUrl && (
                              <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center min-h-[100px]">
-                                <Image src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={200} height={100} style={{ objectFit: 'contain' }} className="mx-auto" />
+                                <Image src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={150} height={75} style={{ objectFit: 'contain' }} className="mx-auto" />
                             </div>
                          )}
                          <p className="font-semibold pt-2">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
@@ -118,16 +118,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     </CardContent>
                 </Card>
             </div>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Términos y Condiciones</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-xs text-muted-foreground">
-                        Precios en MXN. Esta cotización es válida hasta el {validityDate}. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
-                    </p>
-                </CardContent>
-            </Card>
         </div>
     );
 });

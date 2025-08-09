@@ -46,10 +46,10 @@ export default function PublicPageLayout({
                 </Link>
                 <div className="flex items-center gap-4 text-sm">
                     <Link href="/legal/terminos">
-                        <Badge variant="outline">Términos y Condiciones</Badge>
+                        <Badge variant="outline" className="text-sm">Términos y Condiciones</Badge>
                     </Link>
                     <Link href="/legal/privacidad">
-                         <Badge variant="outline">Aviso de Privacidad</Badge>
+                         <Badge variant="outline" className="text-sm">Aviso de Privacidad</Badge>
                     </Link>
                 </div>
             </div>
