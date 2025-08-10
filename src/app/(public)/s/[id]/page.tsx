@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
 import { savePublicDocument } from '@/lib/public-document';
-import ServiceDocumentContent from '@/components/public-service-sheet';
+import { ServiceSheetContent } from '@/components/public-service-sheet';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 
 export default function PublicServicePage() {
@@ -129,10 +129,11 @@ export default function PublicServicePage() {
   return (
      <>
         <div className="container mx-auto py-4 sm:py-8">
-            <ServiceDocumentContent
-              record={adaptedRecord}
+            <ServiceSheetContent
+              record={adaptedRecord as any}
               onSignClick={handleSignClick}
               isSigning={isSigning}
+              activeTab="order"
             />
         </div>
         
