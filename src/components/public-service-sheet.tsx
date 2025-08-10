@@ -9,7 +9,7 @@ import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency, capitalizeWo
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Signature, Loader2, Phone, MapPin } from 'lucide-react';
+import { Signature, Loader2, Phone, MapPin, User, Car as CarIcon, FileText as FileTextIcon } from 'lucide-react';
 import { toNumber, IVA_RATE } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
 import Image from "next/image";
@@ -129,51 +129,62 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     } = record;
     
     const effectiveWorkshopInfo = { ...{ name: 'Ranoro' }, ...workshopInfo };
-    const formattedServiceDate = serviceDate && isValid(parseDate(serviceDate)) ? format(parseDate(serviceDate)!, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    const formattedServiceDate = serviceDate && isValid(parseDate(serviceDate)!) ? format(parseDate(serviceDate)!, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     
     const isQuote = status === 'Cotizacion' || status === 'Agendado';
 
     const renderHeader = () => (
-        <header className="mb-4 pb-4 border-b-2 border-primary">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="relative w-[180px] h-[60px] flex-shrink-0">
-                    {effectiveWorkshopInfo.logoUrl && (
-                        <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" priority />
-                    )}
-                </div>
-                <div className="text-left sm:text-right">
-                    <h1 className="text-2xl font-bold text-primary">{isQuote ? 'COTIZACIÓN' : 'ORDEN DE SERVICIO'}</h1>
-                    <p className="font-mono text-base">Folio: <span className="font-semibold">{id}</span></p>
-                    <p className="text-sm">Fecha: <span className="font-semibold">{formattedServiceDate}</span></p>
-                </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>ORDEN DE SERVICIO</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-between text-sm">
+            <div>
+              <p className="text-muted-foreground">Folio</p>
+              <p className="font-semibold">{id}</p>
             </div>
-        </header>
+            <div className="text-right">
+              <p className="text-muted-foreground">Fecha</p>
+              <p className="font-semibold">{formattedServiceDate}</p>
+            </div>
+          </CardContent>
+        </Card>
     );
 
     const renderClientInfo = () => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-            <Tabs defaultValue="cliente" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="cliente">Datos del Cliente</TabsTrigger>
-                    <TabsTrigger value="vehiculo">Datos del Vehículo</TabsTrigger>
-                </TabsList>
-                <TabsContent value="cliente" className="p-6">
-                    <CardTitle className="mb-2">Cliente</CardTitle>
-                    <p className="font-semibold">{capitalizeWords(customerName || '')}</p>
-                </TabsContent>
-                <TabsContent value="vehiculo" className="p-6">
-                    <CardTitle className="mb-2">Vehículo</CardTitle>
-                    <p className="font-semibold">{vehicle?.label || 'N/A'}</p>
-                    <p className="text-muted-foreground">{vehicle?.plates || 'N/A'}</p>
-                </TabsContent>
-            </Tabs>
+          <CardHeader className="flex flex-row items-center gap-4">
+            <User className="w-8 h-8 text-muted-foreground"/>
+            <div>
+              <CardTitle>Cliente</CardTitle>
+              <CardDescription>Información del propietario</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="font-semibold">{capitalizeWords(customerName || '')}</p>
+          </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-4">
+             <CarIcon className="w-8 h-8 text-muted-foreground"/>
+            <div>
+              <CardTitle>Vehículo</CardTitle>
+              <CardDescription>Datos del vehículo</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+             <p className="font-semibold">{vehicle?.label || 'N/A'}</p>
+             <p className="text-muted-foreground">{vehicle?.plates || 'N/A'}</p>
+          </CardContent>
+        </Card>
+      </div>
     );
 
     return (
       <div ref={ref} className="font-sans bg-white text-black p-4 sm:p-8" data-format="letter">
-        {renderHeader()}
         <div className="space-y-6 mt-6">
+            {renderHeader()}
             {renderClientInfo()}
             <QuoteContent quote={record} />
         </div>
