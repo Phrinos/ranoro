@@ -182,8 +182,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     );
 
     return (
-      <div ref={ref} className="font-sans bg-white text-black p-4 sm:p-8" data-format="letter">
-        <div className="space-y-6 mt-6">
+      <div ref={ref} className="font-sans bg-transparent text-black" data-format="letter">
+        <div className="space-y-6">
             {renderHeader()}
             {renderClientInfo()}
             <QuoteContent quote={record} />
