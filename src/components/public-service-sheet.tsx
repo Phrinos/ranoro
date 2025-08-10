@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { format, isValid, addDays, parseISO } from "date-fns";
@@ -73,7 +73,7 @@ interface Props {
 }
 
 export default function ServiceDocumentContent({ record, onSignClick, isSigning }: Props){
-  const vehicle = record.vehicle || {};
+  const [activeTab, setActiveTab] = useState("resumen");
   const workshop = record.workshopInfo || { name: "Ranoro", phone: "4491425323" };
   const baseDate = toDate(record.serviceDate) || new Date();
   const validityDate = isValid(baseDate)
@@ -82,9 +82,9 @@ export default function ServiceDocumentContent({ record, onSignClick, isSigning 
 
   // Elegir items según estado
   const items = useMemo(() => {
-    const raw = record.status === "EN_TALLER" || record.status === "ENTREGADO"
-      ? (record.serviceItems ?? [])
-      : (record.quoteItems ?? record.serviceItems ?? []);
+    const raw = record.status === "COTIZACION" || record.status === "AGENDADO"
+      ? (record.quoteItems ?? record.serviceItems ?? [])
+      : (record.serviceItems ?? []);
     return raw.map((it) => ({
       ...it,
       price: toNumber(it?.price, 0),
@@ -107,16 +107,14 @@ export default function ServiceDocumentContent({ record, onSignClick, isSigning 
       <HeaderBar record={record} validityDate={validityDate} />
 
       {showTabs ? (
-        <Tabs defaultValue="resumen" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="resumen">Resumen</TabsTrigger>
             <TabsTrigger value="seguridad">Rev. seguridad</TabsTrigger>
           </TabsList>
-
           <TabsContent value="resumen">
             <ResumenSection record={record} items={items} subTotal={subTotal} taxAmount={taxAmount} totalCost={totalCost} onSignClick={onSignClick} isSigning={isSigning}/>
           </TabsContent>
-
           <TabsContent value="seguridad">
             <SecuritySection checklist={record.securityChecklist!} />
           </TabsContent>
@@ -125,7 +123,6 @@ export default function ServiceDocumentContent({ record, onSignClick, isSigning 
         <ResumenSection record={record} items={items} subTotal={subTotal} taxAmount={taxAmount} totalCost={totalCost} onSignClick={onSignClick} isSigning={isSigning}/>
       )}
 
-      {/* Footer de contacto */}
       <ThanksAndContact workshop={workshop} />
     </div>
   );
@@ -151,16 +148,13 @@ function ResumenSection({
 }){
   const workshop = record.workshopInfo || { name: "Ranoro", phone: "4491425323" };
   const status = record.status;
+  const [infoTab, setInfoTab] = useState("cliente");
 
-  // Mensaje/etiqueta del bloque principal según estado
   const mainTitle = status === "EN_TALLER" || status === "ENTREGADO" ? "Detalles del Servicio" : "Detalles de la Cotización";
 
   return (
     <>
-      <VehicleCustomerCard record={record} />
-      
-      {/* AGENDADO: mostrar solo la cita */}
-      {status === "AGENDADO" && (
+      {status === 'AGENDADO' ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5"/> Cita agendada</CardTitle>
@@ -169,9 +163,21 @@ function ResumenSection({
             <AppointmentBlock date={record.appointmentDate} />
           </CardContent>
         </Card>
+      ) : (
+        <Tabs value={infoTab} onValueChange={setInfoTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="cliente">Datos del Cliente</TabsTrigger>
+            <TabsTrigger value="vehiculo">Datos del Vehículo</TabsTrigger>
+          </TabsList>
+          <TabsContent value="cliente">
+            <CustomerInfoCard name={record.customerName} />
+          </TabsContent>
+          <TabsContent value="vehiculo">
+            <VehicleInfoCard vehicle={record.vehicle} />
+          </TabsContent>
+        </Tabs>
       )}
-
-      {/* Detalle de conceptos (según estado: cotización o servicio) */}
+      
       <Card>
         <CardHeader>
           <CardTitle>{mainTitle}</CardTitle>
@@ -199,26 +205,18 @@ function ResumenSection({
         </CardContent>
       </Card>
 
-      {/* Asesor + Resumen de costos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AdvisorCard name={record.serviceAdvisorName} signature={record.serviceAdvisorSignatureDataUrl} />
         <CostsCard subTotal={subTotal} taxAmount={taxAmount} totalCost={totalCost} validityDate={toValidDate(record.serviceDate)} />
       </div>
 
-      {/* EN_TALLER: tarjeta de recepción */}
-      {status === "EN_TALLER" && (
-        <ReceptionCard kind="Recepción" data={record.reception} />
-      )}
-
-      {/* ENTREGADO: tarjetas de recepción y entrega */}
-      {status === "ENTREGADO" && (
+      {(status === "EN_TALLER" || status === "ENTREGADO") && (
         <>
           <ReceptionCard kind="Recepción" data={record.reception} />
-          <ReceptionCard kind="Entrega" data={record.delivery} />
+          {status === "ENTREGADO" && <ReceptionCard kind="Entrega" data={record.delivery} />}
         </>
       )}
 
-      {/* Botón de firma (en vista pública) */}
       {record.isPublicView && onSignClick && (
         <div className="pt-2">
           <Button onClick={onSignClick} disabled={isSigning} className="w-full sm:w-auto">
@@ -231,6 +229,7 @@ function ResumenSection({
   );
 }
 
+// ... Rest of the components (SecuritySection, ReceptionCard, etc.) remain the same
 function SecuritySection({ checklist }: { checklist: SecurityCheckItem[] }){
   if (!checklist?.length) return null;
   return (
@@ -308,23 +307,31 @@ function ReceptionCard({ kind, data }: { kind: "Recepción" | "Entrega"; data?: 
   );
 }
 
-function VehicleCustomerCard({ record }: { record: ServiceRecordLike }) {
-  const vehicle = record.vehicle || {};
+function CustomerInfoCard({ name }: { name?: string }) {
   return (
     <Card>
-      <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <CardTitle className="flex items-center gap-2 mb-2"><UserIcon className="h-5 w-5"/> Cliente</CardTitle>
-          <p className="font-semibold">{record.customerName || "—"}</p>
-        </div>
-        <div>
-          <CardTitle className="flex items-center gap-2 mb-2"><Icon icon="ph:car-fill" className="h-5 w-5"/> Vehículo</CardTitle>
-          <p className="font-semibold">{vehicle.label || "—"}</p>
-          <p className="text-sm text-muted-foreground">{vehicle.plates || "—"}</p>
-        </div>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base"><UserIcon className="h-4 w-4"/> Cliente</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="font-semibold">{name || "—"}</p>
       </CardContent>
     </Card>
-  );
+  )
+}
+
+function VehicleInfoCard({ vehicle }: { vehicle?: Vehicle }) {
+  return (
+    <Card>
+       <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base"><Icon icon="ph:car-fill" className="h-4 w-4"/> Vehículo</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="font-semibold">{vehicle?.label || "—"}</p>
+        <p className="text-sm text-muted-foreground">{vehicle?.plates || "—"}</p>
+      </CardContent>
+    </Card>
+  )
 }
 
 
@@ -423,24 +430,24 @@ function PhotoGrid({ photos }: { photos: Photo[] }){
 
 function HeaderBar({ record, validityDate }: { record: ServiceRecordLike; validityDate: string }){
   const vehicle = record.vehicle || {};
-  const statusClass = {
-    AGENDADO: "bg-amber-50 text-amber-700 ring-amber-200",
-    EN_TALLER: "bg-sky-50 text-sky-700 ring-sky-200",
-    ENTREGADO: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-    COTIZACION: "bg-gray-50 text-gray-700 ring-gray-200",
+  const statusInfo = {
+    AGENDADO: { label: "Cita Agendada", class: "bg-amber-50 text-amber-700 ring-amber-200" },
+    EN_TALLER: { label: "Servicio en Taller", class: "bg-sky-50 text-sky-700 ring-sky-200" },
+    ENTREGADO: { label: "Servicio Entregado", class: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+    COTIZACION: { label: "Cotización", class: "bg-gray-50 text-gray-700 ring-gray-200" },
   }[record.status];
+
   return (
     <Card>
       <CardContent className="p-4 md:p-5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">{record.status}</div>
+            <div className="text-xs uppercase tracking-widest text-muted-foreground">{statusInfo.label}</div>
             <div className="text-lg md:text-xl font-extrabold truncate">
-              {vehicle.label || "Vehículo"} {vehicle.plates ? `(${vehicle.plates})` : ""}
+              {record.id}
             </div>
-            <div className="text-sm text-muted-foreground truncate">Cliente: {record.customerName || "—"}</div>
           </div>
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ring-1 ${statusClass}`}>
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ring-1 ${statusInfo.class}`}>
             <span className="text-xs font-bold">Válida hasta</span>
             <span className="font-mono text-sm font-extrabold">{validityDate}</span>
           </div>
