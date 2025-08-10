@@ -3,281 +3,17 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
-import { Loader2, ShieldAlert, Eye, Wrench, ShieldCheck, Camera, Download, Signature, User, Phone, Mail, Link as LinkIcon, Printer, Car, Fingerprint, CalendarCheck } from 'lucide-react';
-import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
+import { Loader2, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ServiceSheetContent } from '@/components/service-sheet-content';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { ServiceRecord, Vehicle, WorkshopInfo, SafetyInspection, SafetyCheckStatus, QuoteRecord, Payment, ServiceItem } from '@/types';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import Image from 'next/image';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency, capitalizeWords } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
 import { savePublicDocument } from '@/lib/public-document';
-import Link from 'next/link';
-import { format, isValid, parseISO, addDays } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { parseDate } from '@/lib/forms';
-import { QuoteContent } from '@/components/quote-content';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { GARANTIA_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
-
-
-// Component to render the page header
-const PageHeader = ({ serviceId, creationDate }: { serviceId: string, creationDate: Date | null }) => (
-    <header className="mb-6 rounded-lg bg-card p-4 sm:p-6 border print:hidden">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Documento de Servicio</h1>
-                <p className="font-mono text-muted-foreground">Folio: {serviceId}</p>
-            </div>
-            {creationDate && isValid(creationDate) && (
-                 <div className="text-left sm:text-right">
-                    <p className="text-sm text-muted-foreground">Fecha de Creación</p>
-                    <p className="font-semibold">{format(creationDate, "dd 'de' MMMM, yyyy", { locale: es })}</p>
-                </div>
-            )}
-        </div>
-    </header>
-);
-
-// Component for Client and Vehicle info cards
-const InfoCards = ({ vehicle, service }: { vehicle?: Vehicle | null, service: ServiceRecord }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 print:mb-4">
-        <Card>
-            <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Datos del Cliente</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-1">
-                <p className="font-semibold">{vehicle?.ownerName || 'N/A'}</p>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="h-4 w-4"/><span>{vehicle?.ownerPhone || 'N/A'}</span>
-                </div>
-                 {vehicle?.ownerEmail && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <Mail className="h-4 w-4"/><span>{vehicle.ownerEmail}</span>
-                    </div>
-                 )}
-            </CardContent>
-        </Card>
-         <Card>
-            <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2"><Car className="h-5 w-5 text-primary"/>Datos del Vehículo</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-1">
-                <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : 'N/A'}</p>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <Fingerprint className="h-4 w-4"/><span>{vehicle?.licensePlate || 'N/A'}</span>
-                </div>
-                 {vehicle?.vin && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <span>VIN: {vehicle.vin}</span>
-                    </div>
-                 )}
-                 {typeof service.mileage === 'number' && service.mileage > 0 && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <span>Kilometraje: {service.mileage.toLocaleString('es-MX')} km</span>
-                </div>
-                 )}
-            </CardContent>
-        </Card>
-    </div>
-);
-
-const ServiceDetailsContent = ({ service }: { service: ServiceRecord }) => (
-  <div className="space-y-4">
-    <Card>
-      <CardHeader><CardTitle>Trabajos a Realizar</CardTitle></CardHeader>
-      <CardContent className="space-y-3">
-        {service.serviceItems?.map((item, index) => (
-          <div key={index} className="flex justify-between items-start border-b pb-3 last:border-b-0">
-            <div>
-              <p className="font-semibold">{item.name}</p>
-              {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>
-              )}
-            </div>
-            <p className="font-semibold">{formatCurrency(item.price)}</p>
-          </div>
-        ))}
-        {(!service.serviceItems || service.serviceItems.length === 0) && (
-            <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
-        )}
-      </CardContent>
-    </Card>
-    
-    <Card>
-      <CardHeader><CardTitle>Resumen de Costos</CardTitle></CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        <div className="flex justify-between"><span>Subtotal:</span><span>{formatCurrency(service.subTotal)}</span></div>
-        <div className="flex justify-between"><span>IVA (16%):</span><span>{formatCurrency(service.taxAmount)}</span></div>
-        <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total:</span><span className="text-primary">{formatCurrency(service.totalCost)}</span></div>
-      </CardContent>
-    </Card>
-  </div>
-);
-
-const ReceptionContent = ({ service, onSignClick, isSigning, showSignReception }: {
-    service: ServiceRecord;
-    onSignClick?: (type: 'reception' | 'delivery') => void;
-    isSigning?: boolean;
-    showSignReception?: boolean;
-}) => (
-  <div className="space-y-4">
-     <Card>
-        <CardHeader><CardTitle>Condiciones del Vehículo</CardTitle></CardHeader>
-        <CardContent>
-            <p className="whitespace-pre-wrap">{service.vehicleConditions || 'No se especificaron condiciones.'}</p>
-        </CardContent>
-     </Card>
-     <Card>
-        <CardHeader><CardTitle>Pertenencias del Cliente</CardTitle></CardHeader>
-        <CardContent>
-            <p className="whitespace-pre-wrap">{service.customerItems || 'No se registraron pertenencias.'}</p>
-        </CardContent>
-     </Card>
-     <Card>
-        <CardHeader><CardTitle>Firma de Recepción</CardTitle></CardHeader>
-        <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
-            {service.customerSignatureReception ? (
-                 <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={300} height={150} style={{ objectFit: 'contain' }} className="border rounded-md" />
-            ) : showSignReception && onSignClick ? (
-                 <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="w-full sm:w-auto">
-                    {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
-                    Firmar de Conformidad
-                </Button>
-            ) : ( <p className="text-muted-foreground">Firma pendiente.</p> )}
-            <p className="text-xs text-muted-foreground">{GARANTIA_CONDICIONES_TEXT.split('\n')[1]}</p>
-        </CardContent>
-     </Card>
-  </div>
-);
-
-const DeliveryContent = ({ service, onSignClick, isSigning, showSignDelivery }: {
-    service: ServiceRecord;
-    onSignClick?: (type: 'reception' | 'delivery') => void;
-    isSigning?: boolean;
-    showSignDelivery?: boolean;
-}) => (
-    <Card>
-        <CardHeader><CardTitle>Firma de Conformidad y Salida</CardTitle></CardHeader>
-        <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
-            {service.customerSignatureDelivery ? (
-                 <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de entrega" width={300} height={150} style={{ objectFit: 'contain' }} className="border rounded-md" />
-            ) : showSignDelivery && onSignClick ? (
-                 <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="w-full sm:w-auto">
-                    {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
-                    Firmar de Conformidad
-                </Button>
-            ) : ( <p className="text-muted-foreground">Firma pendiente.</p> )}
-            <p className="text-xs text-muted-foreground">{GARANTIA_CONDICIONES_TEXT}</p>
-        </CardContent>
-     </Card>
-);
-
-
-const SafetyChecklistDisplay = ({
-  inspection,
-  onViewImage,
-  service
-}: {
-  inspection: SafetyInspection;
-  onViewImage: (url: string) => void;
-  service: ServiceRecord;
-}) => {
-    return (
-        <div className="mt-4 print:mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                {inspectionGroups.map(group => (
-                    <div key={group.title} className="break-inside-avoid">
-                        <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4>
-                        <div className="space-y-1">
-                            {group.items.map(item => {
-                                const checkItem = inspection[item.name as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
-                                if (!checkItem || checkItem.status === 'na') return null;
-                                return (
-                                    <div key={item.name} className="py-2 border-b border-dashed last:border-none">
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="pr-4">{item.label}</span>
-                                            <Badge variant={checkItem.status === 'ok' ? 'success' : checkItem.status === 'atencion' ? 'waiting' : 'destructive'}>{capitalizeWords(checkItem.status)}</Badge>
-                                        </div>
-                                        {checkItem.notes && <p className="text-xs text-muted-foreground mt-1 pl-2">{checkItem.notes}</p>}
-                                        {checkItem && checkItem.photos && checkItem.photos.length > 0 && (
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 mt-2 pl-2">
-                                                {checkItem.photos.map((photoUrl, pIndex) => (
-                                                     <button type="button" onClick={() => onViewImage && onViewImage(photoUrl)} key={pIndex} className="relative aspect-video w-full bg-gray-100 rounded overflow-hidden border group">
-                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" crossOrigin="anonymous"/>
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"><Eye className="h-6 w-6 text-white" /></div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ))}
-            </div>
-            {inspection.inspectionNotes && (
-                <Card className="mt-6">
-                    <CardHeader><CardTitle>Observaciones Generales de la Inspección</CardTitle></CardHeader>
-                    <CardContent><p className="whitespace-pre-wrap">{inspection.inspectionNotes}</p></CardContent>
-                </Card>
-            )}
-        </div>
-    )
-}
-
-const PhotoReportContent = ({
-  photoReports,
-  onViewImage
-}: {
-  photoReports: PhotoReportGroup[];
-  onViewImage: (url: string) => void;
-}) => (
-  <div className="space-y-6">
-    {photoReports.map((report) => (
-      <Card key={report.id}>
-        <CardHeader>
-          <CardTitle>Reporte Fotográfico - {report.type}</CardTitle>
-          <CardDescription>
-            {report.description}
-            <span className="block text-xs mt-1">
-              Fecha: {format(parseISO(report.date), 'dd/MM/yyyy HH:mm', { locale: es })}
-            </span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {report.photos.map((photoUrl, photoIndex) => (
-              <button
-                key={photoIndex}
-                onClick={() => onViewImage(photoUrl)}
-                className="relative aspect-video w-full bg-gray-100 rounded-lg overflow-hidden border group"
-              >
-                <Image src={photoUrl} alt={`Foto ${photoIndex + 1}`} fill style={{objectFit:'cover'}} className="transition-transform duration-300 group-hover:scale-105" />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                  <Eye className="h-8 w-8 text-white" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    ))}
-  </div>
-);
-
-
-
-// --- Main Page Component ---
+import ServiceDocumentContent from '@/components/public-service-sheet';
+import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 
 export default function PublicServicePage() {
   const params = useParams();
@@ -285,18 +21,10 @@ export default function PublicServicePage() {
   const { toast } = useToast();
 
   const [service, setService] = useState<ServiceRecord | null | undefined>(undefined);
-  
   const [error, setError] = useState<string | null>(null);
   
   const [isSigning, setIsSigning] = useState(false);
   const [signatureType, setSignatureType] = useState<'reception' | 'delivery' | null>(null);
-  
-  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
-  
-  // Destructure embedded data
-  const vehicle = service?.vehicle;
-  const workshopInfo = service?.workshopInfo;
 
   useEffect(() => {
     if (!publicId || !db) {
@@ -335,7 +63,6 @@ export default function PublicServicePage() {
         [fieldToUpdate]: signatureDataUrl,
       };
 
-      // Use the new centralized function to save the signature to the public collection
       const result = await savePublicDocument('service', dataToSave);
 
       if (result.success) {
@@ -349,36 +76,6 @@ export default function PublicServicePage() {
       setSignatureType(null);
   };
 
-
-  const showQuote = service && (service.status === 'Cotizacion' || service.status === 'Agendado');
-  const showServiceDetails = service && service.status !== 'Cotizacion' && service.status !== 'Agendado';
-  const showChecklist = service && !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
-  const showPhotoReport = service && !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
-
-  const tabs = [];
-  if (showQuote) tabs.push({ value: 'quote', label: 'Cotización', icon: Eye });
-  if (showServiceDetails) {
-      tabs.push({ value: 'details', label: 'Detalles del Servicio', icon: Wrench });
-      tabs.push({ value: 'reception', label: 'Recepción', icon: Wrench });
-      tabs.push({ value: 'delivery', label: 'Entrega', icon: Wrench });
-  }
-  if (showChecklist) tabs.push({ value: 'checklist', label: 'Puntos de Seguridad', icon: ShieldCheck });
-  if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico', icon: Camera });
-
-  const defaultTabValue = service && (service.status === 'Cotizacion' || service.status === 'Agendado') ? 'quote' : 'details';
-  const [activeTab, setActiveTab] = useState(defaultTabValue);
-  
-  useEffect(() => {
-    setActiveTab(defaultTabValue);
-  }, [defaultTabValue]);
-
-
-  const gridColsClass = 
-    tabs.length >= 4 ? 'grid-cols-2 sm:grid-cols-4' :
-    tabs.length === 3 ? 'grid-cols-3' :
-    tabs.length === 2 ? 'grid-cols-2' :
-    'grid-cols-1';
-
   if (service === undefined) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
@@ -390,44 +87,53 @@ export default function PublicServicePage() {
       </div>
     );
   }
+
+  const vehicle = service?.vehicle as Vehicle | undefined;
+  const workshopInfo = service?.workshopInfo as WorkshopInfo | undefined;
+
+  const adaptedRecord = {
+      id: service.id,
+      status: service.status === 'En Taller' ? 'EN_TALLER' : service.status === 'Entregado' ? 'ENTREGADO' : 'AGENDADO',
+      serviceDate: service.serviceDate,
+      appointmentDate: service.appointmentDateTime,
+      isPublicView: true,
+      vehicle: {
+        label: vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'Vehículo',
+        plates: vehicle?.licensePlate,
+      },
+      customerName: service.customerName,
+      workshopInfo: workshopInfo,
+      serviceAdvisorName: service.serviceAdvisorName,
+      serviceAdvisorSignatureDataUrl: service.serviceAdvisorSignatureDataUrl,
+      serviceItems: service.serviceItems,
+      quoteItems: service.status === 'Cotizacion' ? service.serviceItems : [],
+      reception: {
+        at: service.receptionDateTime,
+        customerSignatureDataUrl: service.customerSignatureReception,
+      },
+      delivery: {
+        at: service.deliveryDateTime,
+        customerSignatureDataUrl: service.customerSignatureDelivery,
+      },
+      securityChecklist: [], // This will need to be mapped from the original service.safetyInspection
+  };
+
+  const handleSignClick = () => {
+      if(service.status === 'En Taller' && !service.customerSignatureReception) {
+          setSignatureType('reception');
+      } else if (service.status === 'Entregado' && !service.customerSignatureDelivery) {
+          setSignatureType('delivery');
+      }
+  }
   
   return (
      <>
         <div className="container mx-auto py-4 sm:py-8">
-            <PageHeader serviceId={service.id} creationDate={parseDate(service.serviceDate)} />
-            <InfoCards vehicle={vehicle} service={service} />
-
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                {tabs.length > 1 && (
-                    <TabsList className={cn('grid w-full h-auto p-0 bg-transparent gap-2 print:hidden', gridColsClass)}>
-                        {tabs.map(tab => (
-                            <TabsTrigger key={tab.value} value={tab.value} className="flex-1 min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug flex items-center justify-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-card data-[state=inactive]:text-card-foreground hover:data-[state=inactive]:bg-muted/80">
-                                <tab.icon className="mr-2 h-4 w-4 shrink-0"/>{tab.label}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
-                )}
-                <div className="mt-6">
-                    <TabsContent value="quote">
-                        {showQuote && <QuoteContent quote={service as QuoteRecord} />}
-                    </TabsContent>
-                    <TabsContent value="details">
-                        {showServiceDetails && <ServiceDetailsContent service={service} />}
-                    </TabsContent>
-                     <TabsContent value="reception">
-                        {showServiceDetails && <ReceptionContent service={service} onSignClick={(type) => setSignatureType(type)} isSigning={isSigning} showSignReception={!service.customerSignatureReception} />}
-                    </TabsContent>
-                    <TabsContent value="delivery">
-                        {showServiceDetails && <DeliveryContent service={service} onSignClick={(type) => setSignatureType(type)} isSigning={isSigning} showSignDelivery={!!service.customerSignatureReception && !service.customerSignatureDelivery} />}
-                    </TabsContent>
-                    <TabsContent value="checklist">
-                        {showChecklist && <SafetyChecklistDisplay inspection={service.safetyInspection!} onViewImage={(url) => { setViewingImageUrl(url); setIsImageViewerOpen(true); }} service={service} />}
-                    </TabsContent>
-                    <TabsContent value="photoreport">
-                        {showPhotoReport && <PhotoReportContent photoReports={service.photoReports!} onViewImage={(url) => { setViewingImageUrl(url); setIsImageViewerOpen(true); }} />}
-                    </TabsContent>
-                </div>
-            </Tabs>
+            <ServiceDocumentContent
+              record={adaptedRecord}
+              onSignClick={handleSignClick}
+              isSigning={isSigning}
+            />
         </div>
         
         <SignatureDialog 
@@ -435,12 +141,6 @@ export default function PublicServicePage() {
             onOpenChange={(isOpen) => !isOpen && setSignatureType(null)} 
             onSave={handleSaveSignature}
         />
-        
-        <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-            <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
-                {viewingImageUrl && (<div className="relative aspect-video w-full"><Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill style={{ objectFit: 'contain' }} sizes="(max-width: 768px) 100vw, 1024px" crossOrigin="anonymous"/></div>)}
-            </DialogContent>
-        </Dialog>
      </>
   );
 }

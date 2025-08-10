@@ -1,22 +1,17 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
-import { Loader2, ShieldAlert, Eye, Wrench, ShieldCheck, Camera, Download } from 'lucide-react';
-import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
+import { Loader2, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ServiceSheetContent } from '@/components/service-sheet-content';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import Image from 'next/image';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
 import { savePublicDocument } from '@/lib/public-document';
+import ServiceDocumentContent from '@/components/public-service-sheet';
+import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 
 export default function PublicServicePage() {
   const params = useParams();
@@ -24,16 +19,11 @@ export default function PublicServicePage() {
   const { toast } = useToast();
 
   const [service, setService] = useState<ServiceRecord | null | undefined>(undefined);
-  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   const [isSigning, setIsSigning] = useState(false);
   const [signatureType, setSignatureType] = useState<'reception' | 'delivery' | null>(null);
-  
-  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
-  
+
   useEffect(() => {
     if (!publicId || !db) {
       setError("Enlace inválido o la base de datos no está disponible.");
@@ -44,10 +34,7 @@ export default function PublicServicePage() {
     
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
-            const data = docSnap.data();
-            setService(data as ServiceRecord);
-            setVehicle(data.vehicle as Vehicle); // Vehicle data is embedded
-            setWorkshopInfo(data.workshopInfo as WorkshopInfo);
+            setService(docSnap.data() as ServiceRecord);
             setError(null);
         } else {
             setError(`El documento con ID "${publicId}" no fue encontrado.`);
@@ -74,7 +61,6 @@ export default function PublicServicePage() {
         [fieldToUpdate]: signatureDataUrl,
       };
 
-      // Use the new centralized function to save the signature to the public collection
       const result = await savePublicDocument('service', dataToSave);
 
       if (result.success) {
@@ -88,101 +74,64 @@ export default function PublicServicePage() {
       setSignatureType(null);
   };
 
-
-  const showOrder = service && service.status !== 'Cotizacion' && service.status !== 'Agendado';
-  const showQuote = service && (service.status === 'Cotizacion' || service.status === 'Agendado');
-  const showChecklist = service && !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
-  const showPhotoReport = service && !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
-
-  const tabs = [];
-  if (showQuote) tabs.push({ value: 'quote', label: 'Cotización', icon: Eye });
-  if (showOrder) tabs.push({ value: 'order', label: 'Orden', icon: Wrench });
-  if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión', icon: ShieldCheck });
-  if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico', icon: Camera });
-
-  const defaultTabValue = service && (service.status === 'Cotizacion' || service.status === 'Agendado') ? 'quote' : 'order';
-  const [activeTab, setActiveTab] = useState(defaultTabValue);
-  
-  useEffect(() => {
-    setActiveTab(defaultTabValue);
-  }, [defaultTabValue]);
-
-
-  const gridColsClass = 
-    tabs.length === 4 ? 'grid-cols-4' :
-    tabs.length === 3 ? 'grid-cols-3' :
-    tabs.length === 2 ? 'grid-cols-2' :
-    'grid-cols-1';
-
   if (service === undefined) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
 
   if (!service || error) {
     return (
       <div className="container mx-auto py-8">
-        <Card className="max-w-xl mx-auto text-center">
-          <CardHeader>
-            <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-            <CardTitle className="text-2xl font-bold">Error al Cargar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{error || "No se pudo cargar el documento del servicio."}</p>
-          </CardContent>
-        </Card>
+        <Card className="max-w-xl mx-auto text-center"><CardHeader><ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" /><CardTitle className="text-2xl font-bold">Error al Cargar</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">{error || "No se pudo cargar el documento del servicio."}</p></CardContent></Card>
       </div>
     );
   }
 
+  const vehicle = service?.vehicle as Vehicle | undefined;
+  const workshopInfo = service?.workshopInfo as WorkshopInfo | undefined;
+
+  const adaptedRecord = {
+      id: service.id,
+      status: service.status === 'En Taller' ? 'EN_TALLER' : service.status === 'Entregado' ? 'ENTREGADO' : 'AGENDADO',
+      serviceDate: service.serviceDate,
+      appointmentDate: service.appointmentDateTime,
+      isPublicView: true,
+      vehicle: {
+        label: vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'Vehículo',
+        plates: vehicle?.licensePlate,
+      },
+      customerName: service.customerName,
+      workshopInfo: workshopInfo,
+      serviceAdvisorName: service.serviceAdvisorName,
+      serviceAdvisorSignatureDataUrl: service.serviceAdvisorSignatureDataUrl,
+      serviceItems: service.serviceItems,
+      quoteItems: service.status === 'Cotizacion' ? service.serviceItems : [],
+      reception: {
+        at: service.receptionDateTime,
+        customerSignatureDataUrl: service.customerSignatureReception,
+      },
+      delivery: {
+        at: service.deliveryDateTime,
+        customerSignatureDataUrl: service.customerSignatureDelivery,
+      },
+      securityChecklist: [], // This will need to be mapped from the original service.safetyInspection
+  };
+
+  const handleSignClick = () => {
+      if(service.status === 'En Taller' && !service.customerSignatureReception) {
+          setSignatureType('reception');
+      } else if (service.status === 'Entregado' && !service.customerSignatureDelivery) {
+          setSignatureType('delivery');
+      }
+  }
+  
   return (
      <>
-        <div className="container mx-auto px-2 sm:px-4">
-            <div className="bg-white md:mx-auto my-4 md:shadow-lg printable-content print-format-letter">
-              <div className="p-4 print:hidden">
-                  <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
-                      <div>
-                          <CardTitle>Documento de Servicio</CardTitle>
-                          <CardDescription>Folio: {service.id}</CardDescription>
-                      </div>
-                       {tabs.length > 1 && (
-                            <TabsList className={cn('grid w-full h-auto p-0 bg-transparent gap-2', gridColsClass)}>
-                                {tabs.map(tab => (
-                                    <button
-                                      key={tab.value}
-                                      onClick={() => setActiveTab(tab.value)}
-                                      className={cn(
-                                        'flex-1 min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug flex items-center justify-center',
-                                        activeTab === tab.value
-                                          ? 'bg-primary text-primary-foreground shadow'
-                                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                      )}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
-                            </TabsList>
-                      )}
-                  </div>
-              </div>
-              <div id="printable-area-public" className="bg-white p-4 md:p-8">
-                  <ServiceSheetContent
-                      service={service}
-                      vehicle={vehicle || undefined}
-                      workshopInfo={workshopInfo || undefined}
-                      onViewImage={(url) => { setViewingImageUrl(url); setIsImageViewerOpen(true); }}
-                      isPublicView={true}
-                      showSignReception={!service.customerSignatureReception}
-                      showSignDelivery={!!service.customerSignatureReception && !service.customerSignatureDelivery}
-                      onSignClick={(type) => setSignatureType(type)}
-                      isSigning={isSigning}
-                      activeTab={activeTab}
-                  />
-              </div>
-            </div>
+        <div className="container mx-auto py-4 sm:py-8">
+            <ServiceDocumentContent
+              record={adaptedRecord}
+              onSignClick={handleSignClick}
+              isSigning={isSigning}
+            />
         </div>
         
         <SignatureDialog 
@@ -190,23 +139,6 @@ export default function PublicServicePage() {
             onOpenChange={(isOpen) => !isOpen && setSignatureType(null)} 
             onSave={handleSaveSignature}
         />
-        
-        <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-            <DialogContent className="max-w-4xl p-0 bg-transparent border-none shadow-none">
-                {viewingImageUrl && (
-                  <div className="relative aspect-video w-full">
-                    <Image
-                      src={viewingImageUrl}
-                      alt="Vista ampliada de evidencia"
-                      fill
-                      style={{ objectFit: 'contain' }}
-                      sizes="(max-width: 768px) 100vw, 1024px"
-                      crossOrigin="anonymous"
-                    />
-                  </div>
-                )}
-            </DialogContent>
-        </Dialog>
      </>
   );
 }

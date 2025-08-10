@@ -29,7 +29,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { cn } from '@/lib/utils';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { ServiceSheetContent } from '@/components/service-sheet-content';
+import ServiceDocumentContent from '@/components/public-service-sheet';
 import ReactDOMServer from 'react-dom/server';
 
 const cashTransactionSchema = z.object({
@@ -268,14 +268,34 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
             />
         );
     } else { // It's a ServiceRecord
+        const service = selectedDocument as ServiceRecord;
+        const adaptedRecord = {
+          id: service.id,
+          status: service.status === 'En Taller' ? 'EN_TALLER' : service.status === 'Entregado' ? 'ENTREGADO' : 'AGENDADO',
+          serviceDate: service.serviceDate,
+          appointmentDate: service.appointmentDateTime,
+          isPublicView: false,
+          vehicle: {
+            label: selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model} ${selectedVehicle.year}` : 'Vehículo',
+            plates: selectedVehicle?.licensePlate,
+          },
+          customerName: service.customerName,
+          workshopInfo: workshopInfo,
+          serviceAdvisorName: service.serviceAdvisorName,
+          serviceAdvisorSignatureDataUrl: service.serviceAdvisorSignatureDataUrl,
+          serviceItems: service.serviceItems,
+          reception: {
+            at: service.receptionDateTime,
+            customerSignatureDataUrl: service.customerSignatureReception,
+          },
+          delivery: {
+            at: service.deliveryDateTime,
+            customerSignatureDataUrl: service.customerSignatureDelivery,
+          },
+          securityChecklist: [],
+        };
         return ReactDOMServer.renderToString(
-            <ServiceSheetContent
-                ref={serviceSheetContentRef}
-                service={selectedDocument as ServiceRecord}
-                vehicle={selectedVehicle || undefined}
-                workshopInfo={workshopInfo || undefined}
-                activeTab="order"
-            />
+            <ServiceDocumentContent record={adaptedRecord} />
         );
     }
   };

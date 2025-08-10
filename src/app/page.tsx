@@ -82,7 +82,7 @@ export default function LandingPage() {
                       </Link>
                   ))}
                   <Button asChild size="lg" className="mt-8" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Link href="/login">Iniciar Sesión</Link>
+                    <Link href="/login">Registrarte / Iniciar Sesión</Link>
                   </Button>
                 </nav>
               </SheetContent>
