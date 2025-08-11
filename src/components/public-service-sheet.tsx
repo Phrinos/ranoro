@@ -134,46 +134,47 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const isQuote = status === 'Cotizacion' || status === 'Agendado';
 
     const renderHeader = () => (
-        <Card>
-          <CardHeader>
-            <CardTitle>ORDEN DE SERVICIO</CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-between text-sm">
+      <Card>
+        <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-              <p className="text-muted-foreground">Folio</p>
+              <CardTitle>ORDEN DE SERVICIO</CardTitle>
+            </div>
+            <div className="text-left sm:text-right">
+              <p className="text-sm text-muted-foreground">Folio</p>
               <p className="font-semibold">{id}</p>
             </div>
-            <div className="text-right">
-              <p className="text-muted-foreground">Fecha</p>
+            <div className="text-left sm:text-right">
+              <p className="text-sm text-muted-foreground">Fecha</p>
               <p className="font-semibold">{formattedServiceDate}</p>
             </div>
-          </CardContent>
-        </Card>
+        </CardHeader>
+      </Card>
     );
 
     const renderClientInfo = () => (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center gap-4">
-            <User className="w-8 h-8 text-muted-foreground"/>
+          <CardHeader className="flex flex-row items-center gap-4 p-4">
+            <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
             <div>
-              <CardTitle>Cliente</CardTitle>
-              <CardDescription>Información del propietario</CardDescription>
+              <CardTitle className="text-base">Cliente</CardTitle>
+              <CardDescription className="text-xs">Información del propietario</CardDescription>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <p className="font-semibold">{capitalizeWords(customerName || '')}</p>
+            <p className="text-sm text-muted-foreground">{vehicle?.ownerPhone || 'Teléfono no disponible'}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center gap-4">
-             <CarIcon className="w-8 h-8 text-muted-foreground"/>
+          <CardHeader className="flex flex-row items-center gap-4 p-4">
+             <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
             <div>
-              <CardTitle>Vehículo</CardTitle>
-              <CardDescription>Datos del vehículo</CardDescription>
+              <CardTitle className="text-base">Vehículo</CardTitle>
+              <CardDescription className="text-xs">Datos del vehículo</CardDescription>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
              <p className="font-semibold">{vehicle?.label || 'N/A'}</p>
              <p className="text-muted-foreground">{vehicle?.plates || 'N/A'}</p>
           </CardContent>
