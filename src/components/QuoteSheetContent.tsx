@@ -21,7 +21,7 @@ const initialWorkshopInfo: WorkshopInfo = {
 };
 
 
-export const QuoteSheetContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecord }>(({ quote }, ref) => {
+export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecord }>(({ quote }, ref) => {
     
     const vehicle = quote.vehicle || null;
     const workshopInfo = quote.workshopInfo || { name: 'Ranoro' };
@@ -59,7 +59,10 @@ export const QuoteSheetContent = React.forwardRef<HTMLDivElement, { quote: Quote
                 <div className="text-left sm:text-right text-sm">
                   <p className="text-muted-foreground">Fecha</p>
                   <p className="font-semibold">{formattedQuoteDate}</p>
-                   <p className="text-xs text-muted-foreground">Válida hasta: {validityDate}</p>
+                   <p className="text-xs text-muted-foreground mt-1">
+                      <span className="font-semibold">Válida hasta:</span>{' '}
+                      <Badge variant="destructive">{validityDate}</Badge>
+                   </p>
                 </div>
             </CardHeader>
         </Card>
@@ -114,6 +117,21 @@ export const QuoteSheetContent = React.forwardRef<HTMLDivElement, { quote: Quote
                                 <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
                             )}
                         </div>
+                        <Separator className="my-4"/>
+                        <div className="text-xs text-muted-foreground space-y-2">
+                            <p>{termsText}</p>
+                        </div>
+                         <div className="mt-4 pt-4 border-t flex flex-col items-center text-center">
+                            {quote.serviceAdvisorSignatureDataUrl && (
+                                <div className="p-2 bg-muted/50 flex items-center justify-center min-h-[60px] max-w-[112px] mx-auto">
+                                    <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width="112" height="56" className="mx-auto object-contain" />
+                                </div>
+                            )}
+                            <div className="pt-1">
+                                <p className="font-semibold">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
+                                <p className="text-xs text-muted-foreground">ASESOR DE SERVICIO</p>
+                            </div>
+                         </div>
                     </CardContent>
                 </Card>
             </div>
@@ -136,35 +154,9 @@ export const QuoteSheetContent = React.forwardRef<HTMLDivElement, { quote: Quote
                         </div>
                     </CardContent>
                 </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="text-base">Asesor y Condiciones</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center space-y-4">
-                        {quote.serviceAdvisorSignatureDataUrl && (
-                            <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center min-h-[60px] max-w-[112px] mx-auto">
-                                <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width="112" height="56" className="mx-auto object-contain" />
-                            </div>
-                        )}
-                        <div className="pt-1">
-                            <p className="font-semibold">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
-                            <p className="text-xs text-muted-foreground">ASESOR DE SERVICIO</p>
-                        </div>
-                    </CardContent>
-                </Card>
             </div>
         </div>
-        <Card>
-            <CardHeader><CardTitle className="text-base">Términos y Condiciones</CardTitle></CardHeader>
-            <CardContent className="text-xs text-muted-foreground space-y-2">
-                <p>
-                    <span className="font-semibold text-foreground">Válida hasta:</span>{' '}
-                    <Badge variant="destructive">{validityDate}</Badge>
-                </p>
-                <p>{termsText}</p>
-            </CardContent>
-        </Card>
       </div>
     );
 });
-QuoteSheetContent.displayName = "QuoteSheetContent";
+QuoteContent.displayName = "QuoteContent";
