@@ -50,79 +50,78 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
 
     return (
         <div className="space-y-6" ref={ref}>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Trabajos a realizar</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {items.map((item, index) => (
-                            <div key={item.id || index} className="p-4 border rounded-lg bg-background">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                        <p className="font-semibold">{item.name}</p>
-                                        {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
-                                            </p>
-                                        )}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                <div className="lg:col-span-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Trabajos a realizar</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {items.map((item, index) => (
+                                    <div key={item.id || index} className="p-4 border rounded-lg bg-background">
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex-1">
+                                                <p className="font-semibold">{item.name}</p>
+                                                {item.suppliesUsed && item.suppliesUsed.length > 0 && (
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <p className="font-bold text-lg">{formatCurrency(item.price)}</p>
+                                        </div>
                                     </div>
-                                    <p className="font-bold text-lg">{formatCurrency(item.price)}</p>
+                                ))}
+                                {items.length === 0 && (
+                                    <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="lg:col-span-1 space-y-6">
+                    <Card>
+                        <CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Subtotal:</span>
+                                <span className="font-medium">{formatCurrency(subTotal)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">IVA (16%):</span>
+                                <span className="font-medium">{formatCurrency(taxAmount)}</span>
+                            </div>
+                            <Separator className="my-2"/>
+                            <div className="flex justify-between items-center font-bold text-base">
+                                <span>Total a Pagar:</span>
+                                <span className="text-primary">{formatCurrency(totalCost)}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">Asesor y Condiciones</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-center space-y-4">
+                            {quote.serviceAdvisorSignatureDataUrl && (
+                                <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center min-h-[60px] max-w-[112px] mx-auto">
+                                    <Image src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={112} height={56} style={{ objectFit: 'contain' }} className="mx-auto" />
                                 </div>
+                            )}
+                            <div className="pt-1">
+                                <p className="font-semibold">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
+                                <p className="text-xs text-muted-foreground">ASESOR DE SERVICIO</p>
                             </div>
-                        ))}
-                         {items.length === 0 && (
-                             <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
-                         )}
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Asesor de Servicio</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center space-y-3">
-                         {quote.serviceAdvisorSignatureDataUrl && (
-                             <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center min-h-[60px] max-w-[112px] mx-auto">
-                                <Image src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={112} height={56} style={{ objectFit: 'contain' }} className="mx-auto" />
+                            <Separator />
+                             <div className="text-xs text-muted-foreground text-left space-y-2">
+                                <p><span className="font-semibold text-foreground">Válida hasta:</span> <Badge variant="destructive">{validityDate}</Badge></p>
+                                <p>{termsText}</p>
                             </div>
-                         )}
-                         <p className="font-semibold pt-2">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle>Resumen de Costos</CardTitle></CardHeader>
-                    <CardContent className="space-y-2 text-sm">
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Subtotal:</span>
-                            <span className="font-medium">{formatCurrency(subTotal)}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">IVA (16%):</span>
-                            <span className="font-medium">{formatCurrency(taxAmount)}</span>
-                        </div>
-                        <Separator className="my-2"/>
-                        <div className="flex justify-between items-center font-bold text-base">
-                            <span>Total a Pagar:</span>
-                            <span className="text-primary">{formatCurrency(totalCost)}</span>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
-            <Card>
-              <CardHeader>
-                  <CardTitle>Términos y Condiciones</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground space-y-3">
-                  <div className="flex items-center gap-2">
-                      <span className="font-semibold">Válida hasta:</span>
-                      <Badge variant="destructive">{validityDate}</Badge>
-                  </div>
-                  <p>{termsText}</p>
-              </CardContent>
-          </Card>
         </div>
     );
 });
@@ -139,6 +138,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const effectiveWorkshopInfo = { ...{ name: 'Ranoro' }, ...workshopInfo };
     const formattedServiceDate = serviceDate && isValid(parseDate(serviceDate)!) ? format(parseDate(serviceDate)!, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    const quoteDate = parseDate(serviceDate) || new Date();
+    const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, 15), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     
     const isQuote = status === 'Cotizacion' || status === 'Agendado';
 
@@ -155,6 +156,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             <div className="text-left sm:text-right">
               <p className="text-sm text-muted-foreground">Fecha</p>
               <p className="font-semibold">{formattedServiceDate}</p>
+              <p className="text-xs text-muted-foreground">Válida hasta: {validityDate}</p>
             </div>
         </CardHeader>
       </Card>
