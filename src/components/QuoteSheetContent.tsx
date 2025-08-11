@@ -8,13 +8,11 @@ import React, { useMemo } from 'react';
 import { cn, formatCurrency, capitalizeWords } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon, Link as LinkIcon } from 'lucide-react';
+import { User, Car as CarIcon } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
-import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
-
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -22,7 +20,6 @@ const initialWorkshopInfo: WorkshopInfo = {
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
   logoUrl: "/ranoro-logo.png",
 };
-
 
 export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecord }>(({ quote }, ref) => {
     
@@ -117,7 +114,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                             )}
                         </div>
                          <div className="text-center text-sm font-semibold mt-4 pt-4 border-t">
-                            Cotizacion Valida hasta el {validityDate}.
+                            <p>Cotización Válida hasta el {validityDate}.</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -152,7 +149,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                    <div className="pt-4 mt-4 border-t space-y-2">
                         <div className="flex items-center gap-4">
                             <a href="https://www.ranoro.mx" target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-8 w-8 text-muted-foreground hover:text-primary"/></a>
-                            <a href="https://wa.me/524491425323" target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-8 w-8"/></a>
+                            <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-8 w-8"/></a>
                             <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-8 w-8"/></a>
                             <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-8 w-8"/></a>
                         </div>
@@ -177,9 +174,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                               <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-[80px]" />
                             ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
                         </div>
-                        <div className="pt-1 border-t border-dashed w-full max-w-[200px] mt-1 text-center mx-auto">
-                            <p className="font-semibold text-sm">FIRMA DE CONFORMIDAD</p>
-                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -188,4 +182,3 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
     );
 });
 QuoteContent.displayName = "QuoteContent";
-
