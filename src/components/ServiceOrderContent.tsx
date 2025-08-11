@@ -1,258 +1,191 @@
 
 "use client";
 
-import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
-import { format, parseISO, isValid, addDays } from 'date-fns';
+import type { QuoteRecord, WorkshopInfo } from '@/types';
+import { format, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
-import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency, capitalizeWords } from "@/lib/utils";
-import { Card, CardContent } from '@/components/ui/card';
-import { Check, Eye, Signature, Loader2, AlertTriangle, CalendarCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Image from 'next/image';
+import { cn, formatCurrency, capitalizeWords } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { User, Car as CarIcon } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
-import { GARANTIA_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
 import Link from 'next/link';
+import { Icon } from '@iconify/react';
+import Image from 'next/image';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
-  addressLine2: "Jardines de la Concepcion, C.P. 20267",
-  cityState: "Aguascalientes, Ags.",
   logoUrl: "/ranoro-logo.png",
-  footerLine1: "¡Gracias por su preferencia!",
-  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
 
-interface ServiceOrderContentProps {
-  service: ServiceRecord;
-  onViewImage: (url: string) => void;
-  isPublicView?: boolean;
-  showSignReception?: boolean;
-  showSignDelivery?: boolean;
-  onSignClick?: (type: 'reception' | 'delivery') => void;
-  isSigning?: boolean;
-  activeTab: string;
-}
+export const ServiceOrderContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecord }>(({ quote }, ref) => {
+    
+    const vehicle = quote.vehicle || null;
+    const workshopInfo = quote.workshopInfo || { name: 'Ranoro' };
+    const IVA_RATE = 0.16;
 
-export const ServiceOrderContent = React.forwardRef<HTMLDivElement, ServiceOrderContentProps>(
-  ({ service, onViewImage, isPublicView, showSignReception, showSignDelivery, onSignClick, isSigning, activeTab }, ref) => {
-    
-    const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...service.workshopInfo };
-    const vehicle = service.vehicle as Vehicle | undefined;
-    
-    const serviceDate = parseDate(service.receptionDateTime) || parseDate(service.serviceDate);
-    const formattedServiceDate = serviceDate && isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
+    const quoteDate = parseDate(quote.serviceDate) || new Date();
+    const formattedQuoteDate = isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, 15), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
-    const fuelLevelMap: Record<string, number> = {
-        'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50,
-        '5/8': 62.5, '3/4': 75, '7/8': 87.5, 'Lleno': 100,
-    };
+    const items = useMemo(() => (quote?.serviceItems ?? []).map(it => ({
+        ...it,
+        price: Number(it?.price) || 0,
+    })), [quote?.serviceItems]);
 
-    const fuelPercentage = service.fuelLevel ? fuelLevelMap[service.fuelLevel] ?? 0 : 0;
-    const getFuelColorClass = (percentage: number) => {
-        if (percentage <= 25) return "bg-red-500";
-        if (percentage <= 50) return "bg-orange-400";
-        if (percentage <= 87.5) return "bg-yellow-400";
-        return "bg-green-500";
-    };
-    const fuelColor = getFuelColorClass(fuelPercentage);
+    const { subTotal, taxAmount, totalCost } = useMemo(() => {
+        const total = items.reduce((acc, it) => acc + it.price, 0);
+        const sub = total / (1 + IVA_RATE);
+        const tax = total - sub;
+        return { subTotal: sub, taxAmount: tax, totalCost: total };
+    }, [items]);
     
-    const driver: Driver | undefined = undefined; // Placeholder
-    const driverDebt = { totalDebt: 0 }; // Placeholder
-    
-    const shouldShowNextService = service.nextServiceInfo && service.status === 'Entregado';
+    const termsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.`;
 
     return (
-      <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm h-full w-full print:p-0">
-        <div className="flex flex-col min-h-full relative print:p-0">
-          {service.status === 'Cancelado' && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-              <span className="text-red-500 text-7xl md:text-9xl font-black opacity-20 transform -rotate-12 select-none">
-                CANCELADO
-              </span>
-            </div>
-          )}
-          <header className="mb-2 pb-2 border-b-2 border-black">
-            <div className="flex justify-between items-start gap-2">
-              <div className="relative w-[150px] h-[50px]">
-                  <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" priority />
-              </div>
-              <div className="text-right">
-                <h1 className="text-xl font-bold">ORDEN DE SERVICIO</h1>
-                <p className="font-mono text-base">Folio: <span className="font-bold">{service.id}</span></p>
-              </div>
-            </div>
-            <div className="flex justify-between items-end mt-1 text-xs">
-               <div className="space-y-0 leading-tight">
-                  <p className="font-bold text-base">{effectiveWorkshopInfo.name}</p>
-                  <p>{effectiveWorkshopInfo.addressLine1}</p>
-                  {effectiveWorkshopInfo.addressLine2 && <p>{effectiveWorkshopInfo.addressLine2}</p>}
-                  <p>{effectiveWorkshopInfo.cityState}</p>
-                  <p>Tel: {effectiveWorkshopInfo.phone}</p>
-               </div>
-               <div className="text-right text-[10px]">
-                  <p><span className="font-bold">Fecha de Recepción:</span> {formattedServiceDate}</p>
-               </div>
-            </div>
-          </header>
-
-          <main className="flex-grow">
-             <section className="mb-4 text-sm border-b-2 border-black pb-2">
-              <p className="font-bold text-lg">{capitalizeWords(vehicle?.ownerName || '')}</p>
-              <p className="font-semibold text-base">{vehicle?.ownerPhone || ''}</p>
-              <div className="mt-2 flex justify-between items-end">
-                  <p className="font-bold text-lg">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                  <p className="font-bold text-xl px-2 py-1 bg-gray-200 rounded-md">{vehicle?.licensePlate || 'N/A'}</p>
-              </div>
-            </section>
-
-            {driverDebt.totalDebt > 0 && (
-              <div className="my-2 p-2 border-2 border-red-500 bg-red-50 rounded-md text-red-800">
-                  <h4 className="font-bold text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4"/>AVISO DE ADEUDO</h4>
-                  <p className="text-xs mt-1">
-                      Este conductor presenta un adeudo con la flotilla por un total de <strong>{formatCurrency(driverDebt.totalDebt)}</strong>.
-                  </p>
-              </div>
-            )}
-
-
-            <section className="border-2 border-black rounded-md overflow-hidden mb-2">
-                <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">TRABAJOS A REALIZAR</h3>
-                <div className="p-2 space-y-1 text-xs min-h-[8rem]">
-                  {service.serviceItems && service.serviceItems.length > 0 ? (
-                    service.serviceItems.map((item, index) => {
-                        const isLastItem = index === service.serviceItems.length - 1;
-                        return (
-                            <div key={index} className={cn("pb-1", !isLastItem && "border-b border-dashed border-gray-300")}>
-                                <div className="flex justify-between items-center font-bold text-sm">
-                                    <p>{item.name}</p>
-                                    <p>{formatCurrency(item.price)}</p>
-                                </div>
-                                {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                                    <ul className="list-disc list-inside pl-2 text-gray-600">
-                                        {item.suppliesUsed.map((supply, sIndex) => (
-                                            <li key={sIndex}>{supply.quantity} x {supply.supplyName}</li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-                        )
-                    })
-                  ) : (
-                    <p className="text-gray-600 italic">No se especificaron trabajos.</p>
-                  )}
+      <div ref={ref} className="space-y-6">
+        <Card>
+            <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div className="relative w-[150px] h-[50px] mb-4 sm:mb-0">
+                    <Image src={initialWorkshopInfo.logoUrl} alt={`${initialWorkshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" />
                 </div>
-            </section>
-            
-            <section className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-2 text-xs">
-                <div className="border-2 border-black rounded-md overflow-hidden md:col-span-3 flex flex-col">
-                   <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">CONDICIONES DEL VEHÍCULO</h3>
-                   <p className="whitespace-pre-wrap p-2 text-base flex-grow">{service.vehicleConditions || 'No especificado.'}</p>
+                <div className="text-center">
+                    <h1 className="text-xl font-bold">COTIZACION DE SERVICIO</h1>
+                    <p className="text-sm text-muted-foreground">Folio: <span className="font-semibold">{quote.id}</span></p>
                 </div>
-                <div className="border-2 border-black rounded-md overflow-hidden md:col-span-1 flex flex-col">
-                    <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">PERTENENCIAS</h3>
-                    <p className="whitespace-pre-wrap p-2 text-base flex-grow">{service.customerItems || 'No especificado.'}</p>
+                <div className="text-left sm:text-right text-sm">
+                  <p className="text-muted-foreground">Fecha</p>
+                  <p className="font-semibold">{formattedQuoteDate}</p>
                 </div>
-                <div className="border-2 border-black rounded-md overflow-hidden md:col-span-1 flex flex-col justify-center min-h-[60px]">
-                    <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">COMBUSTIBLE</h3>
-                    <div className="flex-grow flex flex-col items-center justify-center p-2">
-                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300">
-                          <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
-                      </div>
-                      <div className="w-full flex justify-between text-base mt-0.5 px-0.5">
-                          <span>E</span>
-                          <span>F</span>
-                      </div>
-                      <span className="font-semibold text-sm mt-1">{service.fuelLevel || 'N/A'}</span>
-                    </div>
-                </div>
-            </section>
-             <section className="mt-auto pt-2 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                  <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px] col-span-1">
-                      <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ASESOR</h3>
-                      <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
-                          {service.serviceAdvisorSignatureDataUrl && (
-                              <div className="relative w-full h-full">
-                                  <Image
-                                    src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)}
-                                    alt="Firma del asesor"
-                                    fill
-                                    style={{ objectFit: 'contain' }}
-                                    crossOrigin="anonymous"
-                                    priority
-                                  />
-                              </div>
-                          )}
-                      </div>
-                      <div className="w-full text-center mt-auto pt-1 leading-tight">
-                          <p className="font-bold text-sm leading-tight">{capitalizeWords(service.serviceAdvisorName || '')}</p>
-                      </div>
-                  </div>
-                  <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px]">
-                      <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ENTRADA AL TALLER</h3>
-                      <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
-                          {service.customerSignatureReception ? (
-                              <div className="relative w-full h-full">
-                                  <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" fill style={{objectFit: 'contain'}} unoptimized crossOrigin="anonymous" priority />
-                              </div>
-                          ) : (
-                              isPublicView && showSignReception && onSignClick && (
-                                  <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="mb-2">
-                                      {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
-                                      Firmar Aquí
-                                  </Button>
-                              )
-                          )}
-                      </div>
-                      <div className="w-full text-center mt-auto pt-1 leading-tight">
-                          <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
-                          <p className="text-[7px] text-gray-600">
-                            Al firmar, acepto los <Link href="/legal/terminos" target="_blank" className="underline">Términos y Condiciones</Link> y el <Link href="/legal/privacidad" target="_blank" className="underline">Aviso de Privacidad</Link> para la realización del servicio.
-                          </p>
-                      </div>
-                  </div>
-                  <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px]">
-                      <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">SALIDA DEL TALLER</h3>
-                      <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
-                          {service.customerSignatureDelivery ? (
-                              <div className="relative w-full h-full">
-                              <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" fill style={{objectFit: 'contain'}} unoptimized crossOrigin="anonymous" priority />
-                              </div>
-                          ) : (
-                              isPublicView && showSignDelivery && onSignClick && (
-                                  <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="bg-green-600 hover:bg-green-700 h-8 text-xs">
-                                      {isSigning ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <Signature className="mr-2 h-3 w-3"/>}
-                                      Firmar de Conformidad
-                                  </Button>
-                              )
-                          )}
-                      </div>
-                      <div className="w-full text-center mt-auto pt-1 leading-tight">
-                          <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
-                          <p className="text-[7px] text-gray-600">{GARANTIA_CONDICIONES_TEXT}</p>
-                      </div>
-                  </div>
-             </section>
-          </main>
-          
-          <footer className="mt-auto pt-2 text-xs">
-             <section className="mt-2 text-center text-gray-500 text-[10px] space-x-4">
-                <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
-                <span>|</span>
-                <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
-             </section>
-             {effectiveWorkshopInfo.fixedFooterText && (
-              <div className="text-center mt-2 pt-2 border-t border-gray-200">
-                <p className="text-[10px] text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
-              </div>
-            )}
-          </footer>
+            </CardHeader>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center gap-4 p-4">
+                <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
+                <CardTitle className="text-base">Cliente</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <p className="font-semibold">{capitalizeWords(quote.customerName || '')}</p>
+                <p className="text-sm text-muted-foreground">{quote.customerPhone || 'Teléfono no disponible'}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center gap-4 p-4">
+                 <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
+                 <CardTitle className="text-base">Vehículo</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                 <p className="font-semibold">{vehicle?.label || 'N/A'}</p>
+                 <p className="text-muted-foreground">{vehicle?.plates || 'N/A'}</p>
+              </CardContent>
+            </Card>
         </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div className="lg:col-span-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Trabajos a realizar</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {items.map((item, index) => (
+                                <div key={item.id || index} className="p-4 border rounded-lg bg-background">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                            <p className="font-semibold">{item.name}</p>
+                                            {item.suppliesUsed && item.suppliesUsed.length > 0 && (
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <p className="font-bold text-lg">{formatCurrency(item.price)}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {items.length === 0 && (
+                                <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
+                            )}
+                        </div>
+                         <div className="text-left text-xs text-muted-foreground mt-4 pt-4 border-t">
+                            <p>{termsText}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="lg:col-span-1 space-y-6">
+                <Card>
+                    <CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Subtotal:</span>
+                            <span className="font-medium">{formatCurrency(subTotal)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">IVA (16%):</span>
+                            <span className="font-medium">{formatCurrency(taxAmount)}</span>
+                        </div>
+                        <Separator className="my-2"/>
+                        <div className="flex justify-between items-center font-bold text-base">
+                            <span>Total a Pagar:</span>
+                            <span className="text-primary">{formatCurrency(totalCost)}</span>
+                        </div>
+                         <div className="text-center text-sm font-semibold mt-4 pt-4 border-t">
+                            <p>Cotización Válida hasta el {validityDate}.</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+
+        <Card>
+          <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <div className="flex items-center gap-4">
+               <div className="flex-shrink-0 text-center">
+                  <div className="p-2 bg-white flex items-center justify-center min-h-[80px] w-[160px] border rounded-md">
+                      {quote.serviceAdvisorSignatureDataUrl ? (
+                        <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-[80px]" />
+                      ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
+                  </div>
+                  <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor'}</p>
+                </div>
+                <div className="text-left">
+                  <h4 className="font-bold text-lg">¡Gracias por su preferencia!</h4>
+                  <p className="text-muted-foreground mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
+                  <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer">
+                    <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 text-green-800 font-semibold hover:bg-green-200 transition-colors">
+                      <Icon icon="logos:whatsapp-icon" className="h-5 w-5"/>
+                      <span>+52 449-142-5323</span>
+                    </div>
+                  </a>
+                </div>
+            </div>
+          </CardContent>
+        </Card>
+
+         <Card>
+            <CardContent className="p-4">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <a href="https://www.ranoro.mx" target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-10 w-10 text-muted-foreground hover:text-primary"/></a>
+                        <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-10 w-10"/></a>
+                        <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-10 w-10"/></a>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-x-4">
+                        <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+                        <span>|</span>
+                        <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
+                    </div>
+               </div>
+            </CardContent>
+         </Card>
       </div>
     );
-  }
-);
+});
 ServiceOrderContent.displayName = "ServiceOrderContent";
