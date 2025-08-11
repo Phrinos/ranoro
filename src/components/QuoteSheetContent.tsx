@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { User, Car as CarIcon } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 
 const initialWorkshopInfo: WorkshopInfo = {
@@ -75,7 +76,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <p className="font-semibold">{capitalizeWords(quote.customerName || '')}</p>
-                <p className="text-sm text-muted-foreground">{vehicle?.ownerPhone || 'Teléfono no disponible'}</p>
+                <p className="text-sm text-muted-foreground">{quote.customerPhone || 'Teléfono no disponible'}</p>
               </CardContent>
             </Card>
             <Card>
@@ -117,21 +118,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                                 <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
                             )}
                         </div>
-                        <Separator className="my-4"/>
-                        <div className="text-xs text-muted-foreground space-y-2">
-                            <p>{termsText}</p>
-                        </div>
-                         <div className="mt-4 pt-4 border-t flex flex-col items-center text-center">
-                            {quote.serviceAdvisorSignatureDataUrl && (
-                                <div className="p-2 bg-muted/50 flex items-center justify-center min-h-[60px] max-w-[112px] mx-auto">
-                                    <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width="112" height="56" className="mx-auto object-contain" />
-                                </div>
-                            )}
-                            <div className="pt-1">
-                                <p className="font-semibold">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
-                                <p className="text-xs text-muted-foreground">ASESOR DE SERVICIO</p>
-                            </div>
-                         </div>
                     </CardContent>
                 </Card>
             </div>
@@ -156,6 +142,31 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                 </Card>
             </div>
         </div>
+
+        <Card>
+            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div className="md:col-span-2 text-xs text-muted-foreground space-y-2">
+                    <p className="font-semibold text-foreground">Términos y Condiciones</p>
+                    <p>{termsText}</p>
+                </div>
+                <div className="md:col-span-1 flex flex-col items-center text-center">
+                    {quote.serviceAdvisorSignatureDataUrl && (
+                        <div className="p-2 bg-muted/50 flex items-center justify-center min-h-[60px] w-full max-w-[150px]">
+                            <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain" />
+                        </div>
+                    )}
+                    <div className="pt-2 border-t border-dashed w-full max-w-[200px]">
+                        <p className="font-semibold text-sm">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
+                        <p className="text-xs text-muted-foreground">ASESOR DE SERVICIO</p>
+                    </div>
+                </div>
+            </CardContent>
+             <div className="border-t p-2 text-center text-xs text-muted-foreground space-x-4">
+                <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+                <span>|</span>
+                <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
+            </div>
+        </Card>
       </div>
     );
 });
