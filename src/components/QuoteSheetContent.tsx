@@ -8,7 +8,7 @@ import React, { useMemo } from 'react';
 import { cn, formatCurrency, capitalizeWords } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon, FileText } from 'lucide-react';
+import { User, Car as CarIcon } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
@@ -114,6 +114,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                                 <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
                             )}
                         </div>
+                        <p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{termsText}</p>
                     </CardContent>
                 </Card>
             </div>
