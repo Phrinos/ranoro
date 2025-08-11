@@ -20,7 +20,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem } from "@/types";
+import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem, ServiceItem } from "@/types";
 import { cleanObjectForFirestore, parseDate } from '../forms';
 import { IVA_RATE } from '../money';
 import { logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '../placeholder-data';

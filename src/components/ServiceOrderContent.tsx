@@ -34,7 +34,8 @@ export const ServiceOrderContent = React.forwardRef<HTMLDivElement, ServiceOrder
     
     const vehicle = service.vehicle || null;
     const workshopInfo = service.workshopInfo || initialWorkshopInfo;
-    const [activeTab, setActiveTab] = useState("original");
+    const isQuoteOrScheduled = service.status === 'Cotizacion' || service.status === 'Agendado';
+    const [activeTab, setActiveTab] = useState(isQuoteOrScheduled ? "original" : "detalles");
     const IVA_RATE = 0.16;
 
     const quoteDate = parseDate(service.serviceDate) || new Date();
@@ -52,10 +53,10 @@ export const ServiceOrderContent = React.forwardRef<HTMLDivElement, ServiceOrder
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
     
-    const originalItems = useMemo(() => (service?.originalQuoteItems ?? []).map(it => ({
+    const originalItems = useMemo(() => (service?.originalQuoteItems ?? service.serviceItems ?? []).map(it => ({
         ...it,
         price: Number(it?.price) || 0,
-    })), [service?.originalQuoteItems]);
+    })), [service?.originalQuoteItems, service?.serviceItems]);
 
     return (
       <div ref={ref} className="space-y-6">
@@ -109,7 +110,7 @@ export const ServiceOrderContent = React.forwardRef<HTMLDivElement, ServiceOrder
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="original">Cotización Original</TabsTrigger>
+                <TabsTrigger value="original">Cotización</TabsTrigger>
                 <TabsTrigger value="detalles">Detalles del Servicio</TabsTrigger>
                 <TabsTrigger value="revision">Revisión de Seguridad</TabsTrigger>
             </TabsList>

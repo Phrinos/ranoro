@@ -241,6 +241,7 @@ export interface ServiceRecord {
   technicianId: string;
   technicianName?: string;
   serviceItems: ServiceItem[];
+  originalQuoteItems?: ServiceItem[];
   subTotal: number; 
   taxAmount: number;
   totalCost: number;
