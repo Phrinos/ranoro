@@ -3,7 +3,7 @@
 
 import React from 'react';
 import type { ServiceRecord } from '@/types';
-import { QuoteSheetContent } from './QuoteSheetContent';
+import { QuoteContent } from './QuoteSheetContent';
 import { ServiceOrderContent } from './ServiceOrderContent';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,7 +26,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     };
 
     if (isQuoteOrScheduled) {
-      return <QuoteSheetContent ref={ref} quote={record} />;
+      return <QuoteContent ref={ref} quote={record} />;
     }
     
     return <ServiceOrderContent ref={ref} service={record} onViewImage={handleViewImage} isPublicView={record.isPublicView} onSignClick={onSignClick} isSigning={isSigning} activeTab={activeTab} />;
