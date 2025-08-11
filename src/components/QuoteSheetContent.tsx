@@ -113,8 +113,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                                 <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
                             )}
                         </div>
-                         <div className="text-center text-sm font-semibold mt-4 pt-4 border-t">
-                            <p>Cotización Válida hasta el {validityDate}.</p>
+                         <div className="text-left text-xs text-muted-foreground mt-4 pt-4 border-t">
+                            <p>{termsText}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -136,50 +136,55 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                             <span>Total a Pagar:</span>
                             <span className="text-primary">{formatCurrency(totalCost)}</span>
                         </div>
+                         <div className="text-center text-sm font-semibold mt-4 pt-4 border-t">
+                            <p>Cotización Válida hasta el {validityDate}.</p>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <Card className="lg:col-span-2">
-              <CardContent className="p-4">
-                  <h4 className="font-bold text-lg">Términos y Condiciones</h4>
-                  <p className="text-sm text-muted-foreground mt-2">{termsText}</p>
-                   <div className="pt-4 mt-4 border-t flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <a href="https://www.ranoro.mx" target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-8 w-8 text-muted-foreground hover:text-primary"/></a>
-                            <a href="https://wa.me/524491425323" target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-8 w-8"/></a>
-                            <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-8 w-8"/></a>
-                            <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-8 w-8"/></a>
-                        </div>
-                        <div className="text-xs text-muted-foreground space-x-4">
-                            <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
-                            <span>|</span>
-                            <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
-                        </div>
-                   </div>
-              </CardContent>
-            </Card>
-
-            <Card className="lg:col-span-1">
-                <CardContent className="p-4 flex flex-col items-center text-center">
-                     <div className="grid grid-cols-1 items-start gap-2 text-left w-full">
-                        <div className="mb-2">
-                            <h4 className="font-bold text-base">Asesor de Servicio</h4>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="p-2 bg-white flex items-center justify-center min-h-[60px] w-full border rounded-md">
-                                {quote.serviceAdvisorSignatureDataUrl ? (
-                                  <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-[80px]" />
-                                ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
-                            </div>
-                             <p className="font-semibold text-sm leading-tight">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
-                        </div>
+        <Card>
+          <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <div className="flex items-center gap-4">
+               <div className="flex-shrink-0 text-center">
+                  <div className="p-2 bg-white flex items-center justify-center min-h-[80px] w-[160px] border rounded-md">
+                      {quote.serviceAdvisorSignatureDataUrl ? (
+                        <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-[80px]" />
+                      ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
+                  </div>
+                  <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor'}</p>
+                </div>
+                <div className="text-left">
+                  <h4 className="font-bold text-lg">¡Gracias por su preferencia!</h4>
+                  <p className="text-muted-foreground mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
+                  <a href="https://wa.me/524491425323" target="_blank" rel="noopener noreferrer">
+                    <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 text-green-800 font-semibold hover:bg-green-200 transition-colors">
+                      <Icon icon="logos:whatsapp-icon" className="h-5 w-5"/>
+                      <span>+52 449-142-5323</span>
                     </div>
-                </CardContent>
-            </Card>
-        </div>
+                  </a>
+                </div>
+            </div>
+          </CardContent>
+        </Card>
+
+         <Card>
+            <CardContent className="p-4">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <a href="https://www.ranoro.mx" target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-10 w-10 text-muted-foreground hover:text-primary"/></a>
+                        <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-10 w-10"/></a>
+                        <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-10 w-10"/></a>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-x-4">
+                        <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+                        <span>|</span>
+                        <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
+                    </div>
+               </div>
+            </CardContent>
+         </Card>
       </div>
     );
 });
