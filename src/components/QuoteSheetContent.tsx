@@ -141,15 +141,15 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
             </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            <Card className="md:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <Card className="lg:col-span-2">
               <CardContent className="p-4">
-                  <h4 className="font-bold text-base">Términos y Condiciones</h4>
+                  <h4 className="font-bold text-lg">Términos y Condiciones</h4>
                   <p className="text-sm text-muted-foreground mt-2">{termsText}</p>
-                   <div className="pt-4 mt-4 border-t space-y-2">
+                   <div className="pt-4 mt-4 border-t flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <a href="https://www.ranoro.mx" target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-8 w-8 text-muted-foreground hover:text-primary"/></a>
-                            <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-8 w-8"/></a>
+                            <a href="https://wa.me/524491425323" target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-8 w-8"/></a>
                             <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-8 w-8"/></a>
                             <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-8 w-8"/></a>
                         </div>
@@ -162,17 +162,19 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
               </CardContent>
             </Card>
 
-            <Card className="md:col-span-1">
+            <Card className="lg:col-span-1">
                 <CardContent className="p-4 flex flex-col items-center text-center">
-                    <div className="grid grid-cols-1 items-start gap-2 text-left w-full">
+                     <div className="grid grid-cols-1 items-start gap-2 text-left w-full">
                         <div className="mb-2">
                             <h4 className="font-bold text-base">Asesor de Servicio</h4>
-                            <p className="font-semibold text-sm">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
                         </div>
-                        <div className="p-2 bg-white flex items-center justify-center min-h-[60px] w-full border rounded-md">
-                            {quote.serviceAdvisorSignatureDataUrl ? (
-                              <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-[80px]" />
-                            ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
+                        <div className="flex items-center gap-4">
+                            <div className="p-2 bg-white flex items-center justify-center min-h-[60px] w-full border rounded-md">
+                                {quote.serviceAdvisorSignatureDataUrl ? (
+                                  <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-[80px]" />
+                                ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
+                            </div>
+                             <p className="font-semibold text-sm leading-tight">{quote.serviceAdvisorName || 'Su asesor de confianza'}</p>
                         </div>
                     </div>
                 </CardContent>
