@@ -46,7 +46,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
     
-    const termsText = `No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.`;
+    const termsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.`;
 
     return (
         <div className="space-y-6" ref={ref}>
@@ -111,18 +111,18 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                     </CardContent>
                 </Card>
             </div>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Términos y Condiciones</CardTitle>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground space-y-3">
-                    <div className="flex items-center gap-2">
-                        <span className="font-semibold">Válida hasta:</span>
-                        <Badge variant="destructive">{validityDate}</Badge>
-                    </div>
-                    <p>Precios en MXN. {termsText}</p>
-                </CardContent>
-            </Card>
+            <Card>
+              <CardHeader>
+                  <CardTitle>Términos y Condiciones</CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground space-y-3">
+                  <div className="flex items-center gap-2">
+                      <span className="font-semibold">Válida hasta:</span>
+                      <Badge variant="destructive">{validityDate}</Badge>
+                  </div>
+                  <p>{termsText}</p>
+              </CardContent>
+          </Card>
         </div>
     );
 });
@@ -146,7 +146,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       <Card>
         <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-              <CardTitle>ORDEN DE SERVICIO</CardTitle>
+              <CardTitle>COTIZACION DE SERVICIO</CardTitle>
             </div>
             <div className="text-left sm:text-right">
               <p className="text-sm text-muted-foreground">Folio</p>
