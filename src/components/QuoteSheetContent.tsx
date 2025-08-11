@@ -60,10 +60,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                 <div className="text-left sm:text-right text-sm">
                   <p className="text-muted-foreground">Fecha</p>
                   <p className="font-semibold">{formattedQuoteDate}</p>
-                   <p className="text-xs text-muted-foreground mt-1">
+                   <div className="text-xs text-muted-foreground mt-1">
                       <span className="font-semibold">Válida hasta:</span>{' '}
                       <Badge variant="destructive">{validityDate}</Badge>
-                   </p>
+                   </div>
                 </div>
             </CardHeader>
         </Card>
@@ -171,3 +171,5 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
     );
 });
 QuoteContent.displayName = "QuoteContent";
+
+    
