@@ -13,6 +13,7 @@ import { parseDate } from '@/lib/forms';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
+import { Button } from '@/components/ui/button';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -43,7 +44,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
     
-    const termsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.`;
+    const termsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización...`;
 
     return (
       <div ref={ref} className="space-y-6">
@@ -53,8 +54,11 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                     <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" />
                 </div>
                 <div className="text-left sm:text-right">
-                    <h1 className="text-xl font-bold">Folio: {quote.id}</h1>
-                    <p className="text-sm text-muted-foreground">{formattedQuoteDate}</p>
+                    <h1 className="text-xl font-bold text-center">COTIZACION DE SERVICIO</h1>
+                    <p className="text-sm text-muted-foreground text-center">Folio: {quote.id}</p>
+                </div>
+                <div className="text-left sm:text-right">
+                  <p className="text-sm text-muted-foreground">{formattedQuoteDate}</p>
                 </div>
             </CardHeader>
         </Card>
@@ -82,15 +86,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
             </Card>
         </div>
         
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                    <FileText className="h-5 w-5"/>
-                    DETALLES DE SERVICIO
-                </CardTitle>
-            </CardHeader>
-        </Card>
-        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2">
                 <Card>
@@ -100,15 +95,13 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                     <CardContent>
                         <div className="space-y-4">
                             {items.map((item, index) => (
-                                <div key={item.id || index} className="p-4 border rounded-lg bg-background">
+                                <div key={item.id || index} className="p-4 rounded-lg bg-background">
                                     <div className="flex justify-between items-start">
                                         <div className="flex-1">
-                                            <p className="font-semibold">{item.name}</p>
-                                            {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
-                                                </p>
-                                            )}
+                                            <p className="font-semibold">{format(quoteDate, "dd MMMM", { locale: es })}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Insumos: {item.suppliesUsed?.map(s => `${s.quantity}x ${s.supplyName}`).join(', ') || item.name}
+                                            </p>
                                         </div>
                                         <p className="font-bold text-lg">{formatCurrency(item.price)}</p>
                                     </div>
@@ -148,38 +141,44 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                 </Card>
             </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="md:col-span-2">
-              <CardHeader><CardTitle className="text-base">Términos y Condiciones</CardTitle></CardHeader>
-              <CardContent>
-                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-8 w-8"/></a>
-                        <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-8 w-8"/></a>
-                        <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-8 w-8"/></a>
-                        <a href="https://www.ranoro.mx" target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-8 w-8 text-muted-foreground hover:text-primary"/></a>
-                    </div>
-                     <div className="text-xs text-muted-foreground space-x-4">
-                        <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
-                        <span>|</span>
-                        <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
-                    </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-                <CardHeader><CardTitle className="text-base">Asesor de Servicio</CardTitle></CardHeader>
-                <CardContent className="flex flex-col items-center justify-center">
-                    <div className="p-2 bg-white flex items-center justify-center min-h-[60px] w-full border rounded-md">
+        
+        <Card>
+            <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
+                <div className="flex flex-col items-center flex-shrink-0">
+                    <div className="p-2 bg-white flex items-center justify-center w-48 h-24 border rounded-md">
                       {quote.serviceAdvisorSignatureDataUrl ? (
-                        <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-[60px]" />
+                        <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-full max-w-full" />
                       ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
-                  </div>
-                  <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor no asignado'}</p>
-                </CardContent>
-            </Card>
-        </div>
+                    </div>
+                    <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor no asignado'}</p>
+                </div>
+                <div className="text-center md:text-left">
+                    <h3 className="text-lg font-bold">¡Gracias por su preferencia!</h3>
+                    <p className="text-muted-foreground mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
+                     <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                        <Badge className="mt-4 bg-green-100 text-green-800 text-base py-2 px-4 hover:bg-green-200">
+                           <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2"/> {workshopInfo.phone}
+                        </Badge>
+                     </a>
+                </div>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardContent className="p-4 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <a href={workshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-7 w-7 text-muted-foreground hover:text-primary"/></a>
+                    <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-7 w-7"/></a>
+                    <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-7 w-7"/></a>
+                    <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-7 w-7"/></a>
+                </div>
+                <div className="text-xs text-muted-foreground space-x-4">
+                    <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+                    <span>|</span>
+                    <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
+                </div>
+            </CardContent>
+        </Card>
       </div>
     );
 });
