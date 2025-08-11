@@ -9,7 +9,7 @@ import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency, capitalizeWo
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Signature, Loader2, Phone, MapPin, User, Car as CarIcon, FileText as FileTextIcon } from 'lucide-react';
+import { Signature, Loader2, Phone, MapPin, User, Car as CarIcon, FileText as FileTextIcon, AlertTriangle } from 'lucide-react';
 import { toNumber, IVA_RATE } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
 import Image from "next/image";
@@ -45,7 +45,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
     
-    const termsText = `Precios en MXN. Esta cotización es válida hasta el ${validityDate}. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.`;
+    const termsText = `No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.`;
 
     return (
         <div className="space-y-6" ref={ref}>
@@ -107,13 +107,21 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                             <span>Total a Pagar:</span>
                             <span className="text-primary">{formatCurrency(totalCost)}</span>
                         </div>
-                        <Separator className="my-2"/>
-                        <p className="text-xs text-muted-foreground pt-2">
-                           {termsText}
-                        </p>
                     </CardContent>
                 </Card>
             </div>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Términos y Condiciones</CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground space-y-3">
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold">Válida hasta:</span>
+                        <Badge variant="destructive">{validityDate}</Badge>
+                    </div>
+                    <p>Precios en MXN. {termsText}</p>
+                </CardContent>
+            </Card>
         </div>
     );
 });
