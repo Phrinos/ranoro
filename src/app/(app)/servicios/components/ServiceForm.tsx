@@ -230,6 +230,9 @@ function ServiceFormContent({
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     const finalValues = { ...values };
+
+    // This is the key change to prevent saving the vehicle list to the DB.
+    delete (finalValues as any).allVehiclesForDialog;
     
     if (finalValues.status === 'Entregado' && !finalValues.deliveryDateTime) {
       finalValues.deliveryDateTime = new Date();

@@ -44,8 +44,6 @@ const getDocById = async (collectionName: string, id: string): Promise<any> => {
 
 const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
     if (!db) return () => {};
-    // Remove the orderBy clause to ensure all documents are fetched, even if they lack a serviceDate.
-    // Client-side components will handle sorting.
     const q = query(collection(db, "serviceRecords"));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord)));
@@ -54,7 +52,6 @@ const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() =>
 
 const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
     if (!db) return [];
-    // Remove the orderBy clause here as well for consistency.
     const q = query(collection(db, "serviceRecords"));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
@@ -63,7 +60,6 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
 const getServicesForVehicle = async (vehicleId: string): Promise<ServiceRecord[]> => {
     if (!db) return [];
     
-    // Simplified query: only filter by vehicleId. Sorting will be done on the client.
     const q = query(
         collection(db, "serviceRecords"), 
         where("vehicleId", "==", vehicleId)
@@ -71,7 +67,6 @@ const getServicesForVehicle = async (vehicleId: string): Promise<ServiceRecord[]
     const snapshot = await getDocs(q);
     const services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
     
-    // Sort on the client side to avoid needing the composite index immediately.
     return services.sort((a, b) => {
         const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate);
         const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate);
@@ -91,7 +86,6 @@ const updateVehicleOnServiceChange = async (vehicleId: string, serviceDate: stri
         const vehicleDoc = await getDoc(vehicleRef);
         if (vehicleDoc.exists()) {
             const vehicleData = vehicleDoc.data() as Vehicle;
-            // Only update if the new service is more recent
             if (!vehicleData.lastServiceDate || new Date(serviceDate) > new Date(vehicleData.lastServiceDate)) {
                 await updateDoc(vehicleRef, { lastServiceDate: serviceDate });
             }
@@ -106,12 +100,12 @@ const addService = async (data: Omit<ServiceRecord, 'id'>): Promise<ServiceRecor
     if (!db) throw new Error("Database not initialized.");
     const newId = `SRV-${nanoid(8).toUpperCase()}`;
     
-    const serviceData = {
+    const serviceData: ServiceRecord = {
         ...data,
         id: newId,
         publicId: newId, 
         receptionDateTime: new Date().toISOString(),
-    };
+    } as ServiceRecord;
     
     const cleanedData = cleanObjectForFirestore(serviceData);
     await setDoc(doc(db, 'serviceRecords', newId), cleanedData);
@@ -120,34 +114,55 @@ const addService = async (data: Omit<ServiceRecord, 'id'>): Promise<ServiceRecor
       await updateVehicleOnServiceChange(data.vehicleId, data.serviceDate);
     }
     
-    // Save to public collection
-    const vehicle = await getDoc(doc(db, 'vehicles', data.vehicleId));
-    if (vehicle.exists()) {
-        await savePublicDocument('service', cleanedData, vehicle.data() as Vehicle);
+    const vehicleDoc = await getDoc(doc(db, 'vehicles', data.vehicleId));
+    if (vehicleDoc.exists()) {
+        await savePublicDocument('service', serviceData, vehicleDoc.data() as Vehicle);
     }
 
-    return serviceData as ServiceRecord;
+    return serviceData;
 };
 
 const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, 'serviceRecords', id);
+    
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) throw new Error("Service record not found");
+    const existingData = docSnap.data() as ServiceRecord;
+
+    if (data.status?.toLowerCase() === 'en taller' && !existingData.originalQuoteItems) {
+        data.originalQuoteItems = existingData.serviceItems;
+    }
+
     const cleanedData = cleanObjectForFirestore(data);
     await updateDoc(docRef, cleanedData);
 
+    // --- FIX STARTS HERE ---
+    // After updating, fetch the complete, fresh data to ensure synchronization.
     const updatedDoc = await getDoc(docRef);
     if (updatedDoc.exists()) {
-        const updatedData = updatedDoc.data() as ServiceRecord;
-        if (updatedData.vehicleId && updatedData.serviceDate) {
-            await updateVehicleOnServiceChange(updatedData.vehicleId, updatedData.serviceDate);
+        const fullUpdatedData = { id: updatedDoc.id, ...updatedDoc.data() } as ServiceRecord;
+        
+        if (fullUpdatedData.vehicleId) {
+            if (fullUpdatedData.serviceDate) {
+                await updateVehicleOnServiceChange(fullUpdatedData.vehicleId, fullUpdatedData.serviceDate);
+            }
+            
+            // Fetch the full vehicle document to ensure it's synced to the public document
+            const vehicleDoc = await getDoc(doc(db, 'vehicles', fullUpdatedData.vehicleId));
+            if (vehicleDoc.exists()) {
+                // Pass the full service record AND the full vehicle record to sync
+                await savePublicDocument('service', fullUpdatedData, vehicleDoc.data() as Vehicle);
+            }
         }
+        // --- FIX ENDS HERE ---
     }
 };
+
 
 const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
 
-    // Recalculate totals before saving
     const serviceItems = data.serviceItems || [];
     const totalCost = serviceItems.reduce((acc, item) => acc + (item.price || 0), 0);
     const totalSuppliesWorkshopCost = serviceItems.flatMap(item => item.suppliesUsed || []).reduce((acc, supply) => acc + (supply.unitPrice || 0) * (supply.quantity || 0), 0);
@@ -206,22 +221,18 @@ const saveMigratedServices = async (services: any[], vehicles: any[]) => {
     if (!db) throw new Error("Database not initialized.");
     const batch = writeBatch(db);
 
-    // Save new vehicles
     for (const vehicleData of vehicles) {
       const vehicleRef = doc(collection(db, "vehicles"));
       batch.set(vehicleRef, cleanObjectForFirestore(vehicleData));
     }
 
-    // Save new services
     for (const serviceData of services) {
         const serviceRef = doc(collection(db, 'serviceRecords'));
         const { vehicleLicensePlate, serviceDate, description, totalCost } = serviceData;
 
-        // Find the vehicle to link
         const vehicleSnapshot = await getDocs(query(collection(db, "vehicles"), where("licensePlate", "==", vehicleLicensePlate), limit(1)));
         const vehicleId = vehicleSnapshot.empty ? null : vehicleSnapshot.docs[0].id;
         
-        // Try to parse the flexible date format
         const parsedDate = parse(serviceDate, 'M/d/yy', new Date());
 
         const newService = {
@@ -232,7 +243,6 @@ const saveMigratedServices = async (services: any[], vehicles: any[]) => {
             totalCost,
             status: 'Entregado',
             paymentMethod: 'Efectivo',
-            // Add other required fields with default values
             receptionDateTime: isValid(parsedDate) ? parsedDate.toISOString() : new Date().toISOString(),
             deliveryDateTime: isValid(parsedDate) ? parsedDate.toISOString() : new Date().toISOString(),
         };
@@ -250,6 +260,13 @@ const cancelService = async (serviceId: string, reason: string): Promise<void> =
         cancellationReason: reason,
         deliveryDateTime: new Date().toISOString(),
     });
+    const updatedDoc = await getDoc(doc(db, 'serviceRecords', serviceId));
+    if (updatedDoc.exists()) {
+        const vehicle = await getDoc(doc(db, 'vehicles', updatedDoc.data().vehicleId));
+        if(vehicle.exists()){
+             await savePublicDocument('service', updatedDoc.data() as ServiceRecord, vehicle.data() as Vehicle);
+        }
+    }
 };
 
 const deleteService = async (serviceId: string): Promise<void> => {
@@ -260,14 +277,13 @@ const deleteService = async (serviceId: string): Promise<void> => {
 const completeService = async (
     service: ServiceRecord, 
     paymentDetails: PaymentDetailsFormValues & { nextServiceInfo?: ServiceRecord['nextServiceInfo'] },
-    batch: any // Firebase WriteBatch
+    batch: any
 ): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     
     const serviceRef = doc(db, 'serviceRecords', service.id);
     const deliveryDate = new Date().toISOString();
     
-    // 1. Update service record status, payment details, and delivery time
     const updateData = {
         status: 'Entregado' as const,
         deliveryDateTime: deliveryDate,
@@ -276,12 +292,10 @@ const completeService = async (
     };
     batch.update(serviceRef, cleanObjectForFirestore(updateData));
     
-    // 2. Update vehicle's last service date
     if (service.vehicleId) {
         await updateVehicleOnServiceChange(service.vehicleId, deliveryDate);
     }
 
-    // 3. Register cash transactions if applicable
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
     
