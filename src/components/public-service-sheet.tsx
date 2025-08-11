@@ -16,6 +16,7 @@ import Image from "next/image";
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 
 interface ServiceSheetContentProps {
