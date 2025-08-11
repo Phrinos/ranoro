@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -98,10 +99,12 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                                 <div key={item.id || index} className="p-4 rounded-lg bg-background">
                                     <div className="flex justify-between items-start">
                                         <div className="flex-1">
-                                            <p className="font-semibold">{format(quoteDate, "dd MMMM", { locale: es })}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                Insumos: {item.suppliesUsed?.map(s => `${s.quantity}x ${s.supplyName}`).join(', ') || item.name}
-                                            </p>
+                                            <p className="font-semibold">{item.name}</p>
+                                            {item.suppliesUsed && item.suppliesUsed.length > 0 && (
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
+                                                </p>
+                                            )}
                                         </div>
                                         <p className="font-bold text-lg">{formatCurrency(item.price)}</p>
                                     </div>
@@ -110,9 +113,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                             {items.length === 0 && (
                                 <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
                             )}
-                        </div>
-                         <div className="text-left text-xs text-muted-foreground mt-4 pt-4 border-t">
-                            <p>{termsText}</p>
                         </div>
                     </CardContent>
                 </Card>
