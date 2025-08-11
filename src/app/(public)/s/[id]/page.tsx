@@ -93,15 +93,17 @@ export default function PublicServicePage() {
 
   const adaptedRecord = {
       id: service.id,
-      status: service.status === 'En Taller' ? 'EN_TALLER' : service.status === 'Entregado' ? 'ENTREGADO' : 'AGENDADO',
+      status: service.status,
       serviceDate: service.serviceDate,
       appointmentDate: service.appointmentDateTime,
       isPublicView: true,
       vehicle: {
         label: vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'Vehículo',
         plates: vehicle?.licensePlate,
+        ownerPhone: vehicle?.ownerPhone,
       },
-      customerName: service.customerName,
+      customerName: service.customerName || vehicle?.ownerName,
+      customerPhone: vehicle?.ownerPhone,
       workshopInfo: workshopInfo,
       serviceAdvisorName: service.serviceAdvisorName,
       serviceAdvisorSignatureDataUrl: service.serviceAdvisorSignatureDataUrl,

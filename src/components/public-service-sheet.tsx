@@ -51,7 +51,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
         <div className="space-y-6" ref={ref}>
             <Card>
                 <CardHeader>
-                    <CardTitle>Detalles de la Cotización</CardTitle>
+                    <CardTitle>Trabajos a realizar</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
@@ -156,23 +156,17 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <Card>
           <CardHeader className="flex flex-row items-center gap-4 p-4">
             <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-            <div>
-              <CardTitle className="text-base">Cliente</CardTitle>
-              <CardDescription className="text-xs">Información del propietario</CardDescription>
-            </div>
+            <CardTitle className="text-base">Cliente</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <p className="font-semibold">{capitalizeWords(customerName || '')}</p>
-            <p className="text-sm text-muted-foreground">{vehicle?.ownerPhone || 'Teléfono no disponible'}</p>
+            <p className="text-sm text-muted-foreground">{record.customerPhone || 'Teléfono no disponible'}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center gap-4 p-4">
              <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-            <div>
-              <CardTitle className="text-base">Vehículo</CardTitle>
-              <CardDescription className="text-xs">Datos del vehículo</CardDescription>
-            </div>
+             <CardTitle className="text-base">Vehículo</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
              <p className="font-semibold">{vehicle?.label || 'N/A'}</p>
