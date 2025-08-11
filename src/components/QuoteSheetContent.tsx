@@ -1,14 +1,14 @@
 
 "use client";
 
-import type { QuoteRecord, WorkshopInfo } from '@/types';
+import type { QuoteRecord, WorkshopInfo, Vehicle } from '@/types';
 import { format, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
 import { cn, formatCurrency, capitalizeWords } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon } from 'lucide-react';
+import { User, Car as CarIcon, FileText } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
@@ -23,8 +23,8 @@ const initialWorkshopInfo: WorkshopInfo = {
 
 export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecord }>(({ quote }, ref) => {
     
-    const vehicle = quote.vehicle || null;
-    const workshopInfo = quote.workshopInfo || { name: 'Ranoro' };
+    const vehicle = quote.vehicle as Vehicle | null || null;
+    const workshopInfo = quote.workshopInfo || initialWorkshopInfo;
     const IVA_RATE = 0.16;
 
     const quoteDate = parseDate(quote.serviceDate) || new Date();
@@ -50,15 +50,11 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
         <Card>
             <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div className="relative w-[150px] h-[50px] mb-4 sm:mb-0">
-                    <Image src={initialWorkshopInfo.logoUrl} alt={`${initialWorkshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" />
+                    <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" />
                 </div>
-                <div className="text-center">
-                    <h1 className="text-xl font-bold">COTIZACION DE SERVICIO</h1>
-                    <p className="text-sm text-muted-foreground">Folio: <span className="font-semibold">{quote.id}</span></p>
-                </div>
-                <div className="text-left sm:text-right text-sm">
-                  <p className="text-muted-foreground">Fecha</p>
-                  <p className="font-semibold">{formattedQuoteDate}</p>
+                <div className="text-left sm:text-right">
+                    <h1 className="text-xl font-bold">Folio: {quote.id}</h1>
+                    <p className="text-sm text-muted-foreground">{formattedQuoteDate}</p>
                 </div>
             </CardHeader>
         </Card>
@@ -85,6 +81,15 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
               </CardContent>
             </Card>
         </div>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                    <FileText className="h-5 w-5"/>
+                    DETALLES DE SERVICIO
+                </CardTitle>
+            </CardHeader>
+        </Card>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2">
@@ -144,47 +149,37 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
             </div>
         </div>
 
-        <Card>
-          <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-            <div className="flex items-center gap-4">
-               <div className="flex-shrink-0 text-center">
-                  <div className="p-2 bg-white flex items-center justify-center min-h-[80px] w-[160px] border rounded-md">
-                      {quote.serviceAdvisorSignatureDataUrl ? (
-                        <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-[80px]" />
-                      ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
-                  </div>
-                  <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor'}</p>
-                </div>
-                <div className="text-left">
-                  <h4 className="font-bold text-lg">¡Gracias por su preferencia!</h4>
-                  <p className="text-muted-foreground mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
-                  <a href="https://wa.me/524491425323" target="_blank" rel="noopener noreferrer">
-                    <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 text-green-800 font-semibold hover:bg-green-200 transition-colors">
-                      <Icon icon="logos:whatsapp-icon" className="h-5 w-5"/>
-                      <span>+52 449-142-5323</span>
-                    </div>
-                  </a>
-                </div>
-            </div>
-          </CardContent>
-        </Card>
-
-         <Card>
-            <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="md:col-span-2">
+              <CardHeader><CardTitle className="text-base">Términos y Condiciones</CardTitle></CardHeader>
+              <CardContent>
                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <a href="https://www.ranoro.mx" target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-10 w-10 text-muted-foreground hover:text-primary"/></a>
-                        <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-10 w-10"/></a>
-                        <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-10 w-10"/></a>
+                        <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-8 w-8"/></a>
+                        <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-8 w-8"/></a>
+                        <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-8 w-8"/></a>
+                        <a href="https://www.ranoro.mx" target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-8 w-8 text-muted-foreground hover:text-primary"/></a>
                     </div>
-                    <div className="text-xs text-muted-foreground space-x-4">
+                     <div className="text-xs text-muted-foreground space-x-4">
                         <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
                         <span>|</span>
                         <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
                     </div>
-               </div>
-            </CardContent>
-         </Card>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+                <CardHeader><CardTitle className="text-base">Asesor de Servicio</CardTitle></CardHeader>
+                <CardContent className="flex flex-col items-center justify-center">
+                    <div className="p-2 bg-white flex items-center justify-center min-h-[60px] w-full border rounded-md">
+                      {quote.serviceAdvisorSignatureDataUrl ? (
+                        <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-[60px]" />
+                      ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
+                  </div>
+                  <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor no asignado'}</p>
+                </CardContent>
+            </Card>
+        </div>
       </div>
     );
 });
