@@ -12,6 +12,7 @@ import { User, Car as CarIcon } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { Icon } from '@iconify/react';
 
 
 const initialWorkshopInfo: WorkshopInfo = {
@@ -148,6 +149,12 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                 <div className="md:col-span-2 text-xs text-muted-foreground space-y-2">
                     <p className="font-semibold text-foreground">Términos y Condiciones</p>
                     <p>{termsText}</p>
+                    <div className="flex items-center gap-4 pt-2">
+                        <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
+                        <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer"><Icon icon="logos:facebook" className="h-6 w-6"/></a>
+                        <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer"><Icon icon="skill-icons:instagram" className="h-6 w-6"/></a>
+                        <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer"><Icon icon="skill-icons:linkedin" className="h-6 w-6"/></a>
+                    </div>
                 </div>
                 <div className="md:col-span-1 flex flex-col items-center text-center">
                     {quote.serviceAdvisorSignatureDataUrl && (
@@ -171,5 +178,3 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
     );
 });
 QuoteContent.displayName = "QuoteContent";
-
-    
