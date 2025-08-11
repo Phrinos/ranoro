@@ -8,7 +8,7 @@ import React, { useMemo } from 'react';
 import { cn, formatCurrency, capitalizeWords } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon } from 'lucide-react';
+import { User, Car as CarIcon, Link as LinkIcon } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -146,14 +146,14 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
 
         <Card>
             <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                <div className="md:col-span-2 text-xs text-muted-foreground space-y-2">
-                    <p className="font-semibold text-foreground">Términos y Condiciones</p>
-                    <p>{termsText}</p>
+                <div className="md:col-span-2 text-sm text-muted-foreground space-y-2">
+                    <p className="font-semibold text-foreground text-base">Términos y Condiciones</p>
+                    <p className="text-sm">{termsText}</p>
                     <div className="flex items-center gap-4 pt-2">
-                        <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
-                        <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer"><Icon icon="logos:facebook" className="h-6 w-6"/></a>
-                        <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer"><Icon icon="skill-icons:instagram" className="h-6 w-6"/></a>
-                        <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer"><Icon icon="skill-icons:linkedin" className="h-6 w-6"/></a>
+                        <a href="https://www.ranoro.mx" target="_blank" rel="noopener noreferrer"><Icon icon="mdi:web" className="h-8 w-8"/></a>
+                        <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer"><Icon icon="logos:whatsapp-icon" className="h-8 w-8"/></a>
+                        <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer"><Icon icon="logos:facebook" className="h-8 w-8"/></a>
+                        <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer"><Icon icon="skill-icons:instagram" className="h-8 w-8"/></a>
                     </div>
                 </div>
                 <div className="md:col-span-1 flex flex-col items-center text-center">
