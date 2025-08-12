@@ -55,7 +55,7 @@ export function PricingSection() {
         <section id="pricing" className="py-20 md:py-28 bg-white">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimatedDiv className="text-center max-w-3xl mx-auto">
-                    <Badge variant="secondary" className="mb-4 px-4 py-2 text-base sm:px-6 sm:py-3 sm:text-lg">Precios Claros y Escalables</Badge>
+                    <Badge variant="secondary" className="mb-4 px-4 py-2 text-sm sm:text-base">Precios Claros y Escalables</Badge>
                     <h2 className="text-3xl md:text-4xl font-extrabold">Un plan para cada tamaño de taller</h2>
                     <p className="mt-4 text-lg text-foreground">
                         Elige el plan que mejor se adapte a tu volumen de trabajo. Todos los planes incluyen una prueba gratuita de 14 días.

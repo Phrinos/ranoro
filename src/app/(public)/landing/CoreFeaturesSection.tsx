@@ -11,7 +11,7 @@ export function CoreFeaturesSection() {
         <section id="features" className="py-20 md:py-28 bg-muted/50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <AnimatedDiv className="text-center max-w-3xl mx-auto">
-              <Badge variant="secondary" className="mb-4 px-4 py-2 text-base sm:px-6 sm:py-3 sm:text-lg">Todo en un solo lugar</Badge>
+              <Badge variant="secondary" className="mb-4 px-4 py-2 text-sm sm:text-base">Todo en un solo lugar</Badge>
               <h2 className="text-3xl md:text-4xl font-extrabold">Funciones Diseñadas para Ti</h2>
             </AnimatedDiv>
             <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

@@ -88,37 +88,9 @@ export default function PublicServicePage() {
     );
   }
 
-  const vehicle = service?.vehicle as Vehicle | undefined;
-  const workshopInfo = service?.workshopInfo as WorkshopInfo | undefined;
-
   const adaptedRecord = {
-      id: service.id,
-      status: service.status,
-      subStatus: service.subStatus,
-      serviceDate: service.serviceDate,
-      appointmentDateTime: service.appointmentDateTime,
+      ...service,
       isPublicView: true,
-      vehicle: {
-        label: vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'Vehículo',
-        plates: vehicle?.licensePlate,
-        ownerPhone: vehicle?.ownerPhone,
-      },
-      customerName: service.customerName || vehicle?.ownerName,
-      customerPhone: vehicle?.ownerPhone,
-      workshopInfo: workshopInfo,
-      serviceAdvisorName: service.serviceAdvisorName,
-      serviceAdvisorSignatureDataUrl: service.serviceAdvisorSignatureDataUrl,
-      serviceItems: service.serviceItems,
-      quoteItems: service.status === 'Cotizacion' ? service.serviceItems : [],
-      reception: {
-        at: service.receptionDateTime,
-        customerSignatureDataUrl: service.customerSignatureReception,
-      },
-      delivery: {
-        at: service.deliveryDateTime,
-        customerSignatureDataUrl: service.customerSignatureDelivery,
-      },
-      securityChecklist: [], // This will need to be mapped from the original service.safetyInspection
   };
 
   const handleSignClick = () => {

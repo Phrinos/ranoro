@@ -9,7 +9,7 @@ import { AnimatedDiv } from './AnimatedDiv';
 
 export function HeroSection() {
     return (
-        <section className="relative w-full h-[70vh] sm:h-[80vh] flex items-center justify-start text-left text-white overflow-hidden">
+        <section className="relative w-full h-[80vh] flex items-center justify-start text-left text-white overflow-hidden">
           <div className="absolute inset-0 z-0">
             <Image
               src="/home.png"
@@ -23,7 +23,7 @@ export function HeroSection() {
             <div className="absolute inset-0 bg-black/60 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
           </div>
           <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-            <AnimatedDiv><Badge variant="secondary" className="mb-4 bg-white/10 text-white border-white/20 px-4 py-2 text-base sm:px-6 sm:py-3 sm:text-lg">La evolución de la gestión automotriz</Badge></AnimatedDiv>
+            <AnimatedDiv><Badge variant="secondary" className="mb-4 bg-white/10 text-white border-white/20 px-4 py-2 text-sm sm:text-base">La evolución de la gestión automotriz</Badge></AnimatedDiv>
             <AnimatedDiv><h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-shadow">
               El sistema operativo <span className="text-primary">inteligente</span><br/> para tu taller mecánico.
             </h1></AnimatedDiv>

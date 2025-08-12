@@ -11,7 +11,7 @@ export function CtaSection() {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl text-center">
                  <AnimatedDiv>
                     <h2 className="text-3xl md:text-4xl font-extrabold">¿Listo para profesionalizar tu taller?</h2>
-                    <p className="mt-4 text-lg text-gray-300">
+                    <p className="mt-4 text-base sm:text-lg text-gray-300">
                         Dale a tus clientes la atención de una agencia, mejora tus ingresos y conserva tu equipo actual.
                     </p>
                     <Button size="lg" className="mt-8" asChild>

@@ -29,14 +29,14 @@ export function FaqSection() {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
                 <AnimatedDiv className="text-center">
                     <h2 className="text-3xl md:text-4xl font-extrabold">Preguntas Frecuentes</h2>
-                    <p className="mt-4 text-lg text-foreground">Resolvemos tus dudas para que empieces con total confianza.</p>
+                    <p className="mt-4 text-base sm:text-lg text-foreground">Resolvemos tus dudas para que empieces con total confianza.</p>
                 </AnimatedDiv>
                 <AnimatedDiv className="w-full mt-12 space-y-4">
                   {faqItems.map((item, index) => (
                     <Accordion type="single" collapsible key={index}>
                         <AccordionItem value={`item-${index}`} className="bg-white rounded-xl border px-4 sm:px-6 shadow-sm">
-                          <AccordionTrigger className="text-lg font-semibold text-left hover:no-underline">{item.question}</AccordionTrigger>
-                          <AccordionContent className="text-base text-foreground">{item.answer}</AccordionContent>
+                          <AccordionTrigger className="text-base sm:text-lg font-semibold text-left hover:no-underline">{item.question}</AccordionTrigger>
+                          <AccordionContent className="text-sm sm:text-base text-foreground">{item.answer}</AccordionContent>
                         </AccordionItem>
                     </Accordion>
                   ))}

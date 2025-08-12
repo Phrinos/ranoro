@@ -12,13 +12,13 @@ export function AiFeaturesSection() {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimatedDiv className="text-center flex flex-col items-center">
                     <GeminiLogo className="mb-4" />
-                    <h2 className="text-2xl font-bold tracking-tight text-gray-500">Impulsado por</h2>
-                    <p className="text-5xl font-extrabold tracking-tight">
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-500">Impulsado por</h2>
+                    <p className="text-4xl sm:text-5xl font-extrabold tracking-tight">
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-500 to-red-500">
                             Google Gemini
                         </span>
                     </p>
-                    <p className="mt-4 text-lg max-w-2xl text-foreground">
+                    <p className="mt-4 text-base sm:text-lg max-w-2xl text-foreground">
                         Ranoro utiliza los modelos de IA más avanzados de Google para darte una ventaja competitiva.
                     </p>
                 </AnimatedDiv>
