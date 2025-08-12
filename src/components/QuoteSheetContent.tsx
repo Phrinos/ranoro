@@ -193,6 +193,3 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
     );
 });
 QuoteContent.displayName = "QuoteContent";
-
-
-    

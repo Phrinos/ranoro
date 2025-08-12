@@ -77,6 +77,17 @@ export function getPaymentMethodVariant(method?: PaymentMethod): 'success' | 'pu
     }
 }
 
+export function formatNumber(
+  value: number | string | null | undefined,
+  options?: Intl.NumberFormatOptions
+) {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (num === null || num === undefined || isNaN(num)) {
+    return '';
+  }
+  return num.toLocaleString('es-MX', options);
+}
+
 
 export const optimizeImage = (file: File | string, maxWidthOrHeight: number, quality = 0.9): Promise<string> => {
   return new Promise((resolve, reject) => {
