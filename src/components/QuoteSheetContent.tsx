@@ -5,7 +5,7 @@ import type { QuoteRecord, WorkshopInfo, Vehicle } from '@/types';
 import { format, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
-import { cn, formatCurrency, capitalizeWords } from "@/lib/utils";
+import { cn, formatCurrency, capitalizeWords, formatNumber } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { User, Car as CarIcon } from 'lucide-react';
@@ -55,10 +55,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                     <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" />
                 </div>
                 <div className="text-left sm:text-right">
-                    <h1 className="text-xl font-bold text-center">COTIZACION DE SERVICIO</h1>
-                    <p className="text-sm text-muted-foreground text-center">Folio: {quote.id}</p>
-                </div>
-                <div className="text-left sm:text-right">
+                  <p className="font-bold text-lg">Folio: {quote.id}</p>
                   <p className="text-sm text-muted-foreground">{formattedQuoteDate}</p>
                 </div>
             </CardHeader>
@@ -83,9 +80,17 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
               <CardContent className="p-4 pt-0">
                  <p className="font-semibold">{vehicle?.label || 'N/A'}</p>
                  <p className="text-muted-foreground">{vehicle?.plates || 'N/A'}</p>
+                  {vehicle?.color && <p className="text-xs text-muted-foreground">Color: {vehicle.color}</p>}
+                  {vehicle?.currentMileage && <p className="text-xs text-muted-foreground">KM: {formatNumber(vehicle.currentMileage)}</p>}
               </CardContent>
             </Card>
         </div>
+        
+        <Card>
+            <CardHeader className="p-3 bg-muted/50 text-center">
+                <CardTitle className="text-lg font-bold tracking-wider">COTIZACION DE SERVICIO</CardTitle>
+            </CardHeader>
+        </Card>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2">
@@ -143,44 +148,51 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
             </div>
         </div>
         
-        <Card>
-            <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
-                <div className="flex flex-col items-center flex-shrink-0">
-                    <div className="p-2 bg-white flex items-center justify-center w-48 h-24 border rounded-md">
-                      {quote.serviceAdvisorSignatureDataUrl ? (
-                        <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-full max-w-full" />
-                      ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="md:col-span-2">
+                <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
+                    <div className="flex flex-col items-center flex-shrink-0">
+                        <div className="p-2 bg-white flex items-center justify-center w-48 h-24 border rounded-md">
+                          {quote.serviceAdvisorSignatureDataUrl ? (
+                            <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-full max-w-full" />
+                          ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
+                        </div>
+                        <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor no asignado'}</p>
+                        <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
                     </div>
-                    <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor no asignado'}</p>
-                </div>
-                <div className="text-center md:text-left">
-                    <h3 className="text-lg font-bold">¡Gracias por su preferencia!</h3>
-                    <p className="text-muted-foreground mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
-                     <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                        <Badge className="mt-4 bg-green-100 text-green-800 text-base py-2 px-4 hover:bg-green-200">
-                           <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2"/> {workshopInfo.phone}
-                        </Badge>
-                     </a>
-                </div>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardContent className="p-4 flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <a href={workshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-7 w-7 text-muted-foreground hover:text-primary"/></a>
-                    <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-7 w-7"/></a>
-                    <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-7 w-7"/></a>
-                    <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-7 w-7"/></a>
-                </div>
-                <div className="text-xs text-muted-foreground space-x-4">
-                    <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
-                    <span>|</span>
-                    <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
-                </div>
-            </CardContent>
-        </Card>
+                    <div className="text-center md:text-left">
+                        <h3 className="text-lg font-bold">¡Gracias por su preferencia!</h3>
+                        <p className="text-muted-foreground mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
+                         <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                            <Badge className="mt-4 bg-green-100 text-green-800 text-base py-2 px-4 hover:bg-green-200">
+                               <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2"/> {workshopInfo.phone}
+                            </Badge>
+                         </a>
+                    </div>
+                </CardContent>
+            </Card>
+            
+            <Card>
+                 <CardContent className="p-4 flex flex-col justify-center h-full">
+                    <div className="flex justify-around items-center">
+                        <a href={workshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-7 w-7 text-muted-foreground hover:text-primary"/></a>
+                        <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-7 w-7"/></a>
+                        <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-7 w-7"/></a>
+                        <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-7 w-7"/></a>
+                    </div>
+                    <Separator className="my-3"/>
+                    <div className="text-xs text-muted-foreground text-center space-x-2">
+                        <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+                        <span>|</span>
+                        <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
+                    </div>
+                 </CardContent>
+            </Card>
+        </div>
       </div>
     );
 });
 QuoteContent.displayName = "QuoteContent";
+
+
+    
