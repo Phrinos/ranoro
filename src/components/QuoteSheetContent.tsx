@@ -68,8 +68,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                 <CardTitle className="text-base">Cliente</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <p className="font-semibold">{capitalizeWords(quote.customerName || '')}</p>
-                <p className="text-sm text-muted-foreground">{quote.customerPhone || 'Teléfono no disponible'}</p>
+                <p className="font-semibold">{capitalizeWords(quote.customerName || vehicle?.ownerName || '')}</p>
+                <p className="text-sm text-muted-foreground">{quote.customerPhone || vehicle?.ownerPhone || 'Teléfono no disponible'}</p>
               </CardContent>
             </Card>
             <Card>
@@ -78,17 +78,17 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                  <CardTitle className="text-base">Vehículo</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                 <p className="font-semibold">{vehicle?.label || 'N/A'}</p>
-                 <p className="text-muted-foreground">{vehicle?.plates || 'N/A'}</p>
+                 <p className="font-semibold">{vehicle?.make ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                 <p className="text-muted-foreground">{vehicle?.licensePlate || 'N/A'}</p>
                   {vehicle?.color && <p className="text-xs text-muted-foreground">Color: {vehicle.color}</p>}
                   {vehicle?.currentMileage && <p className="text-xs text-muted-foreground">KM: {formatNumber(vehicle.currentMileage)}</p>}
               </CardContent>
             </Card>
         </div>
         
-        <Card>
-            <CardHeader className="p-3 bg-muted/50 text-center">
-                <CardTitle className="text-lg font-bold tracking-wider">COTIZACION DE SERVICIO</CardTitle>
+        <Card className="bg-yellow-100 border-yellow-200 dark:bg-yellow-900/50 dark:border-yellow-800">
+            <CardHeader className="p-3 text-center">
+                <CardTitle className="text-lg font-bold tracking-wider text-yellow-900 dark:text-yellow-200">COTIZACION DE SERVICIO</CardTitle>
             </CardHeader>
         </Card>
         
@@ -148,7 +148,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
             </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6">
             <Card className="md:col-span-2">
                 <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
                     <div className="flex flex-col items-center flex-shrink-0">
@@ -160,7 +160,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                         <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor no asignado'}</p>
                         <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
                     </div>
-                    <div className="text-center md:text-left">
+                    <div className="text-center md:text-left flex-grow">
                         <h3 className="text-lg font-bold">¡Gracias por su preferencia!</h3>
                         <p className="text-muted-foreground mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
                          <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
@@ -170,23 +170,21 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                          </a>
                     </div>
                 </CardContent>
-            </Card>
-            
-            <Card>
-                 <CardContent className="p-4 flex flex-col justify-center h-full">
-                    <div className="flex justify-around items-center">
-                        <a href={workshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-7 w-7 text-muted-foreground hover:text-primary"/></a>
-                        <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-7 w-7"/></a>
-                        <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-7 w-7"/></a>
-                        <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-7 w-7"/></a>
+                 <CardContent className="p-4 border-t">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="flex justify-center md:justify-start items-center gap-4">
+                            <a href={workshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-6 w-6 text-muted-foreground hover:text-primary"/></a>
+                            <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
+                            <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-6 w-6"/></a>
+                            <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-6 w-6"/></a>
+                        </div>
+                        <div className="text-xs text-muted-foreground text-center md:text-right space-x-2">
+                            <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+                            <span>|</span>
+                            <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
+                        </div>
                     </div>
-                    <Separator className="my-3"/>
-                    <div className="text-xs text-muted-foreground text-center space-x-2">
-                        <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
-                        <span>|</span>
-                        <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
-                    </div>
-                 </CardContent>
+                </CardContent>
             </Card>
         </div>
       </div>
