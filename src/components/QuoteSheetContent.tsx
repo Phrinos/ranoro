@@ -8,7 +8,7 @@ import React, { useMemo } from 'react';
 import { cn, formatCurrency, capitalizeWords, formatNumber } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon } from 'lucide-react';
+import { User, Car as CarIcon, CalendarCheck } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
@@ -32,6 +32,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
     const quoteDate = parseDate(quote.serviceDate) || new Date();
     const formattedQuoteDate = isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, 15), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    const appointmentDate = parseDate(quote.appointmentDateTime);
+    const formattedAppointmentDate = appointmentDate && isValid(appointmentDate) ? format(appointmentDate, "eeee dd 'de' MMMM, yyyy 'a las' HH:mm 'hrs.'", { locale: es }) : 'N/A';
 
     const items = useMemo(() => (quote?.serviceItems ?? []).map(it => ({
         ...it,
@@ -45,8 +47,12 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
     
-    const termsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización...`;
+    const termsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores.`;
 
+    const isQuoteStatus = quote.status === 'Cotizacion';
+    const isScheduledStatus = quote.status === 'Agendado';
+    const isAppointmentConfirmed = isScheduledStatus && quote.appointmentStatus === 'Confirmada';
+    
     return (
       <div ref={ref} className="space-y-6">
         <Card>
@@ -86,9 +92,24 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
             </Card>
         </div>
         
-        <Card className="bg-yellow-100 border-yellow-200 dark:bg-yellow-900/50 dark:border-yellow-800">
-            <CardHeader className="p-3 text-center">
-                <CardTitle className="text-lg font-bold tracking-wider text-yellow-900 dark:text-yellow-200">COTIZACION DE SERVICIO</CardTitle>
+        <Card className={cn(
+          isQuoteStatus && "bg-yellow-100 border-yellow-200 dark:bg-yellow-900/50 dark:border-yellow-800",
+          isScheduledStatus && "bg-blue-50 border-blue-200 dark:bg-blue-900/50 dark:border-blue-800"
+        )}>
+            <CardHeader className="p-4 text-center">
+                 {isScheduledStatus ? (
+                    <div className="space-y-1">
+                        <CardTitle className="text-lg font-bold tracking-wider text-blue-900 dark:text-blue-200">CITA DE SERVICIO</CardTitle>
+                        <p className="font-semibold text-blue-800 dark:text-blue-300">{formattedAppointmentDate}</p>
+                        {isAppointmentConfirmed && (
+                           <Badge className="bg-green-600 text-white hover:bg-green-700">
+                                <CalendarCheck className="mr-2 h-4 w-4"/>Cita Confirmada
+                            </Badge>
+                        )}
+                    </div>
+                ) : (
+                    <CardTitle className="text-lg font-bold tracking-wider text-yellow-900 dark:text-yellow-200">COTIZACION DE SERVICIO</CardTitle>
+                )}
             </CardHeader>
         </Card>
         
@@ -149,7 +170,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
         </div>
         
         <div className="grid grid-cols-1 gap-6">
-            <Card className="md:col-span-2">
+            <Card>
                 <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
                     <div className="flex flex-col items-center flex-shrink-0">
                         <div className="p-2 bg-white flex items-center justify-center w-48 h-24 border rounded-md">
@@ -170,7 +191,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                          </a>
                     </div>
                 </CardContent>
-                 <CardContent className="p-4 border-t">
+                <CardContent className="p-4 border-t">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div className="flex justify-center md:justify-start items-center gap-4">
                             <a href={workshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-6 w-6 text-muted-foreground hover:text-primary"/></a>
@@ -191,3 +212,4 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
     );
 });
 QuoteContent.displayName = "QuoteContent";
+
