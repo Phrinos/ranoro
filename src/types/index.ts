@@ -1,5 +1,4 @@
 
-
 // src/types/index.ts
 import { type VariantProps } from "class-variance-authority"
 import { sidebarMenuButtonVariants } from './sidebar.types';
@@ -53,7 +52,7 @@ export type Personnel = User;
 
 export interface VehiclePaperwork {
   id: string;
-  name: string;
+  name:string;
   dueDate: string; 
   status: 'Pendiente' | 'Completado';
   notes?: string;
@@ -218,8 +217,15 @@ export interface PhotoReportGroup {
   type?: 'Recepción' | 'Entrega' | 'General';
 }
 
+// Define specific sub-statuses for clarity and type safety
+export type AgendadoSubStatus = 'Sin Confirmar' | 'Confirmada' | 'Cancelada';
+export type EnTallerSubStatus = 'Ingresado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado';
+
 export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Proveedor Externo' | 'Entregado' | 'Cancelado';
-export type ServiceSubStatus = 'Cita Agendada' | 'Cita Confirmada' | 'Ingresado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado';
+
+// Combine all possible sub-statuses into one union type
+export type ServiceSubStatus = AgendadoSubStatus | EnTallerSubStatus;
+
 
 export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Tarjeta MSI' | 'Transferencia';
 
@@ -237,6 +243,7 @@ export interface ServiceRecord {
   serviceDate: string; // Creation date
   quoteDate?: string; // DEPRECATED
   appointmentDateTime?: string; // Specific for the appointment
+  appointmentStatus?: 'Confirmada' | 'Sin Confirmar'; // Legacy, use subStatus
   description?: string;
   technicianId: string;
   technicianName?: string;
@@ -282,7 +289,6 @@ export interface ServiceRecord {
     mileage?: number;
   };
   photoReports?: PhotoReportGroup[];
-  appointmentStatus?: 'Creada' | 'Confirmada';
   customerName?: string;
 }
 

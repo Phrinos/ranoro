@@ -94,8 +94,9 @@ export default function PublicServicePage() {
   const adaptedRecord = {
       id: service.id,
       status: service.status,
+      subStatus: service.subStatus,
       serviceDate: service.serviceDate,
-      appointmentDate: service.appointmentDateTime,
+      appointmentDateTime: service.appointmentDateTime,
       isPublicView: true,
       vehicle: {
         label: vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'Vehículo',

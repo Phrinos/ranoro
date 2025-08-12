@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 
 "use client";
@@ -29,8 +30,8 @@ const statusOptions: { value: ServiceFormValues['status'], label: string }[] = [
 
 const subStatusOptions: Record<string, { value: ServiceFormValues['subStatus'], label: string }[]> = {
     'Agendado': [
-        { value: 'Cita Agendada', label: 'Cita Agendada' },
-        { value: 'Cita Confirmada', label: 'Cita Confirmada' },
+        { value: 'Sin Confirmar', label: 'Sin Confirmar' },
+        { value: 'Confirmada', label: 'Confirmada' },
     ],
     'En Taller': [
         { value: 'Ingresado', label: 'Ingresado' },
@@ -70,7 +71,7 @@ export function ServiceDetailsCard({
   const showAppointmentFields = useMemo(() => watchedStatus === 'Agendado', [watchedStatus]);
   const showTechnicianField = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
   const showQuoteDateField = useMemo(() => watchedStatus === 'Cotizacion', [watchedStatus]);
-  const showWorkshopFields = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
+  const showSubStatusField = useMemo(() => watchedStatus === 'En Taller' || watchedStatus === 'Agendado', [watchedStatus]);
   
   const technicianName = useMemo(() => {
     if (!watchedTechnicianId) return null;
@@ -84,6 +85,9 @@ export function ServiceDetailsCard({
       const tomorrow = addDays(new Date(), 1);
       const defaultAppointmentTime = setMinutes(setHours(tomorrow, 8), 30);
       setValue('appointmentDateTime', defaultAppointmentTime, { shouldValidate: true });
+      setValue('subStatus', 'Sin Confirmar', { shouldValidate: true });
+    } else if (newStatus === 'En Taller') {
+      setValue('subStatus', 'Ingresado', { shouldValidate: true });
     }
   };
 
@@ -123,13 +127,13 @@ export function ServiceDetailsCard({
             )}
           />
 
-          {showWorkshopFields && (
+          {showSubStatusField && (
              <FormField
                 control={control}
                 name="subStatus"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sub-Estado Taller</FormLabel>
+                    <FormLabel>Sub-Estado</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
                       <SelectContent>

@@ -1,4 +1,6 @@
 
+// src/app/(app)/servicios/components/agenda-list-content.tsx
+
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -33,9 +35,9 @@ export default function AgendaListContent({ services, vehicles, personnel, onSho
     };
     
     const handleConfirmAppointment = async (service: ServiceRecord) => {
-        if (service.appointmentStatus === 'Confirmada') return;
+        if (service.subStatus === 'Confirmada' || service.subStatus === 'Cancelada') return;
         try {
-            await serviceService.updateService(service.id, { appointmentStatus: 'Confirmada' });
+            await serviceService.updateService(service.id, { subStatus: 'Confirmada' });
             toast({ title: 'Cita Confirmada', description: `La cita para ${service.vehicleIdentifier} ha sido confirmada.` });
         } catch (e) {
             toast({ title: 'Error', description: 'No se pudo confirmar la cita.', variant: 'destructive' });

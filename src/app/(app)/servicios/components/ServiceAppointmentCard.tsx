@@ -1,4 +1,6 @@
+
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
+
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -41,7 +43,7 @@ export function ServiceAppointmentCard({
   onConfirm,
 }: ServiceAppointmentCardProps) {
   const { toast } = useToast();
-  const { color, icon: Icon, label } = getStatusInfo(service.status, service.subStatus, service.appointmentStatus);
+  const { color, icon: Icon, label } = getStatusInfo(service.status, service.subStatus);
 
   const technician = useMemo(() => personnel.find(u => u.id === service.technicianId), [personnel, service.technicianId]);
   const advisor = useMemo(() => personnel.find(u => u.id === service.serviceAdvisorId), [personnel, service.serviceAdvisorId]);
@@ -49,7 +51,6 @@ export function ServiceAppointmentCard({
   const displayDate = service.appointmentDateTime || service.receptionDateTime || service.deliveryDateTime || service.serviceDate;
   const parsedDate = displayDate ? parseDate(displayDate) : null;
 
-  // Recalculate totals directly from serviceItems for display accuracy, especially for quotes
   const calculatedTotals = useMemo(() => {
     const total = (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0);
     const costOfSupplies = (service.serviceItems ?? [])
@@ -145,10 +146,15 @@ export function ServiceAppointmentCard({
 
           {/* Col 4: Status & Actions */}
           <div className="p-4 flex flex-col justify-between items-center text-center w-full md:w-48 flex-shrink-0">
-            <Badge variant={color as any} className="w-full justify-center">
-              <Icon className="mr-2 h-4 w-4" />
-              {label}
-            </Badge>
+             <div>
+                <Badge variant={color as any} className="w-full justify-center">
+                  <Icon className="mr-2 h-4 w-4" />
+                  {label}
+                </Badge>
+                {service.status === 'Agendado' && service.subStatus && (
+                  <p className='text-xs mt-1 text-muted-foreground font-semibold'>{service.subStatus}</p>
+                )}
+            </div>
             <div className="text-xs text-muted-foreground mt-2 w-full text-center">
               <p>Asesor: {advisor?.name || 'N/A'}</p>
               {service.status !== 'Cotizacion' && service.status !== 'Agendado' && (
@@ -162,10 +168,14 @@ export function ServiceAppointmentCard({
                 <Button variant="ghost" size="icon" onClick={onEdit} title="Editar Servicio">
                     <Edit className="h-4 w-4" />
                 </Button>
-                {onConfirm && service.status === 'Agendado' && service.appointmentStatus !== 'Confirmada' && (
-                  <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirmar Cita">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </Button>
+                {service.status === 'Agendado' && (
+                    <>
+                        {service.subStatus === 'Sin Confirmar' && onConfirm ? (
+                             <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirmar Cita">
+                                <Check className="h-4 w-4 text-green-600" />
+                             </Button>
+                        ) : null}
+                    </>
                 )}
                 <Button variant="ghost" size="icon" title="Imprimir" onClick={() => toast({title: "Función no implementada"})}>
                     <Printer className="h-4 w-4" />

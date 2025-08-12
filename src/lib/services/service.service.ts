@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -137,8 +136,6 @@ const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<
     const cleanedData = cleanObjectForFirestore(data);
     await updateDoc(docRef, cleanedData);
 
-    // --- FIX STARTS HERE ---
-    // After updating, fetch the complete, fresh data to ensure synchronization.
     const updatedDoc = await getDoc(docRef);
     if (updatedDoc.exists()) {
         const fullUpdatedData = { id: updatedDoc.id, ...updatedDoc.data() } as ServiceRecord;
@@ -148,14 +145,11 @@ const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<
                 await updateVehicleOnServiceChange(fullUpdatedData.vehicleId, fullUpdatedData.serviceDate);
             }
             
-            // Fetch the full vehicle document to ensure it's synced to the public document
             const vehicleDoc = await getDoc(doc(db, 'vehicles', fullUpdatedData.vehicleId));
             if (vehicleDoc.exists()) {
-                // Pass the full service record AND the full vehicle record to sync
                 await savePublicDocument('service', fullUpdatedData, vehicleDoc.data() as Vehicle);
             }
         }
-        // --- FIX ENDS HERE ---
     }
 };
 
@@ -170,7 +164,7 @@ const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<
     const subTotal = totalCost / (1 + IVA_RATE);
     const taxAmount = totalCost - subTotal;
 
-    const dataWithCalculatedTotals = {
+    const dataWithCalculatedTotals: Partial<ServiceRecord> = {
         ...data,
         totalCost,
         totalSuppliesWorkshopCost,
@@ -178,6 +172,10 @@ const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<
         subTotal,
         taxAmount,
     };
+
+    if (dataWithCalculatedTotals.status === 'Agendado' && !dataWithCalculatedTotals.subStatus) {
+        dataWithCalculatedTotals.subStatus = 'Sin Confirmar';
+    }
 
     const isEditing = !!data.id;
     

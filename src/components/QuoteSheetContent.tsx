@@ -1,20 +1,20 @@
 
 "use client";
 
-import type { QuoteRecord, WorkshopInfo, Vehicle } from '@/types';
-import { format, isValid, addDays } from 'date-fns';
+import type { QuoteRecord, WorkshopInfo, Vehicle, AgendadoSubStatus } from '@/types';
+import { format, isValid, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
 import { cn, formatCurrency, capitalizeWords, formatNumber } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon, CalendarCheck } from 'lucide-react';
-import { parseDate } from '@/lib/forms';
+import { User, Car as CarIcon, CalendarCheck, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -23,17 +23,48 @@ const initialWorkshopInfo: WorkshopInfo = {
   logoUrl: "/ranoro-logo.png",
 };
 
+function coerceDate(v: unknown): Date | null {
+  if (!v) return null;
+  // Firestore Timestamp
+  if (typeof (v as any)?.toDate === 'function') {
+    const d = (v as any).toDate();
+    return isValid(d) ? d : null;
+  }
+  // Date ya creado
+  if (v instanceof Date) return isValid(v) ? v : null;
+  // numérico: ms/segundos
+  if (typeof v === 'number') {
+    const d = new Date(v > 1e12 ? v : v * 1000);
+    return isValid(d) ? d : null;
+  }
+  // string: ISO o datetime-local (YYYY-MM-DDTHH:mm)
+  if (typeof v === 'string') {
+    // intenta ISO
+    const isoTry = parseISO(v);
+    if (isValid(isoTry)) return isoTry;
+    // intenta cast genérico
+    const generic = new Date(v);
+    if (isValid(generic)) return generic;
+  }
+  return null;
+}
+
+
 export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecord }>(({ quote }, ref) => {
     
     const vehicle = quote.vehicle as Vehicle | null || null;
     const workshopInfo = quote.workshopInfo || initialWorkshopInfo;
     const IVA_RATE = 0.16;
 
-    const quoteDate = parseDate(quote.serviceDate) || new Date();
+    const quoteDate = coerceDate((quote as any).serviceDate) || new Date();
     const formattedQuoteDate = isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, 15), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
-    const appointmentDate = parseDate(quote.appointmentDateTime);
-    const formattedAppointmentDate = appointmentDate && isValid(appointmentDate) ? format(appointmentDate, "eeee dd 'de' MMMM, yyyy 'a las' HH:mm 'hrs.'", { locale: es }) : 'N/A';
+    
+    const appointmentDate = coerceDate((quote as any).appointmentDateTime ?? (quote as any).appointmentAt ?? (quote as any).appointmentDate);
+    const formattedAppointmentDate = appointmentDate
+      ? format(appointmentDate, "EEEE dd 'de' MMMM, yyyy 'a las' HH:mm 'hrs.'", { locale: es })
+      : 'Fecha y hora por confirmar';
+
 
     const items = useMemo(() => (quote?.serviceItems ?? []).map(it => ({
         ...it,
@@ -49,9 +80,54 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
     
     const termsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores.`;
 
-    const isQuoteStatus = quote.status === 'Cotizacion';
-    const isScheduledStatus = quote.status === 'Agendado';
-    const isAppointmentConfirmed = isScheduledStatus && quote.appointmentStatus === 'Confirmada';
+    const status = (quote.status || '').toLowerCase();
+    const subStatus = (quote.subStatus || '') as AgendadoSubStatus;
+
+    const isQuoteStatus = status === 'cotizacion';
+    const isAppointmentConfirmed = status === 'agendado' && subStatus === 'Confirmada';
+    const isAppointmentPending = status === 'agendado' && subStatus === 'Sin Confirmar';
+    const isAppointmentCancelled = status === 'agendado' && subStatus === 'Cancelada';
+    
+    const getStatusCardContent = () => {
+        if (isAppointmentCancelled) {
+            return {
+                className: "bg-red-100 border-red-200 dark:bg-red-900/50 dark:border-red-800",
+                title: "CITA CANCELADA",
+                titleClassName: "text-red-900 dark:text-red-200",
+                description: "Esta cita ha sido cancelada.",
+                descriptionClassName: "text-red-800 dark:text-red-300"
+            };
+        }
+        if (isAppointmentConfirmed) {
+            return {
+                className: "bg-green-100 border-green-200 dark:bg-green-900/50 dark:border-green-800",
+                title: "CITA AGENDADA CONFIRMADA",
+                titleClassName: "text-green-900 dark:text-green-200",
+                description: formattedAppointmentDate,
+                descriptionClassName: "text-green-800 dark:text-green-300"
+            };
+        }
+        if (isAppointmentPending) {
+            return {
+                className: "bg-blue-50 border-blue-200 dark:bg-blue-900/50 dark:border-blue-800",
+                title: "CITA DE SERVICIO",
+                titleClassName: "text-blue-900 dark:text-blue-200",
+                description: formattedAppointmentDate,
+                descriptionClassName: "text-blue-800 dark:text-blue-300"
+            };
+        }
+        // Default to quote status
+        return {
+            className: "bg-amber-100 border-amber-200 dark:bg-amber-900/50 dark:border-amber-800",
+            title: "COTIZACIÓN DE SERVICIO",
+            titleClassName: "text-amber-900 dark:text-amber-200",
+            description: null,
+            descriptionClassName: ""
+        };
+    };
+
+    const statusCard = getStatusCardContent();
+
     
     return (
       <div ref={ref} className="space-y-6">
@@ -82,9 +158,9 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
               <CardHeader className="flex flex-row items-center gap-4 p-4">
                  <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
                  <CardTitle className="text-base">Vehículo</CardTitle>
-              </CardHeader>
+                 </CardHeader>
               <CardContent className="p-4 pt-0">
-                 <p className="font-semibold">{vehicle?.make ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                 <p className="font-semibold">{vehicle?.make || ''} {vehicle?.model || ''} ({vehicle?.year || 'N/A'})</p>
                  <p className="text-muted-foreground">{vehicle?.licensePlate || 'N/A'}</p>
                   {vehicle?.color && <p className="text-xs text-muted-foreground">Color: {vehicle.color}</p>}
                   {vehicle?.currentMileage && <p className="text-xs text-muted-foreground">KM: {formatNumber(vehicle.currentMileage)}</p>}
@@ -92,24 +168,18 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
             </Card>
         </div>
         
-        <Card className={cn(
-          isQuoteStatus && "bg-yellow-100 border-yellow-200 dark:bg-yellow-900/50 dark:border-yellow-800",
-          isScheduledStatus && "bg-blue-50 border-blue-200 dark:bg-blue-900/50 dark:border-blue-800"
-        )}>
+        <Card className={cn(statusCard.className)}>
             <CardHeader className="p-4 text-center">
-                 {isScheduledStatus ? (
-                    <div className="space-y-1">
-                        <CardTitle className="text-lg font-bold tracking-wider text-blue-900 dark:text-blue-200">CITA DE SERVICIO</CardTitle>
-                        <p className="font-semibold text-blue-800 dark:text-blue-300">{formattedAppointmentDate}</p>
-                        {isAppointmentConfirmed && (
-                           <Badge className="bg-green-600 text-white hover:bg-green-700">
-                                <CalendarCheck className="mr-2 h-4 w-4"/>Cita Confirmada
-                            </Badge>
-                        )}
-                    </div>
-                ) : (
-                    <CardTitle className="text-lg font-bold tracking-wider text-yellow-900 dark:text-yellow-200">COTIZACION DE SERVICIO</CardTitle>
-                )}
+                <div className="space-y-1">
+                    <CardTitle className={cn("text-lg font-bold tracking-wider", statusCard.titleClassName)}>
+                        {statusCard.title}
+                    </CardTitle>
+                    {statusCard.description && (
+                        <p className={cn("font-semibold", statusCard.descriptionClassName)}>
+                            {statusCard.description}
+                        </p>
+                    )}
+                </div>
             </CardHeader>
         </Card>
         
@@ -169,47 +239,44 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
             </div>
         </div>
         
-        <div className="grid grid-cols-1 gap-6">
-            <Card>
-                <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
-                    <div className="flex flex-col items-center flex-shrink-0">
-                        <div className="p-2 bg-white flex items-center justify-center w-48 h-24 border rounded-md">
-                          {quote.serviceAdvisorSignatureDataUrl ? (
-                            <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-full max-w-full" />
-                          ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
-                        </div>
-                        <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor no asignado'}</p>
-                        <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
+        <Card>
+            <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
+                <div className="flex flex-col items-center flex-shrink-0">
+                    <div className="p-2 bg-white flex items-center justify-center w-48 h-24 border rounded-md">
+                      {quote.serviceAdvisorSignatureDataUrl ? (
+                        <img src={quote.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" className="mx-auto object-contain max-h-full max-w-full" />
+                      ) : <p className="text-xs text-muted-foreground">Firma no disponible</p>}
                     </div>
-                    <div className="text-center md:text-left flex-grow">
-                        <h3 className="text-lg font-bold">¡Gracias por su preferencia!</h3>
-                        <p className="text-muted-foreground mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
-                         <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                            <Badge className="mt-4 bg-green-100 text-green-800 text-base py-2 px-4 hover:bg-green-200">
-                               <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2"/> {workshopInfo.phone}
-                            </Badge>
-                         </a>
+                    <p className="font-semibold text-sm mt-2">{quote.serviceAdvisorName || 'Asesor no asignado'}</p>
+                    <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
+                </div>
+                <div className="text-center md:text-left flex-grow">
+                    <h3 className="text-lg font-bold">¡Gracias por su preferencia!</h3>
+                    <p className="text-muted-foreground mt-1">Para dudas o aclaraciones, no dude en contactarnos.</p>
+                     <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                        <Badge className="mt-4 bg-green-100 text-green-800 text-base py-2 px-4 hover:bg-green-200">
+                           <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2"/> {workshopInfo.phone}
+                        </Badge>
+                     </a>
+                </div>
+            </CardContent>
+             <CardContent className="p-4 border-t">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="flex justify-center md:justify-start items-center gap-4">
+                        <a href={workshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-6 w-6 text-muted-foreground hover:text-primary"/></a>
+                        <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
+                        <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-6 w-6"/></a>
+                        <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-6 w-6"/></a>
                     </div>
-                </CardContent>
-                <CardContent className="p-4 border-t">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex justify-center md:justify-start items-center gap-4">
-                            <a href={workshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-6 w-6 text-muted-foreground hover:text-primary"/></a>
-                            <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
-                            <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-6 w-6"/></a>
-                            <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-6 w-6"/></a>
-                        </div>
-                        <div className="text-xs text-muted-foreground text-center md:text-right space-x-2">
-                            <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
-                            <span>|</span>
-                            <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
-                        </div>
+                    <div className="text-xs text-muted-foreground text-center md:text-right space-x-2">
+                        <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+                        <span>|</span>
+                        <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
                     </div>
-                </CardContent>
-            </Card>
-        </div>
+                </div>
+            </CardContent>
+        </Card>
       </div>
     );
 });
 QuoteContent.displayName = "QuoteContent";
-

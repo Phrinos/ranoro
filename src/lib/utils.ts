@@ -2,7 +2,7 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle } from 'lucide-react';
-import type { PaymentMethod } from '@/types';
+import type { PaymentMethod, AgendadoSubStatus } from '@/types';
 export { toNumber, formatMXN as formatCurrency, IVA_RATE } from './money';
 
 export function cn(...inputs: ClassValue[]) {
@@ -37,11 +37,14 @@ export const capitalizeWords = (str: string | null | undefined): string => {
 };
 
 
-export function getStatusInfo(status: string, subStatus?: string, appointmentStatus?: string) {
+export function getStatusInfo(status: string, subStatus?: string) {
     switch (status) {
         case 'Agendado':
-            if (appointmentStatus === 'Confirmada') {
-                return { color: 'teal', icon: Clock, label: 'Cita Confirmada' };
+            if (subStatus === 'Confirmada') {
+                return { color: 'teal', icon: CheckCircle, label: 'Cita Confirmada' };
+            }
+            if (subStatus === 'Cancelada') {
+                return { color: 'destructive', icon: XCircle, label: 'Cita Cancelada' };
             }
             return { color: 'blue', icon: Clock, label: 'Agendado' };
         case 'En Taller':
