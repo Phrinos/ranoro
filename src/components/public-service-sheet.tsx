@@ -92,7 +92,7 @@ const StatusIndicator = ({ status }: { status?: SafetyCheckStatus }) => {
   );
 };
 
-const SafetyChecklistDisplay = ({ 
+const SafetyChecklistDisplay = ({
   inspection,
   workshopInfo,
   service,
@@ -201,6 +201,7 @@ const SafetyChecklistDisplay = ({
 }
 
 const ServiceOrderContent = ({ service, vehicle, workshopInfo, onSignClick, isSigning }: any) => {
+    const localWorkshopInfo = { ...initialWorkshopInfo, ...(workshopInfo || {}) };
     const receptionDate = parseDate(service.reception?.at || service.serviceDate);
     const formattedReceptionDate = receptionDate && isValid(receptionDate) ? format(receptionDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     const IVA_RATE = 0.16;
@@ -211,15 +212,15 @@ const ServiceOrderContent = ({ service, vehicle, workshopInfo, onSignClick, isSi
         const tax = total - sub;
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [service.serviceItems]);
-
-    const termsText = `Precios en MXN. No incluye trabajos o materiales no especificados. Esta orden de servicio está sujeta a los Términos y Condiciones disponibles en nuestro taller o en ${workshopInfo.googleMapsUrl || 'nuestro sitio web'}.`;
+    
+    const termsText = `Precios en MXN. No incluye trabajos o materiales no especificados. Esta orden de servicio está sujeta a los Términos y Condiciones disponibles en nuestro taller o en ${localWorkshopInfo.googleMapsUrl || 'nuestro sitio web'}.`;
 
     return (
         <div className="space-y-6">
             <Card>
                 <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div className="relative w-[150px] h-[50px] mb-4 sm:mb-0">
-                        <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" />
+                        <Image src={localWorkshopInfo.logoUrl} alt={`${localWorkshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" />
                     </div>
                     <div className="text-left sm:text-right">
                         <p className="font-bold text-lg">Folio: {service.id}</p>
@@ -252,7 +253,7 @@ const ServiceOrderContent = ({ service, vehicle, workshopInfo, onSignClick, isSi
                   </CardContent>
                 </Card>
             </div>
-
+            
             <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/50 dark:border-blue-800">
                 <CardHeader className="p-4 text-center">
                     <CardTitle className="text-lg font-bold tracking-wider text-blue-900 dark:text-blue-200">
@@ -318,8 +319,8 @@ const ServiceOrderContent = ({ service, vehicle, workshopInfo, onSignClick, isSi
                 <CardContent className="p-4 border-t">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div className="flex justify-center md:justify-start items-center gap-4">
-                            <a href={workshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-6 w-6 text-muted-foreground hover:text-primary"/></a>
-                            <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
+                            <a href={localWorkshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-6 w-6 text-muted-foreground hover:text-primary"/></a>
+                            <a href={`https://wa.me/${(localWorkshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
                             <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-6 w-6"/></a>
                             <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-6 w-6"/></a>
                         </div>
