@@ -19,8 +19,6 @@ import { cancelAppointmentAction } from '@/app/(public)/s/actions';
 import { useToast } from '@/hooks/use-toast';
 import { parseDate } from '@/lib/forms';
 import { GARANTIA_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
-import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
-import { calculateDriverDebt } from '@/lib/utils';
 
 
 const initialWorkshopInfo: WorkshopInfo = {
@@ -183,7 +181,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           <div className="lg:col-span-1 space-y-6"><Card><CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader><CardContent className="space-y-2 text-sm"><div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal:</span><span className="font-medium">{formatCurrency(subTotal)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">IVA (16%):</span><span className="font-medium">{formatCurrency(taxAmount)}</span></div><Separator className="my-2"/><div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>{isQuoteStatus && <div className="text-center text-sm font-semibold mt-4 pt-4 border-t"><p>Cotización Válida hasta el {validityDate}.</p></div>}</CardContent></Card></div>
         </div>
         
-        {status === 'En Taller' && (
+        {status === 'en taller' && (
           <Card>
             <CardHeader>
               <CardTitle>Detalles de Recepción</CardTitle>
@@ -221,4 +219,3 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
-```
