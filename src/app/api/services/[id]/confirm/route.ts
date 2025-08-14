@@ -2,18 +2,12 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 
-/**
- * Handles the POST request to confirm a service appointment.
- * This is a secure endpoint that runs on the server with admin privileges.
- * It expects the service ID to be part of the URL path.
- */
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const runtime = 'nodejs';
+
+export async function POST(_request: Request, { params }: { params: { id: string } }) {
   try {
     const db = getAdminDb();
-    const publicId = params.id;
+    const publicId = params.id?.trim();
 
     if (!publicId) {
       return NextResponse.json({ success: false, error: 'Falta el ID del servicio.' }, { status: 400 });
@@ -23,37 +17,39 @@ export async function POST(
     const serviceDoc = await serviceDocRef.get();
 
     if (!serviceDoc.exists) {
-        return NextResponse.json({ success: false, error: 'El servicio no fue encontrado.' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'El servicio no fue encontrado.' }, { status: 404 });
     }
 
     const serviceData = serviceDoc.data()!;
 
-    if (serviceData.status !== 'Agendado' || serviceData.appointmentStatus !== 'Sin Confirmar') {
-        return NextResponse.json({ success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' }, { status: 409 });
+    // Normalize statuses for robust comparison
+    const status = String(serviceData.status || '').toLowerCase();
+    const apptStatus = String(serviceData.appointmentStatus || '').toLowerCase();
+
+    if (!(status === 'agendado' && apptStatus === 'sin confirmar')) {
+      return NextResponse.json(
+        { success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' },
+        { status: 409 }
+      );
     }
 
-    const updateData = {
-        appointmentStatus: 'Confirmada',
-    };
-
+    const updateData = { appointmentStatus: 'Confirmada' };
     const batch = db.batch();
 
     batch.update(serviceDocRef, updateData);
 
     const publicDocRef = db.collection('publicServices').doc(publicId);
-    // Check if public doc exists before trying to update it
     const publicDocSnap = await publicDocRef.get();
-    if(publicDocSnap.exists()) {
-        batch.update(publicDocRef, updateData);
+    if (publicDocSnap.exists) {
+      batch.update(publicDocRef, updateData);
     }
-    
+
     await batch.commit();
 
     return NextResponse.json({ success: true, message: 'Cita confirmada correctamente.' });
-
   } catch (error) {
     console.error('Error al confirmar la cita:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido en el servidor.';
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido en el servidor.';
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
