@@ -14,6 +14,8 @@ import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
 import { savePublicDocument } from '@/lib/public-document';
 import { ServiceSheetContent } from '@/components/public-service-sheet';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
+import { AppointmentScheduler } from '@/components/shared/AppointmentScheduler';
+import { scheduleAppointmentAction } from './actions';
 
 export default function PublicServicePage() {
   const params = useParams();
@@ -25,6 +27,8 @@ export default function PublicServicePage() {
   
   const [isSigning, setIsSigning] = useState(false);
   const [signatureType, setSignatureType] = useState<'reception' | 'delivery' | null>(null);
+
+  const [isScheduling, setIsScheduling] = useState(false);
 
   useEffect(() => {
     if (!publicId || !db) {
@@ -75,6 +79,29 @@ export default function PublicServicePage() {
       setIsSigning(false);
       setSignatureType(null);
   };
+  
+  const handleScheduleAppointment = async (selectedDateTime: Date) => {
+    if (!service) return;
+    try {
+        const result = await scheduleAppointmentAction(publicId, selectedDateTime.toISOString());
+        if (result.success) {
+            toast({
+                title: "Cita Agendada",
+                description: "Tu cita ha sido registrada. Nuestro equipo la confirmará a la brevedad.",
+            });
+            setIsScheduling(false);
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (e: any) {
+        toast({
+            title: "Error al Agendar",
+            description: e.message || "No se pudo agendar la cita. Por favor, inténtelo más tarde.",
+            variant: "destructive",
+        });
+    }
+  };
+
 
   if (service === undefined) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -84,7 +111,7 @@ export default function PublicServicePage() {
     return (
       <div className="container mx-auto py-8">
         <Card className="max-w-xl mx-auto text-center"><CardHeader><ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" /><CardTitle className="text-2xl font-bold">Error al Cargar</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">{error || "No se pudo cargar el documento del servicio."}</p></CardContent></Card>
-      </div>
+  </div>
     );
   }
 
@@ -107,6 +134,7 @@ export default function PublicServicePage() {
             <ServiceSheetContent
               record={adaptedRecord as any}
               onSignClick={handleSignClick}
+              onScheduleClick={() => setIsScheduling(true)}
               isSigning={isSigning}
               activeTab="order"
             />
@@ -116,6 +144,12 @@ export default function PublicServicePage() {
             open={!!signatureType} 
             onOpenChange={(isOpen) => !isOpen && setSignatureType(null)} 
             onSave={handleSaveSignature}
+        />
+        
+        <AppointmentScheduler
+            open={isScheduling}
+            onOpenChange={setIsScheduling}
+            onConfirm={handleScheduleAppointment}
         />
      </>
   );

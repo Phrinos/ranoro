@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -204,17 +205,18 @@ const SafetyChecklistDisplay = ({
 interface ServiceSheetContentProps {
   record: any;
   onSignClick?: (type: 'reception' | 'delivery') => void;
+  onScheduleClick?: () => void;
   isSigning?: boolean;
   activeTab: string;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ record, onSignClick, isSigning, activeTab }, ref) => {
+  ({ record, onSignClick, onScheduleClick, isSigning, activeTab }, ref) => {
     
     const isQuoteOrScheduled = record.status === 'Cotizacion' || record.status === 'Agendado';
 
     if (isQuoteOrScheduled) {
-      return <QuoteContent ref={ref} quote={record} />;
+      return <QuoteContent ref={ref} quote={record} onScheduleClick={onScheduleClick} />;
     }
     
     const service: ServiceRecord = record;

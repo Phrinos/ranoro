@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { QuoteRecord, WorkshopInfo, Vehicle, AgendadoSubStatus } from '@/types';
@@ -8,7 +9,7 @@ import React, { useMemo } from 'react';
 import { cn, formatCurrency, capitalizeWords, formatNumber } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon, CalendarCheck, CheckCircle } from 'lucide-react';
+import { User, Car as CarIcon, CalendarCheck, CheckCircle, XCircle, Clock, Ellipsis, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
@@ -49,8 +50,12 @@ function coerceDate(v: unknown): Date | null {
   return null;
 }
 
+interface QuoteContentProps {
+  quote: QuoteRecord;
+  onScheduleClick?: () => void;
+}
 
-export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecord }>(({ quote }, ref) => {
+export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(({ quote, onScheduleClick }, ref) => {
     
     const vehicle = quote.vehicle as Vehicle | null || null;
     const workshopInfo = quote.workshopInfo || initialWorkshopInfo;
@@ -82,11 +87,12 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
 
     const status = (quote.status || '').toLowerCase();
     const subStatus = (quote.subStatus || '') as AgendadoSubStatus;
+    const appointmentStatus = quote.appointmentStatus;
 
     const isQuoteStatus = status === 'cotizacion';
-    const isAppointmentConfirmed = status === 'agendado' && subStatus === 'Confirmada';
-    const isAppointmentPending = status === 'agendado' && subStatus === 'Sin Confirmar';
-    const isAppointmentCancelled = status === 'agendado' && subStatus === 'Cancelada';
+    const isAppointmentConfirmed = status === 'agendado' && appointmentStatus === 'Confirmada';
+    const isAppointmentPending = status === 'agendado' && appointmentStatus === 'Sin Confirmar';
+    const isAppointmentCancelled = status === 'agendado' && appointmentStatus === 'Cancelada';
     
     const getStatusCardContent = () => {
         if (isAppointmentCancelled) {
@@ -98,16 +104,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                 descriptionClassName: "text-red-800 dark:text-red-300"
             };
         }
-        if (isAppointmentConfirmed) {
-            return {
-                className: "bg-green-100 border-green-200 dark:bg-green-900/50 dark:border-green-800",
-                title: "CITA AGENDADA CONFIRMADA",
-                titleClassName: "text-green-900 dark:text-green-200",
-                description: formattedAppointmentDate,
-                descriptionClassName: "text-green-800 dark:text-green-300"
-            };
-        }
-        if (isAppointmentPending) {
+        if (isAppointmentConfirmed || isAppointmentPending) {
             return {
                 className: "bg-blue-50 border-blue-200 dark:bg-blue-900/50 dark:border-blue-800",
                 title: "CITA DE SERVICIO",
@@ -180,8 +177,23 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, { quote: QuoteRecor
                         </p>
                     )}
                 </div>
+                {isAppointmentConfirmed && (
+                    <Badge className="mt-2 bg-green-600 text-white">
+                        <CheckCircle className="mr-1 h-3 w-3"/>
+                        Confirmada
+                    </Badge>
+                )}
             </CardHeader>
         </Card>
+        
+        {isQuoteStatus && onScheduleClick && (
+            <div className="text-center">
+                <Button onClick={onScheduleClick} size="lg">
+                    <CalendarDays className="mr-2 h-5 w-5"/>
+                    Agendar Cita
+                </Button>
+            </div>
+        )}
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2">
