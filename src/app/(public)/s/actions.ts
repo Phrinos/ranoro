@@ -61,4 +61,3 @@ export async function cancelAppointmentAction(publicId: string): Promise<{ succe
     return { success: false, error: message };
   }
 }
-
