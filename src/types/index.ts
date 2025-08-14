@@ -243,7 +243,6 @@ export interface ServiceRecord {
   serviceDate: string; // Creation date
   quoteDate?: string; // DEPRECATED
   appointmentDateTime?: string; // Specific for the appointment
-  appointmentStatus?: 'Confirmada' | 'Sin Confirmar'; // Legacy, use subStatus
   description?: string;
   technicianId: string;
   technicianName?: string;

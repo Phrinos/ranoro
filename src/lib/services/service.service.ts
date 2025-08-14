@@ -129,13 +129,17 @@ const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<
     if (!docSnap.exists()) throw new Error("Service record not found");
     const existingData = docSnap.data() as ServiceRecord;
 
-    if (data.status?.toLowerCase() === 'en taller' && !existingData.originalQuoteItems) {
+    const isMovingToWorkshop = data.status && data.status.toLowerCase() === 'en taller';
+    const hasNoOriginalQuote = !existingData.originalQuoteItems || existingData.originalQuoteItems.length === 0;
+
+    if (isMovingToWorkshop && hasNoOriginalQuote) {
         data.originalQuoteItems = existingData.serviceItems;
     }
 
     const cleanedData = cleanObjectForFirestore(data);
     await updateDoc(docRef, cleanedData);
 
+    // --- Start of Synchronization Logic ---
     const updatedDoc = await getDoc(docRef);
     if (updatedDoc.exists()) {
         const fullUpdatedData = { id: updatedDoc.id, ...updatedDoc.data() } as ServiceRecord;
@@ -151,6 +155,7 @@ const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<
             }
         }
     }
+    // --- End of Synchronization Logic ---
 };
 
 

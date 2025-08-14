@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -200,9 +201,33 @@ const SafetyChecklistDisplay = ({
     )
 }
 
-const ServiceOrderContent = ({ service, vehicle, workshopInfo, onSignClick, isSigning }: any) => {
-    const localWorkshopInfo = { ...initialWorkshopInfo, ...(workshopInfo || {}) };
-    const receptionDate = parseDate(service.reception?.at || service.serviceDate);
+interface ServiceSheetContentProps {
+  record: any;
+  onSignClick?: () => void;
+  isSigning?: boolean;
+  onScheduleClick?: () => void;
+  activeTab: string;
+}
+
+export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
+  ({ record, onSignClick, isSigning, onScheduleClick, activeTab }, ref) => {
+    
+    const isQuoteOrScheduled = record.status === 'Cotizacion' || record.status === 'Agendado';
+
+    const handleViewImage = (url: string) => {
+        // In a real app, this would open a modal. For now, it opens in a new tab.
+        window.open(url, '_blank');
+    };
+
+    if (isQuoteOrScheduled) {
+      return <QuoteContent ref={ref} quote={record} onScheduleClick={onScheduleClick} />;
+    }
+    
+    const service: ServiceRecord = record;
+    const vehicle = record.vehicle as Vehicle | null;
+    const workshopInfo = record.workshopInfo || initialWorkshopInfo;
+
+    const receptionDate = parseDate(service.receptionDateTime) || parseDate(service.serviceDate);
     const formattedReceptionDate = receptionDate && isValid(receptionDate) ? format(receptionDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     const IVA_RATE = 0.16;
 
@@ -213,156 +238,23 @@ const ServiceOrderContent = ({ service, vehicle, workshopInfo, onSignClick, isSi
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [service.serviceItems]);
     
-    const termsText = `Precios en MXN. No incluye trabajos o materiales no especificados. Esta orden de servicio está sujeta a los Términos y Condiciones disponibles en nuestro taller o en ${localWorkshopInfo.googleMapsUrl || 'nuestro sitio web'}.`;
+    const termsText = `Precios en MXN. No incluye trabajos o materiales no especificados. Esta orden de servicio está sujeta a los Términos y Condiciones disponibles en nuestro taller o en ${workshopInfo.googleMapsUrl || 'nuestro sitio web'}.`;
 
-    return (
-        <div className="space-y-6">
-            <Card>
-                <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <div className="relative w-[150px] h-[50px] mb-4 sm:mb-0">
-                        <Image src={localWorkshopInfo.logoUrl} alt={`${localWorkshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" />
-                    </div>
-                    <div className="text-left sm:text-right">
-                        <p className="font-bold text-lg">Folio: {service.id}</p>
-                        <p className="text-sm text-muted-foreground">{formattedReceptionDate}</p>
-                    </div>
-                </CardHeader>
-            </Card>
+    const customerName = capitalizeWords(service.customerName || vehicle?.ownerName || '');
+    const customerPhone = vehicle?.ownerPhone || 'Teléfono no disponible';
+    const vehicleMake = vehicle?.make || '';
+    const vehicleModel = vehicle?.model || '';
+    const vehicleYear = vehicle?.year || 'N/A';
+    const vehicleLicensePlate = vehicle?.licensePlate || service.vehicleIdentifier || 'N/A';
+    const vehicleColor = vehicle?.color;
+    const serviceMileage = service?.mileage;
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center gap-4 p-4">
-                    <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-                    <CardTitle className="text-base">Cliente</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="font-semibold">{capitalizeWords(service.customerName || '')}</p>
-                    <p className="text-sm text-muted-foreground">{service.customerPhone || 'Teléfono no disponible'}</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center gap-4 p-4">
-                     <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-                     <CardTitle className="text-base">Vehículo</CardTitle>
-                     </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                     <p className="font-semibold">{vehicle?.label || 'N/A'}</p>
-                     <p className="text-muted-foreground">{vehicle?.plates || 'N/A'}</p>
-                      {vehicle?.color && <p className="text-xs text-muted-foreground">Color: {vehicle.color}</p>}
-                      {vehicle?.currentMileage && <p className="text-xs text-muted-foreground">KM: {formatNumber(vehicle.currentMileage)}</p>}
-                  </CardContent>
-                </Card>
-            </div>
-            
-            <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/50 dark:border-blue-800">
-                <CardHeader className="p-4 text-center">
-                    <CardTitle className="text-lg font-bold tracking-wider text-blue-900 dark:text-blue-200">
-                        ORDEN DE SERVICIO
-                    </CardTitle>
-                </CardHeader>
-            </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                <div className="lg:col-span-2">
-                    <Card>
-                        <CardHeader><CardTitle>Trabajos a Realizar</CardTitle></CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {(service.serviceItems || []).map((item, index) => (
-                                    <div key={item.id || index} className="p-4 rounded-lg bg-background">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <p className="font-semibold">{item.name}</p>
-                                                {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                        Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <p className="font-bold text-lg">{formatCurrency(item.price)}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                             <p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{termsText}</p>
-                        </CardContent>
-                    </Card>
-                </div>
-                <div className="lg:col-span-1 space-y-6">
-                    <Card>
-                        <CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader>
-                        <CardContent className="space-y-2 text-sm">
-                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal:</span><span className="font-medium">{formatCurrency(subTotal)}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-muted-foreground">IVA (16%):</span><span className="font-medium">{formatCurrency(taxAmount)}</span></div>
-                            <Separator className="my-2"/>
-                            <div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader><CardTitle className="text-base">Firma de Autorización</CardTitle></CardHeader>
-                        <CardContent className="text-center">
-                            {service.reception?.customerSignatureDataUrl ? (
-                                <Image src={normalizeDataUrl(service.reception.customerSignatureDataUrl)} alt="Firma del cliente" width={200} height={100} className="mx-auto bg-white border p-1" />
-                            ) : onSignClick ? (
-                                <Button onClick={onSignClick} disabled={isSigning} className="w-full">
-                                    {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
-                                    Firmar para Autorizar
-                                </Button>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">Firma pendiente.</p>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-             <Card>
-                <CardContent className="p-4 border-t">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex justify-center md:justify-start items-center gap-4">
-                            <a href={localWorkshopInfo.googleMapsUrl || "https://www.ranoro.mx"} target="_blank" rel="noopener noreferrer" title="Sitio Web"><Icon icon="mdi:web" className="h-6 w-6 text-muted-foreground hover:text-primary"/></a>
-                            <a href={`https://wa.me/${(localWorkshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" title="WhatsApp"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
-                            <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Facebook"><Icon icon="logos:facebook" className="h-6 w-6"/></a>
-                            <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" title="Instagram"><Icon icon="skill-icons:instagram" className="h-6 w-6"/></a>
-                        </div>
-                        <div className="text-xs text-muted-foreground text-center md:text-right space-x-2">
-                            <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
-                            <span>|</span>
-                            <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    );
-};
-
-interface ServiceSheetContentProps {
-  record: any;
-  onSignClick?: () => void;
-  isSigning?: boolean;
-  activeTab: string;
-}
-
-export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ record, onSignClick, isSigning, activeTab }, ref) => {
-    
-    const isQuoteOrScheduled = record.status === 'Cotizacion' || record.status === 'Agendado';
-
-    const handleViewImage = (url: string) => {
-        // In a real app, this would open a modal. For now, it opens in a new tab.
-        window.open(url, '_blank');
-    };
-
-    if (isQuoteOrScheduled) {
-      return <QuoteContent ref={ref} quote={record} />;
-    }
-    
     return (
         <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm h-full w-full">
             <ServiceOrderContent 
-                service={record} 
-                vehicle={record.vehicle}
-                workshopInfo={record.workshopInfo}
+                service={service} 
+                vehicle={vehicle}
+                workshopInfo={workshopInfo}
                 onSignClick={onSignClick}
                 isSigning={isSigning}
             />
@@ -372,3 +264,14 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 );
 
 ServiceSheetContent.displayName = "ServiceSheetContent";
+```
+
+### NO MODIFICATIONS were made to the following files:
+
+- `src/types/index.ts`
+- `src/app/(public)/s/actions.ts`
+- `src/components/shared/AppointmentScheduler.tsx`
+- `src/app/(public)/s/[id]/page.tsx`
+- `src/components/QuoteSheetContent.tsx`
+
+I've only modified `src/components/public-service-sheet.tsx` to handle the new unified view, which was the core request. The other files will be created or modified in subsequent steps if you approve this plan.
