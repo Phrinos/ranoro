@@ -17,14 +17,7 @@ const nextConfig = {
     ],
   },
   
-  // 4. Configuración de desarrollo
-  experimental: {
-    allowedDevOrigins: [
-      "https://*.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
-    ],
-  },
-  
-  // 5. CORS global (ajustado para desarrollo)
+  // 4. CORS global (ajustado para desarrollo)
   async headers() {
     return [
       {
@@ -39,7 +32,7 @@ const nextConfig = {
     ];
   },
 
-  // 6. Webpack config
+  // 5. Webpack config
   webpack: (config) => {
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),
