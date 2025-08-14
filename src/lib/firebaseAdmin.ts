@@ -5,7 +5,7 @@ const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
   : null;
 
-function initializeAdminApp() {
+function getAdminApp() {
   if (getApps().some(app => app.name === 'admin-app')) {
     return getApp('admin-app');
   }
@@ -19,7 +19,4 @@ function initializeAdminApp() {
   }, 'admin-app');
 }
 
-const adminApp = initializeAdminApp();
-const adminDb = getFirestore(adminApp);
-
-export const getAdminDb = () => adminDb;
+export const getAdminDb = () => getFirestore(getAdminApp());

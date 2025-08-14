@@ -15,7 +15,6 @@ export async function POST(
     const db = getAdminDb();
     const publicId = params.id;
 
-    // 1. Validate the incoming data
     if (!publicId) {
       return NextResponse.json({ success: false, error: 'Falta el ID del servicio.' }, { status: 400 });
     }
@@ -29,26 +28,25 @@ export async function POST(
 
     const serviceData = serviceDoc.data()!;
 
-    // 2. Verify that the service is in a confirmable state
     if (serviceData.status !== 'Agendado' || serviceData.appointmentStatus !== 'Sin Confirmar') {
-        return NextResponse.json({ success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' }, { status: 409 }); // 409 Conflict
+        return NextResponse.json({ success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' }, { status: 409 });
     }
 
     const updateData = {
         appointmentStatus: 'Confirmada',
     };
 
-    // 3. Use a batch write to update both documents atomically
     const batch = db.batch();
 
-    // Update the main, internal service record
     batch.update(serviceDocRef, updateData);
 
-    // Update the public-facing document
     const publicDocRef = db.collection('publicServices').doc(publicId);
-    batch.update(publicDocRef, updateData);
-
-    // 4. Commit the atomic write
+    // Check if public doc exists before trying to update it
+    const publicDocSnap = await publicDocRef.get();
+    if(publicDocSnap.exists()) {
+        batch.update(publicDocRef, updateData);
+    }
+    
     await batch.commit();
 
     return NextResponse.json({ success: true, message: 'Cita confirmada correctamente.' });
