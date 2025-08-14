@@ -15,7 +15,9 @@ import { savePublicDocument } from '@/lib/public-document';
 import { QuoteContent } from '@/components/QuoteSheetContent';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { AppointmentScheduler } from '@/components/shared/AppointmentScheduler';
-import { scheduleAppointmentAction, confirmAppointmentAction } from '@/app/(public)/s/actions';
+import { scheduleAppointmentAction, confirmAppointmentAction, cancelAppointmentAction } from '@/app/(public)/s/actions';
+
+export const runtime = 'nodejs'; // Use Node.js runtime for firebase-admin in server actions
 
 export default function PublicServicePage() {
   const params = useParams();
@@ -81,29 +83,7 @@ export default function PublicServicePage() {
       setIsSigning(false);
       setSignatureType(null);
   };
-  
-  const handleScheduleAppointment = async (selectedDateTime: Date) => {
-    if (!service) return;
-    try {
-        const result = await scheduleAppointmentAction(publicId, selectedDateTime.toISOString());
-        if (result.success) {
-            toast({
-                title: "Cita Agendada",
-                description: "Tu cita ha sido registrada. Nuestro equipo la confirmará a la brevedad.",
-            });
-            setIsScheduling(false);
-        } else {
-            throw new Error(result.error);
-        }
-    } catch (e: any) {
-        toast({
-            title: "Error al Agendar",
-            description: e.message || "No se pudo agendar la cita. Por favor, inténtelo más tarde.",
-            variant: "destructive",
-        });
-    }
-  };
-  
+    
   const handleConfirmAppointment = async () => {
     if (!service) return;
     setIsConfirming(true);
@@ -141,14 +121,6 @@ export default function PublicServicePage() {
   </div>
     );
   }
-
-  const handleSignClick = () => {
-      if(service.status === 'En Taller' && !service.customerSignatureReception) {
-          setSignatureType('reception');
-      } else if (service.status === 'Entregado' && !service.customerSignatureDelivery) {
-          setSignatureType('delivery');
-      }
-  }
   
   return (
      <>
@@ -162,15 +134,33 @@ export default function PublicServicePage() {
         </div>
         
         <SignatureDialog 
-            open={!!signatureType} 
-            onOpenChange={(isOpen) => !isOpen && setSignatureType(null)} 
+            open={isSigning} 
+            onOpenChange={(isOpen) => !isOpen && setIsSigning(false)} 
             onSave={handleSaveSignature}
         />
         
         <AppointmentScheduler
             open={isScheduling}
             onOpenChange={setIsScheduling}
-            onConfirm={handleScheduleAppointment}
+            onConfirm={async (selectedDateTime: Date) => {
+              if (!service) return;
+              
+              const result = await scheduleAppointmentAction(publicId, selectedDateTime.toISOString());
+              
+              if (result.success) {
+                  toast({
+                      title: "Cita Agendada",
+                      description: "Tu cita ha sido registrada. Nuestro equipo la confirmará a la brevedad.",
+                  });
+                  setIsScheduling(false);
+              } else {
+                  toast({
+                      title: "Error al Agendar",
+                      description: result.error || "No se pudo agendar la cita. Por favor, inténtelo más tarde.",
+                      variant: "destructive",
+                  });
+              }
+            }}
         />
      </>
   );
