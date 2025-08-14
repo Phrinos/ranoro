@@ -2,7 +2,7 @@
 'use server';
 
 import { getAdminDb } from '@/lib/firebaseAdmin';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import type { ServiceRecord } from '@/types';
 
@@ -26,7 +26,6 @@ export async function scheduleAppointmentAction(
       appointmentStatus: 'Sin Confirmar', 
     };
 
-    // Update both documents using a transaction or batch write for consistency
     const batch = db.batch();
     batch.update(mainDocRef, updatedData);
     batch.update(publicDocRef, updatedData);
@@ -53,8 +52,10 @@ export async function cancelAppointmentAction(publicId: string): Promise<{ succe
 
     const updateData = { appointmentStatus: 'Cancelada' as const };
 
-    await updateDoc(publicDocRef, updateData);
-    await updateDoc(mainDocRef, updateData);
+    const batch = db.batch();
+    batch.update(mainDocRef, updateData);
+    batch.update(publicDocRef, updateData);
+    await batch.commit();
 
     revalidatePath(`/s/${publicId}`);
 
