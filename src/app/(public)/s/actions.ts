@@ -1,4 +1,4 @@
-
+// src/app/(public)/s/actions.ts
 'use server';
 
 import { getAdminDb } from '@/lib/firebaseAdmin';
@@ -114,7 +114,7 @@ export async function confirmAppointmentAction(publicId: string): Promise<{ succ
 
     const publicDocRef = doc(db, 'publicServices', publicId);
     const publicDocSnap = await publicDocRef.get();
-    if (publicDocSnap.exists) {
+    if (publicDocSnap.exists()) {
       batch.update(publicDocRef, updateData);
     }
 
