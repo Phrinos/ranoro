@@ -13,7 +13,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { isWeekend, isPast, setHours, setMinutes, format } from 'date-fns';
+import { isWeekend, isPast, setHours, setMinutes, format, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
