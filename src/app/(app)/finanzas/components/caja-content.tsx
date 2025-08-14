@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/caja-content.tsx
 "use client";
 
@@ -29,7 +28,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { cn } from '@/lib/utils';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import ServiceDocumentContent from '@/components/public-service-sheet';
+import { ServiceSheetContent } from '@/components/public-service-sheet';
 import ReactDOMServer from 'react-dom/server';
 
 const cashTransactionSchema = z.object({
@@ -295,7 +294,7 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
           securityChecklist: [],
         };
         return ReactDOMServer.renderToString(
-            <ServiceDocumentContent record={adaptedRecord} />
+            <ServiceSheetContent record={adaptedRecord} />
         );
     }
   };
