@@ -2,9 +2,10 @@
 'use server';
 
 import { getAdminDb } from '@/lib/firebaseAdmin';
-import { doc, updateDoc, getDoc } from 'firebase-admin/firestore';
+import { doc, updateDoc, getDoc, DocumentData } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import type { ServiceRecord } from '@/types';
+import { cleanObjectForFirestore } from '@/lib/forms';
 
 export async function scheduleAppointmentAction(
   publicId: string,
@@ -18,6 +19,15 @@ export async function scheduleAppointmentAction(
     const db = getAdminDb();
     const publicDocRef = doc(db, 'publicServices', publicId);
     const mainDocRef = doc(db, 'serviceRecords', publicId);
+
+    const mainDocSnap = await getDoc(mainDocRef);
+    if (!mainDocSnap.exists()) {
+      return { success: false, error: 'El servicio solicitado no existe.' };
+    }
+    const serviceData = mainDocSnap.data() as ServiceRecord;
+    if (serviceData.status !== 'Cotizacion') {
+      return { success: false, error: 'Este servicio ya no se puede agendar.' };
+    }
     
     const updatedData: Partial<ServiceRecord> = {
       status: 'Agendado',
@@ -27,8 +37,15 @@ export async function scheduleAppointmentAction(
     };
 
     const batch = db.batch();
-    batch.update(mainDocRef, updatedData);
-    batch.update(publicDocRef, updatedData);
+    const cleanedData = cleanObjectForFirestore(updatedData);
+
+    batch.update(mainDocRef, cleanedData);
+    
+    const publicDocSnap = await getDoc(publicDocRef);
+    if(publicDocSnap.exists()) {
+        batch.update(publicDocRef, cleanedData);
+    }
+
     await batch.commit();
 
     revalidatePath(`/s/${publicId}`);
@@ -50,7 +67,7 @@ export async function cancelAppointmentAction(publicId: string): Promise<{ succe
     const publicDocRef = doc(db, 'publicServices', publicId);
     const mainDocRef = doc(db, 'serviceRecords', publicId);
 
-    const updateData = { appointmentStatus: 'Cancelada' as const };
+    const updateData = { appointmentStatus: 'Cancelada' as const, status: 'Cancelado' as const, cancellationReason: 'Cancelado por el cliente' };
 
     const batch = db.batch();
     batch.update(mainDocRef, updateData);
@@ -91,7 +108,7 @@ export async function confirmAppointmentAction(publicId: string): Promise<{ succ
       return { success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' };
     }
 
-    const updateData = { appointmentStatus: 'Confirmada' as const };
+    const updateData = { appointmentStatus: 'Confirmada' as const, subStatus: 'Confirmada' as const };
     const batch = db.batch();
     batch.update(serviceDocRef, updateData);
 
