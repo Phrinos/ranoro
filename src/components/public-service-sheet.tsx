@@ -9,7 +9,7 @@ import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency, capitalizeWo
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { User, Car as CarIcon, CalendarCheck, CheckCircle, XCircle, Clock, Ellipsis, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2 } from 'lucide-react';
-import { QuoteContent } from '@/components/quote-content';
+import { QuoteContent } from '@/components/QuoteSheetContent';
 import { Button } from '@/components/ui/button';
 import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import Image from 'next/image';
@@ -346,3 +346,5 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
+
+    
