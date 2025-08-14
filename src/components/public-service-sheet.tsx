@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -10,11 +9,14 @@ import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency, capitalizeWo
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { User, Car as CarIcon, CalendarCheck, CheckCircle, XCircle, Clock, Ellipsis, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2 } from 'lucide-react';
-import Link from 'next/link';
-import { Icon } from '@iconify/react';
-import Image from 'next/image';
+import { QuoteContent } from '@/components/quote-content';
 import { Button } from '@/components/ui/button';
+import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
+import Image from 'next/image';
+import { parseDate } from '@/lib/forms';
 import { Badge } from '@/components/ui/badge';
+import { GARANTIA_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
+import Link from 'next/link';
 
 
 const initialWorkshopInfo: WorkshopInfo = {
