@@ -1,7 +1,7 @@
 
 'use server';
 
-import { db } from '@/lib/firebasePublic';
+import { getAdminDb } from '@/lib/firebaseAdmin';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { ServiceRecord } from '@/types';
@@ -15,18 +15,22 @@ export async function scheduleAppointmentAction(
       throw new Error('Información de cita inválida.');
     }
 
+    const db = getAdminDb();
     const publicDocRef = doc(db, 'publicServices', publicId);
     const mainDocRef = doc(db, 'serviceRecords', publicId);
     
     const updatedData: Partial<ServiceRecord> = {
       status: 'Agendado',
+      subStatus: 'Sin Confirmar', 
       appointmentDateTime: new Date(appointmentDateTime).toISOString(),
       appointmentStatus: 'Sin Confirmar', 
     };
 
-    // Update both documents
-    await updateDoc(publicDocRef, updatedData);
-    await updateDoc(mainDocRef, updatedData);
+    // Update both documents using a transaction or batch write for consistency
+    const batch = db.batch();
+    batch.update(mainDocRef, updatedData);
+    batch.update(publicDocRef, updatedData);
+    await batch.commit();
 
     revalidatePath(`/s/${publicId}`);
     
@@ -43,6 +47,7 @@ export async function cancelAppointmentAction(publicId: string): Promise<{ succe
     if (!publicId) {
       throw new Error('ID de servicio inválido.');
     }
+    const db = getAdminDb();
     const publicDocRef = doc(db, 'publicServices', publicId);
     const mainDocRef = doc(db, 'serviceRecords', publicId);
 
