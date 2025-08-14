@@ -12,14 +12,11 @@ import { Separator } from '@/components/ui/separator';
 import { User, Car as CarIcon, CalendarCheck, CheckCircle, XCircle, Clock, Ellipsis, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2 } from 'lucide-react';
 import { QuoteContent } from '@/components/QuoteSheetContent';
 import { Button } from '@/components/ui/button';
-import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import Image from 'next/image';
 import { parseDate } from '@/lib/forms';
 import { Badge } from '@/components/ui/badge';
 import { GARANTIA_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
 import Link from 'next/link';
-import { Icon } from '@iconify/react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 
 const initialWorkshopInfo: WorkshopInfo = {
@@ -33,174 +30,6 @@ const initialWorkshopInfo: WorkshopInfo = {
   footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
   fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
-
-const inspectionGroups = [
-  { title: "LUCES", items: [
-    { name: "luces_altas_bajas_niebla", label: "1. ALTAS, BAJAS Y NIEBLA" },
-    { name: "luces_cuartos", label: "2. CUARTOS DELANTEROS, TRASEROS Y LATERALES" },
-    { name: "luces_direccionales", label: "3. DIRECCIONALES E INTERMITENTES" },
-    { name: "luces_frenos_reversa", label: "4. FRENOS Y REVERSA" },
-    { name: "luces_interiores", label: "5. INTERIORES" },
-  ]},
-  { title: "FUGAS Y NIVELES", items: [
-    { name: "fugas_refrigerante", label: "6. REFRIGERANTE" },
-    { name: "fugas_limpiaparabrisas", label: "7. LIMPIAPARABRISAS" },
-    { name: "fugas_frenos_embrague", label: "8. FRENOS Y EMBRAGUE" },
-    { name: "fugas_transmision", label: "9. TRANSMISIÓN Y TRANSEJE" },
-    { name: "fugas_direccion_hidraulica", label: "10. DIRECCIÓN HIDRÁULICA" },
-  ]},
-  { title: "CARROCERÍA", items: [
-    { name: "carroceria_cristales_espejos", label: "11. CRISTALES / ESPEJOS" },
-    { name: "carroceria_puertas_cofre", label: "12. PUERTAS / COFRE / CAJUELA / SALPICADERA" },
-    { name: "carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
-    { name: "carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
-  ]},
-  { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
-    { name: "suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
-    { name: "suspension_amortiguadores", label: "16. AMORTIGUADORES" },
-    { name: "suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
-    { name: "suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
-  ]},
-  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
-    { name: "llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
-    { name: "llantas_refaccion", label: "20. REFACCIÓN" },
-  ]},
-  { title: "FRENOS", items: [
-    { name: "frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
-    { name: "frenos_discos_traseros", label: "22. DISCOS / BALATAS TRASERAS" },
-  ]},
-  { title: "OTROS", items: [
-    { name: "otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
-    { name: "otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
-    { name: "otros_claxon", label: "25. CLAXON" },
-    { name: "otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
-  ]},
-];
-
-const StatusIndicator = ({ status }: { status?: SafetyCheckStatus }) => {
-  const statusInfo = {
-    ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
-    atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
-    inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" },
-    na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" },
-  };
-  const currentStatus = statusInfo[status || 'na'] || statusInfo.na;
-
-  return (
-    <div className="flex items-center gap-2">
-      <div className={`h-3 w-3 rounded-full ${currentStatus.color}`} />
-      <span className={cn("text-xs font-semibold", currentStatus.textColor)}>{currentStatus.label}</span>
-    </div>
-  );
-};
-
-const SafetyChecklistDisplay = ({
-  inspection,
-  workshopInfo,
-  service,
-  vehicle,
-  onViewImage
-}: {
-  inspection: SafetyInspection;
-  workshopInfo: WorkshopInfo;
-  service: ServiceRecord;
-  vehicle?: Vehicle;
-  onViewImage: (url: string) => void;
-}) => {
-    const serviceDate = parseDate(service.serviceDate);
-    const formattedServiceDate = serviceDate && isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
-
-    return (
-        <div className="mt-4 print:mt-0">
-            <header className="mb-4 pb-2 border-b-2 border-black">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <div className="relative w-[150px] h-auto">
-                        <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} width={150} height={50} style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" priority />
-                    </div>
-                    <div className="text-left sm:text-right">
-                    <h1 className="text-base sm:text-lg font-bold">REVISIÓN DE PUNTOS DE SEGURIDAD</h1>
-                    <p className="font-mono text-xs">Folio de Servicio: <span className="font-semibold">{service.id}</span></p>
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 text-xs">
-                    <div>
-                        <p className="font-bold">Placas:</p>
-                        <p>{vehicle?.licensePlate}</p>
-                        <p className="font-bold mt-2">Vehículo:</p>
-                        <p>{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
-                    </div>
-                    <div className="text-left sm:text-right">
-                        <p className="font-bold">Fecha de Revisión:</p>
-                        <p>{formattedServiceDate}</p>
-                        {service.mileage && (
-                            <>
-                                <p className="font-bold mt-2">Kilometraje:</p>
-                                <p>{service.mileage.toLocaleString('es-MX')} km</p>
-                            </>
-                        )}
-                    </div>
-                </div>
-                 <div className="mt-2 text-xs border-t pt-2">
-                    <p className="font-bold">Cliente:</p>
-                    <p>{vehicle?.ownerName}{vehicle?.ownerPhone && ` - ${vehicle.ownerPhone}`}</p>
-                </div>
-            </header>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                {inspectionGroups.map(group => (
-                    <div key={group.title} className="break-inside-avoid">
-                        <h4 className="font-bold text-base mb-2 border-b-2 border-black pb-1">{group.title}</h4>
-                        <div className="space-y-1">
-                            {group.items.map(item => {
-                                const checkItem = inspection[item.name as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
-                                return (
-                                    <div key={item.name} className="py-1 border-b border-dashed last:border-none">
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="pr-4">{item.label}</span>
-                                            <StatusIndicator status={checkItem?.status} />
-                                        </div>
-                                        {checkItem && checkItem.photos && checkItem.photos.length > 0 && (
-                                            <div className="grid grid-cols-2 gap-1 mt-1 pl-4">
-                                                {checkItem.photos.map((photoUrl, pIndex) => (
-                                                     <button
-                                                        type="button"
-                                                        onClick={() => onViewImage && onViewImage(photoUrl)}
-                                                        key={pIndex} 
-                                                        className="relative aspect-video w-full bg-gray-100 rounded overflow-hidden border group"
-                                                    >
-                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" crossOrigin="anonymous"/>
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                                                            <Eye className="h-6 w-6 text-white" />
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ))}
-            </div>
-            {inspection.inspectionNotes && (
-                <div className="mt-6 border-t pt-4 break-before-page">
-                    <h4 className="font-bold text-base mb-2">Observaciones Generales de la Inspección:</h4>
-                    <p className="text-sm whitespace-pre-wrap p-2 bg-gray-50 rounded-md border">{inspection.inspectionNotes}</p>
-                </div>
-            )}
-            {inspection.technicianSignature && (
-                 <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
-                    <div className="relative w-full h-full max-w-[200px] aspect-video">
-                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" fill className="object-contain" crossOrigin="anonymous" priority />
-                    </div>
-                    <div className="mt-2 pt-1 w-64 text-center">
-                        <p className="text-xs font-bold">FIRMA DEL TÉCNICO ({format(new Date(), "dd/MM/yyyy")})</p>
-                    </div>
-                </div>
-            )}
-        </div>
-    )
-}
 
 interface ServiceSheetContentProps {
   record: any;
@@ -247,13 +76,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-full relative print:p-0">
-        {service.status === 'Cancelado' && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-            <span className="text-red-500 text-7xl md:text-9xl font-black opacity-20 transform -rotate-12 select-none">
-              CANCELADO
-            </span>
-          </div>
-        )}
         <header className="mb-2 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-start gap-2">
             <div className="relative w-[150px] h-[50px]">
@@ -288,26 +110,48 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </div>
           </section>
 
-          <section className="border-2 border-black rounded-md overflow-hidden mb-2">
-              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">TRABAJOS A REALIZAR</h3>
-              <div className="p-2 space-y-1 text-xs min-h-[8rem]">
-                {(service.serviceItems ?? []).map((item, index) => (
-                  <div key={index} className="pb-1 border-b border-dashed border-gray-300 last:border-none">
-                    <div className="flex justify-between items-center font-bold text-sm">
-                      <p>{item.name}</p>
-                      <p>{formatCurrency(item.price)}</p>
-                    </div>
-                    {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                      <ul className="list-disc list-inside pl-2 text-gray-600">
-                        {item.suppliesUsed.map((supply, sIndex) => (
-                          <li key={sIndex}>{supply.quantity} x {supply.supplyName}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
-          </section>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
+            <div className="lg:col-span-2">
+                <Card>
+                    <CardHeader><CardTitle>Trabajos a Realizar</CardTitle></CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {(service.serviceItems || []).map((item, index) => (
+                                <div key={item.id || index} className="p-4 rounded-lg bg-background">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                            <p className="font-semibold">{item.name}</p>
+                                            {item.suppliesUsed && item.suppliesUsed.length > 0 && (
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <p className="font-bold text-lg">{formatCurrency(item.price)}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {(!service.serviceItems || service.serviceItems.length === 0) && (
+                                <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
+                            )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{termsText}</p>
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="lg:col-span-1 space-y-6">
+                <Card>
+                    <CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal:</span><span className="font-medium">{formatCurrency(subTotal)}</span></div>
+                        <div className="flex justify-between items-center"><span className="text-muted-foreground">IVA (16%):</span><span className="font-medium">{formatCurrency(taxAmount)}</span></div>
+                        <Separator className="my-2"/>
+                        <div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+
         </main>
         
         <footer className="mt-auto pt-2 text-xs">
