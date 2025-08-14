@@ -2,7 +2,7 @@
 'use server';
 
 import { getAdminDb } from '@/lib/firebaseAdmin';
-import { doc, updateDoc } from 'firebase-admin/firestore';
+import { doc, updateDoc, getDoc } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import type { ServiceRecord } from '@/types';
 
@@ -64,5 +64,49 @@ export async function cancelAppointmentAction(publicId: string): Promise<{ succe
     console.error('Error cancelling appointment:', error);
     const message = error instanceof Error ? error.message : 'Ocurrió un error desconocido.';
     return { success: false, error: message };
+  }
+}
+
+
+export async function confirmAppointmentAction(publicId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const db = getAdminDb();
+
+    if (!publicId) {
+      throw new Error('Falta el ID del servicio.');
+    }
+
+    const serviceDocRef = doc(db, 'serviceRecords', publicId);
+    const serviceDoc = await getDoc(serviceDocRef);
+
+    if (!serviceDoc.exists()) {
+      return { success: false, error: 'El servicio no fue encontrado.' };
+    }
+
+    const data = serviceDoc.data() || {};
+    const status = String(data.status || '').toLowerCase();
+    const appt = String(data.appointmentStatus || '').toLowerCase();
+
+    if (!(status === 'agendado' && appt === 'sin confirmar')) {
+      return { success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' };
+    }
+
+    const updateData = { appointmentStatus: 'Confirmada' as const };
+    const batch = db.batch();
+    batch.update(serviceDocRef, updateData);
+
+    const publicDocRef = doc(db, 'publicServices', publicId);
+    const publicDocSnap = await publicDocRef.get();
+    if (publicDocSnap.exists) {
+      batch.update(publicDocRef, updateData);
+    }
+
+    await batch.commit();
+    revalidatePath(`/s/${publicId}`);
+    return { success: true, message: 'Cita confirmada correctamente.' };
+  } catch (e) {
+    const err = e as Error;
+    console.error('Error confirming appointment:', err);
+    return { success: false, error: err.message };
   }
 }

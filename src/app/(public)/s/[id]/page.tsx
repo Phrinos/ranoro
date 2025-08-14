@@ -15,7 +15,7 @@ import { savePublicDocument } from '@/lib/public-document';
 import { QuoteContent } from '@/components/QuoteSheetContent';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { AppointmentScheduler } from '@/components/shared/AppointmentScheduler';
-import { scheduleAppointmentAction } from '@/app/(public)/s/actions';
+import { scheduleAppointmentAction, confirmAppointmentAction } from '@/app/(public)/s/actions';
 
 export default function PublicServicePage() {
   const params = useParams();
@@ -108,10 +108,9 @@ export default function PublicServicePage() {
     if (!service) return;
     setIsConfirming(true);
     try {
-      const response = await fetch(`/api/services/${publicId}/confirm`, { method: 'POST' });
-      const result = await response.json();
+      const result = await confirmAppointmentAction(publicId);
 
-      if (!response.ok) {
+      if (!result.success) {
         throw new Error(result.error || 'Error del servidor');
       }
 
