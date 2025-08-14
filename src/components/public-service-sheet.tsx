@@ -10,13 +10,11 @@ import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency, capitalizeWo
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { User, Car as CarIcon, CalendarCheck, CheckCircle, XCircle, Clock, Ellipsis, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2 } from 'lucide-react';
-import { QuoteContent } from '@/components/QuoteSheetContent';
-import { Button } from '@/components/ui/button';
-import Image from 'next/image';
-import { parseDate } from '@/lib/forms';
-import { Badge } from '@/components/ui/badge';
-import { GARANTIA_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
 import Link from 'next/link';
+import { Icon } from '@iconify/react';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 
 const initialWorkshopInfo: WorkshopInfo = {
@@ -31,21 +29,191 @@ const initialWorkshopInfo: WorkshopInfo = {
   fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
 
+const inspectionGroups = [
+  { title: "LUCES", items: [
+    { name: "luces_altas_bajas_niebla", label: "1. ALTAS, BAJAS Y NIEBLA" },
+    { name: "luces_cuartos", label: "2. CUARTOS DELANTEROS, TRASEROS Y LATERALES" },
+    { name: "luces_direccionales", label: "3. DIRECCIONALES E INTERMITENTES" },
+    { name: "luces_frenos_reversa", label: "4. FRENOS Y REVERSA" },
+    { name: "luces_interiores", label: "5. INTERIORES" },
+  ]},
+  { title: "FUGAS Y NIVELES", items: [
+    { name: "fugas_refrigerante", label: "6. REFRIGERANTE" },
+    { name: "fugas_limpiaparabrisas", label: "7. LIMPIAPARABRISAS" },
+    { name: "fugas_frenos_embrague", label: "8. FRENOS Y EMBRAGUE" },
+    { name: "fugas_transmision", label: "9. TRANSMISIÓN Y TRANSEJE" },
+    { name: "fugas_direccion_hidraulica", label: "10. DIRECCIÓN HIDRÁULICA" },
+  ]},
+  { title: "CARROCERÍA", items: [
+    { name: "carroceria_cristales_espejos", label: "11. CRISTALES / ESPEJOS" },
+    { name: "carroceria_puertas_cofre", label: "12. PUERTAS / COFRE / CAJUELA / SALPICADERA" },
+    { name: "carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
+    { name: "carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
+  ]},
+  { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
+    { name: "suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
+    { name: "suspension_amortiguadores", label: "16. AMORTIGUADORES" },
+    { name: "suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
+    { name: "suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
+  ]},
+  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
+    { name: "llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
+    { name: "llantas_refaccion", label: "20. REFACCIÓN" },
+  ]},
+  { title: "FRENOS", items: [
+    { name: "frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
+    { name: "frenos_discos_traseros", label: "22. DISCOS / BALATAS TRASERAS" },
+  ]},
+  { title: "OTROS", items: [
+    { name: "otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
+    { name: "otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
+    { name: "otros_claxon", label: "25. CLAXON" },
+    { name: "otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
+  ]},
+];
+
+const StatusIndicator = ({ status }: { status?: SafetyCheckStatus }) => {
+  const statusInfo = {
+    ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
+    atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
+    inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" },
+    na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" },
+  };
+  const currentStatus = statusInfo[status || 'na'] || statusInfo.na;
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`h-3 w-3 rounded-full ${currentStatus.color}`} />
+      <span className={cn("text-xs font-semibold", currentStatus.textColor)}>{currentStatus.label}</span>
+    </div>
+  );
+};
+
+const SafetyChecklistDisplay = ({
+  inspection,
+  workshopInfo,
+  service,
+  vehicle,
+  onViewImage
+}: {
+  inspection: SafetyInspection;
+  workshopInfo: WorkshopInfo;
+  service: ServiceRecord;
+  vehicle?: Vehicle;
+  onViewImage: (url: string) => void;
+}) => {
+    const serviceDate = parseDate(service.serviceDate);
+    const formattedServiceDate = serviceDate && isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+
+    return (
+        <div className="mt-4 print:mt-0">
+            <header className="mb-4 pb-2 border-b-2 border-black">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div className="relative w-[150px] h-auto">
+                        <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} width={150} height={50} style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" priority />
+                    </div>
+                    <div className="text-left sm:text-right">
+                    <h1 className="text-base sm:text-lg font-bold">REVISIÓN DE PUNTOS DE SEGURIDAD</h1>
+                    <p className="font-mono text-xs">Folio de Servicio: <span className="font-semibold">{service.id}</span></p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 text-xs">
+                    <div>
+                        <p className="font-bold">Placas:</p>
+                        <p>{vehicle?.licensePlate}</p>
+                        <p className="font-bold mt-2">Vehículo:</p>
+                        <p>{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
+                    </div>
+                    <div className="text-left sm:text-right">
+                        <p className="font-bold">Fecha de Revisión:</p>
+                        <p>{formattedServiceDate}</p>
+                        {service.mileage && (
+                            <>
+                                <p className="font-bold mt-2">Kilometraje:</p>
+                                <p>{service.mileage.toLocaleString('es-MX')} km</p>
+                            </>
+                        )}
+                    </div>
+                </div>
+                 <div className="mt-2 text-xs border-t pt-2">
+                    <p className="font-bold">Cliente:</p>
+                    <p>{vehicle?.ownerName}{vehicle?.ownerPhone && ` - ${vehicle.ownerPhone}`}</p>
+                </div>
+            </header>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                {inspectionGroups.map(group => (
+                    <div key={group.title} className="break-inside-avoid">
+                        <h4 className="font-bold text-base mb-2 border-b-2 border-black pb-1">{group.title}</h4>
+                        <div className="space-y-1">
+                            {group.items.map(item => {
+                                const checkItem = inspection[item.name as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
+                                return (
+                                    <div key={item.name} className="py-1 border-b border-dashed last:border-none">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="pr-4">{item.label}</span>
+                                            <StatusIndicator status={checkItem?.status} />
+                                        </div>
+                                        {checkItem && checkItem.photos && checkItem.photos.length > 0 && (
+                                            <div className="grid grid-cols-2 gap-1 mt-1 pl-4">
+                                                {checkItem.photos.map((photoUrl, pIndex) => (
+                                                     <button
+                                                        type="button"
+                                                        onClick={() => onViewImage && onViewImage(photoUrl)}
+                                                        key={pIndex} 
+                                                        className="relative aspect-video w-full bg-gray-100 rounded overflow-hidden border group"
+                                                    >
+                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" crossOrigin="anonymous"/>
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                                                            <Eye className="h-6 w-6 text-white" />
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {inspection.inspectionNotes && (
+                <div className="mt-6 border-t pt-4 break-before-page">
+                    <h4 className="font-bold text-base mb-2">Observaciones Generales de la Inspección:</h4>
+                    <p className="text-sm whitespace-pre-wrap p-2 bg-gray-50 rounded-md border">{inspection.inspectionNotes}</p>
+                </div>
+            )}
+            {inspection.technicianSignature && (
+                 <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
+                    <div className="relative w-full h-full max-w-[200px] aspect-video">
+                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" fill className="object-contain" crossOrigin="anonymous" priority />
+                    </div>
+                    <div className="mt-2 pt-1 w-64 text-center">
+                        <p className="text-xs font-bold">FIRMA DEL TÉCNICO ({format(new Date(), "dd/MM/yyyy")})</p>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
 interface ServiceSheetContentProps {
   record: any;
   onSignClick?: (type: 'reception' | 'delivery') => void;
   onScheduleClick?: () => void;
+  onConfirmClick?: () => void;
   isSigning?: boolean;
+  isConfirming?: boolean;
   activeTab: string;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ record, onSignClick, onScheduleClick, isSigning, activeTab }, ref) => {
+  ({ record, onSignClick, onScheduleClick, onConfirmClick, isSigning, isConfirming, activeTab }, ref) => {
     
     const isQuoteOrScheduled = record.status === 'Cotizacion' || record.status === 'Agendado';
 
     if (isQuoteOrScheduled) {
-      return <QuoteContent ref={ref} quote={record} onScheduleClick={onScheduleClick} />;
+      return <QuoteContent ref={ref} quote={record} onScheduleClick={onScheduleClick} onConfirmClick={onConfirmClick} isConfirming={isConfirming} />;
     }
     
     const service: ServiceRecord = record;
@@ -151,7 +319,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 </Card>
             </div>
         </div>
-
         </main>
         
         <footer className="mt-auto pt-2 text-xs">

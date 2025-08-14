@@ -53,9 +53,11 @@ function coerceDate(v: unknown): Date | null {
 interface QuoteContentProps {
   quote: QuoteRecord;
   onScheduleClick?: () => void;
+  onConfirmClick?: () => void;
+  isConfirming?: boolean;
 }
 
-export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(({ quote, onScheduleClick }, ref) => {
+export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(({ quote, onScheduleClick, onConfirmClick, isConfirming }, ref) => {
     
     const vehicle = quote.vehicle as Vehicle | null || null;
     const workshopInfo = quote.workshopInfo || initialWorkshopInfo;
@@ -65,7 +67,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     const formattedQuoteDate = isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, 15), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     
-    const appointmentDate = coerceDate((quote as any).appointmentDateTime ?? (quote as any).appointmentAt ?? (quote as any).appointmentDate);
+    const appointmentDate = coerceDate((quote as any).appointmentDateTime);
     const formattedAppointmentDate = appointmentDate
       ? format(appointmentDate, "EEEE dd 'de' MMMM, yyyy 'a las' HH:mm 'hrs.'", { locale: es })
       : 'Fecha y hora por confirmar';
@@ -86,7 +88,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     const termsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores.`;
 
     const status = (quote.status || '').toLowerCase();
-    const subStatus = (quote.subStatus || '') as AgendadoSubStatus;
     const appointmentStatus = quote.appointmentStatus;
 
     const isQuoteStatus = status === 'cotizacion';
@@ -107,7 +108,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         if (isAppointmentConfirmed || isAppointmentPending) {
             return {
                 className: "bg-blue-50 border-blue-200 dark:bg-blue-900/50 dark:border-blue-800",
-                title: "CITA DE SERVICIO",
+                title: isAppointmentConfirmed ? "CITA AGENDADA CONFIRMADA" : "CITA PENDIENTE DE CONFIRMACIÓN",
                 titleClassName: "text-blue-900 dark:text-blue-200",
                 description: formattedAppointmentDate,
                 descriptionClassName: "text-blue-800 dark:text-blue-300"
@@ -191,6 +192,15 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 <Button onClick={onScheduleClick} size="lg">
                     <CalendarDays className="mr-2 h-5 w-5"/>
                     Agendar Cita
+                </Button>
+            </div>
+        )}
+        
+        {isAppointmentPending && onConfirmClick && (
+            <div className="text-center">
+                <Button onClick={onConfirmClick} size="lg" disabled={isConfirming}>
+                    {isConfirming ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <CheckCircle className="mr-2 h-5 w-5"/>}
+                    {isConfirming ? 'Confirmando...' : 'Confirmar mi Cita'}
                 </Button>
             </div>
         )}

@@ -28,6 +28,8 @@ export default function PublicServicePage() {
   const [signatureType, setSignatureType] = useState<'reception' | 'delivery' | null>(null);
 
   const [isScheduling, setIsScheduling] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+
 
   useEffect(() => {
     if (!publicId || !db) {
@@ -100,7 +102,33 @@ export default function PublicServicePage() {
         });
     }
   };
+  
+  const handleConfirmAppointment = async () => {
+    if (!service) return;
+    setIsConfirming(true);
+    try {
+      const response = await fetch(`/api/services/${publicId}/confirm`, { method: 'POST' });
+      const result = await response.json();
 
+      if (!response.ok) {
+        throw new Error(result.error || 'Error del servidor');
+      }
+
+      toast({
+        title: "Cita Confirmada",
+        description: "¡Gracias! Hemos confirmado tu cita.",
+      });
+
+    } catch (e: any) {
+        toast({
+            title: "Error al Confirmar",
+            description: e.message || "No se pudo confirmar la cita. Por favor, contacta al taller.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsConfirming(false);
+    }
+  };
 
   if (service === undefined) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -134,7 +162,9 @@ export default function PublicServicePage() {
               record={adaptedRecord as any}
               onSignClick={handleSignClick}
               onScheduleClick={() => setIsScheduling(true)}
+              onConfirmClick={handleConfirmAppointment}
               isSigning={isSigning}
+              isConfirming={isConfirming}
               activeTab="order"
             />
         </div>

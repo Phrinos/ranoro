@@ -39,7 +39,7 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
   const [selectedTime, setSelectedTime] = useState<{ hours: number; minutes: number } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const today = new Date();
+  const today = startOfDay(new Date());
 
   const handleDateSelect = (date?: Date) => {
     if (date) {
@@ -67,11 +67,18 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
     
     try {
       await onConfirm(finalDateTime);
+      onOpenChange(false);
     } catch(e) {
        // Error toast is handled by the parent component that calls onConfirm
     } finally {
       setIsSubmitting(false);
     }
+  };
+  
+  const startOfDay = (date: Date): Date => {
+    const newDate = new Date(date);
+    newDate.setHours(0, 0, 0, 0);
+    return newDate;
   };
 
   return (
