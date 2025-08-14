@@ -1,22 +1,6 @@
-
 // src/app/api/services/[id]/confirm/route.ts
 import { NextResponse } from 'next/server';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-
-// --- Firebase Admin SDK Initialization ---
-try {
-  if (!getApps().length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
-  }
-} catch (error) {
-  console.error('Firebase Admin initialization error:', error);
-}
-
-const db = getFirestore();
+import { getAdminDb } from '@/lib/firebaseAdmin';
 
 /**
  * Handles the POST request to confirm a service appointment.
@@ -28,6 +12,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const db = getAdminDb();
     const publicId = params.id;
 
     // 1. Validate the incoming data
@@ -45,12 +30,12 @@ export async function POST(
     const serviceData = serviceDoc.data()!;
 
     // 2. Verify that the service is in a confirmable state
-    if (serviceData.status !== 'Agendado' || serviceData.subStatus !== 'Sin Confirmar') {
+    if (serviceData.status !== 'Agendado' || serviceData.appointmentStatus !== 'Sin Confirmar') {
         return NextResponse.json({ success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' }, { status: 409 }); // 409 Conflict
     }
 
     const updateData = {
-        subStatus: 'Confirmada',
+        appointmentStatus: 'Confirmada',
     };
 
     // 3. Use a batch write to update both documents atomically
