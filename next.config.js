@@ -1,3 +1,4 @@
+require('dotenv').config();
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // 1. Ajustes de compilación
