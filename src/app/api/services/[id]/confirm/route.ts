@@ -1,3 +1,4 @@
+
 // src/app/api/services/[id]/confirm/route.ts
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
