@@ -27,7 +27,12 @@ const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
+  addressLine2: "Jardines de la Concepcion, C.P. 20267",
+  cityState: "Aguascalientes, Ags.",
   logoUrl: "/ranoro-logo.png",
+  footerLine1: "¡Gracias por su preferencia!",
+  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
+  fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
 
 function coerceDate(v: unknown): Date | null {
@@ -57,6 +62,7 @@ interface ServiceSheetContentProps {
   isConfirming?: boolean;
   onSignClick?: (type: 'reception' | 'delivery') => void;
   isSigning?: boolean;
+  activeTab: string;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
@@ -325,25 +331,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       );
     }
 });
-
 ServiceSheetContent.displayName = "ServiceSheetContent";
-```
 
-```
-- src/components/public-service-sheet.tsx
-```
-<content><![CDATA[
-// This component is now deprecated and its logic has been moved to ServiceSheetContent.tsx
-// This file can be safely deleted in a future commit.
-
-"use client";
-
-import React from 'react';
-
-export function ServiceSheetContent() {
-  return (
-    <div>
-      <p>This component is deprecated. Please use ServiceSheetContent instead.</p>
-    </div>
-  );
-}
+  
