@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
 import { savePublicDocument } from '@/lib/public-document';
-import { ServiceSheetContent } from '@/components/public-service-sheet';
+import { ServiceSheetContent } from '@/components/ServiceSheetContent';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 
 export default function PublicServicePage() {
@@ -75,6 +75,11 @@ export default function PublicServicePage() {
       setIsSigning(false);
       setSignatureType(null);
   };
+  
+   const handleSignClick = (type: 'reception' | 'delivery') => {
+      setSignatureType(type);
+      setIsSigning(true); // Open the dialog by setting isSigning to true
+  };
 
   if (service === undefined) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -88,51 +93,11 @@ export default function PublicServicePage() {
     );
   }
 
-  const vehicle = service?.vehicle as Vehicle | undefined;
-  const workshopInfo = service?.workshopInfo as WorkshopInfo | undefined;
-
-  const adaptedRecord = {
-      id: service.id,
-      status: service.status,
-      serviceDate: service.serviceDate,
-      appointmentDate: service.appointmentDateTime,
-      isPublicView: true,
-      vehicle: {
-        label: vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'Vehículo',
-        plates: vehicle?.licensePlate,
-        ownerPhone: vehicle?.ownerPhone,
-      },
-      customerName: service.customerName || vehicle?.ownerName,
-      customerPhone: vehicle?.ownerPhone,
-      workshopInfo: workshopInfo,
-      serviceAdvisorName: service.serviceAdvisorName,
-      serviceAdvisorSignatureDataUrl: service.serviceAdvisorSignatureDataUrl,
-      serviceItems: service.serviceItems,
-      quoteItems: service.status === 'Cotizacion' ? service.serviceItems : [],
-      reception: {
-        at: service.receptionDateTime,
-        customerSignatureDataUrl: service.customerSignatureReception,
-      },
-      delivery: {
-        at: service.deliveryDateTime,
-        customerSignatureDataUrl: service.customerSignatureDelivery,
-      },
-      securityChecklist: [], // This will need to be mapped from the original service.safetyInspection
-  };
-
-  const handleSignClick = () => {
-      if(service.status === 'En Taller' && !service.customerSignatureReception) {
-          setSignatureType('reception');
-      } else if (service.status === 'Entregado' && !service.customerSignatureDelivery) {
-          setSignatureType('delivery');
-      }
-  }
-  
   return (
      <>
         <div className="container mx-auto py-4 sm:py-8">
             <ServiceSheetContent
-              record={adaptedRecord as any}
+              service={service}
               onSignClick={handleSignClick}
               isSigning={isSigning}
               activeTab="order"
@@ -140,8 +105,8 @@ export default function PublicServicePage() {
         </div>
         
         <SignatureDialog 
-            open={!!signatureType} 
-            onOpenChange={(isOpen) => !isOpen && setSignatureType(null)} 
+            open={isSigning} 
+            onOpenChange={(isOpen) => !isOpen && setIsSigning(false)} 
             onSave={handleSaveSignature}
         />
      </>

@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
 import { savePublicDocument } from '@/lib/public-document';
-import { QuoteContent } from '@/components/QuoteSheetContent';
+import { ServiceSheetContent } from '@/components/ServiceSheetContent';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { AppointmentScheduler } from '@/components/shared/AppointmentScheduler';
 import { scheduleAppointmentAction, confirmAppointmentAction, cancelAppointmentAction } from '@/app/(public)/s/actions';
@@ -109,6 +109,11 @@ export default function PublicServicePage() {
         setIsConfirming(false);
     }
   };
+  
+  const handleSignClick = (type: 'reception' | 'delivery') => {
+      setSignatureType(type);
+      setIsSigning(true); // Open the dialog by setting isSigning to true
+  };
 
   if (service === undefined) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -118,18 +123,21 @@ export default function PublicServicePage() {
     return (
       <div className="container mx-auto py-8">
         <Card className="max-w-xl mx-auto text-center"><CardHeader><ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" /><CardTitle className="text-2xl font-bold">Error al Cargar</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">{error || "No se pudo cargar el documento del servicio."}</p></CardContent></Card>
-  </div>
+      </div>
     );
   }
   
   return (
      <>
         <div className="container mx-auto py-4 sm:py-8">
-            <QuoteContent
-              quote={service as any}
+            <ServiceSheetContent
+              service={service}
               onScheduleClick={() => setIsScheduling(true)}
               onConfirmClick={handleConfirmAppointment}
               isConfirming={isConfirming}
+              onSignClick={handleSignClick}
+              isSigning={isSigning}
+              activeTab="order" // Default tab, can be dynamic
             />
         </div>
         
