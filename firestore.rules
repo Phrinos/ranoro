@@ -3,26 +3,24 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Default-deny all reads and writes
-    // match /{document=**} {
-    //   allow read, write: if false;
+    // Previous Rules (for reference)
+    // match /users/{userId} {
+    //  allow read, write: if request.auth != null && request.auth.uid == userId;
     // }
-
-    // Allow logged-in users to read/write all collections
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Public service sheets can be read by anyone, but written only by auth users
-    match /publicServices/{serviceId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
+    // match /serviceRecords/{serviceId} {
+    //   allow read, write: if request.auth != null;
+    // }
     
-    // Public owner reports can be read by anyone
-    match /publicOwnerReports/{reportId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // Allow read access to public service sheets
+    match /publicServices/{serviceId} {
+      allow read;
+      // Allow unauthenticated users to update ONLY the fields needed for scheduling
+      allow update: if request.resource.data.keys().hasAll(['status', 'appointmentDateTime', 'appointmentStatus']);
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
