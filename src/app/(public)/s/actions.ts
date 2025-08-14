@@ -15,7 +15,8 @@ export async function scheduleAppointmentAction(
       throw new Error('Información de cita inválida.');
     }
 
-    const docRef = doc(db, 'publicServices', publicId);
+    const publicDocRef = doc(db, 'publicServices', publicId);
+    const mainDocRef = doc(db, 'serviceRecords', publicId);
     
     const updatedData: Partial<ServiceRecord> = {
       status: 'Agendado',
@@ -23,10 +24,8 @@ export async function scheduleAppointmentAction(
       appointmentStatus: 'Sin Confirmar', 
     };
 
-    await updateDoc(docRef, updatedData);
-
-    // Also update the main service record
-    const mainDocRef = doc(db, 'serviceRecords', publicId);
+    // Update both documents
+    await updateDoc(publicDocRef, updatedData);
     await updateDoc(mainDocRef, updatedData);
 
     revalidatePath(`/s/${publicId}`);
@@ -44,12 +43,12 @@ export async function cancelAppointmentAction(publicId: string): Promise<{ succe
     if (!publicId) {
       throw new Error('ID de servicio inválido.');
     }
-    const docRef = doc(db, 'publicServices', publicId);
+    const publicDocRef = doc(db, 'publicServices', publicId);
     const mainDocRef = doc(db, 'serviceRecords', publicId);
 
     const updateData = { appointmentStatus: 'Cancelada' as const };
 
-    await updateDoc(docRef, updateData);
+    await updateDoc(publicDocRef, updateData);
     await updateDoc(mainDocRef, updateData);
 
     revalidatePath(`/s/${publicId}`);
