@@ -39,6 +39,12 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
   const [selectedTime, setSelectedTime] = useState<{ hours: number; minutes: number } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  const startOfDay = (date: Date): Date => {
+    const newDate = new Date(date);
+    newDate.setHours(0, 0, 0, 0);
+    return newDate;
+  };
+  
   const today = startOfDay(new Date());
 
   const handleDateSelect = (date?: Date) => {
@@ -73,12 +79,6 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
     } finally {
       setIsSubmitting(false);
     }
-  };
-  
-  const startOfDay = (date: Date): Date => {
-    const newDate = new Date(date);
-    newDate.setHours(0, 0, 0, 0);
-    return newDate;
   };
 
   return (
