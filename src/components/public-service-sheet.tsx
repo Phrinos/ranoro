@@ -203,24 +203,18 @@ const SafetyChecklistDisplay = ({
 
 interface ServiceSheetContentProps {
   record: any;
-  onSignClick?: () => void;
+  onSignClick?: (type: 'reception' | 'delivery') => void;
   isSigning?: boolean;
-  onScheduleClick?: () => void;
   activeTab: string;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ record, onSignClick, isSigning, onScheduleClick, activeTab }, ref) => {
+  ({ record, onSignClick, isSigning, activeTab }, ref) => {
     
     const isQuoteOrScheduled = record.status === 'Cotizacion' || record.status === 'Agendado';
 
-    const handleViewImage = (url: string) => {
-        // In a real app, this would open a modal. For now, it opens in a new tab.
-        window.open(url, '_blank');
-    };
-
     if (isQuoteOrScheduled) {
-      return <QuoteContent ref={ref} quote={record} onScheduleClick={onScheduleClick} />;
+      return <QuoteContent ref={ref} quote={record} />;
     }
     
     const service: ServiceRecord = record;
@@ -238,7 +232,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [service.serviceItems]);
     
-    const termsText = `Precios en MXN. No incluye trabajos o materiales no especificados. Esta orden de servicio está sujeta a los Términos y Condiciones disponibles en nuestro taller o en ${workshopInfo.googleMapsUrl || 'nuestro sitio web'}.`;
+    const termsText = `Precios en MXN. No incluye trabajos o materiales no especificados. Esta orden de servicio está sujeta a los Términos y Condiciones disponibles en nuestro taller o en nuestro sitio web.`;
 
     const customerName = capitalizeWords(service.customerName || vehicle?.ownerName || '');
     const customerPhone = vehicle?.ownerPhone || 'Teléfono no disponible';
@@ -249,29 +243,91 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const vehicleColor = vehicle?.color;
     const serviceMileage = service?.mileage;
 
+    const ServiceOrderContent = (
+      <div className="flex flex-col min-h-full relative print:p-0">
+        {service.status === 'Cancelado' && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <span className="text-red-500 text-7xl md:text-9xl font-black opacity-20 transform -rotate-12 select-none">
+              CANCELADO
+            </span>
+          </div>
+        )}
+        <header className="mb-2 pb-2 border-b-2 border-black">
+          <div className="flex justify-between items-start gap-2">
+            <div className="relative w-[150px] h-[50px]">
+                <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" priority />
+            </div>
+            <div className="text-right">
+              <h1 className="text-xl font-bold">ORDEN DE SERVICIO</h1>
+              <p className="font-mono text-base">Folio: <span className="font-bold">{service.id}</span></p>
+            </div>
+          </div>
+          <div className="flex justify-between items-end mt-1 text-xs">
+             <div className="space-y-0 leading-tight">
+                <p className="font-bold text-base">{workshopInfo.name}</p>
+                <p>{workshopInfo.addressLine1}</p>
+                {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
+                <p>{workshopInfo.cityState}</p>
+                <p>Tel: {workshopInfo.phone}</p>
+             </div>
+             <div className="text-right text-[10px]">
+                <p><span className="font-bold">Fecha de Recepción:</span> {formattedReceptionDate}</p>
+             </div>
+          </div>
+        </header>
+
+        <main className="flex-grow">
+           <section className="mb-4 text-sm border-b-2 border-black pb-2">
+            <p className="font-bold text-lg">{customerName}</p>
+            <p className="font-semibold text-base">{customerPhone}</p>
+            <div className="mt-2 flex justify-between items-end">
+                <p className="font-bold text-lg">{vehicle ? `${vehicleMake} ${vehicleModel} ${vehicleYear}` : 'N/A'}</p>
+                <p className="font-bold text-xl px-2 py-1 bg-gray-200 rounded-md">{vehicleLicensePlate}</p>
+            </div>
+          </section>
+
+          <section className="border-2 border-black rounded-md overflow-hidden mb-2">
+              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">TRABAJOS A REALIZAR</h3>
+              <div className="p-2 space-y-1 text-xs min-h-[8rem]">
+                {(service.serviceItems ?? []).map((item, index) => (
+                  <div key={index} className="pb-1 border-b border-dashed border-gray-300 last:border-none">
+                    <div className="flex justify-between items-center font-bold text-sm">
+                      <p>{item.name}</p>
+                      <p>{formatCurrency(item.price)}</p>
+                    </div>
+                    {item.suppliesUsed && item.suppliesUsed.length > 0 && (
+                      <ul className="list-disc list-inside pl-2 text-gray-600">
+                        {item.suppliesUsed.map((supply, sIndex) => (
+                          <li key={sIndex}>{supply.quantity} x {supply.supplyName}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+          </section>
+        </main>
+        
+        <footer className="mt-auto pt-2 text-xs">
+           <section className="mt-2 text-center text-gray-500 text-[10px] space-x-4">
+              <Link href="/legal/terminos" target="_blank" className="hover:underline">Términos y Condiciones</Link>
+              <span>|</span>
+              <Link href="/legal/privacidad" target="_blank" className="hover:underline">Aviso de Privacidad</Link>
+           </section>
+           {workshopInfo.fixedFooterText && (
+            <div className="text-center mt-2 pt-2 border-t border-gray-200">
+              <p className="text-[10px] text-muted-foreground whitespace-pre-wrap">{workshopInfo.fixedFooterText}</p>
+            </div>
+          )}
+        </footer>
+      </div>
+    );
+
     return (
         <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm h-full w-full">
-            <ServiceOrderContent 
-                service={service} 
-                vehicle={vehicle}
-                workshopInfo={workshopInfo}
-                onSignClick={onSignClick}
-                isSigning={isSigning}
-            />
+            {ServiceOrderContent}
         </div>
     );
   }
 );
-
 ServiceSheetContent.displayName = "ServiceSheetContent";
-```
-
-### NO MODIFICATIONS were made to the following files:
-
-- `src/types/index.ts`
-- `src/app/(public)/s/actions.ts`
-- `src/components/shared/AppointmentScheduler.tsx`
-- `src/app/(public)/s/[id]/page.tsx`
-- `src/components/QuoteSheetContent.tsx`
-
-I've only modified `src/components/public-service-sheet.tsx` to handle the new unified view, which was the core request. The other files will be created or modified in subsequent steps if you approve this plan.
