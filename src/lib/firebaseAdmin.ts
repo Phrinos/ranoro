@@ -1,29 +1,40 @@
 // src/lib/firebaseAdmin.ts
-import { initializeApp, getApps, cert, getApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, cert, getApp, App } from 'firebase-admin/app';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
-let serviceAccount: any = null;
-const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+let app: App | null = null;
+let db: Firestore | null = null;
 
-if (raw) {
+function loadServiceAccount() {
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (!raw) return null;
   try {
-    serviceAccount = JSON.parse(raw);
-    if (serviceAccount.private_key?.includes('\\n')) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    const sa = JSON.parse(raw);
+    if (sa.private_key?.includes('\\n')) {
+      sa.private_key = sa.private_key.replace(/\\n/g, '\n');
     }
+    return sa;
   } catch {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not valid JSON.');
-  }
-} else {
-  throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY env var is missing.');
-}
-
-function getAdminApp() {
-  try {
-    return getApp('admin-app');
-  } catch {
-    return initializeApp({ credential: cert(serviceAccount) }, 'admin-app');
+    return null;
   }
 }
 
-export const getAdminDb = () => getFirestore(getAdminApp());
+export function getAdminDb(): Firestore {
+  if (db) return db;
+
+  // Reusa si ya existe
+  const existing = getApps().find(a => a.name === 'admin-app');
+  if (existing) {
+    app = existing;
+  } else {
+    const serviceAccount = loadServiceAccount();
+    if (!serviceAccount) {
+      // Lanza aquí (dentro de la función), para que el route lo pueda atrapar
+      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY missing or invalid.');
+    }
+    app = initializeApp({ credential: cert(serviceAccount) }, 'admin-app');
+  }
+
+  db = getFirestore(app!);
+  return db!;
+}
