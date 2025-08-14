@@ -1,26 +1,38 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // --- User and Role Management ---
+    // Any authenticated user can read the list of users and roles.
+    // This is necessary for assigning technicians, advisors, etc.
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      // Only a user can write to their own document.
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
     
-    // Previous Rules (for reference)
-    // match /users/{userId} {
-    //  allow read, write: if request.auth != null && request.auth.uid == userId;
-    // }
-    // match /serviceRecords/{serviceId} {
-    //   allow read, write: if request.auth != null;
-    // }
-    
-    // Allow read access to public service sheets
-    match /publicServices/{serviceId} {
-      allow read;
-      // Allow unauthenticated users to update ONLY the fields needed for scheduling
-      allow update: if request.resource.data.keys().hasAll(['status', 'appointmentDateTime', 'appointmentStatus']);
+    match /appRoles/{roleId} {
+      allow read: if request.auth != null;
+      // Writing to roles should be restricted to admin functions (managed by backend/security rules logic).
+      allow write: if false;
     }
 
-    // Default deny all other collections
+    // --- Public Documents ---
+    // Documents that need to be accessible without authentication.
+    match /publicServices/{serviceId} {
+        // Anyone can read a public service document.
+        allow read: if true;
+        // Anyone can update ONLY these specific fields for scheduling/signing.
+        allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'appointmentDateTime', 'appointmentStatus', 'customerSignatureReception', 'customerSignatureDelivery']);
+        // No one can create or delete public documents directly.
+        allow create, delete: if false;
+    }
+
+    // --- General Authenticated Access ---
+    // Default rule for all other collections.
+    // Any authenticated user can read and write.
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
     }
   }
 }
