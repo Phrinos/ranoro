@@ -1,3 +1,4 @@
+
 // src/app/(public)/s/[id]/page.tsx
 
 "use client";
@@ -11,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
 import { savePublicDocument } from '@/lib/public-document';
-import { ServiceSheetContent } from '@/components/public-service-sheet';
+import { QuoteSheetContent } from '@/components/QuoteSheetContent';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { AppointmentScheduler } from '@/components/shared/AppointmentScheduler';
 import { scheduleAppointmentAction } from '@/app/(public)/s/actions';
@@ -142,11 +143,6 @@ export default function PublicServicePage() {
     );
   }
 
-  const adaptedRecord = {
-      ...service,
-      isPublicView: true,
-  };
-
   const handleSignClick = () => {
       if(service.status === 'En Taller' && !service.customerSignatureReception) {
           setSignatureType('reception');
@@ -158,14 +154,11 @@ export default function PublicServicePage() {
   return (
      <>
         <div className="container mx-auto py-4 sm:py-8">
-            <ServiceSheetContent
-              record={adaptedRecord as any}
-              onSignClick={handleSignClick}
+            <QuoteSheetContent
+              quote={service as any}
               onScheduleClick={() => setIsScheduling(true)}
               onConfirmClick={handleConfirmAppointment}
-              isSigning={isSigning}
               isConfirming={isConfirming}
-              activeTab="order"
             />
         </div>
         

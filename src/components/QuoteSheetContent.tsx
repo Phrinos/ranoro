@@ -1,21 +1,22 @@
 
-
 "use client";
 
 import type { QuoteRecord, WorkshopInfo, Vehicle, AgendadoSubStatus } from '@/types';
 import { format, isValid, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { cn, formatCurrency, capitalizeWords, formatNumber } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon, CalendarCheck, CheckCircle, XCircle, Clock, Ellipsis, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2 } from 'lucide-react';
+import { User, Car as CarIcon, CalendarCheck, CheckCircle, XCircle, Clock, Ellipsis, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2, Ban } from 'lucide-react';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { cancelAppointmentAction } from '@/app/(public)/s/actions';
+import { useToast } from '@/hooks/use-toast';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -26,24 +27,18 @@ const initialWorkshopInfo: WorkshopInfo = {
 
 function coerceDate(v: unknown): Date | null {
   if (!v) return null;
-  // Firestore Timestamp
+  if (v instanceof Date) return isValid(v) ? v : null;
   if (typeof (v as any)?.toDate === 'function') {
     const d = (v as any).toDate();
     return isValid(d) ? d : null;
   }
-  // Date ya creado
-  if (v instanceof Date) return isValid(v) ? v : null;
-  // numérico: ms/segundos
   if (typeof v === 'number') {
     const d = new Date(v > 1e12 ? v : v * 1000);
     return isValid(d) ? d : null;
   }
-  // string: ISO o datetime-local (YYYY-MM-DDTHH:mm)
   if (typeof v === 'string') {
-    // intenta ISO
     const isoTry = parseISO(v);
     if (isValid(isoTry)) return isoTry;
-    // intenta cast genérico
     const generic = new Date(v);
     if (isValid(generic)) return generic;
   }
@@ -58,7 +53,8 @@ interface QuoteContentProps {
 }
 
 export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(({ quote, onScheduleClick, onConfirmClick, isConfirming }, ref) => {
-    
+    const { toast } = useToast();
+    const [isCancelling, setIsCancelling] = useState(false);
     const vehicle = quote.vehicle as Vehicle | null || null;
     const workshopInfo = quote.workshopInfo || initialWorkshopInfo;
     const IVA_RATE = 0.16;
@@ -108,7 +104,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         if (isAppointmentConfirmed || isAppointmentPending) {
             return {
                 className: "bg-blue-50 border-blue-200 dark:bg-blue-900/50 dark:border-blue-800",
-                title: isAppointmentConfirmed ? "CITA AGENDADA CONFIRMADA" : "CITA PENDIENTE DE CONFIRMACIÓN",
+                title: isAppointmentConfirmed ? "CITA AGENDADA" : "CITA PENDIENTE DE CONFIRMACIÓN",
                 titleClassName: "text-blue-900 dark:text-blue-200",
                 description: formattedAppointmentDate,
                 descriptionClassName: "text-blue-800 dark:text-blue-300"
@@ -126,6 +122,21 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 
     const statusCard = getStatusCardContent();
 
+    const handleCancelAppointment = async () => {
+      setIsCancelling(true);
+      try {
+        const result = await cancelAppointmentAction(quote.id);
+        if (result.success) {
+          toast({ title: "Cita Cancelada", description: "Tu cita ha sido cancelada exitosamente." });
+        } else {
+          throw new Error(result.error);
+        }
+      } catch (e: any) {
+        toast({ title: "Error", description: e.message || "No se pudo cancelar la cita.", variant: "destructive" });
+      } finally {
+        setIsCancelling(false);
+      }
+    };
     
     return (
       <div ref={ref} className="space-y-6">
@@ -142,28 +153,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center gap-4 p-4">
-                <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-                <CardTitle className="text-base">Cliente</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <p className="font-semibold">{capitalizeWords(quote.customerName || vehicle?.ownerName || '')}</p>
-                <p className="text-sm text-muted-foreground">{quote.customerPhone || vehicle?.ownerPhone || 'Teléfono no disponible'}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center gap-4 p-4">
-                 <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-                 <CardTitle className="text-base">Vehículo</CardTitle>
-                 </CardHeader>
-              <CardContent className="p-4 pt-0">
-                 <p className="font-semibold">{vehicle?.make || ''} {vehicle?.model || ''} ({vehicle?.year || 'N/A'})</p>
-                 <p className="text-muted-foreground">{vehicle?.licensePlate || 'N/A'}</p>
-                  {vehicle?.color && <p className="text-xs text-muted-foreground">Color: {vehicle.color}</p>}
-                  {vehicle?.currentMileage && <p className="text-xs text-muted-foreground">KM: {formatNumber(vehicle.currentMileage)}</p>}
-              </CardContent>
-            </Card>
+            <Card><CardHeader className="flex flex-row items-center gap-4 p-4"><User className="w-8 h-8 text-muted-foreground flex-shrink-0"/><CardTitle className="text-base">Cliente</CardTitle></CardHeader><CardContent className="p-4 pt-0"><p className="font-semibold">{capitalizeWords(quote.customerName || vehicle?.ownerName || '')}</p><p className="text-sm text-muted-foreground">{quote.customerPhone || vehicle?.ownerPhone || 'Teléfono no disponible'}</p></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center gap-4 p-4"><CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/><CardTitle className="text-base">Vehículo</CardTitle></CardHeader><CardContent className="p-4 pt-0"><p className="font-semibold">{vehicle?.make || ''} {vehicle?.model || ''} ({vehicle?.year || 'N/A'})</p><p className="text-muted-foreground">{vehicle?.licensePlate || 'N/A'}</p>{vehicle?.color && <p className="text-xs text-muted-foreground">Color: {vehicle.color}</p>}{vehicle?.currentMileage && <p className="text-xs text-muted-foreground">KM: {formatNumber(vehicle.currentMileage)}</p>}</CardContent></Card>
         </div>
         
         <Card className={cn(statusCard.className)}>
@@ -179,26 +170,27 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     )}
                 </div>
                 {isAppointmentConfirmed && (
-                    <Badge className="mt-2 bg-green-600 text-white">
-                        <CheckCircle className="mr-1 h-3 w-3"/>
-                        Confirmada
-                    </Badge>
+                    <Badge className="mt-2 bg-green-600 text-white"><CheckCircle className="mr-1 h-3 w-3"/>Confirmada</Badge>
                 )}
             </CardHeader>
         </Card>
         
         {isQuoteStatus && onScheduleClick && (
             <div className="text-center">
-                <Button onClick={onScheduleClick} size="lg">
-                    <CalendarDays className="mr-2 h-5 w-5"/>
-                    Agendar Cita
-                </Button>
+                <Button onClick={onScheduleClick} size="lg"><CalendarDays className="mr-2 h-5 w-5"/>Agendar Cita</Button>
             </div>
         )}
         
         {isAppointmentPending && onConfirmClick && (
-            <div className="text-center">
-                <Button onClick={onConfirmClick} size="lg" disabled={isConfirming}>
+            <div className="flex justify-center items-center gap-4 flex-wrap">
+                <ConfirmDialog
+                    triggerButton={<Button variant="destructive" disabled={isCancelling}><Ban className="mr-2 h-4 w-4"/>Cancelar Cita</Button>}
+                    title="¿Estás seguro de cancelar esta cita?"
+                    description="Esta acción notificará al taller sobre la cancelación. Puedes volver a agendar más tarde."
+                    onConfirm={handleCancelAppointment}
+                    isLoading={isCancelling}
+                />
+                <Button onClick={onConfirmClick} size="lg" disabled={isConfirming} className="bg-green-600 hover:bg-green-700">
                     {isConfirming ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <CheckCircle className="mr-2 h-5 w-5"/>}
                     {isConfirming ? 'Confirmando...' : 'Confirmar mi Cita'}
                 </Button>
@@ -207,55 +199,33 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Trabajos a realizar</CardTitle>
-                    </CardHeader>
+                <Card><CardHeader><CardTitle>Trabajos a realizar</CardTitle></CardHeader>
                     <CardContent>
                         <div className="space-y-4">
                             {items.map((item, index) => (
                                 <div key={item.id || index} className="p-4 rounded-lg bg-background">
                                     <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                            <p className="font-semibold">{item.name}</p>
-                                            {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                                                <p className="text-xs text-muted-foreground mt-1">
-                                                    Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
-                                                </p>
-                                            )}
+                                        <div className="flex-1"><p className="font-semibold">{item.name}</p>
+                                            {item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}
                                         </div>
                                         <p className="font-bold text-lg">{formatCurrency(item.price)}</p>
                                     </div>
                                 </div>
                             ))}
-                            {items.length === 0 && (
-                                <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>
-                            )}
+                            {items.length === 0 && (<p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{termsText}</p>
                     </CardContent>
                 </Card>
             </div>
             <div className="lg:col-span-1 space-y-6">
-                <Card>
-                    <CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader>
+                <Card><CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader>
                     <CardContent className="space-y-2 text-sm">
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Subtotal:</span>
-                            <span className="font-medium">{formatCurrency(subTotal)}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">IVA (16%):</span>
-                            <span className="font-medium">{formatCurrency(taxAmount)}</span>
-                        </div>
+                        <div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal:</span><span className="font-medium">{formatCurrency(subTotal)}</span></div>
+                        <div className="flex justify-between items-center"><span className="text-muted-foreground">IVA (16%):</span><span className="font-medium">{formatCurrency(taxAmount)}</span></div>
                         <Separator className="my-2"/>
-                        <div className="flex justify-between items-center font-bold text-base">
-                            <span>Total a Pagar:</span>
-                            <span className="text-primary">{formatCurrency(totalCost)}</span>
-                        </div>
-                         <div className="text-center text-sm font-semibold mt-4 pt-4 border-t">
-                            <p>Cotización Válida hasta el {validityDate}.</p>
-                        </div>
+                        <div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>
+                         <div className="text-center text-sm font-semibold mt-4 pt-4 border-t"><p>Cotización Válida hasta el {validityDate}.</p></div>
                     </CardContent>
                 </Card>
             </div>
