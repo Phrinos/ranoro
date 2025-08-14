@@ -1,4 +1,3 @@
-
 // src/app/(public)/s/[id]/page.tsx
 
 "use client";
@@ -15,7 +14,7 @@ import { savePublicDocument } from '@/lib/public-document';
 import { ServiceSheetContent } from '@/components/public-service-sheet';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { AppointmentScheduler } from '@/components/shared/AppointmentScheduler';
-import { scheduleAppointmentAction } from './actions';
+import { scheduleAppointmentAction } from '@/app/(public)/s/actions';
 
 export default function PublicServicePage() {
   const params = useParams();
