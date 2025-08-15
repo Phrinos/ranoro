@@ -53,8 +53,9 @@ export const parseDate = (d: any): Date | null => {
 /**
  * Recursively cleans an object for Firestore.
  * - Converts `undefined` values to `null`.
+ * - Converts `null` to `''` for specific string fields to avoid type errors.
  * - Converts Date objects to ISO strings.
- * This makes the object safe for Firestore, which doesn't accept `undefined`.
+ * This makes the object safe for Firestore.
  * @param obj The object or array to clean.
  * @returns A new object or array ready for Firestore.
  */
@@ -63,7 +64,7 @@ export const cleanObjectForFirestore = (obj: any): any => {
     return null; // Convert undefined to null for Firestore compatibility
   }
   if (obj === null || typeof obj !== 'object') {
-    return obj; // Primitives are returned as-is
+    return obj; // Primitives are returned as-is (except null, which is handled contextually below)
   }
 
   if (obj instanceof Date) {
@@ -74,7 +75,17 @@ export const cleanObjectForFirestore = (obj: any): any => {
     return obj.map(item => cleanObjectForFirestore(item));
   }
 
+  // List of keys that should be strings and not null.
+  const stringFields = ['notes', 'vehicleConditions', 'customerItems', 'cancellationReason', 'description', 'serviceType', 'subStatus'];
+
   return Object.fromEntries(
-    Object.entries(obj).map(([key, value]) => [key, cleanObjectForFirestore(value)])
+    Object.entries(obj).map(([key, value]) => {
+        let finalValue = cleanObjectForFirestore(value);
+        // If the value is null but the key is one of our designated string fields, convert null to an empty string.
+        if (finalValue === null && stringFields.includes(key)) {
+            finalValue = '';
+        }
+        return [key, finalValue];
+    })
   );
 };
