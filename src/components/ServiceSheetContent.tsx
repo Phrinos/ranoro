@@ -129,6 +129,7 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
         return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null, cardClass: "bg-muted/50", titleClass: "text-foreground", descClass: "text-muted-foreground" };
     }, [status, appointmentStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate, service]);
 
+    const shouldShowNextService = service.status === 'Entregado' && service.nextServiceInfo?.date && isValid(parseDate(service.nextServiceInfo.date)!);
 
     return (
       <>
@@ -145,7 +146,18 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
             {statusInfo.badge && <div className="mt-2"><Badge variant={statusInfo.badge.variant as any}>{statusInfo.badge.text}</Badge></div>}
           </CardHeader>
         </Card>
-         {isAppointmentPending && onConfirmClick && (<div className="flex justify-center items-center gap-4 flex-wrap mt-6"><ConfirmDialog triggerButton={<Button variant="destructive" disabled={isConfirming}><Ban className="mr-2 h-4 w-4"/>Cancelar Cita</Button>} title="¿Estás seguro de cancelar esta cita?" description="Esta acción notificará al taller sobre la cancelación. Puedes volver a agendar más tarde." onConfirm={onCancelAppointment} isLoading={isConfirming}/><Button onClick={onConfirmClick} size="lg" disabled={isConfirming} className="bg-green-600 hover:bg-green-700">{isConfirming ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <CheckCircle className="mr-2 h-5 w-5"/>}{isConfirming ? 'Confirmando...' : 'Confirmar mi Cita'}</Button></div>)}
+        {isAppointmentPending && onConfirmClick && (<div className="flex justify-center items-center gap-4 flex-wrap mt-6"><ConfirmDialog triggerButton={<Button variant="destructive" disabled={isConfirming}><Ban className="mr-2 h-4 w-4"/>Cancelar Cita</Button>} title="¿Estás seguro de cancelar esta cita?" description="Esta acción notificará al taller sobre la cancelación. Puedes volver a agendar más tarde." onConfirm={onCancelAppointment} isLoading={isConfirming}/><Button onClick={onConfirmClick} size="lg" disabled={isConfirming} className="bg-green-600 hover:bg-green-700">{isConfirming ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <CheckCircle className="mr-2 h-5 w-5"/>}{isConfirming ? 'Confirmando...' : 'Confirmar mi Cita'}</Button></div>)}
+        {shouldShowNextService && (
+            <div className="mt-4 p-3 border-2 border-red-500 bg-red-50 rounded-md text-red-800 text-center">
+                <h4 className="font-bold text-sm flex items-center gap-2 justify-center"><CalendarCheck className="h-4 w-4"/>PRÓXIMO SERVICIO</h4>
+                <p className="text-sm mt-1">
+                    <strong>Fecha:</strong> {format(parseDate(service.nextServiceInfo!.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}
+                    {service.nextServiceInfo!.mileage && (
+                        <> / <strong>KM:</strong> {formatNumber(service.nextServiceInfo!.mileage)}</>
+                    )}
+                </p>
+            </div>
+        )}
       </>
     );
 });
@@ -344,7 +356,7 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                 <Card>
                     <CardHeader><CardTitle>Salida del vehiculo del taller</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="border-t pt-4">
+                         <div className="border-t pt-4">
                              <h4 className="font-semibold mb-2">GARANTIA</h4>
                              <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
                         </div>
