@@ -1,4 +1,3 @@
-
 // src/app/(app)/pos/caja/components/corte-caja-content.tsx
 
 "use client";
@@ -344,5 +343,3 @@ export default function CorteCajaContent({ allSales, allServices, allCashTransac
     </>
   );
 }
-
-    
