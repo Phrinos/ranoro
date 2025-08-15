@@ -25,7 +25,6 @@ const statusOptions: { value: ServiceFormValues['status'], label: string }[] = [
     { value: 'Agendado', label: 'Agendado' },
     { value: 'En Taller', label: 'En Taller' },
     { value: 'Entregado', label: 'Entregado' },
-    { value: 'Cancelado', label: 'Cancelado' },
 ];
 
 const subStatusOptions: Record<string, { value: ServiceFormValues['subStatus'], label: string }[]> = {
