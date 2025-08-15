@@ -231,13 +231,14 @@ interface ServiceSheetContentProps {
   isConfirming?: boolean;
   onSignClick?: (type: 'reception' | 'delivery') => void;
   isSigning?: boolean;
+  activeTab?: string;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
   ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning }, ref) => {
     const { toast } = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
-    const [activeTab, setActiveTab] = useState('order');
+    const [currentActiveTab, setActiveTab] = useState('order');
     
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...service.workshopInfo };
     const vehicle = service.vehicle as Vehicle | undefined;
@@ -287,7 +288,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <StatusCard service={service} isConfirming={isConfirming} onConfirmClick={onConfirmClick} onCancelAppointment={handleCancelAppointment}/>
         {status === 'cotizacion' && onScheduleClick && <div className="text-center"><Button onClick={onScheduleClick} size="lg"><CalendarDays className="mr-2 h-5 w-5"/>Agendar Cita</Button></div>}
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={currentActiveTab} onValueChange={setActiveTab} className="w-full">
             <div className="overflow-x-auto scrollbar-hide">
               <TabsList className="relative w-max">
                   {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
@@ -319,6 +320,8 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
 
+    const showReceptionCard = service.status === 'En Taller' || service.status === 'Entregado' || service.status === 'Completado';
+
     return (
         <div className="space-y-6">
             <Card>
@@ -343,33 +346,35 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                     </div>
                 </CardContent>
             </Card>
-
+            
             <div className={cn("grid grid-cols-1 gap-6", service.status === 'Entregado' && "md:grid-cols-2")}>
-                <Card>
-                    <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                        <ReceptionDetails service={service} />
-                        <div className="border-t pt-4">
-                            <h4 className="font-semibold mb-2">Firma de Autorización</h4>
-                            <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
-                            <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
-                        </div>
-                    </CardContent>
-                </Card>
+              {showReceptionCard && (
+                  <Card>
+                      <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
+                      <CardContent className="space-y-4">
+                          <ReceptionDetails service={service} />
+                          <div className="border-t pt-4">
+                              <h4 className="font-semibold mb-2">Firma de Autorización</h4>
+                              <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
+                              <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
+                          </div>
+                      </CardContent>
+                  </Card>
+              )}
                 
-                {service.status === 'Entregado' && (
-                    <Card>
-                        <CardHeader><CardTitle>Salida del vehiculo del taller</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                             <div className="border-t pt-4">
-                                 <h4 className="font-semibold mb-2">GARANTIA</h4>
-                                 <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
-                            </div>
-                            <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
-                            <SignatureDisplay type="delivery" signatureUrl={service.customerSignatureDelivery} onSignClick={onSignClick} isSigning={isSigning} />
-                        </CardContent>
-                    </Card>
-                )}
+              {service.status === 'Entregado' && (
+                  <Card>
+                      <CardHeader><CardTitle>Salida del vehiculo del taller</CardTitle></CardHeader>
+                      <CardContent className="space-y-4">
+                           <div className="border-t pt-4">
+                               <h4 className="font-semibold mb-2">GARANTIA</h4>
+                               <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
+                          </div>
+                          <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
+                          <SignatureDisplay type="delivery" signatureUrl={service.customerSignatureDelivery} onSignClick={onSignClick} isSigning={isSigning} />
+                      </CardContent>
+                  </Card>
+              )}
             </div>
         </div>
     );

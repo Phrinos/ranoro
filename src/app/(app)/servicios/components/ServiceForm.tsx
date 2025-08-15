@@ -444,11 +444,11 @@ function ServiceFormContent({
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Próximo KM</FormLabel>
-                                                    <FormControl><Input type="number" placeholder="Ej: 85000" {...field} value={field.value ?? ''}/></FormControl>
+                                                    <FormControl><Input type="number" placeholder="Ej: 85000" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} value={field.value ?? ''}/></FormControl>
                                                     <Select onValueChange={(v) => {
                                                         const kmToAdd = parseInt(v);
                                                         const currentKm = getValues('mileage') || 0;
-                                                        setValue('nextServiceInfo.mileage', currentKm + kmToAdd);
+                                                        setValue('nextServiceInfo.mileage', Number(currentKm) + kmToAdd);
                                                     }}>
                                                         <SelectTrigger className="mt-1"><SelectValue placeholder="Añadir KM..."/></SelectTrigger>
                                                         <SelectContent>

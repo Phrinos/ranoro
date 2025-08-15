@@ -13,7 +13,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { isWeekend, isPast, setHours, setMinutes, format, isSameDay } from 'date-fns';
+import { isWeekend, isPast, setHours, setMinutes, format, isSameDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -39,13 +39,7 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
   const [selectedTime, setSelectedTime] = useState<{ hours: number; minutes: number } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const startOfDay = (date: Date): Date => {
-    const newDate = new Date(date);
-    newDate.setHours(0, 0, 0, 0);
-    return newDate;
-  };
-  
-  const today = startOfDay(new Date());
+  const today = new Date();
 
   const handleDateSelect = (date?: Date) => {
     if (date) {
@@ -96,7 +90,7 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
                     mode="single"
                     selected={selectedDate}
                     onSelect={handleDateSelect}
-                    disabled={(date) => isPast(date) && !isSameDay(date, today) || isWeekend(date) && date.getDay() === 0}
+                    disabled={(date) => date < today || (isWeekend(date) && date.getDay() === 0)}
                     locale={es}
                     initialFocus
                 />
