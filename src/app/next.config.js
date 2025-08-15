@@ -33,11 +33,20 @@ const nextConfig = {
   },
 
   // 5. Webpack config
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),
       /require.extensions is not supported by webpack. Use a loader instead./,
     ];
+    
+    // Add this to improve HMR stability
+    if (!isServer) {
+        config.watchOptions = {
+            poll: 1000,
+            aggregateTimeout: 300,
+        }
+    }
+    
     return config;
   }
 };
