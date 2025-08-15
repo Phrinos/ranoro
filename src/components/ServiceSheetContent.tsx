@@ -8,7 +8,7 @@ import React, { useMemo, useState } from 'react';
 import { cn, formatCurrency, capitalizeWords, formatNumber, normalizeDataUrl } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon, CalendarCheck, CheckCircle, Ban, Clock, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2, Phone, Link as LinkIcon, Globe, MessageSquare } from 'lucide-react';
+import { User, Car as CarIcon, CalendarCheck, CheckCircle, Ban, Clock, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2, Phone, Link as LinkIcon, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
@@ -163,11 +163,11 @@ TotalsCard.displayName = 'TotalsCard';
 const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }: { workshopInfo: Partial<WorkshopInfo>, advisorName?: string, advisorSignature?: string }) => (
     <Card className="mt-6">
         <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                 <div className="flex flex-col items-center md:items-start text-center md:text-left">
                     {advisorSignature && (
                         <div className="relative w-48 h-24 mb-2">
-                            <Image src={normalizeDataUrl(advisorSignature)} alt="Firma del asesor" fill style={{ objectFit: "contain" }} sizes="192px" />
+                           <Image src={normalizeDataUrl(advisorSignature)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="192px" />
                         </div>
                     )}
                     <p className="font-bold text-sm leading-tight">{advisorName || 'Asesor de Servicio'}</p>
@@ -263,3 +263,5 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
+
+    
