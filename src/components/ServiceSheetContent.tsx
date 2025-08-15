@@ -121,7 +121,7 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
             if (subStatus === 'En Espera de Refacciones') badgeVariant = "waiting";
             if (subStatus === 'Reparando') badgeVariant = "blue";
             if (subStatus === 'Completado') badgeVariant = "success";
-            return { title: "ORDEN DE SERVICIO", description: `Vehículo ingresado el ${formattedReceptionDate}`, badge: { text: subStatus || 'En Taller', variant: badgeVariant }, cardClass: "bg-blue-50 border-blue-200", titleClass: "text-blue-800", descClass: "text-blue-700" };
+            return { title: "ORDEN DE SERVICIO", description: `Ingresado: ${formattedReceptionDate}`, badge: { text: subStatus || 'En Taller', variant: badgeVariant }, cardClass: "bg-blue-50 border-blue-200", titleClass: "text-blue-800", descClass: "text-blue-700" };
         }
         
         if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Ingresado: ${formattedReceptionDate} | Entregado: ${formattedDeliveryDate}`, badge: { text: "Entregado", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
@@ -148,15 +148,17 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
         </Card>
         {isAppointmentPending && onConfirmClick && (<div className="flex justify-center items-center gap-4 flex-wrap mt-6"><ConfirmDialog triggerButton={<Button variant="destructive" disabled={isConfirming}><Ban className="mr-2 h-4 w-4"/>Cancelar Cita</Button>} title="¿Estás seguro de cancelar esta cita?" description="Esta acción notificará al taller sobre la cancelación. Puedes volver a agendar más tarde." onConfirm={onCancelAppointment} isLoading={isConfirming}/><Button onClick={onConfirmClick} size="lg" disabled={isConfirming} className="bg-green-600 hover:bg-green-700">{isConfirming ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <CheckCircle className="mr-2 h-5 w-5"/>}{isConfirming ? 'Confirmando...' : 'Confirmar mi Cita'}</Button></div>)}
         {shouldShowNextService && (
-            <div className="mt-4 p-3 border-2 border-red-500 bg-red-50 rounded-md text-red-800 text-center">
-                <h4 className="font-bold text-sm flex items-center gap-2 justify-center"><CalendarCheck className="h-4 w-4"/>PRÓXIMO SERVICIO</h4>
-                <p className="text-sm mt-1">
-                    <strong>Fecha:</strong> {format(parseDate(service.nextServiceInfo!.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}
-                    {service.nextServiceInfo!.mileage && typeof service.nextServiceInfo!.mileage === 'number' && isFinite(service.nextServiceInfo!.mileage) && (
-                        <> / <strong>KM:</strong> {formatNumber(service.nextServiceInfo!.mileage)}</>
-                    )}
-                </p>
-            </div>
+            <Card className="mt-4 border-red-500 bg-red-50 text-red-800">
+                <CardHeader className="text-center p-3">
+                    <CardTitle className="text-base font-bold flex items-center gap-2 justify-center"><CalendarCheck className="h-4 w-4"/>PRÓXIMO SERVICIO</CardTitle>
+                    <CardDescription className="text-red-700 font-semibold">
+                         Fecha: {format(parseDate(service.nextServiceInfo!.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}
+                         {service.nextServiceInfo!.mileage && typeof service.nextServiceInfo!.mileage === 'number' && isFinite(service.nextServiceInfo!.mileage) && (
+                            <> / KM: {formatNumber(service.nextServiceInfo!.mileage)}</>
+                        )}
+                    </CardDescription>
+                </CardHeader>
+            </Card>
         )}
       </>
     );
@@ -229,7 +231,6 @@ interface ServiceSheetContentProps {
   isConfirming?: boolean;
   onSignClick?: (type: 'reception' | 'delivery') => void;
   isSigning?: boolean;
-  activeTab: string;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
@@ -287,9 +288,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         {status === 'cotizacion' && onScheduleClick && <div className="text-center"><Button onClick={onScheduleClick} size="lg"><CalendarDays className="mr-2 h-5 w-5"/>Agendar Cita</Button></div>}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
-                {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
-            </TabsList>
+            <div className="overflow-x-auto scrollbar-hide">
+              <TabsList className="relative w-max">
+                  {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
+              </TabsList>
+            </div>
             {tabs.map(tab => (
                  <TabsContent key={tab.value} value={tab.value} className="mt-6">
                     {tab.content}
@@ -452,5 +455,3 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
         </Card>
     );
 }
-
-    
