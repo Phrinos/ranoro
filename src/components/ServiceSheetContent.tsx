@@ -93,7 +93,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
     
-    const termsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores.`;
+    const quoteTermsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores.`;
+    const serviceTermsText = `GARANTIA RANORO: Nuestros trabajos cuentan con garantía de 60 días o 1,000 km (lo que suceda primero), aplicable exclusivamente al trabajo realizado por Ranoro y, en su caso, a las refacciones suministradas e instaladas por nosotros; la garantía consiste en corregir sin costo el mismo concepto reparado, una vez que nuestro diagnóstico confirme la relación directa de la falla con la intervención realizada. Quedan excluidos: fallas no relacionadas con el servicio, componentes no intervenidos y daños consecuenciales; así como las derivadas de desgaste normal, mal uso, falta de mantenimiento, sobrecalentamiento, golpes, ingreso de agua o polvo, uso de combustible o lubricantes de mala calidad, o modificaciones de terceros. Las refacciones aportadas por el cliente no cuentan con garantía por parte del taller. Cualquier intervención de terceros o manipulación posterior del sistema anula la presente garantía. La atención de garantía se realiza exclusivamente en el taller, previa revisión y diagnóstico. Precios en MXN. Los precios y la disponibilidad de refacciones pueden cambiar sin previo aviso por parte de los proveedores.`;
 
     // --- Status Logic ---
     const status = (service.status || '').toLowerCase();
@@ -122,6 +123,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     };
 
     const statusCard = getStatusCardContent();
+    const isServiceFlow = status === 'en taller' || status === 'entregado';
 
     const handleCancelAppointment = async () => {
       setIsCancelling(true);
@@ -158,11 +160,14 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           <Card><CardHeader className="flex flex-row items-center gap-4 p-4"><CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/><CardTitle className="text-base">Vehículo</CardTitle></CardHeader><CardContent className="p-4 pt-0"><p className="font-semibold">{vehicleMake} {vehicleModel} ({vehicleYear})</p><p className="text-muted-foreground">{vehicleLicensePlate}</p>{vehicle?.color && <p className="text-xs text-muted-foreground">Color: {vehicle.color}</p>}{service.mileage && <p className="text-xs text-muted-foreground">KM: {formatNumber(service.mileage)}</p>}</CardContent></Card>
         </div>
         
-        <Card className="bg-muted/50">
+        <Card className={cn(
+          "bg-muted/50",
+          isServiceFlow && "bg-red-50 border-red-200"
+        )}>
           <CardHeader className="p-4 text-center">
               <div className="space-y-1">
-                  <CardTitle className="text-lg font-bold tracking-wider text-foreground">{statusCard.title}</CardTitle>
-                  {statusCard.description && <p className="font-semibold text-muted-foreground">{statusCard.description}</p>}
+                  <CardTitle className={cn("text-lg font-bold tracking-wider text-foreground", isServiceFlow && "text-red-800")}>{statusCard.title}</CardTitle>
+                  {statusCard.description && <p className={cn("font-semibold text-muted-foreground", isServiceFlow && "text-red-700")}>{statusCard.description}</p>}
               </div>
               {statusCard.badge}
           </CardHeader>
@@ -177,7 +182,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <div className="lg:col-span-2"><Card><CardHeader><CardTitle>Trabajos a realizar</CardTitle></CardHeader><CardContent><div className="space-y-4">{items.map((item, index) => (<div key={item.id || index} className="p-4 rounded-lg bg-background"><div className="flex justify-between items-start"><div className="flex-1"><p className="font-semibold">{item.name}</p>{item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}</div><p className="font-bold text-lg">{formatCurrency(item.price)}</p></div></div>))}{items.length === 0 && (<p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>)}</div><p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{termsText}</p></CardContent></Card></div>
+          <div className="lg:col-span-2"><Card><CardHeader><CardTitle>Trabajos a realizar</CardTitle></CardHeader><CardContent><div className="space-y-4">{items.map((item, index) => (<div key={item.id || index} className="p-4 rounded-lg bg-background"><div className="flex justify-between items-start"><div className="flex-1"><p className="font-semibold">{item.name}</p>{item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}</div><p className="font-bold text-lg">{formatCurrency(item.price)}</p></div></div>))}{items.length === 0 && (<p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>)}</div><p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{isServiceFlow ? serviceTermsText : quoteTermsText}</p></CardContent></Card></div>
           <div className="lg:col-span-1 space-y-6"><Card><CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader><CardContent className="space-y-2 text-sm"><div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal:</span><span className="font-medium">{formatCurrency(subTotal)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">IVA (16%):</span><span className="font-medium">{formatCurrency(taxAmount)}</span></div><Separator className="my-2"/><div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>{isQuoteStatus && <div className="text-center text-sm font-semibold mt-4 pt-4 border-t"><p>Cotización Válida hasta el {validityDate}.</p></div>}</CardContent></Card></div>
         </div>
         
@@ -207,6 +212,12 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     {service.customerSignatureReception ? (
                         <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={250} height={100} style={{objectFit: 'contain'}} />
                     ) : (
+                        onSignClick ? (
+                           <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="mb-2">
+                                {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
+                                Firmar Aquí
+                           </Button>
+                        ) :
                         <p className="text-muted-foreground text-sm">Firma pendiente</p>
                     )}
                   </div>
@@ -219,3 +230,5 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
+
+    
