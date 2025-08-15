@@ -121,7 +121,7 @@ Total: ${formatCurrency(sale.totalAmount)}
     try {
       const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error("Could not create blob from canvas.");
+      if (!blob) throw new Error("No se pudo crear el blob de la imagen.");
       
       if (isForSharing) {
         return new File([blob], `ticket_${selectedSaleForReprint.id}.png`, { type: 'image/png' });
@@ -189,22 +189,19 @@ Total: ${formatCurrency(sale.totalAmount)}
             open={isReprintDialogOpen}
             onOpenChange={setIsReprintDialogOpen}
             title="Reimprimir Ticket"
-            documentType="text"
-            textContent={
-              ReactDOMServer.renderToString(
-                <TicketContent 
-                  ref={ticketContentRef}
-                  sale={selectedSaleForReprint} 
-                  previewWorkshopInfo={workshopInfo || undefined} 
-                />
-              )
+            footerContent={
+                 <div className="flex flex-col sm:flex-row gap-2 w-full justify-end">
+                    <Button variant="outline" onClick={() => handleCopyAsImage(false)}><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+                    <Button variant="outline" onClick={handleShare} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200"><Share2 className="mr-2 h-4 w-4"/>Compartir</Button>
+                    <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+                </div>
             }
           >
-             <div className="flex flex-col sm:flex-row gap-2 w-full justify-end">
-                <Button variant="outline" onClick={() => handleCopyAsImage(false)}><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-                <Button variant="outline" onClick={handleShare} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200"><Share2 className="mr-2 h-4 w-4"/>Compartir</Button>
-                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
-            </div>
+            <TicketContent 
+              ref={ticketContentRef}
+              sale={selectedSaleForReprint} 
+              previewWorkshopInfo={workshopInfo || undefined} 
+            />
           </UnifiedPreviewDialog>
       )}
       

@@ -227,23 +227,20 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
                 open={isTicketDialogOpen}
                 onOpenChange={setIsTicketDialogOpen}
                 title="Ticket de Servicio"
-                documentType="text"
-                textContent={
-                  ReactDOMServer.renderToString(
-                    <TicketContent 
-                      ref={ticketContentRef}
-                      service={serviceForTicket} 
-                      vehicle={vehicles.find(v => v.id === serviceForTicket.vehicleId)}
-                      previewWorkshopInfo={workshopInfo || undefined} 
-                    />
-                  )
+                footerContent={
+                  <div className="flex flex-col sm:flex-row gap-2 w-full justify-end">
+                      <Button variant="outline" onClick={() => handleCopyTicketAsImage(false)}><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+                      <Button variant="outline" onClick={handleShareTicket} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200"><Share2 className="mr-2 h-4 w-4"/>Compartir</Button>
+                      <Button onClick={handlePrintTicket}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+                  </div>
                 }
               >
-                 <div className="flex flex-col sm:flex-row gap-2 w-full justify-end">
-                    <Button variant="outline" onClick={() => handleCopyTicketAsImage(false)}><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-                    <Button variant="outline" onClick={handleShareTicket} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200"><Share2 className="mr-2 h-4 w-4"/>Compartir</Button>
-                    <Button onClick={handlePrintTicket}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
-                </div>
+                <TicketContent 
+                  ref={ticketContentRef}
+                  service={serviceForTicket} 
+                  vehicle={vehicles.find(v => v.id === serviceForTicket.vehicleId)}
+                  previewWorkshopInfo={workshopInfo || undefined} 
+                />
               </UnifiedPreviewDialog>
             )}
         </Suspense>
