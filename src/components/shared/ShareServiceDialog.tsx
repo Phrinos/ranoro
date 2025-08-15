@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { Printer, MessageSquare, Link as LinkIcon, Car, Copy, ExternalLink, Share2 } from "lucide-react";
 import type { ServiceRecord, Vehicle, WorkshopInfo } from "@/types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 interface ShareServiceDialogProps {
   open: boolean;
@@ -73,7 +75,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl md:max-w-2xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-xl md:max-w-2xl p-0 overflow-hidden" hideCloseButton={true}>
         {/* Header visual */}
         <div className="bg-gradient-to-r from-primary to-rose-700 text-white px-6 py-5">
           <div className="flex items-start justify-between gap-4">
@@ -148,25 +150,34 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
             <div className="space-y-2">
               <p className="text-sm font-medium">Enlace público</p>
               <div className="flex items-center gap-2">
-                <Input value={shareUrl} readOnly className="bg-muted"/>
-                <Button size="icon" variant="outline" onClick={() => copy(shareUrl, "Enlace copiado")}> <Copy className="h-4 w-4"/> </Button>
-                <Button size="icon" variant="outline" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}> <ExternalLink className="h-4 w-4"/> </Button>
+                <Input value={shareUrl} readOnly className="bg-white text-foreground border-input"/>
+                <TooltipProvider>
+                  <Tooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" onClick={() => copy(shareUrl, "Enlace copiado")} className="bg-white"><Copy className="h-4 w-4"/> </Button>
+                  </TooltipTrigger><TooltipContent><p>Copiar Enlace</p></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")} className="bg-white"><ExternalLink className="h-4 w-4"/> </Button>
+                  </TooltipTrigger><TooltipContent><p>Abrir Enlace</p></TooltipContent></Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           )}
         </div>
 
         {/* Footer actions */}
-        <DialogFooter className="px-6 pb-6 pt-4 border-t flex-col sm:flex-row gap-2">
-           <Button onClick={handleCopyWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
+        <DialogFooter className="px-6 pb-6 pt-4 border-t flex-col sm:flex-row gap-2 justify-between">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
+          <div className="flex gap-2 justify-end">
+            <Button onClick={handleCopyWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
                 <MessageSquare className="mr-2 h-4 w-4"/> Copiar para WhatsApp
             </Button>
-          <Button onClick={handleNativeShare} className="w-full sm:w-auto">
-            <Share2 className="mr-2 h-4 w-4"/> Compartir
-          </Button>
-          <Button variant="outline" onClick={() => window.print()} className="w-full sm:w-auto">
-            <Printer className="mr-2 h-4 w-4"/> Imprimir
-          </Button>
+            <Button onClick={handleNativeShare} className="w-full sm:w-auto">
+              <Share2 className="mr-2 h-4 w-4"/> Compartir
+            </Button>
+            <Button variant="outline" onClick={() => window.print()} className="w-full sm:w-auto bg-amber-400 hover:bg-amber-500 text-amber-900">
+              <Printer className="mr-2 h-4 w-4"/> Imprimir
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
