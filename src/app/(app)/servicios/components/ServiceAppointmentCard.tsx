@@ -64,9 +64,10 @@ export function ServiceAppointmentCard({
     const total = service.totalCost || (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0);
     
     // Always calculate profit on the fly to ensure accuracy even with old data
-    const costOfSupplies = (service.serviceItems ?? [])
+    const costOfSupplies = service.totalSuppliesWorkshopCost || (service.serviceItems ?? [])
       .flatMap((i) => i.suppliesUsed ?? [])
       .reduce((s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0), 0);
+
     const commissionCost = service.cardCommission || 0;
     const profit = total - costOfSupplies - commissionCost;
     
