@@ -353,9 +353,9 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                       <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
                       <CardContent className="space-y-4">
                           <ReceptionDetails service={service} />
-                          <p className="text-xs text-muted-foreground whitespace-pre-line mt-2 border-t pt-4">{INGRESO_CONDICIONES_TEXT}</p>
                           <div className="border-t pt-4">
-                              <h4 className="font-semibold mb-2">Firma de Autorización</h4>
+                              <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
+                              <h4 className="font-semibold mb-2 mt-4">Firma de Autorización</h4>
                               <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
                           </div>
                       </CardContent>
@@ -367,7 +367,7 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                       <CardHeader><CardTitle>Salida del Vehículo del Taller</CardTitle></CardHeader>
                       <CardContent className="space-y-4">
                            <div className="border-t pt-4">
-                               <h4 className="font-semibold mb-2">GARANTIA</h4>
+                               <h4 className="font-semibold mb-2">Garantía</h4>
                                <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
                           </div>
                           <h4 className="font-semibold mb-2">Firma de Conformidad</h4>

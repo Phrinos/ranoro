@@ -37,6 +37,17 @@ export default function PhotoReportTab({
 
     const filteredFields = fields.map((field, index) => ({...field, originalIndex: index}))
         .filter(field => field.type === reportType);
+        
+    const handleAddReport = () => {
+        const defaultDescription = reportType === 'Recepción' ? 'Fotografias del Vehiculo al ingreso al taller' : '';
+        append({
+            id: `rep_${Date.now()}`,
+            date: new Date().toISOString(),
+            description: defaultDescription,
+            photos: [],
+            type: reportType
+        });
+    };
 
     return (
         <Card>
@@ -70,7 +81,7 @@ export default function PhotoReportTab({
                      </Card>
                 ))}
                 {!isReadOnly && (
-                    <Button type="button" variant="outline" onClick={() => append({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [], type: reportType })}>
+                    <Button type="button" variant="outline" onClick={handleAddReport}>
                         <PlusCircle className="mr-2 h-4 w-4"/>Nuevo Reporte de {reportType}
                     </Button>
                 )}
