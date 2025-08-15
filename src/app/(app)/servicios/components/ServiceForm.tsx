@@ -369,14 +369,6 @@ function ServiceFormContent({
         setIsValidationDialogOpen(false);
     };
 
-  const handleLogData = () => {
-    console.log("Current Service Form Data:", getValues());
-    toast({
-      title: "Datos en Consola",
-      description: "Se ha registrado el objeto de datos del servicio en la consola del navegador (Presiona F12).",
-    });
-  };
-
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
   const isSubmitDisabled = methods.formState.isSubmitting;
 
@@ -517,9 +509,6 @@ function ServiceFormContent({
           )}
         </div>
         <div className="flex gap-2">
-          <Button type="button" variant="secondary" onClick={handleLogData}>
-            Log Data
-          </Button>
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
           <Button type="submit" disabled={isSubmitDisabled}>
             {methods.formState.isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}

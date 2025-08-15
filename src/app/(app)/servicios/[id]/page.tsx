@@ -165,7 +165,7 @@ export default function ServicioPage() {
     
   const pageActions = isEditMode && initialData ? (
     <div className="flex items-center gap-2">
-      <Button variant="outline" onClick={() => handleShowShareDialog(initialData)}>
+      <Button onClick={() => handleShowShareDialog(initialData)} className="bg-amber-400 hover:bg-amber-500 text-amber-900">
           <Share2 className="mr-2 h-4 w-4"/>
           Compartir
       </Button>
