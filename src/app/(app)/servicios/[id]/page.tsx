@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -6,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { serviceService, inventoryService, adminService } from '@/lib/services';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Share2, MessageSquare } from 'lucide-react';
 import { ServiceForm } from '../components/ServiceForm';
 import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
@@ -14,6 +13,7 @@ import type { ServiceFormValues } from '@/schemas/service-form';
 import { PageHeader } from '@/components/page-header';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
+import { Button } from '@/components/ui/button';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -162,11 +162,20 @@ export default function ServicioPage() {
   const pageDescription = isEditMode 
     ? `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`
     : "Completa los datos para crear un nuevo registro.";
+    
+  const pageActions = isEditMode && initialData ? (
+    <div className="flex items-center gap-2">
+      <Button variant="outline" onClick={() => handleShowShareDialog(initialData)}>
+          <Share2 className="mr-2 h-4 w-4"/>
+          Compartir
+      </Button>
+    </div>
+  ) : null;
 
 
   return (
     <>
-      <PageHeader title={pageTitle} description={pageDescription} />
+      <PageHeader title={pageTitle} description={pageDescription} actions={pageActions} />
       <ServiceForm
         initialData={initialData}
         vehicles={vehicles}
@@ -186,7 +195,7 @@ export default function ServicioPage() {
           <ShareServiceDialog 
             open={isShareDialogOpen} 
             onOpenChange={(isOpen) => {
-              if (!isOpen) {
+              if (!isOpen && !isEditMode) { // Only redirect if it was a new service
                   const targetTab = recordForSharing.status === 'Cotizacion' ? 'cotizaciones' : 'activos';
                   router.push(`/servicios?tab=${targetTab}`);
               }

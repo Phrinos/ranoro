@@ -1,5 +1,4 @@
-
-
+// src/app/(app)/servicios/page.tsx
 "use client";
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -100,7 +99,7 @@ function ServiciosPage() {
   }
   
   const pageActions = (
-    <Button asChild className="bg-white text-black hover:bg-gray-200">
+    <Button asChild>
       <Link href="/servicios/nuevo">
         <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Servicio
       </Link>
