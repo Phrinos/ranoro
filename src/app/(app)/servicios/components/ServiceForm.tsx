@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -239,7 +240,6 @@ function ServiceFormContent({
       finalValues.nextServiceInfo.date = new Date(finalValues.nextServiceInfo.date).toISOString();
     }
     
-    // This is the important part: Handle the case where the inputs might be empty strings
     if (finalValues.nextServiceInfo?.mileage === '' || finalValues.nextServiceInfo?.mileage === null) {
       finalValues.nextServiceInfo.mileage = undefined;
     }
@@ -426,7 +426,15 @@ function ServiceFormContent({
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Próximo KM</FormLabel>
-                                                        <FormControl><Input type="number" placeholder="Ej: 85000" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} value={field.value ?? ''}/></FormControl>
+                                                        <FormControl>
+                                                            <Input 
+                                                              type="number" 
+                                                              placeholder="Ej: 85000" 
+                                                              {...field} 
+                                                              onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))} 
+                                                              value={field.value ?? ''}
+                                                            />
+                                                        </FormControl>
                                                         <Select onValueChange={(v) => {
                                                             const kmToAdd = parseInt(v);
                                                             const currentKm = getValues('mileage') || 0;

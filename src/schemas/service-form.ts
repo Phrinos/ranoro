@@ -113,7 +113,7 @@ export const serviceFormSchema = z.object({
     
     nextServiceInfo: z.object({
         date: z.string().optional(),
-        mileage: z.number().optional(), 
+        mileage: z.coerce.number().optional().nullable(), 
     }).optional().nullable(),
     photoReports: z.array(photoReportSchema).optional(),
     customerName: z.string().optional(),
