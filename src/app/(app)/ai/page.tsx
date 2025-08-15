@@ -145,15 +145,21 @@ export default function AiPageComponent({ tab }: { tab?: string }) {
   const defaultTab = tab || 'compras';
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setIsLoading(true);
-    const unsub = inventoryService.onItemsUpdate((items) => {
-        setInventoryItems(items);
-        setIsLoading(false);
-    });
-    return () => unsub();
+    const unsubs = [
+      inventoryService.onItemsUpdate((items) => {
+          setInventoryItems(items);
+      }),
+      serviceService.onServicesUpdate((services) => {
+          setServiceRecords(services);
+          setIsLoading(false);
+      })
+    ];
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
 
   const tabs = [
@@ -161,7 +167,7 @@ export default function AiPageComponent({ tab }: { tab?: string }) {
     { value: 'inventario', label: 'Análisis de Inventario', content: (
         isLoading 
             ? <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
-            : <AnalisisIaContent inventoryItems={inventoryItems} />
+            : <AnalisisIaContent inventoryItems={inventoryItems} serviceRecords={serviceRecords} />
     ) },
   ];
 

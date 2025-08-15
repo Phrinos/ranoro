@@ -8,14 +8,14 @@ import { Loader2, CheckCircle, AlertTriangle, PackageCheck, ShoppingCart, BrainC
 import type { InventoryItem, ServiceRecord } from '@/types';
 import { analyzeInventory, type InventoryRecommendation } from '@/ai/flows/inventory-analysis-flow';
 import { useToast } from "@/hooks/use-toast";
-import { placeholderServiceRecords } from '@/lib/placeholder-data';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AnalisisIaContentProps {
   inventoryItems: InventoryItem[];
+  serviceRecords: ServiceRecord[];
 }
 
-export function AnalisisIaContent({ inventoryItems }: AnalisisIaContentProps) {
+export function AnalisisIaContent({ inventoryItems, serviceRecords }: AnalisisIaContentProps) {
   const { toast } = useToast();
   const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -28,17 +28,7 @@ export function AnalisisIaContent({ inventoryItems }: AnalisisIaContentProps) {
     try {
       const inventoryForAI = inventoryItems.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, lowStockThreshold: item.lowStockThreshold }));
       
-      const servicesForAI = placeholderServiceRecords
-        .filter(service => service.serviceDate && typeof service.serviceDate === 'string') // Filter out records without a valid date
-        .map(service => ({
-        serviceDate: service.serviceDate,
-        suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
-          supplyId: supply.supplyId,
-          quantity: supply.quantity,
-        })),
-      }));
-
-      const result = await analyzeInventory({ inventoryItems: inventoryForAI, serviceRecords: servicesForAI });
+      const result = await analyzeInventory({ inventoryItems: inventoryForAI });
       setAnalysisResult(result.recommendations);
       toast({ title: "Análisis Completado", description: `La IA ha generado ${result.recommendations.length} recomendaciones.` });
     } catch (e) {
