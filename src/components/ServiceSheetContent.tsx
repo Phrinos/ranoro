@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { QuoteRecord, WorkshopInfo, Vehicle, ServiceRecord } from '@/types';
@@ -219,18 +220,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...service.workshopInfo };
     const vehicle = service.vehicle as Vehicle | undefined;
-    const IVA_RATE = 0.16;
-
-    const items = useMemo(() => (service?.serviceItems ?? []).map(it => ({ ...it, price: Number(it?.price) || 0 })), [service?.serviceItems]);
-    const { subTotal, taxAmount, totalCost } = useMemo(() => {
-        const total = items.reduce((acc, it) => acc + it.price, 0);
-        const sub = total / (1 + IVA_RATE);
-        const tax = total - sub;
-        return { subTotal: sub, taxAmount: tax, totalCost: total };
-    }, [items]);
-
-    const creationDate = coerceDate(service.serviceDate) || new Date();
-    const validityDate = isValid(creationDate) ? format(addDays(creationDate, 15), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     
     const status = (service.status || '').toLowerCase();
     
@@ -345,6 +334,10 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                     <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300 mt-2"><div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} /></div>
                     <p className="text-center text-xs mt-1">{service.fuelLevel || 'N/A'}</p>
                 </div>
+                 <div className="border-t pt-4">
+                    <h4 className="font-semibold mb-2">Garantía y Condiciones del Servicio</h4>
+                    <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
+                 </div>
                 <div className="border-t pt-4">
                      <h4 className="font-semibold mb-2">Firmas de Autorización</h4>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
