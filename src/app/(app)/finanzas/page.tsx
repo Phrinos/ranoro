@@ -1,4 +1,5 @@
 
+
 // src/app/(app)/finanzas/page.tsx
 
 "use client";
@@ -34,7 +35,7 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipTrigger, TooltipProvider, TooltipContent } from '@/components/ui/tooltip';
-import { calcEffectiveProfit } from '@/lib/money-helpers';
+import { calcEffectiveProfit } from "@/lib/money-helpers";
 
 
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
@@ -173,20 +174,8 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
         
         const proportionalBaseExpenses = (totalBaseSalaries + totalOtherFixedExpenses) * periodFactor;
         
-        const netProfitBeforeCommissions = totalOperationalProfit - proportionalBaseExpenses;
-        const isProfitableForCommissions = netProfitBeforeCommissions > 0;
-        
-        let totalVariableCommissions = 0;
-        if (isProfitableForCommissions) {
-          totalVariableCommissions = allPersonnel
-            .filter(p => !p.isArchived)
-            .reduce((sum, person) => {
-                const commission = netProfitBeforeCommissions * ((person.commissionRate || 0) / 100);
-                return sum + commission;
-            }, 0);
-        }
-        
-        const netProfit = netProfitBeforeCommissions - totalVariableCommissions;
+        // La ganancia neta no incluye comisiones, según el requerimiento.
+        const netProfit = totalOperationalProfit - proportionalBaseExpenses;
         
         // --- MÉTRICAS ADICIONALES ---
         const serviceIncomeBreakdown: Record<string, { income: number; profit: number; count: number }> = {};
@@ -219,7 +208,10 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
             totalAdministrativeSalaries: 0, 
             totalFixedExpenses: totalOtherFixedExpenses,
             totalBaseExpenses: proportionalBaseExpenses,
-            totalVariableCommissions, netProfit, isProfitableForCommissions, serviceIncomeBreakdown,
+            totalVariableCommissions: 0, // No se calculan comisiones
+            netProfit: netProfit, // Ganancia neta sin comisiones
+            isProfitableForCommissions: false,
+            serviceIncomeBreakdown,
             totalInventoryValue, totalUnitsSold
         };
     }, [dateRange, isLoading, allSales, allServices, allInventory, allPersonnel, fixedExpenses]);
@@ -273,11 +265,6 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
                                     <span className="text-muted-foreground">(-) Gastos Fijos (Proporcionales):</span>
                                     <span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalBaseExpenses)}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground">(-) Comisiones Variables:</span>
-                                    <span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalVariableCommissions)}</span>
-                                </div>
-                                {!financialSummary.isProfitableForCommissions && (<p className="text-xs text-right text-muted-foreground pt-1">Las comisiones no se aplican porque la ganancia no cubrió los gastos fijos.</p>)}
                                 <hr className="my-2 border-dashed"/>
                                 <div className="flex justify-between items-center font-bold text-2xl pt-1">
                                     <span className="text-foreground">(=) Utilidad Neta del Periodo:</span>

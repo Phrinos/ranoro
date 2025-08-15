@@ -140,13 +140,19 @@ export default function DashboardPage() {
             }),
       });
       setCapacityInfo(result);
-      toast({ title: "Análisis de Capacidad Completo", description: result.recommendation });
     } catch (e: any) {
       setCapacityError(e.message || 'Error en análisis de capacidad');
     } finally {
       setIsCapacityLoading(false);
     }
   }, [allServices, allPersonnel, toast]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      runCapacityAnalysis();
+    }
+  }, [isLoading, runCapacityAnalysis]);
+
 
   return (
     <div className="container mx-auto py-8 flex flex-col">
@@ -216,7 +222,9 @@ export default function DashboardPage() {
               <BrainCircuit className="h-5 w-5 text-purple-500" />
           </CardHeader>
           <CardContent>
-              {capacityInfo ? (
+              {isCapacityLoading ? (
+                  <Skeleton className="h-8 w-3/4 mt-1" />
+              ) : capacityInfo ? (
                   <>
                       <div className="text-2xl font-bold font-headline">{capacityInfo.capacityPercentage}%</div>
                       <p className="text-xs text-muted-foreground" title={`${capacityInfo.totalRequiredHours.toFixed(1)}h de ${capacityInfo.totalAvailableHours}h`}>
@@ -229,10 +237,7 @@ export default function DashboardPage() {
                       <span className="text-sm">{capacityError}</span>
                   </div>
               ) : (
-                  <Button size="sm" className="w-full mt-2" onClick={runCapacityAnalysis} disabled={isCapacityLoading}>
-                      {isCapacityLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                      {isCapacityLoading ? 'Analizando...' : 'Analizar Capacidad con IA'}
-                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">Analizando capacidad...</p>
               )}
           </CardContent>
         </Card>
