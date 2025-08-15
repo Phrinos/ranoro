@@ -20,7 +20,7 @@ import { isToday, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } fr
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import ReactDOMServer from 'react-dom/server';
+import html2canvas from 'html2canvas';
 
 export default function PosPage() {
   const { toast } = useToast();
