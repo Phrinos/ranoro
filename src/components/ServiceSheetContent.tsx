@@ -194,7 +194,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           </Card>
         )}
         
-         <Card className="mt-6">
+        <Card className="mt-6">
             <CardContent className="p-4">
                 <div className="flex flex-col items-center text-center">
                   {service.serviceAdvisorSignatureDataUrl && (
