@@ -111,7 +111,6 @@ export function ServiceForm({
         suppliers={suppliers}
         serviceHistory={serviceHistory}
         onSubmit={onSave}
-        onClose={() => router.back()}
         mode={mode}
         onVehicleCreated={onVehicleCreated}
         onDelete={onDelete}
@@ -131,7 +130,6 @@ interface ServiceFormContentProps {
   suppliers: Supplier[];
   serviceHistory: ServiceRecord[];
   onSubmit: (data: ServiceFormValues) => Promise<void>;
-  onClose: () => void;
   mode: 'service' | 'quote';
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
   onDelete?: (id: string) => void;
@@ -148,7 +146,6 @@ function ServiceFormContent({
   suppliers,
   serviceHistory,
   onSubmit,
-  onClose,
   mode,
   onVehicleCreated,
   onDelete,
@@ -370,11 +367,9 @@ function ServiceFormContent({
     };
 
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
-  const isSubmitDisabled = methods.formState.isSubmitting;
 
   return (
-    <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)} className="flex flex-col h-full">
-      <div className="flex-grow space-y-6">
+    <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
             <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
@@ -388,7 +383,7 @@ function ServiceFormContent({
         )}
 
         {showTabs ? (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
                  <div className="overflow-x-auto scrollbar-hide pb-2">
                     <TabsList className="relative w-max">
                         <TabsTrigger value="servicio">Detalles del Servicio</TabsTrigger>
@@ -479,43 +474,6 @@ function ServiceFormContent({
                 <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceSummary onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense></div>
              </div>
         )}
-      </div>
-
-      <div className="flex-shrink-0 flex justify-between items-center mt-6 pt-4 border-t px-6 pb-6 bg-background sticky bottom-0 z-10">
-        <div>
-          {(onDelete || onCancelService) && initialData?.id && (
-            <ConfirmDialog
-                triggerButton={
-                    <Button variant="destructive" type="button" disabled={isReadOnly}>
-                        {isQuote ? <Trash2 className="mr-2 h-4 w-4"/> : <Ban className="mr-2 h-4 w-4"/>}
-                        {isQuote ? 'Eliminar Cotización' : 'Cancelar Servicio'}
-                    </Button>
-                }
-                title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
-                description={
-                    isQuote 
-                    ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
-                    : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'
-                }
-                onConfirm={() => {
-                    if (isQuote && onDelete && initialData?.id) {
-                        onDelete(initialData.id);
-                    } else if (!isQuote && onCancelService && initialData?.id) {
-                        const reason = prompt("Motivo de la cancelación:");
-                        if(reason) onCancelService(initialData.id, reason);
-                    }
-                }}
-            />
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" disabled={isSubmitDisabled}>
-            {methods.formState.isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-            {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
-          </Button>
-        </div>
-      </div>
 
       <VehicleDialog
           open={isNewVehicleDialogOpen}

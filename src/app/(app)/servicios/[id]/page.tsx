@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { serviceService, inventoryService, adminService } from '@/lib/services';
-import { Loader2, Share2, MessageSquare } from 'lucide-react';
+import { Loader2, Share2, MessageSquare, Save, Ban, Trash2 } from 'lucide-react';
 import { ServiceForm } from '../components/ServiceForm';
 import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
@@ -14,6 +14,7 @@ import { PageHeader } from '@/components/page-header';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -34,6 +35,8 @@ export default function ServicioPage() {
   
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [recordForSharing, setRecordForSharing] = useState<ServiceRecord | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   const isEditMode = serviceId !== 'nuevo';
   const isQuoteModeParam = searchParams.get('mode') === 'quote';
@@ -103,20 +106,25 @@ export default function ServicioPage() {
   }, []);
 
   const handleSaveService = async (values: ServiceFormValues) => {
+    setIsSubmitting(true);
     try {
       const savedRecord = await serviceService.saveService(values as ServiceRecord);
       toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id.slice(-6)} se ha guardado.` });
       
-      handleShowShareDialog(savedRecord);
+      const targetTab = savedRecord.status === 'Cotizacion' ? 'cotizaciones' : 'activos';
+      router.push(`/servicios?tab=${targetTab}`);
         
     } catch(e) {
       console.error(e);
       toast({ title: 'Error al Registrar', variant: 'destructive'});
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
   const handleUpdateService = async (values: ServiceFormValues) => {
     if (!initialData) return;
+    setIsSubmitting(true);
     try {
       await serviceService.saveService({ ...values, id: serviceId });
       toast({ title: 'Servicio Actualizado', description: `El registro #${serviceId?.slice(-6)} ha sido actualizado.` });
@@ -124,6 +132,8 @@ export default function ServicioPage() {
     } catch(e) {
       console.error(e);
       toast({ title: 'Error al Actualizar', variant: 'destructive'});
+    } finally {
+        setIsSubmitting(false);
     }
   };
   
@@ -163,15 +173,45 @@ export default function ServicioPage() {
     ? `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`
     : "Completa los datos para crear un nuevo registro.";
     
-  const pageActions = isEditMode && initialData ? (
+  const pageActions = (
     <div className="flex items-center gap-2">
-      <Button onClick={() => handleShowShareDialog(initialData)} className="bg-amber-400 hover:bg-amber-500 text-amber-900">
-          <Share2 className="mr-2 h-4 w-4"/>
-          Compartir
+      {isEditMode && initialData && (
+        <Button variant="outline" onClick={() => handleShowShareDialog(initialData)} size="icon">
+          <Share2 className="h-4 w-4"/>
+        </Button>
+      )}
+
+      {(isQuote && onDelete && initialData?.id) || (!isQuote && onCancelService && initialData?.id) ? (
+        <ConfirmDialog
+            triggerButton={
+                <Button variant="destructive" size="icon">
+                    {isQuote ? <Trash2 className="h-4 w-4"/> : <Ban className="h-4 w-4"/>}
+                </Button>
+            }
+            title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
+            description={
+                isQuote 
+                ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
+                : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'
+            }
+            onConfirm={() => {
+                if (isQuote && onDelete && initialData?.id) {
+                    onDelete(initialData.id);
+                } else if (!isQuote && onCancelService && initialData?.id) {
+                    const reason = prompt("Motivo de la cancelación:");
+                    if(reason) onCancelService(initialData.id, reason);
+                }
+            }}
+        />
+      ) : null}
+
+      <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
+      <Button type="submit" form="service-form" disabled={isSubmitting}>
+        {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
+        {isEditMode ? 'Guardar Cambios' : 'Crear Registro'}
       </Button>
     </div>
-  ) : null;
-
+  );
 
   return (
     <>
@@ -194,13 +234,7 @@ export default function ServicioPage() {
        {recordForSharing && (
           <ShareServiceDialog 
             open={isShareDialogOpen} 
-            onOpenChange={(isOpen) => {
-              if (!isOpen && !isEditMode) { // Only redirect if it was a new service
-                  const targetTab = recordForSharing.status === 'Cotizacion' ? 'cotizaciones' : 'activos';
-                  router.push(`/servicios?tab=${targetTab}`);
-              }
-              setIsShareDialogOpen(isOpen);
-            }} 
+            onOpenChange={setIsShareDialogOpen}
             service={recordForSharing}
             vehicle={vehicles.find(v => v.id === recordForSharing.vehicleId)}
           />
