@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/page.tsx
 "use client";
 
@@ -10,16 +11,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { inventoryService, personnelService, fleetService } from '@/lib/services';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from "@/lib/utils";
 import { startOfMonth, endOfMonth, parseISO, isValid, isWithinInterval } from 'date-fns';
 
 // Lazy load dialogs and tab content
 const ConductoresTab = lazy(() => import('./components/conductores-tab').then(module => ({ default: module.ConductoresTab })));
 const VehiculosFlotillaTab = lazy(() => import('./components/vehiculos-flotilla-tab').then(module => ({ default: module.VehiculosFlotillaTab })));
-const ResumenTab = lazy(() => import('../rentas/components/ResumenTab').then(module => ({ default: module.ResumenTab })));
+const MovimientosFlotillaTab = lazy(() => import('./components/MovimientosFlotillaTab').then(module => ({ default: module.MovimientosFlotillaTab })));
 const EstadoCuentaTab = lazy(() => import('../rentas/components/EstadoCuentaTab').then(module => ({ default: module.EstadoCuentaTab })));
-const HistorialTab = lazy(() => import('../rentas/components/HistorialTab').then(module => ({ default: module.HistorialTab })));
-const GastosRetirosTab = lazy(() => import('../rentas/components/GastosRetirosTab').then(module => ({ default: module.GastosRetirosTab })));
 const ReportesTab = lazy(() => import('../rentas/components/ReportesTab').then(module => ({ default: module.ReportesTab })));
 const RegisterPaymentDialog = lazy(() => import('../rentas/components/register-payment-dialog').then(module => ({ default: module.RegisterPaymentDialog })));
 const VehicleExpenseDialog = lazy(() => import('../rentas/components/vehicle-expense-dialog').then(module => ({ default: module.VehicleExpenseDialog })));
@@ -116,18 +115,11 @@ export default function FlotillaPage() {
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
 
-  const monthlyBalances = allDrivers.filter(d => !d.isArchived).map(driver => {
-      const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
-      return { driver, vehicle, balanceData: {} };
-  });
-
   const tabs = [
     { value: "conductores", label: "Conductores", content: <Suspense fallback={<Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" />}><ConductoresTab allDrivers={allDrivers} allVehicles={allVehicles} /></Suspense> },
     { value: "vehiculos", label: "Vehículos", content: <Suspense fallback={<Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" />}><VehiculosFlotillaTab allDrivers={allDrivers} allVehicles={allVehicles} /></Suspense> },
-    { value: "resumen", label: "Resumen", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ResumenTab payments={allPayments} expenses={allExpenses} monthlyBalances={monthlyBalances as any} /></Suspense> },
+    { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosFlotillaTab payments={allPayments} expenses={allExpenses} withdrawals={allWithdrawals} drivers={allDrivers} /></Suspense> },
     { value: "estado_cuenta", label: "Estado de Cuenta", content: <Suspense fallback={<Loader2 className="animate-spin" />}><EstadoCuentaTab drivers={allDrivers} vehicles={allVehicles} payments={allPayments} /></Suspense> },
-    { value: "historial", label: "Historial de Pagos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><HistorialTab allPayments={allPayments} workshopInfo={workshopInfo} drivers={allDrivers} vehicles={allVehicles} /></Suspense> },
-    { value: "gastos_retiros", label: "Gastos y Retiros", content: <Suspense fallback={<Loader2 className="animate-spin" />}><GastosRetirosTab expenses={allExpenses} withdrawals={allWithdrawals} /></Suspense> },
     { value: "reportes", label: "Reportes", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ReportesTab vehicles={allVehicles} /></Suspense> },
   ];
   
