@@ -206,6 +206,7 @@ export function VentasPosContent({
                               : [<Badge key="no-payment" variant="outline">Sin Pago</Badge>]
                   );
                   const sellerName = sale.registeredByName || allUsers.find(u => u.id === sale.registeredById)?.name || 'N/A';
+                  const cancelDialogDescription = `Esta acción no se puede deshacer. El stock se restaurará y los movimientos de caja asociados se eliminarán.`;
 
                   return (
                       <Card key={sale.id} className={cn("shadow-sm overflow-hidden", isCancelled && "bg-muted/60 opacity-80")}>
@@ -237,7 +238,7 @@ export function VentasPosContent({
                                                   </Button>
                                               }
                                               title={`¿Cancelar Venta #${sale.id.slice(-6)}?`}
-                                              description="Esta acción no se puede deshacer. El stock se restaurará y los movimientos de caja asociados se eliminarán."
+                                              description={cancelDialogDescription}
                                               onConfirm={() => onCancelSale(sale.id, prompt('Motivo de cancelación:') || 'Sin motivo especificado.')}
                                           />
                                       </div>
