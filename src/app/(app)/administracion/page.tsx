@@ -1,11 +1,11 @@
-
+// src/app/(app)/administracion/page.tsx
 
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";
+import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { User, AppRole, AuditLog } from '@/types';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { adminService } from '@/lib/services';
 import { AuditoriaPageContent } from "./components/auditoria-content";
 import { MigracionPageContent } from "./components/migracion-content";
@@ -15,13 +15,10 @@ import { Shield, Users, BookOpen, DatabaseZap, MessageSquare } from 'lucide-reac
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MensajeriaPageContent } from "./components/mensajeria-content";
 
-
-export default function AdministracionPage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-    const defaultSubTab = (searchParams?.tab as string) || 'mensajeria';
+function AdministracionPageComponent() {
+    const searchParams = useSearchParams();
+    const tab = searchParams.get('tab');
+    const defaultSubTab = tab || 'mensajeria';
     const [activeTab, setAdminTab] = useState(defaultSubTab);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -43,7 +40,7 @@ export default function AdministracionPage({
     }
 
     return (
-        <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+        <>
             <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
                 <h1 className="text-3xl font-bold tracking-tight">Administración del Sistema</h1>
                 <p className="text-primary-foreground/80 mt-1">Gestiona usuarios, roles y realiza migraciones de datos.</p>
@@ -84,6 +81,14 @@ export default function AdministracionPage({
                     </Tabs>
                 </TabsContent>
             </Tabs>
-        </Suspense>
+        </>
     );
+}
+
+export default function AdministracionPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <AdministracionPageComponent />
+    </Suspense>
+  );
 }
