@@ -46,6 +46,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Tablero', path: '/tablero', icon: LayoutGrid, groupTag: 'Mi Taller', permissions: ['dashboard:view'] },
   { label: 'Servicios', path: '/servicios', icon: Wrench, groupTag: 'Mi Taller', permissions: ['services:view_history'] },
   { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: 'Mi Taller', permissions: ['vehicles:manage'] },
+  { label: 'Flotilla', path: '/flotilla', icon: Truck, groupTag: 'Mi Taller', permissions: ['fleet:manage'] },
   
   // Operaciones
   { label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones', permissions: ['pos:view_sales'] },
@@ -55,16 +56,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Operaciones', permissions: ['billing:manage'] },
   { label: 'I.A.', path: '/ai', icon: BrainCircuit, groupTag: 'Operaciones', permissions: ['dashboard:view'] },
   
-  // Mi Flotilla
-  { label: 'Flotilla', path: '/flotilla', icon: Truck, groupTag: 'Mi Flotilla', permissions: ['fleet:manage'] },
-
   // Opciones
   { label: 'Personal', path: '/personal', icon: Users, groupTag: 'Opciones', permissions: ['technicians:manage', 'users:manage', 'roles:manage'] },
   { label: 'Opciones', path: '/opciones', icon: Settings, groupTag: 'Opciones', permissions: ['dashboard:view'] },
   { label: 'Administración', path: '/administracion', icon: Shield, groupTag: 'Opciones', permissions: ['audits:view', 'messaging:manage'] }
 ];
 
-const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Mi Flotilla', 'Opciones'];
+const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Opciones'];
 
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
