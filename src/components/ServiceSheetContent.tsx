@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { QuoteRecord, WorkshopInfo, Vehicle, ServiceRecord } from '@/types';
@@ -92,7 +91,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
     
-    const termsText = `GARANTIA RANORO: Nuestros trabajos cuentan con garantía de 60 días o 1,000 km (lo que suceda primero), aplicable exclusivamente al trabajo realizado por Ranoro y, en su caso, a las refacciones suministradas e instaladas por nosotros; la garantía consiste en corregir sin costo el mismo concepto reparado, una vez que nuestro diagnóstico confirme la relación directa de la falla con la intervención realizada. Quedan excluidos: fallas no relacionadas con el servicio, componentes no intervenidos y daños consecuenciales; así como las derivadas de desgaste normal, mal uso, falta de mantenimiento, sobrecalentamiento, golpes, ingreso de agua o polvo, uso de combustible o lubricantes de mala calidad, o modificaciones de terceros. Las refacciones aportadas por el cliente no cuentan con garantía por parte del taller. Cualquier intervención de terceros o manipulación posterior del sistema anula la presente garantía. La atención de garantía se realiza exclusivamente en el taller, previa revisión y diagnóstico. Precios en MXN. Los precios y la disponibilidad de refacciones pueden cambiar sin previo aviso por parte de los proveedores.`;
+    const termsText = GARANTIA_CONDICIONES_TEXT;
     
     const status = (service.status || '').toLowerCase();
     const appointmentStatus = service.appointmentStatus;
@@ -120,6 +119,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const vehicleModel = vehicle?.model || '';
     const vehicleYear = vehicle?.year || 'N/A';
     const vehicleLicensePlate = vehicle?.licensePlate || service.vehicleIdentifier || 'N/A';
+    const advisorName = capitalizeWords(service.serviceAdvisorName || "Asesor de Servicio");
+
 
     const handleCancelAppointment = async () => {
       setIsCancelling(true);
@@ -170,7 +171,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         {isAppointmentPending && onConfirmClick && (<div className="flex justify-center items-center gap-4 flex-wrap"><ConfirmDialog triggerButton={<Button variant="destructive" disabled={isCancelling}><Ban className="mr-2 h-4 w-4"/>Cancelar Cita</Button>} title="¿Estás seguro de cancelar esta cita?" description="Esta acción notificará al taller sobre la cancelación. Puedes volver a agendar más tarde." onConfirm={handleCancelAppointment} isLoading={isCancelling}/><Button onClick={onConfirmClick} size="lg" disabled={isConfirming} className="bg-green-600 hover:bg-green-700">{isConfirming ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <CheckCircle className="mr-2 h-5 w-5"/>}{isConfirming ? 'Confirmando...' : 'Confirmar mi Cita'}</Button></div>)}
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <div className="lg:col-span-2"><Card><CardHeader><CardTitle>Trabajos a realizar</CardTitle></CardHeader><CardContent><div className="space-y-4">{items.map((item, index) => (<div key={item.id || index} className="p-4 rounded-lg bg-background"><div className="flex justify-between items-start"><div className="flex-1"><p className="font-semibold">{item.name}</p>{item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}</div><p className="font-bold text-lg">{formatCurrency(item.price)}</p></div></div>))}{items.length === 0 && (<p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>)}</div><p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{isServiceFlow ? GARANTIA_CONDICIONES_TEXT : "Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores."}</p></CardContent></Card></div>
+          <div className="lg:col-span-2"><Card><CardHeader><CardTitle>Trabajos a realizar</CardTitle></CardHeader><CardContent><div className="space-y-4">{items.map((item, index) => (<div key={item.id || index} className="p-4 rounded-lg bg-background"><div className="flex justify-between items-start"><div className="flex-1"><p className="font-semibold">{item.name}</p>{item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}</div><p className="font-bold text-lg">{formatCurrency(item.price)}</p></div></div>))}{items.length === 0 && (<p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>)}</div><p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{isServiceFlow ? termsText : "Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores."}</p></CardContent></Card></div>
           <div className="lg:col-span-1 space-y-6">
               <Card><CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader><CardContent className="space-y-2 text-sm"><div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal:</span><span className="font-medium">{formatCurrency(subTotal)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">IVA (16%):</span><span className="font-medium">{formatCurrency(taxAmount)}</span></div><Separator className="my-2"/><div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>{isQuoteStatus && <div className="text-center text-sm font-semibold mt-4 pt-4 border-t"><p>Cotización Válida hasta el {validityDate}.</p></div>}</CardContent></Card>
           </div>
@@ -194,34 +195,43 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           </Card>
         )}
         
-        <Card className="mt-6">
-            <CardContent className="p-4">
-                <div className="flex flex-col items-center text-center">
-                  {service.serviceAdvisorSignatureDataUrl && (
-                      <div className="relative w-48 h-24 mb-2">
-                          <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="192px" />
-                      </div>
-                  )}
-                  <p className="font-bold text-sm leading-tight">{capitalizeWords(service.serviceAdvisorName || "Asesor de Servicio")}</p>
-                  <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
-                  <div className="mt-2 text-xs">
-                      <p>¡Gracias por su preferencia! Para dudas o aclaraciones, no dude en contactarnos.</p>
-                      <p className="font-semibold">{workshopInfo.phone}</p>
-                  </div>
-                </div>
-                <Separator className="my-3"/>
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        <a href={workshopInfo.googleMapsUrl || "#"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Globe className="h-5 w-5 text-muted-foreground"/></a>
-                        <a href={`https://wa.me/${workshopInfo.phone}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-5 w-5"/></a>
+        <footer className="mt-6">
+            <Card>
+                <CardContent className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                        <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                            {service.serviceAdvisorSignatureDataUrl && (
+                                <div className="relative w-48 h-24 mb-2">
+                                    <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" fill style={{ objectFit: "contain" }} sizes="192px" />
+                                </div>
+                            )}
+                            <p className="font-bold text-sm leading-tight">{advisorName}</p>
+                            <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
+                        </div>
+                        <div className="text-center md:text-right">
+                            <p className="font-semibold">{workshopInfo.footerLine1 || '¡Gracias por su preferencia!'}</p>
+                            <p className="text-sm text-muted-foreground">{workshopInfo.footerLine2 || 'Para dudas o aclaraciones, no dude en contactarnos.'}</p>
+                            <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
+                                <Button variant="link" className="text-base px-0">{workshopInfo.phone}</Button>
+                            </a>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-3 text-xs">
-                        <Link href="/legal/terminos" target="_blank" className="hover:underline text-muted-foreground">Términos</Link>
-                        <Link href="/legal/privacidad" target="_blank" className="hover:underline text-muted-foreground">Privacidad</Link>
+                    <Separator className="my-3"/>
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <a href={workshopInfo.googleMapsUrl || "#"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Globe className="h-5 w-5 text-muted-foreground"/></a>
+                            <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-5 w-5"/></a>
+                            <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:facebook" className="h-5 w-5"/></a>
+                            <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:instagram-icon" className="h-5 w-5"/></a>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                            <Link href="/legal/terminos" target="_blank" className="hover:underline text-muted-foreground">Términos</Link>
+                            <Link href="/legal/privacidad" target="_blank" className="hover:underline text-muted-foreground">Privacidad</Link>
+                        </div>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </footer>
       </div>
     );
   }
