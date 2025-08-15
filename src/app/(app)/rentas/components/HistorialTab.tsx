@@ -22,6 +22,7 @@ import { fleetService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import ReactDOMServer from 'react-dom/server';
 import { Icon } from '@iconify/react';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface HistorialTabProps {
   allPayments: RentalPayment[];
@@ -39,6 +40,7 @@ const paymentMethodIcons: Record<RentalPayment['paymentMethod'], string> = {
 export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: HistorialTabProps) {
   const { toast } = useToast();
   const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
+  const [isReceiptPreviewOpen, setIsReceiptPreviewOpen] = useState(false);
   const [paymentToEdit, setPaymentToEdit] = useState<RentalPayment | null>(null);
   const [isEditNoteDialogOpen, setIsEditNoteDialogOpen] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -105,6 +107,11 @@ export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: H
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
 
+  const handleOpenReceiptDialog = (payment: RentalPayment) => {
+    setPaymentForReceipt(payment);
+    setIsReceiptPreviewOpen(true);
+  };
+
 
   return (
     <>
@@ -143,14 +150,8 @@ export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: H
                         <Button variant="ghost" size="icon" onClick={() => { setPaymentToEdit(p); setIsEditNoteDialogOpen(true); }}>
                           <Edit className="h-4 w-4"/>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setPaymentForReceipt(p)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenReceiptDialog(p)}>
                           <Printer className="h-4 w-4"/>
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => { setPaymentForReceipt(p); handleCopyAsImage(false); }}>
-                          <Copy className="h-4 w-4"/>
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => { setPaymentForReceipt(p); setTimeout(handleShare, 100); }}>
-                          <Share2 className="h-4 w-4"/>
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -173,21 +174,41 @@ export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: H
       
       {paymentForReceipt && (
         <UnifiedPreviewDialog
-            open={!!paymentForReceipt}
-            onOpenChange={(isOpen) => !isOpen && setPaymentForReceipt(null)}
+            open={isReceiptPreviewOpen}
+            onOpenChange={setIsReceiptPreviewOpen}
             title="Recibo de Pago de Renta"
-            documentType="text"
-            textContent={ReactDOMServer.renderToString(
-                <RentalReceiptContent 
-                  ref={receiptRef} 
-                  payment={paymentForReceipt} 
-                  workshopInfo={workshopInfo} 
-                  driver={drivers.find(d => d.id === paymentForReceipt.driverId)}
-                  allPaymentsForDriver={allPayments.filter(p => p.driverId === paymentForReceipt.driverId)}
-                  vehicle={vehicles.find(v => v.licensePlate === paymentForReceipt.vehicleLicensePlate)}
-                />
-            )}
+            footerContent={
+                <div className="flex w-full justify-end gap-4">
+                    <TooltipProvider>
+                      <Tooltip><TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyAsImage(false)}>
+                          <Copy className="h-6 w-6" />
+                        </Button>
+                      </TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
+                      
+                      <Tooltip><TooltipTrigger asChild>
+                         <Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShare}>
+                          <Share2 className="h-6 w-6" />
+                        </Button>
+                      </TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+                      
+                       <Tooltip><TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrint}>
+                          <Printer className="h-6 w-6" />
+                        </Button>
+                       </TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
+                    </TooltipProvider>
+                </div>
+            }
         >
+          <RentalReceiptContent 
+            ref={receiptRef} 
+            payment={paymentForReceipt} 
+            workshopInfo={workshopInfo} 
+            driver={drivers.find(d => d.id === paymentForReceipt.driverId)}
+            allPaymentsForDriver={allPayments.filter(p => p.driverId === paymentForReceipt.driverId)}
+            vehicle={vehicles.find(v => v.licensePlate === paymentForReceipt.vehicleLicensePlate)}
+          />
         </UnifiedPreviewDialog>
       )}
     </>

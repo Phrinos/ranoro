@@ -10,7 +10,7 @@ interface UnifiedPreviewDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   title: string;
-  children: React.ReactNode; // Accept React components directly
+  children: React.ReactNode;
   footerContent?: React.ReactNode;
 }
 

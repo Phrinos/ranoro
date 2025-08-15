@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, Copy, MessageSquare, Share2, Wallet } from "lucide-react";
 import { TicketContent } from '@/components/ticket-content';
 import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User, Payment } from '@/types'; 
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { operationsService, inventoryService, adminService, saleService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
@@ -192,32 +192,25 @@ Total: ${formatCurrency(sale.totalAmount)}
             onOpenChange={setIsReprintDialogOpen}
             title="Reimprimir Ticket"
             footerContent={
-                 <div className="flex w-full justify-end gap-2">
+                 <div className="flex w-full justify-end gap-4">
                     <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-12 w-12" onClick={() => handleCopyAsImage(false)}>
-                            <Copy className="h-6 w-6" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Copiar Imagen</p></TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                           <Button variant="outline" size="icon" className="h-12 w-12" onClick={handleShare}>
-                            <Share2 className="h-6 w-6" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Compartir</p></TooltipContent>
-                      </Tooltip>
-                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-12 w-12" onClick={handlePrint}>
-                            <Printer className="h-6 w-6" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Imprimir</p></TooltipContent>
-                      </Tooltip>
+                      <Tooltip><TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyAsImage(false)}>
+                          <Copy className="h-6 w-6" />
+                        </Button>
+                      </TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
+                      
+                      <Tooltip><TooltipTrigger asChild>
+                         <Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShare}>
+                          <Share2 className="h-6 w-6" />
+                        </Button>
+                      </TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+                      
+                       <Tooltip><TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrint}>
+                          <Printer className="h-6 w-6" />
+                        </Button>
+                       </TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
                     </TooltipProvider>
                 </div>
             }

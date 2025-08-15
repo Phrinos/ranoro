@@ -75,7 +75,7 @@ function ServiciosPage() {
     
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
-
+  
   const handleShowShareDialog = useCallback((service: ServiceRecord) => {
     setRecordForSharing(service);
     setIsShareDialogOpen(true);
@@ -230,11 +230,11 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
                 onOpenChange={setIsTicketDialogOpen}
                 title="Ticket de Servicio"
                 footerContent={
-                  <div className="flex w-full justify-end gap-2">
+                  <div className="flex w-full justify-end gap-4">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-12 w-12" onClick={() => handleCopyTicketAsImage(false)}>
+                           <Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyTicketAsImage(false)}>
                             <Copy className="h-6 w-6" />
                           </Button>
                         </TooltipTrigger>
@@ -242,7 +242,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                           <Button variant="outline" size="icon" className="h-12 w-12" onClick={handleShareTicket}>
+                           <Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareTicket}>
                             <Share2 className="h-6 w-6" />
                           </Button>
                         </TooltipTrigger>
@@ -250,7 +250,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
                       </Tooltip>
                        <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-12 w-12" onClick={handlePrintTicket}>
+                          <Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrintTicket}>
                             <Printer className="h-6 w-6" />
                           </Button>
                         </TooltipTrigger>
