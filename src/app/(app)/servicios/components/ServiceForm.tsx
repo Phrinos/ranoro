@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -6,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, X, Ban, Trash2, BrainCircuit } from 'lucide-react';
+import { Loader2, Save, X, Ban, Trash2, BrainCircuit, LogIn } from 'lucide-react';
 import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -371,6 +370,14 @@ function ServiceFormContent({
         setIsValidationDialogOpen(false);
     };
 
+  const handleLogData = () => {
+    console.log("Current Service Form Data:", getValues());
+    toast({
+      title: "Datos en Consola",
+      description: "Se ha registrado el objeto de datos del servicio en la consola del navegador (Presiona F12).",
+    });
+  };
+
   const showTabs = !isQuote && watchedStatus !== 'Agendado';
   const isSubmitDisabled = methods.formState.isSubmitting;
 
@@ -446,6 +453,9 @@ function ServiceFormContent({
           )}
         </div>
         <div className="flex gap-2">
+          <Button type="button" variant="secondary" onClick={handleLogData}>
+            Log Data
+          </Button>
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
           <Button type="submit" disabled={isSubmitDisabled}>
             {methods.formState.isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
