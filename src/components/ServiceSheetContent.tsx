@@ -33,7 +33,7 @@ const initialWorkshopInfo: WorkshopInfo = {
   fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
 
-function coerceDate(v: unknown): Date | null {
+const coerceDate = (v: unknown): Date | null => {
   if (!v) return null;
   if (v instanceof Date) return isValid(v) ? v : null;
   if (typeof (v as any)?.toDate === 'function') {
@@ -51,7 +51,7 @@ function coerceDate(v: unknown): Date | null {
     if (isValid(generic)) return generic;
   }
   return null;
-}
+};
 
 interface ServiceSheetContentProps {
   service: ServiceRecord;
@@ -71,7 +71,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const workshopInfo = service.workshopInfo || initialWorkshopInfo;
     const IVA_RATE = 0.16;
 
-    // --- Date and Cost Calculations ---
     const creationDate = coerceDate(service.serviceDate) || new Date();
     const formattedCreationDate = isValid(creationDate) ? format(creationDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     const validityDate = isValid(creationDate) ? format(addDays(creationDate, 15), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
@@ -94,8 +93,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     }, [items]);
     
     const termsText = `GARANTIA RANORO: Nuestros trabajos cuentan con garantía de 60 días o 1,000 km (lo que suceda primero), aplicable exclusivamente al trabajo realizado por Ranoro y, en su caso, a las refacciones suministradas e instaladas por nosotros; la garantía consiste en corregir sin costo el mismo concepto reparado, una vez que nuestro diagnóstico confirme la relación directa de la falla con la intervención realizada. Quedan excluidos: fallas no relacionadas con el servicio, componentes no intervenidos y daños consecuenciales; así como las derivadas de desgaste normal, mal uso, falta de mantenimiento, sobrecalentamiento, golpes, ingreso de agua o polvo, uso de combustible o lubricantes de mala calidad, o modificaciones de terceros. Las refacciones aportadas por el cliente no cuentan con garantía por parte del taller. Cualquier intervención de terceros o manipulación posterior del sistema anula la presente garantía. La atención de garantía se realiza exclusivamente en el taller, previa revisión y diagnóstico. Precios en MXN. Los precios y la disponibilidad de refacciones pueden cambiar sin previo aviso por parte de los proveedores.`;
-
-    // --- Status Logic ---
+    
     const status = (service.status || '').toLowerCase();
     const appointmentStatus = service.appointmentStatus;
 
@@ -196,36 +194,30 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           </Card>
         )}
         
-        <Card className="mt-6">
+         <Card className="mt-6">
             <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                    {service.serviceAdvisorSignatureDataUrl && (
-                        <div className="relative w-20 h-20 flex-shrink-0">
-                            <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="80px" />
-                        </div>
-                    )}
-                    <div className="flex-1 space-y-1">
-                        <p className="font-bold text-sm">{capitalizeWords(service.serviceAdvisorName || "Asesor de Servicio")}</p>
-                        <p className="text-xs text-muted-foreground">¡Gracias por su preferencia! Para dudas o aclaraciones, no dude en contactarnos.</p>
-                        <Button asChild size="sm" className="mt-1 bg-green-100 text-green-800 hover:bg-green-200">
-                            <a href={`https://wa.me/${workshopInfo.phone}`} target="_blank" rel="noopener noreferrer">
-                                <Icon icon="logos:whatsapp-icon" className="h-4 w-4 mr-2" />
-                                {workshopInfo.phone}
-                            </a>
-                        </Button>
-                    </div>
+                <div className="flex flex-col items-center text-center">
+                  {service.serviceAdvisorSignatureDataUrl && (
+                      <div className="relative w-48 h-24 mb-2">
+                          <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="192px" />
+                      </div>
+                  )}
+                  <p className="font-bold text-sm leading-tight">{capitalizeWords(service.serviceAdvisorName || "Asesor de Servicio")}</p>
+                  <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
+                  <div className="mt-2 text-xs">
+                      <p>¡Gracias por su preferencia! Para dudas o aclaraciones, no dude en contactarnos.</p>
+                      <p className="font-semibold">{workshopInfo.phone}</p>
+                  </div>
                 </div>
                 <Separator className="my-3"/>
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                         <a href={workshopInfo.googleMapsUrl || "#"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Globe className="h-5 w-5 text-muted-foreground"/></a>
                         <a href={`https://wa.me/${workshopInfo.phone}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-5 w-5"/></a>
-                        <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:facebook" className="h-5 w-5"/></a>
-                        <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="skill-icons:instagram" className="h-5 w-5"/></a>
                     </div>
                     <div className="flex items-center gap-3 text-xs">
-                        <Link href="/legal/terminos" target="_blank" className="hover:underline text-muted-foreground">Términos y Condiciones</Link>
-                        <Link href="/legal/privacidad" target="_blank" className="hover:underline text-muted-foreground">Aviso de Privacidad</Link>
+                        <Link href="/legal/terminos" target="_blank" className="hover:underline text-muted-foreground">Términos</Link>
+                        <Link href="/legal/privacidad" target="_blank" className="hover:underline text-muted-foreground">Privacidad</Link>
                     </div>
                 </div>
             </CardContent>
@@ -235,5 +227,3 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
-
-    
