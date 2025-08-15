@@ -108,6 +108,12 @@ const onVehicleExpensesUpdate = (callback: (expenses: VehicleExpense[]) => void)
     });
 };
 
+const onVehicleExpensesUpdatePromise = async (): Promise<VehicleExpense[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(query(collection(db, "vehicleExpenses")));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehicleExpense));
+};
+
 const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'vehicleLicensePlate'>): Promise<VehicleExpense> => {
     if (!db) throw new Error("Database not initialized.");
     
@@ -150,6 +156,7 @@ export const fleetService = {
   onRentalPaymentsUpdatePromise,
   addVehicleExpense,
   onVehicleExpensesUpdate,
+  onVehicleExpensesUpdatePromise,
   addOwnerWithdrawal,
   onOwnerWithdrawalsUpdate
 };

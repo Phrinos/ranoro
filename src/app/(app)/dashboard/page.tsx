@@ -19,6 +19,7 @@ import { isValid, isToday, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
+import { DashboardCharts } from './components/DashboardCharts';
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
@@ -234,6 +235,9 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <DashboardCharts services={allServices} sales={allSales} />
+
     </div>
   );
 }

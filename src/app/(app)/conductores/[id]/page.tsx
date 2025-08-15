@@ -24,7 +24,7 @@ import { RegisterPaymentDialog } from '../components/register-payment-dialog';
 import { DebtDialog, type DebtFormValues } from '../components/debt-dialog';
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { storage } from '@/lib/firebaseClient';
-import { operationsService, personnelService, inventoryService } from '@/lib/services';
+import { fleetService, personnelService, inventoryService } from '@/lib/services';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,7 +70,7 @@ export default function DriverDetailPage() {
     try {
         const [fetchedDriver, payments, vehiclesData] = await Promise.all([
             personnelService.getDriverById(driverId),
-            operationsService.onRentalPaymentsUpdatePromise(),
+            fleetService.onRentalPaymentsUpdatePromise(),
             inventoryService.onVehiclesUpdatePromise()
         ]);
         if (isMounted.current) {
@@ -242,7 +242,7 @@ const handleAssignVehicle = useCallback(async (newVehicleId: string | null) => {
   const handleRegisterPayment = async (details: { amount: number; daysCovered: number; }) => {
     if (!driver || !assignedVehicle) return;
 
-    await operationsService.addRentalPayment(driverId, details.amount, undefined, undefined);
+    await fleetService.addRentalPayment(driverId, details.amount, undefined, undefined);
     await fetchDriverData();
     
     toast({ title: "Pago Registrado", description: `Se ha registrado el pago de ${formatCurrency(details.amount)}.` });
@@ -640,5 +640,3 @@ const handleAssignVehicle = useCallback(async (newVehicleId: string | null) => {
     </>
   );
 }
-
-    

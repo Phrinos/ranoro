@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
@@ -26,7 +25,7 @@ import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import Image from "next/image";
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService, fleetService, serviceService } from '@/lib/services';
 import { savePublicDocument } from '@/lib/public-document';
 import { PrintLetterDialog } from "@/components/ui/print-letter-dialog";
 
@@ -123,9 +122,9 @@ export default function OwnerIncomeDetailPage({ params }: { params: { ownerName:
         setIsLoading(true);
         const [vehiclesData, paymentsData, servicesData, expensesData] = await Promise.all([
             inventoryService.onVehiclesUpdatePromise(),
-            operationsService.onRentalPaymentsUpdatePromise(),
-            operationsService.onServicesUpdatePromise(),
-            operationsService.onVehicleExpensesUpdatePromise()
+            fleetService.onRentalPaymentsUpdatePromise(),
+            serviceService.onServicesUpdatePromise(),
+            fleetService.onVehicleExpensesUpdatePromise()
         ]);
         setAllVehicles(vehiclesData);
         setAllPayments(paymentsData);
@@ -266,6 +265,3 @@ export default function OwnerIncomeDetailPage({ params }: { params: { ownerName:
     </>
   );
 }
-
-
-

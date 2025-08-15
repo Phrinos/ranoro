@@ -15,7 +15,7 @@ import { SupplierDialog } from '../components/supplier-dialog';
 import { formatCurrency } from '@/lib/utils';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService, purchaseService } from '@/lib/services';
 import type { Supplier, PayableAccount, User } from '@/types';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { PayableAccountDialog } from '../components/payable-account-dialog';
@@ -78,7 +78,7 @@ export default function SupplierDetailPage() {
     try {
         const userString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
         const user: User | null = userString ? JSON.parse(userString) : null;
-        await operationsService.registerPayableAccountPayment(accountId, amount, paymentMethod, note, user);
+        await purchaseService.registerPayableAccountPayment(accountId, amount, paymentMethod, note, user);
         toast({ title: "Pago Registrado", description: "El pago se ha registrado correctamente." });
         setIsPaymentDialogOpen(false);
     } catch(e) {
@@ -183,7 +183,7 @@ export default function SupplierDetailPage() {
       {selectedAccount && (
         <PayableAccountDialog
             open={isPaymentDialogOpen}
-            onOpenChange={setIsPaymentDialogOpen}
+            onOpen-change={setIsPaymentDialogOpen}
             account={selectedAccount}
             onSave={handleRegisterPayment}
         />
