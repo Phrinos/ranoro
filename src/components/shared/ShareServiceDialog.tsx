@@ -75,7 +75,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl md:max-w-2xl p-0 overflow-hidden">
         {/* Header visual */}
-        <div className="bg-gradient-to-r from-rose-600 to-rose-700 text-white px-6 py-5">
+        <div className="bg-gradient-to-r from-primary to-rose-700 text-white px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-white/10 grid place-items-center"><Car className="h-5 w-5" /></div>

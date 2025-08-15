@@ -382,9 +382,12 @@ function ServiceFormContent({
 
   return (
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)} className="flex flex-col h-full">
-      <div className="flex-grow overflow-y-auto px-6 py-4 space-y-6">
-        <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
-        <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
+      <div className="flex-grow space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
+            <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
+        </div>
+        
         {originalLockedStatus && (
           <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-900">
             Estás editando un servicio marcado como <b>{originalLockedStatus}</b>. Solo se habilitó la edición para corregir insumos/notas.
