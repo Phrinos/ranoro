@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 "use client";
 
@@ -18,6 +17,7 @@ import { FileText, ShoppingCart, Wrench, Wallet, CreditCard, Send, LineChart, Do
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import { parseDate } from '@/lib/forms';
+import { calcEffectiveProfit } from "@/lib/money-helpers";
 
 
 // --- Tipos para la pestaña Movimientos ---
@@ -90,7 +90,7 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
         payments: s.payments || [],
         paymentMethod_legacy: s.paymentMethod,
         total: s.totalCost || 0,
-        profit: s.serviceProfit || 0,
+        profit: calcEffectiveProfit(s),
       }));
 
     return [...saleMovements, ...serviceMovements];
