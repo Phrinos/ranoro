@@ -1,31 +1,12 @@
 
-
 import type {
   User,
-  SaleReceipt,
-  InventoryItem,
-  Vehicle,
-  Driver,
-  RentalPayment,
-  MonthlyFixedExpense,
   AppRole,
-  InventoryCategory,
-  Supplier,
-  ServiceRecord,
-  Technician,
-  AdministrativeStaff,
-  InitialCashBalance,
-  CashDrawerTransaction,
-  VehiclePriceList,
-  VehicleExpense,
-  ServiceTypeRecord,
-  AuditLog
 } from '@/types';
 import { ALL_PERMISSIONS } from './permissions';
 
 export const IVA_RATE = 0.16;
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
-const COMMISSION_ITEM_ID = 'COMMISSION_FEE';
 
 // =======================================
 // ===    DEFAULT SUPERADMIN CONFIG    ===
@@ -40,18 +21,6 @@ export const defaultSuperAdmin: User = {
 // =======================================
 // ===        PLACEHOLDER DATA         ===
 // =======================================
-// These arrays will be populated from Firestore or a local source
-export const placeholderVehicles: Vehicle[] = [];
-export const placeholderDrivers: Driver[] = [];
-export const placeholderRentalPayments: RentalPayment[] = [];
-export const placeholderVehicleExpenses: VehicleExpense[] = [];
-export const placeholderOwnerWithdrawals: any[] = []; // Define type if used
-export const placeholderServiceRecords: ServiceRecord[] = [];
-export const placeholderInventory: InventoryItem[] = [];
-export const placeholderSales: SaleReceipt[] = [];
-export const placeholderTechnicians: Technician[] = [];
-export const placeholderAdministrativeStaff: AdministrativeStaff[] = [];
-export const placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
 export const placeholderAppRoles: AppRole[] = [
     {
     id: "superadmin_role",
@@ -101,34 +70,18 @@ export const placeholderAppRoles: AppRole[] = [
     ],
   },
 ];
-export const placeholderCategories: InventoryCategory[] = [];
-export const placeholderSuppliers: Supplier[] = [];
-export const placeholderInitialCashBalance: InitialCashBalance = { date: '', amount: 0, userId: '', userName: '' };
-export const placeholderCashDrawerTransactions: CashDrawerTransaction[] = [];
-export const placeholderVehiclePriceLists: VehiclePriceList[] = [];
-export const placeholderTechnicianMonthlyPerformance: any[] = []; // Define type if used
-export const placeholderServiceTypes: ServiceTypeRecord[] = [];
-export const placeholderAuditLogs: AuditLog[] = [];
-export const placeholderUsers: User[] = [defaultSuperAdmin];
-
-// =======================================
-// ===         DATA HYDRATION          ===
-// =======================================
-// Deprecated hydrateReady logic removed. Hydration is now handled by individual page components.
-export const hydrateReady: Promise<void> = Promise.resolve();
-
 
 // =======================================
 // ===           UTILITIES           ===
 // =======================================
 
 export const calculateSaleProfit = (
-  sale: SaleReceipt,
-  inventory: InventoryItem[]
+  sale: { items: { inventoryItemId: string; unitPrice: number; quantity: number; isService?: boolean; }[], totalAmount: number },
+  inventory: { id: string; isService?: boolean; unitPrice: number; }[]
 ): number => {
   if (!sale?.items?.length) return 0;
 
-  const inventoryMap = new Map<string, InventoryItem>(
+  const inventoryMap = new Map<string, { id: string; isService?: boolean; unitPrice: number; }>(
     inventory.map((i) => [i.id, i])
   );
 
@@ -136,26 +89,15 @@ export const calculateSaleProfit = (
   
   let totalCostOfGoods = 0;
   for (const saleItem of sale.items) {
-    const isCommission = saleItem.inventoryItemId === COMMISSION_ITEM_ID;
-
-    if (isCommission) {
-        // The commission itself is a cost
-        totalCostOfGoods += saleItem.unitPrice || 0;
-        continue;
-    }
-    
     const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
     const isService = saleItem.isService || (inventoryItem && inventoryItem.isService);
     
-    // For physical products, the cost is the unitPrice from inventory.
     if (!isService && inventoryItem) {
       totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
     } 
-    // For cataloged services that might have a fixed cost associated.
     else if (isService && inventoryItem) {
       totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
     }
-    // For manually added items in a sale, their cost was already captured in unitPrice.
     else if (!inventoryItem) { 
        totalCostOfGoods += (saleItem.unitPrice || 0) * saleItem.quantity;
     }
@@ -164,32 +106,4 @@ export const calculateSaleProfit = (
   const finalProfit = totalRevenue - totalCostOfGoods;
 
   return isFinite(finalProfit) ? finalProfit : 0;
-};
-
-
-
-export const persistToFirestore = async (collections: string[]) => {
-  console.log(`[LOCAL MODE] Simulating persistence for: ${collections.join(', ')}`);
-  // This function would handle writing the placeholder arrays back to Firestore
-  // in a real application. In this local-only setup, we trigger an event
-  // to let other components know the data has "updated".
-  window.dispatchEvent(new CustomEvent('databaseUpdated'));
-  return { success: true };
-};
-
-export const logAudit = async (actionType: string, description: string, details?: any) => {
-  const userString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-  const user = userString ? JSON.parse(userString) : defaultSuperAdmin;
-  
-  const newLog: AuditLog = {
-    id: `log_${Date.now()}`,
-    date: new Date().toISOString(),
-    userId: user.id,
-    userName: user.name,
-    actionType: actionType as AuditLog['actionType'],
-    description,
-    ...details
-  };
-  placeholderAuditLogs.push(newLog);
-  // In a real app, this would also be persisted to Firestore
 };

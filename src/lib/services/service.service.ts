@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -22,7 +23,8 @@ import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem, ServiceItem } from "@/types";
 import { cleanObjectForFirestore, parseDate } from '../forms';
 import { IVA_RATE } from '../money';
-import { logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '../placeholder-data';
+import { logAudit } from './admin.service';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '../placeholder-data';
 import { nanoid } from 'nanoid';
 import { savePublicDocument } from '../public-document';
 import { cashService } from './cash.service';
@@ -41,12 +43,60 @@ const getDocById = async (collectionName: string, id: string): Promise<any> => {
 
 // --- Service Listeners ---
 
+const _onServicesUpdateByStatus = (
+  statuses: string[],
+  callback: (services: ServiceRecord[]) => void,
+  sortFn: (a: ServiceRecord, b: ServiceRecord) => number
+): (() => void) => {
+  if (!db) return () => {};
+  const q = query(
+    collection(db, "serviceRecords"),
+    where("status", "in", statuses)
+  );
+  return onSnapshot(q, (snapshot) => {
+    const services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+    services.sort(sortFn);
+    callback(services);
+  }, (error) => {
+    console.error(`Error listening to services with statuses [${statuses.join(', ')}]:`, error.message);
+    callback([]);
+  });
+};
+
+
 const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
     if (!db) return () => {};
     const q = query(collection(db, "serviceRecords"));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord)));
     }, (error) => console.error("Error listening to services:", error.message));
+};
+
+const onAgendaUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
+    return _onServicesUpdateByStatus(['Agendado'], callback, (a, b) => {
+        const dateA = a.appointmentDateTime ? new Date(a.appointmentDateTime) : (a.serviceDate ? new Date(a.serviceDate) : null);
+        const dateB = b.appointmentDateTime ? new Date(b.appointmentDateTime) : (b.serviceDate ? new Date(b.serviceDate) : null);
+        if (dateA && dateB) return dateA.getTime() - dateB.getTime();
+        return 0;
+    });
+};
+
+const onQuotesUpdate = (callback: (quotes: ServiceRecord[]) => void): (() => void) => {
+    return _onServicesUpdateByStatus(['Cotizacion'], callback, (a, b) => {
+        const dateA = a.receptionDateTime ? new Date(a.receptionDateTime) : 0;
+        const dateB = b.receptionDateTime ? new Date(b.receptionDateTime) : 0;
+        if (dateA && dateB) return dateB.getTime() - dateA.getTime();
+        return 0;
+    });
+};
+
+const onHistoryUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
+    return _onServicesUpdateByStatus(['Entregado', 'Cancelado'], callback, (a, b) => {
+        const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate) || new Date(0);
+        const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate) || new Date(0);
+        if (dateA && dateB) return dateB.getTime() - dateA.getTime();
+        return 0;
+    });
 };
 
 const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
@@ -323,6 +373,9 @@ const completeService = async (
 export const serviceService = {
     getDocById,
     onServicesUpdate,
+    onAgendaUpdate,
+    onQuotesUpdate,
+    onHistoryUpdate,
     onServicesUpdatePromise,
     getServicesForVehicle,
     addService,

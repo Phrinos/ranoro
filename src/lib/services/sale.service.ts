@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -12,12 +13,13 @@ import {
   DocumentReference,
   Timestamp,
   orderBy,
-  limit
+  limit,
+  where
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { SaleReceipt, InventoryItem, User, Payment } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
-import { logAudit } from '../placeholder-data';
+import { logAudit } from './admin.service';
 import { cashService } from './cash.service';
 import type { POSFormValues } from '@/schemas/pos-form-schema';
 

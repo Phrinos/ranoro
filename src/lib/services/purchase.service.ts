@@ -1,4 +1,3 @@
-
 // src/lib/services/purchase.service.ts
 
 import {
@@ -13,7 +12,7 @@ import { db } from '../firebaseClient';
 import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
 import type { User, PayableAccount, PaymentMethod } from '@/types';
 import { inventoryService } from './inventory.service';
-import { logAudit } from '../placeholder-data';
+import { logAudit } from './admin.service';
 import { cleanObjectForFirestore } from '../forms';
 import { formatCurrency } from '../utils';
 

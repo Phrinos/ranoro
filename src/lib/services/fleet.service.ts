@@ -18,7 +18,6 @@ import { db } from '../firebaseClient';
 import type { RentalPayment, VehicleExpense, OwnerWithdrawal, Vehicle, PaymentMethod, User } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
-import { logAudit } from '../placeholder-data';
 import { nanoid } from 'nanoid';
 
 // --- Rental Payments ---
