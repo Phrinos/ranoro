@@ -11,10 +11,11 @@ export function cn(...inputs: ClassValue[]) {
 
 export function normalizeDataUrl(dataUrl: string): string {
   if (!dataUrl) return '';
-  if (dataUrl.startsWith('data:image/') || dataUrl.startsWith('http')) {
+  // Check if it's already a valid data URL or an HTTP/HTTPS URL
+  if (dataUrl.startsWith('data:image') || dataUrl.startsWith('http')) {
     return dataUrl;
   }
-  // Fallback for raw base64 data, though less common now
+  // Fallback for raw base64 data
   return `data:image/png;base64,${dataUrl}`;
 }
 
