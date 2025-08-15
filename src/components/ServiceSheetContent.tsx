@@ -152,7 +152,7 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
                 <h4 className="font-bold text-sm flex items-center gap-2 justify-center"><CalendarCheck className="h-4 w-4"/>PRÓXIMO SERVICIO</h4>
                 <p className="text-sm mt-1">
                     <strong>Fecha:</strong> {format(parseDate(service.nextServiceInfo!.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}
-                    {service.nextServiceInfo!.mileage && (
+                    {service.nextServiceInfo!.mileage && typeof service.nextServiceInfo!.mileage === 'number' && isFinite(service.nextServiceInfo!.mileage) && (
                         <> / <strong>KM:</strong> {formatNumber(service.nextServiceInfo!.mileage)}</>
                     )}
                 </p>
@@ -229,6 +229,7 @@ interface ServiceSheetContentProps {
   isConfirming?: boolean;
   onSignClick?: (type: 'reception' | 'delivery') => void;
   isSigning?: boolean;
+  activeTab: string;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
@@ -451,3 +452,5 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
         </Card>
     );
 }
+
+    
