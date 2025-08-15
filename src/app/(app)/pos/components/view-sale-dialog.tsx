@@ -58,14 +58,16 @@ export function ViewSaleDialog({
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
+    // Initialize with sale data, but it will be updated by useEffect
     defaultValues: sale,
   });
 
   useEffect(() => {
+    // This effect now correctly handles resetting the form when the `sale` prop changes.
+    // It checks if the dialog is open and a sale object is provided.
     if (open && sale) {
       methods.reset(sale);
     }
-    // Only reset the form when the sale ID changes, preventing infinite loops.
   }, [open, sale, methods.reset]);
   
   if (!sale) return null;
