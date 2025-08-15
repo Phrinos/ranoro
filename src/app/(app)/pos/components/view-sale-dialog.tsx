@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -66,12 +65,8 @@ export function ViewSaleDialog({
     if (open && sale) {
       methods.reset(sale);
     }
-  }, [open, sale, methods]);
-
-  const handleUpdateSale = async (data: POSFormValues) => {
-    await onPaymentUpdate(sale.id, { payments: data.payments });
-    onOpenChange(false);
-  };
+    // Only reset the form when the sale ID changes, preventing infinite loops.
+  }, [open, sale, methods.reset]);
   
   if (!sale) return null;
 
