@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { TableToolbar } from '@/components/shared/table-toolbar';
-import { PlusCircle, ChevronLeft, ChevronRight, ShoppingCart, Wallet, CreditCard, Send, TrendingUp, Edit, Printer, Trash2, Repeat, User as UserIcon } from "lucide-react";
+import { PlusCircle, ChevronLeft, ChevronRight, ShoppingCart, Wallet, CreditCard, Send, TrendingUp, Edit, Printer, Trash2, Repeat, User as UserIcon, Landmark } from "lucide-react";
 import type { SaleReceipt, InventoryItem, Payment, User } from "@/types";
 import Link from "next/link";
 import { useTableManager } from '@/hooks/useTableManager';
@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { parseDate } from '@/lib/forms';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { Icon } from '@iconify/react';
+
 
 const sortOptions = [
     { value: 'date_desc', label: 'Más Reciente' },
@@ -34,11 +34,11 @@ const paymentMethodOptions: { value: Payment['method'] | 'all', label: string }[
     { value: 'Transferencia', label: 'Transferencia' },
 ];
 
-const paymentMethodIcons: Record<Payment['method'], string> = {
-  "Efectivo": "mdi:cash",
-  "Tarjeta": "logos:visa-electron",
-  "Tarjeta MSI": "logos:mastercard",
-  "Transferencia": "mdi:bank-transfer",
+const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Tarjeta MSI": CreditCard,
+  "Transferencia": Landmark,
 };
 
 interface VentasPosContentProps {
@@ -150,10 +150,10 @@ export function VentasPosContent({
                 {Array.from(summaryData.paymentsSummary.entries()).length > 0 ? (
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
-                      const iconName = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || "mdi:cash";
+                      const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || Wallet;
                       return (
                         <div key={method} className="flex items-center gap-2 text-sm">
-                           <Icon icon={iconName} className="h-4 w-4 text-muted-foreground" />
+                           <Icon className="h-4 w-4 text-muted-foreground" />
                            <span className="font-semibold">{method}:</span>
                            <span className="text-foreground">{formatCurrency(data.total)}</span>
                            <span className="text-muted-foreground text-xs">({data.count})</span>
@@ -195,10 +195,10 @@ export function VentasPosContent({
                       ? [<Badge key="cancelled" variant="destructive" className="font-bold">CANCELADO</Badge>]
                       : (sale.payments && sale.payments.length > 0)
                           ? sale.payments.map((p, index) => {
-                              const iconName = paymentMethodIcons[p.method] || 'mdi:cash';
+                              const Icon = paymentMethodIcons[p.method] || Wallet;
                               return (
                                 <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
-                                  <Icon icon={iconName} className="h-3 w-3 mr-1"/>{p.method} <span className="font-normal ml-1 opacity-80">{formatCurrency(p.amount)}</span>
+                                  <Icon className="h-3 w-3 mr-1"/>{p.method} <span className="font-normal ml-1 opacity-80">{formatCurrency(p.amount)}</span>
                                 </Badge>
                               )
                             })

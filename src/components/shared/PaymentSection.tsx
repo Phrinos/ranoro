@@ -8,21 +8,20 @@ import { useFormContext, useFieldArray } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wallet, CreditCard, Send, CheckCircle } from 'lucide-react';
+import { Wallet, CreditCard, Landmark, CheckCircle } from 'lucide-react';
 import type { Payment } from '@/types';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { DollarSign, PlusCircle, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Icon } from '@iconify/react';
 
 const paymentMethods: Payment['method'][] = ['Efectivo', 'Tarjeta', 'Tarjeta MSI', 'Transferencia'];
 
-const paymentMethodIcons: Record<Payment['method'], string> = {
-  "Efectivo": "mdi:cash",
-  "Tarjeta": "logos:visa-electron",
-  "Tarjeta MSI": "logos:mastercard",
-  "Transferencia": "mdi:bank-transfer",
+const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Tarjeta MSI": CreditCard,
+  "Transferencia": Landmark,
 };
 
 interface PaymentSectionProps {
@@ -84,9 +83,9 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
                                             <FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl>
                                             <SelectContent>
                                                 {paymentMethods.map(method => {
-                                                    const iconName = paymentMethodIcons[method];
+                                                    const Icon = paymentMethodIcons[method];
                                                     return (<SelectItem key={method} value={method} disabled={availablePaymentMethods.indexOf(method) === -1 && method !== selectedMethod}>
-                                                                <div className="flex items-center gap-2"><Icon icon={iconName} className="h-4 w-4" /><span>{method}</span></div>
+                                                                <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
                                                             </SelectItem>
                                                     );
                                                 })}

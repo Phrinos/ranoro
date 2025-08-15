@@ -8,13 +8,21 @@ import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
 import Image from "next/image";
 import { calculateDriverDebt, formatCurrency } from '@/lib/utils';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Wallet, CreditCard, Landmark } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
   logoUrl: "/ranoro-logo.png",
+};
+
+const paymentMethodIcons: Record<RentalPayment['paymentMethod'], React.ElementType> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Transferencia": Landmark,
 };
 
 
@@ -50,6 +58,8 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
       return { total, days };
 
     }, [allPaymentsForDriver]);
+    
+    const PaymentIcon = payment.paymentMethod ? paymentMethodIcons[payment.paymentMethod] : Wallet;
 
     return (
       <div 
@@ -98,8 +108,13 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
             <div className="flex justify-between"><span>Conductor:</span><span className="font-semibold">{payment.driverName}</span></div>
             <div className="flex justify-between"><span>Vehículo:</span><span className="font-semibold">{payment.vehicleLicensePlate}</span></div>
             {payment.note && <div className="text-left"><span>Concepto:</span><span className="font-semibold block">{payment.note}</span></div>}
-            {payment.paymentMethod && <div className="flex justify-between"><span>Método de Pago:</span><span className="font-semibold">{payment.paymentMethod}</span></div>}
-            <div className="flex justify-between text-lg"><span>TOTAL PAGADO:</span><span className="font-bold">{formattedAmount}</span></div>
+            <div className="flex justify-between items-center text-lg">
+              <span>TOTAL PAGADO:</span>
+              <div className="flex items-center gap-2">
+                {payment.paymentMethod && <PaymentIcon className="h-4 w-4" />}
+                <span className="font-bold">{formattedAmount}</span>
+              </div>
+            </div>
         </div>
         
         <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>

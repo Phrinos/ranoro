@@ -14,11 +14,11 @@ import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { TableToolbar } from '@/components/shared/table-toolbar';
-import { FileText, ShoppingCart, Wrench, Wallet, CreditCard, Send, LineChart, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, ShoppingCart, Wrench, Wallet, CreditCard, Send, LineChart, DollarSign, ChevronLeft, ChevronRight, Landmark } from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import { parseDate } from '@/lib/forms';
-import { Icon } from '@iconify/react';
+
 
 // --- Tipos para la pestaña Movimientos ---
 interface Movement {
@@ -42,11 +42,11 @@ const sortOptions = [
   { value: 'profit_asc', label: 'Utilidad (Menor a Menor)' },
 ];
 
-const paymentMethodIcons: Record<Payment['method'], string> = {
-  "Efectivo": "mdi:cash",
-  "Tarjeta": "logos:visa-electron",
-  "Tarjeta MSI": "logos:mastercard",
-  "Transferencia": "mdi:bank-transfer",
+const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Tarjeta MSI": CreditCard,
+  "Transferencia": Landmark,
 };
 
 // --- Componente de la pestaña Movimientos ---
@@ -171,10 +171,10 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
                     {Array.from(summary.paymentsSummary.entries()).length > 0 ? (
                         <div className="flex flex-wrap gap-x-4 gap-y-2">
                         {Array.from(summary.paymentsSummary.entries()).map(([method, data]) => {
-                            const iconName = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || "mdi:cash";
+                            const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || Wallet;
                             return (
                                 <div key={method} className="flex items-center gap-2 text-sm">
-                                    <Icon icon={iconName} className="h-4 w-4 text-muted-foreground" />
+                                    <Icon className="h-4 w-4 text-muted-foreground" />
                                     <span className="font-semibold">{method}:</span>
                                     <span className="text-foreground">{formatCurrency(data.total)}</span>
                                     <span className="text-muted-foreground text-xs">({data.count})</span>
@@ -212,9 +212,9 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
                                           <div className="flex flex-wrap gap-1">
                                             {(m.payments && m.payments.length > 0) ? (
                                                 m.payments.map((p, index) => {
-                                                    const iconName = paymentMethodIcons[p.method] || "mdi:cash";
+                                                    const Icon = paymentMethodIcons[p.method] || Wallet;
                                                     return (<Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
-                                                    <Icon icon={iconName} className="h-3 w-3 mr-1"/>{p.method}
+                                                    <Icon className="h-3 w-3 mr-1"/>{p.method}
                                                     </Badge>);
                                                 })
                                             ) : (

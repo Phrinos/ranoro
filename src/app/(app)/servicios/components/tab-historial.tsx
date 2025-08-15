@@ -10,7 +10,7 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
 import { startOfMonth, endOfMonth, subDays, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, FileText, Wrench, DollarSign, TrendingUp, LineChart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, Wrench, DollarSign, TrendingUp, LineChart, Wallet, CreditCard, Send, Landmark } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
@@ -45,10 +45,16 @@ const sortOptions = [
     { value: 'deliveryDateTime_desc', label: 'Fecha (Más Reciente)' },
     { value: 'deliveryDateTime_asc', label: 'Fecha (Más Antiguo)' },
     { value: 'totalCost_desc', label: 'Costo (Mayor a Menor)' },
-    { value: 'totalCost_asc', label: 'Costo (Menor a Mayor)' },
+    { value: 'totalCost_asc', label: 'Costo (Menor a Menor)' },
     { value: 'vehicleIdentifier_asc', label: 'Placa (A-Z)' },
 ];
 
+const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Tarjeta MSI": CreditCard,
+  "Transferencia": Landmark,
+};
 
 export default function HistorialTabContent({
   services,
@@ -160,11 +166,15 @@ export default function HistorialTabContent({
             <CardContent>
                 {Array.from(summaryData.paymentsSummary.entries()).length > 0 ? (
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
-                    {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => (
-                        <Badge key={method} variant="secondary" className="text-sm">
-                            {method}:<span className="font-semibold ml-1">{formatCurrency(data.total)}</span>
-                        </Badge>
-                    ))}
+                    {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
+                        const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || Wallet;
+                        return (
+                            <Badge key={method} variant="secondary" className="text-sm">
+                                <Icon className="h-3 w-3 mr-1" />
+                                {method}:<span className="font-semibold ml-1">{formatCurrency(data.total)}</span>
+                            </Badge>
+                        );
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">No hay pagos registrados en este periodo.</p>

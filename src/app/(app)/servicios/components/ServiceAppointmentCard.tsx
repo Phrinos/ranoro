@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 
 "use client";
@@ -7,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Car, User as UserIcon, Calendar, CheckCircle, XCircle, Clock, Ellipsis, Eye, Edit, Check, DollarSign, TrendingUp, Copy, Printer, Trash2, Phone, Share2, Wallet, CreditCard, Send } from 'lucide-react';
+import { Car, User as UserIcon, Calendar, CheckCircle, XCircle, Clock, Ellipsis, Eye, Edit, Check, DollarSign, TrendingUp, Copy, Printer, Trash2, Phone, Share2, Wallet, CreditCard, Send, Landmark } from 'lucide-react';
 import type { ServiceRecord, Vehicle, User, Payment } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -15,7 +16,6 @@ import { formatCurrency, getStatusInfo, getPaymentMethodVariant, cn } from "@/li
 import { useToast } from '@/hooks/use-toast';
 import { parseDate } from '@/lib/forms';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { Icon } from '@iconify/react';
 
 
 interface ServiceAppointmentCardProps {
@@ -33,11 +33,11 @@ interface ServiceAppointmentCardProps {
 
 const IVA_RATE = 0.16;
 
-const paymentMethodIcons: Record<Payment['method'], string> = {
-  "Efectivo": "mdi:cash",
-  "Tarjeta": "logos:visa-electron",
-  "Tarjeta MSI": "logos:mastercard",
-  "Transferencia": "mdi:bank-transfer",
+const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Tarjeta MSI": CreditCard,
+  "Transferencia": Landmark,
 };
 
 export function ServiceAppointmentCard({
@@ -149,7 +149,7 @@ export function ServiceAppointmentCard({
             </div>
             {primaryPayment && (
               <Badge variant={getPaymentMethodVariant(primaryPayment.method)} className="mt-1">
-                <Icon icon={paymentMethodIcons[primaryPayment.method] || 'mdi:cash'} className="h-3 w-3 mr-1" />
+                 <Icon className="h-3 w-3 mr-1" />
                 {primaryPayment.method} {service.payments && service.payments.length > 1 ? `(+${service.payments.length - 1})` : ''}
               </Badge>
             )}

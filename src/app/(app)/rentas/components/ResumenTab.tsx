@@ -10,23 +10,16 @@ import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from 'react-day-picker';
 import { formatCurrency } from "@/lib/utils";
 import type { RentalPayment, VehicleExpense } from '@/types';
-import { DollarSign, AlertCircle, LineChart, TrendingDown, CalendarIcon as CalendarDateIcon, Wallet, CreditCard, Send } from "lucide-react";
+import { DollarSign, AlertCircle, LineChart, TrendingDown, CalendarIcon as CalendarDateIcon, Wallet, CreditCard, Send, Landmark } from "lucide-react";
 import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
-import { Icon } from '@iconify/react';
 
 interface ResumenTabProps {
   payments: RentalPayment[];
   expenses: VehicleExpense[];
   monthlyBalances: any[]; // Consider creating a specific type for this
 }
-
-const paymentMethodIcons: Record<RentalPayment['paymentMethod'], string> = {
-  "Efectivo": "mdi:cash",
-  "Tarjeta": "logos:visa-electron",
-  "Transferencia": "mdi:bank-transfer",
-};
 
 export function ResumenTab({ payments, expenses, monthlyBalances }: ResumenTabProps) {
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
@@ -75,7 +68,7 @@ export function ResumenTab({ payments, expenses, monthlyBalances }: ResumenTabPr
           <PopoverTrigger asChild>
             <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal bg-card",!filterDateRange && "text-muted-foreground")}>
               <CalendarDateIcon className="mr-2 h-4 w-4" />
-              {filterDateRange?.from ? (filterDateRange.to ? (`${format(filterDateRange.from, "LLL dd, y", { locale: es })} - ${format(filterDateRange.to, "LLL dd, y", { locale: es })}`) : format(filterDateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
+              {filterDateRange?.from ? (filterDateRange.to && filterDateRange.from.getTime() !== filterDateRange.to.getTime() ? (`${format(filterDateRange.from, "LLL dd, y", { locale: es })} - ${format(filterDateRange.to, "LLL dd, y", { locale: es })}`) : format(filterDateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
