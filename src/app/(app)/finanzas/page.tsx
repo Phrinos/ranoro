@@ -34,6 +34,7 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipTrigger, TooltipProvider, TooltipContent } from '@/components/ui/tooltip';
+import { calcEffectiveProfit } from '@/lib/money-helpers';
 
 
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
@@ -149,7 +150,7 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
         const totalIncomeFromSales = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
         const totalProfitFromSales = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
         const totalIncomeFromServices = servicesInRange.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-        const totalProfitFromServices = servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+        const totalProfitFromServices = servicesInRange.reduce((sum, s) => sum + calcEffectiveProfit(s), 0);
         
         const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
         const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;

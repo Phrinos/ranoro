@@ -6,7 +6,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
-import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel } from '@/types';
+import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense } from '@/types';
 import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Landmark } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
+  const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
@@ -43,6 +44,7 @@ export default function DashboardPage() {
       serviceService.onServicesUpdate(setAllServices),
       saleService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
+      inventoryService.onFixedExpensesUpdate(setFixedExpenses),
       personnelService.onPersonnelUpdate((personnel) => {
         setAllPersonnel(personnel);
         setIsLoading(false);
@@ -166,7 +168,7 @@ export default function DashboardPage() {
               </Link>
             </Button>
             <Button asChild variant="outline" className="bg-white hover:bg-gray-100 text-black">
-              <Link href="/rentas?action=registrar">
+              <Link href="/flotilla?action=registrar">
                 <Landmark className="mr-2 h-4 w-4" />
                 Registrar Pago Flotilla
               </Link>
@@ -236,7 +238,13 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <DashboardCharts services={allServices} sales={allSales} />
+      <DashboardCharts 
+        services={allServices} 
+        sales={allSales}
+        inventory={allInventory}
+        fixedExpenses={fixedExpenses}
+        personnel={allPersonnel}
+      />
 
     </div>
   );
