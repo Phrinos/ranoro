@@ -100,49 +100,50 @@ export default function DashboardPage() {
     }
   }, []);
   
-  useEffect(() => {
-    const runCapacityAnalysis = async () => {
-      if (isLoading || allServices.length === 0 || allPersonnel.length === 0) return;
-      
-      setIsCapacityLoading(true);
-      setCapacityError(null);
-      
-      try {
-        const servicesForToday = allServices.filter(s => {
-          const serviceDay = parseDate(s.serviceDate);
-          return (s.status === 'En Taller') || (s.status === 'Agendado' && serviceDay && isValid(serviceDay) && isToday(serviceDay));
-        });
+  const runCapacityAnalysis = useCallback(async () => {
+    if (allServices.length === 0 || allPersonnel.length === 0) {
+      toast({ title: 'Datos insuficientes', description: 'Se necesitan servicios y personal para analizar la capacidad.', variant: 'default' });
+      return;
+    }
+    
+    setIsCapacityLoading(true);
+    setCapacityError(null);
+    
+    try {
+      const servicesForToday = allServices.filter(s => {
+        const serviceDay = parseDate(s.serviceDate);
+        return (s.status === 'En Taller') || (s.status === 'Agendado' && serviceDay && isValid(serviceDay) && isToday(serviceDay));
+      });
 
-        if (servicesForToday.length === 0) {
-            const totalAvailable = allPersonnel.filter(p => !p.isArchived).reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
-            setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: totalAvailable, recommendation: 'Taller disponible', capacityPercentage: 0 });
-            return;
-        }
-
-        const result = await analyzeWorkshopCapacity({
-            servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
-            technicians: allPersonnel.filter(p => !p.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
-            serviceHistory: allServices
-              .filter(s => s.serviceDate)
-              .map(s => {
-                  const serviceDate = parseDate(s.serviceDate);
-                  const deliveryDateTime = parseDate(s.deliveryDateTime);
-                  return {
-                      description: s.description || '',
-                      serviceDate: serviceDate ? serviceDate.toISOString() : undefined,
-                      deliveryDateTime: deliveryDateTime ? deliveryDateTime.toISOString() : undefined,
-                  };
-              }),
-        });
-        setCapacityInfo(result);
-      } catch (e: any) {
-        setCapacityError(e.message || 'Error en análisis de capacidad');
-      } finally {
-        setIsCapacityLoading(false);
+      if (servicesForToday.length === 0) {
+          const totalAvailable = allPersonnel.filter(p => !p.isArchived).reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
+          setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: totalAvailable, recommendation: 'Taller disponible', capacityPercentage: 0 });
+          return;
       }
-    };
-    runCapacityAnalysis();
-  }, [allServices, allPersonnel, isLoading, toast]);
+
+      const result = await analyzeWorkshopCapacity({
+          servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
+          technicians: allPersonnel.filter(p => !p.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
+          serviceHistory: allServices
+            .filter(s => s.serviceDate)
+            .map(s => {
+                const serviceDate = parseDate(s.serviceDate);
+                const deliveryDateTime = parseDate(s.deliveryDateTime);
+                return {
+                    description: s.description || '',
+                    serviceDate: serviceDate ? serviceDate.toISOString() : undefined,
+                    deliveryDateTime: deliveryDateTime ? deliveryDateTime.toISOString() : undefined,
+                };
+            }),
+      });
+      setCapacityInfo(result);
+      toast({ title: "Análisis de Capacidad Completo", description: result.recommendation });
+    } catch (e: any) {
+      setCapacityError(e.message || 'Error en análisis de capacidad');
+    } finally {
+      setIsCapacityLoading(false);
+    }
+  }, [allServices, allPersonnel, toast]);
 
   return (
     <div className="container mx-auto py-8 flex flex-col">
@@ -212,25 +213,23 @@ export default function DashboardPage() {
               <BrainCircuit className="h-5 w-5 text-purple-500" />
           </CardHeader>
           <CardContent>
-              {isCapacityLoading ? (
-                  <div className="flex items-center gap-2 pt-2">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span className="text-muted-foreground text-sm">Calculando...</span>
-                  </div>
-              ) : capacityError ? (
-                  <div className="flex items-center gap-2 pt-2 text-destructive">
-                      <AlertTriangle className="h-5 w-5" />
-                      <span className="text-sm">{capacityError}</span>
-                  </div>
-              ) : capacityInfo ? (
+              {capacityInfo ? (
                   <>
                       <div className="text-2xl font-bold font-headline">{capacityInfo.capacityPercentage}%</div>
                       <p className="text-xs text-muted-foreground" title={`${capacityInfo.totalRequiredHours.toFixed(1)}h de ${capacityInfo.totalAvailableHours}h`}>
                           {capacityInfo.recommendation}
                       </p>
                   </>
+              ) : capacityError ? (
+                   <div className="flex items-center gap-2 pt-2 text-destructive">
+                      <AlertTriangle className="h-5 w-5" />
+                      <span className="text-sm">{capacityError}</span>
+                  </div>
               ) : (
-                  <p className="text-xs text-muted-foreground pt-2">No hay datos de capacidad.</p>
+                  <Button size="sm" className="w-full mt-2" onClick={runCapacityAnalysis} disabled={isCapacityLoading}>
+                      {isCapacityLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                      {isCapacityLoading ? 'Analizando...' : 'Analizar Capacidad con IA'}
+                  </Button>
               )}
           </CardContent>
         </Card>

@@ -86,12 +86,12 @@ const capacityAnalysisFlow = ai.defineFlow(
     const processedServiceHistory = input.serviceHistory
       .map(item => {
         if (!item.serviceDate || !item.deliveryDateTime) {
-          return { description: item.description, durationInHours: 1 }; // Default to 1 hour if end time is missing
+          return null; // Ignore items without full date information for this summary
         }
         const startDate = parseISO(item.serviceDate);
         const endDate = parseISO(item.deliveryDateTime);
         if (!isValid(startDate) || !isValid(endDate)) {
-          return { description: item.description, durationInHours: 1 }; // Default if dates are invalid
+          return null;
         }
         const durationInMinutes = differenceInMinutes(endDate, startDate);
         // Only include reasonable durations to avoid skewing the data
