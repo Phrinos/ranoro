@@ -305,15 +305,15 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 className="text-2xl font-semibold tracking-tight">Caja</h2>
              <div className="flex gap-2 items-center flex-wrap">
-                <Button variant="outline" size="sm" onClick={() => setPresetRange('today')}>Hoy</Button>
-                <Button variant="outline" size="sm" onClick={() => setPresetRange('yesterday')}>Ayer</Button>
-                <Button variant="outline" size="sm" onClick={() => setPresetRange('week')}>Semana</Button>
-                <Button variant="outline" size="sm" onClick={() => setPresetRange('month')}>Mes</Button>
+                <Button variant="outline" size="sm" onClick={() => setPresetRange('today')} className="bg-card">Hoy</Button>
+                <Button variant="outline" size="sm" onClick={() => setPresetRange('yesterday')} className="bg-card">Ayer</Button>
+                <Button variant="outline" size="sm" onClick={() => setPresetRange('week')} className="bg-card">Semana</Button>
+                <Button variant="outline" size="sm" onClick={() => setPresetRange('month')} className="bg-card">Mes</Button>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
-                    className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}
+                    className={cn("w-[280px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateRange?.from ? (
@@ -349,10 +349,10 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
             </Card>
         </div>
         <div className="flex justify-end gap-2">
-            <Button onClick={() => handleOpenDialog('Entrada')} variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700">
+            <Button onClick={() => handleOpenDialog('Entrada')} variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700 bg-card">
                 <ArrowUp className="mr-2 h-4 w-4"/> Registrar Entrada
             </Button>
-            <Button onClick={() => handleOpenDialog('Salida')} variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700">
+            <Button onClick={() => handleOpenDialog('Salida')} variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700 bg-card">
                 <ArrowDown className="mr-2 h-4 w-4"/> Registrar Salida
             </Button>
         </div>
