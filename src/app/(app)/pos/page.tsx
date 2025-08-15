@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/page.tsx
 "use client";
 
@@ -22,6 +23,7 @@ import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-sc
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import html2canvas from 'html2canvas';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ViewSaleDialog } from './components/view-sale-dialog';
 
 
 export default function PosPage() {
