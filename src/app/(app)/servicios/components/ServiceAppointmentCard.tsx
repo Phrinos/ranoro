@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 
 "use client";
@@ -149,7 +148,7 @@ export function ServiceAppointmentCard({
             </div>
             {primaryPayment && (
               <Badge variant={getPaymentMethodVariant(primaryPayment.method)} className="mt-1">
-                 <Icon className="h-3 w-3 mr-1" />
+                 {React.createElement(paymentMethodIcons[primaryPayment.method] || Wallet, { className: "h-3 w-3 mr-1" })}
                 {primaryPayment.method} {service.payments && service.payments.length > 1 ? `(+${service.payments.length - 1})` : ''}
               </Badge>
             )}

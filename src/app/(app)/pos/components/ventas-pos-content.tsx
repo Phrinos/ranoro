@@ -1,4 +1,3 @@
-
 // src/app/(app)/pos/components/ventas-pos-content.tsx
 "use client";
 

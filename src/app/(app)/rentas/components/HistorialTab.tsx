@@ -133,7 +133,9 @@ export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: H
               </TableHeader>
               <TableBody>
                 {sortedPayments.length > 0 ? (
-                  sortedPayments.map(p => (
+                  sortedPayments.map(p => {
+                    const PaymentIcon = p.paymentMethod ? paymentMethodIcons[p.paymentMethod] : Wallet;
+                    return (
                     <TableRow key={p.id}>
                       <TableCell className="font-mono">{p.id.slice(-6)}</TableCell>
                       <TableCell>{p.registeredBy || 'Sistema'}</TableCell>
@@ -142,7 +144,7 @@ export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: H
                       <TableCell>{p.vehicleLicensePlate}</TableCell>
                       <TableCell className="text-right font-bold">
                         <p>{formatCurrency(p.amount)}</p>
-                        {p.paymentMethod && <Badge variant={getPaymentMethodVariant(p.paymentMethod)} className="mt-1 text-xs"><Icon icon={paymentMethodIcons[p.paymentMethod]} className="mr-1 h-3 w-3"/>{p.paymentMethod}</Badge>}
+                        {p.paymentMethod && <Badge variant={getPaymentMethodVariant(p.paymentMethod)} className="mt-1 text-xs"><PaymentIcon className="mr-1 h-3 w-3"/>{p.paymentMethod}</Badge>}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{p.note || 'N/A'}</TableCell>
                       <TableCell className="text-right">
@@ -154,7 +156,7 @@ export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: H
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))
+                  )})
                 ) : (
                   <TableRow><TableCell colSpan={8} className="text-center h-24">No hay pagos registrados.</TableCell></TableRow>
                 )}
