@@ -142,14 +142,19 @@ export default function ServicioPage() {
       toast({ title: "Vehículo Creado" });
   };
 
-  const handleCancelService = async (id: string, reason: string) => {
-      await serviceService.cancelService(id, reason);
-      toast({ title: "Servicio Cancelado" });
-      router.push('/servicios?tab=historial');
+  const handleCancelService = async () => {
+      if (!initialData?.id) return;
+      const reason = prompt("Motivo de la cancelación:");
+      if (reason) {
+        await serviceService.cancelService(initialData.id, reason);
+        toast({ title: "Servicio Cancelado" });
+        router.push('/servicios?tab=historial');
+      }
   };
   
-  const handleDeleteQuote = async (id: string) => {
-      await serviceService.deleteService(id);
+  const handleDeleteQuote = async () => {
+      if (!initialData?.id) return;
+      await serviceService.deleteService(initialData.id);
       toast({ title: "Cotización Eliminada", variant: "destructive" });
       router.push('/servicios?tab=cotizaciones');
   };
@@ -166,7 +171,7 @@ export default function ServicioPage() {
   const isQuote = initialData?.status === 'Cotizacion' || isQuoteModeParam;
   
   const pageTitle = isEditMode 
-    ? `Editar ${initialData?.status === 'Cotizacion' ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`
+    ? `Editar ${isQuote ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`
     : `Nueva ${isQuote ? 'Cotización' : 'Servicio'}`;
     
   const pageDescription = isEditMode 
@@ -176,15 +181,15 @@ export default function ServicioPage() {
   const pageActions = (
     <div className="flex items-center gap-2">
       {isEditMode && initialData && (
-        <Button variant="outline" onClick={() => handleShowShareDialog(initialData)} size="icon">
+        <Button variant="outline" onClick={() => handleShowShareDialog(initialData)} size="icon" title="Compartir Documento">
           <Share2 className="h-4 w-4"/>
         </Button>
       )}
 
-      {(isQuote && onDelete && initialData?.id) || (!isQuote && onCancelService && initialData?.id) ? (
+      {initialData?.id && (
         <ConfirmDialog
             triggerButton={
-                <Button variant="destructive" size="icon">
+                <Button variant="destructive" size="icon" title={isQuote ? "Eliminar Cotización" : "Cancelar Servicio"}>
                     {isQuote ? <Trash2 className="h-4 w-4"/> : <Ban className="h-4 w-4"/>}
                 </Button>
             }
@@ -194,16 +199,9 @@ export default function ServicioPage() {
                 ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
                 : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'
             }
-            onConfirm={() => {
-                if (isQuote && onDelete && initialData?.id) {
-                    onDelete(initialData.id);
-                } else if (!isQuote && onCancelService && initialData?.id) {
-                    const reason = prompt("Motivo de la cancelación:");
-                    if(reason) onCancelService(initialData.id, reason);
-                }
-            }}
+            onConfirm={isQuote ? handleDeleteQuote : handleCancelService}
         />
-      ) : null}
+      )}
 
       <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
       <Button type="submit" form="service-form" disabled={isSubmitting}>
@@ -226,8 +224,6 @@ export default function ServicioPage() {
         suppliers={suppliers}
         serviceHistory={serviceHistory}
         onSave={isEditMode ? handleUpdateService : handleSaveService}
-        onDelete={handleDeleteQuote}
-        onCancelService={handleCancelService}
         onVehicleCreated={handleVehicleCreated}
         mode={isQuote ? 'quote' : 'service'}
       />

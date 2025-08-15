@@ -57,8 +57,6 @@ interface ServiceFormWrapperProps {
   suppliers: Supplier[];
   serviceHistory: ServiceRecord[];
   onSave: (data: ServiceFormValues) => Promise<void>;
-  onDelete?: (id: string) => void;
-  onCancelService?: (id: string, reason: string) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
   mode: 'service' | 'quote';
 }
@@ -75,8 +73,6 @@ export function ServiceForm({
   suppliers,
   serviceHistory,
   onSave,
-  onDelete,
-  onCancelService,
   onVehicleCreated,
   mode,
 }: ServiceFormWrapperProps) {
@@ -113,8 +109,6 @@ export function ServiceForm({
         onSubmit={onSave}
         mode={mode}
         onVehicleCreated={onVehicleCreated}
-        onDelete={onDelete}
-        onCancelService={onCancelService}
       />
     </FormProvider>
   );
@@ -132,8 +126,6 @@ interface ServiceFormContentProps {
   onSubmit: (data: ServiceFormValues) => Promise<void>;
   mode: 'service' | 'quote';
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
-  onDelete?: (id: string) => void;
-  onCancelService?: (id: string, reason: string) => void;
 }
 
 function ServiceFormContent({
@@ -148,8 +140,6 @@ function ServiceFormContent({
   onSubmit,
   mode,
   onVehicleCreated,
-  onDelete,
-  onCancelService,
 }: ServiceFormContentProps) {
   const { toast } = useToast();
   const methods = useFormContext<ServiceFormValues>();
