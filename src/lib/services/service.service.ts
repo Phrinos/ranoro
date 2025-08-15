@@ -20,7 +20,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem, ServiceItem } from "@/types";
+import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem, ServiceItem, PaymentMethod } from "@/types";
 import { cleanObjectForFirestore, parseDate } from '../forms';
 import { IVA_RATE } from '../money';
 import { adminService } from './admin.service';
@@ -31,6 +31,7 @@ import { cashService } from './cash.service';
 import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
 import { inventoryService } from './inventory.service';
 import { format, isValid, compareDesc, parse } from 'date-fns';
+import { calcCardCommission, calcSuppliesCostFromItems, calcTotalFromItems } from "@/lib/money-helpers";
 
 // --- Generic Document Getter ---
 const getDocById = async (collectionName: string, id: string): Promise<any> => {
@@ -213,10 +214,14 @@ const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<
     if (!db) throw new Error("Database not initialized.");
 
     const serviceItems = data.serviceItems || [];
-    const totalCost = serviceItems.reduce((acc, item) => acc + (item.price || 0), 0);
-    const totalSuppliesWorkshopCost = serviceItems.flatMap(item => item.suppliesUsed || []).reduce((acc, supply) => acc + (supply.unitPrice || 0) * (supply.quantity || 0), 0);
-    const cardCommission = data.cardCommission || 0;
-    const serviceProfit = totalCost - totalSuppliesWorkshopCost - cardCommission;
+    const totalCost = calcTotalFromItems(serviceItems);
+    const totalSuppliesWorkshopCost = calcSuppliesCostFromItems(serviceItems);
+
+    const payments = (data as any).payments as Payment[] | undefined;
+    const commission = Number(data.cardCommission ?? (payments ? calcCardCommission(totalCost, payments, data.paymentMethod as any) : 0));
+    
+    const serviceProfit = totalCost - totalSuppliesWorkshopCost - commission;
+    
     const subTotal = totalCost / (1 + IVA_RATE);
     const taxAmount = totalCost - subTotal;
 
@@ -224,6 +229,7 @@ const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<
         ...data,
         totalCost,
         totalSuppliesWorkshopCost,
+        cardCommission: Number(data.cardCommission ?? commission),
         serviceProfit,
         subTotal,
         taxAmount,
@@ -343,16 +349,27 @@ const completeService = async (
     batch: any
 ): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
-    
+
     const serviceRef = doc(db, 'serviceRecords', service.id);
     const deliveryDate = new Date().toISOString();
-    
+
+    // 1) Calcula total, insumos y comisión con base en los pagos que estás guardando
+    const total     = Number(service.totalCost ?? calcTotalFromItems(service.serviceItems));
+    const supplies  = Number(service.totalSuppliesWorkshopCost ?? calcSuppliesCostFromItems(service.serviceItems));
+    const commission = calcCardCommission(total, paymentDetails.payments as any, service.paymentMethod as any);
+
+    // 2) Ganancia efectiva
+    const serviceProfit = total - supplies - commission;
+
     const updateData = {
         status: 'Entregado' as const,
         deliveryDateTime: deliveryDate,
         payments: paymentDetails.payments,
         nextServiceInfo: paymentDetails.nextServiceInfo,
+        cardCommission: commission,
+        serviceProfit, // ← deja persistido el valor correcto
     };
+
     batch.update(serviceRef, cleanObjectForFirestore(updateData));
     
     if (service.vehicleId) {

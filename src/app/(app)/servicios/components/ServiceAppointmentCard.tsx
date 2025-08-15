@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 
 "use client";
@@ -15,6 +16,7 @@ import { formatCurrency, getStatusInfo, getPaymentMethodVariant, cn } from "@/li
 import { useToast } from '@/hooks/use-toast';
 import { parseDate } from '@/lib/forms';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { calcEffectiveProfit } from "@/lib/money-helpers";
 
 
 interface ServiceAppointmentCardProps {
@@ -61,20 +63,9 @@ export function ServiceAppointmentCard({
   const parsedDate = displayDate ? parseDate(displayDate) : null;
 
   const calculatedTotals = useMemo(() => {
-    const total = service.totalCost || (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0);
-    
-    // Always calculate profit on the fly to ensure accuracy even with old data
-    const costOfSupplies = service.totalSuppliesWorkshopCost || (service.serviceItems ?? [])
-      .flatMap((i) => i.suppliesUsed ?? [])
-      .reduce((s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0), 0);
-
-    const commissionCost = service.cardCommission || 0;
-    const profit = total - costOfSupplies - commissionCost;
-    
-    return {
-      totalCost: total,
-      serviceProfit: profit,
-    };
+    const total = Number(service.totalCost ?? (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0));
+    const serviceProfit = calcEffectiveProfit(service);
+    return { totalCost: total, serviceProfit };
   }, [service]);
 
   const copyToClipboard = (text: string, fieldName: string) => {
