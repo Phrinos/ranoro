@@ -1,4 +1,3 @@
-
 // src/components/layout/app-sidebar.tsx
 "use client";
 
@@ -53,6 +52,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', permissions: ['inventory:view'] },
   { label: 'Proveedores', path: '/proveedores', icon: Building, groupTag: 'Operaciones', permissions: ['inventory:manage'] },
   { label: 'Finanzas', path: '/finanzas', icon: LineChart, groupTag: 'Operaciones', permissions: ['finances:view_report'] },
+  { label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Operaciones', permissions: ['billing:manage'] },
   { label: 'I.A.', path: '/ai', icon: BrainCircuit, groupTag: 'Operaciones', permissions: ['dashboard:view'] },
   
   // Mi Flotilla
