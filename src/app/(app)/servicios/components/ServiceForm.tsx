@@ -161,7 +161,7 @@ function ServiceFormContent({
   const [validationFolio, setValidationFolio] = useState('');
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
   
-  const { control, handleSubmit, getValues, setValue, watch, formState: { errors }, reset } = methods;
+  const { control, handleSubmit, getValues, setValue, watch, formState: { errors, isSubmitting }, reset } = methods;
 
   const [originalLockedStatus, setOriginalLockedStatus] = useState<'Completado' | 'Entregado' | null>(null);
 
@@ -264,6 +264,7 @@ function ServiceFormContent({
   };
   
   const onValidationErrors = (errors: any) => {
+    console.log("Validation Errors:", errors);
     toast({
         title: "Error de Validación",
         description: "Por favor, corrija los errores antes de guardar.",
@@ -512,6 +513,23 @@ function ServiceFormContent({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+        <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-end gap-2">
+                 <Button type="button" variant="secondary" onClick={() => console.log(errors)}>
+                    Ver Errores de Validación (Log)
+                </Button>
+               <Button type="button" variant="outline" onClick={() => {
+                   const confirmed = confirm("¿Está seguro de que desea descartar los cambios?");
+                   if(confirmed) {
+                       reset(initialData || {}); // Reset to initial state
+                   }
+               }}>Descartar Cambios</Button>
+               <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
+                  {isEditing ? 'Guardar Cambios' : 'Crear Registro'}
+               </Button>
+            </div>
+      </footer>
     </form>
   );
 }

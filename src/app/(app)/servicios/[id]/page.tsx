@@ -191,22 +191,22 @@ export default function ServicioPage() {
                   <Share2 className="h-4 w-4"/>
                 </Button>
               )}
-              {initialData?.id ? (
-                <ConfirmDialog
-                    triggerButton={
-                        <Button variant="destructive" size="icon" title={isQuote ? "Eliminar Cotización" : "Cancelar Servicio"}>
-                            {isQuote ? <Trash2 className="h-4 w-4"/> : <Ban className="h-4 w-4"/>}
-                        </Button>
-                    }
-                    title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
-                    description={
-                        isQuote 
-                        ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
-                        : 'Esta acción marcará el servicio como cancelado, pero no se podrá deshacer.'
-                    }
-                    onConfirm={isQuote ? handleDeleteQuote : handleCancelService}
-                />
-              ) : null}
+               {initialData?.id && (
+                  <ConfirmDialog
+                      triggerButton={
+                          <Button variant="destructive" size="icon" title={isQuote ? "Eliminar Cotización" : "Cancelar Servicio"}>
+                              {isQuote ? <Trash2 className="h-4 w-4"/> : <Ban className="h-4 w-4"/>}
+                          </Button>
+                      }
+                      title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
+                      description={
+                          isQuote 
+                          ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
+                          : 'Esta acción marcará el servicio como cancelado, pero no se podrá deshacer.'
+                      }
+                      onConfirm={isQuote ? handleDeleteQuote : handleCancelService}
+                  />
+                )}
             </div>
           )}
         />
@@ -226,15 +226,6 @@ export default function ServicioPage() {
             mode={isQuote ? 'quote' : 'service'}
         />
       </main>
-      <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
-        <div className="flex justify-end gap-2">
-           <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
-           <Button type="submit" form="service-form" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-              {isEditMode ? 'Guardar Cambios' : 'Crear Registro'}
-           </Button>
-        </div>
-      </footer>
        {recordForSharing && (
           <ShareServiceDialog 
             open={isShareDialogOpen} 
