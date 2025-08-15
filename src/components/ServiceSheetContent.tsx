@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { QuoteRecord, WorkshopInfo, Vehicle, ServiceRecord } from '@/types';
@@ -93,8 +94,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
     
-    const quoteTermsText = `Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores.`;
-    const serviceTermsText = `GARANTIA RANORO: Nuestros trabajos cuentan con garantía de 60 días o 1,000 km (lo que suceda primero), aplicable exclusivamente al trabajo realizado por Ranoro y, en su caso, a las refacciones suministradas e instaladas por nosotros; la garantía consiste en corregir sin costo el mismo concepto reparado, una vez que nuestro diagnóstico confirme la relación directa de la falla con la intervención realizada. Quedan excluidos: fallas no relacionadas con el servicio, componentes no intervenidos y daños consecuenciales; así como las derivadas de desgaste normal, mal uso, falta de mantenimiento, sobrecalentamiento, golpes, ingreso de agua o polvo, uso de combustible o lubricantes de mala calidad, o modificaciones de terceros. Las refacciones aportadas por el cliente no cuentan con garantía por parte del taller. Cualquier intervención de terceros o manipulación posterior del sistema anula la presente garantía. La atención de garantía se realiza exclusivamente en el taller, previa revisión y diagnóstico. Precios en MXN. Los precios y la disponibilidad de refacciones pueden cambiar sin previo aviso por parte de los proveedores.`;
+    const termsText = `GARANTIA RANORO: Nuestros trabajos cuentan con garantía de 60 días o 1,000 km (lo que suceda primero), aplicable exclusivamente al trabajo realizado por Ranoro y, en su caso, a las refacciones suministradas e instaladas por nosotros; la garantía consiste en corregir sin costo el mismo concepto reparado, una vez que nuestro diagnóstico confirme la relación directa de la falla con la intervención realizada. Quedan excluidos: fallas no relacionadas con el servicio, componentes no intervenidos y daños consecuenciales; así como las derivadas de desgaste normal, mal uso, falta de mantenimiento, sobrecalentamiento, golpes, ingreso de agua o polvo, uso de combustible o lubricantes de mala calidad, o modificaciones de terceros. Las refacciones aportadas por el cliente no cuentan con garantía por parte del taller. Cualquier intervención de terceros o manipulación posterior del sistema anula la presente garantía. La atención de garantía se realiza exclusivamente en el taller, previa revisión y diagnóstico. Precios en MXN. Los precios y la disponibilidad de refacciones pueden cambiar sin previo aviso por parte de los proveedores.`;
 
     // --- Status Logic ---
     const status = (service.status || '').toLowerCase();
@@ -114,12 +114,12 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const vehicleLicensePlate = vehicle?.licensePlate || service.vehicleIdentifier || 'N/A';
 
     const getStatusCardContent = () => {
-        if (isAppointmentCancelled) return { title: "CITA CANCELADA", badge: <Badge className="mt-2 bg-red-600 text-white"><XCircle className="mr-1 h-3 w-3"/>Cancelada</Badge>, description: "Esta cita ha sido cancelada." };
-        if (isAppointmentConfirmed) return { title: "CITA AGENDADA", badge: <Badge className="mt-2 bg-green-600 text-white"><CheckCircle className="mr-1 h-3 w-3"/>Confirmada</Badge>, description: formattedAppointmentDate };
-        if (isAppointmentPending) return { title: "CITA PENDIENTE DE CONFIRMACIÓN", badge: <Badge className="mt-2 bg-yellow-500 text-white"><Clock className="mr-1 h-3 w-3"/>Pendiente</Badge>, description: formattedAppointmentDate };
-        if (status === 'en taller') return { title: "ORDEN DE SERVICIO", badge: <Badge className="mt-2" variant="secondary">{service.subStatus || 'En Taller'}</Badge>, description: `Vehículo ingresado el ${format(parseDate(service.receptionDateTime)!, "dd MMMM, HH:mm", {locale: es})}`};
-        if (status === 'entregado') return { title: "ORDEN DE SERVICIO", badge: <Badge className="mt-2" variant="success">Entregado</Badge>, description: `Vehículo entregado el ${format(parseDate(service.deliveryDateTime)!, "dd MMMM, HH:mm", {locale: es})}`};
-        return { title: "COTIZACIÓN DE SERVICIO", badge: null, description: null };
+        if (isAppointmentCancelled) return { title: "CITA CANCELADA", description: "Esta cita ha sido cancelada.", badge: { text: "Cancelada", variant: "destructive" } };
+        if (isAppointmentConfirmed) return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Confirmada", variant: "success" } };
+        if (isAppointmentPending) return { title: "CITA PENDIENTE DE CONFIRMACIÓN", description: formattedAppointmentDate, badge: { text: "Pendiente", variant: "waiting" } };
+        if (status === 'en taller') return { title: "ORDEN DE SERVICIO", description: `Vehículo ingresado el ${format(parseDate(service.receptionDateTime)!, "dd MMMM, HH:mm", { locale: es })}`, badge: { text: service.subStatus || 'En Taller', variant: "secondary" } };
+        if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Vehículo entregado el ${format(parseDate(service.deliveryDateTime)!, "dd MMMM, HH:mm", { locale: es })}`, badge: { text: "Entregado", variant: "success" } };
+        return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null };
     };
 
     const statusCard = getStatusCardContent();
@@ -169,7 +169,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   <CardTitle className={cn("text-lg font-bold tracking-wider text-foreground", isServiceFlow && "text-red-800")}>{statusCard.title}</CardTitle>
                   {statusCard.description && <p className={cn("font-semibold text-muted-foreground", isServiceFlow && "text-red-700")}>{statusCard.description}</p>}
               </div>
-              {statusCard.badge}
+              {statusCard.badge && (
+                <div className="mt-2">
+                  <Badge variant={statusCard.badge.variant as any}>{statusCard.badge.text}</Badge>
+                </div>
+              )}
           </CardHeader>
         </Card>
         
@@ -182,7 +186,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <div className="lg:col-span-2"><Card><CardHeader><CardTitle>Trabajos a realizar</CardTitle></CardHeader><CardContent><div className="space-y-4">{items.map((item, index) => (<div key={item.id || index} className="p-4 rounded-lg bg-background"><div className="flex justify-between items-start"><div className="flex-1"><p className="font-semibold">{item.name}</p>{item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}</div><p className="font-bold text-lg">{formatCurrency(item.price)}</p></div></div>))}{items.length === 0 && (<p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>)}</div><p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{isServiceFlow ? serviceTermsText : quoteTermsText}</p></CardContent></Card></div>
+          <div className="lg:col-span-2"><Card><CardHeader><CardTitle>Trabajos a realizar</CardTitle></CardHeader><CardContent><div className="space-y-4">{items.map((item, index) => (<div key={item.id || index} className="p-4 rounded-lg bg-background"><div className="flex justify-between items-start"><div className="flex-1"><p className="font-semibold">{item.name}</p>{item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}</div><p className="font-bold text-lg">{formatCurrency(item.price)}</p></div></div>))}{items.length === 0 && (<p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>)}</div><p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{isServiceFlow ? termsText : "Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores."}</p></CardContent></Card></div>
           <div className="lg:col-span-1 space-y-6"><Card><CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader><CardContent className="space-y-2 text-sm"><div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal:</span><span className="font-medium">{formatCurrency(subTotal)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">IVA (16%):</span><span className="font-medium">{formatCurrency(taxAmount)}</span></div><Separator className="my-2"/><div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>{isQuoteStatus && <div className="text-center text-sm font-semibold mt-4 pt-4 border-t"><p>Cotización Válida hasta el {validityDate}.</p></div>}</CardContent></Card></div>
         </div>
         
