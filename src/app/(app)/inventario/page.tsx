@@ -1,8 +1,9 @@
+// src/app/(app)/inventario/page.tsx
 
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2 } from "lucide-react";
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from '@/types'; 
