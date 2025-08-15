@@ -1,14 +1,14 @@
 
 "use client";
 
-import type { QuoteRecord, WorkshopInfo, Vehicle, ServiceRecord } from '@/types';
+import type { QuoteRecord, WorkshopInfo, Vehicle, ServiceRecord, SafetyInspection, SafetyCheckValue } from '@/types';
 import { format, isValid, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo, useState } from 'react';
 import { cn, formatCurrency, capitalizeWords, formatNumber, normalizeDataUrl } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon, CalendarCheck, CheckCircle, Ban, Clock, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2, Phone, Link as LinkIcon, Globe } from 'lucide-react';
+import { User, Car as CarIcon, CalendarCheck, CheckCircle, Ban, Clock, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2, Phone, Link as LinkIcon, Globe, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
@@ -405,14 +405,49 @@ function SignatureDisplay({ type, signatureUrl, onSignClick, isSigning }: { type
 }
 
 
-function SafetyChecklistDisplay({ inspection }: { inspection: any }) {
-    return (
-        <Card>
-            <CardHeader><CardTitle>Revisión de Puntos de Seguridad</CardTitle></CardHeader>
-            <CardContent><p className="text-muted-foreground">La visualización detallada de los puntos de seguridad se mostrará aquí.</p></CardContent>
-        </Card>
-    );
+function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }) {
+  const inspectionGroups = [
+      { title: "LUCES", items: [ { name: "luces_altas_bajas_niebla", label: "ALTAS, BAJAS Y NIEBLA" }, { name: "luces_cuartos", label: "CUARTOS" }, { name: "luces_direccionales", label: "DIRECCIONALES" }, { name: "luces_frenos_reversa", label: "FRENOS Y REVERSA" }, { name: "luces_interiores", label: "INTERIORES" } ] },
+      { title: "NIVELES Y FUGAS", items: [ { name: "fugas_refrigerante", label: "REFRIGERANTE" }, { name: "fugas_limpiaparabrisas", label: "LIMPIAPARABRISAS" }, { name: "fugas_frenos_embrague", label: "FRENOS Y EMBRAGUE" }, { name: "fugas_transmision", label: "TRANSMISIÓN" }, { name: "fugas_direccion_hidraulica", label: "DIRECCIÓN HIDRÁULICA" } ] },
+      { title: "CARROCERÍA", items: [ { name: "carroceria_cristales_espejos", label: "CRISTALES/ESPEJOS" }, { name: "carroceria_puertas_cofre", label: "PUERTAS/COFRE/CAJUELA" }, { name: "carroceria_asientos_tablero", label: "ASIENTOS/TABLERO" }, { name: "carroceria_plumas", label: "PLUMAS LIMPIAPARABRISAS" } ] },
+      { title: "SUSPENSIÓN", items: [ { name: "suspension_rotulas", label: "RÓTULAS" }, { name: "suspension_amortiguadores", label: "AMORTIGUADORES" }, { name: "suspension_caja_direccion", label: "CAJA DE DIRECCIÓN" }, { name: "suspension_terminales", label: "TERMINALES" } ] },
+      { title: "LLANTAS", items: [ { name: "llantas_delanteras_traseras", label: "DELANTERAS/TRASERAS" }, { name: "llantas_refaccion", label: "REFACCIÓN" } ] },
+      { title: "FRENOS", items: [ { name: "frenos_discos_delanteros", label: "FRENOS DELANTEROS" }, { name: "frenos_discos_traseros", label: "FRENOS TRASEROS" } ] },
+      { title: "OTROS", items: [ { name: "otros_tuberia_escape", label: "SISTEMA DE ESCAPE" }, { name: "otros_soportes_motor", label: "SOPORTES DE MOTOR" }, { name: "otros_claxon", label: "CLAXON" }, { name: "otros_inspeccion_sdb", label: "INSPECCIÓN SDB" } ] },
+  ];
+
+  const StatusIndicator = ({ status }: { status?: SafetyCheckValue['status'] }) => {
+      const statusInfo = { ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" }, atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" }, inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" }, na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" } };
+      const currentStatus = statusInfo[status || 'na'];
+      return <div className="flex items-center gap-2"><div className={`h-3 w-3 rounded-full ${currentStatus.color}`} /><span className={cn("text-xs font-semibold", currentStatus.textColor)}>{currentStatus.label}</span></div>;
+  };
+
+  return (
+      <Card>
+          <CardHeader><CardTitle>Revisión de Puntos de Seguridad</CardTitle></CardHeader>
+          <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                  {inspectionGroups.map(group => (
+                      <div key={group.title}><h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4><div className="space-y-1">
+                          {group.items.map(item => {
+                              const checkItem = inspection[item.name.replace('safetyInspection.', '') as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
+                              return (
+                                  <div key={item.name} className="py-2 border-b border-dashed last:border-none">
+                                      <div className="flex justify-between items-center text-sm"><span className="pr-4">{item.label}</span><StatusIndicator status={checkItem?.status} /></div>
+                                      {checkItem?.notes && <p className="text-xs text-muted-foreground mt-1 pl-2 border-l-2 border-slate-200">Nota: {checkItem.notes}</p>}
+                                      {checkItem?.photos && checkItem.photos.length > 0 && <div className="mt-2 flex gap-2 flex-wrap">{checkItem.photos.map((p:string, i:number) => <div key={i} className="relative w-16 h-16 rounded border bg-slate-100"><Image src={p} alt={`Foto ${i}`} fill style={{objectFit:"cover"}}/></div>)}</div>}
+                                  </div>);
+                          })}
+                      </div></div>
+                  ))}
+              </div>
+              <div><h4 className="font-semibold">Observaciones Generales</h4><p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{inspection.inspectionNotes || 'Sin observaciones.'}</p></div>
+              <div><h4 className="font-semibold">Firma del Técnico</h4><div className="mt-1 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{inspection.technicianSignature ? <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma Técnico" width={200} height={80} style={{objectFit: "contain"}}/> : <span className="text-xs text-muted-foreground">Sin firma</span>}</div></div>
+          </CardContent>
+      </Card>
+  );
 }
+
 
 function PhotoReportContent({ photoReports }: { photoReports: any[] }) {
     return (
