@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, X, Ban, Trash2, BrainCircuit, LogIn } from 'lucide-react';
+import { Loader2, Save, X, Ban, Trash2, BrainCircuit, LogIn, Calendar, Plus } from 'lucide-react';
 import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,9 +29,15 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ServiceSummary } from './ServiceSummary';
-import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format as formatDate, addDays, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Lazy load complex components
 const ServiceItemsList = lazy(() => import('./ServiceItemsList').then(module => ({ default: module.ServiceItemsList })));
@@ -86,6 +92,10 @@ export function ServiceForm({
       receptionDateTime: initialData?.receptionDateTime ? new Date(initialData.receptionDateTime) : undefined,
       deliveryDateTime: initialData?.deliveryDateTime ? new Date(initialData.deliveryDateTime) : undefined,
       allVehiclesForDialog: vehicles, 
+      nextServiceInfo: initialData?.nextServiceInfo ? {
+        ...initialData.nextServiceInfo,
+        date: initialData.nextServiceInfo.date ? new Date(initialData.nextServiceInfo.date).toISOString() : undefined,
+      } : { date: undefined, mileage: undefined },
     },
   });
 
@@ -171,6 +181,7 @@ function ServiceFormContent({
   const watchedPayments = watch('payments');
   const watchedServiceItems = watch('serviceItems');
   const watchedTechnicianId = watch('technicianId');
+  const watchedStatus = watch('status');
 
 
    useEffect(() => {
@@ -222,20 +233,30 @@ function ServiceFormContent({
   }, [technicianInfo, setValue]);
 
   const isEditing = !!initialData?.id;
-  const watchedStatus = watch('status');
+  
   const isQuote = watchedStatus === 'Cotizacion' || (mode === 'quote' && !isEditing);
 
   const isReadOnly = originalLockedStatus !== null && currentUser?.role !== 'Superadministrador'; 
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
-    const finalValues = { ...values };
+    const finalValues: any = { ...values };
 
     // This is the key change to prevent saving the vehicle list to the DB.
-    delete (finalValues as any).allVehiclesForDialog;
+    delete finalValues.allVehiclesForDialog;
     
     if (finalValues.status === 'Entregado' && !finalValues.deliveryDateTime) {
       finalValues.deliveryDateTime = new Date();
     }
+    
+    if (finalValues.nextServiceInfo?.date) {
+      finalValues.nextServiceInfo.date = new Date(finalValues.nextServiceInfo.date).toISOString();
+    }
+    
+    // This is the important part: Handle the case where the inputs might be empty strings
+    if (finalValues.nextServiceInfo?.mileage === '' || finalValues.nextServiceInfo?.mileage === null) {
+      finalValues.nextServiceInfo.mileage = undefined;
+    }
+
 
     if (originalLockedStatus) {
         const allowedUpdate = {
@@ -245,6 +266,7 @@ function ServiceFormContent({
           payments: finalValues.payments,
           deliveryDateTime: finalValues.deliveryDateTime,
           status: originalLockedStatus,
+          nextServiceInfo: finalValues.nextServiceInfo,
         };
         const updatedData = { ...initialData, ...allowedUpdate };
         await onSubmit(updatedData as ServiceFormValues);
@@ -259,29 +281,6 @@ function ServiceFormContent({
         title: "Error de Validación",
         description: "Por favor, corrija los errores antes de guardar.",
         variant: "destructive",
-    });
-
-    const getErrorMessages = (errorObject: any): string[] => {
-        let messages: string[] = [];
-        if (!errorObject) return messages;
-
-        for (const key in errorObject) {
-            if (key === 'message') {
-                messages.push(errorObject[key]);
-            } else if (typeof errorObject[key] === 'object') {
-                messages = messages.concat(getErrorMessages(errorObject[key]));
-            }
-        }
-        return messages;
-    };
-    
-    const errorMessages = getErrorMessages(errors);
-    errorMessages.forEach((msg, index) => {
-        toast({
-            title: `Error ${index + 1}`,
-            description: msg,
-            variant: "destructive",
-        });
     });
 };
 
@@ -404,7 +403,67 @@ function ServiceFormContent({
                 <TabsContent value="servicio" className="mt-6">
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
                         <div className="lg:col-span-3"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense></div>
-                        <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceSummary onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense></div>
+                        <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceSummary onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense>
+                        {watchedStatus === 'Entregado' && (
+                            <Card>
+                                <CardHeader><CardTitle>Programar Próximo Servicio (Opcional)</CardTitle></CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={control}
+                                            name="nextServiceInfo.date"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-col">
+                                                    <FormLabel>Próxima Fecha</FormLabel>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <FormControl>
+                                                                <Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value && isValid(new Date(field.value)) ? formatDate(new Date(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button>
+                                                            </FormControl>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="start">
+                                                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus locale={es}/>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                    <Select onValueChange={(v) => {
+                                                        const days = parseInt(v);
+                                                        const deliveryDate = getValues('deliveryDateTime') || new Date();
+                                                        setValue('nextServiceInfo.date', addDays(deliveryDate, days).toISOString());
+                                                    }}>
+                                                        <SelectTrigger className="mt-1"><SelectValue placeholder="Añadir tiempo..."/></SelectTrigger>
+                                                        <SelectContent><SelectItem value="183">+6 meses</SelectItem><SelectItem value="365">+12 meses</SelectItem></SelectContent>
+                                                    </Select>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={control}
+                                            name="nextServiceInfo.mileage"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Próximo KM</FormLabel>
+                                                    <FormControl><Input type="number" placeholder="Ej: 85000" {...field} value={field.value ?? ''}/></FormControl>
+                                                    <Select onValueChange={(v) => {
+                                                        const kmToAdd = parseInt(v);
+                                                        const currentKm = getValues('mileage') || 0;
+                                                        setValue('nextServiceInfo.mileage', currentKm + kmToAdd);
+                                                    }}>
+                                                        <SelectTrigger className="mt-1"><SelectValue placeholder="Añadir KM..."/></SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="5000">+5,000 km</SelectItem>
+                                                            <SelectItem value="10000">+10,000 km</SelectItem>
+                                                            <SelectItem value="12500">+12,500 km</SelectItem>
+                                                            <SelectItem value="15000">+15,000 km</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                         )}
+                        </div>
                     </div>
                 </TabsContent>
                 <TabsContent value="recepcion" className="mt-6 space-y-6">

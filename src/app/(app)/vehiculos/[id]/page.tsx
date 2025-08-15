@@ -1,4 +1,3 @@
-
 // src/app/(app)/vehiculos/[id]/page.tsx
 "use client";
 
@@ -58,7 +57,7 @@ import { useToast } from "@/hooks/use-toast";
 import { inventoryService, adminService, serviceService } from "@/lib/services";
 import { parseDate } from "@/lib/forms";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
-import { capitalizeWords } from '@/lib/utils';
+import { capitalizeWords, formatNumber } from '@/lib/utils';
 import { Separator } from "@/components/ui/separator";
 
 export default function VehicleDetailPage() {
@@ -166,7 +165,7 @@ export default function VehicleDetailPage() {
                             {vehicle.nextServiceInfo.mileage && (
                                 <div>
                                     <p className="font-semibold">Kilometraje:</p>
-                                    <p>{vehicle.nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                                    <p>{formatNumber(vehicle.nextServiceInfo.mileage)} km</p>
                                 </div>
                             )}
                         </CardContent>
