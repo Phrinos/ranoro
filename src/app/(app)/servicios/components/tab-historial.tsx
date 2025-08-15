@@ -84,6 +84,8 @@ export default function HistorialTabContent({
     const servicesToSummarize = fullFilteredData; // Use the full filtered data for summary
     const servicesCount = servicesToSummarize.length;
     const totalRevenue = servicesToSummarize.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+    
+    // Use the stored profit which already accounts for commission
     const totalProfit = servicesToSummarize.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
 
     const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();

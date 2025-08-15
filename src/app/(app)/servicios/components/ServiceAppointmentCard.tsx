@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Car, User as UserIcon, Calendar, CheckCircle, XCircle, Clock, Ellipsis, Eye, Edit, Check, DollarSign, TrendingUp, Copy, Printer, Trash2, Phone, Share2, Wallet, CreditCard, Send, Landmark } from 'lucide-react';
+import { Car, User as UserIcon, Calendar, CheckCircle, XCircle, Clock, Ellipsis, Eye, Edit, Check, DollarSign, TrendingUp, Copy, Printer, Trash2, Phone, Share2, Wallet, CreditCard, Landmark, Repeat } from 'lucide-react';
 import type { ServiceRecord, Vehicle, User, Payment } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -61,18 +61,23 @@ export function ServiceAppointmentCard({
   const parsedDate = displayDate ? parseDate(displayDate) : null;
 
   const calculatedTotals = useMemo(() => {
-    const total = (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0);
-    const costOfSupplies = (service.serviceItems ?? [])
-      .flatMap((i) => i.suppliesUsed ?? [])
-      .reduce((s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0), 0);
+    const total = service.totalCost || (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0);
     
-    const commissionCost = service.cardCommission || 0;
-
+    // Use stored profit if available, otherwise calculate it
+    let profit = service.serviceProfit;
+    if (profit === undefined || profit === null) {
+        const costOfSupplies = (service.serviceItems ?? [])
+          .flatMap((i) => i.suppliesUsed ?? [])
+          .reduce((s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0), 0);
+        const commissionCost = service.cardCommission || 0;
+        profit = total - costOfSupplies - commissionCost;
+    }
+    
     return {
       totalCost: total,
-      serviceProfit: total - costOfSupplies - commissionCost,
+      serviceProfit: profit,
     };
-  }, [service.serviceItems, service.cardCommission]);
+  }, [service]);
 
   const copyToClipboard = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text).then(() => {

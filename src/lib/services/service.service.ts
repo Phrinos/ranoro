@@ -215,7 +215,8 @@ const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<
     const serviceItems = data.serviceItems || [];
     const totalCost = serviceItems.reduce((acc, item) => acc + (item.price || 0), 0);
     const totalSuppliesWorkshopCost = serviceItems.flatMap(item => item.suppliesUsed || []).reduce((acc, supply) => acc + (supply.unitPrice || 0) * (supply.quantity || 0), 0);
-    const serviceProfit = totalCost - totalSuppliesWorkshopCost;
+    const cardCommission = data.cardCommission || 0;
+    const serviceProfit = totalCost - totalSuppliesWorkshopCost - cardCommission;
     const subTotal = totalCost / (1 + IVA_RATE);
     const taxAmount = totalCost - subTotal;
 
