@@ -167,12 +167,16 @@ export function DashboardCharts({ services, sales, inventory, fixedExpenses, per
             <LineChart data={financialData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis tickFormatter={(value) => formatCurrency(value, {notation: 'compact'})}/>
+              <YAxis 
+                tickFormatter={(value) => new Intl.NumberFormat('es-MX', { notation: 'compact', compactDisplay: 'short', style: 'currency', currency: 'MXN' }).format(value)}
+                width={80}
+                tick={{ fontSize: 12 }}
+              />
               <Tooltip formatter={(value: number) => formatCurrency(value)} />
               <Legend />
               <Line type="monotone" dataKey="ingresos" stroke="#3b82f6" strokeWidth={2} name="Ingresos Totales" />
               <Line type="monotone" dataKey="gananciaBruta" stroke="#84cc16" strokeWidth={2} name="Ganancia Bruta" />
-              <Line type="monotone" dataKey="gastosFijos" stroke="#f97316" strokeWidth={2} name="Gastos Fijos" />
+              <Line type="monotone" dataKey="gastosFijos" stroke="#ef4444" strokeWidth={2} name="Gastos Fijos" />
               <Line type="monotone" dataKey="utilidadNeta" stroke="#16a34a" strokeWidth={3} name="Utilidad Neta" />
             </LineChart>
           </ResponsiveContainer>
