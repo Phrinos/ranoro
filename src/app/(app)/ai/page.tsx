@@ -18,6 +18,7 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { PurchaseOrderContent } from './components/purchase-order-content';
 import ReactDOMServer from 'react-dom/server';
+import { MensajeriaPageContent } from '../administracion/components/mensajeria-content';
 
 
 const AnalisisIaContent = lazy(() => import('@/app/(app)/ai/components/analisis-ia-content').then(module => ({ default: module.AnalisisIaContent })));
@@ -142,7 +143,7 @@ function AsistenteComprasContent() {
 
 
 export default function AiPageComponent({ tab }: { tab?: string }) {
-  const defaultTab = tab || 'compras';
+  const defaultTab = tab || 'inventario';
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
@@ -163,12 +164,13 @@ export default function AiPageComponent({ tab }: { tab?: string }) {
   }, []);
 
   const tabs = [
-    { value: 'compras', label: 'Asistente de Compras', content: <AsistenteComprasContent /> },
     { value: 'inventario', label: 'Análisis de Inventario', content: (
         isLoading 
             ? <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
             : <AnalisisIaContent inventoryItems={inventoryItems} serviceRecords={serviceRecords} />
     ) },
+    { value: 'compras', label: 'Asistente de Compras', content: <AsistenteComprasContent /> },
+    { value: 'mensajeria', label: 'Mensajería y Notificaciones', content: <MensajeriaPageContent /> },
   ];
 
   return (

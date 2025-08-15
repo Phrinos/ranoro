@@ -59,7 +59,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Opciones
   { label: 'Personal', path: '/personal', icon: Users, groupTag: 'Opciones', permissions: ['technicians:manage', 'users:manage', 'roles:manage'] },
   { label: 'Opciones', path: '/opciones', icon: Settings, groupTag: 'Opciones', permissions: ['dashboard:view'] },
-  { label: 'Administración', path: '/administracion', icon: Shield, groupTag: 'Opciones', permissions: ['audits:view', 'messaging:manage'] }
 ];
 
 const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Opciones'];
@@ -278,7 +277,10 @@ export function AppSidebar({
               <Link href="/opciones?tab=perfil"><Users className="mr-2 h-4 w-4" /> Mi Perfil</Link>
             </DropdownMenuItem>
              <DropdownMenuItem asChild>
-               <Link href="/opciones"><Settings className="mr-2 h-4 w-4" /> Opciones y Configuración</Link>
+               <Link href="/administracion"><Shield className="mr-2 h-4 w-4" /> Administración</Link>
+            </DropdownMenuItem>
+             <DropdownMenuItem asChild>
+               <Link href="/manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual de Uso</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
                  <DropdownMenuItem onClick={handleLogout}>

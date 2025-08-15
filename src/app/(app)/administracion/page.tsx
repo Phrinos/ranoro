@@ -18,7 +18,7 @@ import { MensajeriaPageContent } from "./components/mensajeria-content";
 function AdministracionPageComponent() {
     const searchParams = useSearchParams();
     const tab = searchParams.get('tab');
-    const defaultSubTab = tab || 'mensajeria';
+    const defaultSubTab = tab || 'auditoria';
     const [activeTab, setAdminTab] = useState(defaultSubTab);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -49,9 +49,6 @@ function AdministracionPageComponent() {
             <Tabs value={activeTab} onValueChange={setAdminTab} className="w-full">
                 <div className="w-full">
                     <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
-                        <TabsTrigger value="mensajeria" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
-                             <MessageSquare className="h-5 w-5 mr-2"/>Mensajería
-                        </TabsTrigger>
                         <TabsTrigger value="auditoria" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
                              <BookOpen className="h-5 w-5 mr-2"/>Auditoría
                         </TabsTrigger>
@@ -60,9 +57,6 @@ function AdministracionPageComponent() {
                         </TabsTrigger>
                     </TabsList>
                 </div>
-                <TabsContent value="mensajeria" className="mt-6">
-                    <MensajeriaPageContent />
-                </TabsContent>
                  <TabsContent value="auditoria" className="mt-6">
                     <AuditoriaPageContent initialLogs={auditLogs} />
                 </TabsContent>
