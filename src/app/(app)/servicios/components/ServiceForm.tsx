@@ -515,7 +515,7 @@ function ServiceFormContent({
       </AlertDialog>
         <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
             <div className="flex items-center justify-end gap-2">
-                 <Button type="button" variant="secondary" onClick={() => console.log(errors)}>
+                 <Button type="button" variant="ghost" onClick={() => console.log('Validation Errors: ', errors)}>
                     Ver Errores de Validación (Log)
                 </Button>
                <Button type="button" variant="outline" onClick={() => {
