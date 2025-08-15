@@ -73,7 +73,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
       <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
     );
     
-    const customerNameToDisplay = sale?.customerName || vehicle?.ownerName || 'Cliente Mostrador';
+    const customerNameToDisplay = sale?.customerName || service?.customerName || vehicle?.ownerName || 'Cliente Mostrador';
 
 
     return (
@@ -143,7 +143,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
                 <span>{item.name}</span>
                 <span>{formatCurrency(item.price)}</span>
               </div>
-              {item.suppliesUsed.map((supply, supplyIdx) => (
+              {item.suppliesUsed && item.suppliesUsed.length > 0 && item.suppliesUsed.map((supply, supplyIdx) => (
                 <div key={`supply-${supplyIdx}`} className="flex justify-between text-neutral-600 pl-2">
                   <span>- {supply.supplyName}</span>
                   <span>Cant: {supply.quantity}</span>

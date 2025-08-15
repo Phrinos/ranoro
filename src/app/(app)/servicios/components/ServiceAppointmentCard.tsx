@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 
 "use client";
@@ -29,6 +28,7 @@ interface ServiceAppointmentCardProps {
   onDelete?: () => void;
   onCancel?: () => void;
   onConfirm?: () => void;
+  onShowTicket: () => void;
 }
 
 const IVA_RATE = 0.16;
@@ -50,6 +50,7 @@ export function ServiceAppointmentCard({
   onDelete,
   onCancel,
   onConfirm,
+  onShowTicket,
 }: ServiceAppointmentCardProps) {
   const { toast } = useToast();
   const { color, icon: Icon, label } = getStatusInfo(service.status, service.subStatus);
@@ -187,7 +188,7 @@ export function ServiceAppointmentCard({
                         ) : null}
                     </>
                 )}
-                <Button variant="ghost" size="icon" title="Imprimir" onClick={() => toast({title: "Función no implementada"})}>
+                <Button variant="ghost" size="icon" title="Imprimir Ticket" onClick={onShowTicket}>
                     <Printer className="h-4 w-4" />
                 </Button>
                 {currentUser?.role === 'Superadministrador' && onDelete && (

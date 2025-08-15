@@ -26,6 +26,7 @@ interface ActivosTabContentProps {
   personnel: User[];
   currentUser: User | null;
   onShowShareDialog: (service: ServiceRecord) => void;
+  onShowTicket: (service: ServiceRecord) => void; // New prop
   onCompleteService: (service: ServiceRecord) => void;
   onDelete: (serviceId: string) => void;
 }
@@ -53,6 +54,7 @@ export default function ActivosTabContent({
   personnel,
   currentUser,
   onShowShareDialog,
+  onShowTicket, // New prop
   onCompleteService,
   onDelete,
 }: ActivosTabContentProps) {
@@ -137,11 +139,12 @@ export default function ActivosTabContent({
         currentUser={currentUser}
         onEdit={() => handleEditService(service.id)}
         onView={() => onShowShareDialog(service)}
+        onShowTicket={() => onShowTicket(service)}
         onCancel={() => handleCancelService(service.id)}
         onDelete={() => onDelete(service.id)}
       />
     ),
-    [vehicles, personnel, currentUser, onShowShareDialog, onDelete, handleEditService, handleCancelService]
+    [vehicles, personnel, currentUser, onShowShareDialog, onDelete, handleEditService, handleCancelService, onShowTicket]
   );
 
   return (
