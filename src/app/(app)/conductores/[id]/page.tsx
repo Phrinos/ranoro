@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
-import { PrintLetterDialog } from "@/components/ui/print-letter-dialog";
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 
 
 type DocType = 'ineFrontUrl' | 'ineBackUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl';
@@ -629,14 +629,16 @@ const handleAssignVehicle = useCallback(async (newVehicleId: string | null) => {
     )}
 
     {assignedVehicle && (
-      <PrintLetterDialog
+      <UnifiedPreviewDialog
         open={isContractDialogOpen}
         onOpenChange={setIsContractDialogOpen}
         title="Contrato de Arrendamiento"
       >
         <ContractContent ref={contractContentRef} driver={driver} vehicle={assignedVehicle} />
-      </PrintLetterDialog>
+      </UnifiedPreviewDialog>
     )}
     </>
   );
 }
+
+    
