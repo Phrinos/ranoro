@@ -68,25 +68,11 @@ export default function AppLayout({
   if (isLoading || !currentUser) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative w-[200px] h-[50px]">
-            <Image
-              src="/ranoro-logo.png"
-              alt="Ranoro Logo"
-              fill
-              className="dark:invert"
-              style={{objectFit: 'contain'}}
-              priority
-              sizes="200px"
-              data-ai-hint="ranoro logo"
-            />
-          </div>
-          <div className="flex items-center">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="ml-3 text-lg text-muted-foreground">
-              Verificando sesión...
-            </span>
-          </div>
+        <div className="flex items-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="ml-3 text-lg text-muted-foreground">
+            Verificando sesión...
+          </span>
         </div>
       </div>
     );
