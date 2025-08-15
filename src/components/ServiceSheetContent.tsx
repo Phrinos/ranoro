@@ -98,17 +98,29 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
     const status = (service.status || '').toLowerCase();
     const appointmentStatus = service.appointmentStatus;
     const appointmentDate = coerceDate(service.appointmentDateTime);
-    const formattedAppointmentDate = appointmentDate ? format(appointmentDate, "EEEE dd 'de' MMMM, yyyy 'a las' HH:mm 'hrs.'", { locale: es }) : 'Fecha y hora por confirmar';
+    const receptionDate = parseDate(service.receptionDateTime);
+    const deliveryDate = parseDate(service.deliveryDateTime);
+
+    const formattedAppointmentDate = appointmentDate && isValid(appointmentDate) ? format(appointmentDate, "EEEE dd 'de' MMMM, yyyy 'a las' HH:mm 'hrs.'", { locale: es }) : 'Fecha y hora por confirmar';
+    const formattedReceptionDate = receptionDate && isValid(receptionDate) ? format(receptionDate, "dd MMMM, yyyy, HH:mm 'hrs'", { locale: es }) : 'Fecha no registrada';
+    const formattedDeliveryDate = deliveryDate && isValid(deliveryDate) ? format(deliveryDate, "dd MMMM, yyyy, HH:mm 'hrs'", { locale: es }) : 'Fecha no registrada';
+
     const isAppointmentPending = status === 'agendado' && appointmentStatus === 'Sin Confirmar';
 
     const statusInfo = useMemo(() => {
-      if (status === 'cancelado' || appointmentStatus === 'Cancelada') return { title: "CANCELADO", description: "Este servicio o cita ha sido cancelado.", badge: { text: "Cancelado", variant: "destructive" } };
-      if (appointmentStatus === 'Confirmada') return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Confirmada", variant: "success" } };
-      if (isAppointmentPending) return { title: "CITA PENDIENTE DE CONFIRMACIÓN", description: formattedAppointmentDate, badge: { text: "Pendiente", variant: "waiting" } };
-      if (status === 'en taller') return { title: "ORDEN DE SERVICIO", description: `Vehículo ingresado el ${format(parseDate(service.receptionDateTime)!, "dd MMMM, HH:mm", { locale: es })}`, badge: { text: service.subStatus || 'En Taller', variant: "secondary" } };
-      if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Vehículo entregado el ${format(parseDate(service.deliveryDateTime)!, "dd MMMM, HH:mm", { locale: es })}`, badge: { text: "Entregado", variant: "success" } };
-      return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null };
-    }, [status, appointmentStatus, formattedAppointmentDate, service]);
+        if (status === 'cancelado' || appointmentStatus === 'Cancelada') return { title: "CANCELADO", description: "Este servicio o cita ha sido cancelado.", badge: { text: "Cancelado", variant: "destructive" } };
+        
+        if (status === 'agendado') {
+          if (appointmentStatus === 'Confirmada') return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Confirmada", variant: "success" } };
+          if (appointmentStatus === 'Sin Confirmar') return { title: "CITA PENDIENTE DE CONFIRMACIÓN", description: formattedAppointmentDate, badge: { text: "Pendiente", variant: "waiting" } };
+        }
+        
+        if (status === 'en taller') return { title: "ORDEN DE SERVICIO", description: `Vehículo ingresado el ${formattedReceptionDate}`, badge: { text: service.subStatus || 'En Taller', variant: "secondary" } };
+        if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Vehículo entregado el ${formattedDeliveryDate}`, badge: { text: "Entregado", variant: "success" } };
+        
+        return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null };
+    }, [status, appointmentStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate, service]);
+
 
     return (
       <>
@@ -302,5 +314,3 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
-
-    
