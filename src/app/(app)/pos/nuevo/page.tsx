@@ -264,7 +264,13 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
                 />
               )
             }
-          />
+          >
+            <div className="flex flex-col sm:flex-row gap-2 w-full justify-end">
+                <Button variant="outline" onClick={() => handleCopyAsImage(false)}><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+                <Button variant="outline" onClick={handleShare} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200"><Share2 className="mr-2 h-4 w-4"/>Compartir</Button>
+                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+            </div>
+          </UnifiedPreviewDialog>
       )}
 
       <AlertDialog open={isValidationDialogOpen} onOpenChange={setIsValidationDialogOpen}>

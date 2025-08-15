@@ -1,5 +1,4 @@
-
-
+// src/app/(app)/pos/page.tsx
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -92,10 +91,9 @@ export default function PosPage() {
     }
   }, [currentUser, toast]);
 
-
   const handleReprintSale = useCallback((sale: SaleReceipt) => { setSelectedSaleForReprint(sale); setIsReprintDialogOpen(true); }, []);
   
-  const handleCopyServiceForWhatsapp = useCallback((sale: SaleReceipt) => {
+  const handleCopyWhatsappMessage = useCallback((sale: SaleReceipt) => {
     const workshopName = workshopInfo?.name || 'nuestro taller';
     const message = `Hola ${sale.customerName || 'Cliente'}, aquí tienes los detalles de tu compra en ${workshopName}.
 Folio de Venta: ${sale.id}
@@ -118,6 +116,53 @@ Total: ${formatCurrency(sale.totalAmount)}
     setIsPaymentDialogOpen(false);
   }, [toast]);
   
+    const handleCopyAsImage = useCallback(async (isForSharing: boolean = false) => {
+    if (!ticketContentRef.current || !selectedSaleForReprint) return null;
+    try {
+      const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error("Could not create blob from canvas.");
+      
+      if (isForSharing) {
+        return new File([blob], `ticket_${selectedSaleForReprint.id}.png`, { type: 'image/png' });
+      } else {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        toast({ title: "Copiado", description: "La imagen ha sido copiada." });
+        return null;
+      }
+    } catch (e) {
+      console.error('Error handling image:', e);
+      toast({ title: "Error", description: "No se pudo procesar la imagen del ticket.", variant: "destructive" });
+      return null;
+    }
+  }, [selectedSaleForReprint, toast]);
+  
+  const handleShare = async () => {
+    if (!selectedSaleForReprint) return;
+    const imageFile = await handleCopyAsImage(true);
+    if (imageFile && navigator.share) {
+      try {
+        await navigator.share({
+          files: [imageFile],
+          title: 'Ticket de Venta',
+          text: `Ticket de tu compra en ${workshopInfo?.name || 'nuestro taller'}.`,
+        });
+      } catch (error) {
+        if(!String(error).includes('AbortError')) {
+           toast({ title: 'No se pudo compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
+           handleCopyWhatsappMessage(selectedSaleForReprint);
+        }
+      }
+    } else {
+        // Fallback for desktop browsers
+        handleCopyWhatsappMessage(selectedSaleForReprint);
+    }
+  };
+
+  const handlePrint = () => {
+    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
+  };
+
 
   if (isLoading) { return <div className="flex h-[50vh] w-full items-center justify-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /><p className="text-lg ml-4">Cargando datos...</p></div>; }
   
@@ -147,10 +192,20 @@ Total: ${formatCurrency(sale.totalAmount)}
             documentType="text"
             textContent={
               ReactDOMServer.renderToString(
-                <TicketContent sale={selectedSaleForReprint} previewWorkshopInfo={workshopInfo || undefined} />
+                <TicketContent 
+                  ref={ticketContentRef}
+                  sale={selectedSaleForReprint} 
+                  previewWorkshopInfo={workshopInfo || undefined} 
+                />
               )
             }
-          />
+          >
+             <div className="flex flex-col sm:flex-row gap-2 w-full justify-end">
+                <Button variant="outline" onClick={() => handleCopyAsImage(false)}><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
+                <Button variant="outline" onClick={handleShare} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200"><Share2 className="mr-2 h-4 w-4"/>Compartir</Button>
+                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+            </div>
+          </UnifiedPreviewDialog>
       )}
       
       {selectedSale && <ViewSaleDialog
@@ -164,7 +219,7 @@ Total: ${formatCurrency(sale.totalAmount)}
         onCancelSale={handleCancelSale}
         onDeleteSale={handleDeleteSale}
         onPaymentUpdate={handleUpdatePaymentDetails as any} 
-        onSendWhatsapp={handleCopyServiceForWhatsapp} 
+        onSendWhatsapp={handleCopyWhatsappMessage} 
       />}
     </>
   );

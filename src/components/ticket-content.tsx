@@ -1,4 +1,4 @@
-
+// src/components/ticket-content.tsx
 "use client";
 
 import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem, WorkshopInfo } from '@/types';
@@ -53,7 +53,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
     const operation = sale || service;
     const operationId = sale?.id || service?.id;
     
-    // Corrected: Always use the current time for ticket generation
+    // Always use the current time for ticket generation
     const formattedDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
     
     const items = sale?.items || [];

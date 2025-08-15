@@ -171,12 +171,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
   };
 
   const handlePrintTicket = () => {
-    const content = document.querySelector('.ticket-preview-content')?.innerHTML;
-    if (!content) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    printWindow.document.write(`<html><head><title>Imprimir Ticket</title><style>@media print{ @page { size: 80mm auto; margin: 2mm; } body { margin: 0; } }</style></head><body onload="window.print();window.close()">${content}</body></html>`);
-    printWindow.document.close();
+    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
 
   if (isLoading) {
@@ -233,15 +228,16 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
                 onOpenChange={setIsTicketDialogOpen}
                 title="Ticket de Servicio"
                 documentType="text"
-                textContent={ReactDOMServer.renderToString(
-                    <div ref={ticketContentRef} className="ticket-preview-content">
-                        <TicketContent 
-                            service={serviceForTicket} 
-                            vehicle={vehicles.find(v => v.id === serviceForTicket.vehicleId)}
-                            previewWorkshopInfo={workshopInfo || undefined} 
-                        />
-                    </div>
-                )}
+                textContent={
+                  ReactDOMServer.renderToString(
+                    <TicketContent 
+                      ref={ticketContentRef}
+                      service={serviceForTicket} 
+                      vehicle={vehicles.find(v => v.id === serviceForTicket.vehicleId)}
+                      previewWorkshopInfo={workshopInfo || undefined} 
+                    />
+                  )
+                }
               >
                  <div className="flex flex-col sm:flex-row gap-2 w-full justify-end">
                     <Button variant="outline" onClick={() => handleCopyTicketAsImage(false)}><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
