@@ -37,9 +37,10 @@ export function TabbedPageLayout({
                 <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
                 <p className="text-primary-foreground/80 mt-1">{description}</p>
             </div>
-            {actions && <div className="w-full sm:w-auto flex justify-end">{actions}</div>}
         </div>
       </div>
+
+      {actions && <div className="mb-6 flex justify-end">{actions}</div>}
       
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
         <div className="w-full">
