@@ -229,7 +229,6 @@ export function VentasPosContent({
                                       <div className="text-center"><p className="text-xs text-muted-foreground">Atendió</p><p className="text-xs">{sellerName}</p></div>
                                       <div className="flex justify-center items-center gap-1 flex-wrap">
                                           <Button variant="ghost" size="icon" onClick={() => onViewSale(sale)} title="Ver / Editar Venta"><Edit className="h-4 w-4" /></Button>
-                                          <Button variant="ghost" size="icon" onClick={() => onEditPayment(sale)} title="Editar Pago"><Repeat className="h-4 w-4" /></Button>
                                           <Button variant="ghost" size="icon" onClick={() => onReprintTicket(sale)} title="Reimprimir Ticket" disabled={isCancelled}><Printer className="h-4 w-4" /></Button>
                                            <ConfirmDialog
                                               triggerButton={
