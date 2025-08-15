@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -24,7 +24,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from "zod";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { CorteDiaContent } from './corte-caja-content';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
@@ -113,58 +114,6 @@ function TransactionsList({ transactions, onDelete }: { transactions: CashDrawer
         </Table>
     );
 }
-
-const CorteDiaContent = React.forwardRef<HTMLDivElement, { reportData: any; date: Date; transactions: CashDrawerTransaction[] }>(
-    ({ reportData, date, transactions }, ref) => {
-        const manualEntries = transactions.filter(t => !t.relatedType && t.type === 'Entrada');
-        const manualExits = transactions.filter(t => !t.relatedType && t.type === 'Salida');
-
-        return (
-            <div ref={ref} className="font-mono bg-white text-black p-4 text-xs">
-                <h3 className="text-center font-bold text-sm mb-2">CORTE DE CAJA</h3>
-                <p className="text-center">{format(date, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
-                <div className="border-t border-dashed my-2"></div>
-                
-                <div className="space-y-1">
-                    <div className="flex justify-between"><span>(+) Saldo Inicial:</span><span>{formatCurrency(reportData.initialBalance)}</span></div>
-                    <div className="flex justify-between"><span>(+) Efectivo de Ventas:</span><span>{formatCurrency(reportData.totalCashSales)}</span></div>
-                    
-                    {manualEntries.length > 0 && (
-                        <div>
-                            <p className="font-semibold">Otras Entradas:</p>
-                            {manualEntries.map(t => (
-                                <div key={t.id} className="flex justify-between pl-2"><span>- {t.concept}:</span><span>{formatCurrency(t.amount)}</span></div>
-                            ))}
-                        </div>
-                    )}
-                    
-                     <div className="flex justify-between font-bold text-green-600 border-t border-dashed mt-1 pt-1"><span>(=) TOTAL ENTRADAS:</span><span>{formatCurrency(reportData.initialBalance + reportData.totalCashSales + reportData.totalCashIn)}</span></div>
-                    
-                    <div className="border-t border-dashed my-2"></div>
-                    
-                    {manualExits.length > 0 && (
-                        <div>
-                            <p className="font-semibold">Salidas de Caja:</p>
-                            {manualExits.map(t => (
-                                <div key={t.id} className="flex justify-between pl-2"><span>- {t.concept}:</span><span>{formatCurrency(t.amount)}</span></div>
-                            ))}
-                        </div>
-                    )}
-                    <div className="flex justify-between font-bold text-red-600 border-t border-dashed mt-1 pt-1"><span>(=) TOTAL SALIDAS:</span><span>{formatCurrency(reportData.totalCashOut)}</span></div>
-
-                </div>
-
-                <div className="border-t-2 border-solid border-black mt-2 pt-1">
-                    <div className="flex justify-between font-extrabold text-sm">
-                        <span>SALDO FINAL EN CAJA:</span>
-                        <span>{formatCurrency(reportData.finalCashBalance)}</span>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-);
-CorteDiaContent.displayName = 'CorteDiaContent';
 
 
 interface CorteCajaContentProps {
@@ -257,10 +206,9 @@ export default function CorteCajaContent({ allSales, allServices, allCashTransac
       concept: values.concept,
       userId: currentUser?.id || 'system',
       userName: currentUser?.name || 'Sistema',
-      date: date.toISOString(), // Ensure transaction is for the selected day
     });
     toast({ title: `Se registró una ${type.toLowerCase()} de caja.` });
-  }, [toast, date]);
+  }, [toast]);
   
   const handleDeleteTransaction = useCallback(async (transactionId: string) => {
     await operationsService.deleteCashTransaction(transactionId);
@@ -337,9 +285,9 @@ export default function CorteCajaContent({ allSales, allServices, allCashTransac
         </DialogContent>
       </Dialog>
       
-      <UnifiedPreviewDialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen} title="Corte de Caja" footerContent={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>}>
+      <PrintTicketDialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen} title="Corte de Caja">
          <CorteDiaContent reportData={cajaSummaryData} date={date} transactions={allCashTransactions.filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start: startOfDay(date), end: endOfDay(date) }))} />
-      </UnifiedPreviewDialog>
+      </PrintTicketDialog>
     </>
   );
 }
