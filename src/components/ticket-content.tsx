@@ -65,7 +65,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
     const renderLine = (label: string, value: string, isBold: boolean = false) => (
       <div className="flex justify-between">
         <span>{label}</span>
-        <span className={isBold ? "font-semibold" : ""}>{value}</span>
+        <span className={cn(isBold && "font-semibold")}>{value}</span>
       </div>
     );
 

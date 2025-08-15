@@ -3,6 +3,8 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+
 
 interface UnifiedPreviewDialogProps {
   open: boolean;

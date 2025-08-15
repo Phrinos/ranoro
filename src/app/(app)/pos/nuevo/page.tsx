@@ -27,6 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import ReactDOMServer from 'react-dom/server';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 export default function NuevaVentaPage() {
@@ -255,10 +256,33 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
             onOpenChange={handleDialogClose}
             title="Venta Completada"
             footerContent={
-                <div className="flex flex-col sm:flex-row gap-2 w-full justify-end">
-                    <Button variant="outline" onClick={() => handleCopyAsImage(false)}><Copy className="mr-2 h-4 w-4"/>Copiar Imagen</Button>
-                    <Button variant="outline" onClick={handleShare} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200"><Share2 className="mr-2 h-4 w-4"/>Compartir</Button>
-                    <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+                <div className="flex w-full justify-end gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-12 w-12" onClick={() => handleCopyAsImage(false)}>
+                          <Copy className="h-6 w-6" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Copiar Imagen</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                         <Button variant="outline" size="icon" className="h-12 w-12" onClick={handleShare}>
+                          <Share2 className="h-6 w-6" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Compartir</p></TooltipContent>
+                    </Tooltip>
+                     <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-12 w-12" onClick={handlePrint}>
+                          <Printer className="h-6 w-6" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Imprimir</p></TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
             }
           >
