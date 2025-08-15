@@ -1,3 +1,4 @@
+
 // src/app/(app)/rentas/components/ResumenTab.tsx
 "use client";
 
@@ -9,16 +10,23 @@ import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from 'react-day-picker';
 import { formatCurrency } from "@/lib/utils";
 import type { RentalPayment, VehicleExpense } from '@/types';
-import { DollarSign, AlertCircle, LineChart, TrendingDown, CalendarIcon as CalendarDateIcon } from "lucide-react";
+import { DollarSign, AlertCircle, LineChart, TrendingDown, CalendarIcon as CalendarDateIcon, Wallet, CreditCard, Send } from "lucide-react";
 import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
+import { Icon } from '@iconify/react';
 
 interface ResumenTabProps {
   payments: RentalPayment[];
   expenses: VehicleExpense[];
   monthlyBalances: any[]; // Consider creating a specific type for this
 }
+
+const paymentMethodIcons: Record<RentalPayment['paymentMethod'], string> = {
+  "Efectivo": "mdi:cash",
+  "Tarjeta": "logos:visa-electron",
+  "Transferencia": "mdi:bank-transfer",
+};
 
 export function ResumenTab({ payments, expenses, monthlyBalances }: ResumenTabProps) {
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {

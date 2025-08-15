@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { parseDate } from '@/lib/forms';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { Icon } from '@iconify/react';
 
 const sortOptions = [
     { value: 'date_desc', label: 'Más Reciente' },
@@ -33,11 +34,11 @@ const paymentMethodOptions: { value: Payment['method'] | 'all', label: string }[
     { value: 'Transferencia', label: 'Transferencia' },
 ];
 
-const paymentMethodIcons = {
-  Efectivo: Wallet,
-  Tarjeta: CreditCard,
-  'Tarjeta MSI': CreditCard,
-  Transferencia: Send,
+const paymentMethodIcons: Record<Payment['method'], string> = {
+  "Efectivo": "mdi:cash",
+  "Tarjeta": "logos:visa-electron",
+  "Tarjeta MSI": "logos:mastercard",
+  "Transferencia": "mdi:bank-transfer",
 };
 
 interface VentasPosContentProps {
@@ -149,10 +150,10 @@ export function VentasPosContent({
                 {Array.from(summaryData.paymentsSummary.entries()).length > 0 ? (
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
-                      const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || Wallet;
+                      const iconName = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || "mdi:cash";
                       return (
                         <div key={method} className="flex items-center gap-2 text-sm">
-                           <Icon className="h-4 w-4 text-muted-foreground" />
+                           <Icon icon={iconName} className="h-4 w-4 text-muted-foreground" />
                            <span className="font-semibold">{method}:</span>
                            <span className="text-foreground">{formatCurrency(data.total)}</span>
                            <span className="text-muted-foreground text-xs">({data.count})</span>
@@ -193,11 +194,14 @@ export function VentasPosContent({
                   const paymentBadges = (isCancelled
                       ? [<Badge key="cancelled" variant="destructive" className="font-bold">CANCELADO</Badge>]
                       : (sale.payments && sale.payments.length > 0)
-                          ? sale.payments.map((p, index) => (
+                          ? sale.payments.map((p, index) => {
+                              const iconName = paymentMethodIcons[p.method] || 'mdi:cash';
+                              return (
                                 <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
-                                    {formatCurrency(p.amount)} <span className="font-normal ml-1 opacity-80">({p.method})</span>
+                                  <Icon icon={iconName} className="h-3 w-3 mr-1"/>{p.method} <span className="font-normal ml-1 opacity-80">{formatCurrency(p.amount)}</span>
                                 </Badge>
-                            ))
+                              )
+                            })
                           : sale.paymentMethod // Fallback for older records
                               ? [<Badge key={sale.paymentMethod} variant={getPaymentMethodVariant(sale.paymentMethod as any)} className="text-xs">{sale.paymentMethod}</Badge>]
                               : [<Badge key="no-payment" variant="outline">Sin Pago</Badge>]

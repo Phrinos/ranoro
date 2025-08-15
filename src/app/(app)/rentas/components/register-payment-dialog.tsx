@@ -15,12 +15,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Driver, Vehicle, PaymentMethod } from "@/types";
-import { DollarSign } from 'lucide-react';
+import { DollarSign, Wallet, CreditCard, Send } from 'lucide-react';
 import { subDays, isBefore, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { Icon } from '@iconify/react';
 
 const paymentOptions: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia'];
+
+const paymentMethodIcons: Record<PaymentMethod, string> = {
+  "Efectivo": "mdi:cash",
+  "Tarjeta": "logos:visa-electron",
+  "Tarjeta MSI": "logos:mastercard", // Will not be used here but good for consistency
+  "Transferencia": "mdi:bank-transfer",
+};
 
 interface RegisterPaymentDialogProps {
   open: boolean;
@@ -139,7 +147,12 @@ export function RegisterPaymentDialog({
                     <SelectTrigger id="payment-method-select"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         {paymentOptions.map(opt => (
-                            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                            <SelectItem key={opt} value={opt}>
+                              <div className="flex items-center gap-2">
+                                <Icon icon={paymentMethodIcons[opt]} className="h-4 w-4"/>
+                                <span>{opt}</span>
+                              </div>
+                            </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>

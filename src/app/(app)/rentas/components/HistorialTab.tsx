@@ -1,4 +1,5 @@
 
+
 // src/app/(app)/rentas/components/HistorialTab.tsx
 "use client";
 
@@ -6,20 +7,21 @@ import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Edit, Printer, Copy, Share2 } from 'lucide-react';
+import { Edit, Printer, Copy, Share2, Wallet, CreditCard, Send } from 'lucide-react';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { RentalReceiptContent } from './rental-receipt-content';
 import { EditPaymentNoteDialog } from './edit-payment-note-dialog';
 import type { RentalPayment, WorkshopInfo, Driver, Vehicle } from '@/types';
 import { format, parseISO, compareDesc } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
 import { fleetService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import ReactDOMServer from 'react-dom/server';
+import { Icon } from '@iconify/react';
 
 interface HistorialTabProps {
   allPayments: RentalPayment[];
@@ -27,6 +29,12 @@ interface HistorialTabProps {
   drivers: Driver[];
   vehicles: Vehicle[];
 }
+
+const paymentMethodIcons: Record<RentalPayment['paymentMethod'], string> = {
+  "Efectivo": "mdi:cash",
+  "Tarjeta": "logos:visa-electron",
+  "Transferencia": "mdi:bank-transfer",
+};
 
 export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: HistorialTabProps) {
   const { toast } = useToast();
@@ -128,7 +136,7 @@ export function HistorialTab({ allPayments, workshopInfo, drivers, vehicles }: H
                       <TableCell>{p.vehicleLicensePlate}</TableCell>
                       <TableCell className="text-right font-bold">
                         <p>{formatCurrency(p.amount)}</p>
-                        {p.paymentMethod && <Badge variant="outline" className="mt-1 text-xs">{p.paymentMethod}</Badge>}
+                        {p.paymentMethod && <Badge variant={getPaymentMethodVariant(p.paymentMethod)} className="mt-1 text-xs"><Icon icon={paymentMethodIcons[p.paymentMethod] || 'mdi:cash'} className="mr-1 h-3 w-3"/>{p.paymentMethod}</Badge>}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{p.note || 'N/A'}</TableCell>
                       <TableCell className="text-right">
