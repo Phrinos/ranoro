@@ -18,7 +18,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cancelAppointmentAction } from '@/app/(public)/s/actions';
 import { useToast } from '@/hooks/use-toast';
 import { parseDate } from '@/lib/forms';
-import { GARANTIA_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
+import { GARANTIA_CONDICIONES_TEXT, INGRESO_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
@@ -326,8 +326,8 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                 <CardContent className="space-y-4">
                     <ReceptionDetails service={service} />
                     <div className="border-t pt-4">
-                        <h4 className="font-semibold mb-2">Garantía y Condiciones del Servicio</h4>
-                        <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
+                        <h4 className="font-semibold mb-2">Condiciones del Servicio</h4>
+                        <p className="text-xs text-muted-foreground whitespace-pre-line">{INGRESO_CONDICIONES_TEXT}</p>
                     </div>
                     <div className="border-t pt-4">
                         <h4 className="font-semibold mb-2">Firma de Autorización</h4>
@@ -341,7 +341,11 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
             {service.status === 'Entregado' && (
                 <Card>
                     <CardHeader><CardTitle>Salida del vehiculo del taller</CardTitle></CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
+                        <div className="border-t pt-4">
+                            <h4 className="font-semibold mb-2">GARANTIA</h4>
+                            <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
+                        </div>
                         <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
                         <SignatureDisplay type="delivery" signatureUrl={service.customerSignatureDelivery} onSignClick={onSignClick} isSigning={isSigning} />
                     </CardContent>
