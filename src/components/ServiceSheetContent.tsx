@@ -172,7 +172,7 @@ const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }:
             <CardContent className="p-4 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <a href={workshopInfo.googleMapsUrl || "https://share.google/7ow83ayhfb2iIOKUX"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:google-maps" className="h-6 w-6"/></a>
-                    <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
+                    <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
                     <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:facebook" className="h-6 w-6"/></a>
                     <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="skill-icons:instagram" className="h-6 w-6"/></a>
                 </div>
@@ -247,7 +247,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             { value: 'order', label: 'Orden de Servicio', content: <ServiceOrderTab service={service} vehicle={vehicle} onSignClick={onSignClick} isSigning={isSigning}/> },
         ];
         if (service.safetyInspection && Object.values(service.safetyInspection).some(v => v && v.status && v.status !== 'na')) {
-            availableTabs.push({ value: 'checklist', label: 'Revisión de Seguridad', content: <SafetyChecklistDisplay inspection={service.safetyInspection} workshopInfo={effectiveWorkshopInfo} service={service} vehicle={vehicle} /> });
+            availableTabs.push({ value: 'checklist', label: 'Revisión de Seguridad', content: <SafetyChecklistDisplay inspection={service.safetyInspection} /> });
         }
         if (service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0)) {
             availableTabs.push({ value: 'photoreport', label: 'Reporte Fotográfico', content: <PhotoReportContent photoReports={service.photoReports} /> });
@@ -256,7 +256,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             availableTabs.push({ value: 'quote', label: 'Cotización Original', content: <OriginalQuoteContent items={service.originalQuoteItems} /> });
         }
         return availableTabs;
-    }, [service, vehicle, onSignClick, isSigning, effectiveWorkshopInfo]);
+    }, [service, vehicle, onSignClick, isSigning]);
 
     return (
       <div ref={ref} className="space-y-6">
@@ -296,10 +296,6 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
 
-    const fuelLevelMap: Record<string, number> = { 'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50, '5/8': 62.5, '3/4': 75, '7/8': 87.5, 'Lleno': 100 };
-    const fuelPercentage = service.fuelLevel ? fuelLevelMap[service.fuelLevel] ?? 0 : 0;
-    const fuelColor = fuelPercentage <= 25 ? "bg-red-500" : fuelPercentage <= 50 ? "bg-orange-400" : fuelPercentage <= 87.5 ? "bg-yellow-400" : "bg-green-500";
-    
     return (
         <div className="space-y-6">
             <Card>
@@ -325,33 +321,69 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                 </CardContent>
             </Card>
 
-            <Card><CardHeader><CardTitle>Detalles de Recepción</CardTitle></CardHeader><CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div><h4 className="font-semibold">Condiciones del Vehículo</h4><p className="text-sm text-muted-foreground whitespace-pre-wrap">{service.vehicleConditions || 'No especificado'}</p></div>
-                    <div><h4 className="font-semibold">Pertenencias del Cliente</h4><p className="text-sm text-muted-foreground whitespace-pre-wrap">{service.customerItems || 'No especificado'}</p></div>
-                </div>
-                <div><h4 className="font-semibold">Nivel de Combustible</h4>
-                    <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300 mt-2"><div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} /></div>
-                    <p className="text-center text-xs mt-1">{service.fuelLevel || 'N/A'}</p>
-                </div>
-                 <div className="border-t pt-4">
-                    <h4 className="font-semibold mb-2">Garantía y Condiciones del Servicio</h4>
-                    <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
-                 </div>
-                <div className="border-t pt-4">
-                     <h4 className="font-semibold mb-2">Firmas de Autorización</h4>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="text-center"><p className="text-xs font-semibold">CLIENTE (RECEPCIÓN)</p><div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">{service.customerSignatureReception ? <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={150} height={75} style={{objectFit:'contain'}} unoptimized/> : (onSignClick ? <Button size="sm" onClick={() => onSignClick('reception')} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button> : <p className="text-xs text-muted-foreground">Pendiente</p>)}</div></div>
-                        <div className="text-center"><p className="text-xs font-semibold">CLIENTE (ENTREGA)</p><div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">{service.customerSignatureDelivery ? <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de entrega" width={150} height={75} style={{objectFit:'contain'}} unoptimized/> : (onSignClick ? <Button size="sm" onClick={() => onSignClick('delivery')} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button> : <p className="text-xs text-muted-foreground">Pendiente</p>)}</div></div>
-                     </div>
-                </div>
-            </CardContent></Card>
+            <Card>
+                <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                    <ReceptionDetails service={service} />
+                    <div className="border-t pt-4">
+                        <h4 className="font-semibold mb-2">Garantía y Condiciones del Servicio</h4>
+                        <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
+                    </div>
+                    <div className="border-t pt-4">
+                        <h4 className="font-semibold mb-2">Firma de Autorización</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+            
+            {service.status === 'Entregado' && (
+                <Card>
+                    <CardHeader><CardTitle>Salida del vehiculo del taller</CardTitle></CardHeader>
+                    <CardContent>
+                        <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
+                        <SignatureDisplay type="delivery" signatureUrl={service.customerSignatureDelivery} onSignClick={onSignClick} isSigning={isSigning} />
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }
 
-function SafetyChecklistDisplay({ inspection, workshopInfo, service, vehicle }: { inspection: any, workshopInfo: any, service: ServiceRecord, vehicle?: Vehicle }) {
-    // A simplified version for brevity. You would map through `inspectionGroups` here.
+function ReceptionDetails({ service }: { service: ServiceRecord }) {
+    const fuelLevelMap: Record<string, number> = { 'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50, '5/8': 62.5, '3/4': 75, '7/8': 87.5, 'Lleno': 100 };
+    const fuelPercentage = service.fuelLevel ? fuelLevelMap[service.fuelLevel] ?? 0 : 0;
+    const fuelColor = fuelPercentage <= 25 ? "bg-red-500" : fuelPercentage <= 50 ? "bg-orange-400" : fuelPercentage <= 87.5 ? "bg-yellow-400" : "bg-green-500";
+    return (
+        <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><h4 className="font-semibold">Condiciones del Vehículo</h4><p className="text-sm text-muted-foreground whitespace-pre-wrap">{service.vehicleConditions || 'No especificado'}</p></div>
+                <div><h4 className="font-semibold">Pertenencias del Cliente</h4><p className="text-sm text-muted-foreground whitespace-pre-wrap">{service.customerItems || 'No especificado'}</p></div>
+            </div>
+            <div><h4 className="font-semibold">Nivel de Combustible</h4>
+                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300 mt-2"><div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} /></div>
+                <p className="text-center text-xs mt-1">{service.fuelLevel || 'N/A'}</p>
+            </div>
+        </>
+    );
+}
+
+function SignatureDisplay({ type, signatureUrl, onSignClick, isSigning }: { type: 'reception' | 'delivery', signatureUrl?: string | null, onSignClick?: (type: 'reception' | 'delivery') => void, isSigning?: boolean }) {
+    const label = type === 'reception' ? 'CLIENTE (RECEPCIÓN)' : 'CLIENTE (ENTREGA)';
+    return (
+        <div className="text-center">
+            <p className="text-xs font-semibold">{label}</p>
+            <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
+                {signatureUrl ? <Image src={normalizeDataUrl(signatureUrl)} alt={`Firma de ${type}`} width={150} height={75} style={{objectFit:'contain'}} unoptimized/> 
+                : (onSignClick ? <Button size="sm" onClick={() => onSignClick(type)} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button> : <p className="text-xs text-muted-foreground">Pendiente</p>)}
+            </div>
+        </div>
+    );
+}
+
+
+function SafetyChecklistDisplay({ inspection }: { inspection: any }) {
     return (
         <Card>
             <CardHeader><CardTitle>Revisión de Puntos de Seguridad</CardTitle></CardHeader>
