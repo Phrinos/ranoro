@@ -114,7 +114,7 @@ export function DashboardCharts({ services, sales, inventory, fixedExpenses, per
   const chartData = useMemo(() => processChartData(services, sales, inventory, fixedExpenses, personnel), [services, sales, inventory, fixedExpenses, personnel]);
 
   return (
-    <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+    <div className="grid gap-6 grid-cols-1">
       <Card>
         <CardHeader>
           <CardTitle>Rendimiento Financiero (Últimos 6 Meses)</CardTitle>
@@ -132,25 +132,6 @@ export function DashboardCharts({ services, sales, inventory, fixedExpenses, per
               <Area type="monotone" dataKey="gastos" stackId="1" stroke="#ffc658" fill="#ffc658" name="Gastos" />
               <Area type="monotone" dataKey="ganancia" stackId="1" stroke="#8884d8" fill="#8884d8" name="Ganancia Neta" />
             </AreaChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Volumen de Servicios (Últimos 6 Meses)</CardTitle>
-          <CardDescription>Comparativa de servicios creados vs. completados en el mes.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis allowDecimals={false}/>
-              <Tooltip formatter={(value, name) => name === 'Ticket Promedio' ? formatCurrency(value as number) : value} />
-              <Legend />
-              <Bar dataKey="creados" fill="#8884d8" name="Servicios Creados" />
-              <Bar dataKey="completados" fill="#82ca9d" name="Servicios Completados" />
-            </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
