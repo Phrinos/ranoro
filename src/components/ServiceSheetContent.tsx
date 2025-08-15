@@ -326,14 +326,11 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                 <CardContent className="space-y-4">
                     <ReceptionDetails service={service} />
                     <div className="border-t pt-4">
-                        <h4 className="font-semibold mb-2">Condiciones del Servicio</h4>
-                        <p className="text-xs text-muted-foreground whitespace-pre-line">{INGRESO_CONDICIONES_TEXT}</p>
-                    </div>
-                    <div className="border-t pt-4">
                         <h4 className="font-semibold mb-2">Firma de Autorización</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
                         </div>
+                        <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
                     </div>
                 </CardContent>
             </Card>
