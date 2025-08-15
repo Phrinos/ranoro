@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { SaleReceipt, InventoryItem, User, InventoryCategory, Supplier } from "@/types";
+import type { SaleReceipt, InventoryItem, User, InventoryCategory, Supplier, Payment } from "@/types";
 import { format, parseISO } from "date-fns";
 import { es } from 'date-fns/locale';
 import { Ban, Save, Trash2, MessageSquare, Repeat } from "lucide-react";
@@ -38,7 +38,7 @@ interface ViewSaleDialogProps {
   suppliers: Supplier[];
   onCancelSale: (saleId: string, reason: string) => void;
   onDeleteSale: (saleId: string) => void;
-  onPaymentUpdate: (saleId: string, paymentDetails: any) => Promise<void>;
+  onPaymentUpdate: (saleId: string, paymentDetails: PaymentDetailsFormValues) => Promise<void>;
   onSendWhatsapp: (sale: SaleReceipt) => void;
 }
 
@@ -78,6 +78,13 @@ export function ViewSaleDialog({
   const isCancelled = sale.status === 'Cancelado';
   const saleDate = parseISO(sale.saleDate);
   const formattedDate = format(saleDate, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
+  
+  const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
+  const handleOpenValidateDialog = (index: number) => {
+    // This is a placeholder, actual validation logic should be implemented
+    // perhaps in a separate dialog as it was before.
+    console.log("Validation requested for payment index:", index);
+  };
 
   return (
     <>
@@ -98,6 +105,8 @@ export function ViewSaleDialog({
               suppliers={suppliers}
               onSaleComplete={() => {}} // onSubmit is handled by the footer button
               initialData={sale}
+              onOpenValidateDialog={handleOpenValidateDialog}
+              validatedFolios={validatedFolios}
             />
           </FormProvider>
         </div>

@@ -7,12 +7,11 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, Copy, MessageSquare, Share2, Wallet } from "lucide-react";
 import { TicketContent } from '@/components/ticket-content';
 import type { SaleReceipt, InventoryItem, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User, Payment } from '@/types'; 
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { operationsService, inventoryService, adminService, saleService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
-import { ViewSaleDialog } from "./components/view-sale-dialog";
 import { writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -22,9 +21,9 @@ import { isToday, startOfDay, endOfDay, isWithinInterval, isValid, parseISO } fr
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import ReactDOMServer from 'react-dom/server';
 
-
-export default function PosPageComponent() {
+export default function PosPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -164,7 +163,7 @@ Total: ${formatCurrency(sale.totalAmount)}
         suppliers={allSuppliers}
         onCancelSale={handleCancelSale}
         onDeleteSale={handleDeleteSale}
-        onPaymentUpdate={handleUpdatePaymentDetails} 
+        onPaymentUpdate={handleUpdatePaymentDetails as any} 
         onSendWhatsapp={handleCopyServiceForWhatsapp} 
       />}
     </>

@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/tab-cotizaciones.tsx
 "use client";
 
@@ -30,7 +31,6 @@ function CotizacionesTabContent({
   onDelete,
 }: CotizacionesTabContentProps) {
   const router = useRouter();
-  const { toast } = useToast();
   
   const quotes = useMemo(() => services.filter(s => s.status === 'Cotizacion'), [services]);
   
@@ -49,17 +49,6 @@ function CotizacionesTabContent({
     router.push(`/servicios/${quoteId}`);
   }, [router]);
   
-  const handleDeleteQuote = async (quoteId: string) => {
-    if (window.confirm('¿Está seguro de que desea eliminar esta cotización? Esta acción no se puede deshacer.')) {
-        try {
-            await serviceService.deleteService(quoteId);
-            toast({ title: 'Cotización Eliminada', description: `La cotización ha sido eliminada permanentemente.` });
-        } catch (e) {
-            toast({ title: 'Error', description: 'No se pudo eliminar la cotización.', variant: 'destructive' });
-        }
-    }
-  };
-
   const renderServiceCard = useCallback(
     (quote: ServiceRecord) => (
       <ServiceAppointmentCard 
@@ -70,10 +59,10 @@ function CotizacionesTabContent({
         currentUser={currentUser}
         onEdit={() => handleEditQuote(quote.id)}
         onView={() => onShowShareDialog(quote)}
-        onDelete={() => handleDeleteQuote(quote.id)}
+        onDelete={() => onDelete(quote.id)}
       />
     ),
-    [vehicles, personnel, currentUser, onShowShareDialog, handleEditQuote, handleDeleteQuote]
+    [vehicles, personnel, currentUser, onShowShareDialog, handleEditQuote, onDelete]
   );
 
   return (

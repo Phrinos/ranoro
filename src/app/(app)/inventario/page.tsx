@@ -1,9 +1,8 @@
 
-// src/app/(app)/inventario/page.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2 } from "lucide-react";
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from '@/types'; 
@@ -230,7 +229,7 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
 
 
 // Main Page Component
-function InventarioPageComponent() {
+export default function InventarioPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab');
   const { toast } = useToast();
@@ -445,10 +444,4 @@ function InventarioPageComponent() {
         </>
     </Suspense>
   );
-}
-
-export default function InventarioPageWrapper() {
-  const searchParams = useSearchParams();
-  const tab = searchParams.get('tab');
-  return <InventarioPageComponent />;
 }
