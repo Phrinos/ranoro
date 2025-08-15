@@ -23,7 +23,7 @@ import {
   LogOut,
   LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, 
   Truck, LineChart, Shield, PlusCircle, Landmark, LayoutGrid, CalendarDays, 
-  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3, Wallet, BrainCircuit
+  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3, Wallet, BrainCircuit, LifeBuoy
 } from "lucide-react";
 import {
   DropdownMenu,
