@@ -241,44 +241,36 @@ export function ServiceItemCard({
                         const inventoryItem = inventoryItems.find(i => i.id === supplyField.supplyId);
                         const currentName = inventoryItem?.name || supplyField.supplyName;
                         return (
-                            <div key={supplyField.id} className="flex items-center gap-2 p-2 border rounded-md bg-white">
-                                <div className="flex-1">
-                                    <p className="text-xs font-medium">{currentName}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {`Costo: ${formatCurrency(supplyField.unitPrice || 0)}`}
-                                    </p>
+                            <div key={supplyField.id} className="grid grid-cols-1 sm:grid-cols-12 gap-x-2 gap-y-2 items-center p-2 border rounded-md bg-white">
+                                <div className="sm:col-span-5">
+                                   <p className="text-sm font-medium truncate">{currentName}</p>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSupplyQuantityChange(supplyIndex, -1)} disabled={isReadOnly}>
-                                        <Minus className="h-3 w-3"/>
-                                    </Button>
-                                    <FormField
-                                        control={control}
-                                        name={`serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}.quantity`}
-                                        render={({ field }) => (
-                                            <Input
-                                                type="number"
-                                                step="any"
-                                                min="0.001"
-                                                {...field}
-                                                value={field.value ?? ''}
-                                                onChange={(e) => handleManualQuantitySet(supplyIndex, e.target.value)}
-                                                className="w-16 text-center h-7 text-sm bg-white"
-                                                disabled={isReadOnly}
-                                            />
-                                        )}
-                                    />
-                                    <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSupplyQuantityChange(supplyIndex, 1)} disabled={isReadOnly}>
-                                        <Plus className="h-3 w-3" />
-                                    </Button>
+                                <div className="col-span-6 sm:col-span-3">
+                                  <div className="flex items-center gap-1">
+                                      {!isReadOnly && (<Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSupplyQuantityChange(supplyIndex, -1)} disabled={isReadOnly}><Minus className="h-3 w-3"/></Button>)}
+                                      <FormField
+                                          control={control}
+                                          name={`serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}.quantity`}
+                                          render={({ field }) => ( <Input type="number" step="any" min="0.001" {...field} value={field.value ?? ''} onChange={(e) => handleManualQuantitySet(supplyIndex, e.target.value)} className="w-16 text-center h-7 text-sm bg-white" disabled={isReadOnly}/> )}
+                                      />
+                                      {!isReadOnly && (<Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSupplyQuantityChange(supplyIndex, 1)} disabled={isReadOnly}><Plus className="h-3 w-3" /></Button>)}
+                                      <span className="text-xs w-8 text-center">{supplyField.unitType === 'ml' ? 'ml' : supplyField.unitType === 'liters' ? 'L' : 'uds.'}</span>
+                                  </div>
                                 </div>
-                                <span className="text-sm w-12 text-center">{supplyField.unitType === 'ml' ? 'ml' : supplyField.unitType === 'liters' ? 'L' : 'uds.'}</span>
-                                {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => remove(supplyIndex)}><Trash2 className="h-4 w-4"/></Button>}
+                                <div className="col-span-6 sm:col-span-3 text-right">
+                                    <p className="text-xs text-muted-foreground">Costo Unit.</p>
+                                    <p className="text-sm font-semibold">{formatCurrency(supplyField.unitPrice || 0)}</p>
+                                </div>
+                                {!isReadOnly && (
+                                <div className="sm:col-span-1 text-right">
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => remove(supplyIndex)}><Trash2 className="h-4 w-4"/></Button>
+                                </div>
+                                )}
                             </div>
                         )
                     })}
                      {!isReadOnly && (
-                        <div className="flex justify-end">
+                        <div className="flex justify-end pt-2">
                             <Button type="button" variant="outline" size="sm" className="bg-white hover:bg-gray-100" onClick={() => setIsAddSupplyDialogOpen(true) }>
                                 <PlusCircle className="mr-2 h-4 w-4"/> Añadir Insumo
                             </Button>

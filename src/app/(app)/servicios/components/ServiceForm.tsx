@@ -394,12 +394,14 @@ function ServiceFormContent({
 
         {showTabs ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
-                    <button type="button" onClick={() => setActiveTab('servicio')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-white data-[state=inactive]:text-foreground data-[state=inactive]:border hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'servicio' ? 'active' : 'inactive'}>Detalles del Servicio</button>
-                    <button type="button" onClick={() => setActiveTab('recepcion')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-white data-[state=inactive]:text-foreground data-[state=inactive]:border hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'recepcion' ? 'active' : 'inactive'}>Recepción</button>
-                    <button type="button" onClick={() => setActiveTab('revision')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-white data-[state=inactive]:text-foreground data-[state=inactive]:border hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'revision' ? 'active' : 'inactive'}>Puntos Seguridad</button>
-                    <button type="button" onClick={() => setActiveTab('entrega')} className="flex-1 min-w-[20%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-white data-[state=inactive]:text-foreground data-[state=inactive]:border hover:data-[state=inactive]:bg-muted/80" data-state={activeTab === 'entrega' ? 'active' : 'inactive'}>Entrega</button>
-                </TabsList>
+                 <div className="overflow-x-auto scrollbar-hide pb-2">
+                    <TabsList className="relative w-max">
+                        <TabsTrigger value="servicio">Detalles del Servicio</TabsTrigger>
+                        <TabsTrigger value="recepcion">Recepción</TabsTrigger>
+                        <TabsTrigger value="revision">Puntos Seguridad</TabsTrigger>
+                        <TabsTrigger value="entrega">Entrega</TabsTrigger>
+                    </TabsList>
+                </div>
                 <TabsContent value="servicio" className="mt-6">
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
                         <div className="lg:col-span-3"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense></div>

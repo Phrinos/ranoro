@@ -124,32 +124,34 @@ export const ReceptionAndDelivery = ({
               )}
           />
 
-          <FormField
-            control={control}
-            name="vehicleConditions"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="flex justify-between items-center w-full">
-                  <span>Condiciones del Vehículo</span>
-                   {!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}><BrainCircuit className="h-4 w-4" /></Button>)}
-                </FormLabel>
-                <FormControl><Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} className="min-h-[100px]" disabled={isReadOnly} /></FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="customerItems"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="flex justify-between items-center w-full">
-                  <span>Pertenencias del Cliente</span>
-                   {!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}><BrainCircuit className="h-4 w-4" /></Button>)}
-                </FormLabel>
-                <FormControl><Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} className="min-h-[100px]" disabled={isReadOnly} /></FormControl>
-              </FormItem>
-            )}
-          />
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={control}
+                name="vehicleConditions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex justify-between items-center w-full">
+                      <span>Condiciones del Vehículo</span>
+                       {!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}><BrainCircuit className="h-4 w-4" /></Button>)}
+                    </FormLabel>
+                    <FormControl><Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} className="min-h-[100px]" disabled={isReadOnly} /></FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="customerItems"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex justify-between items-center w-full">
+                      <span>Pertenencias del Cliente</span>
+                       {!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}><BrainCircuit className="h-4 w-4" /></Button>)}
+                    </FormLabel>
+                    <FormControl><Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} className="min-h-[100px]" disabled={isReadOnly} /></FormControl>
+                  </FormItem>
+                )}
+              />
+           </div>
           
           <div className="pt-4 border-t">
             <FormLabel className="font-semibold text-base">Firma de Ingreso</FormLabel>
