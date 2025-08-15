@@ -241,7 +241,7 @@ export function ServiceItemCard({
                         const inventoryItem = inventoryItems.find(i => i.id === supplyField.supplyId);
                         const currentName = inventoryItem?.name || supplyField.supplyName;
                         return (
-                            <div key={supplyField.id} className="grid grid-cols-1 sm:grid-cols-12 gap-x-2 gap-y-2 items-center p-2 border rounded-md bg-white">
+                            <div key={supplyField.id || supplyIndex} className="grid grid-cols-1 sm:grid-cols-12 gap-x-2 gap-y-2 items-center p-2 border rounded-md bg-white">
                                 <div className="sm:col-span-5">
                                    <p className="text-sm font-medium truncate">{currentName}</p>
                                 </div>

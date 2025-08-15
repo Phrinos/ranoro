@@ -87,7 +87,7 @@ export function ServiceItemsList({
                 size="sm"
                 onClick={() =>
                   append({
-                    id: `item_${nanoid()}`,
+                    id: `item_${nanoid(6)}`,
                     name: '',
                     price: undefined, // Set to undefined
                     suppliesUsed: [],

@@ -13,7 +13,7 @@ export const supplySchema = z.object({
 });
 
 export const serviceItemSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   name: z.string().min(3, 'El nombre del servicio es requerido.'),
   price: z.coerce.number({ invalid_type_error: 'El precio debe ser un número.' }).optional(),
   suppliesUsed: z.array(supplySchema),
