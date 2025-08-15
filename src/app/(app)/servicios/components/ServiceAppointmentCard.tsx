@@ -63,15 +63,12 @@ export function ServiceAppointmentCard({
   const calculatedTotals = useMemo(() => {
     const total = service.totalCost || (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0);
     
-    // Use stored profit if available, otherwise calculate it
-    let profit = service.serviceProfit;
-    if (profit === undefined || profit === null) {
-        const costOfSupplies = (service.serviceItems ?? [])
-          .flatMap((i) => i.suppliesUsed ?? [])
-          .reduce((s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0), 0);
-        const commissionCost = service.cardCommission || 0;
-        profit = total - costOfSupplies - commissionCost;
-    }
+    // Always calculate profit on the fly to ensure accuracy even with old data
+    const costOfSupplies = (service.serviceItems ?? [])
+      .flatMap((i) => i.suppliesUsed ?? [])
+      .reduce((s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0), 0);
+    const commissionCost = service.cardCommission || 0;
+    const profit = total - costOfSupplies - commissionCost;
     
     return {
       totalCost: total,
