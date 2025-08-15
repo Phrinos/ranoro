@@ -161,41 +161,45 @@ const TotalsCard = React.memo(({ subTotal, taxAmount, totalCost, validityDate, i
 TotalsCard.displayName = 'TotalsCard';
 
 const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }: { workshopInfo: Partial<WorkshopInfo>, advisorName?: string, advisorSignature?: string }) => (
-    <Card className="mt-6">
-        <CardContent className="p-4">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+    <div className="space-y-4">
+        <Card>
+            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                 <div className="flex flex-col items-center md:items-start text-center md:text-left">
                     {advisorSignature && (
-                        <div className="relative w-48 h-24 mb-2">
-                           <Image src={normalizeDataUrl(advisorSignature)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="192px" />
+                        <div className="relative w-40 h-20 mb-2">
+                           <Image src={normalizeDataUrl(advisorSignature)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="160px" />
                         </div>
                     )}
-                    <p className="font-bold text-sm leading-tight">{advisorName || 'Asesor de Servicio'}</p>
+                    <p className="font-bold text-sm leading-tight">{capitalizeWords(advisorName || 'Asesor de Servicio')}</p>
                     <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
                 </div>
-                <div className="text-center md:text-right">
-                    <p className="font-semibold">{workshopInfo.footerLine1 || '¡Gracias por su preferencia!'}</p>
-                    <p className="text-sm text-muted-foreground">{workshopInfo.footerLine2 || 'Para dudas o aclaraciones, no dude en contactarnos.'}</p>
+                <div className="md:col-span-2 text-center md:text-left">
+                    <p className="font-semibold text-lg">{workshopInfo.footerLine1 || '¡Gracias por su preferencia!'}</p>
+                    <p className="text-muted-foreground">{workshopInfo.footerLine2 || 'Para dudas o aclaraciones, no dude en contactarnos.'}</p>
                     <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                        <Button variant="link" className="text-base px-0">{workshopInfo.phone}</Button>
+                        <Button variant="link" className="text-base px-0 h-auto py-1 mt-1 bg-green-100 text-green-700 hover:bg-green-200">
+                           <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2"/> {workshopInfo.phone}
+                        </Button>
                     </a>
                 </div>
-            </div>
-            <Separator className="my-3"/>
-            <div className="flex justify-between items-center">
+            </CardContent>
+        </Card>
+        <Card>
+            <CardContent className="p-4 flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                    <a href={workshopInfo.googleMapsUrl || "#"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Globe className="h-5 w-5 text-muted-foreground"/></a>
-                    <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-5 w-5"/></a>
-                    <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:facebook" className="h-5 w-5"/></a>
-                    <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:instagram-icon" className="h-5 w-5"/></a>
+                    <a href={workshopInfo.googleMapsUrl || "#"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:google-maps" className="h-6 w-6"/></a>
+                    <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
+                    <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:facebook" className="h-6 w-6"/></a>
+                    <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="skill-icons:instagram" className="h-6 w-6"/></a>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
                     <Link href="/legal/terminos" target="_blank" className="hover:underline text-muted-foreground">Términos</Link>
+                    <span className="text-muted-foreground">|</span>
                     <Link href="/legal/privacidad" target="_blank" className="hover:underline text-muted-foreground">Privacidad</Link>
                 </div>
-            </div>
-        </CardContent>
-    </Card>
+            </CardContent>
+        </Card>
+    </div>
 ));
 SheetFooter.displayName = 'SheetFooter';
 
@@ -263,5 +267,3 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
-
-    
