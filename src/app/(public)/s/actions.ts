@@ -1,3 +1,4 @@
+
 // src/app/(public)/s/actions.ts
 'use server';
 
@@ -5,6 +6,50 @@ import { revalidatePath } from 'next/cache';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import type { ServiceRecord } from '@/types';
 import { cleanObjectForFirestore } from '@/lib/forms';
+
+export async function saveSignatureAction(
+  publicId: string,
+  signatureDataUrl: string,
+  signatureType: 'reception' | 'delivery'
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!publicId || !signatureDataUrl || !signatureType) {
+      throw new Error('Faltan datos para guardar la firma.');
+    }
+    
+    const db = getAdminDb();
+    const mainRef = db.collection('serviceRecords').doc(publicId);
+    const publicRef = db.collection('publicServices').doc(publicId);
+
+    const fieldToUpdate = signatureType === 'reception' 
+      ? 'customerSignatureReception' 
+      : 'customerSignatureDelivery';
+
+    const updatePayload = {
+      [fieldToUpdate]: signatureDataUrl,
+    };
+    
+    const batch = db.batch();
+    
+    // Update the main service record
+    batch.update(mainRef, updatePayload);
+    
+    // Update the public-facing service record if it exists
+    const publicSnap = await publicRef.get();
+    if (publicSnap.exists) {
+      batch.update(publicRef, updatePayload);
+    }
+    
+    await batch.commit();
+
+    revalidatePath(`/s/${publicId}`);
+    return { success: true };
+
+  } catch (error: any) {
+    console.error(`Error saving signature for ${publicId}:`, error);
+    return { success: false, error: error?.message ?? 'Error desconocido al guardar la firma.' };
+  }
+}
 
 export async function scheduleAppointmentAction(
   publicId: string,

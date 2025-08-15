@@ -11,9 +11,10 @@ import { Loader2, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
-import { savePublicDocument } from '@/lib/public-document';
 import { ServiceSheetContent } from '@/components/ServiceSheetContent';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
+import { saveSignatureAction } from '@/app/(public)/s/actions';
+
 
 export default function PublicServicePage() {
   const params = useParams();
@@ -55,15 +56,9 @@ export default function PublicServicePage() {
       if (!service || !signatureType) return;
       setIsSigning(true);
       
-      const fieldToUpdate = signatureType === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery';
       const toastTitle = signatureType === 'reception' ? 'Firma de Recepción Guardada' : 'Firma de Conformidad Guardada';
 
-      const dataToSave = {
-        publicId: service.publicId || service.id,
-        [fieldToUpdate]: signatureDataUrl,
-      };
-
-      const result = await savePublicDocument('service', dataToSave);
+      const result = await saveSignatureAction(publicId, signatureDataUrl, signatureType);
 
       if (result.success) {
           toast({ title: toastTitle });
