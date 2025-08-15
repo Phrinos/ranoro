@@ -107,29 +107,38 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
     const isAppointmentPending = status === 'agendado' && appointmentStatus === 'Sin Confirmar';
 
     const statusInfo = useMemo(() => {
-        if (status === 'cancelado' || appointmentStatus === 'Cancelada') return { title: "CANCELADO", description: "Este servicio o cita ha sido cancelado.", badge: { text: "Cancelado", variant: "destructive" } };
+        if (status === 'cancelado' || appointmentStatus === 'Cancelada') return { title: "CANCELADO", description: "Este servicio o cita ha sido cancelado.", badge: { text: "Cancelado", variant: "destructive" }, cardClass: "bg-red-50 border-red-200", titleClass: "text-red-800", descClass: "text-red-700" };
         
         if (status === 'agendado') {
-          if (appointmentStatus === 'Confirmada') return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Confirmada", variant: "success" } };
-          if (appointmentStatus === 'Sin Confirmar') return { title: "CITA PENDIENTE DE CONFIRMACIÓN", description: formattedAppointmentDate, badge: { text: "Pendiente", variant: "waiting" } };
+          if (appointmentStatus === 'Confirmada') return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Confirmada", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
+          if (appointmentStatus === 'Sin Confirmar') return { title: "CITA PENDIENTE DE CONFIRMACIÓN", description: formattedAppointmentDate, badge: { text: "Pendiente", variant: "waiting" }, cardClass: "bg-yellow-50 border-yellow-200", titleClass: "text-yellow-800", descClass: "text-yellow-700" };
         }
         
-        if (status === 'en taller') return { title: "ORDEN DE SERVICIO", description: `Vehículo ingresado el ${formattedReceptionDate}`, badge: { text: service.subStatus || 'En Taller', variant: "secondary" } };
-        if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Vehículo entregado el ${formattedDeliveryDate}`, badge: { text: "Entregado", variant: "success" } };
+        if (status === 'en taller') {
+            const subStatus = service.subStatus;
+            let badgeVariant: any = "secondary";
+            if (subStatus === 'Ingresado') badgeVariant = "destructive";
+            if (subStatus === 'En Espera de Refacciones') badgeVariant = "waiting";
+            if (subStatus === 'Reparando') badgeVariant = "blue";
+            if (subStatus === 'Completado') badgeVariant = "success";
+            return { title: "ORDEN DE SERVICIO", description: `Vehículo ingresado el ${formattedReceptionDate}`, badge: { text: subStatus || 'En Taller', variant: badgeVariant }, cardClass: "bg-blue-50 border-blue-200", titleClass: "text-blue-800", descClass: "text-blue-700" };
+        }
         
-        return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null };
+        if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Vehículo entregado el ${formattedDeliveryDate}`, badge: { text: "Entregado", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
+        
+        return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null, cardClass: "bg-muted/50", titleClass: "text-foreground", descClass: "text-muted-foreground" };
     }, [status, appointmentStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate, service]);
 
 
     return (
       <>
-        <Card className={cn("bg-muted/50 text-center", (status === 'en taller' || status === 'entregado') && "bg-red-50 border-red-200")}>
+        <Card className={cn("text-center", statusInfo.cardClass)}>
           <CardHeader className="p-4">
-            <CardTitle className={cn("text-lg font-bold tracking-wider text-foreground", (status === 'en taller' || status === 'entregado') && "text-red-800")}>
+            <CardTitle className={cn("text-lg font-bold tracking-wider", statusInfo.titleClass)}>
               {statusInfo.title}
             </CardTitle>
             {statusInfo.description && (
-              <p className={cn("font-semibold text-muted-foreground", (status === 'en taller' || status === 'entregado') && "text-red-700")}>
+              <p className={cn("font-semibold", statusInfo.descClass)}>
                 {statusInfo.description}
               </p>
             )}
