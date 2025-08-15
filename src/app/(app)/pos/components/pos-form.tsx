@@ -36,7 +36,7 @@ export function PosForm({
   validatedFolios,
 }: POSFormProps) {
   const methods = useFormContext();
-  const { control, getValues, setValue } = methods;
+  const { control, getValues, setValue, reset } = methods;
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   
   const watchedPayments = useWatch({ control, name: 'payments' });
@@ -45,6 +45,12 @@ export function PosForm({
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
   const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
+  
+  useEffect(() => {
+    if (initialData) {
+      reset(initialData);
+    }
+  }, [initialData, reset]);
 
   const handleOpenAddItemDialog = () => setIsAddItemDialogOpen(true);
   

@@ -1,3 +1,4 @@
+// src/app/(app)/pos/components/view-sale-dialog.tsx
 
 "use client";
 
@@ -58,18 +59,9 @@ export function ViewSaleDialog({
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
-    // Initialize with sale data, but it will be updated by useEffect
-    defaultValues: sale,
+    defaultValues: sale, // Initial data is set here
   });
 
-  useEffect(() => {
-    // This effect now correctly handles resetting the form when the `sale` prop changes.
-    // It checks if the dialog is open and a sale object is provided.
-    if (open && sale) {
-      methods.reset(sale);
-    }
-  }, [open, sale, methods.reset]);
-  
   if (!sale) return null;
 
   const isCancelled = sale.status === 'Cancelado';
