@@ -23,7 +23,7 @@ import { cleanObjectForFirestore } from '../forms';
  * @param description - A human-readable description of the action.
  * @param details - Contextual details about the action.
  */
-const logAudit = async (
+export const logAudit = async (
   actionType: AuditLog['actionType'],
   description: string,
   details: { 
@@ -239,4 +239,5 @@ export const adminService = {
     saveRole,
     deleteRole,
     updateUserProfile,
+    logAudit,
 };

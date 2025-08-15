@@ -19,7 +19,7 @@ import {
 import { db } from '../firebaseClient';
 import type { SaleReceipt, InventoryItem, User, Payment } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
-import { logAudit } from './admin.service';
+import { adminService } from './admin.service';
 import { cashService } from './cash.service';
 import type { POSFormValues } from '@/schemas/pos-form-schema';
 
@@ -143,7 +143,7 @@ const cancelSale = async (saleId: string, reason: string, currentUser: User | nu
     });
 
     await batch.commit();
-    await logAudit('Cancelar', `Canceló la venta #${saleId.slice(-6)} por: ${reason}`, { entityType: 'Venta', entityId: saleId, userId: currentUser?.id || 'system', userName: currentUser?.name || 'Sistema' });
+    await adminService.logAudit('Cancelar', `Canceló la venta #${saleId.slice(-6)} por: ${reason}`, { entityType: 'Venta', entityId: saleId, userId: currentUser?.id || 'system', userName: currentUser?.name || 'Sistema' });
 };
 
 
@@ -182,7 +182,7 @@ const deleteSale = async (saleId: string, currentUser: User | null): Promise<voi
 
     await deleteDoc(saleRef);
     
-    await logAudit('Eliminar', `Eliminó permanentemente la venta #${saleId.slice(-6)}.`, {
+    await adminService.logAudit('Eliminar', `Eliminó permanentemente la venta #${saleId.slice(-6)}.`, {
       entityType: 'Venta',
       entityId: saleId,
       userId: currentUser?.id || 'system',

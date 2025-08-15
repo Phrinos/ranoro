@@ -12,7 +12,7 @@ import { db } from '../firebaseClient';
 import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
 import type { User, PayableAccount, PaymentMethod } from '@/types';
 import { inventoryService } from './inventory.service';
-import { logAudit } from './admin.service';
+import { adminService } from './admin.service';
 import { cleanObjectForFirestore } from '../forms';
 import { formatCurrency } from '../utils';
 
@@ -78,7 +78,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   
   // Log the audit event
   const description = `Registró compra al proveedor con factura #${data.invoiceId || 'N/A'} por un total de ${formatCurrency(data.invoiceTotal)}.`;
-  await logAudit('Registrar', description, {
+  await adminService.logAudit('Registrar', description, {
     entityType: 'Compra',
     entityId: data.supplierId,
     userId: user?.id || 'system',
@@ -132,7 +132,7 @@ const registerPayableAccountPayment = async (accountId: string, amount: number, 
     }
 
     await batch.commit();
-    await logAudit('Pagar', `Registró pago de ${formatCurrency(amount)} a la cuenta de ${accountData.supplierName}.`, { entityType: 'Cuentas Por Pagar', entityId: accountId, userId: user?.id || 'system', userName: user?.name || 'Sistema' });
+    await adminService.logAudit('Pagar', `Registró pago de ${formatCurrency(amount)} a la cuenta de ${accountData.supplierName}.`, { entityType: 'Cuentas Por Pagar', entityId: accountId, userId: user?.id || 'system', userName: user?.name || 'Sistema' });
 };
 
 

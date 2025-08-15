@@ -23,7 +23,7 @@ import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, Vehicle, User, Payment, PayableAccount, InventoryItem, ServiceItem } from "@/types";
 import { cleanObjectForFirestore, parseDate } from '../forms';
 import { IVA_RATE } from '../money';
-import { logAudit } from './admin.service';
+import { adminService } from './admin.service';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '../placeholder-data';
 import { nanoid } from 'nanoid';
 import { savePublicDocument } from '../public-document';
