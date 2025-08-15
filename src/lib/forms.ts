@@ -60,32 +60,43 @@ export const parseDate = (d: any): Date | null => {
  * @returns A new object or array ready for Firestore.
  */
 export const cleanObjectForFirestore = (obj: any): any => {
-  if (obj === undefined) {
-    return null; // Convert undefined to null for Firestore compatibility
-  }
-  if (obj === null || typeof obj !== 'object') {
-    return obj; // Primitives are returned as-is (except null, which is handled contextually below)
-  }
-
-  if (obj instanceof Date) {
-    return obj.toISOString();
-  }
+    if (obj === undefined) {
+      return null; // Convert undefined to null for Firestore compatibility.
+    }
   
-  if (Array.isArray(obj)) {
-    return obj.map(item => cleanObjectForFirestore(item));
-  }
-
-  // List of keys that should be strings and not null.
-  const stringFields = ['notes', 'vehicleConditions', 'customerItems', 'cancellationReason', 'description', 'serviceType', 'subStatus'];
-
-  return Object.fromEntries(
-    Object.entries(obj).map(([key, value]) => {
-        let finalValue = cleanObjectForFirestore(value);
-        // If the value is null but the key is one of our designated string fields, convert null to an empty string.
-        if (finalValue === null && stringFields.includes(key)) {
-            finalValue = '';
+    if (obj === null || typeof obj !== 'object') {
+      return obj; // Primitives are returned as-is.
+    }
+  
+    if (obj instanceof Date) {
+      return obj.toISOString();
+    }
+  
+    if (Array.isArray(obj)) {
+      // If it's an array, recursively clean each item.
+      return obj.map(item => cleanObjectForFirestore(item));
+    }
+  
+    // List of keys that should be strings and not null.
+    // This now works on any level of nesting.
+    const stringFields = [
+      'notes', 'vehicleConditions', 'customerItems', 'cancellationReason', 
+      'description', 'serviceType', 'subStatus', 'name', 'supplyName'
+    ];
+  
+    // If it's an object, process its properties recursively.
+    const cleanedObj: { [key: string]: any } = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        let value = cleanObjectForFirestore(obj[key]);
+  
+        // If the value is null but the key is one of our designated string fields,
+        // convert null to an empty string.
+        if (value === null && stringFields.includes(key)) {
+          value = '';
         }
-        return [key, finalValue];
-    })
-  );
-};
+        cleanedObj[key] = value;
+      }
+    }
+    return cleanedObj;
+  };
