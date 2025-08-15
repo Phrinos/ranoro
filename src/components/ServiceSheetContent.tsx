@@ -9,7 +9,7 @@ import React, { useMemo, useState } from 'react';
 import { cn, formatCurrency, capitalizeWords, formatNumber, normalizeDataUrl } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon, CalendarCheck, CheckCircle, Ban, Clock, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2 } from 'lucide-react';
+import { User, Car as CarIcon, CalendarCheck, CheckCircle, Ban, Clock, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2, Phone, Link as LinkIcon, Globe, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
@@ -105,14 +105,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const isAppointmentPending = status === 'agendado' && appointmentStatus === 'Sin Confirmar';
     const isAppointmentCancelled = status === 'agendado' && appointmentStatus === 'Cancelada';
     
-    // --- Data for Display ---
-    const customerName = capitalizeWords(service.customerName || vehicle?.ownerName || '');
-    const customerPhone = vehicle?.ownerPhone || 'Teléfono no disponible';
-    const vehicleMake = vehicle?.make || '';
-    const vehicleModel = vehicle?.model || '';
-    const vehicleYear = vehicle?.year || 'N/A';
-    const vehicleLicensePlate = vehicle?.licensePlate || service.vehicleIdentifier || 'N/A';
-
     const getStatusCardContent = () => {
         if (isAppointmentCancelled) return { title: "CITA CANCELADA", description: "Esta cita ha sido cancelada.", badge: { text: "Cancelada", variant: "destructive" } };
         if (isAppointmentConfirmed) return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Confirmada", variant: "success" } };
@@ -124,6 +116,14 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
     const statusCard = getStatusCardContent();
     const isServiceFlow = status === 'en taller' || status === 'entregado';
+    
+    const customerName = capitalizeWords(service.customerName || vehicle?.ownerName || '');
+    const customerPhone = vehicle?.ownerPhone || 'Teléfono no disponible';
+    const vehicleMake = vehicle?.make || '';
+    const vehicleModel = vehicle?.model || '';
+    const vehicleYear = vehicle?.year || 'N/A';
+    const vehicleLicensePlate = vehicle?.licensePlate || service.vehicleIdentifier || 'N/A';
+
 
     const handleCancelAppointment = async () => {
       setIsCancelling(true);
@@ -160,72 +160,52 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           <Card><CardHeader className="flex flex-row items-center gap-4 p-4"><CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/><CardTitle className="text-base">Vehículo</CardTitle></CardHeader><CardContent className="p-4 pt-0"><p className="font-semibold">{vehicleMake} {vehicleModel} ({vehicleYear})</p><p className="text-muted-foreground">{vehicleLicensePlate}</p>{vehicle?.color && <p className="text-xs text-muted-foreground">Color: {vehicle.color}</p>}{service.mileage && <p className="text-xs text-muted-foreground">KM: {formatNumber(service.mileage)}</p>}</CardContent></Card>
         </div>
         
-        <Card className={cn(
-          "bg-muted/50",
-          isServiceFlow && "bg-red-50 border-red-200"
-        )}>
+        <Card className={cn("bg-muted/50", isServiceFlow && "bg-red-50 border-red-200")}>
           <CardHeader className="p-4 text-center">
               <div className="space-y-1">
                   <CardTitle className={cn("text-lg font-bold tracking-wider text-foreground", isServiceFlow && "text-red-800")}>{statusCard.title}</CardTitle>
                   {statusCard.description && <p className={cn("font-semibold text-muted-foreground", isServiceFlow && "text-red-700")}>{statusCard.description}</p>}
               </div>
-              {statusCard.badge && (
-                <div className="mt-2">
-                  <Badge variant={statusCard.badge.variant as any}>{statusCard.badge.text}</Badge>
-                </div>
-              )}
+              {statusCard.badge && (<div className="mt-2"><Badge variant={statusCard.badge.variant as any}>{statusCard.badge.text}</Badge></div>)}
           </CardHeader>
         </Card>
         
         {isQuoteStatus && onScheduleClick && <div className="text-center"><Button onClick={onScheduleClick} size="lg"><CalendarDays className="mr-2 h-5 w-5"/>Agendar Cita</Button></div>}
-        {isAppointmentPending && onConfirmClick && (
-          <div className="flex justify-center items-center gap-4 flex-wrap">
-            <ConfirmDialog triggerButton={<Button variant="destructive" disabled={isCancelling}><Ban className="mr-2 h-4 w-4"/>Cancelar Cita</Button>} title="¿Estás seguro de cancelar esta cita?" description="Esta acción notificará al taller sobre la cancelación. Puedes volver a agendar más tarde." onConfirm={handleCancelAppointment} isLoading={isCancelling}/>
-            <Button onClick={onConfirmClick} size="lg" disabled={isConfirming} className="bg-green-600 hover:bg-green-700">{isConfirming ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <CheckCircle className="mr-2 h-5 w-5"/>}{isConfirming ? 'Confirmando...' : 'Confirmar mi Cita'}</Button>
-          </div>
-        )}
-
+        {isAppointmentPending && onConfirmClick && (<div className="flex justify-center items-center gap-4 flex-wrap"><ConfirmDialog triggerButton={<Button variant="destructive" disabled={isCancelling}><Ban className="mr-2 h-4 w-4"/>Cancelar Cita</Button>} title="¿Estás seguro de cancelar esta cita?" description="Esta acción notificará al taller sobre la cancelación. Puedes volver a agendar más tarde." onConfirm={handleCancelAppointment} isLoading={isCancelling}/><Button onClick={onConfirmClick} size="lg" disabled={isConfirming} className="bg-green-600 hover:bg-green-700">{isConfirming ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <CheckCircle className="mr-2 h-5 w-5"/>}{isConfirming ? 'Confirmando...' : 'Confirmar mi Cita'}</Button></div>)}
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <div className="lg:col-span-2"><Card><CardHeader><CardTitle>Trabajos a realizar</CardTitle></CardHeader><CardContent><div className="space-y-4">{items.map((item, index) => (<div key={item.id || index} className="p-4 rounded-lg bg-background"><div className="flex justify-between items-start"><div className="flex-1"><p className="font-semibold">{item.name}</p>{item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}</div><p className="font-bold text-lg">{formatCurrency(item.price)}</p></div></div>))}{items.length === 0 && (<p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>)}</div><p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{isServiceFlow ? termsText : "Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores."}</p></CardContent></Card></div>
-          <div className="lg:col-span-1 space-y-6"><Card><CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader><CardContent className="space-y-2 text-sm"><div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal:</span><span className="font-medium">{formatCurrency(subTotal)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">IVA (16%):</span><span className="font-medium">{formatCurrency(taxAmount)}</span></div><Separator className="my-2"/><div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>{isQuoteStatus && <div className="text-center text-sm font-semibold mt-4 pt-4 border-t"><p>Cotización Válida hasta el {validityDate}.</p></div>}</CardContent></Card></div>
+          <div className="lg:col-span-2"><Card><CardHeader><CardTitle>Trabajos a realizar</CardTitle></CardHeader><CardContent><div className="space-y-4">{items.map((item, index) => (<div key={item.id || index} className="p-4 rounded-lg bg-background"><div className="flex justify-between items-start"><div className="flex-1"><p className="font-semibold">{item.name}</p>{item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}</div><p className="font-bold text-lg">{formatCurrency(item.price)}</p></div></div>))}{items.length === 0 && (<p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>)}</div><p className="text-xs text-muted-foreground mt-4 pt-4 border-t">{isServiceFlow ? GARANTIA_CONDICIONES_TEXT : "Precios en MXN. No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Esta cotización tiene una vigencia de 15 días a partir de su fecha de emisión. Los precios de las refacciones están sujetos a cambios sin previo aviso por parte de los proveedores."}</p></CardContent></Card></div>
+          <div className="lg:col-span-1 space-y-6">
+              <Card><CardHeader><CardTitle className="text-base">Resumen de Costos</CardTitle></CardHeader><CardContent className="space-y-2 text-sm"><div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal:</span><span className="font-medium">{formatCurrency(subTotal)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">IVA (16%):</span><span className="font-medium">{formatCurrency(taxAmount)}</span></div><Separator className="my-2"/><div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>{isQuoteStatus && <div className="text-center text-sm font-semibold mt-4 pt-4 border-t"><p>Cotización Válida hasta el {validityDate}.</p></div>}</CardContent></Card>
+              <Card><CardContent className="p-4 flex items-start gap-4">
+                  {service.serviceAdvisorSignatureDataUrl && (<div className="relative w-20 h-20 flex-shrink-0"><Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="80px" /></div>)}
+                  <div className="space-y-1"><p className="font-bold text-sm">¡Gracias por su preferencia!</p><p className="text-xs text-muted-foreground">Para dudas o aclaraciones, no dude en contactarnos.</p><Button asChild size="sm" className="mt-1 bg-green-100 text-green-800 hover:bg-green-200"><a href={`https://wa.me/${workshopInfo.phone}`} target="_blank" rel="noopener noreferrer"><Icon icon="logos:whatsapp-icon" className="h-4 w-4 mr-2" />{workshopInfo.phone}</a></Button></div>
+              </CardContent></Card>
+              <Card>
+                <CardContent className="p-2 flex justify-around items-center">
+                    <a href={workshopInfo.googleMapsUrl || "#"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Globe className="h-5 w-5 text-muted-foreground"/></a>
+                    <a href={`https://wa.me/${workshopInfo.phone}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-5 w-5"/></a>
+                    <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:facebook" className="h-5 w-5"/></a>
+                    <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="skill-icons:instagram" className="h-5 w-5"/></a>
+                </CardContent>
+              </Card>
+          </div>
         </div>
         
-        {status === 'en taller' && (
+        {isServiceFlow && (
           <Card>
-            <CardHeader>
-              <CardTitle>Detalles de Recepción</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Detalles de Recepción</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold">Condiciones del Vehículo</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{service.vehicleConditions || 'No especificado'}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><h4 className="font-semibold">Condiciones del Vehículo</h4><p className="text-sm text-muted-foreground whitespace-pre-wrap">{service.vehicleConditions || 'No especificado'}</p></div>
+                    <div><h4 className="font-semibold">Pertenencias del Cliente</h4><p className="text-sm text-muted-foreground whitespace-pre-wrap">{service.customerItems || 'No especificado'}</p></div>
                 </div>
-                <div>
-                  <h4 className="font-semibold">Pertenencias del Cliente</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{service.customerItems || 'No especificado'}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="font-semibold">Nivel de Combustible:</span>
-                <Badge variant="outline">{service.fuelLevel || 'N/A'}</Badge>
-              </div>
-              <div className="text-center mt-4 pt-4 border-t">
-                  <h4 className="font-semibold mb-2">Firma de Recepción</h4>
-                  <div className="mx-auto bg-muted/50 border rounded-md h-32 w-full max-w-sm flex items-center justify-center">
-                    {service.customerSignatureReception ? (
-                        <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={250} height={100} style={{objectFit: 'contain'}} />
-                    ) : (
-                        onSignClick ? (
-                           <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="mb-2">
-                                {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
-                                Firmar Aquí
-                           </Button>
-                        ) :
-                        <p className="text-muted-foreground text-sm">Firma pendiente</p>
+                <div className="flex items-center gap-4"><span className="font-semibold">Nivel de Combustible:</span><Badge variant="outline">{service.fuelLevel || 'N/A'}</Badge></div>
+                <div className="text-center mt-4 pt-4 border-t"><h4 className="font-semibold mb-2">Firma de Recepción</h4><div className="mx-auto bg-muted/50 border rounded-md h-32 w-full max-w-sm flex items-center justify-center">
+                    {service.customerSignatureReception ? (<Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={250} height={100} style={{objectFit: 'contain'}} />) : (
+                        onSignClick ? (<Button onClick={() => onSignClick('reception')} disabled={isSigning} className="mb-2">{isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>} Firmar Aquí</Button>) : <p className="text-muted-foreground text-sm">Firma pendiente</p>
                     )}
-                  </div>
-              </div>
+                </div></div>
             </CardContent>
           </Card>
         )}
@@ -234,5 +214,3 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
-
-    
