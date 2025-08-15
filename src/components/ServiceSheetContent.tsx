@@ -344,31 +344,33 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    <ReceptionDetails service={service} />
-                    <div className="border-t pt-4">
-                        <h4 className="font-semibold mb-2">Firma de Autorización</h4>
-                        <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
-                        <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
-                    </div>
-                </CardContent>
-            </Card>
-            
-            {service.status === 'Entregado' && (
+            <div className={cn("grid grid-cols-1 gap-6", service.status === 'Entregado' && "md:grid-cols-2")}>
                 <Card>
-                    <CardHeader><CardTitle>Salida del vehiculo del taller</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
-                         <div className="border-t pt-4">
-                             <h4 className="font-semibold mb-2">GARANTIA</h4>
-                             <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
+                        <ReceptionDetails service={service} />
+                        <div className="border-t pt-4">
+                            <h4 className="font-semibold mb-2">Firma de Autorización</h4>
+                            <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
+                            <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
                         </div>
-                        <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
-                        <SignatureDisplay type="delivery" signatureUrl={service.customerSignatureDelivery} onSignClick={onSignClick} isSigning={isSigning} />
                     </CardContent>
                 </Card>
-            )}
+                
+                {service.status === 'Entregado' && (
+                    <Card>
+                        <CardHeader><CardTitle>Salida del vehiculo del taller</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                             <div className="border-t pt-4">
+                                 <h4 className="font-semibold mb-2">GARANTIA</h4>
+                                 <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
+                            </div>
+                            <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
+                            <SignatureDisplay type="delivery" signatureUrl={service.customerSignatureDelivery} onSignClick={onSignClick} isSigning={isSigning} />
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
         </div>
     );
 }
