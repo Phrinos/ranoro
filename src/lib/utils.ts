@@ -12,7 +12,7 @@ export function cn(...inputs: ClassValue[]) {
 export function normalizeDataUrl(dataUrl: string): string {
   if (!dataUrl) return '';
   // Check if it's already a valid data URL or an HTTP/HTTPS URL
-  if (dataUrl.startsWith('data:image') || dataUrl.startsWith('http')) {
+  if (dataUrl.startsWith('data:') || dataUrl.startsWith('http')) {
     return dataUrl;
   }
   // Fallback for raw base64 data
@@ -51,15 +51,17 @@ export function getStatusInfo(status: string, subStatus?: ServiceSubStatus) {
             }
             return { color: 'blue', icon: Clock, label: 'Agendado' };
         case 'En Taller':
-            switch (subStatus) {
+             switch (subStatus) {
+                case 'Ingresado':
+                    return { color: 'destructive', icon: Car, label: 'Ingresado' };
                 case 'En Espera de Refacciones':
-                    return { color: 'waiting', icon: Package, label: 'Esperando Refacciones' };
+                    return { color: 'waiting', icon: Package, label: 'Espera Refacciones' };
                 case 'Reparando':
-                    return { color: 'purple', icon: Wrench, label: 'Reparando' };
+                    return { color: 'blue', icon: Wrench, label: 'Reparando' };
                 case 'Completado':
                      return { color: 'success', icon: CheckCircle, label: 'Listo para Entrega' };
                 default:
-                    return { color: 'purple', icon: Wrench, label: 'En Taller' };
+                    return { color: 'blue', icon: Wrench, label: 'En Taller' };
             }
         case 'Entregado':
             return { color: 'success', icon: CheckCircle, label: 'Entregado' };
