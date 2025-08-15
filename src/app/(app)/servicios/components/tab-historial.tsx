@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -70,7 +71,7 @@ export default function HistorialTabContent({
     dateFilterKey: "deliveryDateTime", // Primary date key
     initialSortOption: "deliveryDateTime_desc",
     initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
-    itemsPerPage: 10,
+    itemsPerPage: 50,
   });
 
   const summaryData = useMemo(() => {

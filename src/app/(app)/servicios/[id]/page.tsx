@@ -13,6 +13,7 @@ import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
 import type { ServiceFormValues } from '@/schemas/service-form';
 import { PageHeader } from '@/components/page-header';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -31,6 +32,9 @@ export default function ServicioPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
   
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [recordForSharing, setRecordForSharing] = useState<ServiceRecord | null>(null);
+
   const isEditMode = serviceId !== 'nuevo';
   const isQuoteModeParam = searchParams.get('mode') === 'quote';
 
@@ -92,14 +96,18 @@ export default function ServicioPage() {
 
     fetchData();
   }, [serviceId, isEditMode, isQuoteModeParam, router, toast]);
+  
+  const handleShowShareDialog = useCallback((service: ServiceRecord) => {
+    setRecordForSharing(service);
+    setIsShareDialogOpen(true);
+  }, []);
 
   const handleSaveService = async (values: ServiceFormValues) => {
     try {
       const savedRecord = await serviceService.saveService(values as ServiceRecord);
       toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id.slice(-6)} se ha guardado.` });
       
-      const targetTab = savedRecord.status === 'Cotizacion' ? 'cotizaciones' : 'activos';
-      router.push(`/servicios?tab=${targetTab}`);
+      handleShowShareDialog(savedRecord);
         
     } catch(e) {
       console.error(e);
@@ -174,6 +182,20 @@ export default function ServicioPage() {
         onVehicleCreated={handleVehicleCreated}
         mode={isQuote ? 'quote' : 'service'}
       />
+       {recordForSharing && (
+          <ShareServiceDialog 
+            open={isShareDialogOpen} 
+            onOpenChange={(isOpen) => {
+              if (!isOpen) {
+                  const targetTab = recordForSharing.status === 'Cotizacion' ? 'cotizaciones' : 'activos';
+                  router.push(`/servicios?tab=${targetTab}`);
+              }
+              setIsShareDialogOpen(isOpen);
+            }} 
+            service={recordForSharing}
+            vehicle={vehicles.find(v => v.id === recordForSharing.vehicleId)}
+          />
+       )}
     </>
   );
 }

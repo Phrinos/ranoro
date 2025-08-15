@@ -85,7 +85,7 @@ const onQuotesUpdate = (callback: (quotes: ServiceRecord[]) => void): (() => voi
     return _onServicesUpdateByStatus(['Cotizacion'], callback, (a, b) => {
         const dateA = a.receptionDateTime ? new Date(a.receptionDateTime) : 0;
         const dateB = b.receptionDateTime ? new Date(b.receptionDateTime) : 0;
-        if (dateA && dateB) return dateB.getTime() - dateA.getTime();
+        if (dateA && dateB) return dateB.getTime() - dateA.getTime(); // Descending
         return 0;
     });
 };
@@ -324,7 +324,16 @@ const cancelService = async (serviceId: string, reason: string): Promise<void> =
 
 const deleteService = async (serviceId: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
-    await deleteDoc(doc(db, 'serviceRecords', serviceId));
+    
+    const batch = writeBatch(db);
+    
+    const mainServiceRef = doc(db, 'serviceRecords', serviceId);
+    batch.delete(mainServiceRef);
+    
+    const publicServiceRef = doc(db, 'publicServices', serviceId);
+    batch.delete(publicServiceRef);
+    
+    await batch.commit();
 };
 
 const completeService = async (
