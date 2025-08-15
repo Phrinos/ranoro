@@ -163,17 +163,19 @@ TotalsCard.displayName = 'TotalsCard';
 const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }: { workshopInfo: Partial<WorkshopInfo>, advisorName?: string, advisorSignature?: string }) => (
     <div className="space-y-4">
         <Card>
-            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <div className="flex flex-col items-center md:items-start text-center md:text-left">
+            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div className="flex items-center gap-4">
                     {advisorSignature && (
-                        <div className="relative w-40 h-20 mb-2">
+                        <div className="relative w-40 h-20 flex-shrink-0">
                            <Image src={normalizeDataUrl(advisorSignature)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="160px" />
                         </div>
                     )}
-                    <p className="font-bold text-sm leading-tight">{capitalizeWords(advisorName || 'Asesor de Servicio')}</p>
-                    <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
+                    <div>
+                        <p className="font-bold text-sm leading-tight">{capitalizeWords(advisorName || 'Asesor de Servicio')}</p>
+                        <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
+                    </div>
                 </div>
-                <div className="md:col-span-2 text-center md:text-left">
+                 <div className="text-center md:text-left">
                     <p className="font-semibold text-lg">{workshopInfo.footerLine1 || '¡Gracias por su preferencia!'}</p>
                     <p className="text-muted-foreground">{workshopInfo.footerLine2 || 'Para dudas o aclaraciones, no dude en contactarnos.'}</p>
                     <a href={`https://wa.me/${(workshopInfo.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
@@ -203,10 +205,35 @@ const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }:
 ));
 SheetFooter.displayName = 'SheetFooter';
 
+const SignatureActionCard = ({ onSignClick }: { onSignClick: () => void }) => (
+  <Card className="bg-blue-50 border-blue-200">
+    <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p className="text-sm text-blue-800 font-medium text-center sm:text-left">
+        Tu vehículo ya está en el taller. Por favor, autoriza los trabajos firmando la orden de servicio.
+      </p>
+      <Button onClick={onSignClick} className="w-full sm:w-auto flex-shrink-0">
+        <Signature className="mr-2 h-4 w-4" />
+        Firmar para Autorizar
+      </Button>
+    </CardContent>
+  </Card>
+);
+
 // --- Main Component ---
 
+interface ServiceSheetContentProps {
+  service: ServiceRecord;
+  onScheduleClick?: () => void;
+  onConfirmClick?: () => void;
+  isConfirming?: boolean;
+  onSignClick?: (type: 'reception' | 'delivery') => void;
+  isSigning?: boolean;
+  activeTab: string;
+}
+
+
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, onScheduleClick, onConfirmClick, isConfirming }, ref) => {
+  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, activeTab }, ref) => {
     const { toast } = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
     
@@ -228,6 +255,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const status = (service.status || '').toLowerCase();
     const isQuoteStatus = status === 'cotizacion';
     const isServiceFlow = status === 'en taller' || status === 'entregado';
+    
+    // Determine if the signature call to action card should be shown
+    const showSignatureAction = onSignClick && ((status === 'en taller' && !service.customerSignatureReception) || (status === 'entregado' && !service.customerSignatureDelivery));
+    const signatureActionType = status === 'entregado' ? 'delivery' : 'reception';
+
 
     const handleCancelAppointment = async () => {
       setIsCancelling(true);
@@ -247,6 +279,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     return (
       <div ref={ref} className="space-y-6">
+        {showSignatureAction && (
+          <SignatureActionCard onSignClick={() => onSignClick(signatureActionType)} />
+        )}
         <SheetHeader service={service} workshopInfo={effectiveWorkshopInfo} />
         <ClientInfo service={service} vehicle={vehicle} />
         <StatusCard service={service} isConfirming={isConfirming} onConfirmClick={onConfirmClick} onCancelAppointment={handleCancelAppointment}/>
