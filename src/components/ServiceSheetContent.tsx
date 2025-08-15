@@ -31,7 +31,7 @@ const initialWorkshopInfo: WorkshopInfo = {
   footerLine1: "¡Gracias por su preferencia!",
   footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
   fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
-  googleMapsUrl: "https://maps.app.goo.gl/u5K8Gv4k5J6H7q8XA"
+  googleMapsUrl: "https://share.google/7ow83ayhfb2iIOKUX"
 };
 
 const coerceDate = (v: unknown): Date | null => {
@@ -187,7 +187,7 @@ const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }:
         <Card>
             <CardContent className="p-4 flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                    <a href={workshopInfo.googleMapsUrl || "#"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:google-maps" className="h-6 w-6"/></a>
+                    <a href={workshopInfo.googleMapsUrl || "https://share.google/7ow83ayhfb2iIOKUX"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:google-maps" className="h-6 w-6"/></a>
                     <a href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></a>
                     <a href="https://www.facebook.com/ranoromx" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:facebook" className="h-6 w-6"/></a>
                     <a href="https://www.instagram.com/ranoromx" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="skill-icons:instagram" className="h-6 w-6"/></a>
@@ -267,3 +267,5 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
+
+    
