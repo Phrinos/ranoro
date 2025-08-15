@@ -123,7 +123,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const vehicleYear = vehicle?.year || 'N/A';
     const vehicleLicensePlate = vehicle?.licensePlate || service.vehicleIdentifier || 'N/A';
 
-
     const handleCancelAppointment = async () => {
       setIsCancelling(true);
       try {
@@ -196,23 +195,45 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </CardContent>
           </Card>
         )}
-
-        <div className="space-y-6 pt-6 mt-6 border-t">
-            <Card><CardContent className="p-4 flex items-start gap-4">
-                {service.serviceAdvisorSignatureDataUrl && (<div className="relative w-20 h-20 flex-shrink-0"><Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="80px" /></div>)}
-                <div className="space-y-1"><p className="font-bold text-sm">¡Gracias por su preferencia!</p><p className="text-xs text-muted-foreground">Para dudas o aclaraciones, no dude en contactarnos.</p><Button asChild size="sm" className="mt-1 bg-green-100 text-green-800 hover:bg-green-200"><a href={`https://wa.me/${workshopInfo.phone}`} target="_blank" rel="noopener noreferrer"><Icon icon="logos:whatsapp-icon" className="h-4 w-4 mr-2" />{workshopInfo.phone}</a></Button></div>
-            </CardContent></Card>
-            <Card>
-              <CardContent className="p-2 flex justify-around items-center">
-                  <a href={workshopInfo.googleMapsUrl || "#"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Globe className="h-5 w-5 text-muted-foreground"/></a>
-                  <a href={`https://wa.me/${workshopInfo.phone}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-5 w-5"/></a>
-                  <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:facebook" className="h-5 w-5"/></a>
-                  <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="skill-icons:instagram" className="h-5 w-5"/></a>
-              </CardContent>
-            </Card>
-        </div>
+        
+        <Card className="mt-6">
+            <CardContent className="p-4">
+                <div className="flex items-start gap-4">
+                    {service.serviceAdvisorSignatureDataUrl && (
+                        <div className="relative w-20 h-20 flex-shrink-0">
+                            <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="80px" />
+                        </div>
+                    )}
+                    <div className="flex-1 space-y-1">
+                        <p className="font-bold text-sm">{capitalizeWords(service.serviceAdvisorName || "Asesor de Servicio")}</p>
+                        <p className="text-xs text-muted-foreground">¡Gracias por su preferencia! Para dudas o aclaraciones, no dude en contactarnos.</p>
+                        <Button asChild size="sm" className="mt-1 bg-green-100 text-green-800 hover:bg-green-200">
+                            <a href={`https://wa.me/${workshopInfo.phone}`} target="_blank" rel="noopener noreferrer">
+                                <Icon icon="logos:whatsapp-icon" className="h-4 w-4 mr-2" />
+                                {workshopInfo.phone}
+                            </a>
+                        </Button>
+                    </div>
+                </div>
+                <Separator className="my-3"/>
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <a href={workshopInfo.googleMapsUrl || "#"} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Globe className="h-5 w-5 text-muted-foreground"/></a>
+                        <a href={`https://wa.me/${workshopInfo.phone}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:whatsapp-icon" className="h-5 w-5"/></a>
+                        <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="logos:facebook" className="h-5 w-5"/></a>
+                        <a href="#" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full hover:bg-muted"><Icon icon="skill-icons:instagram" className="h-5 w-5"/></a>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                        <Link href="/legal/terminos" target="_blank" className="hover:underline text-muted-foreground">Términos y Condiciones</Link>
+                        <Link href="/legal/privacidad" target="_blank" className="hover:underline text-muted-foreground">Aviso de Privacidad</Link>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
       </div>
     );
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
+
+    
