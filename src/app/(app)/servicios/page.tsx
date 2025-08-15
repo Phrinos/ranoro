@@ -2,7 +2,7 @@
 
 "use client";
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
