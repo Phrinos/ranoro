@@ -1,4 +1,5 @@
 
+
 import type {
   User,
   AppRole,
@@ -76,7 +77,7 @@ export const placeholderAppRoles: AppRole[] = [
 // =======================================
 
 export const calculateSaleProfit = (
-  sale: { items: { inventoryItemId: string; unitPrice: number; quantity: number; isService?: boolean; }[], totalAmount: number },
+  sale: { items: { inventoryItemId: string; unitPrice: number; quantity: number; isService?: boolean; }[], totalAmount: number, cardCommission?: number },
   inventory: { id: string; isService?: boolean; unitPrice: number; }[]
 ): number => {
   if (!sale?.items?.length) return 0;
@@ -86,6 +87,7 @@ export const calculateSaleProfit = (
   );
 
   const totalRevenue = sale.totalAmount || 0;
+  const commissionCost = sale.cardCommission || 0;
   
   let totalCostOfGoods = 0;
   for (const saleItem of sale.items) {
@@ -103,7 +105,7 @@ export const calculateSaleProfit = (
     }
   }
 
-  const finalProfit = totalRevenue - totalCostOfGoods;
+  const finalProfit = totalRevenue - totalCostOfGoods - commissionCost;
 
   return isFinite(finalProfit) ? finalProfit : 0;
 };
