@@ -360,110 +360,112 @@ function ServiceFormContent({
 
   return (
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
-            <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
-        </div>
-        
-        {originalLockedStatus && (
-          <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-900">
-            Estás editando un servicio marcado como <b>{originalLockedStatus}</b>. Solo se habilitó la edición para corregir insumos/notas.
-            Al guardar se conservará el estado original.
-          </div>
-        )}
+        <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
+                <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
+            </div>
+            
+            {originalLockedStatus && (
+            <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-900">
+                Estás editando un servicio marcado como <b>{originalLockedStatus}</b>. Solo se habilitó la edición para corregir insumos/notas.
+                Al guardar se conservará el estado original.
+            </div>
+            )}
 
-        {showTabs ? (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
-                 <div className="overflow-x-auto scrollbar-hide pb-2">
-                    <TabsList className="relative w-max">
-                        <TabsTrigger value="servicio">Detalles del Servicio</TabsTrigger>
-                        <TabsTrigger value="recepcion">Recepción</TabsTrigger>
-                        <TabsTrigger value="revision">Puntos Seguridad</TabsTrigger>
-                        <TabsTrigger value="entrega">Entrega</TabsTrigger>
-                    </TabsList>
-                </div>
-                <TabsContent value="servicio" className="mt-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-                        <div className="lg:col-span-3"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense></div>
-                        <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceSummary onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense>
-                        {watchedStatus === 'Entregado' && (
-                            <Card>
-                                <CardHeader><CardTitle>Programar Próximo Servicio (Opcional)</CardTitle></CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <FormField
-                                            control={control}
-                                            name="nextServiceInfo.date"
-                                            render={({ field }) => (
-                                                <FormItem className="flex flex-col">
-                                                    <FormLabel>Próxima Fecha</FormLabel>
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                            <FormControl>
-                                                                <Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value && isValid(new Date(field.value)) ? formatDate(new Date(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button>
-                                                            </FormControl>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0" align="start">
-                                                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus locale={es}/>
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                    <Select onValueChange={(v) => {
-                                                        const days = parseInt(v);
-                                                        const deliveryDate = getValues('deliveryDateTime') || new Date();
-                                                        setValue('nextServiceInfo.date', addDays(deliveryDate, days).toISOString());
-                                                    }}>
-                                                        <SelectTrigger className="mt-1"><SelectValue placeholder="Añadir tiempo..."/></SelectTrigger>
-                                                        <SelectContent><SelectItem value="183">+6 meses</SelectItem><SelectItem value="365">+12 meses</SelectItem></SelectContent>
-                                                    </Select>
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={control}
-                                            name="nextServiceInfo.mileage"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Próximo KM</FormLabel>
-                                                    <FormControl><Input type="number" placeholder="Ej: 85000" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} value={field.value ?? ''}/></FormControl>
-                                                    <Select onValueChange={(v) => {
-                                                        const kmToAdd = parseInt(v);
-                                                        const currentKm = getValues('mileage') || 0;
-                                                        setValue('nextServiceInfo.mileage', Number(currentKm) + kmToAdd);
-                                                    }}>
-                                                        <SelectTrigger className="mt-1"><SelectValue placeholder="Añadir KM..."/></SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="5000">+5,000 km</SelectItem>
-                                                            <SelectItem value="10000">+10,000 km</SelectItem>
-                                                            <SelectItem value="12500">+12,500 km</SelectItem>
-                                                            <SelectItem value="15000">+15,000 km</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                         )}
-                        </div>
+            {showTabs ? (
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
+                    <div className="overflow-x-auto scrollbar-hide pb-2">
+                        <TabsList className="relative w-max">
+                            <TabsTrigger value="servicio">Detalles del Servicio</TabsTrigger>
+                            <TabsTrigger value="recepcion">Recepción</TabsTrigger>
+                            <TabsTrigger value="revision">Puntos Seguridad</TabsTrigger>
+                            <TabsTrigger value="entrega">Entrega</TabsTrigger>
+                        </TabsList>
                     </div>
-                </TabsContent>
-                <TabsContent value="recepcion" className="mt-6 space-y-6">
-                    <Suspense fallback={<Loader2 className="animate-spin" />}><PhotoReportTab isReadOnly={isReadOnly} serviceId={initialData?.id || 'new'} onPhotoUploaded={handlePhotoUploaded} onViewImage={handleViewImage} reportType="Recepción" /></Suspense>
-                    <Suspense fallback={<Loader2 className="animate-spin" />}><ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature} part="reception"/></Suspense>
-                </TabsContent>
-                <TabsContent value="revision" className="mt-6"><Suspense fallback={<Loader2 className="animate-spin" />}><SafetyChecklist isReadOnly={isReadOnly} signatureDataUrl={watch('safetyInspection.technicianSignature')} technicianName={technicianInfo?.name} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} serviceId={initialData?.id || 'new'} onPhotoUploaded={handleChecklistPhotoUploaded} onViewImage={handleViewImage}/></Suspense></TabsContent>
-                <TabsContent value="entrega" className="mt-6 space-y-6">
-                    <Suspense fallback={<Loader2 className="animate-spin" />}><PhotoReportTab isReadOnly={isReadOnly} serviceId={initialData?.id || 'new'} onPhotoUploaded={handlePhotoUploaded} onViewImage={handleViewImage} reportType="Entrega" /></Suspense>
-                    <Suspense fallback={<Loader2 className="animate-spin" />}><ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature} part="delivery"/></Suspense>
-                </TabsContent>
-            </Tabs>
-        ) : (
-             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start mt-6">
-                <div className="lg:col-span-3"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense></div>
-                <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceSummary onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense></div>
-             </div>
-        )}
+                    <TabsContent value="servicio" className="mt-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+                            <div className="lg:col-span-3"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense></div>
+                            <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceSummary onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense>
+                            {watchedStatus === 'Entregado' && (
+                                <Card>
+                                    <CardHeader><CardTitle>Programar Próximo Servicio (Opcional)</CardTitle></CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormField
+                                                control={control}
+                                                name="nextServiceInfo.date"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-col">
+                                                        <FormLabel>Próxima Fecha</FormLabel>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value && isValid(new Date(field.value)) ? formatDate(new Date(field.value), "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-0" align="start">
+                                                                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus locale={es}/>
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <Select onValueChange={(v) => {
+                                                            const days = parseInt(v);
+                                                            const deliveryDate = getValues('deliveryDateTime') || new Date();
+                                                            setValue('nextServiceInfo.date', addDays(deliveryDate, days).toISOString());
+                                                        }}>
+                                                            <SelectTrigger className="mt-1"><SelectValue placeholder="Añadir tiempo..."/></SelectTrigger>
+                                                            <SelectContent><SelectItem value="183">+6 meses</SelectItem><SelectItem value="365">+12 meses</SelectItem></SelectContent>
+                                                        </Select>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={control}
+                                                name="nextServiceInfo.mileage"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Próximo KM</FormLabel>
+                                                        <FormControl><Input type="number" placeholder="Ej: 85000" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} value={field.value ?? ''}/></FormControl>
+                                                        <Select onValueChange={(v) => {
+                                                            const kmToAdd = parseInt(v);
+                                                            const currentKm = getValues('mileage') || 0;
+                                                            setValue('nextServiceInfo.mileage', Number(currentKm) + kmToAdd);
+                                                        }}>
+                                                            <SelectTrigger className="mt-1"><SelectValue placeholder="Añadir KM..."/></SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="5000">+5,000 km</SelectItem>
+                                                                <SelectItem value="10000">+10,000 km</SelectItem>
+                                                                <SelectItem value="12500">+12,500 km</SelectItem>
+                                                                <SelectItem value="15000">+15,000 km</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                            </div>
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="recepcion" className="mt-6 space-y-6">
+                        <Suspense fallback={<Loader2 className="animate-spin" />}><PhotoReportTab isReadOnly={isReadOnly} serviceId={initialData?.id || 'new'} onPhotoUploaded={handlePhotoUploaded} onViewImage={handleViewImage} reportType="Recepción" /></Suspense>
+                        <Suspense fallback={<Loader2 className="animate-spin" />}><ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature} part="reception"/></Suspense>
+                    </TabsContent>
+                    <TabsContent value="revision" className="mt-6"><Suspense fallback={<Loader2 className="animate-spin" />}><SafetyChecklist isReadOnly={isReadOnly} signatureDataUrl={watch('safetyInspection.technicianSignature')} technicianName={technicianInfo?.name} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} serviceId={initialData?.id || 'new'} onPhotoUploaded={handleChecklistPhotoUploaded} onViewImage={handleViewImage}/></Suspense></TabsContent>
+                    <TabsContent value="entrega" className="mt-6 space-y-6">
+                        <Suspense fallback={<Loader2 className="animate-spin" />}><PhotoReportTab isReadOnly={isReadOnly} serviceId={initialData?.id || 'new'} onPhotoUploaded={handlePhotoUploaded} onViewImage={handleViewImage} reportType="Entrega" /></Suspense>
+                        <Suspense fallback={<Loader2 className="animate-spin" />}><ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignature} part="delivery"/></Suspense>
+                    </TabsContent>
+                </Tabs>
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start mt-6">
+                    <div className="lg:col-span-3"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceItemsList isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} onNewInventoryItemCreated={handleVehicleCreated as any} categories={categories} suppliers={suppliers} serviceTypes={serviceTypes} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any}/></Suspense></div>
+                    <div className="lg:col-span-2 space-y-6"><Suspense fallback={<Loader2 className="animate-spin" />}><ServiceSummary onOpenValidateDialog={handleOpenValidateDialog} validatedFolios={validatedFolios} /></Suspense></div>
+                </div>
+            )}
+        </div>
 
       <VehicleDialog
           open={isNewVehicleDialogOpen}

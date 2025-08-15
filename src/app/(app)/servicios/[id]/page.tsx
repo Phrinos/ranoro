@@ -178,63 +178,71 @@ export default function ServicioPage() {
     ? `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`
     : "Completa los datos para crear un nuevo registro.";
     
-  const pageActions = (
-    <div className="flex items-center gap-2">
-      {isEditMode && initialData && (
-        <Button variant="outline" onClick={() => handleShowShareDialog(initialData)} size="icon" title="Compartir Documento">
-          <Share2 className="h-4 w-4"/>
-        </Button>
-      )}
-
-      {initialData?.id && (
-        <ConfirmDialog
-            triggerButton={
-                <Button variant="destructive" size="icon" title={isQuote ? "Eliminar Cotización" : "Cancelar Servicio"}>
-                    {isQuote ? <Trash2 className="h-4 w-4"/> : <Ban className="h-4 w-4"/>}
-                </Button>
-            }
-            title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
-            description={
-                isQuote 
-                ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
-                : 'Esta acción marcará el servicio como cancelado, pero no se eliminará del historial. No se puede deshacer.'
-            }
-            onConfirm={isQuote ? handleDeleteQuote : handleCancelService}
-        />
-      )}
-
-      <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
-      <Button type="submit" form="service-form" disabled={isSubmitting}>
-        {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-        {isEditMode ? 'Guardar Cambios' : 'Crear Registro'}
-      </Button>
-    </div>
-  );
-
   return (
-    <>
-      <PageHeader title={pageTitle} description={pageDescription} actions={pageActions} />
-      <ServiceForm
-        initialData={initialData}
-        vehicles={vehicles}
-        technicians={users}
-        inventoryItems={inventoryItems}
-        serviceTypes={serviceTypes}
-        categories={categories}
-        suppliers={suppliers}
-        serviceHistory={serviceHistory}
-        onSave={isEditMode ? handleUpdateService : handleSaveService}
-        onVehicleCreated={handleVehicleCreated}
-        mode={isQuote ? 'quote' : 'service'}
-      />
+    <div className="flex flex-col h-full">
+      <header className="sticky top-0 z-10 bg-background border-b p-4">
+        <PageHeader 
+          title={pageTitle}
+          description={pageDescription}
+          actions={(
+            <div className="flex items-center gap-2">
+              {isEditMode && initialData && (
+                <Button variant="outline" onClick={() => handleShowShareDialog(initialData)} size="icon" title="Compartir Documento">
+                  <Share2 className="h-4 w-4"/>
+                </Button>
+              )}
+              {initialData?.id ? (
+                <ConfirmDialog
+                    triggerButton={
+                        <Button variant="destructive" size="icon" title={isQuote ? "Eliminar Cotización" : "Cancelar Servicio"}>
+                            {isQuote ? <Trash2 className="h-4 w-4"/> : <Ban className="h-4 w-4"/>}
+                        </Button>
+                    }
+                    title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
+                    description={
+                        isQuote 
+                        ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
+                        : 'Esta acción marcará el servicio como cancelado, pero no se podrá deshacer.'
+                    }
+                    onConfirm={isQuote ? handleDeleteQuote : handleCancelService}
+                />
+              ) : null}
+            </div>
+          )}
+        />
+      </header>
+      <main className="flex-1 overflow-y-auto">
+        <ServiceForm
+            initialData={initialData}
+            vehicles={vehicles}
+            technicians={users}
+            inventoryItems={inventoryItems}
+            serviceTypes={serviceTypes}
+            categories={categories}
+            suppliers={suppliers}
+            serviceHistory={serviceHistory}
+            onSave={isEditMode ? handleUpdateService : handleSaveService}
+            onVehicleCreated={handleVehicleCreated}
+            mode={isQuote ? 'quote' : 'service'}
+        />
+      </main>
+      <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
+        <div className="flex justify-end gap-2">
+           <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
+           <Button type="submit" form="service-form" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
+              {isEditMode ? 'Guardar Cambios' : 'Crear Registro'}
+           </Button>
+        </div>
+      </footer>
        {recordForSharing && (
           <ShareServiceDialog 
             open={isShareDialogOpen} 
-            onOpenChange={setIsShareDialogOpen}
+            onOpenChange={setIsShareDialogOpen} 
             service={recordForSharing}
             vehicle={vehicles.find(v => v.id === recordForSharing.vehicleId)}
           />
        )}
-    </>
+    </div>
   );
 }
