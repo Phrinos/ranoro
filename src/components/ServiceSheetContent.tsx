@@ -288,18 +288,18 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <StatusCard service={service} isConfirming={isConfirming} onConfirmClick={onConfirmClick} onCancelAppointment={handleCancelAppointment}/>
         {status === 'cotizacion' && onScheduleClick && <div className="text-center"><Button onClick={onScheduleClick} size="lg"><CalendarDays className="mr-2 h-5 w-5"/>Agendar Cita</Button></div>}
         
-        <Tabs value={currentActiveTab} onValueChange={setActiveTab} className="w-full">
-            <div className="overflow-x-auto scrollbar-hide">
-              <TabsList className="relative w-max">
-                  {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
-              </TabsList>
-            </div>
-            {tabs.map(tab => (
-                 <TabsContent key={tab.value} value={tab.value} className="mt-6">
-                    {tab.content}
-                 </TabsContent>
-            ))}
-        </Tabs>
+        <div className="overflow-x-auto scrollbar-hide">
+            <Tabs value={currentActiveTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="relative w-max">
+                    {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
+                </TabsList>
+                {tabs.map(tab => (
+                    <TabsContent key={tab.value} value={tab.value} className="mt-6">
+                        {tab.content}
+                    </TabsContent>
+                ))}
+            </Tabs>
+        </div>
 
         <SheetFooter workshopInfo={effectiveWorkshopInfo} advisorName={service.serviceAdvisorName} advisorSignature={service.serviceAdvisorSignatureDataUrl}/>
       </div>
@@ -353,10 +353,10 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                       <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
                       <CardContent className="space-y-4">
                           <ReceptionDetails service={service} />
+                          <p className="text-xs text-muted-foreground whitespace-pre-line mt-2 border-t pt-4">{INGRESO_CONDICIONES_TEXT}</p>
                           <div className="border-t pt-4">
                               <h4 className="font-semibold mb-2">Firma de Autorización</h4>
                               <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
-                              <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
                           </div>
                       </CardContent>
                   </Card>
@@ -364,7 +364,7 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                 
               {service.status === 'Entregado' && (
                   <Card>
-                      <CardHeader><CardTitle>Salida del vehiculo del taller</CardTitle></CardHeader>
+                      <CardHeader><CardTitle>Salida del Vehículo del Taller</CardTitle></CardHeader>
                       <CardContent className="space-y-4">
                            <div className="border-t pt-4">
                                <h4 className="font-semibold mb-2">GARANTIA</h4>
