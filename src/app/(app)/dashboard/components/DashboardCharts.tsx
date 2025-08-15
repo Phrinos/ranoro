@@ -4,8 +4,8 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
-  BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-  ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, TooltipProps 
+  LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+  ResponsiveContainer, PieChart, Pie, Cell, TooltipProps 
 } from 'recharts';
 import type { ServiceRecord, SaleReceipt, InventoryItem, MonthlyFixedExpense, Personnel } from '@/types';
 import { format, parseISO, startOfMonth, subMonths, isValid, endOfMonth, isWithinInterval, getDaysInMonth, differenceInDays, isSameDay } from 'date-fns';
@@ -13,7 +13,8 @@ import { es } from 'date-fns/locale';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 
-// --- Financial Chart Data Processing ---
+// --- Data Processing Functions ---
+
 const processFinancialChartData = (
     services: ServiceRecord[], 
     sales: SaleReceipt[], 
@@ -71,7 +72,7 @@ const processFinancialChartData = (
         
         let expenseFactor = 1.0;
         if (isSameDay(startOfMonth(now), monthStartDate)) {
-            expenseFactor = differenceInDays(now, monthStartDate) / daysInMonth;
+            expenseFactor = (differenceInDays(now, monthStartDate) + 1) / daysInMonth;
         }
 
         const proportionalFixedExpenses = totalMonthlyFixedExpenses * expenseFactor;
@@ -83,7 +84,6 @@ const processFinancialChartData = (
 };
 
 
-// --- Operational Charts Data Processing ---
 const processOperationalChartData = (services: ServiceRecord[], sales: SaleReceipt[]) => {
     const dataByMonth: { [key: string]: any } = {};
     const now = new Date();
@@ -121,7 +121,7 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
             }
         });
     });
-
+    
     const pieData = Object.entries(serviceTypeCounts)
         .map(([name, value]) => ({ name, value }))
         .sort((a,b) => b.value - a.value);
@@ -129,8 +129,7 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
     return { lineData: Object.values(dataByMonth), pieData };
 };
 
-
-// --- Chart Components ---
+// --- Optimized Chart Components ---
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#00C49F', '#FFBB28', '#FF8042', '#0088FE'];
 
@@ -145,6 +144,80 @@ const CustomPieTooltip = ({ active, payload }: TooltipProps<number, string>) => 
     return null;
 };
 
+const FinancialChart = React.memo(({ data }: { data: any[] }) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Rendimiento del Taller (Últimos 6 Meses)</CardTitle>
+      <CardDescription>Análisis de la rentabilidad y volumen de operaciones.</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis tickFormatter={(value) => new Intl.NumberFormat('es-MX', { notation: 'compact', compactDisplay: 'short', style: 'currency', currency: 'MXN' }).format(value)} width={80} tick={{ fontSize: 12 }} />
+          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+          <Legend />
+          <Line type="monotone" dataKey="ingresos" stroke="#3b82f6" strokeWidth={2} name="Ingresos Totales" />
+          <Line type="monotone" dataKey="gananciaBruta" stroke="#84cc16" strokeWidth={2} name="Ganancia Bruta" />
+          <Line type="monotone" dataKey="gastosFijos" stroke="#ef4444" strokeWidth={2} name="Gastos Fijos" />
+          <Line type="monotone" dataKey="utilidadNeta" stroke="#16a34a" strokeWidth={3} name="Utilidad Neta" />
+        </LineChart>
+      </ResponsiveContainer>
+    </CardContent>
+  </Card>
+));
+FinancialChart.displayName = 'FinancialChart';
+
+const OperationsVolumeChart = React.memo(({ data }: { data: any[] }) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Volumen de Operaciones</CardTitle>
+      <CardDescription>Cantidad de servicios y ventas a lo largo del tiempo.</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Legend wrapperStyle={{fontSize: '0.8rem'}}/>
+          {Object.keys(data[0] || {}).filter(key => key !== 'name').map((key, index) => (
+             <Line key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} name={key} strokeWidth={2}/>
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </CardContent>
+  </Card>
+));
+OperationsVolumeChart.displayName = 'OperationsVolumeChart';
+
+const ServiceDistributionChart = React.memo(({ data }: { data: any[] }) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Distribución de Tipos de Servicio</CardTitle>
+      <CardDescription>Servicios más comunes en el período seleccionado.</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={120} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomPieTooltip />} />
+        </PieChart>
+      </ResponsiveContainer>
+    </CardContent>
+  </Card>
+));
+ServiceDistributionChart.displayName = 'ServiceDistributionChart';
+
+
+// --- Main Component ---
+
 export function DashboardCharts({ services, sales, inventory, fixedExpenses, personnel }: {
     services: ServiceRecord[];
     sales: SaleReceipt[];
@@ -157,72 +230,9 @@ export function DashboardCharts({ services, sales, inventory, fixedExpenses, per
 
   return (
     <div className="grid gap-6 grid-cols-1">
-      <Card>
-        <CardHeader>
-          <CardTitle>Rendimiento del Taller (Últimos 6 Meses)</CardTitle>
-          <CardDescription>Análisis de la rentabilidad y volumen de operaciones.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={financialData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis 
-                tickFormatter={(value) => new Intl.NumberFormat('es-MX', { notation: 'compact', compactDisplay: 'short', style: 'currency', currency: 'MXN' }).format(value)}
-                width={80}
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
-              <Legend />
-              <Line type="monotone" dataKey="ingresos" stroke="#3b82f6" strokeWidth={2} name="Ingresos Totales" />
-              <Line type="monotone" dataKey="gananciaBruta" stroke="#84cc16" strokeWidth={2} name="Ganancia Bruta" />
-              <Line type="monotone" dataKey="gastosFijos" stroke="#ef4444" strokeWidth={2} name="Gastos Fijos" />
-              <Line type="monotone" dataKey="utilidadNeta" stroke="#16a34a" strokeWidth={3} name="Utilidad Neta" />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-      
-      <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-             <CardHeader>
-                <CardTitle>Volumen de Operaciones</CardTitle>
-                <CardDescription>Cantidad de servicios y ventas a lo largo del tiempo.</CardDescription>
-             </CardHeader>
-             <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={operationalData.lineData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend wrapperStyle={{fontSize: '0.8rem'}}/>
-                        {Object.keys(operationalData.lineData[0] || {}).filter(key => key !== 'name').map((key, index) => (
-                           <Line key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} name={key} strokeWidth={2}/>
-                        ))}
-                    </LineChart>
-                </ResponsiveContainer>
-             </CardContent>
-          </Card>
-          <Card>
-              <CardHeader>
-                <CardTitle>Distribución de Tipos de Servicio</CardTitle>
-                <CardDescription>Servicios más comunes en el período seleccionado.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                 <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                        <Pie data={operationalData.pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={120} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
-                          {operationalData.pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<CustomPieTooltip />} />
-                    </PieChart>
-                 </ResponsiveContainer>
-              </CardContent>
-          </Card>
-      </div>
+      <FinancialChart data={financialData} />
+      <OperationsVolumeChart data={operationalData.lineData} />
+      <ServiceDistributionChart data={operationalData.pieData} />
     </div>
   );
 }
