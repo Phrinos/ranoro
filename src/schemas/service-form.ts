@@ -61,7 +61,7 @@ export const safetyInspectionSchema = z.object({
     otros_soportes_motor: safetyCheckValueSchema.optional(),
     otros_claxon: safetyCheckValueSchema.optional(),
     otros_inspeccion_sdb: safetyCheckValueSchema.optional(),
-    inspectionNotes: z.string().optional(),
+    inspectionNotes: z.string().optional().nullable(),
     technicianSignature: z.string().optional(),
 }).optional();
 
