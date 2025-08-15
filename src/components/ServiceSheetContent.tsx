@@ -124,7 +124,7 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
             return { title: "ORDEN DE SERVICIO", description: `Vehículo ingresado el ${formattedReceptionDate}`, badge: { text: subStatus || 'En Taller', variant: badgeVariant }, cardClass: "bg-blue-50 border-blue-200", titleClass: "text-blue-800", descClass: "text-blue-700" };
         }
         
-        if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Vehículo entregado el ${formattedDeliveryDate}`, badge: { text: "Entregado", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
+        if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Ingresado: ${formattedReceptionDate} | Entregado: ${formattedDeliveryDate}`, badge: { text: "Entregado", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
         
         return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null, cardClass: "bg-muted/50", titleClass: "text-foreground", descClass: "text-muted-foreground" };
     }, [status, appointmentStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate, service]);
@@ -334,9 +334,7 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                     <ReceptionDetails service={service} />
                     <div className="border-t pt-4">
                         <h4 className="font-semibold mb-2">Firma de Autorización</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
-                        </div>
+                        <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
                         <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
                     </div>
                 </CardContent>
@@ -347,8 +345,8 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                     <CardHeader><CardTitle>Salida del vehiculo del taller</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="border-t pt-4">
-                            <h4 className="font-semibold mb-2">GARANTIA</h4>
-                            <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
+                             <h4 className="font-semibold mb-2">GARANTIA</h4>
+                             <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
                         </div>
                         <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
                         <SignatureDisplay type="delivery" signatureUrl={service.customerSignatureDelivery} onSignClick={onSignClick} isSigning={isSigning} />
