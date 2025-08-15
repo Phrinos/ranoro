@@ -22,7 +22,6 @@ interface POSFormProps {
   validatedFolios: Record<number, boolean>;
 }
 
-const IVA_RATE = 0.16;
 const COMMISSION_ITEM_ID = 'COMMISSION_FEE';
 
 export function PosForm({ 
@@ -47,10 +46,11 @@ export function PosForm({
   const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
   
   useEffect(() => {
-    if (initialData) {
+    if (initialData?.id) {
       reset(initialData);
     }
-  }, [initialData, reset]);
+    // sólo cuando cambia el ID de la venta
+  }, [initialData?.id, reset]);
 
   const handleOpenAddItemDialog = () => setIsAddItemDialogOpen(true);
   
@@ -64,7 +64,7 @@ export function PosForm({
         totalPrice: item.sellingPrice * quantity,
         isService: item.isService || false,
         unitType: item.unitType,
-    }]);
+    }], { shouldValidate: false });
     setIsAddItemDialogOpen(false);
   }, [setValue, getValues]);
   
@@ -86,43 +86,55 @@ export function PosForm({
   };
   
     useEffect(() => {
-        const allItems = getValues('items') || [];
-        // Exclude commission from total calculation to prevent feedback loop
-        const totalAmount = allItems
-            .filter((item: any) => item.inventoryItemId !== COMMISSION_ITEM_ID)
-            .reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0) || 0;
+        // Lee los items actuales una sola vez
+        const items = (getValues('items') || []) as any[];
 
-        const hasCardPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta');
-        const hasMSIPayment = watchedPayments?.some((p: any) => p.method === 'Tarjeta MSI');
-        
-        let commissionAmount = 0;
-        if (hasCardPayment) commissionAmount += totalAmount * 0.041;
-        if (hasMSIPayment) commissionAmount += totalAmount * 0.12;
+        // Calcula total EXCLUYENDO la comisión
+        const baseItems = items.filter(i => i.inventoryItemId !== COMMISSION_ITEM_ID);
+        const baseTotal = baseItems.reduce(
+            (sum, i) => sum + (Number(i.totalPrice ?? i.unitPrice * i.quantity) || 0),
+            0
+        );
 
-        const commissionIndex = allItems.findIndex((item: any) => item.inventoryItemId === COMMISSION_ITEM_ID);
+        const hasCard = (watchedPayments ?? []).some((p: any) => p.method === 'Tarjeta');
+        const hasMSI  = (watchedPayments ?? []).some((p: any) => p.method === 'Tarjeta MSI');
 
-        if (commissionAmount > 0) {
-            const commissionItem = {
-                inventoryItemId: COMMISSION_ITEM_ID,
-                itemName: 'Comisión de Tarjeta',
-                quantity: 1,
-                unitPrice: commissionAmount, // Costo para el taller
-                totalPrice: 0, // No se suma al total del cliente
-                isService: true,
-            };
-            if (commissionIndex > -1) {
-                // Update existing commission
-                setValue(`items.${commissionIndex}`, commissionItem, { shouldDirty: true });
-            } else {
-                // Add new commission item
-                append(commissionItem);
-            }
-        } else if (commissionIndex > -1) {
-            // Remove commission if no card payment
-            remove(commissionIndex);
+        let commission = 0;
+        if (hasCard) commission += baseTotal * 0.041;
+        if (hasMSI)  commission += baseTotal * 0.12;
+
+        // Redondea para evitar “flapping” por flotantes
+        commission = Math.round(commission * 100) / 100;
+
+        const idx = items.findIndex(i => i.inventoryItemId === COMMISSION_ITEM_ID);
+
+        if (commission <= 0) {
+            // Si ya no aplica comisión, elimina la línea una sola vez
+            if (idx > -1) remove(idx);
+            return;
         }
 
-    }, [watchedPayments, watchedItems, setValue, getValues, append, remove]);
+        if (idx > -1) {
+            // Ya existe: sólo actualiza si CAMBIÓ (evita loop)
+            const current = Number(items[idx]?.unitPrice || 0);
+            if (Math.abs(current - commission) < 0.01) return; // sin cambios ⇒ no setValue
+            setValue(`items.${idx}.unitPrice`, commission, { shouldDirty: true, shouldValidate: false });
+            // Si tu total de cliente NO debe incluir comisión, asegura totalPrice 0
+            const currentTotal = Number(items[idx]?.totalPrice || 0);
+            if (currentTotal !== 0) setValue(`items.${idx}.totalPrice`, 0, { shouldDirty: true, shouldValidate: false });
+        } else {
+            // No existe: agrégala una vez
+            append({
+            inventoryItemId: COMMISSION_ITEM_ID,
+            itemName: 'Comisión de Tarjeta',
+            quantity: 1,
+            unitPrice: commission, // costo interno
+            totalPrice: 0,         // no suma al total del cliente
+            isService: true,
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [watchedPayments, watchedItems, append, remove, setValue, getValues]);
 
 
   return (

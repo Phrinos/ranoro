@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { saleService } from "@/lib/services";
 import { PaymentDetailsDialog } from "@/components/shared/PaymentDetailsDialog";
 import { PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
+import { Textarea } from "@/components/ui/textarea";
 
 
 interface ViewSaleDialogProps {
@@ -56,11 +57,18 @@ export function ViewSaleDialog({
 }: ViewSaleDialogProps) {
   const { toast } = useToast();
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
-    defaultValues: sale, // Initial data is set here
+    defaultValues: sale,
   });
+
+  useEffect(() => {
+      if (sale?.id) {
+          methods.reset(sale);
+      }
+  }, [sale, methods]);
 
   if (!sale) return null;
 
@@ -73,6 +81,15 @@ export function ViewSaleDialog({
     // This is a placeholder, actual validation logic should be implemented
     // perhaps in a separate dialog as it was before.
     console.log("Validation requested for payment index:", index);
+  };
+  
+  const handleConfirmCancellation = () => {
+    if (!cancellationReason.trim()) {
+        toast({ title: 'Motivo Requerido', description: 'Por favor, ingrese un motivo para la cancelación.', variant: 'destructive' });
+        return;
+    }
+    onCancelSale(sale.id, cancellationReason);
+    setCancellationReason(""); // Reset after use
   };
 
   return (
@@ -87,9 +104,9 @@ export function ViewSaleDialog({
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto px-6 py-4">
-          <FormProvider {...methods}>
-            <PosForm 
-              inventoryItems={inventory} 
+          <FormProvider key={sale.id} {...methods}>
+            <PosForm
+              inventoryItems={inventory}
               categories={categories}
               suppliers={suppliers}
               onSaleComplete={() => {}} // onSubmit is handled by the footer button
@@ -102,13 +119,20 @@ export function ViewSaleDialog({
 
         <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-row justify-between items-center w-full gap-2">
           <div>
-            <ConfirmDialog
-              triggerButton={<Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isCancelled}><Ban className="mr-2 h-4 w-4" />Cancelar Venta</Button>}
-              title="¿Está seguro de cancelar esta venta?"
-              description="Esta acción no se puede deshacer. El stock de los artículos vendidos será restaurado al inventario. Se requiere un motivo para la cancelación."
-              onConfirm={() => onCancelSale(sale.id, prompt("Motivo de la cancelación:") || "Sin motivo especificado")}
-              confirmText="Sí, Cancelar Venta"
-            />
+              <ConfirmDialog
+                triggerButton={<Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isCancelled}><Ban className="mr-2 h-4 w-4" />Cancelar Venta</Button>}
+                title="¿Está seguro de cancelar esta venta?"
+                description="El stock de los artículos será restaurado. Esta acción no se puede deshacer. Por favor, especifique un motivo."
+                onConfirm={handleConfirmCancellation}
+                confirmText="Sí, Cancelar Venta"
+              >
+                  <Textarea
+                    placeholder="Motivo de la cancelación..."
+                    value={cancellationReason}
+                    onChange={(e) => setCancellationReason(e.target.value)}
+                    className="mt-4"
+                  />
+              </ConfirmDialog>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onSendWhatsapp(sale)} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200">

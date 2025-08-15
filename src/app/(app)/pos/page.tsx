@@ -1,4 +1,3 @@
-
 // src/app/(app)/pos/page.tsx
 "use client";
 
@@ -131,7 +130,7 @@ Total: ${formatCurrency(sale.totalAmount)}
         return new File([blob], `ticket_${selectedSaleForReprint.id}.png`, { type: 'image/png' });
       } else {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        toast({ title: "Copiado", description: "La imagen ha sido copiada." });
+        toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
         return null;
       }
     } catch (e) {
