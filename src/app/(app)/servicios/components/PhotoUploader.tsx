@@ -1,3 +1,4 @@
+// src/app/(app)/servicios/components/PhotoUploader.tsx
 "use client";
 
 import React, { useRef, useState, useCallback } from "react";
@@ -10,9 +11,10 @@ import { optimizeImage } from "@/lib/utils";
 import { storage } from "@/lib/firebaseClient";
 
 interface PhotoUploaderProps {
-  reportIndex: number;
+  reportIndex?: number;
+  fieldName?: `safetyInspection.${string}` | `photoReports.${number}`;
   serviceId: string;
-  onUploadComplete: (reportIndex: number, url: string) => void;
+  onUploadComplete: (fieldNameOrIndex: number | `safetyInspection.${string}` | `photoReports.${number}`, url: string) => void;
   photosLength: number;
   disabled?: boolean;
   maxPhotos?: number;
@@ -24,6 +26,7 @@ const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export function PhotoUploader({
   reportIndex,
+  fieldName,
   serviceId,
   onUploadComplete,
   photosLength,
@@ -79,7 +82,8 @@ export function PhotoUploader({
         await uploadString(photoRef, dataUrl, "data_url");
         const downloadURL = await getDownloadURL(photoRef);
         
-        onUploadComplete(reportIndex, downloadURL);
+        const identifier = fieldName ?? reportIndex ?? 0;
+        onUploadComplete(identifier, downloadURL);
         
         toast({ title: "¡Listo!", description: "Imagen añadida correctamente." });
 
@@ -99,7 +103,7 @@ export function PhotoUploader({
     } finally {
         setIsUploading(false);
     }
-  }, [serviceId, photosLength, maxPhotos, onUploadComplete, reportIndex, toast]);
+  }, [serviceId, photosLength, maxPhotos, onUploadComplete, reportIndex, fieldName, toast]);
   
   const isDisabled = disabled || isUploading || photosLength >= maxPhotos;
 

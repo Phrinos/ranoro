@@ -60,10 +60,10 @@ const inspectionGroups = [
     { name: "safetyInspection.frenos_discos_traseros", label: "22. DISCOS / BALATAS TRASERAS" },
   ]},
   { title: "OTROS", items: [
-    { name: "otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
-    { name: "otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
-    { name: "otros_claxon", label: "25. CLAXON" },
-    { name: "otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
+    { name: "safetyInspection.otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
+    { name: "safetyInspection.otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
+    { name: "safetyInspection.otros_claxon", label: "25. CLAXON" },
+    { name: "safetyInspection.otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
   ]},
 ];
 
@@ -206,14 +206,24 @@ export const SafetyChecklist = ({ isReadOnly, signatureDataUrl, technicianName, 
          )}
 
          {hasInspectionData && (
-            <SafetyChecklistReport
-              inspection={inspectionData}
-              isReadOnly={isReadOnly}
-              handleEnhanceText={handleEnhanceText}
-              isEnhancingText={isEnhancingText}
-              signatureDataUrl={signatureDataUrl}
-              technicianName={technicianName}
-            />
+             <>
+                 {!isReadOnly && (
+                     <div className="flex justify-end">
+                         <Button type="button" variant="outline" onClick={() => setIsWizardOpen(true)}>
+                             <PlayCircle className="mr-2 h-4 w-4"/>
+                             Continuar Revisión
+                         </Button>
+                     </div>
+                 )}
+                <SafetyChecklistReport
+                  inspection={inspectionData}
+                  isReadOnly={isReadOnly}
+                  handleEnhanceText={handleEnhanceText}
+                  isEnhancingText={isEnhancingText}
+                  signatureDataUrl={signatureDataUrl}
+                  technicianName={technicianName}
+                />
+             </>
          )}
       </CardContent>
     </Card>
@@ -225,8 +235,10 @@ export const SafetyChecklist = ({ isReadOnly, signatureDataUrl, technicianName, 
               <DialogDescription>Complete cada punto de la inspección de manera secuencial.</DialogDescription>
             </DialogHeader>
               <GuidedInspectionWizard 
-                  inspectionItems={inspectionGroups.flatMap(g => g.items)}
+                  inspectionItems={inspectionGroups.flatMap(g => g.items) as { name: `safetyInspection.${string}`; label: string }[]}
                   onClose={() => setIsWizardOpen(false)}
+                  serviceId={serviceId}
+                  onPhotoUploaded={onPhotoUploaded}
               />
         </DialogContent>
     </Dialog>

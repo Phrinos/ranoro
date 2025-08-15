@@ -12,15 +12,18 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { PhotoUploader } from './PhotoUploader'; 
 import { Card, CardContent } from '@/components/ui/card';
+import type { SafetyCheckValue } from '@/types';
 
 
 interface GuidedInspectionWizardProps {
-    inspectionItems: { name: string; label: string }[];
+    inspectionItems: { name: `safetyInspection.${string}`; label: string }[];
     onClose: () => void;
+    serviceId: string;
+    onPhotoUploaded: (fieldName: `safetyInspection.${string}`, url: string) => void;
 }
 
-export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspectionWizardProps) {
-    const { control, getValues, setValue } = useFormContext();
+export function GuidedInspectionWizard({ inspectionItems, onClose, serviceId, onPhotoUploaded }: GuidedInspectionWizardProps) {
+    const { control, getValues, setValue, watch } = useFormContext();
     const [currentIndex, setCurrentIndex] = useState(0);
     const currentItem = inspectionItems[currentIndex];
     
@@ -41,8 +44,9 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
     };
 
     const handleStatusChange = (newStatus: 'ok' | 'atencion' | 'inmediata') => {
-        const currentValue = getValues(currentItem.name) || { photos: [], notes: '' };
-        setValue(currentItem.name, { ...currentValue, status: newStatus }, { shouldDirty: true });
+        const currentItemName = currentItem.name;
+        const currentValue = getValues(currentItemName) || { photos: [], notes: '' };
+        setValue(currentItemName, { ...currentValue, status: newStatus }, { shouldDirty: true });
     };
     
     const statusOptions = [
@@ -110,13 +114,21 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
                                    <div>
                                       <FormLabel className="text-xs">Fotos</FormLabel>
                                        <p className="text-xs text-muted-foreground">Sube hasta 2 fotos como evidencia.</p>
-                                       {/* Placeholder for PhotoUploader functionality */}
-                                       <div className="mt-2 p-4 border-2 border-dashed rounded-md flex items-center justify-center h-24 bg-white">
-                                          <Button type="button" variant="ghost">
-                                              <Camera className="mr-2 h-5 w-5"/>
-                                              Añadir Foto
-                                          </Button>
-                                       </div>
+                                        <div className="mt-2 grid grid-cols-2 gap-2">
+                                            {(watch(currentItem.name as any)?.photos || []).map((photoUrl: string, pIndex: number) => (
+                                                <div key={pIndex} className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group">
+                                                    <Image src={photoUrl} alt={`Foto ${pIndex + 1}`} fill style={{objectFit:"contain"}} sizes="150px" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                       <PhotoUploader
+                                            reportIndex={0} // Not needed for this context, but prop is required
+                                            fieldName={currentItem.name} // Pass the specific field name
+                                            serviceId={serviceId}
+                                            onUploadComplete={(fieldName, url) => onPhotoUploaded(fieldName as any, url)}
+                                            photosLength={(watch(currentItem.name as any)?.photos || []).length}
+                                            maxPhotos={2}
+                                        />
                                    </div>
                                 </CardContent>
                             </Card>
@@ -139,5 +151,3 @@ export function GuidedInspectionWizard({ inspectionItems, onClose }: GuidedInspe
         </div>
     );
 }
-
-    
