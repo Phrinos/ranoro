@@ -21,7 +21,7 @@ export function UnifiedPreviewDialog({
 }: UnifiedPreviewDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
+      <DialogContent className="sm:max-w-sm max-h-[90vh] flex flex-col p-0 no-print">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
@@ -29,7 +29,7 @@ export function UnifiedPreviewDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto px-6 bg-muted/30 pb-6 print:bg-white print:p-0">
-          <div className="bg-white mx-auto my-4 shadow-lg w-full max-w-[8.5in] print:shadow-none">
+          <div className="bg-white mx-auto my-4 shadow-lg w-full print:shadow-none">
             {children}
           </div>
         </div>
