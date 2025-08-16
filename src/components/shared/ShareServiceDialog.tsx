@@ -158,15 +158,15 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
         </div>
 
         {/* Footer actions */}
-        <DialogFooter className="px-6 pb-6 pt-4 border-t flex-col sm:flex-row gap-2 justify-between">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
-          <div className="flex gap-2 justify-end">
-            <TooltipProvider>
-              <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleCopyWhatsApp} className="w-11 h-11 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar para WhatsApp</p></TooltipContent></Tooltip>
-              <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleNativeShare} className="w-11 h-11 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
-              <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={() => window.print()} className="w-11 h-11 bg-red-100 text-red-700 border-red-200 hover:bg-red-200"><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
-            </TooltipProvider>
-          </div>
+        <DialogFooter className="px-6 pb-6 pt-4 border-t flex-col-reverse sm:flex-row gap-2 justify-between items-center w-full">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
+            <div className="flex gap-2 justify-end">
+                <TooltipProvider>
+                    <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleCopyWhatsApp} className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar para WhatsApp</p></TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleNativeShare} className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={() => window.print()} className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200"><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
+                </TooltipProvider>
+            </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
