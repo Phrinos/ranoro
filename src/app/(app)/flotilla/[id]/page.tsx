@@ -11,8 +11,8 @@ import { inventoryService, personnelService, serviceService } from '@/lib/servic
 import { useToast } from '@/hooks/use-toast';
 import { PageHeader } from '@/components/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { VehicleDialog } from '../components/vehicle-dialog';
-import type { VehicleFormValues } from '../components/vehicle-form';
+import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 
 // Lazy load tab components
 const DetailsTabContent = lazy(() => import('./components/details-tab-content').then(module => ({ default: module.DetailsTabContent })));
