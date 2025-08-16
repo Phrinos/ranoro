@@ -19,11 +19,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DollarSign } from 'lucide-react';
+import type { PaymentMethod } from '@/types';
 
 const withdrawalSchema = z.object({
   ownerName: z.string().min(1, "Debe seleccionar un propietario."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero."),
   reason: z.string().optional(),
+  paymentMethod: z.enum(['Efectivo', 'Tarjeta', 'Transferencia']),
 });
 
 export type OwnerWithdrawalFormValues = z.infer<typeof withdrawalSchema>;
@@ -43,6 +45,9 @@ export function OwnerWithdrawalDialog({
 }: OwnerWithdrawalDialogProps) {
   const form = useForm<OwnerWithdrawalFormValues>({
     resolver: zodResolver(withdrawalSchema),
+    defaultValues: {
+      paymentMethod: 'Efectivo',
+    },
   });
 
   const handleSubmit = (values: OwnerWithdrawalFormValues) => {
@@ -80,6 +85,24 @@ export function OwnerWithdrawalDialog({
                   <FormMessage />
                 </FormItem>
               )}
+            />
+            <FormField
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Método de Pago</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="Efectivo">Efectivo</SelectItem>
+                                <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                                <SelectItem value="Transferencia">Transferencia</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage/>
+                    </FormItem>
+                )}
             />
             <FormField
               control={form.control}

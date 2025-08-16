@@ -19,12 +19,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DollarSign } from 'lucide-react';
-import type { Vehicle } from '@/types';
+import type { Vehicle, PaymentMethod } from '@/types';
 
 const expenseSchema = z.object({
   vehicleId: z.string().min(1, "Debe seleccionar un vehículo."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero."),
   description: z.string().min(3, "La descripción es obligatoria (ej. Pago de tenencia)."),
+  paymentMethod: z.enum(['Efectivo', 'Tarjeta', 'Transferencia']),
 });
 
 export type VehicleExpenseFormValues = z.infer<typeof expenseSchema>;
@@ -44,6 +45,9 @@ export function VehicleExpenseDialog({
 }: VehicleExpenseDialogProps) {
   const form = useForm<VehicleExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
+    defaultValues: {
+      paymentMethod: 'Efectivo',
+    },
   });
 
   const handleSubmit = (values: VehicleExpenseFormValues) => {
@@ -83,6 +87,24 @@ export function VehicleExpenseDialog({
                   <FormMessage />
                 </FormItem>
               )}
+            />
+             <FormField
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Método de Pago</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="Efectivo">Efectivo</SelectItem>
+                                <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                                <SelectItem value="Transferencia">Transferencia</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage/>
+                    </FormItem>
+                )}
             />
             <FormField
               control={form.control}

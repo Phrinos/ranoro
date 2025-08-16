@@ -140,6 +140,7 @@ export interface OwnerWithdrawal {
   date: string; // ISO String
   amount: number;
   reason?: string;
+  paymentMethod?: 'Efectivo' | 'Tarjeta' | 'Transferencia';
 }
 
 export interface VehicleExpense {
@@ -149,6 +150,7 @@ export interface VehicleExpense {
   date: string; // ISO String
   amount: number;
   description: string;
+  paymentMethod?: 'Efectivo' | 'Tarjeta' | 'Transferencia';
 }
 
 
