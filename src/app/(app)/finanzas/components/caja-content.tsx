@@ -328,45 +328,47 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
         </Card>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-md p-0">
+                <DialogHeader className="p-6 pb-4">
                     <DialogTitle>Registrar {dialogType} de Caja</DialogTitle>
                     <DialogDescription>Añade un concepto y monto para registrar el movimiento.</DialogDescription>
                 </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleTransactionSubmit)} id="cash-transaction-form" className="p-6 space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="concept"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Concepto</FormLabel>
-                                <FormControl>
-                                    <Textarea placeholder={dialogType === 'Entrada' ? 'Ej: Fondo inicial' : 'Ej: Compra de papelería'} {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="amount"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Monto</FormLabel>
-                                <FormControl>
-                                    <div className="relative">
-                                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                      <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} className="pl-8"/>
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </form>
-                </Form>
-                 <DialogFooter>
+                <div className="p-6 pt-0">
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(handleTransactionSubmit)} id="cash-transaction-form" className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="concept"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Concepto</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder={dialogType === 'Entrada' ? 'Ej: Fondo inicial' : 'Ej: Compra de papelería'} {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="amount"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Monto</FormLabel>
+                                    <FormControl>
+                                        <div className="relative">
+                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} className="pl-8"/>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </form>
+                    </Form>
+                </div>
+                 <DialogFooter className="p-6 pt-4 border-t">
                     <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
                     <Button type="submit" form="cash-transaction-form" disabled={form.formState.isSubmitting}>
                         {form.formState.isSubmitting ? 'Guardando...' : `Registrar ${dialogType}`}
