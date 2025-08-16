@@ -125,6 +125,7 @@ export function RegisterPaymentDialog({
                 <SelectTrigger id="driver-select"><SelectValue placeholder="Seleccione un conductor" /></SelectTrigger>
                 <SelectContent>
                 {[...drivers]
+                    .filter(d => !d.isArchived)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map(d => (
                     <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
