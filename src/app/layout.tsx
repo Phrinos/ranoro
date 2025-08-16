@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
+  manifest: '/manifest.json',
   metadataBase: new URL('https://ranoro.mx'),
   title: 'RANORO - Tu taller en una app',
   description: 'El sistema operativo inteligente para tu taller mecánico. Por Arturo Valdelamar',
