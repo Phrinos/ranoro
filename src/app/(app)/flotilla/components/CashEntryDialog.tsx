@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/CashEntryDialog.tsx
 "use client";
 
@@ -57,43 +58,45 @@ export function CashEntryDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="px-6 space-y-6">
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monto del Ingreso</FormLabel>
-                  <div className="relative">
-                    <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <div className="p-6 pt-0">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Monto del Ingreso</FormLabel>
+                    <div className="relative">
+                      <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <FormControl>
+                        <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8" placeholder="Ej: 1000.00"/>
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="concept"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Concepto</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8" placeholder="Ej: 1000.00"/>
+                      <Textarea placeholder="Ej: Inversión inicial, fondo de caja..." {...field} value={field.value ?? ''} />
                     </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="concept"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Concepto</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Ej: Inversión inicial, fondo de caja..." {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <DialogFooter className="p-6 pt-4 -mx-6 -mb-6">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Registrando..." : "Registrar Ingreso"}
-              </Button>
-            </DialogFooter>
-          </form>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </form>
+          </div>
+          <DialogFooter className="p-6 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button type="submit" form="cash-entry-form" onClick={form.handleSubmit(handleSubmit)} disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Registrando..." : "Registrar Ingreso"}
+            </Button>
+          </DialogFooter>
         </Form>
       </DialogContent>
     </Dialog>
