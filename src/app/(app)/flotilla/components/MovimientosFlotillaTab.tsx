@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 import type { DateRange } from 'react-day-picker';
 import { formatCurrency } from "@/lib/utils";
-import type { RentalPayment, VehicleExpense, OwnerWithdrawal, Driver } from '@/types';
+import type { RentalPayment, VehicleExpense, OwnerWithdrawal, Driver, CashDrawerTransaction } from '@/types';
 import { DollarSign, AlertCircle, LineChart, TrendingDown, CalendarIcon as CalendarDateIcon, TrendingUp, ArrowUp, ArrowDown, Printer } from "lucide-react";
 import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, startOfMonth, endOfMonth, compareDesc } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 interface Movement {
   id: string;
   date: Date;
-  type: 'Pago de Renta' | 'Gasto de Vehículo' | 'Retiro de Propietario';
+  type: 'Pago de Renta' | 'Gasto de Vehículo' | 'Retiro de Propietario' | 'Entrada de Caja';
   description: string;
   amount: number;
   isIncome: boolean;
@@ -30,11 +30,12 @@ interface MovimientosFlotillaTabProps {
   payments: RentalPayment[];
   expenses: VehicleExpense[];
   withdrawals: OwnerWithdrawal[];
+  cashEntries: CashDrawerTransaction[];
   drivers: Driver[];
   onPrintPayment: (payment: RentalPayment) => void;
 }
 
-export function MovimientosFlotillaTab({ payments, expenses, withdrawals, drivers, onPrintPayment }: MovimientosFlotillaTabProps) {
+export function MovimientosFlotillaTab({ payments, expenses, withdrawals, cashEntries, drivers, onPrintPayment }: MovimientosFlotillaTabProps) {
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
     return { from: startOfMonth(now), to: endOfMonth(now) };
@@ -50,6 +51,12 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, driver
     const totalCollected = payments
         .filter(p => isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), interval))
         .reduce((sum, p) => sum + p.amount, 0);
+        
+    const totalCashEntries = cashEntries
+      .filter(entry => isValid(parseISO(entry.date)) && isWithinInterval(parseISO(entry.date), interval))
+      .reduce((sum, entry) => sum + entry.amount, 0);
+
+    const totalIncome = totalCollected + totalCashEntries;
 
     const totalExpenses = expenses
         .filter(e => isValid(parseISO(e.date)) && isWithinInterval(parseISO(e.date), interval))
@@ -60,12 +67,12 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, driver
         .reduce((sum, w) => sum + w.amount, 0);
 
     return {
-        totalCollected,
+        totalCollected: totalIncome,
         totalExpenses,
         totalWithdrawals,
-        netBalance: totalCollected - totalExpenses - totalWithdrawals
+        netBalance: totalIncome - totalExpenses - totalWithdrawals
     };
-  }, [filterDateRange, payments, expenses, withdrawals]);
+  }, [filterDateRange, payments, expenses, withdrawals, cashEntries]);
 
 
   const unifiedMovements = useMemo(() => {
@@ -97,9 +104,18 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, driver
       isIncome: false
     }));
 
-    return [...paymentMovements, ...expenseMovements, ...withdrawalMovements]
+    const cashEntryMovements: Movement[] = cashEntries.map(entry => ({
+      id: entry.id,
+      date: parseISO(entry.date),
+      type: 'Entrada de Caja',
+      description: entry.concept,
+      amount: entry.amount,
+      isIncome: true,
+    }));
+
+    return [...paymentMovements, ...expenseMovements, ...withdrawalMovements, ...cashEntryMovements]
       .sort((a,b) => compareDesc(a.date, b.date));
-  }, [payments, expenses, withdrawals]);
+  }, [payments, expenses, withdrawals, cashEntries]);
   
   const filteredMovements = useMemo(() => {
     if (!filterDateRange?.from) return unifiedMovements;
@@ -125,7 +141,7 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, driver
         </Popover>
       </div>
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ingresos (Pagos)</CardTitle><TrendingUp className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalCollected)}</div></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle><TrendingUp className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalCollected)}</div></CardContent></Card>
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Gastos (Vehículos)</CardTitle><TrendingDown className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-destructive">{formatCurrency(summaryData.totalExpenses)}</div></CardContent></Card>
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Retiros (Propietarios)</CardTitle><ArrowDown className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-destructive">{formatCurrency(summaryData.totalWithdrawals)}</div></CardContent></Card>
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance Neto</CardTitle><LineChart className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className={cn("text-2xl font-bold", summaryData.netBalance >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(summaryData.netBalance)}</div></CardContent></Card>
@@ -155,7 +171,7 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, driver
                       <TableCell>{format(m.date, "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
                       <TableCell>
                         <Badge variant={m.isIncome ? 'success' : 'destructive'}>
-                            {m.type === 'Pago de Renta' ? <ArrowUp className="mr-1 h-3 w-3"/> : <ArrowDown className="mr-1 h-3 w-3"/>}
+                            {m.isIncome ? <ArrowUp className="mr-1 h-3 w-3"/> : <ArrowDown className="mr-1 h-3 w-3"/>}
                             {m.type}
                         </Badge>
                       </TableCell>

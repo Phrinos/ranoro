@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/page.tsx
 "use client";
 
@@ -41,6 +42,7 @@ export default function FlotillaPage() {
   const [allPayments, setAllPayments] = useState<RentalPayment[]>([]);
   const [allExpenses, setAllExpenses] = useState<VehicleExpense[]>([]);
   const [allWithdrawals, setAllWithdrawals] = useState<OwnerWithdrawal[]>([]);
+  const [fleetCashEntries, setFleetCashEntries] = useState<CashDrawerTransaction[]>([]);
   const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>({});
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -62,6 +64,7 @@ export default function FlotillaPage() {
         personnelService.onDriversUpdate(setAllDrivers),
         fleetService.onRentalPaymentsUpdate(setAllPayments),
         fleetService.onVehicleExpensesUpdate(setAllExpenses),
+        cashService.onFleetCashEntriesUpdate(setFleetCashEntries),
         fleetService.onOwnerWithdrawalsUpdate((data) => {
             setAllWithdrawals(data);
             setIsLoading(false);
@@ -134,9 +137,15 @@ export default function FlotillaPage() {
     const now = new Date();
     const interval = { start: startOfMonth(now), end: endOfMonth(now) };
 
-    const totalIncome = allPayments
-      .filter(p => (p.paymentMethod === 'Efectivo' || !p.paymentMethod) && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), interval))
+    const totalCashIncomeFromPayments = allPayments
+      .filter(p => p.paymentMethod === 'Efectivo' && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), interval))
       .reduce((sum, p) => sum + p.amount, 0);
+
+    const totalManualCashEntries = fleetCashEntries
+      .filter(entry => isValid(parseISO(entry.date)) && isWithinInterval(parseISO(entry.date), interval))
+      .reduce((sum, entry) => sum + entry.amount, 0);
+      
+    const totalCashIncome = totalCashIncomeFromPayments + totalManualCashEntries;
       
     const totalWithdrawals = allWithdrawals
       .filter(w => isValid(parseISO(w.date)) && isWithinInterval(parseISO(w.date), interval))
@@ -146,15 +155,15 @@ export default function FlotillaPage() {
       .filter(e => isValid(parseISO(e.date)) && isWithinInterval(parseISO(e.date), interval))
       .reduce((sum, e) => sum + e.amount, 0);
       
-    return totalIncome - totalWithdrawals - totalVehicleExpenses;
-  }, [allPayments, allWithdrawals, allExpenses]);
+    return totalCashIncome - totalWithdrawals - totalVehicleExpenses;
+  }, [allPayments, allWithdrawals, allExpenses, fleetCashEntries]);
 
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
 
   const tabs = [
     { value: "estado_cuenta", label: "Estado de Cuenta", content: <Suspense fallback={<Loader2 className="animate-spin" />}><EstadoCuentaTab drivers={allDrivers} vehicles={allVehicles} payments={allPayments} /></Suspense> },
-    { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosFlotillaTab payments={allPayments} expenses={allExpenses} withdrawals={allWithdrawals} drivers={allDrivers} onPrintPayment={handlePrintPayment} /></Suspense> },
+    { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosFlotillaTab payments={allPayments} expenses={allExpenses} withdrawals={allWithdrawals} cashEntries={fleetCashEntries} drivers={allDrivers} onPrintPayment={handlePrintPayment} /></Suspense> },
     { value: "conductores", label: "Conductores", content: <Suspense fallback={<Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" />}><ConductoresTab allDrivers={allDrivers} allVehicles={allVehicles} /></Suspense> },
     { value: "vehiculos", label: "Vehículos", content: <Suspense fallback={<Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" />}><VehiculosFlotillaTab allDrivers={allDrivers} allVehicles={allVehicles} /></Suspense> },
     { value: "reportes", label: "Reportes", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ReportesTab vehicles={allVehicles} /></Suspense> },
