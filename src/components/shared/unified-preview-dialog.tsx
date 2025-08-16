@@ -5,6 +5,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { SaleReceipt, ServiceRecord } from '@/types';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 
 interface UnifiedPreviewDialogProps {
@@ -48,7 +49,9 @@ export function UnifiedPreviewDialog({
         </div>
         {footerContent && (
             <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
+               <TooltipProvider>
                 {footerContent}
+               </TooltipProvider>
             </DialogFooter>
         )}
       </DialogContent>

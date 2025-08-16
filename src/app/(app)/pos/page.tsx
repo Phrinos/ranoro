@@ -151,7 +151,16 @@ function PosPageComponent({ tab }: { tab?: string }) {
           open={isReprintDialogOpen}
           onOpenChange={setIsReprintDialogOpen}
           title={`Ticket Venta #${saleForReprint.id.slice(-6)}`}
-          footerContent={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>}
+          sale={saleForReprint}
+          footerContent={
+            <div className="flex w-full justify-end gap-2">
+                <TooltipProvider>
+                    <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => {}}><Copy className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => {}}><Share2 className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => window.print()}><Printer className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
+                </TooltipProvider>
+            </div>
+          }
         >
           <TicketContent ref={ticketContentRef} sale={saleForReprint} previewWorkshopInfo={workshopInfo || undefined} />
         </UnifiedPreviewDialog>
