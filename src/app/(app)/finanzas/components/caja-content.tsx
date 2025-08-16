@@ -82,65 +82,6 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
   });
 
   const mergedCashMovements = useMemo(() => {
-    const posCashMovements: EnhancedCashDrawerTransaction[] = allSales.reduce((acc, sale) => {
-      if (sale.status === 'Cancelado') return acc;
-
-      let cashAmount = 0;
-      if (sale.payments && sale.payments.length > 0) {
-        const cashPayment = sale.payments.find(p => p.method === 'Efectivo');
-        cashAmount = cashPayment?.amount || 0;
-      } else if (sale.amountInCash) {
-        cashAmount = sale.amountInCash;
-      }
-      
-      if (cashAmount > 0) {
-        acc.push({
-          id: `sale-${sale.id}`,
-          date: sale.saleDate,
-          type: 'Entrada',
-          amount: cashAmount,
-          concept: sale.id,
-          fullConcept: sale.items.map(i => `${i.quantity}x ${i.itemName}`).join(', ') || 'Venta de mostrador',
-          userId: sale.registeredById || 'system',
-          userName: sale.registeredByName || 'Sistema',
-          relatedId: sale.id,
-          relatedType: 'Venta',
-        });
-      }
-      return acc;
-    }, [] as EnhancedCashDrawerTransaction[]);
-
-    const serviceCashMovements: EnhancedCashDrawerTransaction[] = allServices.reduce((acc, service) => {
-      const relevantStatus = service.status === 'Entregado' || service.status === 'Completado';
-      if (!relevantStatus) return acc;
-      
-      let cashAmount = 0;
-      if (service.payments && service.payments.length > 0) {
-        const cashPayment = service.payments.find(p => p.method === 'Efectivo');
-        cashAmount = cashPayment?.amount || 0;
-      } else if (service.amountInCash) {
-        cashAmount = service.amountInCash;
-      }
-
-      if (cashAmount > 0) {
-        const serviceItemsConcept = service.serviceItems?.map(i => i.name).join(', ');
-        acc.push({
-          id: `service-${service.id}`,
-          date: service.deliveryDateTime!,
-          type: 'Entrada',
-          amount: cashAmount,
-          concept: service.id,
-          fullConcept: serviceItemsConcept || service.description || 'Servicio General',
-          userId: service.serviceAdvisorId || 'system',
-          userName: service.serviceAdvisorName || 'Asesor no asignado',
-          relatedId: service.id,
-          relatedType: 'Servicio',
-          licensePlate: service.vehicleIdentifier || 'N/A',
-        });
-      }
-      return acc;
-    }, [] as EnhancedCashDrawerTransaction[]);
-        
     const enhancedManualTransactions: EnhancedCashDrawerTransaction[] = cashTransactions.map(t => ({
         ...t,
         id: t.id, // The original object already has the ID
@@ -148,9 +89,9 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
         fullConcept: t.concept, // For the descriptive concept column
     }));
 
-    return [...posCashMovements, ...serviceCashMovements, ...enhancedManualTransactions]
+    return [...enhancedManualTransactions]
       .sort((a,b) => (parseDate(b.date)?.getTime() ?? 0) - (parseDate(a.date)?.getTime() ?? 0));
-  }, [allSales, allServices, cashTransactions]);
+  }, [cashTransactions]);
 
 
   const periodData = useMemo(() => {
@@ -294,7 +235,7 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
           securityChecklist: [],
         };
         return ReactDOMServer.renderToString(
-            <ServiceSheetContent record={adaptedRecord} />
+            <ServiceSheetContent service={adaptedRecord} />
         );
     }
   };
