@@ -98,6 +98,11 @@ const updateRentalPayment = async (paymentId: string, data: Partial<RentalPaymen
     await updateDoc(paymentRef, cleanObjectForFirestore(data));
 };
 
+const deleteRentalPayment = async (paymentId: string): Promise<void> => {
+  if (!db) throw new Error("Database not initialized.");
+  await deleteDoc(doc(db, "rentalPayments", paymentId));
+};
+
 
 // --- Vehicle Expenses ---
 const onVehicleExpensesUpdate = (callback: (expenses: VehicleExpense[]) => void): (() => void) => {
@@ -129,6 +134,11 @@ const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'veh
     return { id: docRef.id, ...newExpense };
 };
 
+const deleteVehicleExpense = async (expenseId: string): Promise<void> => {
+  if (!db) throw new Error("Database not initialized.");
+  await deleteDoc(doc(db, "vehicleExpenses", expenseId));
+};
+
 // --- Owner Withdrawals ---
 const onOwnerWithdrawalsUpdate = (callback: (withdrawals: OwnerWithdrawal[]) => void): (() => void) => {
     if (!db) return () => {};
@@ -148,15 +158,23 @@ const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): P
     return { id: docRef.id, ...newWithdrawal };
 };
 
+const deleteOwnerWithdrawal = async (withdrawalId: string): Promise<void> => {
+  if (!db) throw new Error("Database not initialized.");
+  await deleteDoc(doc(db, "ownerWithdrawals", withdrawalId));
+};
+
 
 export const fleetService = {
   addRentalPayment,
   updateRentalPayment,
   onRentalPaymentsUpdate,
   onRentalPaymentsUpdatePromise,
+  deleteRentalPayment,
   addVehicleExpense,
   onVehicleExpensesUpdate,
   onVehicleExpensesUpdatePromise,
+  deleteVehicleExpense,
   addOwnerWithdrawal,
-  onOwnerWithdrawalsUpdate
+  onOwnerWithdrawalsUpdate,
+  deleteOwnerWithdrawal,
 };

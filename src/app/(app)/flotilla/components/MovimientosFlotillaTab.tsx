@@ -10,11 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 import type { DateRange } from 'react-day-picker';
 import { formatCurrency } from "@/lib/utils";
-import type { RentalPayment, VehicleExpense, OwnerWithdrawal, Driver, CashDrawerTransaction } from '@/types';
-import { DollarSign, AlertCircle, LineChart, TrendingDown, CalendarIcon as CalendarDateIcon, TrendingUp, ArrowUp, ArrowDown, Printer } from "lucide-react";
+import type { RentalPayment, VehicleExpense, OwnerWithdrawal, Driver, CashDrawerTransaction, User } from '@/types';
+import { DollarSign, AlertCircle, LineChart, TrendingDown, CalendarIcon as CalendarDateIcon, TrendingUp, ArrowUp, ArrowDown, Printer, Trash2 } from "lucide-react";
 import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, startOfMonth, endOfMonth, compareDesc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface Movement {
   id: string;
@@ -35,9 +36,21 @@ interface MovimientosFlotillaTabProps {
   drivers: Driver[];
   onPrintPayment: (payment: RentalPayment) => void;
   onPrintCashEntry: (entry: CashDrawerTransaction) => void;
+  currentUser: User | null;
+  onDeleteMovement: (movement: Movement) => void;
 }
 
-export function MovimientosFlotillaTab({ payments, expenses, withdrawals, cashEntries, drivers, onPrintPayment, onPrintCashEntry }: MovimientosFlotillaTabProps) {
+export function MovimientosFlotillaTab({ 
+  payments, 
+  expenses, 
+  withdrawals, 
+  cashEntries, 
+  drivers, 
+  onPrintPayment, 
+  onPrintCashEntry,
+  currentUser,
+  onDeleteMovement
+}: MovimientosFlotillaTabProps) {
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
     return { from: startOfMonth(now), to: endOfMonth(now) };
@@ -192,6 +205,14 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, cashEn
                           <Button variant="ghost" size="icon" onClick={() => onPrintCashEntry(m.originalCashEntry!)} title="Imprimir Comprobante de Ingreso">
                             <Printer className="h-4 w-4"/>
                           </Button>
+                        )}
+                        {currentUser?.role === 'Superadministrador' && (
+                          <ConfirmDialog
+                              triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                              title="¿Eliminar Movimiento?"
+                              description="Esta acción eliminará permanentemente este registro. No se puede deshacer."
+                              onConfirm={() => onDeleteMovement(m)}
+                          />
                         )}
                       </TableCell>
                     </TableRow>

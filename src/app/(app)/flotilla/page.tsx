@@ -146,6 +146,30 @@ export default function FlotillaPage() {
     setIsReceiptDialogOpen(true);
   };
 
+  const handleDeleteMovement = async (movement: any) => {
+    try {
+        switch (movement.type) {
+            case 'Pago de Renta':
+                await fleetService.deleteRentalPayment(movement.id);
+                break;
+            case 'Gasto de Vehículo':
+                await fleetService.deleteVehicleExpense(movement.id);
+                break;
+            case 'Retiro de Propietario':
+                await fleetService.deleteOwnerWithdrawal(movement.id);
+                break;
+            case 'Entrada de Caja':
+                await cashService.deleteCashTransaction(movement.id);
+                break;
+            default:
+                throw new Error("Tipo de movimiento desconocido.");
+        }
+        toast({ title: "Movimiento Eliminado" });
+    } catch (e: any) {
+        toast({ title: "Error al Eliminar", description: e.message, variant: "destructive" });
+    }
+  };
+
 
   const totalCashBalance = useMemo(() => {
     const now = new Date();
@@ -181,7 +205,7 @@ export default function FlotillaPage() {
 
   const tabs = [
     { value: "estado_cuenta", label: "Estado de Cuenta", content: <Suspense fallback={<Loader2 className="animate-spin" />}><EstadoCuentaTab drivers={allDrivers} vehicles={allVehicles} payments={allPayments} /></Suspense> },
-    { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosFlotillaTab payments={allPayments} expenses={allExpenses} withdrawals={allWithdrawals} cashEntries={fleetCashEntries} drivers={allDrivers} onPrintPayment={handlePrintPayment} onPrintCashEntry={handlePrintCashEntry} /></Suspense> },
+    { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosFlotillaTab payments={allPayments} expenses={allExpenses} withdrawals={allWithdrawals} cashEntries={fleetCashEntries} drivers={allDrivers} onPrintPayment={handlePrintPayment} onPrintCashEntry={handlePrintCashEntry} currentUser={currentUser} onDeleteMovement={handleDeleteMovement} /></Suspense> },
     { value: "conductores", label: "Conductores", content: <Suspense fallback={<Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" />}><ConductoresTab allDrivers={allDrivers} allVehicles={allVehicles} /></Suspense> },
     { value: "vehiculos", label: "Vehículos", content: <Suspense fallback={<Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" />}><VehiculosFlotillaTab allDrivers={allDrivers} allVehicles={allVehicles} /></Suspense> },
     { value: "reportes", label: "Reportes", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ReportesTab vehicles={allVehicles} /></Suspense> },
