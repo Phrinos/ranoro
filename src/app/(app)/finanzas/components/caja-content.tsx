@@ -194,7 +194,7 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
     try {
       let docData;
       if (movement.relatedType === 'Venta') {
-        docData = await saleService.getDocById('saleReceipts', movement.relatedId);
+        docData = await saleService.getDocById('sales', movement.relatedId);
         setSelectedDocument(docData);
       } else if (movement.relatedType === 'Servicio') {
         docData = await serviceService.getDocById('serviceRecords', movement.relatedId) as ServiceRecord;
@@ -392,7 +392,9 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
                                         <TableCell className="font-mono text-xs">{m.concept}</TableCell>
                                         <TableCell className="max-w-[250px] truncate">{m.fullConcept}</TableCell>
                                         <TableCell>{m.userName}</TableCell>
-                                        <TableCell className="text-right font-semibold">{formatCurrency(m.amount)}</TableCell>
+                                        <TableCell className={cn("text-right font-semibold", m.type === 'Entrada' ? 'text-green-600' : 'text-red-600')}>
+                                            {formatCurrency(m.amount)}
+                                        </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
@@ -457,9 +459,13 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
             open={isPreviewOpen}
             onOpenChange={setIsPreviewOpen}
             title={`Vista Previa - ${'saleDate' in selectedDocument ? 'Venta' : 'Servicio'}`}
-            documentType={'saleDate' in selectedDocument ? 'text' : 'html'}
-            textContent={renderPreviewContent()}
-          />
+            service={selectedDocument}
+          >
+            {'saleDate' in selectedDocument ? 
+              <TicketContent ref={ticketContentRef} sale={selectedDocument} previewWorkshopInfo={workshopInfo || undefined} /> :
+              <ServiceSheetContent service={selectedDocument} />
+            }
+          </UnifiedPreviewDialog>
         )}
     </div>
   );

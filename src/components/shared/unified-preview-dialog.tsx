@@ -1,11 +1,10 @@
-
 // src/components/shared/unified-preview-dialog.tsx
 "use client";
 
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import type { ServiceRecord } from '@/types';
+import type { SaleReceipt, ServiceRecord } from '@/types';
 
 
 interface UnifiedPreviewDialogProps {
@@ -14,7 +13,8 @@ interface UnifiedPreviewDialogProps {
   title: string;
   children: React.ReactNode;
   footerContent?: React.ReactNode;
-  service?: ServiceRecord; // Optional service record
+  sale?: SaleReceipt; // Make sale optional
+  service?: ServiceRecord; // Make service optional
 }
 
 export function UnifiedPreviewDialog({ 
@@ -23,10 +23,12 @@ export function UnifiedPreviewDialog({
   title, 
   children,
   footerContent,
-  service,
+  sale,
+  service
 }: UnifiedPreviewDialogProps) {
   
-  const isReceipt = service?.id ? false : true; // Heuristic to check if it's a receipt or service sheet
+  // Heuristic to check if it's a receipt (from POS) or service sheet
+  const isReceipt = sale !== undefined; 
   
   const dialogWidthClass = isReceipt ? 'sm:max-w-xs' : 'sm:max-w-4xl';
 
