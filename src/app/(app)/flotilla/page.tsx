@@ -175,25 +175,25 @@ export default function FlotillaPage() {
     const now = new Date();
     const interval = { start: startOfMonth(now), end: endOfMonth(now) };
 
-    const totalCashIncomeFromPayments = allPayments
-      .filter(p => p.paymentMethod === 'Efectivo' && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), interval))
+    const totalIncomeFromPayments = allPayments
+      .filter(p => isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), interval))
       .reduce((sum, p) => sum + p.amount, 0);
 
     const totalManualCashEntries = fleetCashEntries
       .filter(entry => isValid(parseISO(entry.date)) && isWithinInterval(parseISO(entry.date), interval))
       .reduce((sum, entry) => sum + entry.amount, 0);
       
-    const totalCashIncome = totalCashIncomeFromPayments + totalManualCashEntries;
+    const totalIncome = totalIncomeFromPayments + totalManualCashEntries;
       
     const totalWithdrawals = allWithdrawals
-      .filter(w => w.paymentMethod === 'Efectivo' && isValid(parseISO(w.date)) && isWithinInterval(parseISO(w.date), interval))
+      .filter(w => isValid(parseISO(w.date)) && isWithinInterval(parseISO(w.date), interval))
       .reduce((sum, w) => sum + w.amount, 0);
       
     const totalVehicleExpenses = allExpenses
-      .filter(e => e.paymentMethod === 'Efectivo' && isValid(parseISO(e.date)) && isWithinInterval(parseISO(e.date), interval))
+      .filter(e => isValid(parseISO(e.date)) && isWithinInterval(parseISO(e.date), interval))
       .reduce((sum, e) => sum + e.amount, 0);
       
-    return totalCashIncome - totalWithdrawals - totalVehicleExpenses;
+    return totalIncome - totalWithdrawals - totalVehicleExpenses;
   }, [allPayments, allWithdrawals, allExpenses, fleetCashEntries]);
   
   const handlePrintReceipt = () => {
