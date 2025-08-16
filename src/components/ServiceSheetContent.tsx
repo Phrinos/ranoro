@@ -1,3 +1,4 @@
+// src/components/ServiceSheetContent.tsx
 
 "use client";
 
@@ -346,13 +347,15 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicke
                         <div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>
                     </div>
                 </CardContent>
-                 {service.status === 'Entregado' && onShowTicketClick && (
+                 {service.status === 'Entregado' && (
                     <CardFooter className="justify-end gap-2">
-                        <Button onClick={onShowTicketClick}>
-                            <Receipt className="mr-2 h-4 w-4"/>Ver Ticket de Servicio
-                        </Button>
+                         {onShowTicketClick && (
+                            <Button onClick={onShowTicketClick}>
+                                <Receipt className="mr-2 h-4 w-4"/>Ver Ticket de Servicio
+                            </Button>
+                         )}
                         <Button asChild variant="outline">
-                            <Link href="/facturar" target="_blank"><FileJson className="mr-2 h-4 w-4"/>Facturar</Link>
+                            <Link href={`/facturar?folio=${service.id}&total=${service.totalCost}`} target="_blank"><FileJson className="mr-2 h-4 w-4"/>Facturar</Link>
                         </Button>
                     </CardFooter>
                 )}

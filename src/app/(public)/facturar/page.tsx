@@ -1,12 +1,14 @@
+// src/app/(public)/facturar/page.tsx
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +26,6 @@ import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Progress } from '@/components/ui/progress';
 
 const searchSchema = z.object({
   folio: z.string().min(5, "El folio debe tener al menos 5 caracteres.").trim(),
@@ -44,8 +45,9 @@ const LoadingOverlay = ({ message }: { message: string }) => (
     </div>
 );
 
-export default function FacturarPage() {
+function FacturarPageComponent() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchResult, setSearchResult] = useState<TicketType | null>(null);
@@ -63,13 +65,14 @@ export default function FacturarPage() {
 
   const searchForm = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),
+    defaultValues: { folio: '', total: undefined },
   });
 
   const billingMethods = useForm<BillingFormValues>({
     resolver: zodResolver(billingFormSchema),
   });
 
-  const onSearchSubmit = async (data: SearchFormValues) => {
+  const onSearchSubmit = useCallback(async (data: SearchFormValues) => {
     setIsLoading(true);
     setError(null);
     setSearchResult(null);
@@ -87,7 +90,19 @@ export default function FacturarPage() {
     } finally {
         setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    const folio = searchParams.get('folio');
+    const total = searchParams.get('total');
+    
+    if (folio) searchForm.setValue('folio', folio);
+    if (total) searchForm.setValue('total', parseFloat(total));
+    
+    if (folio && total) {
+        onSearchSubmit({ folio, total: parseFloat(total) });
+    }
+  }, [searchParams, searchForm, onSearchSubmit]);
   
   const onBillingDataSubmit = async (data: BillingFormValues) => {
     if (!searchResult) return;
@@ -241,5 +256,13 @@ export default function FacturarPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function FacturarPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+      <FacturarPageComponent />
+    </Suspense>
   );
 }
