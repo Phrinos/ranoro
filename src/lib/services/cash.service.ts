@@ -44,14 +44,15 @@ const onCashTransactionsUpdate = (callback: (transactions: CashDrawerTransaction
 
 const onFleetCashEntriesUpdate = (callback: (entries: CashDrawerTransaction[]) => void): (() => void) => {
   if (!db) return () => {};
+  // Simplified query to avoid composite index error. Filtering will happen on the client.
   const q = query(
     collection(db, "cashDrawerTransactions"),
-    where("relatedType", "==", "Flotilla"),
-    where("type", "==", "Entrada"),
     orderBy("date", "desc")
   );
   return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CashDrawerTransaction)));
+    const allTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CashDrawerTransaction));
+    const fleetEntries = allTransactions.filter(t => t.relatedType === 'Flotilla' && t.type === 'Entrada');
+    callback(fleetEntries);
   }, (error) => {
     console.error("Error listening to fleet cash entries:", error.message);
     callback([]);
