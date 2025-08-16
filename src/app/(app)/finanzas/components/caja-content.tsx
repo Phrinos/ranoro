@@ -413,7 +413,7 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
                     <DialogDescription>Añade un concepto y monto para registrar el movimiento.</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleTransactionSubmit)} id="cash-transaction-form" className="space-y-4 py-4">
+                    <form onSubmit={form.handleSubmit(handleTransactionSubmit)} id="cash-transaction-form" className="space-y-4 px-6 py-4">
                         <FormField
                             control={form.control}
                             name="concept"
