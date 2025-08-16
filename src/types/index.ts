@@ -273,7 +273,7 @@ export interface ServiceRecord {
   safetyInspection?: SafetyInspection;
   serviceAdvisorId?: string;
   serviceAdvisorName?: string;
-  serviceAdvisorSignatureDataUrl?: string; 
+  serviceAdvisorSignatureDataUrl?: string | null; 
   workshopInfo?: WorkshopInfo;
   payments?: Payment[]; // <-- New payment structure
   cardCommission?: number;
@@ -477,7 +477,7 @@ export interface CashDrawerTransaction {
   concept: string;
   userId: string;
   userName: string;
-  relatedType?: 'Venta' | 'Servicio' | 'Compra' | 'InitialBalance';
+  relatedType?: 'Venta' | 'Servicio' | 'Compra' | 'InitialBalance' | 'Flotilla';
   relatedId?: string;
 }
 

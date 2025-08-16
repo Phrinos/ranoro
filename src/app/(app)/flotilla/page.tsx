@@ -4,11 +4,11 @@
 import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Wallet, ArrowDownCircle, Printer } from "lucide-react";
-import type { User, Vehicle, Driver, RentalPayment, WorkshopInfo, VehicleExpense, OwnerWithdrawal, PaymentMethod } from '@/types';
+import { PlusCircle, Wallet, ArrowDownCircle, Printer, ArrowUpCircle } from "lucide-react";
+import type { User, Vehicle, Driver, RentalPayment, WorkshopInfo, VehicleExpense, OwnerWithdrawal, PaymentMethod, CashDrawerTransaction } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
-import { inventoryService, personnelService, fleetService } from '@/lib/services';
+import { inventoryService, personnelService, fleetService, cashService } from '@/lib/services';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { formatCurrency } from "@/lib/utils";
 import { startOfMonth, endOfMonth, parseISO, isValid, isWithinInterval } from 'date-fns';
@@ -25,6 +25,7 @@ const ReportesTab = lazy(() => import('../rentas/components/ReportesTab').then(m
 const RegisterPaymentDialog = lazy(() => import('../rentas/components/register-payment-dialog').then(module => ({ default: module.RegisterPaymentDialog })));
 const VehicleExpenseDialog = lazy(() => import('../rentas/components/vehicle-expense-dialog').then(module => ({ default: module.VehicleExpenseDialog })));
 const OwnerWithdrawalDialog = lazy(() => import('../rentas/components/owner-withdrawal-dialog').then(module => ({ default: module.OwnerWithdrawalDialog })));
+const CashEntryDialog = lazy(() => import('./components/CashEntryDialog').then(module => ({ default: module.CashEntryDialog })));
 
 
 export default function FlotillaPage() {
@@ -45,12 +46,17 @@ export default function FlotillaPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
+  const [isCashEntryDialogOpen, setIsCashEntryDialogOpen] = useState(false);
 
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
+    const authUserString = localStorage.getItem('authUser');
+    if (authUserString) setCurrentUser(JSON.parse(authUserString));
+
     const unsubs = [
         inventoryService.onVehiclesUpdate(setAllVehicles),
         personnelService.onDriversUpdate(setAllDrivers),
@@ -98,6 +104,27 @@ export default function FlotillaPage() {
     }
   };
   
+  const handleSaveCashEntry = async (data: { amount: number; concept: string }) => {
+    if (!currentUser) {
+        toast({ title: 'Error', description: 'No se ha podido identificar al usuario.', variant: 'destructive' });
+        return;
+    }
+    try {
+        await cashService.addCashTransaction({
+            type: 'Entrada',
+            amount: data.amount,
+            concept: data.concept,
+            userId: currentUser.id,
+            userName: currentUser.name,
+            relatedType: 'Flotilla' // Custom type for fleet-related entries
+        });
+        toast({ title: 'Ingreso Registrado'});
+        setIsCashEntryDialogOpen(false);
+    } catch(e: any) {
+        toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
+  
   const handlePrintPayment = (payment: RentalPayment) => {
     setPaymentForReceipt(payment);
     setIsReceiptDialogOpen(true);
@@ -135,6 +162,9 @@ export default function FlotillaPage() {
   
   const pageActions = (
      <div className="flex flex-col sm:flex-row gap-2">
+        <Button onClick={() => setIsCashEntryDialogOpen(true)} variant="outline" className="bg-white hover:bg-gray-100 text-black border-gray-300">
+            <ArrowUpCircle className="mr-2 h-4 w-4 text-green-500"/> Ingreso a Caja
+        </Button>
         <Button onClick={() => setIsWithdrawalDialogOpen(true)} variant="outline" className="bg-white hover:bg-gray-100 text-black border-gray-300">
           <ArrowDownCircle className="mr-2 h-4 w-4 text-red-500"/> Retiro
         </Button>
@@ -168,6 +198,7 @@ export default function FlotillaPage() {
          <RegisterPaymentDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} drivers={allDrivers} vehicles={allVehicles} onSave={handleSavePayment} />
          <VehicleExpenseDialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen} fleetVehicles={allVehicles.filter(v => v.isFleetVehicle)} onSave={handleSaveExpense} />
          <OwnerWithdrawalDialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen} owners={Array.from(new Set(allVehicles.filter(v => v.isFleetVehicle).map(v => v.ownerName))).sort()} onSave={handleSaveWithdrawal}/>
+         <CashEntryDialog open={isCashEntryDialogOpen} onOpenChange={setIsCashEntryDialogOpen} onSave={handleSaveCashEntry} />
          {paymentForReceipt && (
             <UnifiedPreviewDialog
                 open={isReceiptDialogOpen}
