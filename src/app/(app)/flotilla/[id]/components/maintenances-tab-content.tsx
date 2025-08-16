@@ -1,6 +1,5 @@
-// Placeholder for missing file
-import ServiceDialog from '../../../servicios/components/service-dialog';
 
-export default function MaintenancesTabContent() {
-  return <ServiceDialog />;
-}
+// src/app/(app)/flotilla/[id]/components/maintenances-tab-content.tsx
+import HistorialTabContent from "@/app/(app)/servicios/components/tab-historial";
+
+export default HistorialTabContent;

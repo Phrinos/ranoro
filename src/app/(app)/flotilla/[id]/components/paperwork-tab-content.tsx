@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -9,13 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PlusCircle, CheckCircle, Circle, Edit, Trash2, FileText } from 'lucide-react';
 import type { Vehicle, VehiclePaperwork } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { persistToFirestore } from '@/lib/placeholder-data';
 import { PaperworkDialog } from '../../components/paperwork-dialog';
 import type { PaperworkFormValues } from '../../components/paperwork-form';
 import { format, parseISO, compareAsc, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { placeholderVehicles } from '@/lib/placeholder-data';
+import { inventoryService } from '@/lib/services';
 
 interface PaperworkTabContentProps {
   vehicle: Vehicle;
@@ -34,55 +32,62 @@ export function PaperworkTabContent({ vehicle, setVehicle }: PaperworkTabContent
 
   const handleSavePaperwork = useCallback(async (values: PaperworkFormValues) => {
     if (!vehicle) return;
-    const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicle.id);
-    if (vehicleIndex === -1) return;
-
-    const currentVehicle = placeholderVehicles[vehicleIndex];
-    if (!currentVehicle.paperwork) {
-      currentVehicle.paperwork = [];
-    }
+    
+    let updatedPaperwork: VehiclePaperwork[];
 
     if (editingPaperwork) {
-      const pIndex = currentVehicle.paperwork.findIndex(p => p.id === editingPaperwork.id);
-      if (pIndex !== -1) {
-        currentVehicle.paperwork[pIndex] = { ...currentVehicle.paperwork[pIndex], name: values.name, dueDate: values.dueDate.toISOString(), notes: values.notes };
-      }
+      updatedPaperwork = (vehicle.paperwork || []).map(p => 
+        p.id === editingPaperwork.id 
+        ? { ...p, name: values.name, dueDate: values.dueDate.toISOString(), notes: values.notes }
+        : p
+      );
     } else {
-      currentVehicle.paperwork.push({ id: `doc_${Date.now()}`, name: values.name, dueDate: values.dueDate.toISOString(), status: 'Pendiente', notes: values.notes });
+      updatedPaperwork = [
+        ...(vehicle.paperwork || []), 
+        { id: `doc_${Date.now()}`, name: values.name, dueDate: values.dueDate.toISOString(), status: 'Pendiente', notes: values.notes }
+      ];
     }
     
-    await persistToFirestore(['vehicles']);
-    setVehicle({ ...currentVehicle });
-    setIsPaperworkDialogOpen(false);
-    toast({ title: "Trámite Guardado", description: "La lista de trámites ha sido actualizada." });
+    try {
+        const updatedVehicle = await inventoryService.updateVehicle(vehicle.id, { paperwork: updatedPaperwork });
+        setVehicle(updatedVehicle);
+        setIsPaperworkDialogOpen(false);
+        toast({ title: "Trámite Guardado", description: "La lista de trámites ha sido actualizada." });
+    } catch (e) {
+        toast({ title: "Error", description: "No se pudo guardar el trámite.", variant: "destructive" });
+    }
+
   }, [vehicle, editingPaperwork, toast, setVehicle]);
 
   const handleTogglePaperworkStatus = useCallback(async (paperworkId: string) => {
     if (!vehicle) return;
-    const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicle.id);
-    if (vehicleIndex === -1) return;
+    
+    const updatedPaperwork = (vehicle.paperwork || []).map(p => {
+        if (p.id === paperworkId) {
+            return { ...p, status: p.status === 'Pendiente' ? 'Completado' as const : 'Pendiente' as const };
+        }
+        return p;
+    });
 
-    const currentVehicle = placeholderVehicles[vehicleIndex];
-    const pIndex = currentVehicle.paperwork?.findIndex(p => p.id === paperworkId);
-
-    if (pIndex !== undefined && pIndex > -1) {
-        currentVehicle.paperwork![pIndex].status = currentVehicle.paperwork![pIndex].status === 'Pendiente' ? 'Completado' : 'Pendiente';
-        await persistToFirestore(['vehicles']);
-        setVehicle({ ...currentVehicle });
+    try {
+        const updatedVehicle = await inventoryService.updateVehicle(vehicle.id, { paperwork: updatedPaperwork });
+        setVehicle(updatedVehicle);
+    } catch(e) {
+        toast({ title: "Error", description: "No se pudo actualizar el estado.", variant: "destructive"});
     }
-  }, [vehicle, setVehicle]);
+  }, [vehicle, setVehicle, toast]);
   
   const handleDeletePaperwork = useCallback(async (paperworkId: string) => {
     if (!vehicle) return;
-    const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicle.id);
-    if (vehicleIndex === -1) return;
-    
-    const currentVehicle = placeholderVehicles[vehicleIndex];
-    if (currentVehicle.paperwork) {
-        currentVehicle.paperwork = currentVehicle.paperwork.filter(p => p.id !== paperworkId);
-        await persistToFirestore(['vehicles']);
-        setVehicle({ ...currentVehicle });
+
+    const updatedPaperwork = (vehicle.paperwork || []).filter(p => p.id !== paperworkId);
+
+    try {
+        const updatedVehicle = await inventoryService.updateVehicle(vehicle.id, { paperwork: updatedPaperwork });
+        setVehicle(updatedVehicle);
         toast({ title: "Trámite Eliminado" });
+    } catch (e) {
+        toast({ title: "Error", description: "No se pudo eliminar el trámite.", variant: "destructive" });
     }
   }, [vehicle, toast, setVehicle]);
 
