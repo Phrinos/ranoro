@@ -2,10 +2,10 @@
 // src/app/(app)/flotilla/page.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Wallet, ArrowDownCircle, Printer, ArrowUpCircle } from "lucide-react";
+import { PlusCircle, Wallet, ArrowDownCircle, Printer, ArrowUpCircle, Copy, Share2 } from "lucide-react";
 import type { User, Vehicle, Driver, RentalPayment, WorkshopInfo, VehicleExpense, OwnerWithdrawal, PaymentMethod, CashDrawerTransaction } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
@@ -15,6 +15,7 @@ import { formatCurrency } from "@/lib/utils";
 import { startOfMonth, endOfMonth, parseISO, isValid, isWithinInterval } from 'date-fns';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { RentalReceiptContent } from '@/app/(app)/rentas/components/rental-receipt-content';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 // Lazy load dialogs and tab content
@@ -27,7 +28,7 @@ const RegisterPaymentDialog = lazy(() => import('../rentas/components/register-p
 const VehicleExpenseDialog = lazy(() => import('../rentas/components/vehicle-expense-dialog').then(module => ({ default: module.VehicleExpenseDialog })));
 const OwnerWithdrawalDialog = lazy(() => import('../rentas/components/owner-withdrawal-dialog').then(module => ({ default: module.OwnerWithdrawalDialog })));
 const CashEntryDialog = lazy(() => import('./components/CashEntryDialog').then(module => ({ default: module.CashEntryDialog })));
-const CashEntryReceiptContent = lazy(() => import('./components/CashEntryReceiptContent'));
+const CashEntryReceiptContent = lazy(() => import('./components/CashEntryReceiptContent').then(module => ({ default: module.CashEntryReceiptContent })));
 
 
 export default function FlotillaPage() {
@@ -55,6 +56,9 @@ export default function FlotillaPage() {
   const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
   const [cashEntryForReceipt, setCashEntryForReceipt] = useState<CashDrawerTransaction | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  
+  const receiptContentRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     setIsLoading(true);
@@ -167,6 +171,10 @@ export default function FlotillaPage() {
       
     return totalCashIncome - totalWithdrawals - totalVehicleExpenses;
   }, [allPayments, allWithdrawals, allExpenses, fleetCashEntries]);
+  
+  const handlePrintReceipt = () => {
+    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
+  };
 
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
@@ -223,8 +231,17 @@ export default function FlotillaPage() {
               open={isReceiptDialogOpen}
               onOpenChange={setIsReceiptDialogOpen}
               title={paymentForReceipt ? "Comprobante de Pago de Renta" : "Comprobante de Ingreso de Caja"}
-              footerContent={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>}
+              footerContent={
+                 <div className="flex w-full justify-end gap-4">
+                    <TooltipProvider>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Copy className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrintReceipt}><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
+                    </TooltipProvider>
+                </div>
+              }
           >
+            <div ref={receiptContentRef}>
               {paymentForReceipt ? (
                   <RentalReceiptContent 
                       payment={paymentForReceipt}
@@ -239,6 +256,7 @@ export default function FlotillaPage() {
                     workshopInfo={workshopInfo}
                   />
               ) : null}
+            </div>
           </UnifiedPreviewDialog>
          
       </Suspense>

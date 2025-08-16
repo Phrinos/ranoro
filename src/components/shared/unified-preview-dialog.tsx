@@ -4,7 +4,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import type { SaleReceipt, ServiceRecord, RentalPayment } from '@/types';
+import type { SaleReceipt, ServiceRecord, RentalPayment, CashDrawerTransaction } from '@/types';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 
@@ -17,6 +17,7 @@ interface UnifiedPreviewDialogProps {
   sale?: SaleReceipt; // Make sale optional
   service?: ServiceRecord; // Make service optional
   rentalPayment?: RentalPayment;
+  cashEntry?: CashDrawerTransaction;
 }
 
 export function UnifiedPreviewDialog({ 
@@ -27,12 +28,11 @@ export function UnifiedPreviewDialog({
   footerContent,
   sale,
   service,
-  rentalPayment, // new prop
+  rentalPayment,
+  cashEntry,
 }: UnifiedPreviewDialogProps) {
   
-  // A ticket can be for a sale or a service. A full service sheet is not a ticket.
-  // The check for `title` containing "Ticket" makes it more robust.
-  const isTicket = sale !== undefined || rentalPayment !== undefined || (service !== undefined && title.toLowerCase().includes('ticket'));
+  const isTicket = sale !== undefined || rentalPayment !== undefined || cashEntry !== undefined || (service !== undefined && title.toLowerCase().includes('ticket'));
   
   const dialogWidthClass = isTicket ? 'sm:max-w-xs' : 'sm:max-w-4xl';
 
