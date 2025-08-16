@@ -56,7 +56,7 @@ export default function FlotillaPage() {
         inventoryService.onVehiclesUpdate(setAllVehicles),
         personnelService.onDriversUpdate(setAllDrivers),
         fleetService.onRentalPaymentsUpdate(setAllPayments),
-        fleetService.onVehicleExpensesUpdate(setExpenses),
+        fleetService.onVehicleExpensesUpdate(setAllExpenses),
         fleetService.onOwnerWithdrawalsUpdate((data) => {
             setAllWithdrawals(data);
             setIsLoading(false);
