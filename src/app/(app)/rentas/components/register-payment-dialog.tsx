@@ -122,7 +122,7 @@ export function RegisterPaymentDialog({
           <div className="space-y-2">
             <Label htmlFor="driver-select">Conductor</Label>
             <Select onValueChange={setSelectedDriverId} value={selectedDriverId}>
-                <SelectTrigger id="driver-select"><SelectValue placeholder="Seleccione un conductor" /></SelectTrigger>
+                <SelectTrigger id="driver-select" className="bg-white"><SelectValue placeholder="Seleccione un conductor" /></SelectTrigger>
                 <SelectContent>
                 {[...drivers]
                     .filter(d => !d.isArchived)
@@ -138,13 +138,13 @@ export function RegisterPaymentDialog({
                 <Label htmlFor="amount-input">Monto del Pago</Label>
                 <div className="relative">
                     <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input id="amount-input" type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8" />
+                    <Input id="amount-input" type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8 bg-white" />
                 </div>
             </div>
              <div className="space-y-2">
                 <Label htmlFor="payment-method-select">Método</Label>
                 <Select onValueChange={(value) => setPaymentMethod(value as PaymentMethod)} value={paymentMethod}>
-                    <SelectTrigger id="payment-method-select"><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="payment-method-select" className="bg-white"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         {paymentOptions.map(opt => {
                             const Icon = paymentMethodIcons[opt];
@@ -164,13 +164,12 @@ export function RegisterPaymentDialog({
           {needsMileageUpdate && (
             <div className="space-y-2">
                 <Label htmlFor="mileage-input">Kilometraje Actual (Obligatorio)</Label>
-                <Input id="mileage-input" type="number" value={mileage} onChange={(e) => setMileage(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Ej: 125000" />
-                <p className="text-sm text-muted-foreground">Se requiere actualizar el kilometraje (última vez hace más de 7 días).</p>
+                <Input id="mileage-input" type="number" value={mileage} onChange={(e) => setMileage(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Ej: 125000" className="bg-white"/>
             </div>
           )}
           <div className="space-y-2">
             <Label htmlFor="note-input">Concepto o Nota (Opcional)</Label>
-            <Textarea id="note-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ej: Pago de renta semana 25" />
+            <Textarea id="note-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ej: Pago de renta semana 25" className="bg-white"/>
           </div>
         </div>
         <DialogFooter className="p-6 pt-4 border-t">
