@@ -24,6 +24,7 @@ interface Movement {
   amount: number;
   isIncome: boolean;
   originalPayment?: RentalPayment;
+  originalCashEntry?: CashDrawerTransaction;
 }
 
 interface MovimientosFlotillaTabProps {
@@ -33,9 +34,10 @@ interface MovimientosFlotillaTabProps {
   cashEntries: CashDrawerTransaction[];
   drivers: Driver[];
   onPrintPayment: (payment: RentalPayment) => void;
+  onPrintCashEntry: (entry: CashDrawerTransaction) => void;
 }
 
-export function MovimientosFlotillaTab({ payments, expenses, withdrawals, cashEntries, drivers, onPrintPayment }: MovimientosFlotillaTabProps) {
+export function MovimientosFlotillaTab({ payments, expenses, withdrawals, cashEntries, drivers, onPrintPayment, onPrintCashEntry }: MovimientosFlotillaTabProps) {
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
     return { from: startOfMonth(now), to: endOfMonth(now) };
@@ -111,6 +113,7 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, cashEn
       description: entry.concept,
       amount: entry.amount,
       isIncome: true,
+      originalCashEntry: entry,
     }));
 
     return [...paymentMovements, ...expenseMovements, ...withdrawalMovements, ...cashEntryMovements]
@@ -182,6 +185,11 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, cashEn
                       <TableCell className="text-right">
                         {m.type === 'Pago de Renta' && m.originalPayment && (
                           <Button variant="ghost" size="icon" onClick={() => onPrintPayment(m.originalPayment!)} title="Imprimir Comprobante">
+                            <Printer className="h-4 w-4"/>
+                          </Button>
+                        )}
+                        {m.type === 'Entrada de Caja' && m.originalCashEntry && (
+                          <Button variant="ghost" size="icon" onClick={() => onPrintCashEntry(m.originalCashEntry!)} title="Imprimir Comprobante de Ingreso">
                             <Printer className="h-4 w-4"/>
                           </Button>
                         )}
