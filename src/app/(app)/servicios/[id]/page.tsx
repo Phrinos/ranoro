@@ -1,7 +1,8 @@
+
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { serviceService, inventoryService, adminService } from '@/lib/services';
@@ -36,7 +37,7 @@ export default function ServicioPage() {
   
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
-  const [recordForSharing, setRecordForSharing] = useState<ServiceRecord | null>(null);
+  const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const ticketContentRef = React.useRef<HTMLDivElement>(null);
@@ -105,12 +106,12 @@ export default function ServicioPage() {
   }, [serviceId, isEditMode, isQuoteModeParam, router, toast]);
   
   const handleShowShareDialog = useCallback((service: ServiceRecord) => {
-    setRecordForSharing(service);
+    setRecordForPreview(service);
     setIsShareDialogOpen(true);
   }, []);
   
   const handleShowTicketDialog = useCallback((service: ServiceRecord) => {
-    setRecordForSharing(service); // Use the same state, as it holds the service data
+    setRecordForPreview(service); 
     setIsTicketDialogOpen(true);
   }, []);
 
@@ -225,24 +226,24 @@ export default function ServicioPage() {
             mode={isQuote ? 'quote' : 'service'}
         />
       </main>
-       {recordForSharing && (
-          <ShareServiceDialog 
-            open={isShareDialogOpen} 
-            onOpenChange={setIsShareDialogOpen} 
-            service={recordForSharing}
-            vehicle={vehicles.find(v => v.id === recordForSharing.vehicleId)}
-          />
+       {recordForPreview && (
+          <>
+            <ShareServiceDialog 
+              open={isShareDialogOpen} 
+              onOpenChange={setIsShareDialogOpen} 
+              service={recordForPreview}
+              vehicle={vehicles.find(v => v.id === recordForPreview.vehicleId)}
+            />
+            <UnifiedPreviewDialog
+              open={isTicketDialogOpen}
+              onOpenChange={setIsTicketDialogOpen}
+              title="Ticket de Servicio"
+              service={recordForPreview}
+            >
+              <TicketContent ref={ticketContentRef} service={recordForPreview} />
+            </UnifiedPreviewDialog>
+          </>
        )}
-        {recordForSharing && (
-          <UnifiedPreviewDialog
-            open={isTicketDialogOpen}
-            onOpenChange={setIsTicketDialogOpen}
-            title="Ticket de Servicio"
-            service={recordForSharing}
-          >
-            <TicketContent ref={ticketContentRef} service={recordForSharing} />
-          </UnifiedPreviewDialog>
-        )}
     </div>
   );
 }
