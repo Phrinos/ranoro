@@ -6,7 +6,7 @@ import { format, isValid, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo, useState } from 'react';
 import { cn, formatCurrency, capitalizeWords, formatNumber, normalizeDataUrl } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { User, Car as CarIcon, CalendarCheck, CheckCircle, Ban, Clock, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2, Phone, Link as LinkIcon, Globe, Camera, Receipt, FileJson } from 'lucide-react';
 import Link from 'next/link';
@@ -267,7 +267,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const tabs = useMemo(() => {
         const availableTabs = [
-            { value: 'order', label: 'Orden de Servicio', content: <ServiceOrderTab service={service} vehicle={vehicle} onSignClick={onSignClick} isSigning={isSigning}/> },
+            { value: 'order', label: 'Orden de Servicio', content: <ServiceOrderTab service={service} vehicle={vehicle} onSignClick={onSignClick} isSigning={isSigning} onShowTicketClick={onShowTicketClick}/> },
         ];
         if (service.safetyInspection && Object.values(service.safetyInspection).some(v => v && v.status && v.status !== 'na')) {
             availableTabs.push({ value: 'checklist', label: 'Revisión de Seguridad', content: <SafetyChecklistDisplay inspection={service.safetyInspection} /> });
@@ -279,7 +279,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             availableTabs.push({ value: 'quote', label: 'Cotización Original', content: <OriginalQuoteContent items={service.originalQuoteItems} /> });
         }
         return availableTabs;
-    }, [service, vehicle, onSignClick, isSigning]);
+    }, [service, vehicle, onSignClick, isSigning, onShowTicketClick]);
 
     return (
       <div ref={ref} className="space-y-6">
@@ -288,17 +288,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <ClientInfo service={service} vehicle={vehicle} />
         <StatusCard service={service} isConfirming={isConfirming} onConfirmClick={onConfirmClick} onCancelAppointment={handleCancelAppointment}/>
         {status === 'cotizacion' && onScheduleClick && <div className="text-center"><Button onClick={onScheduleClick} size="lg"><CalendarDays className="mr-2 h-5 w-5"/>Agendar Cita</Button></div>}
-        
-        {service.status === 'Entregado' && (
-          <div className="flex justify-center items-center gap-4 flex-wrap mt-6">
-            <Button onClick={onShowTicketClick} className="w-full sm:w-auto">
-                <Receipt className="mr-2 h-4 w-4"/>Ver Ticket de Servicio
-            </Button>
-            <Button asChild variant="outline" className="w-full sm:w-auto">
-                <Link href="/facturar" target="_blank"><FileJson className="mr-2 h-4 w-4"/>Facturar</Link>
-            </Button>
-          </div>
-        )}
         
         <div className="overflow-x-auto scrollbar-hide">
             <Tabs value={currentActiveTab} onValueChange={setActiveTab} className="w-full">
@@ -323,7 +312,7 @@ ServiceSheetContent.displayName = "ServiceSheetContent";
 
 // --- Tab Content Components ---
 
-function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service: ServiceRecord, vehicle?: Vehicle, onSignClick?: (type: 'reception' | 'delivery') => void, isSigning?: boolean }) {
+function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicketClick }: { service: ServiceRecord, vehicle?: Vehicle, onSignClick?: (type: 'reception' | 'delivery') => void, isSigning?: boolean, onShowTicketClick?: () => void }) {
     const items = useMemo(() => (service?.serviceItems ?? []).map(it => ({ ...it, price: Number(it?.price) || 0 })), [service?.serviceItems]);
     const { subTotal, taxAmount, totalCost } = useMemo(() => {
         const total = items.reduce((acc, it) => acc + it.price, 0);
@@ -357,6 +346,16 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning }: { service
                         <div className="flex justify-between items-center font-bold text-base"><span>Total a Pagar:</span><span className="text-primary">{formatCurrency(totalCost)}</span></div>
                     </div>
                 </CardContent>
+                 {service.status === 'Entregado' && onShowTicketClick && (
+                    <CardFooter className="justify-end gap-2">
+                        <Button onClick={onShowTicketClick}>
+                            <Receipt className="mr-2 h-4 w-4"/>Ver Ticket de Servicio
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href="/facturar" target="_blank"><FileJson className="mr-2 h-4 w-4"/>Facturar</Link>
+                        </Button>
+                    </CardFooter>
+                )}
             </Card>
             
             <div className={cn("grid grid-cols-1 gap-6", service.status === 'Entregado' && "md:grid-cols-2")}>
