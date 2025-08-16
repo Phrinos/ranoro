@@ -133,7 +133,7 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
     if (!movement.relatedId || !movement.relatedType) return;
     
     if (movement.relatedType === 'Venta') {
-      router.push(`/pos?tab=ventas&saleId=${movement.relatedId}`);
+      router.push(`/pos?saleId=${movement.relatedId}`);
     } else if (movement.relatedType === 'Servicio') {
       router.push(`/servicios/${movement.relatedId}`);
     }
@@ -334,7 +334,7 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
                     <DialogDescription>Añade un concepto y monto para registrar el movimiento.</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleTransactionSubmit)} id="cash-transaction-form" className="space-y-4 px-6 py-4">
+                    <form onSubmit={form.handleSubmit(handleTransactionSubmit)} id="cash-transaction-form" className="p-6 space-y-4">
                         <FormField
                             control={form.control}
                             name="concept"
