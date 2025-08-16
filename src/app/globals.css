@@ -149,31 +149,27 @@
 
 
   /* =========================================
-    REGLAS DE IMPRESIÓN GENERALES
+    Simplified Print Rules
    ========================================= */
-  @media print {
-    body.printing {
-        background-color: white !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+   @media print {
+    /* Hide everything by default */
+    body * {
+      visibility: hidden;
     }
-    .no-print {
-      display: none !important;
+    /* Make the printable content and everything inside it visible */
+    .printable-content, .printable-content * {
+      visibility: visible;
     }
+    /* Position the printable content at the top-left of the page */
     .printable-content {
-      position: absolute !important;
-      left: 0 !important;
-      top: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      box-shadow: none !important;
-      border: none !important;
-      visibility: visible !important;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
     }
-    body.printing > *:not(.printable-content) {
-      visibility: hidden !important;
+    /* Remove any special styling from the .no-print class when printing */
+    .no-print {
+      display: none;
     }
   }
 

@@ -41,7 +41,7 @@ export function UnifiedPreviewDialog({
             Contenido del documento listo para imprimir o compartir.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto px-6 bg-muted/30 pb-6 print:bg-white print:p-0">
+        <div className="printable-content flex-grow overflow-y-auto px-6 bg-muted/30 pb-6 print:bg-white print:p-0">
           <div className="bg-white mx-auto my-4 shadow-lg w-full print:shadow-none">
             {children}
           </div>

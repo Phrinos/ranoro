@@ -429,18 +429,18 @@ export default function InventarioPage() {
         </Suspense>
 
         <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 no-print">
-                <div className="flex-grow overflow-y-auto bg-muted/30 print:bg-white print:p-0">
-                  <Suspense fallback={<Loader2 className="animate-spin" />}>
-                      <InventoryReportContent items={itemsToPrint} />
-                  </Suspense>
-                </div>
-                <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
-                    <Button onClick={() => window.print()}>
-                        <Printer className="mr-2 h-4 w-4" /> Imprimir
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
+          <DialogContent className="max-w-4xl p-0 no-print">
+            <div className="printable-content bg-white">
+                <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
+                    <InventoryReportContent items={itemsToPrint} />
+                </Suspense>
+            </div>
+            <DialogFooter className="p-4 border-t bg-background sm:justify-end no-print">
+                <Button onClick={() => window.print()}>
+                    <Printer className="mr-2 h-4 w-4" /> Imprimir
+                </Button>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
         </>
     </Suspense>
