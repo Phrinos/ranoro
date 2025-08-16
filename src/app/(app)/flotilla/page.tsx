@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/page.tsx
 "use client";
 
@@ -26,7 +27,7 @@ const RegisterPaymentDialog = lazy(() => import('../rentas/components/register-p
 const VehicleExpenseDialog = lazy(() => import('../rentas/components/vehicle-expense-dialog').then(module => ({ default: module.VehicleExpenseDialog })));
 const OwnerWithdrawalDialog = lazy(() => import('../rentas/components/owner-withdrawal-dialog').then(module => ({ default: module.OwnerWithdrawalDialog })));
 const CashEntryDialog = lazy(() => import('./components/CashEntryDialog').then(module => ({ default: module.CashEntryDialog })));
-const CashEntryReceiptContent = lazy(() => import('./components/CashEntryReceiptContent').then(module => ({ default: module.CashEntryReceiptContent })));
+const CashEntryReceiptContent = lazy(() => import('./components/CashEntryReceiptContent'));
 
 
 export default function FlotillaPage() {
