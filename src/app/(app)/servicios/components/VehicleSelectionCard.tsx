@@ -106,11 +106,11 @@ export function VehicleSelectionCard({
       return;
     }
     const lowerSearch = vehicleLicensePlateSearch.toLowerCase();
-    const results = localVehicles.filter(v =>
-      v.licensePlate.toLowerCase().includes(lowerSearch) ||
-      v.make.toLowerCase().includes(lowerSearch) ||
-      v.model.toLowerCase().includes(lowerSearch) ||
-      v.ownerName.toLowerCase().includes(lowerSearch)
+    const results = localVehicles.filter(v => 
+        (v.licensePlate && typeof v.licensePlate === 'string' && v.licensePlate.toLowerCase().includes(lowerSearch)) ||
+        (v.make && typeof v.make === 'string' && v.make.toLowerCase().includes(lowerSearch)) ||
+        (v.model && typeof v.model === 'string' && v.model.toLowerCase().includes(lowerSearch)) ||
+        (v.ownerName && typeof v.ownerName === 'string' && v.ownerName.toLowerCase().includes(lowerSearch))
     ).slice(0, 5);
     setVehicleSearchResults(results);
   }, [vehicleLicensePlateSearch, localVehicles]);
