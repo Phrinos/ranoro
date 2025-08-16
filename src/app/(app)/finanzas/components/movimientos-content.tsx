@@ -148,9 +148,9 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
 
   const handleRowClick = (movement: Movement) => {
     if (movement.type === 'Servicio') {
-      router.push(`/servicios/${movement.id}`);
+      window.open(`/servicios/${movement.id}`, '_blank');
     } else { // Venta
-      router.push(`/pos?saleId=${movement.id}`);
+      window.open(`/pos?saleId=${movement.id}`, '_blank');
     }
   };
 
