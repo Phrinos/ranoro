@@ -8,7 +8,7 @@ import React, { useMemo, useState } from 'react';
 import { cn, formatCurrency, capitalizeWords, formatNumber, normalizeDataUrl } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { User, Car as CarIcon, CalendarCheck, CheckCircle, Ban, Clock, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2, Phone, Link as LinkIcon, Globe, Camera } from 'lucide-react';
+import { User, Car as CarIcon, CalendarCheck, CheckCircle, Ban, Clock, Eye, Signature, Loader2, AlertCircle, CalendarDays, Share2, Phone, Link as LinkIcon, Globe, Camera, Receipt, FileJson } from 'lucide-react';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
@@ -228,6 +228,7 @@ interface ServiceSheetContentProps {
   service: ServiceRecord;
   onScheduleClick?: () => void;
   onConfirmClick?: () => void;
+  onShowTicketClick?: () => void;
   isConfirming?: boolean;
   onSignClick?: (type: 'reception' | 'delivery') => void;
   isSigning?: boolean;
@@ -235,7 +236,7 @@ interface ServiceSheetContentProps {
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning }, ref) => {
+  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick }, ref) => {
     const { toast } = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
     const [currentActiveTab, setActiveTab] = useState('order');
@@ -287,6 +288,17 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <ClientInfo service={service} vehicle={vehicle} />
         <StatusCard service={service} isConfirming={isConfirming} onConfirmClick={onConfirmClick} onCancelAppointment={handleCancelAppointment}/>
         {status === 'cotizacion' && onScheduleClick && <div className="text-center"><Button onClick={onScheduleClick} size="lg"><CalendarDays className="mr-2 h-5 w-5"/>Agendar Cita</Button></div>}
+        
+        {service.status === 'Entregado' && (
+          <div className="flex justify-center items-center gap-4 flex-wrap mt-6">
+            <Button onClick={onShowTicketClick} className="w-full sm:w-auto">
+                <Receipt className="mr-2 h-4 w-4"/>Ver Ticket de Servicio
+            </Button>
+            <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Link href="/facturar" target="_blank"><FileJson className="mr-2 h-4 w-4"/>Facturar</Link>
+            </Button>
+          </div>
+        )}
         
         <div className="overflow-x-auto scrollbar-hide">
             <Tabs value={currentActiveTab} onValueChange={setActiveTab} className="w-full">

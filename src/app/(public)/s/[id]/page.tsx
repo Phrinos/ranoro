@@ -3,7 +3,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
@@ -15,6 +15,11 @@ import { ServiceSheetContent } from '@/components/ServiceSheetContent';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { AppointmentScheduler } from '@/components/shared/AppointmentScheduler';
 import { scheduleAppointmentAction, confirmAppointmentAction, cancelAppointmentAction, saveSignatureAction } from '@/app/(public)/s/actions';
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { TicketContent } from '@/components/ticket-content';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
+
 
 export const runtime = 'nodejs'; // Use Node.js runtime for firebase-admin in server actions
 
@@ -31,6 +36,9 @@ export default function PublicServicePage() {
 
   const [isScheduling, setIsScheduling] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  
+  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
+  const ticketContentRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
@@ -129,6 +137,7 @@ export default function PublicServicePage() {
               onConfirmClick={handleConfirmAppointment}
               isConfirming={isConfirming}
               onSignClick={handleSignClick}
+              onShowTicketClick={() => setIsTicketDialogOpen(true)}
               isSigning={isSigning}
               activeTab="order" // Default tab, can be dynamic
             />
@@ -163,6 +172,21 @@ export default function PublicServicePage() {
               }
             }}
         />
+
+        <UnifiedPreviewDialog
+          open={isTicketDialogOpen}
+          onOpenChange={setIsTicketDialogOpen}
+          title="Ticket de Servicio"
+          footerContent={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>}
+          service={service}
+        >
+          <TicketContent 
+            ref={ticketContentRef}
+            service={service}
+            vehicle={service.vehicle as Vehicle}
+            previewWorkshopInfo={service.workshopInfo}
+          />
+        </UnifiedPreviewDialog>
      </>
   );
 }
