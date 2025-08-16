@@ -1,8 +1,8 @@
-
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { DateRange } from "react-day-picker";
 import type { SaleReceipt, ServiceRecord, InventoryItem, Payment } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -58,7 +58,8 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
   dateRange?: DateRange;
   onDateRangeChange: (range?: DateRange) => void;
 }) {
-  
+  const router = useRouter();
+
   const mergedMovements = useMemo((): Movement[] => {
     const saleMovements: Movement[] = allSales
       .filter(s => s.status !== 'Cancelado')
@@ -145,6 +146,14 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
     return { totalMovements, grossProfit, netProfit, paymentsSummary };
   }, [fullFilteredData]);
 
+  const handleRowClick = (movement: Movement) => {
+    if (movement.type === 'Servicio') {
+      router.push(`/servicios/${movement.id}`);
+    } else { // Venta
+      router.push(`/pos?saleId=${movement.id}`);
+    }
+  };
+
   return (
     <div className="space-y-6">
         <TableToolbar
@@ -195,7 +204,7 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
                         <TableBody>
                             {paginatedData.length > 0 ? (
                                 paginatedData.map(m => (
-                                    <TableRow key={m.id}>
+                                    <TableRow key={m.id} onClick={() => handleRowClick(m)} className="cursor-pointer">
                                         <TableCell>{m.date && isValid(m.date) ? format(m.date, "dd MMM yyyy, HH:mm", { locale: es }) : 'N/A'}</TableCell>
                                         <TableCell className="font-mono">{m.folio.slice(-6)}</TableCell>
                                         <TableCell>

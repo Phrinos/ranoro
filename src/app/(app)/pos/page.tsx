@@ -30,6 +30,7 @@ function PosPageComponent({ tab }: { tab?: string }) {
   const defaultTab = tab || 'ventas';
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +72,19 @@ function PosPageComponent({ tab }: { tab?: string }) {
     ];
     return () => unsubs.forEach(unsub => unsub());
   }, []);
+
+  useEffect(() => {
+    const saleIdToShow = searchParams.get('saleId');
+    if (saleIdToShow && allSales.length > 0) {
+        const sale = allSales.find(s => s.id === saleIdToShow);
+        if (sale) {
+            handleViewSale(sale);
+            // Optional: remove the query param from URL after showing
+            router.replace('/pos?tab=ventas', { scroll: false });
+        }
+    }
+  }, [searchParams, allSales, router]);
+
 
   const handleReprintTicket = (sale: SaleReceipt) => {
     setSaleForReprint(sale);
