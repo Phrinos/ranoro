@@ -191,8 +191,8 @@
    @media print {
     .print-format-receipt {
         @page {
-            size: 80mm auto; /* 80mm width, auto height */
-            margin: 2mm;
+            size: 80mm auto;
+            margin: 0; /* No margin for thermal printers */
         }
         width: 100% !important;
         max-width: none !important;
