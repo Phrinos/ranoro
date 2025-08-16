@@ -28,10 +28,11 @@ export function UnifiedPreviewDialog({
   service
 }: UnifiedPreviewDialogProps) {
   
-  // Heuristic to check if it's a receipt (from POS) or service sheet
-  const isReceipt = sale !== undefined; 
+  // A ticket can be for a sale or a service. A full service sheet is not a ticket.
+  // The check for `title` containing "Ticket" makes it more robust.
+  const isTicket = sale !== undefined || (service !== undefined && title.toLowerCase().includes('ticket'));
   
-  const dialogWidthClass = isReceipt ? 'sm:max-w-xs' : 'sm:max-w-4xl';
+  const dialogWidthClass = isTicket ? 'sm:max-w-xs' : 'sm:max-w-4xl';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
