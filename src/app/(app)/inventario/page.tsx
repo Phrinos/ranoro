@@ -70,7 +70,11 @@ const getSortPriority = (item: InventoryItem) => {
     return 2;
 };
 
-const ProductosContent = ({ inventoryItems, onPrint }: { inventoryItems: InventoryItem[], onPrint: (items: InventoryItem[]) => void }) => {
+const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: { 
+    inventoryItems: InventoryItem[], 
+    onPrint: (items: InventoryItem[]) => void,
+    onNewItemFromSearch: (name: string) => void,
+}) => {
   const router = useRouter();
 
   const { filteredData, ...tableManager } = useTableManager<InventoryItem>({
@@ -121,7 +125,8 @@ const ProductosContent = ({ inventoryItems, onPrint }: { inventoryItems: Invento
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customSortedItems.map(item => {
+                {customSortedItems.length > 0 ? (
+                  customSortedItems.map(item => {
                     const isLowStock = !item.isService && item.quantity <= item.lowStockThreshold;
                     return (
                         <TableRow key={item.id} onClick={() => router.push(`/inventario/${item.id}`)} className="cursor-pointer hover:bg-muted/50">
@@ -136,7 +141,21 @@ const ProductosContent = ({ inventoryItems, onPrint }: { inventoryItems: Invento
                             <TableCell className="text-right font-bold text-primary">{formatCurrency(item.sellingPrice)}</TableCell>
                         </TableRow>
                     )
-                })}
+                  })
+                ) : (
+                    <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          {tableManager.searchTerm ? (
+                            <Button variant="link" onClick={() => onNewItemFromSearch(tableManager.searchTerm)}>
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              Registrar nuevo ítem: "{tableManager.searchTerm}"
+                            </Button>
+                          ) : (
+                            "No se encontraron productos o servicios."
+                          )}
+                        </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
@@ -289,10 +308,14 @@ export default function InventarioPage() {
   }, []);
 
 
-  const handleOpenItemDialog = useCallback(() => {
-    setEditingItem(null);
+  const handleOpenItemDialog = useCallback((initialValues?: Partial<InventoryItem>) => {
+    setEditingItem(initialValues || null);
     setIsItemDialogOpen(true);
   }, []);
+  
+  const handleNewItemFromSearch = useCallback((name: string) => {
+    handleOpenItemDialog({ name: capitalizeWords(name) });
+  }, [handleOpenItemDialog]);
   
   const handleItemUpdated = async (data: InventoryItemFormValues) => {
     if (!editingItem || !('id' in editingItem)) return;
@@ -309,10 +332,12 @@ export default function InventarioPage() {
   }, [toast]);
   
   const handleSaveItem = useCallback(async (itemData: InventoryItemFormValues) => {
-    await inventoryService.addItem(itemData);
-    toast({ title: "Producto Creado", description: `"${itemData.name}" ha sido agregado al inventario.` });
+    const idToSave = editingItem?.id;
+    await inventoryService.saveItem(itemData, idToSave);
+    toast({ title: `Ítem ${idToSave ? 'Actualizado' : 'Creado'}` });
     setIsItemDialogOpen(false);
-  }, [toast]);
+    setEditingItem(null);
+  }, [toast, editingItem]);
   
   const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
       const newItem = await inventoryService.addItem(formData);
@@ -360,7 +385,7 @@ export default function InventarioPage() {
         
         <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={handleOpenItemDialog}
+          onNewItemClick={() => handleOpenItemDialog()}
           onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
         
@@ -390,6 +415,7 @@ export default function InventarioPage() {
                   <ProductosContent 
                       inventoryItems={inventoryItems}
                       onPrint={handlePrint}
+                      onNewItemFromSearch={handleNewItemFromSearch}
                   />
               </Suspense>
             </TabsContent>
