@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import type { DateRange } from "react-day-picker";
 import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment, WorkshopInfo, Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -51,6 +52,7 @@ interface CajaContentProps {
 
 export default function CajaContent({ allSales, allServices, cashTransactions }: CajaContentProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'Entrada' | 'Salida'>('Entrada');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
@@ -130,32 +132,10 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
   const handleRowClick = async (movement: EnhancedCashDrawerTransaction) => {
     if (!movement.relatedId || !movement.relatedType) return;
     
-    setIsLoadingDocument(true);
-    setSelectedVehicle(null);
-    try {
-      let docData;
-      if (movement.relatedType === 'Venta') {
-        docData = await saleService.getDocById('sales', movement.relatedId);
-        setSelectedDocument(docData);
-      } else if (movement.relatedType === 'Servicio') {
-        docData = await serviceService.getDocById('serviceRecords', movement.relatedId) as ServiceRecord;
-        if (docData && docData.vehicleId) {
-            const vehicleData = await inventoryService.getVehicleById(docData.vehicleId);
-            setSelectedVehicle(vehicleData);
-        }
-        setSelectedDocument(docData);
-      }
-      
-      if (docData) {
-        setIsPreviewOpen(true);
-      } else {
-        toast({ title: "No encontrado", description: "No se pudo encontrar el documento asociado.", variant: "warning" });
-      }
-    } catch (error) {
-      toast({ title: "Error", description: "Hubo un problema al cargar el documento.", variant: "destructive" });
-      console.error(error);
-    } finally {
-      setIsLoadingDocument(false);
+    if (movement.relatedType === 'Venta') {
+      router.push(`/pos?tab=ventas&saleId=${movement.relatedId}`);
+    } else if (movement.relatedType === 'Servicio') {
+      router.push(`/servicios/${movement.relatedId}`);
     }
   };
 
