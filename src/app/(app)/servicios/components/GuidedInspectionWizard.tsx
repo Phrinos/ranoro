@@ -79,7 +79,7 @@ export function GuidedInspectionWizard({ inspectionItems, onClose, serviceId, on
                                         variant="default"
                                         onClick={() => handleStatusChange(status.value as any)}
                                         className={cn(
-                                            "h-16 text-white text-xs sm:text-sm transition-all",
+                                            "h-12 text-white text-xs sm:text-sm transition-all",
                                             status.color,
                                             field.value?.status === status.value 
                                                 ? `ring-2 ring-offset-2 opacity-100 ${status.ringColor}`

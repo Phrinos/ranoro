@@ -80,7 +80,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
       <div 
         ref={ref}
         data-format="receipt"
-        className="font-mono bg-white text-black px-2 py-4 mx-auto leading-tight print:max-w-full print:text-[9px] print:p-0"
+        className="font-mono bg-white text-black px-2 py-4 max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0"
       >
         {Array.from({ length: blankLinesTop || 0 }).map((_, i) => <div key={`top-${i}`} style={{ height: `10px` }}>&nbsp;</div>)}
 
