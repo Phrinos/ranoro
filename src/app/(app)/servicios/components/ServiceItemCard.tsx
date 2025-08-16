@@ -163,16 +163,16 @@ export function ServiceItemCard({
                     <Wrench className="h-5 w-5 text-muted-foreground"/>
                     Trabajo a Realizar #{serviceIndex + 1}
                 </h4>
-                 {!isReadOnly && (
-                    <div className="flex items-center">
-                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => setIsAddToPriceListDialogOpen(true)} title="Guardar en Precotizaciones">
-                            <Tags className="h-4 w-4"/>
-                        </Button>
+                <div className="flex items-center">
+                    <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => setIsAddToPriceListDialogOpen(true)} title="Guardar en Precotizaciones">
+                        <Tags className="h-4 w-4"/>
+                    </Button>
+                    {!isReadOnly && (
                         <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeServiceItem(serviceIndex)} title="Eliminar Trabajo">
                             <Trash2 className="h-4 w-4"/>
                         </Button>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
              <div className="space-y-4">
                 <FormField
