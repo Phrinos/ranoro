@@ -29,15 +29,30 @@ const buildShareUrl = (publicId?: string) => {
 
 const buildShareMessage = (svc: ServiceRecord, vehicle?: Vehicle, workshop?: Partial<WorkshopInfo>) => {
   const customerName = svc.customerName || "Cliente";
-  const vehicleInfo = vehicle
-    ? `${vehicle.make} ${vehicle.model} ${vehicle.year} (${vehicle.licensePlate})`
-    : svc.vehicleIdentifier;
-  
-  const saludo = `Hola ${customerName} 👋\nTu ${vehicleInfo} ya está en proceso. Revisa el detalle y da seguimiento aquí:`;
+  const vehicleDescription = vehicle
+    ? `${vehicle.make} ${vehicle.model} ${vehicle.year}`
+    : '';
+  const vehiclePlates = vehicle ? `(${vehicle.licensePlate})` : svc.vehicleIdentifier || '';
+
   const url = buildShareUrl(svc.publicId);
-  const cierre = `\nCuando estés de acuerdo, puedes firmar ahí mismo. ¡Gracias por confiar en nosotros!`;
+
+  const message = `Hola ${customerName}👋
+
+Tu ${vehicleDescription} ${vehiclePlates} ya está en proceso en Ranoro. 🚗🔧
+Desde este enlace puedes consultar en todo momento el avance de tu servicio, revisar el detalle de trabajos y refacciones, y dar seguimiento en línea:
+
+👉 Acceder a tu hoja de servicio: ${url}
+
+En la misma plataforma también podrás:
+✅ Revisar y aprobar cotizaciones
+✅ Firmar digitalmente tu servicio
+✅ Agendar próximas citas
+✅ Descargar tu ticket o factura
+✅ Mantener comunicación directa con nosotros
+
+Gracias por confiar en Ranoro. Nuestro compromiso es brindarte la mejor atención y transparencia en cada paso del proceso. 🙌`;
   
-  return `${saludo}\n${url}${cierre}`;
+  return message;
 };
 
 export function ShareServiceDialog({ open, onOpenChange, service: initialService, vehicle }: ShareServiceDialogProps) {
@@ -57,7 +72,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
 
   const copy = async (text: string, label = "Copiado al portapapeles") => {
     try { await navigator.clipboard.writeText(text); toast({ title: label }); }
-    catch { toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manualmente.", variant: "destructive" }); }
+    catch { toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manually.", variant: "destructive" }); }
   };
   
   const handleCopyWhatsApp = React.useCallback(() => copy(message, "Mensaje copiado"), [message, copy]);
