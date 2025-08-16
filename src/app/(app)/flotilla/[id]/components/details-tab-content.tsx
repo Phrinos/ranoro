@@ -103,20 +103,20 @@ export function DetailsTabContent({ vehicle, drivers, onEdit }: DetailsTabConten
               Editar Costos
           </Button>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
-          <div className="p-2 bg-muted/50 rounded-md">
+        <CardContent className="flex flex-wrap gap-4 text-center">
+          <div className="p-3 bg-muted/50 rounded-md flex-1 min-w-[120px]">
             <p className="text-xs font-medium text-muted-foreground">RENTA DIARIA</p>
             <p className="text-lg font-bold">{formatCurrency(vehicle.dailyRentalCost || 0)}</p>
           </div>
-          <div className="p-2 bg-muted/50 rounded-md">
+          <div className="p-3 bg-muted/50 rounded-md flex-1 min-w-[120px]">
             <p className="text-xs font-medium text-muted-foreground">GPS (MENSUAL)</p>
             <p className="text-lg font-bold">{formatCurrency(vehicle.gpsMonthlyCost || 0)}</p>
           </div>
-          <div className="p-2 bg-muted/50 rounded-md">
+          <div className="p-3 bg-muted/50 rounded-md flex-1 min-w-[120px]">
             <p className="text-xs font-medium text-muted-foreground">ADMIN (MENSUAL)</p>
             <p className="text-lg font-bold">{formatCurrency(vehicle.adminMonthlyCost || 0)}</p>
           </div>
-          <div className="p-2 bg-muted/50 rounded-md">
+          <div className="p-3 bg-muted/50 rounded-md flex-1 min-w-[120px]">
             <p className="text-xs font-medium text-muted-foreground">SEGURO (MENSUAL)</p>
             <p className="text-lg font-bold">{formatCurrency(vehicle.insuranceMonthlyCost || 0)}</p>
           </div>
