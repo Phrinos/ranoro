@@ -175,7 +175,8 @@ function ServiceFormContent({
   const watchedTechnicianId = watch('technicianId');
   const watchedStatus = watch('status');
 
-  const mainServiceType = watch('serviceItems.0.serviceType');
+  const serviceItem = watch('serviceItems.0');
+  const mainServiceType = serviceItem ? serviceItem.serviceType : undefined;
   const maintenanceServiceTypes = ['Afinación', 'Cambio de Aceite', 'Mecanica General'];
 
 
@@ -416,7 +417,7 @@ function ServiceFormContent({
                                                                     </FormControl>
                                                                 </PopoverTrigger>
                                                                 <PopoverContent className="w-auto p-0" align="start">
-                                                                    <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus locale={es}/>
+                                                                    <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} locale={es}/>
                                                                 </PopoverContent>
                                                             </Popover>
                                                             <Select onValueChange={(v) => {
