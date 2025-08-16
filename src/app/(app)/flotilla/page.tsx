@@ -231,6 +231,8 @@ export default function FlotillaPage() {
               open={isReceiptDialogOpen}
               onOpenChange={setIsReceiptDialogOpen}
               title={paymentForReceipt ? "Comprobante de Pago de Renta" : "Comprobante de Ingreso de Caja"}
+              rentalPayment={paymentForReceipt ?? undefined}
+              cashEntry={cashEntryForReceipt ?? undefined}
               footerContent={
                  <div className="flex w-full justify-end gap-4">
                     <TooltipProvider>
