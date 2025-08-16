@@ -89,6 +89,7 @@ export function ServiceForm({
       appointmentDateTime: initialData?.appointmentDateTime ? new Date(initialData.appointmentDateTime) : undefined,
       receptionDateTime: initialData?.receptionDateTime ? new Date(initialData.receptionDateTime) : undefined,
       deliveryDateTime: initialData?.deliveryDateTime ? new Date(initialData.deliveryDateTime) : undefined,
+      serviceAdvisorSignatureDataUrl: initialData?.serviceAdvisorSignatureDataUrl ?? null,
       allVehiclesForDialog: vehicles, 
       nextServiceInfo: initialData?.nextServiceInfo ? {
         ...initialData.nextServiceInfo,
