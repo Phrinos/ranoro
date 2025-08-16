@@ -1,4 +1,5 @@
 
+
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle } from 'lucide-react';
@@ -20,17 +21,20 @@ export function normalizeDataUrl(dataUrl: string): string {
 }
 
 
-export const calculateDriverDebt = (driver: any, allPayments: any[], allVehicles: any[]): { totalDebt: number; rentalDebt: number; depositDebt: number; manualDebt: number } => {
+export const calculateDriverDebt = (driver: any, allPayments: any[], allVehicles: any[]): { totalDebt: number; rentalDebt: number; depositDebt: number; manualDebt: number, balance: number } => {
     // This is a placeholder function. The actual logic might be more complex.
     const rentalDebt = 0; // Placeholder
     const depositDebt = (driver.requiredDepositAmount || 0) - (driver.depositAmount || 0);
     const manualDebt = (driver.manualDebts || []).reduce((sum: number, debt: any) => sum + debt.amount, 0);
+    const totalDebt = rentalDebt + depositDebt + manualDebt;
+    const balance = totalDebt > 0 ? 0 : Math.abs(totalDebt); // Simplified balance calculation
 
     return { 
-        totalDebt: rentalDebt + depositDebt + manualDebt, 
+        totalDebt: Math.max(0, totalDebt),
         rentalDebt, 
         depositDebt, 
-        manualDebt 
+        manualDebt,
+        balance
     };
 };
 

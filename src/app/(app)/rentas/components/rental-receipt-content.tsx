@@ -42,7 +42,7 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
     const formattedAmount = `$${payment.amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     const debtInfo = useMemo(() => {
-        if (!driver || !allPaymentsForDriver || !vehicle) return { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
+        if (!driver || !allPaymentsForDriver || !vehicle) return { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0, balance: 0 };
         return calculateDriverDebt(driver, allPaymentsForDriver, [vehicle]);
     }, [driver, allPaymentsForDriver, vehicle]);
 
@@ -119,27 +119,18 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
         
         <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
         <div className="my-2 p-2 border border-blue-500 bg-blue-50 text-blue-800">
-            <h4 className="font-bold">Resumen Mensual</h4>
+            <h4 className="font-bold">Estado de Cuenta</h4>
             <div className="space-y-0.5 text-xs mt-1">
-                <div className="flex justify-between"><span>Pagos del mes:</span><span>{formatCurrency(monthlyPayments.total)}</span></div>
-                <div className="flex justify-between"><span>Días cubiertos:</span><span>{monthlyPayments.days.toFixed(2)} días</span></div>
+                {debtInfo.rentalDebt > 0 && <div className="flex justify-between"><span>Deuda por Renta:</span><span>{formatCurrency(debtInfo.rentalDebt)}</span></div>}
+                {debtInfo.depositDebt > 0 && <div className="flex justify-between"><span>Deuda de Depósito:</span><span>{formatCurrency(debtInfo.depositDebt)}</span></div>}
+                {debtInfo.manualDebt > 0 && <div className="flex justify-between"><span>Adeudos Manuales:</span><span>{formatCurrency(debtInfo.manualDebt)}</span></div>}
+                {debtInfo.balance > 0 && <div className="flex justify-between"><span>Saldo a Favor:</span><span>{formatCurrency(debtInfo.balance)}</span></div>}
+                <div className="flex justify-between font-bold mt-1 pt-1 border-t">
+                    <span className={debtInfo.totalDebt > 0 ? "text-red-700" : ""}>Deuda Total:</span>
+                    <span className={debtInfo.totalDebt > 0 ? "text-red-700" : ""}>{formatCurrency(debtInfo.totalDebt)}</span>
+                </div>
             </div>
         </div>
-        
-        {debtInfo.totalDebt > 0 && (
-            <>
-                <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
-                <div className="my-2 p-2 border border-red-500 bg-red-50 text-red-800">
-                    <h4 className="font-bold flex items-center gap-1"><AlertTriangle className="h-3 w-3"/>AVISO DE ADEUDO</h4>
-                    <div className="space-y-0.5 text-xs mt-1">
-                        {debtInfo.depositDebt > 0 && <div className="flex justify-between"><span>Deuda de depósito:</span><span>{formatCurrency(debtInfo.depositDebt)}</span></div>}
-                        {debtInfo.rentalDebt > 0 && <div className="flex justify-between"><span>Deuda de renta:</span><span>{formatCurrency(debtInfo.rentalDebt)}</span></div>}
-                        {debtInfo.manualDebt > 0 && <div className="flex justify-between"><span>Adeudo pendiente:</span><span>{formatCurrency(debtInfo.manualDebt)}</span></div>}
-                        <div className="flex justify-between font-bold mt-1 pt-1"><span>Deuda Total Restante:</span><span>{formatCurrency(debtInfo.totalDebt)}</span></div>
-                    </div>
-                </div>
-            </>
-        )}
 
         <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
 
