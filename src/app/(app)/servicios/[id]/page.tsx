@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { serviceService, inventoryService, adminService } from '@/lib/services';
-import { Loader2, Share2, Save, Ban, Trash2, Printer } from 'lucide-react';
+import { Loader2, Share2, Save, Ban, Trash2, Printer, Copy } from 'lucide-react';
 import { ServiceForm } from '../components/ServiceForm';
 import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
@@ -17,6 +17,9 @@ import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
 import { Button } from '@/components/ui/button';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TicketContent } from '@/components/ticket-content';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import html2canvas from 'html2canvas';
+import { formatCurrency } from '@/lib/utils';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -79,6 +82,7 @@ export default function ServicioPage() {
                   return;
                 }
                 setInitialData(serviceData);
+                setRecordForPreview(serviceData); // Pre-load data for preview
             } else {
                 const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
                 const currentUser = authUserString ? JSON.parse(authUserString) : null;
@@ -169,6 +173,50 @@ export default function ServicioPage() {
       router.push('/servicios?tab=cotizaciones');
   };
   
+  const handleCopyTicketAsImage = useCallback(async (isForSharing: boolean = false) => {
+    if (!ticketContentRef.current || !recordForPreview) return null;
+    try {
+        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error("No se pudo crear el blob de la imagen.");
+
+        if (isForSharing) {
+            return new File([blob], `ticket_servicio_${recordForPreview.id}.png`, { type: 'image/png' });
+        } else {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+            return null;
+        }
+    } catch (e) {
+        console.error("Error al manejar la imagen:", e);
+        toast({ title: "Error", description: "No se pudo procesar la imagen del ticket.", variant: "destructive" });
+        return null;
+    }
+  }, [recordForPreview, toast]);
+  
+  const handleShareTicket = async () => {
+    const imageFile = await handleCopyTicketAsImage(true);
+    if (imageFile && navigator.share) {
+        try {
+            await navigator.share({
+                files: [imageFile],
+                title: 'Ticket de Servicio',
+                text: `Ticket de tu servicio.`,
+            });
+        } catch (error) {
+            if (!String(error).includes('AbortError')) {
+               toast({ title: 'No se pudo compartir', description: 'El error se ha registrado.', variant: 'default' });
+            }
+        }
+    } else {
+        toast({ title: 'No disponible', description: 'La función de compartir no está disponible en este navegador.', variant: 'default' });
+    }
+  };
+  
+  const handlePrintTicket = () => {
+    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
+  };
+
   if (isLoading || (isEditMode && !initialData)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -187,6 +235,16 @@ export default function ServicioPage() {
   const pageDescription = isEditMode 
     ? `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`
     : "Completa los datos para crear un nuevo registro.";
+    
+  const ticketDialogFooter = (
+    <div className="flex w-full justify-end gap-2">
+      <TooltipProvider>
+        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyTicketAsImage(false)}><Copy className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
+        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareTicket}><Share2 className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrintTicket}><Printer className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
+      </TooltipProvider>
+    </div>
+  );
     
   return (
     <div className="flex flex-col h-full">
@@ -239,6 +297,7 @@ export default function ServicioPage() {
               onOpenChange={setIsTicketDialogOpen}
               title="Ticket de Servicio"
               service={recordForPreview}
+              footerContent={ticketDialogFooter}
             >
               <TicketContent ref={ticketContentRef} service={recordForPreview} />
             </UnifiedPreviewDialog>
