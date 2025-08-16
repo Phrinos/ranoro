@@ -7,7 +7,7 @@ import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'da
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
 import Image from "next/image";
-import { calculateDriverDebt, formatCurrency } from '@/lib/utils';
+import { calculateDriverDebt, formatCurrency } from "@/lib/utils";
 import { AlertTriangle, Wallet, CreditCard, Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 

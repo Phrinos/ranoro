@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Wallet, ArrowDownCircle } from "lucide-react";
+import { PlusCircle, Wallet, ArrowDownCircle, Printer } from "lucide-react";
 import type { User, Vehicle, Driver, RentalPayment, WorkshopInfo, VehicleExpense, OwnerWithdrawal, PaymentMethod } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
@@ -13,6 +13,9 @@ import { inventoryService, personnelService, fleetService } from '@/lib/services
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { formatCurrency } from "@/lib/utils";
 import { startOfMonth, endOfMonth, parseISO, isValid, isWithinInterval } from 'date-fns';
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { RentalReceiptContent } from '@/app/(app)/rentas/components/rental-receipt-content';
+
 
 // Lazy load dialogs and tab content
 const ConductoresTab = lazy(() => import('./components/conductores-tab').then(module => ({ default: module.ConductoresTab })));
@@ -44,13 +47,16 @@ export default function FlotillaPage() {
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
 
+  const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
+  const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
+
   useEffect(() => {
     setIsLoading(true);
     const unsubs = [
         inventoryService.onVehiclesUpdate(setAllVehicles),
         personnelService.onDriversUpdate(setAllDrivers),
         fleetService.onRentalPaymentsUpdate(setAllPayments),
-        fleetService.onVehicleExpensesUpdate(setAllExpenses),
+        fleetService.onVehicleExpensesUpdate(setExpenses),
         fleetService.onOwnerWithdrawalsUpdate((data) => {
             setAllWithdrawals(data);
             setIsLoading(false);
@@ -92,6 +98,11 @@ export default function FlotillaPage() {
         toast({ title: 'Error', description: e.message, variant: 'destructive' });
     }
   };
+  
+  const handlePrintPayment = (payment: RentalPayment) => {
+    setPaymentForReceipt(payment);
+    setIsReceiptDialogOpen(true);
+  };
 
   const totalCashBalance = useMemo(() => {
     const now = new Date();
@@ -117,7 +128,7 @@ export default function FlotillaPage() {
 
   const tabs = [
     { value: "estado_cuenta", label: "Estado de Cuenta", content: <Suspense fallback={<Loader2 className="animate-spin" />}><EstadoCuentaTab drivers={allDrivers} vehicles={allVehicles} payments={allPayments} /></Suspense> },
-    { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosFlotillaTab payments={allPayments} expenses={allExpenses} withdrawals={allWithdrawals} drivers={allDrivers} /></Suspense> },
+    { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosFlotillaTab payments={allPayments} expenses={allExpenses} withdrawals={allWithdrawals} drivers={allDrivers} onPrintPayment={handlePrintPayment} /></Suspense> },
     { value: "conductores", label: "Conductores", content: <Suspense fallback={<Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" />}><ConductoresTab allDrivers={allDrivers} allVehicles={allVehicles} /></Suspense> },
     { value: "vehiculos", label: "Vehículos", content: <Suspense fallback={<Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" />}><VehiculosFlotillaTab allDrivers={allDrivers} allVehicles={allVehicles} /></Suspense> },
     { value: "reportes", label: "Reportes", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ReportesTab vehicles={allVehicles} /></Suspense> },
@@ -158,6 +169,22 @@ export default function FlotillaPage() {
          <RegisterPaymentDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} drivers={allDrivers} vehicles={allVehicles} onSave={handleSavePayment} />
          <VehicleExpenseDialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen} fleetVehicles={allVehicles.filter(v => v.isFleetVehicle)} onSave={handleSaveExpense} />
          <OwnerWithdrawalDialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen} owners={Array.from(new Set(allVehicles.filter(v => v.isFleetVehicle).map(v => v.ownerName))).sort()} onSave={handleSaveWithdrawal}/>
+         {paymentForReceipt && (
+            <UnifiedPreviewDialog
+                open={isReceiptDialogOpen}
+                onOpenChange={setIsReceiptDialogOpen}
+                title="Comprobante de Pago de Renta"
+                footerContent={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>}
+            >
+                <RentalReceiptContent 
+                    payment={paymentForReceipt}
+                    driver={allDrivers.find(d => d.id === paymentForReceipt.driverId)}
+                    vehicle={allVehicles.find(v => v.licensePlate === paymentForReceipt.vehicleLicensePlate)}
+                    allPaymentsForDriver={allPayments.filter(p => p.driverId === paymentForReceipt.driverId)}
+                    workshopInfo={workshopInfo}
+                />
+            </UnifiedPreviewDialog>
+         )}
       </Suspense>
     </Suspense>
   );

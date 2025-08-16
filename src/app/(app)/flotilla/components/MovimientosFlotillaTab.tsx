@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import type { DateRange } from 'react-day-picker';
 import { formatCurrency } from "@/lib/utils";
 import type { RentalPayment, VehicleExpense, OwnerWithdrawal, Driver } from '@/types';
-import { DollarSign, AlertCircle, LineChart, TrendingDown, CalendarIcon as CalendarDateIcon, TrendingUp, ArrowUp, ArrowDown } from "lucide-react";
+import { DollarSign, AlertCircle, LineChart, TrendingDown, CalendarIcon as CalendarDateIcon, TrendingUp, ArrowUp, ArrowDown, Printer } from "lucide-react";
 import { format, startOfDay, endOfDay, isWithinInterval, isValid, parseISO, startOfMonth, endOfMonth, compareDesc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ interface Movement {
   description: string;
   amount: number;
   isIncome: boolean;
+  originalPayment?: RentalPayment;
 }
 
 interface MovimientosFlotillaTabProps {
@@ -30,9 +31,10 @@ interface MovimientosFlotillaTabProps {
   expenses: VehicleExpense[];
   withdrawals: OwnerWithdrawal[];
   drivers: Driver[];
+  onPrintPayment: (payment: RentalPayment) => void;
 }
 
-export function MovimientosFlotillaTab({ payments, expenses, withdrawals, drivers }: MovimientosFlotillaTabProps) {
+export function MovimientosFlotillaTab({ payments, expenses, withdrawals, drivers, onPrintPayment }: MovimientosFlotillaTabProps) {
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
     return { from: startOfMonth(now), to: endOfMonth(now) };
@@ -73,7 +75,8 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, driver
       type: 'Pago de Renta',
       description: `Pago de ${p.driverName} (${p.vehicleLicensePlate})`,
       amount: p.amount,
-      isIncome: true
+      isIncome: true,
+      originalPayment: p,
     }));
 
     const expenseMovements: Movement[] = expenses.map(e => ({
@@ -142,6 +145,7 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, driver
                   <TableHead className="text-white">Tipo</TableHead>
                   <TableHead className="text-white">Descripción</TableHead>
                   <TableHead className="text-right text-white">Monto</TableHead>
+                  <TableHead className="text-right text-white">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -159,10 +163,17 @@ export function MovimientosFlotillaTab({ payments, expenses, withdrawals, driver
                       <TableCell className={cn("text-right font-semibold", m.isIncome ? "text-green-600" : "text-destructive")}>
                         {formatCurrency(m.amount)}
                       </TableCell>
+                      <TableCell className="text-right">
+                        {m.type === 'Pago de Renta' && m.originalPayment && (
+                          <Button variant="ghost" size="icon" onClick={() => onPrintPayment(m.originalPayment!)} title="Imprimir Comprobante">
+                            <Printer className="h-4 w-4"/>
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay movimientos en este periodo.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay movimientos en este periodo.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
