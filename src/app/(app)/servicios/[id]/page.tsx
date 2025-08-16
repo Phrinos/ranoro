@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { serviceService, inventoryService, adminService } from '@/lib/services';
-import { Loader2, Share2, MessageSquare, Save, Ban, Trash2 } from 'lucide-react';
+import { Loader2, Share2, Save, Ban, Trash2, Printer } from 'lucide-react';
 import { ServiceForm } from '../components/ServiceForm';
 import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
@@ -14,7 +14,8 @@ import { PageHeader } from '@/components/page-header';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
 import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { TicketContent } from '@/components/ticket-content';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -34,8 +35,11 @@ export default function ServicioPage() {
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
   
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [recordForSharing, setRecordForSharing] = useState<ServiceRecord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const ticketContentRef = React.useRef<HTMLDivElement>(null);
 
 
   const isEditMode = serviceId !== 'nuevo';
@@ -103,6 +107,11 @@ export default function ServicioPage() {
   const handleShowShareDialog = useCallback((service: ServiceRecord) => {
     setRecordForSharing(service);
     setIsShareDialogOpen(true);
+  }, []);
+  
+  const handleShowTicketDialog = useCallback((service: ServiceRecord) => {
+    setRecordForSharing(service); // Use the same state, as it holds the service data
+    setIsTicketDialogOpen(true);
   }, []);
 
   const handleSaveService = async (values: ServiceFormValues) => {
@@ -187,26 +196,15 @@ export default function ServicioPage() {
           actions={(
             <div className="flex items-center gap-2">
               {isEditMode && initialData && (
-                <Button variant="outline" onClick={() => handleShowShareDialog(initialData)} size="icon" title="Compartir Documento">
-                  <Share2 className="h-4 w-4"/>
-                </Button>
+                 <>
+                    <Button variant="destructive" onClick={() => handleShowTicketDialog(initialData)} size="sm" title="Imprimir Ticket">
+                      <Printer className="h-4 w-4"/>
+                    </Button>
+                    <Button onClick={() => handleShowShareDialog(initialData)} size="sm" title="Compartir Documento" className="bg-green-600 hover:bg-green-700 text-white">
+                      <Share2 className="h-4 w-4"/>
+                    </Button>
+                 </>
               )}
-               {initialData?.id && (
-                  <ConfirmDialog
-                      triggerButton={
-                          <Button variant="destructive" size="icon" title={isQuote ? "Eliminar Cotización" : "Cancelar Servicio"}>
-                              {isQuote ? <Trash2 className="h-4 w-4"/> : <Ban className="h-4 w-4"/>}
-                          </Button>
-                      }
-                      title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
-                      description={
-                          isQuote 
-                          ? 'Esta acción eliminará permanentemente el registro de la cotización. No se puede deshacer.'
-                          : 'Esta acción marcará el servicio como cancelado, pero no se podrá deshacer.'
-                      }
-                      onConfirm={isQuote ? handleDeleteQuote : handleCancelService}
-                  />
-                )}
             </div>
           )}
         />
@@ -223,6 +221,7 @@ export default function ServicioPage() {
             serviceHistory={serviceHistory}
             onSave={isEditMode ? handleUpdateService : handleSaveService}
             onVehicleCreated={handleVehicleCreated}
+            onCancel={isQuote ? handleDeleteQuote : handleCancelService}
             mode={isQuote ? 'quote' : 'service'}
         />
       </main>
@@ -234,6 +233,16 @@ export default function ServicioPage() {
             vehicle={vehicles.find(v => v.id === recordForSharing.vehicleId)}
           />
        )}
+        {recordForSharing && (
+          <UnifiedPreviewDialog
+            open={isTicketDialogOpen}
+            onOpenChange={setIsTicketDialogOpen}
+            title="Ticket de Servicio"
+            service={recordForSharing}
+          >
+            <TicketContent ref={ticketContentRef} service={recordForSharing} />
+          </UnifiedPreviewDialog>
+        )}
     </div>
   );
 }

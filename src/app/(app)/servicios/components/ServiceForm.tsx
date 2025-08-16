@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -59,6 +58,7 @@ interface ServiceFormWrapperProps {
   serviceHistory: ServiceRecord[];
   onSave: (data: ServiceFormValues) => Promise<void>;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
+  onCancel?: () => void;
   mode: 'service' | 'quote';
 }
 
@@ -75,6 +75,7 @@ export function ServiceForm({
   serviceHistory,
   onSave,
   onVehicleCreated,
+  onCancel,
   mode,
 }: ServiceFormWrapperProps) {
   const router = useRouter();
@@ -110,6 +111,7 @@ export function ServiceForm({
         onSubmit={onSave}
         mode={mode}
         onVehicleCreated={onVehicleCreated}
+        onCancel={onCancel}
       />
     </FormProvider>
   );
@@ -127,6 +129,7 @@ interface ServiceFormContentProps {
   onSubmit: (data: ServiceFormValues) => Promise<void>;
   mode: 'service' | 'quote';
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
+  onCancel?: () => void;
 }
 
 function ServiceFormContent({
@@ -141,6 +144,7 @@ function ServiceFormContent({
   onSubmit,
   mode,
   onVehicleCreated,
+  onCancel,
 }: ServiceFormContentProps) {
   const { toast } = useToast();
   const methods = useFormContext<ServiceFormValues>();
@@ -522,20 +526,30 @@ function ServiceFormContent({
         </AlertDialogContent>
       </AlertDialog>
         <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
-            <div className="flex items-center justify-end gap-2">
-                 <Button type="button" variant="ghost" onClick={() => console.log('Validation Errors: ', errors)}>
-                    Ver Errores de Validación (Log)
-                </Button>
-               <Button type="button" variant="outline" onClick={() => {
-                   const confirmed = confirm("¿Está seguro de que desea descartar los cambios?");
-                   if(confirmed) {
-                       reset(initialData || {}); // Reset to initial state
-                   }
-               }}>Descartar Cambios</Button>
-               <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-                  {isEditing ? 'Guardar Cambios' : 'Crear Registro'}
-               </Button>
+            <div className="flex items-center justify-between gap-2">
+                <div>
+                  {onCancel && (
+                    <ConfirmDialog
+                      triggerButton={
+                        <Button variant="destructive" type="button">
+                          <Ban className="mr-2 h-4 w-4" />
+                          {isQuote ? 'Eliminar Cotización' : 'Cancelar Servicio'}
+                        </Button>
+                      }
+                      title={isQuote ? '¿Eliminar esta cotización?' : '¿Cancelar este servicio?'}
+                      description={isQuote ? 'Esta acción eliminará permanentemente el registro.' : 'Esta acción marcará el servicio como cancelado.'}
+                      onConfirm={onCancel}
+                      confirmText={isQuote ? 'Sí, Eliminar' : 'Sí, Cancelar'}
+                    />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                   <Button type="button" variant="outline" onClick={() => reset(initialData || {})}>Descartar Cambios</Button>
+                   <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
+                      {isEditing ? 'Guardar Cambios' : 'Crear Registro'}
+                   </Button>
+                </div>
             </div>
       </footer>
     </form>
