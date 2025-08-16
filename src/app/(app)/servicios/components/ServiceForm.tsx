@@ -89,7 +89,7 @@ export function ServiceForm({
       appointmentDateTime: initialData?.appointmentDateTime ? new Date(initialData.appointmentDateTime) : undefined,
       receptionDateTime: initialData?.receptionDateTime ? new Date(initialData.receptionDateTime) : undefined,
       deliveryDateTime: initialData?.deliveryDateTime ? new Date(initialData.deliveryDateTime) : undefined,
-      serviceAdvisorSignatureDataUrl: initialData?.serviceAdvisorSignatureDataUrl ?? null,
+      serviceAdvisorSignatureDataUrl: initialData?.serviceAdvisorSignatureDataUrl ?? undefined,
       allVehiclesForDialog: vehicles, 
       nextServiceInfo: initialData?.nextServiceInfo ? {
         ...initialData.nextServiceInfo,
@@ -155,7 +155,7 @@ function ServiceFormContent({
   const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
   
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
-  const [signatureTarget, setSignatureTarget] = useState<'reception' | 'delivery' | null>(null);
+  const [signatureTarget, setSignatureTarget] = useState<'reception' | 'delivery' | 'advisor' | null>(null);
 
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
@@ -216,6 +216,12 @@ function ServiceFormContent({
     }
   }, []);
   
+  useEffect(() => {
+    if (!getValues('serviceAdvisorSignatureDataUrl') && currentUser?.signatureDataUrl) {
+      setValue('serviceAdvisorSignatureDataUrl', currentUser.signatureDataUrl, { shouldDirty: true });
+    }
+  }, [currentUser, getValues, setValue]);
+
   const technicianInfo = useMemo(() => {
     const techId = getValues('technicianId');
     if (!techId) return null;
@@ -253,6 +259,9 @@ function ServiceFormContent({
       finalValues.nextServiceInfo.mileage = undefined;
     }
 
+    if (!finalValues.serviceAdvisorSignatureDataUrl && currentUser?.signatureDataUrl) {
+        finalValues.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl;
+    }
 
     if (originalLockedStatus) {
         const allowedUpdate = {
@@ -274,6 +283,7 @@ function ServiceFormContent({
   
   const onValidationErrors = (errors: any) => {
     console.log("Validation Errors:", errors);
+    console.log('Advisor sig error:', errors?.serviceAdvisorSignatureDataUrl?.message);
     toast({
         title: "Error de Validación",
         description: "Por favor, corrija los errores antes de guardar.",
@@ -293,15 +303,19 @@ function ServiceFormContent({
     setIsNewVehicleDialogOpen(false);
   };
 
-  const handleOpenSignature = (type: 'reception' | 'delivery') => {
+  const handleOpenSignature = (type: 'reception' | 'delivery' | 'advisor') => {
     setSignatureTarget(type);
     setIsSignatureDialogOpen(true);
   };
   
   const handleSaveSignature = (signatureDataUrl: string) => {
     if (signatureTarget) {
-      const fieldToUpdate: any = signatureTarget === 'delivery' ? "customerSignatureDelivery" : "customerSignatureReception";
-      setValue(fieldToUpdate, signatureDataUrl, { shouldDirty: true });
+      const fieldToUpdate =
+        signatureTarget === 'delivery' ? "customerSignatureDelivery"
+        : signatureTarget === 'reception' ? "customerSignatureReception"
+        : "serviceAdvisorSignatureDataUrl";
+      
+      setValue(fieldToUpdate as any, signatureDataUrl, { shouldDirty: true });
     }
     setIsSignatureDialogOpen(false);
     setSignatureTarget(null);
@@ -374,7 +388,7 @@ function ServiceFormContent({
     <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
         <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} />
+                <ServiceDetailsCard isReadOnly={isReadOnly} users={technicians} serviceTypes={serviceTypes} onOpenSignature={handleOpenSignature} />
                 <Suspense fallback={<Loader2 className="animate-spin" />}><VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={(v) => setValue('vehicleId', v?.id || '')} onOpenNewVehicleDialog={handleOpenNewVehicleDialog}/></Suspense>
             </div>
             

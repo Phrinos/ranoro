@@ -1,4 +1,3 @@
-
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -100,7 +99,7 @@ export const serviceFormSchema = z.object({
     safetyInspection: safetyInspectionSchema.optional(),
     serviceAdvisorId: z.string().optional(),
     serviceAdvisorName: z.string().optional(),
-    serviceAdvisorSignatureDataUrl: z.string().optional(), 
+    serviceAdvisorSignatureDataUrl: z.string().url().optional().nullable().transform(v => (v === '' || v == null ? undefined : v)), 
     payments: z.array(paymentSchema).optional(),
     cardCommission: z.number().optional(),
     // Deprecated payment fields

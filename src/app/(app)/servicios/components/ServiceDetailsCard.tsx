@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 
 "use client";
@@ -10,7 +9,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, Signature } from "lucide-react";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import type { User, ServiceTypeRecord } from "@/types";
 import { cn } from "@/lib/utils";
@@ -44,12 +43,14 @@ interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
   users: User[];
   serviceTypes: ServiceTypeRecord[];
+  onOpenSignature: (type: 'reception' | 'delivery' | 'advisor') => void;
 }
 
 export function ServiceDetailsCard({
   isReadOnly,
   users,
-  serviceTypes
+  serviceTypes,
+  onOpenSignature,
 }: ServiceDetailsCardProps) {
   const { control, watch, formState: { errors }, setValue } = useFormContext<ServiceFormValues>();
   
@@ -164,6 +165,11 @@ export function ServiceDetailsCard({
               )}
             />
         )}
+
+        <Button type="button" variant="outline" className="w-full" onClick={() => onOpenSignature('advisor')} disabled={isReadOnly}>
+          <Signature className="mr-2 h-4 w-4" />
+          {watch('serviceAdvisorSignatureDataUrl') ? 'Cambiar Firma del Asesor' : 'Firmar como Asesor'}
+        </Button>
         
         {showQuoteDateField && (
           <div className="pt-4 border-t">
@@ -190,7 +196,6 @@ export function ServiceDetailsCard({
                            setIsQuoteDatePickerOpen(false);
                         }}
                         disabled={isReadOnly}
-                        initialFocus
                         locale={es}
                       />
                     </PopoverContent>
@@ -228,7 +233,6 @@ export function ServiceDetailsCard({
                           setIsDatePickerOpen(false);
                         }}
                         disabled={isReadOnly}
-                        initialFocus
                         locale={es}
                       />
                     </PopoverContent>
