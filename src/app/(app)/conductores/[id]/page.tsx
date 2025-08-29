@@ -6,11 +6,11 @@ import type { Driver, RentalPayment, ManualDebtEntry, Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User as UserIcon, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2, FileX, Receipt, Trash2, Archive } from 'lucide-react';
+import { ShieldAlert, Edit, User as UserIcon, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2, FileX, Receipt, Trash2, Archive, HandCoins } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from 'next/link';
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { DriverDialog } from '../components/driver-dialog';
 import type { DriverFormValues } from '../components/driver-form';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,7 @@ import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 
+const BalanceTabContent = lazy(() => import('../components/balance-tab-content').then(module => ({ default: module.BalanceTabContent })));
 
 type DocType = 'ineFrontUrl' | 'ineBackUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl';
 
@@ -96,45 +97,6 @@ export default function DriverDetailPage() {
     return allVehicles.find(v => v.id === driver.assignedVehicleId);
   }, [driver, allVehicles]);
   
-  const debtInfo = useMemo(() => {
-    if (!driver || !assignedVehicle?.dailyRentalCost) {
-      return { totalDebt: 0, daysOwed: 0, balance: 0, calculatedRentDebt: 0, manualDebt: 0 };
-    }
-    
-    const today = startOfToday();
-    const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
-    
-    // Use a fixed start date for rent calculation as per previous request.
-    const rentStartDate = new Date('2024-07-01');
-    let totalExpectedAmountThisMonth = 0;
-
-    if (!isAfter(rentStartDate, today)) {
-        // Calculate days to charge within the current month, starting from July 1st.
-        const startOfCalculation = isAfter(rentStartDate, monthStart) ? rentStartDate : monthStart;
-        
-        if (!isAfter(startOfCalculation, today)) {
-            const daysToCharge = differenceInCalendarDays(today, startOfCalculation) + 1;
-            totalExpectedAmountThisMonth = daysToCharge * assignedVehicle.dailyRentalCost;
-        }
-    }
-    
-    const paymentsThisMonth = driverPayments
-        .filter(p => isAfter(parseISO(p.paymentDate), monthStart) || isAfter(monthStart, parseISO(p.paymentDate)))
-        .reduce((sum, p) => sum + p.amount, 0);
-
-    const balance = paymentsThisMonth - totalExpectedAmountThisMonth;
-    const calculatedRentDebt = Math.max(0, -balance);
-    
-    const manualDebt = (driver.manualDebts || []).reduce((sum, debt) => sum + debt.amount, 0);
-    const totalDebt = calculatedRentDebt + manualDebt;
-    const daysOwed = assignedVehicle?.dailyRentalCost ? totalDebt / assignedVehicle.dailyRentalCost : 0;
-    
-    return { totalDebt, daysOwed, balance, calculatedRentDebt, manualDebt };
-
-  }, [driver, assignedVehicle, driverPayments]);
-
-
   const handleSaveDriver = async (formData: DriverFormValues) => {
     try {
         await personnelService.saveDriver(formData, driverId);
@@ -368,8 +330,9 @@ const handleAssignVehicle = useCallback(async (newVehicleId: string | null) => {
         <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
             <TabsTrigger value="details" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Detalles</TabsTrigger>
             <TabsTrigger value="documents" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Documentos</TabsTrigger>
-            <TabsTrigger value="deuda" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Deuda</TabsTrigger>
-            <TabsTrigger value="payments" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">Pagos</TabsTrigger>
+            <TabsTrigger value="balance" className="flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base break-words whitespace-normal leading-snug data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground hover:data-[state=inactive]:bg-muted/80">
+              <HandCoins className="mr-2 h-4 w-4" /> Saldo
+            </TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="mt-6">
@@ -493,112 +456,18 @@ const handleAssignVehicle = useCallback(async (newVehicleId: string | null) => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="deuda" className="mt-6 space-y-6">
-            <Card className="lg:col-span-1 bg-amber-50 dark:bg-amber-900/50 border-amber-200">
-                <CardHeader>
-                    <CardTitle className="text-lg text-amber-900 dark:text-amber-200">Estado de Cuenta</CardTitle>
-                    <CardDescription className="text-amber-800 dark:text-amber-300">Resumen de la deuda del mes actual y cargos manuales.</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center space-y-4">
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">DEUDA TOTAL</p>
-                        <p className="text-3xl font-bold text-destructive">{formatCurrency(debtInfo.totalDebt)}</p>
-                        <p className="text-xs text-muted-foreground">(Renta Mes: {formatCurrency(debtInfo.calculatedRentDebt)} + Adeudos Manuales: {formatCurrency(debtInfo.manualDebt)})</p>
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">DÍAS PENDIENTES (APROX)</p>
-                        <p className="text-3xl font-bold">{debtInfo.daysOwed.toFixed(2)}</p>
-                    </div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Historial de Adeudos Manuales</CardTitle>
-                    <CardDescription>Cargos adicionales como multas, daños, etc.</CardDescription>
-                  </div>
-                  <Button onClick={() => handleOpenDebtDialog(null)}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Adeudo
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                    <div className="rounded-md border overflow-x-auto">
-                      <Table>
-                        <TableHeader className="bg-black"><TableRow>
-                          <TableHead className="text-white">Fecha</TableHead>
-                          <TableHead className="text-white">Concepto</TableHead>
-                          <TableHead className="text-right text-white">Monto</TableHead>
-                          <TableHead className="text-right text-white">Acciones</TableHead>
-                        </TableRow></TableHeader>
-                        <TableBody>
-                          {(driver.manualDebts || []).length > 0 ? (
-                            [...driver.manualDebts].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()).map(debt => (
-                              <TableRow key={debt.id}>
-                                <TableCell>{format(parseISO(debt.date), "dd MMM, yyyy", { locale: es })}</TableCell>
-                                <TableCell>{debt.note}</TableCell>
-                                <TableCell className="text-right font-semibold text-destructive">{formatCurrency(debt.amount)}</TableCell>
-                                <TableCell className="text-right">
-                                  <Button variant="ghost" size="icon" className="mr-2" onClick={() => handleOpenDebtDialog(debt)}><Edit className="h-4 w-4" /></Button>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader><AlertDialogTitle>¿Eliminar Adeudo?</AlertDialogTitle><AlertDialogDescription>Se eliminará el cargo de "{debt.note}" por {formatCurrency(debt.amount)}. Esta acción no se puede deshacer.</AlertDialogDescription></AlertDialogHeader>
-                                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteDebt(debt.id)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay adeudos manuales registrados.</TableCell></TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                </CardContent>
-            </Card>
-        </TabsContent>
-
-        <TabsContent value="payments" className="mt-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Historial de Pagos</CardTitle>
-               <Button onClick={() => setIsPaymentDialogOpen(true)} disabled={!assignedVehicle}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Registrar Pago
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {driverPayments.length > 0 ? (
-                <div className="rounded-md border overflow-x-auto">
-                  <Table>
-                    <TableHeader className="bg-black"><TableRow>
-                      <TableHead className="text-white">Folio de Pago</TableHead>
-                      <TableHead className="text-white">Fecha</TableHead>
-                      <TableHead className="text-right text-white">Días Cubiertos</TableHead>
-                      <TableHead className="text-right text-white">Monto</TableHead>
-                    </TableRow></TableHeader>
-                    <TableBody>
-                      {driverPayments.map(payment => (
-                        <TableRow key={payment.id}>
-                          <TableCell className="font-mono">{payment.id}</TableCell>
-                          <TableCell>{format(parseISO(payment.paymentDate), "dd MMM yyyy, HH:mm 'hrs'", { locale: es })}</TableCell>
-                          <TableCell className="text-right">{payment.daysCovered.toFixed(2)}</TableCell>
-                          <TableCell className="text-right font-semibold">{formatCurrency(payment.amount)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
-                    <Receipt className="h-12 w-12 mb-2" />
-                    <h3 className="text-lg font-semibold text-foreground">No hay pagos registrados</h3>
-                    <p className="text-sm">Cuando se registre un pago para este conductor, aparecerá aquí.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="balance" className="mt-6">
+          <Suspense fallback={<Loader2 className="animate-spin mx-auto my-8" />}>
+            <BalanceTabContent
+              driver={driver}
+              vehicle={assignedVehicle}
+              payments={driverPayments}
+              onAddDebt={() => handleOpenDebtDialog()}
+              onRegisterPayment={() => setIsPaymentDialogOpen(true)}
+              onDeleteDebt={handleDeleteDebt}
+              onEditDebt={handleOpenDebtDialog}
+            />
+          </Suspense>
         </TabsContent>
       </Tabs>
       

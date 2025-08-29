@@ -3,7 +3,8 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle } from 'lucide-react';
-import type { PaymentMethod, ServiceSubStatus } from '@/types';
+import type { PaymentMethod, ServiceSubStatus, Driver, RentalPayment, Vehicle } from '@/types';
+import { parseISO, isAfter, startOfMonth, differenceInCalendarDays } from 'date-fns';
 export { toNumber, formatMXN as formatCurrency, IVA_RATE } from './money';
 
 export function cn(...inputs: ClassValue[]) {
@@ -21,18 +22,36 @@ export function normalizeDataUrl(dataUrl: string): string {
 }
 
 
-export const calculateDriverDebt = (driver: any, allPayments: any[], allVehicles: any[]): { totalDebt: number; rentalDebt: number; depositDebt: number; manualDebt: number, balance: number } => {
-    // This is a placeholder function. The actual logic might be more complex.
-    const rentalDebt = 0; // Placeholder
+export const calculateDriverDebt = (driver: Driver, allPayments: RentalPayment[], allVehicles: Vehicle[]): { totalDebt: number; rentalDebt: number; depositDebt: number; manualDebt: number, balance: number } => {
+    const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
+    if (!driver || !vehicle?.dailyRentalCost) {
+      return { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0, balance: 0 };
+    }
+
+    const today = startOfDay(new Date());
+    const contractStartDate = driver.contractDate ? parseISO(driver.contractDate) : today;
+    
+    let totalCharges = 0;
+    if (isAfter(today, contractStartDate)) {
+        const daysSinceStart = differenceInCalendarDays(today, contractStartDate) + 1;
+        totalCharges = daysSinceStart * vehicle.dailyRentalCost;
+    }
+
+    const totalPayments = allPayments
+        .filter(p => p.driverId === driver.id)
+        .reduce((sum, p) => sum + p.amount, 0);
+
+    const rentalDebt = Math.max(0, totalCharges - totalPayments);
     const depositDebt = (driver.requiredDepositAmount || 0) - (driver.depositAmount || 0);
-    const manualDebt = (driver.manualDebts || []).reduce((sum: number, debt: any) => sum + debt.amount, 0);
+    const manualDebt = (driver.manualDebts || []).reduce((sum, debt) => sum + debt.amount, 0);
+    
     const totalDebt = rentalDebt + depositDebt + manualDebt;
-    const balance = totalDebt > 0 ? 0 : Math.abs(totalDebt); // Simplified balance calculation
+    const balance = totalDebt > 0 ? 0 : Math.abs(totalDebt);
 
     return { 
         totalDebt: Math.max(0, totalDebt),
         rentalDebt, 
-        depositDebt, 
+        depositDebt: Math.max(0, depositDebt), 
         manualDebt,
         balance
     };
