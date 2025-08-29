@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -40,7 +41,7 @@ import { writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 
-const BalanceTabContent = lazy(() => import('../components/balance-tab-content').then(module => ({ default: module.BalanceTabContent })));
+const BalanceTabContent = lazy(() => import('../components/balance-tab-content'));
 
 type DocType = 'ineFrontUrl' | 'ineBackUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl';
 
