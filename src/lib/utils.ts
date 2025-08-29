@@ -4,7 +4,7 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle } from 'lucide-react';
 import type { PaymentMethod, ServiceSubStatus, Driver, RentalPayment, Vehicle } from '@/types';
-import { parseISO, isAfter, startOfMonth, differenceInCalendarDays } from 'date-fns';
+import { parseISO, isAfter, startOfMonth, differenceInCalendarDays, startOfDay } from 'date-fns';
 export { toNumber, formatMXN as formatCurrency, IVA_RATE } from './money';
 
 export function cn(...inputs: ClassValue[]) {
