@@ -17,6 +17,7 @@ import { FineCheckDialog } from './fine-check-dialog';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatNumber } from '@/lib/utils';
+import { parseDate } from '@/lib/forms';
 
 interface VehiculosFlotillaTabProps {
   allVehicles: Vehicle[];
@@ -115,14 +116,15 @@ export function VehiculosFlotillaTab({ allVehicles, allDrivers }: VehiculosFloti
               <TableBody>
                 {filteredData.length > 0 ? (
                   filteredData.map(vehicle => {
+                    const lastServiceDate = parseDate(vehicle.lastServiceDate);
                     return (
                       <TableRow key={vehicle.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/flotilla/${vehicle.id}`)}>
                         <TableCell className="font-semibold">{vehicle.licensePlate}</TableCell>
                         <TableCell>{vehicle.make} {vehicle.model}</TableCell>
                         <TableCell>{formatNumber(vehicle.currentMileage)} km</TableCell>
                         <TableCell>
-                          {vehicle.lastServiceDate && isValid(parseISO(vehicle.lastServiceDate))
-                            ? format(parseISO(vehicle.lastServiceDate), "dd MMM yyyy", { locale: es }) 
+                          {lastServiceDate && isValid(lastServiceDate)
+                            ? format(lastServiceDate, "dd MMM yyyy", { locale: es }) 
                             : 'N/A'}
                         </TableCell>
                       </TableRow>
