@@ -46,14 +46,14 @@ export function ConfirmDialog({
 
   const handleConfirm = async () => {
     setInternalLoading(true);
-    if (typeof onConfirm === 'function') {
-      await onConfirm();
+    try {
+        if (typeof onConfirm === 'function') {
+            await onConfirm();
+        }
+    } finally {
+        setInternalLoading(false);
+        setIsOpen(false); // Close the dialog after action completes
     }
-    setInternalLoading(false);
-    // Parent component is responsible for closing the dialog
-    // by changing its own state, which will re-render and pass a new 'open' prop.
-    // However, if it's not controlled, we might want to close it here.
-    // For simplicity and control, we let the parent handle it.
   };
 
   return (
@@ -68,7 +68,7 @@ export function ConfirmDialog({
         </AlertDialogHeader>
         {children && <div className="py-4">{children}</div>}
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => setIsOpen(false)} disabled={isLoading}>{cancelText}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             className={variant === 'destructive' ? "bg-destructive hover:bg-destructive/90" : ""}
