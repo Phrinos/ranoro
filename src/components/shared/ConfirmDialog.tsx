@@ -21,7 +21,7 @@ interface ConfirmDialogProps {
   triggerButton: React.ReactNode;
   title: string;
   description: string;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   confirmText?: string;
   cancelText?: string;
   variant?: 'default' | 'destructive';
@@ -52,7 +52,7 @@ export function ConfirmDialog({
         }
     } finally {
         setInternalLoading(false);
-        setIsOpen(false); // Close the dialog after action completes
+        setIsOpen(false); // Ensure dialog closes after action
     }
   };
 

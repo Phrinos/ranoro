@@ -158,12 +158,10 @@ export default function ServicioPage() {
 
   const handleCancelService = async () => {
       if (!initialData?.id) return;
-      const reason = prompt("Motivo de la cancelación:");
-      if (reason) {
-        await serviceService.cancelService(initialData.id, reason);
-        toast({ title: "Servicio Cancelado" });
-        router.push('/servicios?tab=historial');
-      }
+      // Removed prompt, reason will be handled by the service
+      await serviceService.cancelService(initialData.id, "Cancelado desde el panel");
+      toast({ title: "Servicio Cancelado" });
+      router.push('/servicios?tab=historial');
   };
   
   const handleDeleteQuote = async () => {

@@ -313,11 +313,11 @@ const saveMigratedServices = async (services: any[], vehicles: any[]) => {
 };
 
 
-const cancelService = async (serviceId: string, reason: string): Promise<void> => {
+const cancelService = async (serviceId: string, reason?: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     await updateDoc(doc(db, 'serviceRecords', serviceId), {
         status: 'Cancelado',
-        cancellationReason: reason,
+        cancellationReason: reason || "Cancelado desde el panel",
         deliveryDateTime: new Date().toISOString(),
     });
     const updatedDoc = await getDoc(doc(db, 'serviceRecords', serviceId));
