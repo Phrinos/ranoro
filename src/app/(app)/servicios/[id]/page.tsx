@@ -20,6 +20,11 @@ import { TicketContent } from '@/components/ticket-content';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import html2canvas from 'html2canvas';
 import { formatCurrency } from '@/lib/utils';
+import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
+import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
+import { writeBatch } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
+
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -40,6 +45,7 @@ export default function ServicioPage() {
   
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -148,6 +154,37 @@ export default function ServicioPage() {
       toast({ title: 'Error al Actualizar', variant: 'destructive'});
     } finally {
         setIsSubmitting(false);
+    }
+  };
+
+  const handleCompleteService = (values: ServiceFormValues) => {
+    setInitialData(values as ServiceRecord);
+    setIsPaymentDialogOpen(true);
+  };
+  
+  const handleConfirmPayment = async (recordId: string, paymentDetails: PaymentDetailsFormValues) => {
+    if (!initialData) return;
+    setIsSubmitting(true);
+    try {
+      const batch = writeBatch(db);
+      await serviceService.completeService(initialData, paymentDetails, batch);
+      await batch.commit();
+      
+      toast({
+        title: "Servicio Completado",
+        description: `El servicio #${recordId.slice(-6)} ha sido completado y cobrado.`,
+      });
+      setIsPaymentDialogOpen(false);
+      router.push('/servicios?tab=historial');
+    } catch (e: any) {
+      console.error("Error al completar el servicio:", e);
+      toast({
+        title: "Error al Completar",
+        description: e.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -277,6 +314,7 @@ export default function ServicioPage() {
             suppliers={suppliers}
             serviceHistory={serviceHistory}
             onSave={isEditMode ? handleUpdateService : handleSaveService}
+            onComplete={handleCompleteService}
             onVehicleCreated={handleVehicleCreated}
             onCancel={isQuote ? handleDeleteQuote : handleCancelService}
             mode={isQuote ? 'quote' : 'service'}
@@ -301,6 +339,16 @@ export default function ServicioPage() {
             </UnifiedPreviewDialog>
           </>
        )}
+       {initialData && (
+        <PaymentDetailsDialog
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+          record={initialData}
+          onConfirm={handleConfirmPayment}
+          recordType="service"
+          isCompletionFlow={true}
+        />
+      )}
     </div>
   );
 }

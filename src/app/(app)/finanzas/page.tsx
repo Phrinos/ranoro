@@ -1,5 +1,4 @@
 
-
 // src/app/(app)/finanzas/page.tsx
 
 "use client";
@@ -324,8 +323,6 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
             content: (
                  <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
                     <CajaContent 
-                      allSales={allSales} 
-                      allServices={allServices}
                       cashTransactions={cashTransactions}
                     />
                  </Suspense>

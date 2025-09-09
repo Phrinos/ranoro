@@ -1,17 +1,20 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { Driver, Vehicle, RentalPayment, ManualDebtEntry } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO, isAfter, startOfDay, eachDayOfInterval } from 'date-fns';
+import { format, parseISO, isAfter, startOfDay, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency, cn } from '@/lib/utils';
-import { ArrowDown, ArrowUp, PlusCircle, HandCoins, Edit, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, PlusCircle, HandCoins, Edit, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import type { DateRange } from 'react-day-picker';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 interface Transaction {
   date: Date;
@@ -43,6 +46,11 @@ export default function BalanceTabContent({
   onDeleteDebt,
   onEditDebt,
 }: BalanceTabContentProps) {
+  
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const now = new Date();
+    return { from: startOfMonth(now), to: endOfMonth(now) };
+  });
 
   const { transactions, totalBalance, depositDebt } = useMemo(() => {
     let balance = 0;
@@ -62,22 +70,53 @@ export default function BalanceTabContent({
         isManualDebt: true,
       });
     }
+    
+    // 2. Filter payments and manual debts based on the selected date range
+    const from = dateRange?.from ? startOfDay(dateRange.from) : new Date('2000-01-01');
+    const to = dateRange?.to ? endOfDay(dateRange.to) : new Date();
+    const interval = { start: from, end: to };
 
-    // 2. Generate daily rental charges
+    const paymentTransactions: Transaction[] = payments
+      .filter(p => isWithinInterval(parseISO(p.paymentDate), interval))
+      .map(p => ({
+        date: parseISO(p.paymentDate),
+        description: p.note || 'Pago de Renta',
+        charge: 0,
+        payment: p.amount,
+        balance: 0,
+        isPayment: true,
+        isManualDebt: false,
+      }));
+
+    const manualDebtTransactions: Transaction[] = (driver.manualDebts || [])
+      .filter(d => isWithinInterval(parseISO(d.date), interval))
+      .map(d => ({
+        date: parseISO(d.date),
+        description: d.note,
+        charge: d.amount,
+        payment: 0,
+        balance: 0,
+        isPayment: false,
+        isManualDebt: true,
+        originalDebt: d,
+      }));
+
+
+    // 3. Generate daily rental charges only for the selected date range
     const dailyCharges: Transaction[] = [];
     if (vehicle && driver.contractDate && vehicle.dailyRentalCost) {
-      const startDate = parseISO(driver.contractDate);
-      const today = startOfDay(new Date());
-
-      if (isAfter(today, startDate) || isAfter(startDate, today)) {
-        const interval = eachDayOfInterval({ start: startDate, end: today });
-        interval.forEach(day => {
+      const contractStart = parseISO(driver.contractDate);
+      const effectiveStart = isAfter(contractStart, from) ? contractStart : from;
+      
+      if (isAfter(to, effectiveStart)) {
+        const rentalInterval = eachDayOfInterval({ start: effectiveStart, end: to });
+        rentalInterval.forEach(day => {
           dailyCharges.push({
             date: day,
             description: `Renta diaria (${format(day, 'dd MMM', { locale: es })})`,
             charge: vehicle.dailyRentalCost as number,
             payment: 0,
-            balance: 0, // will be calculated later
+            balance: 0,
             isPayment: false,
             isManualDebt: false,
           });
@@ -85,27 +124,6 @@ export default function BalanceTabContent({
       }
     }
 
-    // 3. Format payments and manual debts
-    const paymentTransactions: Transaction[] = payments.map(p => ({
-      date: parseISO(p.paymentDate),
-      description: p.note || 'Pago de Renta',
-      charge: 0,
-      payment: p.amount,
-      balance: 0,
-      isPayment: true,
-      isManualDebt: false,
-    }));
-
-    const manualDebtTransactions: Transaction[] = (driver.manualDebts || []).map(d => ({
-      date: parseISO(d.date),
-      description: d.note,
-      charge: d.amount,
-      payment: 0,
-      balance: 0,
-      isPayment: false,
-      isManualDebt: true,
-      originalDebt: d,
-    }));
 
     // 4. Combine and sort all transactions
     const sortedTransactions = [...dailyCharges, ...paymentTransactions, ...manualDebtTransactions]
@@ -116,14 +134,17 @@ export default function BalanceTabContent({
       balance += t.payment - t.charge;
       t.balance = balance;
     });
+    
+    // Add the initial deposit debt to the start of the visible transactions if it falls in range
+    const displayTransactions = [...allTransactions, ...sortedTransactions].sort((a,b) => b.date.getTime() - a.date.getTime());
 
     return { 
-      transactions: [...allTransactions, ...sortedTransactions].sort((a,b) => b.date.getTime() - a.date.getTime()), 
+      transactions: displayTransactions,
       totalBalance: balance,
       depositDebt: depositOwed,
     };
 
-  }, [driver, vehicle, payments]);
+  }, [driver, vehicle, payments, dateRange]);
 
 
   return (
@@ -147,18 +168,31 @@ export default function BalanceTabContent({
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <CardTitle>Historial de Movimientos</CardTitle>
             <CardDescription>Registro cronológico de todos los cargos y pagos.</CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={onAddDebt} variant="destructive" size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" /> Añadir Cargo
-            </Button>
-            <Button onClick={onRegisterPayment} size="sm">
-                <HandCoins className="mr-2 h-4 w-4" /> Registrar Pago
-            </Button>
+          <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "dd/MM/yy")} - ${format(dateRange.to, "dd/MM/yy")}` : format(dateRange.from, "dd/MM/yy")) : "Seleccionar fecha"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} />
+              </PopoverContent>
+            </Popover>
+            <div className="flex gap-2">
+              <Button onClick={onAddDebt} variant="destructive" size="sm" className="flex-1">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Añadir Cargo
+              </Button>
+              <Button onClick={onRegisterPayment} size="sm" className="flex-1">
+                  <HandCoins className="mr-2 h-4 w-4" /> Registrar Pago
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -217,4 +251,3 @@ export default function BalanceTabContent({
     </div>
   );
 }
-

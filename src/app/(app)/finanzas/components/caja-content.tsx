@@ -33,24 +33,21 @@ import { ServiceSheetContent } from '@/components/ServiceSheetContent';
 import ReactDOMServer from 'react-dom/server';
 
 const cashTransactionSchema = z.object({
-  concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
+  description: z.string().min(3, "La descripción debe tener al menos 3 caracteres."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a 0."),
 });
 type CashTransactionFormValues = z.infer<typeof cashTransactionSchema>;
 
 // Extend the existing CashDrawerTransaction type for local use
 type EnhancedCashDrawerTransaction = CashDrawerTransaction & {
-    licensePlate?: string;
-    fullConcept?: string;
+    fullDescription?: string;
 };
 
 interface CajaContentProps {
-  allSales: SaleReceipt[];
-  allServices: ServiceRecord[];
   cashTransactions: CashDrawerTransaction[];
 }
 
-export default function CajaContent({ allSales, allServices, cashTransactions }: CajaContentProps) {
+export default function CajaContent({ cashTransactions }: CajaContentProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -60,13 +57,8 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
     return { from: startOfMonth(now), to: endOfMonth(now) };
   });
 
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<SaleReceipt | ServiceRecord | null>(null);
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
-  const ticketContentRef = useRef<HTMLDivElement>(null);
-  const serviceSheetContentRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
@@ -84,14 +76,13 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
   });
 
   const mergedCashMovements = useMemo(() => {
-    const enhancedManualTransactions: EnhancedCashDrawerTransaction[] = cashTransactions.map(t => ({
-        ...t,
-        id: t.id, // The original object already has the ID
-        concept: t.id, // For the ID column
-        fullConcept: t.concept, // For the descriptive concept column
-    }));
-
-    return [...enhancedManualTransactions]
+    return cashTransactions
+      .map(t => ({
+          ...t,
+          // Ensure backwards compatibility for entries that used 'concept'
+          fullDescription: t.fullDescription || t.description,
+          description: t.description || t.concept,
+      }))
       .sort((a,b) => (parseDate(b.date)?.getTime() ?? 0) - (parseDate(a.date)?.getTime() ?? 0));
   }, [cashTransactions]);
 
@@ -146,9 +137,10 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
         await cashService.addCashTransaction({
             type: dialogType,
             amount: values.amount,
-            concept: values.concept,
+            description: values.description,
             userId: currentUser?.id || 'system',
             userName: currentUser?.name || 'Sistema',
+            relatedType: 'Manual',
         });
         toast({ title: `Se registró una ${dialogType.toLowerCase()} de caja.` });
         setIsDialogOpen(false);
@@ -175,51 +167,6 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
             break;
     }
   };
-
-  const renderPreviewContent = () => {
-    if (!selectedDocument) return '';
-
-    if ('saleDate' in selectedDocument) { // It's a SaleReceipt
-        return ReactDOMServer.renderToString(
-            <TicketContent
-                ref={ticketContentRef}
-                sale={selectedDocument as SaleReceipt}
-                previewWorkshopInfo={workshopInfo || undefined}
-            />
-        );
-    } else { // It's a ServiceRecord
-        const service = selectedDocument as ServiceRecord;
-        const adaptedRecord = {
-          id: service.id,
-          status: service.status === 'En Taller' ? 'EN_TALLER' : service.status === 'Entregado' ? 'ENTREGADO' : 'AGENDADO',
-          serviceDate: service.serviceDate,
-          appointmentDate: service.appointmentDateTime,
-          isPublicView: false,
-          vehicle: {
-            label: selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model} ${selectedVehicle.year}` : 'Vehículo',
-            plates: selectedVehicle?.licensePlate,
-          },
-          customerName: service.customerName,
-          workshopInfo: workshopInfo,
-          serviceAdvisorName: service.serviceAdvisorName,
-          serviceAdvisorSignatureDataUrl: service.serviceAdvisorSignatureDataUrl,
-          serviceItems: service.serviceItems,
-          reception: {
-            at: service.receptionDateTime,
-            customerSignatureDataUrl: service.customerSignatureReception,
-          },
-          delivery: {
-            at: service.deliveryDateTime,
-            customerSignatureDataUrl: service.customerSignatureDelivery,
-          },
-          securityChecklist: [],
-        };
-        return ReactDOMServer.renderToString(
-            <ServiceSheetContent service={adaptedRecord} />
-        );
-    }
-  };
-
 
   return (
     <div className="space-y-6">
@@ -279,7 +226,11 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
         </div>
         
         <Card>
-            <CardHeader><CardTitle>Movimientos de Caja del Periodo</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Movimientos de Caja del Periodo</CardTitle>
+            <CardDescription>
+                Esta lista incluye todos los movimientos en efectivo: servicios, ventas y registros manuales.
+            </CardDescription>
+            </CardHeader>
             <CardContent className="p-0">
                 <div className="overflow-x-auto rounded-md border">
                     <Table>
@@ -288,8 +239,8 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
                                 <TableHead>Hora</TableHead>
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>Origen</TableHead>
-                                <TableHead>ID Movimiento</TableHead>
-                                <TableHead>Concepto</TableHead>
+                                <TableHead>ID Movimiento/Folio</TableHead>
+                                <TableHead>Descripción</TableHead>
                                 <TableHead>Usuario</TableHead>
                                 <TableHead className="text-right">Monto</TableHead>
                             </TableRow>
@@ -310,8 +261,8 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
                                         <TableCell>
                                           <Badge variant="outline">{m.relatedType || 'Manual'}</Badge>
                                         </TableCell>
-                                        <TableCell className="font-mono text-xs">{m.concept}</TableCell>
-                                        <TableCell className="max-w-[250px] truncate">{m.fullConcept}</TableCell>
+                                        <TableCell className="font-mono text-xs">{m.relatedId ? m.relatedId.slice(-6) : m.id.slice(-6)}</TableCell>
+                                        <TableCell className="max-w-[250px] truncate">{m.fullDescription}</TableCell>
                                         <TableCell>{m.userName}</TableCell>
                                         <TableCell className={cn("text-right font-semibold", m.type === 'Entrada' ? 'text-green-600' : 'text-red-600')}>
                                             {formatCurrency(m.amount)}
@@ -331,17 +282,17 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
             <DialogContent className="sm:max-w-md p-0">
                 <DialogHeader className="p-6 pb-4">
                     <DialogTitle>Registrar {dialogType} de Caja</DialogTitle>
-                    <DialogDescription>Añade un concepto y monto para registrar el movimiento.</DialogDescription>
+                    <DialogDescription>Añade una descripción y monto para registrar el movimiento.</DialogDescription>
                 </DialogHeader>
                 <div className="p-6 pt-0">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(handleTransactionSubmit)} id="cash-transaction-form" className="space-y-4">
                             <FormField
                                 control={form.control}
-                                name="concept"
+                                name="description"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Concepto</FormLabel>
+                                    <FormLabel>Descripción</FormLabel>
                                     <FormControl>
                                         <Textarea placeholder={dialogType === 'Entrada' ? 'Ej: Fondo inicial' : 'Ej: Compra de papelería'} {...field} />
                                     </FormControl>
@@ -376,20 +327,6 @@ export default function CajaContent({ allSales, allServices, cashTransactions }:
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-        
-        {selectedDocument && (
-          <UnifiedPreviewDialog
-            open={isPreviewOpen}
-            onOpenChange={setIsPreviewOpen}
-            title={`Vista Previa - ${'saleDate' in selectedDocument ? 'Venta' : 'Servicio'}`}
-            service={selectedDocument}
-          >
-            {'saleDate' in selectedDocument ? 
-              <TicketContent ref={ticketContentRef} sale={selectedDocument} previewWorkshopInfo={workshopInfo || undefined} /> :
-              <ServiceSheetContent service={selectedDocument} />
-            }
-          </UnifiedPreviewDialog>
-        )}
     </div>
   );
 }
