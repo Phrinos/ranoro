@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -216,8 +217,14 @@ export default function DriverDetailPage() {
                 <div className="flex items-center gap-3"><FileText className="h-4 w-4 text-muted-foreground" /><span>Contrato: {driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'No especificada'}</span></div>
               </CardContent>
             </Card>
-            <Card className="lg:col-span-3">
-              <CardHeader><CardTitle>Vehículo Asignado</CardTitle></CardHeader>
+             <Card className="lg:col-span-3">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Vehículo Asignado</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                    <Edit className="mr-2 h-4 w-4"/>
+                    Cambiar Vehículo
+                </Button>
+              </CardHeader>
               <CardContent>
                 {assignedVehicle ? (
                   <div className="flex items-center justify-between">
