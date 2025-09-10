@@ -26,6 +26,7 @@ interface Transaction {
   isPayment: boolean;
   isManualDebt: boolean;
   originalDebt?: ManualDebtEntry;
+  isDailyCharge?: boolean;
 }
 
 interface BalanceTabContentProps {
@@ -36,6 +37,7 @@ interface BalanceTabContentProps {
   onRegisterPayment: () => void;
   onDeleteDebt: (debtId: string) => void;
   onEditDebt: (debt: ManualDebtEntry) => void;
+  onDeletePayment: (payment: RentalPayment) => void;
 }
 
 export default function BalanceTabContent({ 
@@ -46,6 +48,7 @@ export default function BalanceTabContent({
   onRegisterPayment,
   onDeleteDebt,
   onEditDebt,
+  onDeletePayment,
 }: BalanceTabContentProps) {
   
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
@@ -106,7 +109,7 @@ export default function BalanceTabContent({
     let runningBalance = initialBalance;
     const transactionsInPeriod: Transaction[] = [];
     
-    const paymentTransactions: Omit<Transaction, 'balance'>[] = payments
+    const paymentTransactions: Omit<Transaction, 'balance'|'isDailyCharge'>[] = payments
       .filter(p => isWithinInterval(parseISO(p.paymentDate), interval))
       .map(p => ({
         date: parseISO(p.paymentDate),
@@ -115,9 +118,10 @@ export default function BalanceTabContent({
         payment: p.amount,
         isPayment: true,
         isManualDebt: false,
+        originalPayment: p,
       }));
 
-    const manualDebtTransactions: Omit<Transaction, 'balance'>[] = (driver.manualDebts || [])
+    const manualDebtTransactions: Omit<Transaction, 'balance'|'isDailyCharge'>[] = (driver.manualDebts || [])
       .filter(d => isWithinInterval(parseISO(d.date), interval))
       .map(d => ({
         date: parseISO(d.date),
@@ -129,12 +133,12 @@ export default function BalanceTabContent({
         originalDebt: d,
       }));
 
-    const dailyCharges: Omit<Transaction, 'balance'>[] = [];
+    const dailyCharges: Omit<Transaction, 'balance'|'isDailyCharge'>[] = [];
     if (calculationPreCheck.canCalculate) {
       const contractStart = startOfDay(parseISO(driver.contractDate!));
       const effectiveStart = isAfter(contractStart, from) ? contractStart : from;
       
-      if (isAfter(effectiveTo, effectiveStart) || effectiveStart.getTime() === effectiveTo.getTime()) {
+      if (!isAfter(effectiveStart, effectiveTo)) {
         const rentalInterval = eachDayOfInterval({ start: effectiveStart, end: effectiveTo });
         rentalInterval.forEach(day => {
           dailyCharges.push({
@@ -144,6 +148,7 @@ export default function BalanceTabContent({
             payment: 0,
             isPayment: false,
             isManualDebt: false,
+            isDailyCharge: true,
           });
         });
       }
@@ -160,7 +165,7 @@ export default function BalanceTabContent({
     let finalTotalBalance = 0;
     if (calculationPreCheck.canCalculate) {
         const contractStart = startOfDay(parseISO(driver.contractDate!));
-        if (isAfter(today, contractStart) || contractStart.getTime() === today.getTime()) {
+        if (isAfter(today, contractStart) || isSameDay(today, contractStart)) {
             const rentalInterval = eachDayOfInterval({ start: contractStart, end: today });
             finalTotalBalance -= rentalInterval.length * (vehicle!.dailyRentalCost as number);
         }
@@ -264,11 +269,13 @@ export default function BalanceTabContent({
                 <TableBody>
                   {transactions.length > 0 ? (
                     transactions.map((t, index) => (
-                      <TableRow key={index}>
+                      <TableRow key={`${t.date.toISOString()}-${index}`}>
                         <TableCell>{format(t.date, "dd MMM yyyy", { locale: es })}</TableCell>
                         <TableCell>
                           {t.description}
                           {t.isManualDebt && <Badge variant="destructive" className="ml-2">Cargo Manual</Badge>}
+                          {t.isPayment && <Badge variant="success" className="ml-2">Abono</Badge>}
+                          {t.isDailyCharge && <Badge variant="outline" className="ml-2">Renta</Badge>}
                         </TableCell>
                         <TableCell className="text-right text-destructive">
                           {t.charge > 0 ? formatCurrency(t.charge) : '-'}
@@ -288,6 +295,16 @@ export default function BalanceTabContent({
                                 title="¿Eliminar Adeudo?"
                                 description={`Se eliminará el cargo de "${t.description}" por ${formatCurrency(t.charge)}. Esta acción no se puede deshacer.`}
                                 onConfirm={() => onDeleteDebt(t.originalDebt!.id)}
+                              />
+                            </>
+                          )}
+                           {t.isPayment && t.originalPayment && (
+                            <>
+                              <ConfirmDialog
+                                triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                                title="¿Eliminar Pago?"
+                                description={`Se eliminará el pago de ${formatCurrency(t.payment)}. Esta acción no se puede deshacer.`}
+                                onConfirm={() => onDeletePayment(t.originalPayment!)}
                               />
                             </>
                           )}
