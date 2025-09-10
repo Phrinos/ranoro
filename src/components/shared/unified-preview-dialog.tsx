@@ -1,4 +1,3 @@
-
 // src/components/shared/unified-preview-dialog.tsx
 "use client";
 
@@ -6,8 +5,6 @@ import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { SaleReceipt, ServiceRecord, RentalPayment, CashDrawerTransaction } from '@/types';
-import { TooltipProvider } from '@/components/ui/tooltip';
-
 
 interface UnifiedPreviewDialogProps {
   open: boolean;
@@ -52,10 +49,8 @@ export function UnifiedPreviewDialog({
           </div>
         </div>
         {footerContent && (
-            <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
-               <TooltipProvider>
+            <DialogFooter className="p-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
                 {footerContent}
-               </TooltipProvider>
             </DialogFooter>
         )}
       </DialogContent>

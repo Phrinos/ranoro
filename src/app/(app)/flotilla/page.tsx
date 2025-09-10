@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/page.tsx
 "use client";
 
@@ -16,7 +15,7 @@ import { startOfMonth, endOfMonth, parseISO, isValid, isWithinInterval } from 'd
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { RentalReceiptContent } from '@/app/(app)/rentas/components/rental-receipt-content';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
+import html2canvas from 'html2canvas';
 
 // Lazy load dialogs and tab content
 const ConductoresTab = lazy(() => import('./components/conductores-tab').then(module => ({ default: module.ConductoresTab })));
@@ -196,6 +195,63 @@ export default function FlotillaPage() {
     return totalIncome - totalWithdrawals - totalVehicleExpenses;
   }, [allPayments, allWithdrawals, allExpenses, fleetCashEntries]);
   
+  const handleCopyTicketAsImage = useCallback(async (isForSharing: boolean = false) => {
+    if (!receiptContentRef.current) return null;
+    try {
+        const canvas = await html2canvas(receiptContentRef.current, { scale: 2.5, backgroundColor: null, useCORS: true });
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error("No se pudo crear el blob de la imagen.");
+
+        if (isForSharing) {
+            const file = paymentForReceipt ? `recibo_pago_${paymentForReceipt.id}.png` : `recibo_ingreso_${cashEntryForReceipt!.id}.png`;
+            return new File([blob], file, { type: 'image/png' });
+        } else {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            toast({ title: "Copiado", description: "La imagen del recibo ha sido copiada." });
+            return null;
+        }
+    } catch (e) {
+        console.error("Error al manejar la imagen:", e);
+        toast({ title: "Error", description: "No se pudo procesar la imagen del recibo.", variant: "destructive" });
+        return null;
+    }
+  }, [paymentForReceipt, cashEntryForReceipt, toast]);
+  
+  const handleCopyWhatsAppMessage = useCallback(() => {
+    if (!paymentForReceipt) return; // Only implement for payment receipts for now
+    const message = `Comprobante de Pago
+Folio: ${paymentForReceipt.id}
+Conductor: ${paymentForReceipt.driverName}
+Vehículo: ${paymentForReceipt.vehicleLicensePlate}
+Monto: ${formatCurrency(paymentForReceipt.amount)}
+¡Gracias por tu pago!`;
+
+    navigator.clipboard.writeText(message).then(() => {
+        toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado.' });
+    });
+  }, [paymentForReceipt, toast]);
+
+
+  const handleShareReceipt = async () => {
+    const imageFile = await handleCopyTicketAsImage(true);
+    if (imageFile && navigator.share) {
+        try {
+            await navigator.share({
+                files: [imageFile],
+                title: 'Recibo',
+                text: `Recibo de ${paymentForReceipt ? 'pago' : 'ingreso'}`,
+            });
+        } catch (error) {
+            if (!String(error).includes('AbortError')) {
+                toast({ title: 'No se pudo compartir', description: 'Copiando texto como alternativa.', variant: 'default' });
+                handleCopyWhatsAppMessage();
+            }
+        }
+    } else {
+        handleCopyWhatsAppMessage();
+    }
+  };
+
   const handlePrintReceipt = () => {
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
@@ -258,10 +314,10 @@ export default function FlotillaPage() {
               rentalPayment={paymentForReceipt ?? undefined}
               cashEntry={cashEntryForReceipt ?? undefined}
               footerContent={
-                 <div className="flex w-full justify-end gap-4">
+                 <div className="flex w-full justify-end gap-2">
                     <TooltipProvider>
-                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Copy className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
-                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyTicketAsImage(false)}><Copy className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareReceipt}><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
                         <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrintReceipt}><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
                     </TooltipProvider>
                 </div>

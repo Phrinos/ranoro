@@ -120,7 +120,7 @@ function ServiciosPage() {
   const handleCopyTicketAsImage = useCallback(async (isForSharing: boolean = false) => {
     if (!ticketContentRef.current || !serviceForTicket) return null;
     try {
-        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
+        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null, useCORS: true });
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
         if (!blob) throw new Error("No se pudo crear el blob de la imagen.");
 
@@ -231,7 +231,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
                 title="Ticket de Servicio"
                 service={serviceForTicket}
                 footerContent={
-                  <div className="flex w-full justify-end gap-4">
+                  <div className="flex w-full justify-end gap-2">
                     <TooltipProvider>
                       <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyTicketAsImage(false)}>
                             <Copy className="h-6 w-6" />

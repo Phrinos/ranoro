@@ -125,7 +125,7 @@ function PosPageComponent({ tab }: { tab?: string }) {
   const handleCopyTicketAsImage = useCallback(async (isForSharing: boolean = false) => {
     if (!ticketContentRef.current || !saleForReprint) return null;
     try {
-        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
+        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null, useCORS: true });
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
         if (!blob) throw new Error("No se pudo crear el blob de la imagen.");
 
@@ -224,7 +224,7 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
           title={`Ticket Venta #${saleForReprint.id.slice(-6)}`}
           sale={saleForReprint}
           footerContent={
-            <div className="flex w-full justify-end gap-4">
+            <div className="flex w-full justify-end gap-2">
                 <TooltipProvider>
                     <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyTicketAsImage(false)}><Copy className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareTicket}><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
