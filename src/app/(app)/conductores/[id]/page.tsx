@@ -86,7 +86,31 @@ export default function DriverDetailPage() {
   const handleSaveDriver = async (formData: DriverFormValues) => {
     if (!driver) return;
     try {
-        await personnelService.saveDriver(formData, driver.id);
+        const depositDifference = (formData.requiredDepositAmount || 0) - (formData.depositAmount || 0);
+        const existingDebts = driver.manualDebts || [];
+        const depositDebtIndex = existingDebts.findIndex(d => d.note === 'Adeudo de depósito inicial');
+
+        if (depositDifference > 0) {
+            if (depositDebtIndex > -1) {
+                // Update existing deposit debt
+                existingDebts[depositDebtIndex].amount = depositDifference;
+                existingDebts[depositDebtIndex].date = new Date().toISOString();
+            } else {
+                // Add new deposit debt
+                existingDebts.push({
+                    id: `DEP_${Date.now().toString(36)}`,
+                    date: new Date().toISOString(),
+                    amount: depositDifference,
+                    note: 'Adeudo de depósito inicial'
+                });
+            }
+        } else if (depositDebtIndex > -1) {
+            // Remove deposit debt if it's paid off
+            existingDebts.splice(depositDebtIndex, 1);
+        }
+
+        const dataToSave = { ...formData, manualDebts: existingDebts };
+        await personnelService.saveDriver(dataToSave, driver.id);
         await fetchDriverData();
         setIsEditDialogOpen(false);
         toast({ title: "Datos Actualizados", description: `Se guardaron los cambios para ${formData.name}.` });
@@ -235,7 +259,17 @@ export default function DriverDetailPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-      <div className="mb-6"><h1 className="text-2xl font-bold tracking-tight md:text-3xl">{driver.name}</h1><p className="text-muted-foreground">ID: {driver.id}</p></div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{driver.name}</h1>
+        {assignedVehicle ? (
+          <p className="text-lg text-muted-foreground font-semibold flex items-center gap-2">
+            <Car className="h-5 w-5"/> {assignedVehicle.make} {assignedVehicle.model} ({assignedVehicle.licensePlate})
+          </p>
+        ) : (
+          <p className="text-muted-foreground">Sin vehículo asignado</p>
+        )}
+        <p className="text-sm text-muted-foreground mt-1">ID Conductor: {driver.id}</p>
+      </div>
 
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="details">Detalles</TabsTrigger><TabsTrigger value="documents">Documentos</TabsTrigger><TabsTrigger value="balance"><HandCoins className="mr-2 h-4 w-4" />Saldo</TabsTrigger></TabsList>
