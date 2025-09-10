@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,7 +30,6 @@ const driverFormSchema = z.object({
     required_error: "La fecha del contrato es requerida.",
     invalid_type_error: "Por favor seleccione una fecha válida.",
   }).optional(),
-  assignedVehicleId: z.string().nullable().optional(),
 });
 
 export type DriverFormValues = z.infer<typeof driverFormSchema>;
@@ -46,7 +46,6 @@ export function DriverForm({ id, initialData, onSubmit, allVehicles }: DriverFor
     resolver: zodResolver(driverFormSchema),
     defaultValues: initialData ? {
         ...initialData,
-        assignedVehicleId: initialData.assignedVehicleId ?? null,
         requiredDepositAmount: initialData.requiredDepositAmount ?? 3500,
         depositAmount: initialData.depositAmount ?? undefined,
         contractDate: initialData.contractDate ? new Date(initialData.contractDate) : undefined,
@@ -58,11 +57,8 @@ export function DriverForm({ id, initialData, onSubmit, allVehicles }: DriverFor
       requiredDepositAmount: 3500,
       depositAmount: undefined,
       contractDate: new Date(),
-      assignedVehicleId: null,
     },
   });
-
-  const fleetVehicles = allVehicles.filter(v => v.isFleetVehicle);
 
   return (
     <Form {...form}>
@@ -74,31 +70,6 @@ export function DriverForm({ id, initialData, onSubmit, allVehicles }: DriverFor
             <FormItem>
               <FormLabel>Nombre Completo</FormLabel>
               <FormControl><Input placeholder="Ej: Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-         <FormField
-          control={form.control}
-          name="assignedVehicleId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Vehículo Asignado</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="-- Seleccionar vehículo --" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="null">-- Ninguno --</SelectItem>
-                  {fleetVehicles.map(v => (
-                    <SelectItem key={v.id} value={v.id} disabled={!!v.assignedDriverId && v.assignedDriverId !== initialData?.id}>
-                        {v.licensePlate} - {v.make} {v.model} {v.assignedDriverId && v.assignedDriverId !== initialData?.id ? '(Asignado a otro)' : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <FormMessage />
             </FormItem>
           )}

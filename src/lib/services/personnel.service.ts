@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -135,27 +136,18 @@ const saveDriver = async (data: Partial<DriverFormValues>, existingId?: string):
     }
 };
 
-const saveDriverWithVehicleAssignment = async (
-    originalDriver: Driver,
-    formData: DriverFormValues,
+const assignVehicleToDriver = async (
+    driver: Driver,
+    newVehicleId: string | null,
     allVehicles: Vehicle[]
 ): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const batch = writeBatch(db);
-    const driverRef = doc(db, 'drivers', originalDriver.id);
+    const driverRef = doc(db, 'drivers', driver.id);
+    const oldVehicleId = driver.assignedVehicleId;
 
-    const oldVehicleId = originalDriver.assignedVehicleId;
-    const newVehicleId = formData.assignedVehicleId || null;
-
-    // 1. Update the driver's own data from the form
-    const driverDataToSave = {
-        ...formData,
-        assignedVehicleId: newVehicleId,
-        depositAmount: formData.depositAmount ? Number(formData.depositAmount) : 0,
-        requiredDepositAmount: formData.requiredDepositAmount ? Number(formData.requiredDepositAmount) : 0,
-        contractDate: formData.contractDate ? new Date(formData.contractDate).toISOString() : null,
-    };
-    batch.update(driverRef, cleanObjectForFirestore(driverDataToSave));
+    // 1. Update the driver's assignedVehicleId
+    batch.update(driverRef, { assignedVehicleId: newVehicleId });
 
     // 2. If the vehicle assignment has changed, handle all necessary updates
     if (oldVehicleId !== newVehicleId) {
@@ -171,18 +163,19 @@ const saveDriverWithVehicleAssignment = async (
             const newVehicleRef = inventoryService.getVehicleDocRef(newVehicleId);
 
             // B.1) If the new vehicle was assigned to someone else, un-assign it from the other driver.
-            if (vehicleToAssign?.assignedDriverId && vehicleToAssign.assignedDriverId !== originalDriver.id) {
+            if (vehicleToAssign?.assignedDriverId && vehicleToAssign.assignedDriverId !== driver.id) {
                 const otherDriverRef = getDriverDocRef(vehicleToAssign.assignedDriverId);
                 batch.update(otherDriverRef, { assignedVehicleId: null });
             }
             
             // B.2) Assign the current driver to the new vehicle.
-            batch.update(newVehicleRef, { assignedDriverId: originalDriver.id });
+            batch.update(newVehicleRef, { assignedDriverId: driver.id });
         }
     }
     
     await batch.commit();
 };
+
 
 
 const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => {
@@ -217,7 +210,7 @@ export const personnelService = {
     getDriverById,
     getDriverDocRef,
     saveDriver,
-    saveDriverWithVehicleAssignment,
+    assignVehicleToDriver,
     archiveDriver,
     onAreasUpdate,
     saveArea,

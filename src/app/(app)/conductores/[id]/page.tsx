@@ -7,7 +7,7 @@ import type { Driver, RentalPayment, ManualDebtEntry, Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User as UserIcon, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, ArrowLeft, Loader2, FileX, Archive, HandCoins } from 'lucide-react';
+import { ShieldAlert, Edit, User as UserIcon, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, ArrowLeft, Loader2, FileX, Archive, HandCoins, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { DriverDialog } from '../components/driver-dialog';
@@ -25,6 +25,7 @@ import { storage } from '@/lib/firebaseClient';
 import { fleetService, personnelService, inventoryService } from '@/lib/services';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { AssignVehicleDialog } from '../components/assign-vehicle-dialog';
 
 const BalanceTabContent = lazy(() => import('../components/balance-tab-content'));
 
@@ -49,6 +50,7 @@ export default function DriverDetailPage() {
   const [uploadingDocType, setUploadingDocType] = useState<DocType | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [editingDebt, setEditingDebt] = useState<ManualDebtEntry | null>(null);
+  const [isAssignVehicleDialogOpen, setIsAssignVehicleDialogOpen] = useState(false);
 
   const fetchDriverData = useCallback(async () => {
     if (!driverId) return;
@@ -83,13 +85,27 @@ export default function DriverDetailPage() {
   const handleSaveDriver = async (formData: DriverFormValues) => {
     if (!driver) return;
     try {
-        await personnelService.saveDriverWithVehicleAssignment(driver, formData, allVehicles);
+        // This function now only saves driver-specific data
+        await personnelService.saveDriver(formData, driver.id);
         await fetchDriverData();
         setIsEditDialogOpen(false);
         toast({ title: "Datos Actualizados", description: `Se guardaron los cambios para ${formData.name}.` });
     } catch (error) {
         console.error("Error al guardar conductor:", error);
         toast({ title: "Error al Guardar", description: "Ocurrió un problema al intentar guardar.", variant: "destructive"});
+    }
+  };
+  
+  const handleAssignVehicle = async (vehicleId: string | null) => {
+    if (!driver) return;
+    try {
+        await personnelService.assignVehicleToDriver(driver, vehicleId, allVehicles);
+        await fetchDriverData();
+        setIsAssignVehicleDialogOpen(false);
+        toast({ title: "Vehículo Asignado", description: "La asignación del vehículo se ha actualizado." });
+    } catch (error) {
+        console.error("Error al asignar vehículo:", error);
+        toast({ title: "Error de Asignación", description: "No se pudo actualizar el vehículo.", variant: "destructive" });
     }
   };
 
@@ -136,15 +152,28 @@ export default function DriverDetailPage() {
   
   const handleSaveDebt = async (formData: DebtFormValues) => {
     if (!driver) return;
-    const updatedDebts = editingDebt
-        ? (driver.manualDebts || []).map(d => d.id === editingDebt.id ? { ...d, ...formData } : d)
-        : [...(driver.manualDebts || []), { id: `DEBT_${Date.now().toString(36)}`, date: new Date().toISOString(), ...formData }];
+    const isEditing = !!editingDebt;
+    const existingDebts = driver.manualDebts || [];
     
-    await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
+    // Check for existing deposit debt to avoid duplicates
+    const depositDebtIndex = existingDebts.findIndex(d => d.note === 'Adeudo de depósito inicial');
+    if (formData.note === 'Adeudo de depósito inicial' && depositDebtIndex !== -1 && (!editingDebt || editingDebt.note !== 'Adeudo de depósito inicial')) {
+      // If adding a new deposit debt and one already exists, update the existing one instead
+      const updatedDebts = [...existingDebts];
+      updatedDebts[depositDebtIndex].amount = formData.amount;
+      updatedDebts[depositDebtIndex].date = new Date().toISOString();
+      await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
+    } else {
+      const updatedDebts = isEditing
+          ? existingDebts.map(d => d.id === editingDebt.id ? { ...d, ...formData } : d)
+          : [...existingDebts, { id: `DEBT_${Date.now().toString(36)}`, date: new Date().toISOString(), ...formData }];
+      await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
+    }
+
     await fetchDriverData();
     setIsDebtDialogOpen(false);
     setEditingDebt(null);
-    toast({ title: `Adeudo ${editingDebt ? 'actualizado' : 'registrado'}` });
+    toast({ title: `Adeudo ${isEditing ? 'actualizado' : 'registrado'}` });
   };
   
   const handleDeleteDebt = async (debtId: string) => {
@@ -153,6 +182,13 @@ export default function DriverDetailPage() {
     await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
     await fetchDriverData();
     toast({ title: 'Adeudo Eliminado', variant: 'destructive' });
+  };
+  
+  const handleDeletePayment = async (payment: RentalPayment) => {
+    if(!driver) return;
+    await fleetService.deleteRentalPayment(payment.id);
+    await fetchDriverData();
+    toast({ title: "Pago Eliminado", variant: "destructive" });
   };
 
   const handleArchiveDriver = async () => {
@@ -220,7 +256,7 @@ export default function DriverDetailPage() {
              <Card className="lg:col-span-3">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Vehículo Asignado</CardTitle>
-                <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                <Button variant="outline" size="sm" onClick={() => setIsAssignVehicleDialogOpen(true)}>
                     <Edit className="mr-2 h-4 w-4"/>
                     Cambiar Vehículo
                 </Button>
@@ -259,16 +295,27 @@ export default function DriverDetailPage() {
         </TabsContent>
         <TabsContent value="balance" className="mt-6">
           <Suspense fallback={<Loader2 className="animate-spin mx-auto my-8" />}>
-            <BalanceTabContent driver={driver} vehicle={assignedVehicle} payments={driverPayments} onAddDebt={() => handleOpenDebtDialog()} onRegisterPayment={() => setIsPaymentDialogOpen(true)} onDeleteDebt={handleDeleteDebt} onEditDebt={handleOpenDebtDialog} />
+            <BalanceTabContent 
+              driver={driver} 
+              vehicle={assignedVehicle} 
+              payments={driverPayments} 
+              onAddDebt={() => handleOpenDebtDialog()} 
+              onRegisterPayment={() => setIsPaymentDialogOpen(true)} 
+              onDeleteDebt={handleDeleteDebt}
+              onDeletePayment={handleDeletePayment}
+              onEditDebt={handleOpenDebtDialog} 
+            />
           </Suspense>
         </TabsContent>
       </Tabs>
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
       <DriverDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} driver={driver} onSave={handleSaveDriver} allVehicles={allVehicles} />
       <DebtDialog open={isDebtDialogOpen} onOpenChange={setIsDebtDialogOpen} onSave={handleSaveDebt} initialData={editingDebt ?? undefined} />
+      {driver && <AssignVehicleDialog open={isAssignVehicleDialogOpen} onOpenChange={setIsAssignVehicleDialogOpen} driver={driver} allVehicles={allVehicles} onSave={handleAssignVehicle} />}
     </div>
     {driver && assignedVehicle && <RegisterPaymentDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} driver={driver} vehicle={assignedVehicle} onSave={handleRegisterPayment} />}
     {assignedVehicle && <UnifiedPreviewDialog open={isContractDialogOpen} onOpenChange={setIsContractDialogOpen} title="Contrato de Arrendamiento"><ContractContent ref={contractContentRef} driver={driver} vehicle={assignedVehicle} /></UnifiedPreviewDialog>}
     </>
   );
 }
+
