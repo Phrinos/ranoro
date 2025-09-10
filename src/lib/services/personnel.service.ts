@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -14,7 +13,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { Technician, AdministrativeStaff, Driver, Personnel, Area, User } from "@/types";
+import type { Technician, AdministrativeStaff, Driver, Personnel, Area, User, Vehicle } from "@/types";
 import type { DriverFormValues } from '@/app/(app)/conductores/components/driver-form';
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
@@ -120,6 +119,7 @@ const saveDriver = async (data: Partial<DriverFormValues>, existingId?: string):
     const dataToSave = {
         ...data,
         depositAmount: data.depositAmount ? Number(data.depositAmount) : undefined,
+        requiredDepositAmount: data.requiredDepositAmount ? Number(data.requiredDepositAmount) : undefined,
         contractDate: data.contractDate ? new Date(data.contractDate).toISOString() : undefined,
     };
 
@@ -135,16 +135,61 @@ const saveDriver = async (data: Partial<DriverFormValues>, existingId?: string):
     }
 };
 
+const saveDriverWithVehicleAssignment = async (
+    originalDriver: Driver,
+    formData: DriverFormValues,
+    allVehicles: Vehicle[]
+): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const batch = writeBatch(db);
+    const driverRef = doc(db, 'drivers', originalDriver.id);
+
+    const oldVehicleId = originalDriver.assignedVehicleId;
+    const newVehicleId = formData.assignedVehicleId || null;
+
+    // 1. Update the driver's own data from the form
+    const driverDataToSave = {
+        ...formData,
+        assignedVehicleId: newVehicleId,
+        depositAmount: formData.depositAmount ? Number(formData.depositAmount) : 0,
+        requiredDepositAmount: formData.requiredDepositAmount ? Number(formData.requiredDepositAmount) : 0,
+        contractDate: formData.contractDate ? new Date(formData.contractDate).toISOString() : null,
+    };
+    batch.update(driverRef, cleanObjectForFirestore(driverDataToSave));
+
+    // 2. If the vehicle assignment has changed, handle all necessary updates
+    if (oldVehicleId !== newVehicleId) {
+        // A) If there was an old vehicle, it must be un-assigned.
+        if (oldVehicleId) {
+            const oldVehicleRef = inventoryService.getVehicleDocRef(oldVehicleId);
+            batch.update(oldVehicleRef, { assignedDriverId: null });
+        }
+        
+        // B) If there is a new vehicle, it must be assigned.
+        if (newVehicleId) {
+            const vehicleToAssign = allVehicles.find(v => v.id === newVehicleId);
+            const newVehicleRef = inventoryService.getVehicleDocRef(newVehicleId);
+
+            // B.1) If the new vehicle was assigned to someone else, un-assign it from the other driver.
+            if (vehicleToAssign?.assignedDriverId && vehicleToAssign.assignedDriverId !== originalDriver.id) {
+                const otherDriverRef = getDriverDocRef(vehicleToAssign.assignedDriverId);
+                batch.update(otherDriverRef, { assignedVehicleId: null });
+            }
+            
+            // B.2) Assign the current driver to the new vehicle.
+            batch.update(newVehicleRef, { assignedDriverId: originalDriver.id });
+        }
+    }
+    
+    await batch.commit();
+};
+
+
 const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
-
     const batch = writeBatch(db);
     const driverRef = doc(db, 'drivers', id);
-    
-    // Archive/unarchive the driver
     batch.update(driverRef, { isArchived });
-
-    // If archiving, unassign the vehicle from the driver
     if (isArchived) {
         const driverDoc = await getDoc(driverRef);
         const driverData = driverDoc.data() as Driver;
@@ -154,7 +199,6 @@ const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => 
             batch.update(driverRef, { assignedVehicleId: null });
         }
     }
-
     await batch.commit();
 };
 
@@ -162,7 +206,6 @@ const getDriverDocRef = (id: string) => {
     if (!db) throw new Error("Database not initialized.");
     return doc(db, 'drivers', id);
 }
-
 
 export const personnelService = {
     onPersonnelUpdate,
@@ -174,6 +217,7 @@ export const personnelService = {
     getDriverById,
     getDriverDocRef,
     saveDriver,
+    saveDriverWithVehicleAssignment,
     archiveDriver,
     onAreasUpdate,
     saveArea,

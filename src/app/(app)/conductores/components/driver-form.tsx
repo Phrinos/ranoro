@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { Driver } from "@/types";
+import type { Driver, Vehicle } from "@/types";
 import { DollarSign, CalendarIcon } from "lucide-react";
 import { capitalizeWords } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -16,6 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const driverFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -28,6 +29,7 @@ const driverFormSchema = z.object({
     required_error: "La fecha del contrato es requerida.",
     invalid_type_error: "Por favor seleccione una fecha válida.",
   }).optional(),
+  assignedVehicleId: z.string().nullable().optional(),
 });
 
 export type DriverFormValues = z.infer<typeof driverFormSchema>;
@@ -36,14 +38,16 @@ interface DriverFormProps {
   id?: string;
   initialData?: Driver | null;
   onSubmit: (values: DriverFormValues) => Promise<void>;
+  allVehicles: Vehicle[];
 }
 
-export function DriverForm({ id, initialData, onSubmit }: DriverFormProps) {
+export function DriverForm({ id, initialData, onSubmit, allVehicles }: DriverFormProps) {
   const form = useForm<DriverFormValues>({
     resolver: zodResolver(driverFormSchema),
     defaultValues: initialData ? {
         ...initialData,
-        requiredDepositAmount: initialData.requiredDepositAmount ?? 3500, // Default to 3500 if not present
+        assignedVehicleId: initialData.assignedVehicleId ?? null,
+        requiredDepositAmount: initialData.requiredDepositAmount ?? 3500,
         depositAmount: initialData.depositAmount ?? undefined,
         contractDate: initialData.contractDate ? new Date(initialData.contractDate) : undefined,
     } : {
@@ -54,8 +58,11 @@ export function DriverForm({ id, initialData, onSubmit }: DriverFormProps) {
       requiredDepositAmount: 3500,
       depositAmount: undefined,
       contractDate: new Date(),
+      assignedVehicleId: null,
     },
   });
+
+  const fleetVehicles = allVehicles.filter(v => v.isFleetVehicle);
 
   return (
     <Form {...form}>
@@ -67,6 +74,31 @@ export function DriverForm({ id, initialData, onSubmit }: DriverFormProps) {
             <FormItem>
               <FormLabel>Nombre Completo</FormLabel>
               <FormControl><Input placeholder="Ej: Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="assignedVehicleId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Vehículo Asignado</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="-- Seleccionar vehículo --" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="null">-- Ninguno --</SelectItem>
+                  {fleetVehicles.map(v => (
+                    <SelectItem key={v.id} value={v.id} disabled={!!v.assignedDriverId && v.assignedDriverId !== initialData?.id}>
+                        {v.licensePlate} - {v.make} {v.model} {v.assignedDriverId && v.assignedDriverId !== initialData?.id ? '(Asignado a otro)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

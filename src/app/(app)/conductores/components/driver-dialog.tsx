@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { FormDialog } from '@/components/shared/form-dialog';
 import { DriverForm, type DriverFormValues } from "./driver-form";
-import type { Driver } from "@/types";
+import type { Driver, Vehicle } from "@/types";
 import { useToast } from '@/hooks/use-toast';
 
 interface DriverDialogProps {
@@ -12,9 +12,10 @@ interface DriverDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   driver?: Driver | null;
   onSave: (data: DriverFormValues) => Promise<void>;
+  allVehicles: Vehicle[];
 }
 
-export function DriverDialog({ open, onOpenChange, driver, onSave }: DriverDialogProps) {
+export function DriverDialog({ open, onOpenChange, driver, onSave, allVehicles }: DriverDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -44,6 +45,7 @@ export function DriverDialog({ open, onOpenChange, driver, onSave }: DriverDialo
         id="driver-form"
         initialData={driver}
         onSubmit={handleSubmit}
+        allVehicles={allVehicles}
       />
     </FormDialog>
   );
