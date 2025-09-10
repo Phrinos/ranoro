@@ -26,6 +26,7 @@ import { fleetService, personnelService, inventoryService } from '@/lib/services
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { AssignVehicleDialog } from '../components/assign-vehicle-dialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 const BalanceTabContent = lazy(() => import('../components/balance-tab-content'));
 
@@ -85,7 +86,6 @@ export default function DriverDetailPage() {
   const handleSaveDriver = async (formData: DriverFormValues) => {
     if (!driver) return;
     try {
-        // This function now only saves driver-specific data
         await personnelService.saveDriver(formData, driver.id);
         await fetchDriverData();
         setIsEditDialogOpen(false);
@@ -154,20 +154,19 @@ export default function DriverDetailPage() {
     if (!driver) return;
     const isEditing = !!editingDebt;
     const existingDebts = driver.manualDebts || [];
-    
-    // Check for existing deposit debt to avoid duplicates
     const depositDebtIndex = existingDebts.findIndex(d => d.note === 'Adeudo de depósito inicial');
-    if (formData.note === 'Adeudo de depósito inicial' && depositDebtIndex !== -1 && (!editingDebt || editingDebt.note !== 'Adeudo de depósito inicial')) {
-      // If adding a new deposit debt and one already exists, update the existing one instead
-      const updatedDebts = [...existingDebts];
-      updatedDebts[depositDebtIndex].amount = formData.amount;
-      updatedDebts[depositDebtIndex].date = new Date().toISOString();
-      await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
+
+    if (formData.note === 'Adeudo de depósito inicial' && depositDebtIndex > -1 && (!isEditing || editingDebt.id !== existingDebts[depositDebtIndex].id)) {
+        const updatedDebts = [...existingDebts];
+        updatedDebts[depositDebtIndex].amount = formData.amount;
+        updatedDebts[depositDebtIndex].date = new Date().toISOString();
+        await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
+    } else if (isEditing) {
+        const updatedDebts = existingDebts.map(d => d.id === editingDebt.id ? { ...d, ...formData } : d);
+        await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
     } else {
-      const updatedDebts = isEditing
-          ? existingDebts.map(d => d.id === editingDebt.id ? { ...d, ...formData } : d)
-          : [...existingDebts, { id: `DEBT_${Date.now().toString(36)}`, date: new Date().toISOString(), ...formData }];
-      await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
+        const updatedDebts = [...existingDebts, { id: `DEBT_${Date.now().toString(36)}`, date: new Date().toISOString(), ...formData }];
+        await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
     }
 
     await fetchDriverData();
@@ -265,7 +264,15 @@ export default function DriverDetailPage() {
                 {assignedVehicle ? (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3"><Car className="h-5 w-5" /><p className="font-semibold">{assignedVehicle.licensePlate} - {assignedVehicle.make} {assignedVehicle.model}</p></div>
-                    <Button variant="outline" size="sm" asChild><Link href={`/flotilla/${assignedVehicle.id}`}>Ver Vehículo</Link></Button>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" asChild><Link href={`/flotilla/${assignedVehicle.id}`}>Ver Vehículo</Link></Button>
+                       <ConfirmDialog
+                          triggerButton={<Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4"/></Button>}
+                          title="¿Quitar Asignación?"
+                          description={`Se desvinculará el vehículo ${assignedVehicle.licensePlate} de ${driver.name}.`}
+                          onConfirm={() => handleAssignVehicle(null)}
+                       />
+                    </div>
                   </div>
                 ) : <p className="text-muted-foreground">No hay vehículo asignado.</p>}
               </CardContent>
@@ -318,4 +325,3 @@ export default function DriverDetailPage() {
     </>
   );
 }
-

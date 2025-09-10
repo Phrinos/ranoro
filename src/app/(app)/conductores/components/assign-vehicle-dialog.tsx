@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Driver, Vehicle } from '@/types';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const assignVehicleSchema = z.object({
   assignedVehicleId: z.string().nullable().optional(),
@@ -81,12 +82,14 @@ export function AssignVehicleDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="null">-- Ninguno --</SelectItem>
-                        {allVehicles.filter(v => v.isFleetVehicle).map(v => (
-                          <SelectItem key={v.id} value={v.id} disabled={!!v.assignedDriverId && v.assignedDriverId !== driver.id}>
-                              {v.licensePlate} - {v.make} {v.model} {v.assignedDriverId && v.assignedDriverId !== driver.id ? '(Asignado a otro)' : ''}
-                          </SelectItem>
-                        ))}
+                         <ScrollArea className="h-60">
+                            <SelectItem value="null">-- Ninguno --</SelectItem>
+                            {allVehicles.filter(v => v.isFleetVehicle).map(v => (
+                              <SelectItem key={v.id} value={v.id} disabled={!!v.assignedDriverId && v.assignedDriverId !== driver.id}>
+                                  {v.licensePlate} - {v.make} {v.model} {v.assignedDriverId && v.assignedDriverId !== driver.id ? '(Asignado a otro)' : ''}
+                              </SelectItem>
+                            ))}
+                         </ScrollArea>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -99,4 +102,3 @@ export function AssignVehicleDialog({
     </FormDialog>
   );
 }
-
