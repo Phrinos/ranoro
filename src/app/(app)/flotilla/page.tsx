@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/page.tsx
 "use client";
 
@@ -82,9 +83,9 @@ export default function FlotillaPage() {
     return () => unsubs.forEach(unsub => unsub());
   }, []);
 
-  const handleSavePayment = async (driverId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, mileage?: number) => {
+  const handleSavePayment = async (driverId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, mileage?: number, paymentDate?: Date) => {
     try {
-        await fleetService.addRentalPayment(driverId, amount, paymentMethod, note, mileage);
+        await fleetService.addRentalPayment(driverId, amount, paymentMethod, note, mileage, paymentDate);
         toast({ title: 'Pago Registrado' });
         setIsPaymentDialogOpen(false);
     } catch (e: any) {

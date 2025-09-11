@@ -15,10 +15,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Driver, Vehicle, PaymentMethod } from "@/types";
-import { DollarSign, Wallet, CreditCard, Send, Landmark } from 'lucide-react';
-import { subDays, isBefore, parseISO, isValid } from 'date-fns';
+import { DollarSign, Wallet, CreditCard, Send, Landmark, CalendarIcon } from 'lucide-react';
+import { subDays, isBefore, parseISO, isValid, format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 const paymentOptions: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia'];
 
@@ -34,7 +38,7 @@ interface RegisterPaymentDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   drivers: Driver[];
   vehicles: Vehicle[];
-  onSave: (driverId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, mileage?: number) => void;
+  onSave: (driverId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, mileage?: number, paymentDate?: Date) => void;
 }
 
 export function RegisterPaymentDialog({
@@ -51,6 +55,7 @@ export function RegisterPaymentDialog({
   const [note, setNote] = useState('');
   const [needsMileageUpdate, setNeedsMileageUpdate] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Efectivo');
+  const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     if (!open) {
@@ -61,6 +66,7 @@ export function RegisterPaymentDialog({
       setNote('');
       setNeedsMileageUpdate(false);
       setPaymentMethod('Efectivo');
+      setPaymentDate(new Date());
       return;
     }
 
@@ -105,7 +111,7 @@ export function RegisterPaymentDialog({
         return;
     }
 
-    onSave(selectedDriverId, Number(amount), paymentMethod, note, mileage !== '' ? Number(mileage) : undefined);
+    onSave(selectedDriverId, Number(amount), paymentMethod, note, mileage !== '' ? Number(mileage) : undefined, paymentDate);
     onOpenChange(false);
   };
 
@@ -160,6 +166,20 @@ export function RegisterPaymentDialog({
                     </SelectContent>
                 </Select>
             </div>
+           </div>
+           <div className="space-y-2">
+             <Label>Fecha del Pago</Label>
+             <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white", !paymentDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {paymentDate ? format(paymentDate, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={paymentDate} onSelect={setPaymentDate} initialFocus locale={es} />
+                </PopoverContent>
+             </Popover>
            </div>
           {needsMileageUpdate && (
             <div className="space-y-2">

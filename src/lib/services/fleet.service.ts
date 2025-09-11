@@ -42,7 +42,8 @@ const addRentalPayment = async (
   amount: number, 
   paymentMethod: PaymentMethod = 'Efectivo', 
   note?: string,
-  mileage?: number
+  mileage?: number,
+  paymentDate: Date = new Date()
 ): Promise<RentalPayment> => {
     if (!db) throw new Error("Database not initialized.");
     
@@ -66,7 +67,7 @@ const addRentalPayment = async (
         driverId,
         driverName: driver.name,
         vehicleLicensePlate: vehicle.licensePlate,
-        paymentDate: new Date().toISOString(),
+        paymentDate: paymentDate.toISOString(),
         amount,
         daysCovered,
         note: note || `Pago de renta`,
@@ -84,7 +85,7 @@ const addRentalPayment = async (
         const vehicleRef = doc(db, 'vehicles', vehicle.id);
         batch.update(vehicleRef, {
             currentMileage: mileage,
-            lastMileageUpdate: new Date().toISOString(),
+            lastMileageUpdate: paymentDate.toISOString(),
         });
     }
 
