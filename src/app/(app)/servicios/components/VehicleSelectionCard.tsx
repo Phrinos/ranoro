@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 
 "use client";
@@ -67,10 +66,13 @@ export function VehicleSelectionCard({
   
   const filteredVehicles = localVehicles.filter(v => {
     const term = searchTerm.toLowerCase();
-    return (v.licensePlate || '').toLowerCase().includes(term) ||
-           (v.make || '').toLowerCase().includes(term) ||
-           (v.model || '').toLowerCase().includes(term) ||
-           (v.ownerName || '').toLowerCase().includes(term)
+    const norm = (s?: string) => (s ?? "").toLowerCase();
+    return (
+      norm(v.licensePlate).includes(term) ||
+      norm(v.make).includes(term) ||
+      norm(v.model).includes(term) ||
+      norm(v.ownerName).includes(term)
+    );
   }).slice(0, 10);
 
 
@@ -124,7 +126,11 @@ export function VehicleSelectionCard({
             <Button
                 type="button"
                 variant="outline"
-                className={cn("w-full h-24 border-2 border-dashed hover:bg-gray-100 text-muted-foreground", errors.vehicleId && "border-destructive text-destructive")}
+                className={cn(
+                  "w-full h-24 border-2 border-dashed",
+                  "bg-yellow-50 border-yellow-400 text-yellow-800 hover:bg-yellow-100",
+                  errors.vehicleId && "border-destructive text-destructive bg-destructive/10 border-destructive/50 hover:bg-destructive/20"
+                )}
                 onClick={() => setIsSelectionDialogOpen(true)}
                 disabled={isReadOnly}
             >
