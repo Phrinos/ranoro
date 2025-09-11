@@ -240,13 +240,26 @@ const saveService = async (data: Partial<ServiceRecord | QuoteRecord>): Promise<
     }
 
     const isEditing = !!data.id;
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
     
     if (isEditing) {
         await updateService(data.id!, dataWithCalculatedTotals);
         const updatedDoc = await getDoc(doc(db, 'serviceRecords', data.id!));
         return { id: updatedDoc.id, ...updatedDoc.data() } as ServiceRecord;
     } else {
-        return await addService(dataWithCalculatedTotals as Omit<ServiceRecord, 'id'>);
+        const newRecord = await addService(dataWithCalculatedTotals as Omit<ServiceRecord, 'id'>);
+        
+        const isQuote = newRecord.status === 'Cotizacion';
+        const description = `${isQuote ? 'Creó la cotización' : 'Creó el servicio'} para ${newRecord.vehicleIdentifier}.`;
+        await adminService.logAudit('Crear', description, { 
+            entityType: isQuote ? 'Cotización' : 'Servicio',
+            entityId: newRecord.id, 
+            userId: currentUser?.id || 'system', 
+            userName: currentUser?.name || 'Sistema'
+        });
+
+        return newRecord;
     }
 };
 
