@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { FormProvider, useForm, useFormContext, watch } from 'react-hook-form';
+import { FormProvider, useForm, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Ban, DollarSign } from 'lucide-react';
@@ -43,7 +43,7 @@ const ServiceFormFooter = ({ onCancel, onComplete, mode, initialData, isSubmitti
     initialData: ServiceRecord | null;
     isSubmitting: boolean;
 }) => {
-    const { getValues, reset } = useFormContext<ServiceFormValues>();
+    const { getValues, reset, watch } = useFormContext<ServiceFormValues>();
     const watchedStatus = watch('status');
 
     return (
@@ -99,6 +99,8 @@ export function ServiceForm({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
       ...initialData,
+      vehicleId: initialData?.vehicleId || '',
+      serviceItems: initialData?.serviceItems || [],
       notes: initialData?.notes ?? '',
       serviceDate: initialData?.serviceDate ? new Date(initialData.serviceDate) : new Date(),
       appointmentDateTime: initialData?.appointmentDateTime ? new Date(initialData.appointmentDateTime) : undefined,
@@ -107,9 +109,7 @@ export function ServiceForm({
     },
   });
 
-  const { handleSubmit, getValues, setValue, watch, formState: { isSubmitting }, reset } = methods;
-
-  const watchedStatus = watch('status');
+  const { handleSubmit, getValues, setValue, formState: { isSubmitting }, reset } = methods;
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (values.status === 'Entregado' && initialData?.status !== 'Entregado') {
@@ -146,40 +146,36 @@ export function ServiceForm({
         <div className="space-y-6 p-1 pb-24">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <VehicleSelectionCard
+               <VehicleSelectionCard
                 vehicles={vehicles}
                 onVehicleCreated={onVehicleCreated}
                 serviceHistory={serviceHistory || []}
+                onOpenNewVehicleDialog={() => {
+                  // This needs to be implemented or passed as a prop
+                }}
+                initialVehicleId={initialData?.vehicleId}
               />
-              <ServiceDetailsCard technicians={technicians} />
-              <Tabs defaultValue="items">
-                <TabsList>
-                  <TabsTrigger value="items">Items del Servicio</TabsTrigger>
-                  <TabsTrigger value="checklist">Checklist de Seguridad</TabsTrigger>
-                  <TabsTrigger value="photos">Reporte Fotográfico</TabsTrigger>
-                  <TabsTrigger value="reception">Recepción y Entrega</TabsTrigger>
-                </TabsList>
-                <TabsContent value="items">
-                  <ServiceItemsList
-                    inventoryItems={inventoryItems}
-                    serviceTypes={serviceTypes}
-                    categories={categories}
-                    suppliers={suppliers}
-                  />
-                </TabsContent>
-                <TabsContent value="checklist">
-                  <SafetyChecklist />
-                </TabsContent>
-                <TabsContent value="photos">
-                  <PhotoReportTab />
-                </TabsContent>
-                <TabsContent value="reception">
-                  <ReceptionAndDelivery />
-                </TabsContent>
-              </Tabs>
+              <ServiceDetailsCard
+                  isReadOnly={false}
+                  users={technicians}
+                  serviceTypes={serviceTypes}
+                  onOpenSignature={() => {}}
+                  isNew={!initialData?.id}
+              />
+              <ServiceItemsList
+                inventoryItems={inventoryItems}
+                serviceTypes={serviceTypes}
+                categories={categories}
+                suppliers={suppliers}
+                onNewInventoryItemCreated={async () => ({} as InventoryItem)}
+                mode={mode}
+              />
             </div>
             <div className="lg:col-span-1 space-y-6">
-              <ServiceSummary />
+              <ServiceSummary
+                onOpenValidateDialog={() => {}}
+                validatedFolios={{}}
+              />
             </div>
           </div>
         </div>
