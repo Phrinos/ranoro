@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -287,8 +286,7 @@ export default function ServicioPage() {
   );
     
   return (
-    <div className="flex flex-col h-full">
-      <header className="sticky top-0 z-10 bg-background border-b p-4">
+    <>
         <PageHeader 
           title={pageTitle}
           description={pageDescription}
@@ -307,8 +305,6 @@ export default function ServicioPage() {
             </div>
           )}
         />
-      </header>
-      <main className="flex-1 overflow-y-auto">
         <ServiceForm
             initialData={initialData}
             vehicles={vehicles}
@@ -324,7 +320,6 @@ export default function ServicioPage() {
             onCancel={isQuote ? handleDeleteQuote : handleCancelService}
             mode={isQuote ? 'quote' : 'service'}
         />
-      </main>
        {recordForPreview && (
           <>
             <ShareServiceDialog 
@@ -354,6 +349,6 @@ export default function ServicioPage() {
           isCompletionFlow={true}
         />
       )}
-    </div>
+    </>
   );
 }

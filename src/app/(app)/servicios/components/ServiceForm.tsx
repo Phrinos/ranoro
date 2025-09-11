@@ -31,10 +31,53 @@ interface ServiceFormProps {
   serviceHistory: ServiceRecord[];
   onSave: (data: ServiceFormValues) => Promise<void>;
   onComplete?: (data: ServiceFormValues) => void;
-  onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
+  onVehicleCreated?: (newVehicle: VehicleFormValues) => void;
   onCancel?: () => void;
   mode: 'service' | 'quote';
 }
+
+const ServiceFormFooter = ({ onCancel, onComplete, mode, initialData, isSubmitting }: {
+    onCancel?: () => void;
+    onComplete?: (values: ServiceFormValues) => void;
+    mode: 'service' | 'quote';
+    initialData: ServiceRecord | null;
+    isSubmitting: boolean;
+}) => {
+    const { getValues } = useFormContext<ServiceFormValues>();
+    const watchedStatus = watch('status');
+
+    return (
+        <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              {onCancel && (
+                <ConfirmDialog
+                  triggerButton={<Button variant="destructive" type="button"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar' : 'Cancelar'}</Button>}
+                  title={mode === 'quote' ? '¿Eliminar cotización?' : '¿Cancelar servicio?'}
+                  description={mode === 'quote' ? 'Esto es permanente.' : 'El servicio se marcará como cancelado.'}
+                  onConfirm={onCancel}
+                  confirmText={mode === 'quote' ? 'Sí, Eliminar' : 'Sí, Cancelar'}
+                />
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" onClick={() => reset(initialData || {})}>Descartar</Button>
+              {initialData?.id && watchedStatus === 'En Taller' && onComplete ? (
+                <Button type="button" onClick={() => onComplete(getValues())} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
+                  {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <DollarSign className="mr-2 h-4 w-4"/>}
+                  Completar y Cobrar
+                </Button>
+              ) : (
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
+                  {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
+                </Button>
+              )}
+            </div>
+          </div>
+        </footer>
+    );
+};
 
 export function ServiceForm({
   initialData,
@@ -100,7 +143,7 @@ export function ServiceForm({
   return (
     <FormProvider {...methods}>
       <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
-        <div className="p-6 space-y-6">
+        <div className="space-y-6 p-1 pb-24">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <VehicleSelectionCard
@@ -140,35 +183,13 @@ export function ServiceForm({
             </div>
           </div>
         </div>
-        <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              {onCancel && (
-                <ConfirmDialog
-                  triggerButton={<Button variant="destructive" type="button"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar' : 'Cancelar'}</Button>}
-                  title={mode === 'quote' ? '¿Eliminar cotización?' : '¿Cancelar servicio?'}
-                  description={mode === 'quote' ? 'Esto es permanente.' : 'El servicio se marcará como cancelado.'}
-                  onConfirm={onCancel}
-                  confirmText={mode === 'quote' ? 'Sí, Eliminar' : 'Sí, Cancelar'}
-                />
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" onClick={() => reset(initialData || {})}>Descartar</Button>
-              {initialData?.id && watchedStatus === 'En Taller' && onComplete ? (
-                <Button type="button" onClick={handleCompleteClick} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
-                  {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <DollarSign className="mr-2 h-4 w-4"/>}
-                  Completar y Cobrar
-                </Button>
-              ) : (
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-                  {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
-                </Button>
-              )}
-            </div>
-          </div>
-        </footer>
+         <ServiceFormFooter
+            onCancel={onCancel}
+            onComplete={handleCompleteClick}
+            mode={mode}
+            initialData={initialData}
+            isSubmitting={isSubmitting}
+        />
       </form>
     </FormProvider>
   );
