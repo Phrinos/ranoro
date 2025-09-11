@@ -96,6 +96,8 @@ export default function ServicioPage() {
                 setInitialData({
                     status: 'Cotizacion',
                     serviceDate: new Date(),
+                    vehicleId: '', // Ensure vehicleId is initialized
+                    serviceItems: [], // Ensure serviceItems is initialized
                     ...(currentUser && {
                         serviceAdvisorId: currentUser.id,
                         serviceAdvisorName: currentUser.name,
@@ -211,7 +213,7 @@ export default function ServicioPage() {
   const handleCopyTicketAsImage = useCallback(async (isForSharing: boolean = false) => {
     if (!ticketContentRef.current || !recordForPreview) return null;
     try {
-        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
+        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null, useCORS: true });
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
         if (!blob) throw new Error("No se pudo crear el blob de la imagen.");
 
