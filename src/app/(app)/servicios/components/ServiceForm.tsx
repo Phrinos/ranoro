@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useFormContext, watch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Ban, DollarSign } from 'lucide-react';
@@ -43,7 +43,7 @@ const ServiceFormFooter = ({ onCancel, onComplete, mode, initialData, isSubmitti
     initialData: ServiceRecord | null;
     isSubmitting: boolean;
 }) => {
-    const { getValues } = useFormContext<ServiceFormValues>();
+    const { getValues, reset } = useFormContext<ServiceFormValues>();
     const watchedStatus = watch('status');
 
     return (
