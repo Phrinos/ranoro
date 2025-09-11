@@ -31,31 +31,36 @@ export const calculateDriverDebt = (driver: Driver, allPayments: RentalPayment[]
     const today = startOfDay(new Date());
     const contractStartDate = driver.contractDate ? parseISO(driver.contractDate) : today;
     
-    let totalCharges = 0;
+    let totalRentalCharges = 0;
     if (isAfter(today, contractStartDate) || today.getTime() === contractStartDate.getTime()) {
         const daysSinceStart = differenceInCalendarDays(today, contractStartDate) + 1;
-        totalCharges = daysSinceStart * vehicle.dailyRentalCost;
+        totalRentalCharges = daysSinceStart * vehicle.dailyRentalCost;
     }
 
     const totalPayments = allPayments
         .filter(p => p.driverId === driver.id)
         .reduce((sum, p) => sum + p.amount, 0);
 
-    const rentalDebt = Math.max(0, totalCharges - totalPayments);
-    const depositDebt = (driver.requiredDepositAmount || 0) - (driver.depositAmount || 0);
     const manualDebtTotal = manualDebts.reduce((sum, debt) => sum + debt.amount, 0);
+    const depositDebt = Math.max(0, (driver.requiredDepositAmount || 0) - (driver.depositAmount || 0));
+
+    // Operational balance calculation (what the user expects to see as "Saldo Actual")
+    // Total Payments - (Rental Charges + Manual Charges)
+    const balance = totalPayments - (totalRentalCharges + manualDebtTotal);
     
-    const totalDebt = rentalDebt + depositDebt + manualDebtTotal;
-    const balance = totalPayments - totalCharges - depositDebt - manualDebtTotal;
+    // Total debt calculation (includes deposit)
+    // (Rental Charges + Manual Charges + Deposit Debt) - Total Payments
+    const totalDebt = (totalRentalCharges + manualDebtTotal + depositDebt) - totalPayments;
 
     return { 
         totalDebt: Math.max(0, totalDebt),
-        rentalDebt, 
-        depositDebt: Math.max(0, depositDebt), 
+        rentalDebt: Math.max(0, totalRentalCharges - totalPayments), // Simplified view for rental part
+        depositDebt: depositDebt, 
         manualDebt: manualDebtTotal,
         balance: balance
     };
 };
+
 
 export const capitalizeWords = (str: string | null | undefined): string => {
   if (!str) return '';

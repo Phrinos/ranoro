@@ -174,7 +174,7 @@ export default function BalanceTabContent({
 
     return { 
       transactions: transactionsInPeriod.sort((a,b) => b.date.getTime() - a.date.getTime()),
-      totalBalance: historicalDebt.totalDebt > 0 ? -historicalDebt.totalDebt : historicalDebt.balance,
+      totalBalance: historicalDebt.balance,
       periodTotals,
     };
 
