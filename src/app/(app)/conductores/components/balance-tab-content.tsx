@@ -157,14 +157,15 @@ export default function BalanceTabContent({
       }
     }
     
-    const sortedTransactionsInPeriod = [...dailyCharges, ...paymentTransactions, ...manualDebtTransactions]
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    const allTransactionParts = [...dailyCharges, ...paymentTransactions, ...manualDebtTransactions];
+
+    const sortedTransactionsInPeriod = allTransactionParts.sort((a, b) => a.date.getTime() - b.date.getTime());
 
     sortedTransactionsInPeriod.forEach(t => {
       runningBalance += t.payment - t.charge;
-      transactionsInPeriod.push({ ...t, balance: runningBalance });
+      transactionsInPeriod.push({ ...t, balance: runningBalance, isDailyCharge: 'isDailyCharge' in t ? t.isDailyCharge : false });
     });
-
+    
     const historicalDebt = calculateDriverDebt(driver, payments, vehicle ? [vehicle] : [], manualDebts);
 
     const periodTotals = {
@@ -316,3 +317,4 @@ export default function BalanceTabContent({
     </div>
   );
 }
+
