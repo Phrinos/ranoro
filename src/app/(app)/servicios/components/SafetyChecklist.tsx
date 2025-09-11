@@ -1,28 +1,18 @@
 // src/app/(app)/servicios/components/SafetyChecklist.tsx
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useFormContext, Controller, type Control } from "react-hook-form";
+import React, { useState } from 'react';
+import { useFormContext } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Signature, BrainCircuit, Loader2, Camera, Trash2, Eye, PlayCircle } from "lucide-react";
-import type { ServiceFormValues } from "@/schemas/service-form";
-import type { SafetyInspection, SafetyCheckStatus, SafetyCheckValue } from '@/types';
+import { BrainCircuit, Loader2, PlayCircle } from "lucide-react";
+import type { SafetyInspection, SafetyCheckStatus } from '@/types';
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { useToast } from "@/hooks/use-toast";
-import { optimizeImage } from "@/lib/utils";
-import { storage } from "@/lib/firebaseClient";
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { PhotoUploader } from './PhotoUploader';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { GuidedInspectionWizard } from './GuidedInspectionWizard';
-import { format, isValid } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { parseDate } from '@/lib/forms';
-
 
 const inspectionGroups = [
   { title: "LUCES", items: [
@@ -84,23 +74,15 @@ const StatusIndicator = ({ status }: { status?: SafetyCheckStatus }) => {
   );
 };
 
-const SafetyChecklistReport = ({ 
-  inspection,
-  isReadOnly,
-  handleEnhanceText,
-  isEnhancingText,
-  signatureDataUrl,
-  technicianName
-}: {
+const SafetyChecklistReport = ({ inspection, signatureDataUrl, technicianName }: {
   inspection: SafetyInspection,
-  isReadOnly?: boolean,
-  handleEnhanceText: (fieldName: any) => void;
-  isEnhancingText: string | null;
   signatureDataUrl?: string;
   technicianName?: string;
 }) => {
   const { control, getValues } = useFormContext();
-  
+  const isEnhancingText = null; // Placeholder for AI feature
+  const handleEnhanceText = () => {}; // Placeholder for AI feature
+
   return (
     <div className="space-y-6">
        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -130,18 +112,15 @@ const SafetyChecklistReport = ({
                 <FormItem className="pt-4">
                     <FormLabel className="text-base font-semibold flex justify-between items-center w-full">
                       <span>Observaciones Generales de la Inspección</span>
-                      {!isReadOnly && (
-                        <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('safetyInspection.inspectionNotes')} disabled={isEnhancingText === 'safetyInspection.inspectionNotes' || !getValues('safetyInspection.inspectionNotes')}>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText()} disabled={isEnhancingText === 'safetyInspection.inspectionNotes' || !getValues('safetyInspection.inspectionNotes')}>
                             {isEnhancingText === 'safetyInspection.inspectionNotes' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
                             <span className="ml-2 hidden sm:inline">Mejorar texto</span>
                         </Button>
-                      )}
                     </FormLabel>
                     <FormControl>
                         <Textarea
                             placeholder="Anotaciones sobre la inspección, detalles de los puntos que requieren atención, etc."
                             className="min-h-[100px]"
-                            disabled={isReadOnly}
                             {...field}
                         />
                     </FormControl>
@@ -165,21 +144,20 @@ const SafetyChecklistReport = ({
   )
 }
 
-export const SafetyChecklist = ({ isReadOnly, signatureDataUrl, technicianName, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded, onViewImage }: { 
-  isReadOnly?: boolean; 
-  signatureDataUrl?: string;
-  technicianName?: string;
-  isEnhancingText: string | null;
-  handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description` | `safetyInspection.${string}.notes`) => void;
-  serviceId: string;
-  onPhotoUploaded: (fieldName: `safetyInspection.${string}`, url: string) => void;
-  onViewImage: (url: string) => void;
-}) => {
-  const { watch } = useFormContext();
+export const SafetyChecklist = () => {
+  const { watch, setValue } = useFormContext();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const inspectionData = watch('safetyInspection');
-  
-  const hasInspectionData = inspectionData && Object.values(inspectionData).some(v => v && v.status && v.status !== 'na');
+  const serviceId = watch('id');
+  const signatureDataUrl = watch('serviceAdvisorSignatureDataUrl');
+  const technicianName = watch('serviceAdvisorName');
+
+  const hasInspectionData = inspectionData && Object.values(inspectionData).some(v => v && typeof v === 'object' && 'status' in v && v.status !== 'na');
+
+  const onPhotoUploaded = (fieldName: `safetyInspection.${string}`, url: string) => {
+    const currentPhotos = watch(`${fieldName}.photos`) || [];
+    setValue(`${fieldName}.photos`, [...currentPhotos, url]);
+  };
 
   return (
     <>
@@ -195,7 +173,7 @@ export const SafetyChecklist = ({ isReadOnly, signatureDataUrl, technicianName, 
       </CardHeader>
       
       <CardContent className="space-y-6 pt-0">
-         {!hasInspectionData && !isReadOnly && (
+         {!hasInspectionData && (
             <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
                 <Button type="button" size="lg" onClick={() => setIsWizardOpen(true)}>
                     <PlayCircle className="mr-2 h-5 w-5"/>
@@ -207,19 +185,14 @@ export const SafetyChecklist = ({ isReadOnly, signatureDataUrl, technicianName, 
 
          {hasInspectionData && (
              <>
-                 {!isReadOnly && (
-                     <div className="flex justify-end">
-                         <Button type="button" variant="outline" onClick={() => setIsWizardOpen(true)}>
-                             <PlayCircle className="mr-2 h-4 w-4"/>
-                             Continuar Revisión
-                         </Button>
-                     </div>
-                 )}
+                <div className="flex justify-end">
+                    <Button type="button" variant="outline" onClick={() => setIsWizardOpen(true)}>
+                        <PlayCircle className="mr-2 h-4 w-4"/>
+                        Continuar Revisión
+                    </Button>
+                </div>
                 <SafetyChecklistReport
                   inspection={inspectionData}
-                  isReadOnly={isReadOnly}
-                  handleEnhanceText={handleEnhanceText}
-                  isEnhancingText={isEnhancingText}
                   signatureDataUrl={signatureDataUrl}
                   technicianName={technicianName}
                 />

@@ -143,43 +143,61 @@ export function ServiceForm({
   return (
     <FormProvider {...methods}>
       <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
-        <div className="space-y-6 p-1 pb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-               <VehicleSelectionCard
-                vehicles={vehicles}
-                onVehicleCreated={onVehicleCreated}
-                serviceHistory={serviceHistory || []}
-                onOpenNewVehicleDialog={() => {
-                  // This needs to be implemented or passed as a prop
-                }}
-                initialVehicleId={initialData?.vehicleId}
-              />
-              <ServiceDetailsCard
-                  isReadOnly={false}
-                  users={technicians}
-                  serviceTypes={serviceTypes}
-                  onOpenSignature={() => {}}
-                  isNew={!initialData?.id}
-              />
-              <ServiceItemsList
-                inventoryItems={inventoryItems}
-                serviceTypes={serviceTypes}
-                categories={categories}
-                suppliers={suppliers}
-                onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
-                mode={mode}
-              />
-            </div>
-            <div className="lg:col-span-1 space-y-6">
-              <ServiceSummary
-                onOpenValidateDialog={() => {}}
-                validatedFolios={{}}
-              />
-            </div>
+       <Tabs defaultValue="service-details">
+          <div className="sticky top-0 z-10 border-b bg-background/95 p-1 backdrop-blur-sm">
+            <TabsList className="grid w-full grid-cols-3 h-12">
+              <TabsTrigger value="service-details">Detalles del Servicio</TabsTrigger>
+              <TabsTrigger value="photo-report">Reporte de Fotos</TabsTrigger>
+              <TabsTrigger value="safety-checklist">Revisión de Puntos</TabsTrigger>
+            </TabsList>
           </div>
-        </div>
-         <ServiceFormFooter
+          <div className="space-y-6 p-1 pb-24">
+             <TabsContent value="service-details">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+                  <div className="lg:col-span-2 space-y-6">
+                    <VehicleSelectionCard
+                      vehicles={vehicles}
+                      onVehicleCreated={onVehicleCreated}
+                      serviceHistory={serviceHistory || []}
+                      onOpenNewVehicleDialog={() => {
+                        // This needs to be implemented or passed as a prop
+                      }}
+                      initialVehicleId={initialData?.vehicleId}
+                    />
+                    <ServiceDetailsCard
+                        isReadOnly={false}
+                        users={technicians}
+                        serviceTypes={serviceTypes}
+                        onOpenSignature={() => {}}
+                        isNew={!initialData?.id}
+                    />
+                    <ServiceItemsList
+                      inventoryItems={inventoryItems}
+                      serviceTypes={serviceTypes}
+                      categories={categories}
+                      suppliers={suppliers}
+                      onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
+                      mode={mode}
+                    />
+                  </div>
+                  <div className="lg:col-span-1 space-y-6">
+                    <ServiceSummary
+                      onOpenValidateDialog={() => {}}
+                      validatedFolios={{}}
+                    />
+                    <ReceptionAndDelivery />
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="photo-report">
+                <PhotoReportTab />
+              </TabsContent>
+              <TabsContent value="safety-checklist">
+                <SafetyChecklist />
+              </TabsContent>
+          </div>
+        </Tabs>
+        <ServiceFormFooter
             onCancel={onCancel}
             onComplete={handleCompleteClick}
             mode={mode}

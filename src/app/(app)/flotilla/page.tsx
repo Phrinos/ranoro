@@ -6,7 +6,7 @@ import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy, useRe
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Wallet, ArrowDownCircle, Printer, ArrowUpCircle, Copy, Share2 } from "lucide-react";
-import type { User, Vehicle, Driver, RentalPayment, WorkshopInfo, VehicleExpense, OwnerWithdrawal, PaymentMethod, CashDrawerTransaction } from '@/types';
+import type { User, Vehicle, Driver, RentalPayment, WorkshopInfo, VehicleExpense, OwnerWithdrawal, PaymentMethod, CashDrawerTransaction, ManualDebtEntry } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { inventoryService, personnelService, fleetService, cashService } from '@/lib/services';
@@ -44,6 +44,7 @@ export default function FlotillaPage() {
   const [allPayments, setAllPayments] = useState<RentalPayment[]>([]);
   const [allExpenses, setAllExpenses] = useState<VehicleExpense[]>([]);
   const [allWithdrawals, setAllWithdrawals] = useState<OwnerWithdrawal[]>([]);
+  const [allManualDebts, setAllManualDebts] = useState<ManualDebtEntry[]>([]);
   const [fleetCashEntries, setFleetCashEntries] = useState<CashDrawerTransaction[]>([]);
   const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>({});
 
@@ -71,6 +72,8 @@ export default function FlotillaPage() {
         fleetService.onRentalPaymentsUpdate(setAllPayments),
         fleetService.onVehicleExpensesUpdate(setAllExpenses),
         cashService.onFleetCashEntriesUpdate(setFleetCashEntries),
+        // This is a temporary solution. Ideally, you'd fetch debts per driver.
+        personnelService.onManualDebtsUpdate('', (debts) => setAllManualDebts(debts)), // Fetch all for now
         fleetService.onOwnerWithdrawalsUpdate((data) => {
             setAllWithdrawals(data);
             setIsLoading(false);
@@ -176,7 +179,7 @@ export default function FlotillaPage() {
     const interval = { start: startOfMonth(now), end: endOfMonth(now) };
 
     const totalIncomeFromPayments = allPayments
-      .filter(p => isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), interval))
+      .filter(p => (p.paymentMethod === 'Efectivo' || !p.paymentMethod) && isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), interval))
       .reduce((sum, p) => sum + p.amount, 0);
 
     const totalManualCashEntries = fleetCashEntries
@@ -261,7 +264,7 @@ Monto: ${formatCurrency(paymentForReceipt.amount)}
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
 
   const tabs = [
-    { value: "estado_cuenta", label: "Estado de Cuenta", content: <Suspense fallback={<Loader2 className="animate-spin" />}><EstadoCuentaTab drivers={allDrivers} vehicles={allVehicles} payments={allPayments} /></Suspense> },
+    { value: "estado_cuenta", label: "Estado de Cuenta", content: <Suspense fallback={<Loader2 className="animate-spin" />}><EstadoCuentaTab drivers={allDrivers} vehicles={allVehicles} payments={allPayments} manualDebts={allManualDebts} /></Suspense> },
     { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosFlotillaTab payments={allPayments} expenses={allExpenses} withdrawals={allWithdrawals} cashEntries={fleetCashEntries} drivers={allDrivers} onPrintPayment={handlePrintPayment} onPrintCashEntry={handlePrintCashEntry} currentUser={currentUser} onDeleteMovement={handleDeleteMovement} /></Suspense> },
     { value: "conductores", label: "Conductores", content: <Suspense fallback={<Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" />}><ConductoresTab allDrivers={allDrivers} allVehicles={allVehicles} /></Suspense> },
     { value: "vehiculos", label: "Vehículos", content: <Suspense fallback={<Loader2 className="mx-auto my-8 h-8 w-8 animate-spin" />}><VehiculosFlotillaTab allDrivers={allDrivers} allVehicles={allVehicles} /></Suspense> },
@@ -331,6 +334,7 @@ Monto: ${formatCurrency(paymentForReceipt.amount)}
                       driver={allDrivers.find(d => d.id === paymentForReceipt.driverId)}
                       vehicle={allVehicles.find(v => v.licensePlate === paymentForReceipt.vehicleLicensePlate)}
                       allPaymentsForDriver={allPayments.filter(p => p.driverId === paymentForReceipt.driverId)}
+                      manualDebtsForDriver={allManualDebts.filter(d => d.driverId === paymentForReceipt.driverId)}
                       workshopInfo={workshopInfo}
                   />
               ) : cashEntryForReceipt ? (

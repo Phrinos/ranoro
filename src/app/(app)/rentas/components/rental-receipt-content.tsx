@@ -2,7 +2,7 @@
 
 "use client";
 
-import type { RentalPayment, WorkshopInfo, Driver, Vehicle } from '@/types';
+import type { RentalPayment, WorkshopInfo, Driver, Vehicle, ManualDebtEntry } from '@/types';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isAfter, differenceInCalendarDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
@@ -30,21 +30,22 @@ interface RentalReceiptContentProps {
   payment: RentalPayment;
   driver?: Driver;
   allPaymentsForDriver?: RentalPayment[];
+  manualDebtsForDriver?: ManualDebtEntry[];
   vehicle?: Vehicle;
   workshopInfo?: Partial<WorkshopInfo>;
 }
 
 export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalReceiptContentProps>(
-  ({ payment, driver, allPaymentsForDriver, vehicle, workshopInfo: customWorkshopInfo }, ref) => {
+  ({ payment, driver, allPaymentsForDriver, manualDebtsForDriver, vehicle, workshopInfo: customWorkshopInfo }, ref) => {
     const workshopInfo = { ...initialWorkshopInfo, ...customWorkshopInfo };
 
     const formattedDateTime = format(parseISO(payment.paymentDate), "dd/MM/yyyy HH:mm:ss", { locale: es });
     const formattedAmount = `$${payment.amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     const debtInfo = useMemo(() => {
-        if (!driver || !allPaymentsForDriver || !vehicle) return { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0, balance: 0 };
-        return calculateDriverDebt(driver, allPaymentsForDriver, [vehicle]);
-    }, [driver, allPaymentsForDriver, vehicle]);
+        if (!driver || !allPaymentsForDriver || !vehicle || !manualDebtsForDriver) return { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0, balance: 0 };
+        return calculateDriverDebt(driver, allPaymentsForDriver, [vehicle], manualDebtsForDriver);
+    }, [driver, allPaymentsForDriver, manualDebtsForDriver, vehicle]);
     
     const monthlyBalance = useMemo(() => {
         if (!driver || !allPaymentsForDriver || !vehicle?.dailyRentalCost) return 0;
@@ -79,6 +80,7 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
     }, [allPaymentsForDriver]);
     
     const PaymentIcon = payment.paymentMethod ? paymentMethodIcons[payment.paymentMethod] : Wallet;
+    const totalBalance = debtInfo.totalDebt > 0 ? -debtInfo.totalDebt : debtInfo.balance;
 
     return (
       <div 
@@ -144,12 +146,8 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
                 {debtInfo.manualDebt > 0 && <div className="flex justify-between"><span>Adeudos Manuales:</span><span>{formatCurrency(debtInfo.manualDebt)}</span></div>}
                 {debtInfo.balance > 0 && <div className="flex justify-between"><span>Saldo a Favor:</span><span>{formatCurrency(debtInfo.balance)}</span></div>}
                 <div className="flex justify-between font-bold mt-1 pt-1 border-t">
-                    <span className={debtInfo.totalDebt > 0 ? "text-red-700" : ""}>Saldo Total:</span>
-                    <span className={debtInfo.totalDebt > 0 ? "text-red-700" : ""}>{formatCurrency(debtInfo.totalDebt > 0 ? -debtInfo.totalDebt : debtInfo.balance)}</span>
-                </div>
-                 <div className="flex justify-between font-bold mt-1 pt-1 border-t border-blue-300">
-                    <span className={monthlyBalance < 0 ? "text-red-700" : "text-green-700"}>Balance del Mes:</span>
-                    <span className={monthlyBalance < 0 ? "text-red-700" : "text-green-700"}>{formatCurrency(monthlyBalance)}</span>
+                    <span className={totalBalance < 0 ? "text-red-700" : "text-green-700"}>Saldo Total:</span>
+                    <span className={totalBalance < 0 ? "text-red-700" : "text-green-700"}>{formatCurrency(totalBalance)}</span>
                 </div>
             </div>
         </div>

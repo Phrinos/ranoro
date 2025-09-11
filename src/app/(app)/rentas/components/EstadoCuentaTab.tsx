@@ -1,3 +1,4 @@
+
 // src/app/(app)/rentas/components/EstadoCuentaTab.tsx
 "use client";
 
@@ -8,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { ListFilter } from 'lucide-react';
-import type { Driver, RentalPayment, Vehicle } from '@/types';
+import type { Driver, RentalPayment, Vehicle, ManualDebtEntry } from '@/types';
 import { format, parseISO, isAfter, startOfMonth, differenceInCalendarDays, getDate } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency, calculateDriverDebt, cn } from "@/lib/utils";
@@ -31,9 +32,10 @@ interface EstadoCuentaTabProps {
   drivers: Driver[];
   vehicles: Vehicle[];
   payments: RentalPayment[];
+  manualDebts: ManualDebtEntry[];
 }
 
-export function EstadoCuentaTab({ drivers, vehicles, payments }: EstadoCuentaTabProps) {
+export function EstadoCuentaTab({ drivers, vehicles, payments, manualDebts }: EstadoCuentaTabProps) {
   const [balanceSortOption, setBalanceSortOption] = useState<BalanceSortOption>('daysOwed_desc');
   const router = useRouter();
 
@@ -44,9 +46,11 @@ export function EstadoCuentaTab({ drivers, vehicles, payments }: EstadoCuentaTab
     return drivers.filter(d => !d.isArchived).map(driver => {
         const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
         const dailyRate = vehicle?.dailyRentalCost || 0;
+        const driverDebts = manualDebts.filter(d => d.driverId === driver.id);
+        const driverPayments = payments.filter(p => p.driverId === driver.id);
 
-        const paymentsThisMonth = payments
-            .filter(p => p.driverId === driver.id && isAfter(parseISO(p.paymentDate), monthStart))
+        const paymentsThisMonth = driverPayments
+            .filter(p => isAfter(parseISO(p.paymentDate), monthStart))
             .reduce((sum, p) => sum + p.amount, 0);
 
         const daysPaidThisMonth = dailyRate > 0 ? paymentsThisMonth / dailyRate : 0;
@@ -59,8 +63,8 @@ export function EstadoCuentaTab({ drivers, vehicles, payments }: EstadoCuentaTab
 
         const monthlyBalance = paymentsThisMonth - chargesThisMonth;
         
-        const debtInfo = calculateDriverDebt(driver, payments, vehicle ? [vehicle] : []);
-        const realBalance = monthlyBalance + (driver.depositAmount || 0) - debtInfo.depositDebt - debtInfo.manualDebt;
+        const debtInfo = calculateDriverDebt(driver, driverPayments, vehicle ? [vehicle] : [], driverDebts);
+        const realBalance = debtInfo.balance - debtInfo.totalDebt;
 
         const rentalDebtThisMonth = Math.max(0, -monthlyBalance);
         const daysOwed = dailyRate > 0 ? rentalDebtThisMonth / dailyRate : 0;
@@ -87,7 +91,7 @@ export function EstadoCuentaTab({ drivers, vehicles, payments }: EstadoCuentaTab
             default: return b.daysOwed - a.daysOwed;
         }
     });
-  }, [drivers, vehicles, payments, balanceSortOption]);
+  }, [drivers, vehicles, payments, manualDebts, balanceSortOption]);
 
   return (
     <Card>

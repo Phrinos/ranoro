@@ -94,6 +94,7 @@ export interface Vehicle {
 
 export interface ManualDebtEntry {
   id: string;
+  driverId: string;
   date: string; // ISO String
   amount: number;
   note: string;
@@ -117,7 +118,6 @@ export interface Driver {
   requiredDepositAmount?: number;
   depositAmount?: number;
   contractDate?: string; // ISO string
-  manualDebts?: ManualDebtEntry[];
   isArchived?: boolean;
 }
 

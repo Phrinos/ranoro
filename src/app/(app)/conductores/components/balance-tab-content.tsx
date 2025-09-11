@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO, isAfter, startOfDay, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, endOfDay, isBefore, min, isSameDay, differenceInDays } from 'date-fns';
+import { format, parseISO, isAfter, startOfDay, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, endOfDay, isBefore, min } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency, cn, calculateDriverDebt } from '@/lib/utils';
 import { PlusCircle, HandCoins, Edit, Trash2, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
@@ -26,6 +27,7 @@ interface Transaction {
   isPayment: boolean;
   isManualDebt: boolean;
   originalDebt?: ManualDebtEntry;
+  originalPayment?: RentalPayment;
   isDailyCharge?: boolean;
 }
 
@@ -33,6 +35,7 @@ interface BalanceTabContentProps {
   driver: Driver;
   vehicle: Vehicle | null;
   payments: RentalPayment[];
+  manualDebts: ManualDebtEntry[];
   onAddDebt: () => void;
   onRegisterPayment: () => void;
   onDeleteDebt: (debtId: string) => void;
@@ -44,6 +47,7 @@ export default function BalanceTabContent({
   driver, 
   vehicle, 
   payments,
+  manualDebts,
   onAddDebt,
   onRegisterPayment,
   onDeleteDebt,
@@ -56,7 +60,6 @@ export default function BalanceTabContent({
     return { from: startOfMonth(now), to: endOfMonth(now) };
   });
   
-  // Temporary state for the date picker
   const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
@@ -102,7 +105,7 @@ export default function BalanceTabContent({
       .filter(p => isBefore(parseISO(p.paymentDate), from))
       .forEach(p => { initialBalance += p.amount; });
 
-    (driver.manualDebts || [])
+    (manualDebts || [])
       .filter(d => isBefore(parseISO(d.date), from))
       .forEach(d => { initialBalance -= d.amount; });
 
@@ -121,7 +124,7 @@ export default function BalanceTabContent({
         originalPayment: p,
       }));
 
-    const manualDebtTransactions: Omit<Transaction, 'balance'|'isDailyCharge'>[] = (driver.manualDebts || [])
+    const manualDebtTransactions: Omit<Transaction, 'balance'|'isDailyCharge'>[] = (manualDebts || [])
       .filter(d => isWithinInterval(parseISO(d.date), interval))
       .map(d => ({
         date: parseISO(d.date),
@@ -162,7 +165,7 @@ export default function BalanceTabContent({
       transactionsInPeriod.push({ ...t, balance: runningBalance });
     });
 
-    const historicalDebt = calculateDriverDebt(driver, payments, vehicle ? [vehicle] : []);
+    const historicalDebt = calculateDriverDebt(driver, payments, vehicle ? [vehicle] : [], manualDebts);
 
     const periodTotals = {
       charge: transactionsInPeriod.reduce((sum, t) => sum + t.charge, 0),
@@ -175,7 +178,7 @@ export default function BalanceTabContent({
       periodTotals,
     };
 
-  }, [driver, vehicle, payments, dateRange, calculationPreCheck]);
+  }, [driver, vehicle, payments, manualDebts, dateRange, calculationPreCheck]);
 
 
   return (

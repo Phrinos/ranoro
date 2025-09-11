@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, User, ChevronRight, AlertTriangle, UserCheck, UserX } from "lucide-react";
+import { PlusCircle, User, ChevronRight, AlertTriangle, UserCheck, UserX, DollarSign } from "lucide-react";
 import type { Driver, Vehicle } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,9 +12,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, calculateDriverDebt, cn } from "@/lib/utils";
 import { DriverDialog } from '../../conductores/components/driver-dialog';
 import type { DriverFormValues } from '../../conductores/components/driver-form';
-import { personnelService } from '@/lib/services';
+import { personnelService, fleetService } from '@/lib/services';
 import { useTableManager } from '@/hooks/useTableManager';
 import { TableToolbar } from '@/components/shared/table-toolbar';
+import { CashEntryDialog, type CashEntryFormValues } from './CashEntryDialog';
 
 interface ConductoresTabProps {
   allDrivers: Driver[];
@@ -27,13 +28,13 @@ const getDriverSortPriority = (driver: Driver): number => {
     return 1; // Highest priority
 };
 
-
 export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps) {
   const router = useRouter();
   const { toast } = useToast();
   
   const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  const [isCashEntryDialogOpen, setIsCashEntryDialogOpen] = useState(false);
   
   const sortedInitialDrivers = useMemo(() => {
     return [...allDrivers].sort((a,b) => {
@@ -46,15 +47,14 @@ export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps)
     });
   }, [allDrivers]);
 
-
   const {
     filteredData,
     ...tableManager
   } = useTableManager<Driver>({
     initialData: sortedInitialDrivers,
     searchKeys: ['name', 'phone'],
-    dateFilterKey: '', // No date filter here
-    initialSortOption: 'default' // Using a default and handling sort logic in component
+    dateFilterKey: '',
+    initialSortOption: 'default'
   });
 
   const handleOpenDriverDialog = useCallback((driver?: Driver) => {
@@ -72,9 +72,22 @@ export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps)
     }
   };
 
+  const handleSaveCashEntry = async (data: CashEntryFormValues) => {
+    try {
+        await fleetService.addCashEntry(data.amount, data.concept, data.driverId);
+        toast({ title: "Ingreso Registrado" });
+        setIsCashEntryDialogOpen(false);
+    } catch(e: any) {
+        toast({ title: "Error", description: e.message, variant: 'destructive' });
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button onClick={() => setIsCashEntryDialogOpen(true)} variant="outline">
+          <DollarSign className="mr-2 h-4 w-4"/> Registrar Ingreso Manual
+        </Button>
         <Button onClick={() => handleOpenDriverDialog()}>
           <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Conductor
         </Button>
@@ -143,6 +156,11 @@ export function ConductoresTab({ allDrivers, allVehicles }: ConductoresTabProps)
         onOpenChange={setIsDriverDialogOpen}
         driver={editingDriver}
         onSave={handleSaveDriver}
+      />
+      <CashEntryDialog
+        open={isCashEntryDialogOpen}
+        onOpenChange={setIsCashEntryDialogOpen}
+        onSave={handleSaveCashEntry}
       />
     </div>
   );

@@ -135,6 +135,49 @@ const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'veh
     return { id: docRef.id, ...newExpense };
 };
 
+const addCashEntry = async (amount: number, concept: string, driverId?: string): Promise<VehicleExpense> => {
+    if (!db) throw new Error("Database not initialized.");
+
+    let vehicleId = '';
+    let vehicleLicensePlate = 'N/A';
+    let driverName = 'N/A';
+
+    if (driverId) {
+        const driverDoc = await getDoc(doc(db, 'drivers', driverId));
+        if (driverDoc.exists()) {
+            const driver = driverDoc.data();
+            driverName = driver.name;
+            if (driver.assignedVehicleId) {
+                vehicleId = driver.assignedVehicleId;
+                const vehicle = await inventoryService.getVehicleById(vehicleId);
+                if (vehicle) {
+                    vehicleLicensePlate = vehicle.licensePlate;
+                }
+            }
+        }
+    }
+    
+    const authUserString = localStorage.getItem('authUser');
+    const registeredBy = authUserString ? JSON.parse(authUserString).name : 'Sistema';
+
+    const newEntry: Omit<VehicleExpense, 'id'> = {
+        vehicleId,
+        vehicleLicensePlate,
+        driverId: driverId || '',
+        driverName,
+        date: new Date().toISOString(),
+        category: 'Ingreso Manual',
+        amount: amount,
+        description: concept,
+        paymentMethod: 'Efectivo',
+        isIncome: true,
+        registeredBy,
+    };
+
+    const docRef = await addDoc(collection(db, 'vehicleExpenses'), cleanObjectForFirestore(newEntry));
+    return { id: docRef.id, ...newEntry };
+};
+
 const deleteVehicleExpense = async (expenseId: string): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
   await deleteDoc(doc(db, "vehicleExpenses", expenseId));
@@ -178,4 +221,5 @@ export const fleetService = {
   addOwnerWithdrawal,
   onOwnerWithdrawalsUpdate,
   deleteOwnerWithdrawal,
+  addCashEntry,
 };

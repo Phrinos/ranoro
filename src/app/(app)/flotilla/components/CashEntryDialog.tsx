@@ -23,6 +23,7 @@ import { DollarSign } from 'lucide-react';
 const cashEntrySchema = z.object({
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero."),
   concept: z.string().min(3, "El concepto es obligatorio."),
+  driverId: z.string().optional(),
 });
 
 export type CashEntryFormValues = z.infer<typeof cashEntrySchema>;
@@ -31,17 +32,23 @@ interface CashEntryDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSave: (values: CashEntryFormValues) => void;
+  driverId?: string;
 }
 
 export function CashEntryDialog({
   open,
   onOpenChange,
   onSave,
+  driverId,
 }: CashEntryDialogProps) {
   const form = useForm<CashEntryFormValues>({
     resolver: zodResolver(cashEntrySchema),
-    defaultValues: { amount: undefined, concept: '' },
+    defaultValues: { amount: undefined, concept: '', driverId },
   });
+
+  React.useEffect(() => {
+    form.reset({ amount: undefined, concept: '', driverId });
+  }, [driverId, form]);
 
   const handleSubmit = (values: CashEntryFormValues) => {
     onSave(values);
@@ -59,7 +66,7 @@ export function CashEntryDialog({
         </DialogHeader>
         <Form {...form}>
           <div className="p-6 pt-0">
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <form id="cash-entry-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="amount"
@@ -93,7 +100,7 @@ export function CashEntryDialog({
           </div>
           <DialogFooter className="p-6 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" form="cash-entry-form" onClick={form.handleSubmit(handleSubmit)} disabled={form.formState.isSubmitting}>
+            <Button type="submit" form="cash-entry-form" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Registrando..." : "Registrar Ingreso"}
             </Button>
           </DialogFooter>

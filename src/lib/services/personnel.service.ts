@@ -14,7 +14,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { Technician, AdministrativeStaff, Driver, Personnel, Area, User, Vehicle } from "@/types";
+import type { Technician, AdministrativeStaff, Driver, Personnel, Area, User, Vehicle, ManualDebtEntry } from "@/types";
 import type { DriverFormValues } from '@/app/(app)/conductores/components/driver-form';
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
@@ -117,23 +117,60 @@ const getDriverById = async (id: string): Promise<Driver | undefined> => {
 
 const saveDriver = async (data: Partial<DriverFormValues>, existingId?: string): Promise<Driver> => {
     if (!db) throw new Error("Database not initialized.");
+    const isEditing = !!existingId;
+    const driverId = existingId || doc(collection(db, 'drivers')).id;
+
     const dataToSave = {
-        ...data,
-        depositAmount: data.depositAmount ? Number(data.depositAmount) : undefined,
+        name: data.name,
+        address: data.address,
+        phone: data.phone,
+        emergencyPhone: data.emergencyPhone,
         requiredDepositAmount: data.requiredDepositAmount ? Number(data.requiredDepositAmount) : undefined,
+        depositAmount: data.depositAmount ? Number(data.depositAmount) : undefined,
         contractDate: data.contractDate ? new Date(data.contractDate).toISOString() : undefined,
     };
-
-    if (existingId) {
-        const docRef = doc(db, 'drivers', existingId);
-        await updateDoc(docRef, cleanObjectForFirestore(dataToSave));
-        const docSnap = await getDoc(docRef);
-        return { id: docSnap.id, ...(docSnap.data() as Omit<Driver, 'id'>) };
+    
+    const batch = writeBatch(db);
+    
+    // Save or update driver document
+    const driverRef = doc(db, 'drivers', driverId);
+    if (isEditing) {
+        batch.update(driverRef, cleanObjectForFirestore(dataToSave));
     } else {
-        const newDriverData = { ...dataToSave, documents: {}, manualDebts: [], isArchived: false };
-        const docRef = await addDoc(collection(db, 'drivers'), cleanObjectForFirestore(newDriverData));
-        return { id: docRef.id, ...newDriverData };
+        const newDriverData = { ...dataToSave, isArchived: false, documents: {} };
+        batch.set(driverRef, cleanObjectForFirestore(newDriverData));
     }
+    
+    // Handle deposit debt in the manualDebts collection
+    const depositDifference = (data.requiredDepositAmount || 0) - (data.depositAmount || 0);
+    const q = query(collection(db, 'manualDebts'), where('driverId', '==', driverId), where('note', '==', 'Adeudo de depósito inicial'));
+    const depositDebtSnapshot = await getDocs(q);
+
+    if (depositDifference > 0) {
+        if (!depositDebtSnapshot.empty) {
+            // Update existing deposit debt
+            const debtDocRef = depositDebtSnapshot.docs[0].ref;
+            batch.update(debtDocRef, { amount: depositDifference });
+        } else {
+            // Create new deposit debt
+            const newDebtRef = doc(collection(db, 'manualDebts'));
+            batch.set(newDebtRef, {
+                driverId: driverId,
+                date: new Date().toISOString(),
+                amount: depositDifference,
+                note: 'Adeudo de depósito inicial',
+            });
+        }
+    } else if (!depositDebtSnapshot.empty) {
+        // Delete existing deposit debt if it's no longer applicable
+        const debtDocRef = depositDebtSnapshot.docs[0].ref;
+        batch.delete(debtDocRef);
+    }
+    
+    await batch.commit();
+
+    const savedDriverDoc = await getDoc(driverRef);
+    return { id: driverId, ...(savedDriverDoc.data() as Omit<Driver, 'id'>) };
 };
 
 const assignVehicleToDriver = async (
@@ -200,6 +237,33 @@ const getDriverDocRef = (id: string) => {
     return doc(db, 'drivers', id);
 }
 
+// --- Manual Debts ---
+const onManualDebtsUpdate = (driverId: string, callback: (debts: ManualDebtEntry[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, 'manualDebts'), where('driverId', '==', driverId));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ManualDebtEntry)));
+    });
+};
+
+const saveManualDebt = async (driverId: string, data: Omit<ManualDebtEntry, 'id' | 'driverId' | 'date'>, id?: string): Promise<ManualDebtEntry> => {
+    if (!db) throw new Error("Database not initialized.");
+    const debtData = { ...data, driverId, date: new Date().toISOString() };
+    if (id) {
+        await updateDoc(doc(db, 'manualDebts', id), cleanObjectForFirestore(debtData));
+        return { id, ...debtData };
+    } else {
+        const docRef = await addDoc(collection(db, 'manualDebts'), cleanObjectForFirestore(debtData));
+        return { id: docRef.id, ...debtData };
+    }
+};
+
+const deleteManualDebt = async (id: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await deleteDoc(doc(db, 'manualDebts', id));
+};
+
+
 export const personnelService = {
     onPersonnelUpdate,
     onPersonnelUpdatePromise,
@@ -215,4 +279,7 @@ export const personnelService = {
     onAreasUpdate,
     saveArea,
     deleteArea,
+    onManualDebtsUpdate,
+    saveManualDebt,
+    deleteManualDebt,
 };

@@ -43,6 +43,7 @@ export default function DriverDetailPage() {
 
   const [driver, setDriver] = useState<Driver | null | undefined>(undefined);
   const [driverPayments, setDriverPayments] = useState<RentalPayment[]>([]);
+  const [manualDebts, setManualDebts] = useState<ManualDebtEntry[]>([]);
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
@@ -53,30 +54,31 @@ export default function DriverDetailPage() {
   const [editingDebt, setEditingDebt] = useState<ManualDebtEntry | null>(null);
   const [isAssignVehicleDialogOpen, setIsAssignVehicleDialogOpen] = useState(false);
 
-  const fetchDriverData = useCallback(async () => {
-    if (!driverId) return;
-    try {
-        const [fetchedDriver, payments, vehiclesData] = await Promise.all([
-            personnelService.getDriverById(driverId),
-            fleetService.onRentalPaymentsUpdatePromise(),
-            inventoryService.onVehiclesUpdatePromise()
-        ]);
-        if (isMounted.current) {
-            setDriver(fetchedDriver || null);
-            setDriverPayments(payments.filter(p => p.driverId === driverId).sort((a,b) => parseISO(b.paymentDate).getTime() - parseISO(a.paymentDate).getTime()));
-            setAllVehicles(vehiclesData);
-        }
-    } catch (error) {
-        console.error("Failed to fetch driver data:", error);
-        if (isMounted.current) setDriver(null);
-    }
-  }, [driverId]);
-
   useEffect(() => {
     isMounted.current = true;
-    fetchDriverData();
-    return () => { isMounted.current = false; };
-  }, [fetchDriverData]);
+    if (!driverId) return;
+
+    const unsubDriver = personnelService.onDriversUpdate((drivers) => {
+        if(isMounted.current) setDriver(drivers.find(d => d.id === driverId) || null);
+    });
+    const unsubPayments = fleetService.onRentalPaymentsUpdate((payments) => {
+        if(isMounted.current) setDriverPayments(payments.filter(p => p.driverId === driverId).sort((a,b) => parseISO(b.paymentDate).getTime() - parseISO(a.paymentDate).getTime()));
+    });
+    const unsubDebts = personnelService.onManualDebtsUpdate(driverId, (debts) => {
+        if(isMounted.current) setManualDebts(debts);
+    });
+    const unsubVehicles = inventoryService.onVehiclesUpdate((vehicles) => {
+        if(isMounted.current) setAllVehicles(vehicles);
+    });
+    
+    return () => {
+        isMounted.current = false;
+        unsubDriver();
+        unsubPayments();
+        unsubDebts();
+        unsubVehicles();
+    };
+  }, [driverId]);
 
   const assignedVehicle = useMemo(() => {
     if (!driver?.assignedVehicleId) return null;
@@ -86,32 +88,7 @@ export default function DriverDetailPage() {
   const handleSaveDriver = async (formData: DriverFormValues) => {
     if (!driver) return;
     try {
-        const depositDifference = (formData.requiredDepositAmount || 0) - (formData.depositAmount || 0);
-        const existingDebts = driver.manualDebts || [];
-        const depositDebtIndex = existingDebts.findIndex(d => d.note === 'Adeudo de depósito inicial');
-
-        if (depositDifference > 0) {
-            if (depositDebtIndex > -1) {
-                // Update existing deposit debt
-                existingDebts[depositDebtIndex].amount = depositDifference;
-                existingDebts[depositDebtIndex].date = new Date().toISOString();
-            } else {
-                // Add new deposit debt
-                existingDebts.push({
-                    id: `DEP_${Date.now().toString(36)}`,
-                    date: new Date().toISOString(),
-                    amount: depositDifference,
-                    note: 'Adeudo de depósito inicial'
-                });
-            }
-        } else if (depositDebtIndex > -1) {
-            // Remove deposit debt if it's paid off
-            existingDebts.splice(depositDebtIndex, 1);
-        }
-
-        const dataToSave = { ...formData, manualDebts: existingDebts };
-        await personnelService.saveDriver(dataToSave, driver.id);
-        await fetchDriverData();
+        await personnelService.saveDriver(formData, driver.id);
         setIsEditDialogOpen(false);
         toast({ title: "Datos Actualizados", description: `Se guardaron los cambios para ${formData.name}.` });
     } catch (error) {
@@ -124,7 +101,6 @@ export default function DriverDetailPage() {
     if (!driver) return;
     try {
         await personnelService.assignVehicleToDriver(driver, vehicleId, allVehicles);
-        await fetchDriverData();
         setIsAssignVehicleDialogOpen(false);
         toast({ title: "Vehículo Asignado", description: "La asignación del vehículo se ha actualizado." });
     } catch (error) {
@@ -150,7 +126,6 @@ export default function DriverDetailPage() {
           documents: { ...driver.documents, [uploadingDocType]: downloadURL }
       };
       await personnelService.saveDriver(updatedDriverData, driverId);
-      await fetchDriverData();
       toast({ title: '¡Documento Subido!', description: 'El documento se ha guardado correctamente.' });
     } catch (err) {
       toast({ title: 'Error de Subida', variant: 'destructive' });
@@ -165,7 +140,6 @@ export default function DriverDetailPage() {
   const handleRegisterPayment = async (details: { amount: number; daysCovered: number; }) => {
     if (!driver || !assignedVehicle) return;
     await fleetService.addRentalPayment(driverId, details.amount);
-    await fetchDriverData();
     toast({ title: "Pago Registrado", description: `Se ha registrado el pago de ${formatCurrency(details.amount)}.` });
   };
   
@@ -177,23 +151,7 @@ export default function DriverDetailPage() {
   const handleSaveDebt = async (formData: DebtFormValues) => {
     if (!driver) return;
     const isEditing = !!editingDebt;
-    const existingDebts = driver.manualDebts || [];
-    const depositDebtIndex = existingDebts.findIndex(d => d.note === 'Adeudo de depósito inicial');
-
-    if (formData.note === 'Adeudo de depósito inicial' && depositDebtIndex > -1 && (!isEditing || editingDebt.id !== existingDebts[depositDebtIndex].id)) {
-        const updatedDebts = [...existingDebts];
-        updatedDebts[depositDebtIndex].amount = formData.amount;
-        updatedDebts[depositDebtIndex].date = new Date().toISOString();
-        await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
-    } else if (isEditing) {
-        const updatedDebts = existingDebts.map(d => d.id === editingDebt.id ? { ...d, ...formData } : d);
-        await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
-    } else {
-        const updatedDebts = [...existingDebts, { id: `DEBT_${Date.now().toString(36)}`, date: new Date().toISOString(), ...formData }];
-        await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
-    }
-
-    await fetchDriverData();
+    await personnelService.saveManualDebt(driverId, formData, editingDebt?.id);
     setIsDebtDialogOpen(false);
     setEditingDebt(null);
     toast({ title: `Adeudo ${isEditing ? 'actualizado' : 'registrado'}` });
@@ -201,16 +159,13 @@ export default function DriverDetailPage() {
   
   const handleDeleteDebt = async (debtId: string) => {
     if (!driver) return;
-    const updatedDebts = (driver.manualDebts || []).filter(d => d.id !== debtId);
-    await personnelService.saveDriver({ ...driver, manualDebts: updatedDebts }, driverId);
-    await fetchDriverData();
+    await personnelService.deleteManualDebt(debtId);
     toast({ title: 'Adeudo Eliminado', variant: 'destructive' });
   };
   
   const handleDeletePayment = async (payment: RentalPayment) => {
     if(!driver) return;
     await fleetService.deleteRentalPayment(payment.id);
-    await fetchDriverData();
     toast({ title: "Pago Eliminado", variant: "destructive" });
   };
 
@@ -340,6 +295,7 @@ export default function DriverDetailPage() {
               driver={driver} 
               vehicle={assignedVehicle} 
               payments={driverPayments} 
+              manualDebts={manualDebts}
               onAddDebt={() => handleOpenDebtDialog()} 
               onRegisterPayment={() => setIsPaymentDialogOpen(true)} 
               onDeleteDebt={handleDeleteDebt}
