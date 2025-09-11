@@ -40,13 +40,12 @@ export function EstadoCuentaTab({ drivers, vehicles, payments, manualDebts }: Es
         const driverPayments = payments.filter(p => p.driverId === driver.id);
 
         const debtInfo = calculateDriverDebt(driver, driverPayments, vehicle ? [vehicle] : [], driverDebts);
-        const currentBalance = debtInfo.balance - debtInfo.totalDebt;
-
+        
         return {
             driverId: driver.id,
             driverName: driver.name,
             vehicleInfo: vehicle ? `${vehicle.licensePlate} (${formatCurrency(vehicle.dailyRentalCost || 0)}/día)` : 'N/A',
-            balance: currentBalance,
+            balance: debtInfo.balance,
         };
     }).sort((a, b) => {
         switch (balanceSortOption) {

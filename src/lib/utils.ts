@@ -4,7 +4,7 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle } from 'lucide-react';
 import type { PaymentMethod, ServiceSubStatus, Driver, RentalPayment, Vehicle, ManualDebtEntry } from '@/types';
-import { parseISO, isAfter, startOfMonth, differenceInCalendarDays, startOfDay } from 'date-fns';
+import { parseISO, isAfter, startOfDay, differenceInCalendarDays } from 'date-fns';
 export { toNumber, formatMXN as formatCurrency, IVA_RATE } from './money';
 
 export function cn(...inputs: ClassValue[]) {
@@ -37,24 +37,19 @@ export const calculateDriverDebt = (driver: Driver, allPayments: RentalPayment[]
         totalRentalCharges = daysSinceStart * vehicle.dailyRentalCost;
     }
 
-    const totalPayments = allPayments
-        .filter(p => p.driverId === driver.id)
-        .reduce((sum, p) => sum + p.amount, 0);
-
+    const totalPayments = allPayments.reduce((sum, p) => sum + p.amount, 0);
     const manualDebtTotal = manualDebts.reduce((sum, debt) => sum + debt.amount, 0);
     const depositDebt = Math.max(0, (driver.requiredDepositAmount || 0) - (driver.depositAmount || 0));
 
-    // Operational balance calculation (what the user expects to see as "Saldo Actual")
-    // Total Payments - (Rental Charges + Manual Charges)
+    // The driver's operative balance (rent + manual charges vs payments)
     const balance = totalPayments - (totalRentalCharges + manualDebtTotal);
     
-    // Total debt calculation (includes deposit)
-    // (Rental Charges + Manual Charges + Deposit Debt) - Total Payments
+    // The total amount the driver owes, including the deposit
     const totalDebt = (totalRentalCharges + manualDebtTotal + depositDebt) - totalPayments;
 
     return { 
         totalDebt: Math.max(0, totalDebt),
-        rentalDebt: Math.max(0, totalRentalCharges - totalPayments), // Simplified view for rental part
+        rentalDebt: Math.max(0, totalRentalCharges),
         depositDebt: depositDebt, 
         manualDebt: manualDebtTotal,
         balance: balance
