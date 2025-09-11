@@ -90,24 +90,23 @@ export default function BalanceTabContent({
     const effectiveTo = min([to, today]);
     const interval = { start: from, end: effectiveTo };
     
-    let initialBalance = 0;
+    const historicalDebt = calculateDriverDebt(driver, payments, vehicle ? [vehicle] : [], manualDebts);
     
-    if (calculationPreCheck.canCalculate) {
-      const contractStart = startOfDay(parseISO(driver.contractDate!));
+    let initialBalance = 0;
+    if (calculationPreCheck.canCalculate && driver.contractDate) {
+      const contractStart = startOfDay(parseISO(driver.contractDate));
       if (isBefore(contractStart, from)) {
         const rentalInterval = eachDayOfInterval({ start: contractStart, end: from });
-        rentalInterval.pop();
+        rentalInterval.pop(); // Don't include the 'from' day itself in the initial balance
         initialBalance -= rentalInterval.length * (vehicle!.dailyRentalCost as number);
       }
     }
+    
+    const pastPayments = payments.filter(p => isBefore(parseISO(p.paymentDate), from));
+    initialBalance += pastPayments.reduce((sum, p) => sum + p.amount, 0);
 
-    payments
-      .filter(p => isBefore(parseISO(p.paymentDate), from))
-      .forEach(p => { initialBalance += p.amount; });
-
-    (manualDebts || [])
-      .filter(d => isBefore(parseISO(d.date), from))
-      .forEach(d => { initialBalance -= d.amount; });
+    const pastDebts = manualDebts.filter(d => isBefore(parseISO(d.date), from));
+    initialBalance -= pastDebts.reduce((sum, d) => sum + d.amount, 0);
 
     let runningBalance = initialBalance;
     const transactionsInPeriod: Transaction[] = [];
@@ -137,8 +136,8 @@ export default function BalanceTabContent({
       }));
 
     const dailyCharges: Omit<Transaction, 'balance'|'isDailyCharge'>[] = [];
-    if (calculationPreCheck.canCalculate) {
-      const contractStart = startOfDay(parseISO(driver.contractDate!));
+    if (calculationPreCheck.canCalculate && driver.contractDate) {
+      const contractStart = startOfDay(parseISO(driver.contractDate));
       const effectiveStart = isAfter(contractStart, from) ? contractStart : from;
       
       if (!isAfter(effectiveStart, effectiveTo)) {
@@ -159,14 +158,10 @@ export default function BalanceTabContent({
     
     const allTransactionParts = [...dailyCharges, ...paymentTransactions, ...manualDebtTransactions];
 
-    const sortedTransactionsInPeriod = allTransactionParts.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-    sortedTransactionsInPeriod.forEach(t => {
+    allTransactionParts.sort((a, b) => a.date.getTime() - b.date.getTime()).forEach(t => {
       runningBalance += t.payment - t.charge;
       transactionsInPeriod.push({ ...t, balance: runningBalance, isDailyCharge: 'isDailyCharge' in t ? t.isDailyCharge : false });
     });
-    
-    const historicalDebt = calculateDriverDebt(driver, payments, vehicle ? [vehicle] : [], manualDebts);
 
     const periodTotals = {
       charge: transactionsInPeriod.reduce((sum, t) => sum + t.charge, 0),
