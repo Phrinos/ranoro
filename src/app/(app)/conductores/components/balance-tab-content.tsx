@@ -191,7 +191,7 @@ export default function BalanceTabContent({
         </CardHeader>
         <CardContent className="text-center space-y-4">
             <div>
-                <p className="text-sm font-medium text-muted-foreground">SALDO ACTUAL</p>
+                <p className="text-sm font-medium text-muted-foreground">SALDO OPERATIVO ACTUAL</p>
                 <p className={cn("text-3xl font-bold", totalBalance >= 0 ? "text-green-600" : "text-destructive")}>
                     {formatCurrency(totalBalance)}
                 </p>
@@ -317,4 +317,3 @@ export default function BalanceTabContent({
     </div>
   );
 }
-
