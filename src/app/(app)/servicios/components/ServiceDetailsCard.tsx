@@ -44,6 +44,7 @@ interface ServiceDetailsCardProps {
   users: User[];
   serviceTypes: ServiceTypeRecord[];
   onOpenSignature: (type: 'reception' | 'delivery' | 'advisor') => void;
+  isNew: boolean;
 }
 
 export function ServiceDetailsCard({
@@ -51,6 +52,7 @@ export function ServiceDetailsCard({
   users,
   serviceTypes,
   onOpenSignature,
+  isNew
 }: ServiceDetailsCardProps) {
   const { control, watch, formState: { errors }, setValue } = useFormContext<ServiceFormValues>();
   
@@ -65,12 +67,13 @@ export function ServiceDetailsCard({
   const [isQuoteDatePickerOpen, setIsQuoteDatePickerOpen] = useState(false);
 
   const technicians = useMemo(() => {
-    return users.filter(u => u.role.toLowerCase().includes('tecnico') || u.role.toLowerCase().includes('admin'));
+    const safeUsers: User[] = Array.isArray(users) ? users : [];
+    return safeUsers.filter(u => u.role.toLowerCase().includes('tecnico') || u.role.toLowerCase().includes('admin'));
   }, [users]);
 
   const showAppointmentFields = useMemo(() => watchedStatus === 'Agendado', [watchedStatus]);
   const showTechnicianField = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
-  const showQuoteDateField = useMemo(() => watchedStatus === 'Cotizacion', [watchedStatus]);
+  const showQuoteDateField = useMemo(() => isNew && watchedStatus === 'Cotizacion', [watchedStatus, isNew]);
   const showSubStatusField = useMemo(() => watchedStatus === 'En Taller' || watchedStatus === 'Agendado', [watchedStatus]);
   
   const technicianName = useMemo(() => {
@@ -88,6 +91,9 @@ export function ServiceDetailsCard({
       setValue('subStatus', 'Sin Confirmar', { shouldValidate: true });
     } else if (newStatus === 'En Taller') {
       setValue('subStatus', 'Ingresado', { shouldValidate: true });
+      setValue('receptionDateTime', new Date(), { shouldDirty: true });
+    } else if (newStatus === 'Cotizacion') {
+        setValue('subStatus', undefined, { shouldValidate: true });
     }
   };
 
