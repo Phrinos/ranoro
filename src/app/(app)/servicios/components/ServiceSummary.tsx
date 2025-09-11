@@ -23,6 +23,7 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
   const cardCommission = useWatch({ control: form.control, name: 'cardCommission' }) || 0;
   
   const { totalCost, subTotal, taxAmount, serviceProfit } = useMemo(() => {
+    if (!watchedItems) return { totalCost: 0, subTotal: 0, taxAmount: 0, serviceProfit: 0 };
     const total = (watchedItems || []).reduce(
       (s, i) => s + (Number(i.price) || 0),
       0

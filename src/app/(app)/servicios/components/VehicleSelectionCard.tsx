@@ -36,6 +36,7 @@ interface VehicleSelectionCardProps {
   serviceHistory: ServiceRecord[];
   onVehicleSelected: (vehicle: Vehicle | null) => void;
   onOpenNewVehicleDialog: (plate?: string) => void;
+  initialVehicleId?: string; // Add this prop
 }
 
 export function VehicleSelectionCard({
@@ -44,6 +45,7 @@ export function VehicleSelectionCard({
   serviceHistory,
   onVehicleSelected,
   onOpenNewVehicleDialog,
+  initialVehicleId
 }: VehicleSelectionCardProps) {
   const { control, setValue, getValues, watch, formState: { errors } } = useFormContext();
   const { toast } = useToast();
@@ -87,8 +89,12 @@ export function VehicleSelectionCard({
         setLastService(null);
       }
     };
-    findVehicleData(vehicleId);
-  }, [vehicleId, localVehicles, serviceHistory]);
+    // Use initialVehicleId for the very first load if available
+    const idToLoad = vehicleId || initialVehicleId;
+    if (idToLoad) {
+      findVehicleData(idToLoad);
+    }
+  }, [vehicleId, initialVehicleId, localVehicles, serviceHistory]);
 
   const handleSelectVehicle = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
@@ -184,7 +190,7 @@ export function VehicleSelectionCard({
       <Button
         type="button"
         variant="outline"
-        className="w-full h-24 border-2 border-dashed bg-white hover:bg-gray-100 text-muted-foreground"
+        className={cn("w-full h-24 border-2 border-dashed hover:bg-gray-100 text-muted-foreground", errors.vehicleId && "border-destructive text-destructive")}
         onClick={() => setIsSelectionDialogOpen(true)}
         disabled={isReadOnly}
       >
