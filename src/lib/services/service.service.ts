@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -365,37 +364,52 @@ const completeService = async (
 
     const serviceRef = doc(db, 'serviceRecords', service.id);
     const deliveryDate = new Date().toISOString();
+    const wasBatchProvided = !!batch;
+    const workBatch = batch || writeBatch(db);
 
-    // 1) Calcula total, insumos y comisión con base en los pagos que estás guardando
-    const total     = Number(service.totalCost ?? calcTotalFromItems(service.serviceItems));
-    const supplies  = Number(service.totalSuppliesWorkshopCost ?? calcSuppliesCostFromItems(service.serviceItems));
+    // 1. Calculate totals and profit based on the service state
+    const total = Number(service.totalCost ?? calcTotalFromItems(service.serviceItems));
+    const supplies = Number(service.totalSuppliesWorkshopCost ?? calcSuppliesCostFromItems(service.serviceItems));
     const commission = calcCardCommission(total, paymentDetails.payments as any, service.paymentMethod as any);
-
-    // 2) Ganancia efectiva
     const serviceProfit = total - supplies - commission;
-
+    
+    // 2. Prepare the update payload for the service record
     const updateData = {
         status: 'Entregado' as const,
         deliveryDateTime: deliveryDate,
         payments: paymentDetails.payments,
         nextServiceInfo: paymentDetails.nextServiceInfo,
         cardCommission: commission,
-        serviceProfit, // ← deja persistido el valor correcto
+        serviceProfit: serviceProfit,
     };
-
-    batch.update(serviceRef, cleanObjectForFirestore(updateData));
+    workBatch.update(serviceRef, cleanObjectForFirestore(updateData));
     
+    // 3. Update inventory levels for each supply used
+    const allSupplies = service.serviceItems?.flatMap(item => item.suppliesUsed || []) || [];
+    for (const supply of allSupplies) {
+        if (!supply.isService && supply.supplyId && !supply.supplyId.startsWith('manual_')) {
+            const itemRef = doc(db, 'inventory', supply.supplyId);
+            const itemSnap = await getDoc(itemRef);
+            if(itemSnap.exists()){
+                const currentQuantity = itemSnap.data().quantity || 0;
+                workBatch.update(itemRef, { quantity: currentQuantity - supply.quantity });
+            }
+        }
+    }
+
+    // 4. Update last service date for the vehicle
     if (service.vehicleId) {
         await updateVehicleOnServiceChange(service.vehicleId, deliveryDate);
     }
 
+    // 5. Add cash transaction if applicable
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
     
     for (const payment of paymentDetails.payments) {
         if (payment.method === 'Efectivo') {
             const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
-            batch.set(cashTransactionRef, {
+            workBatch.set(cashTransactionRef, {
                 date: new Date().toISOString(),
                 type: 'Entrada' as const,
                 amount: payment.amount,
@@ -407,6 +421,11 @@ const completeService = async (
                 relatedId: service.id,
             });
         }
+    }
+    
+    // 6. Commit the batch if it was created within this function
+    if (!wasBatchProvided) {
+        await workBatch.commit();
     }
 };
 
@@ -428,3 +447,5 @@ export const serviceService = {
     deleteService,
     completeService,
 };
+
+    
