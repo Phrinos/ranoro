@@ -1,41 +1,24 @@
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import React from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, X, Ban, Trash2, BrainCircuit, LogIn, Calendar, Plus, DollarSign } from 'lucide-react';
+import { Loader2, Save, Ban, DollarSign } from 'lucide-react';
 import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import Image from 'next/image';
-import { ServiceDetailsCard } from './ServiceDetailsCard';
-import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 import { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { useToast } from '@/hooks/use-toast';
-import { enhanceText } from '@/ai/flows/text-enhancement-flow';
-import { SignatureDialog } from './signature-dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { ServiceSummary } from './ServiceSummary';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { format as formatDate, addMonths, isValid } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ServiceItemsList } from './ServiceItemsList';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { SafetyChecklist } from './SafetyChecklist';
-import { PhotoReportTab } from './PhotoReportTab';
+import PhotoReportTab from './PhotoReportTab';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
+import { ServiceDetailsCard } from './ServiceDetailsCard';
 
 interface ServiceFormProps {
   initialData: ServiceRecord | null;
@@ -84,7 +67,7 @@ export function ServiceForm({
   const { handleSubmit, getValues, setValue, watch, formState: { isSubmitting }, reset } = methods;
 
   const watchedStatus = watch('status');
-  
+
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (values.status === 'Entregado' && initialData?.status !== 'Entregado') {
       toast({
@@ -117,38 +100,75 @@ export function ServiceForm({
   return (
     <FormProvider {...methods}>
       <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
-          <div className="p-6 space-y-6">
-             {/* Form content */}
-          </div>
-        <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-2">
-                <div>
-                  {onCancel && (
-                    <ConfirmDialog
-                      triggerButton={<Button variant="destructive" type="button"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar' : 'Cancelar'}</Button>}
-                      title={mode === 'quote' ? '¿Eliminar cotización?' : '¿Cancelar servicio?'}
-                      description={mode === 'quote' ? 'Esto es permanente.' : 'El servicio se marcará como cancelado.'}
-                      onConfirm={onCancel}
-                      confirmText={mode === 'quote' ? 'Sí, Eliminar' : 'Sí, Cancelar'}
-                    />
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                   <Button type="button" variant="outline" onClick={() => reset(initialData || {})}>Descartar</Button>
-                   {initialData?.id && watchedStatus === 'En Taller' && onComplete ? (
-                     <Button type="button" onClick={handleCompleteClick} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
-                       {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <DollarSign className="mr-2 h-4 w-4"/>}
-                       Completar y Cobrar
-                     </Button>
-                   ) : (
-                     <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-                        {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
-                     </Button>
-                   )}
-                </div>
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <VehicleSelectionCard
+                vehicles={vehicles}
+                onVehicleCreated={onVehicleCreated}
+                serviceHistory={serviceHistory || []}
+              />
+              <ServiceDetailsCard technicians={technicians} />
+              <Tabs defaultValue="items">
+                <TabsList>
+                  <TabsTrigger value="items">Items del Servicio</TabsTrigger>
+                  <TabsTrigger value="checklist">Checklist de Seguridad</TabsTrigger>
+                  <TabsTrigger value="photos">Reporte Fotográfico</TabsTrigger>
+                  <TabsTrigger value="reception">Recepción y Entrega</TabsTrigger>
+                </TabsList>
+                <TabsContent value="items">
+                  <ServiceItemsList
+                    inventoryItems={inventoryItems}
+                    serviceTypes={serviceTypes}
+                    categories={categories}
+                    suppliers={suppliers}
+                  />
+                </TabsContent>
+                <TabsContent value="checklist">
+                  <SafetyChecklist />
+                </TabsContent>
+                <TabsContent value="photos">
+                  <PhotoReportTab />
+                </TabsContent>
+                <TabsContent value="reception">
+                  <ReceptionAndDelivery />
+                </TabsContent>
+              </Tabs>
             </div>
-      </footer>
+            <div className="lg:col-span-1 space-y-6">
+              <ServiceSummary />
+            </div>
+          </div>
+        </div>
+        <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              {onCancel && (
+                <ConfirmDialog
+                  triggerButton={<Button variant="destructive" type="button"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar' : 'Cancelar'}</Button>}
+                  title={mode === 'quote' ? '¿Eliminar cotización?' : '¿Cancelar servicio?'}
+                  description={mode === 'quote' ? 'Esto es permanente.' : 'El servicio se marcará como cancelado.'}
+                  onConfirm={onCancel}
+                  confirmText={mode === 'quote' ? 'Sí, Eliminar' : 'Sí, Cancelar'}
+                />
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" onClick={() => reset(initialData || {})}>Descartar</Button>
+              {initialData?.id && watchedStatus === 'En Taller' && onComplete ? (
+                <Button type="button" onClick={handleCompleteClick} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
+                  {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <DollarSign className="mr-2 h-4 w-4"/>}
+                  Completar y Cobrar
+                </Button>
+              ) : (
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
+                  {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
+                </Button>
+              )}
+            </div>
+          </div>
+        </footer>
       </form>
     </FormProvider>
   );

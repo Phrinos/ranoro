@@ -22,7 +22,7 @@ import html2canvas from 'html2canvas';
 import { formatCurrency } from '@/lib/utils';
 import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
-import { writeBatch } from 'firebase/firestore';
+import { writeBatch, doc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 
 
@@ -93,7 +93,9 @@ export default function ServicioPage() {
                 const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
                 const currentUser = authUserString ? JSON.parse(authUserString) : null;
 
+                const newId = doc(collection(db, 'serviceRecords')).id;
                 setInitialData({
+                    id: newId,
                     status: 'Cotizacion',
                     serviceDate: new Date(),
                     vehicleId: '', // Ensure vehicleId is initialized
@@ -168,6 +170,7 @@ export default function ServicioPage() {
     if (!initialData) return;
     setIsSubmitting(true);
     try {
+      if(!db) return;
       const batch = writeBatch(db);
       await serviceService.completeService(initialData, paymentDetails, batch);
       await batch.commit();

@@ -1,153 +1,94 @@
+
 // src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormContext, Controller } from "react-hook-form";
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast";
-import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone, CalendarCheck, ArrowRight, Edit, Search, Calendar as CalendarDateIcon, Link2Icon } from 'lucide-react';
+import { Car as CarIcon, History, Search } from 'lucide-react';
 import type { Vehicle, ServiceRecord } from '@/types';
-import { format, isValid, parseISO, addMonths, addYears, setHours, setMinutes } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { serviceService } from '@/lib/services';
+import { cn } from "@/lib/utils";
 import Link from 'next/link';
-import { parseDate } from '@/lib/forms';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface VehicleSelectionCardProps {
   isReadOnly?: boolean;
-  localVehicles: Vehicle[];
+  vehicles: Vehicle[];
   serviceHistory: ServiceRecord[];
-  onVehicleSelected: (vehicle: Vehicle | null) => void;
+  onVehicleCreated?: (newVehicleData: any) => void;
   onOpenNewVehicleDialog: (plate?: string) => void;
-  initialVehicleId?: string; // Add this prop
 }
 
 export function VehicleSelectionCard({
   isReadOnly,
-  localVehicles,
+  vehicles,
   serviceHistory,
-  onVehicleSelected,
   onOpenNewVehicleDialog,
-  initialVehicleId
 }: VehicleSelectionCardProps) {
-  const { control, setValue, getValues, watch, formState: { errors } } = useFormContext();
-  const { toast } = useToast();
-  const router = useRouter();
-
+  const { control, setValue, watch, formState: { errors } } = useFormContext();
+  
   const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
-  const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState("");
-  const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [lastService, setLastService] = useState<ServiceRecord | null>(null);
   
   const vehicleId = watch('vehicleId');
-  
+  const localVehicles: Vehicle[] = Array.isArray(vehicles) ? vehicles : [];
+
   useEffect(() => {
-    const findVehicleData = (vId: string) => {
-      if (!vId) {
-        setSelectedVehicle(null);
-        setLastService(null);
-        return;
-      }
-      const vehicle = localVehicles.find(v => v.id === vId);
-      if (vehicle) {
-        setSelectedVehicle(vehicle);
-        setVehicleLicensePlateSearch(vehicle.licensePlate);
-        if (serviceHistory && serviceHistory.length > 0) {
-            const vehicleServices = serviceHistory
-              .filter(s => s.vehicleId === vehicle.id && (s.status === 'Entregado' || s.status === 'Completado'))
-              .sort((a, b) => {
-                  const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate) || new Date(0);
-                  const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate) || new Date(0);
-                  if (!isValid(dateA)) return 1;
-                  if (!isValid(dateB)) return -1;
-                  return dateB.getTime() - dateA.getTime();
-              });
-            setLastService(vehicleServices[0] || null);
-        } else {
-            setLastService(null);
-        }
-      } else {
-        setSelectedVehicle(null);
-        setLastService(null);
-      }
-    };
-    // Use initialVehicleId for the very first load if available
-    const idToLoad = vehicleId || initialVehicleId;
-    if (idToLoad) {
-      findVehicleData(idToLoad);
+    const vehicle = localVehicles.find(v => v.id === vehicleId);
+    if (vehicle) {
+      setSelectedVehicle(vehicle);
+      setSearchTerm(vehicle.licensePlate);
+      const vehicleServices = serviceHistory
+        .filter(s => s.vehicleId === vehicle.id && s.status === 'Entregado')
+        .sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
+      setLastService(vehicleServices[0] || null);
+    } else {
+      setSelectedVehicle(null);
+      setLastService(null);
     }
-  }, [vehicleId, initialVehicleId, localVehicles, serviceHistory]);
+  }, [vehicleId, localVehicles, serviceHistory]);
 
   const handleSelectVehicle = (vehicle: Vehicle) => {
-    setSelectedVehicle(vehicle);
-    setValue('vehicleId', vehicle.id, { shouldValidate: true });
-    if (vehicle.isFleetVehicle && vehicle.currentMileage) {
+    setValue('vehicleId', vehicle.id, { shouldValidate: true, shouldDirty: true });
+    if (vehicle.currentMileage) {
       setValue('mileage', vehicle.currentMileage, { shouldDirty: true });
     }
-    onVehicleSelected(vehicle);
     setIsSelectionDialogOpen(false);
   };
+  
+  const filteredVehicles = localVehicles.filter(v => {
+    const term = searchTerm.toLowerCase();
+    return (v.licensePlate || '').toLowerCase().includes(term) ||
+           (v.make || '').toLowerCase().includes(term) ||
+           (v.model || '').toLowerCase().includes(term) ||
+           (v.ownerName || '').toLowerCase().includes(term)
+  }).slice(0, 10);
 
-  useEffect(() => {
-    if (!vehicleLicensePlateSearch || vehicleLicensePlateSearch.length < 2) {
-      setVehicleSearchResults([]);
-      return;
-    }
-    const lowerSearch = vehicleLicensePlateSearch.toLowerCase();
-    const results = localVehicles.filter(v => 
-        (v.licensePlate && typeof v.licensePlate === 'string' && v.licensePlate.toLowerCase().includes(lowerSearch)) ||
-        (v.make && typeof v.make === 'string' && v.make.toLowerCase().includes(lowerSearch)) ||
-        (v.model && typeof v.model === 'string' && v.model.toLowerCase().includes(lowerSearch)) ||
-        (v.ownerName && typeof v.ownerName === 'string' && v.ownerName.toLowerCase().includes(lowerSearch))
-    ).slice(0, 5);
-    setVehicleSearchResults(results);
-  }, [vehicleLicensePlateSearch, localVehicles]);
 
   const formatServiceInfo = (service: ServiceRecord | null): string => {
     if (!service) return 'No hay registro de servicio previo.';
-    const relevantDate = parseDate(service.deliveryDateTime) || parseDate(service.serviceDate);
-    
-    // Updated logic to use service items for description
+    const date = service.deliveryDateTime || service.serviceDate;
+    if (!date || !isValid(new Date(date))) return 'Fecha inválida';
     const description = service.serviceItems?.map(item => item.name).join(', ') || service.description || 'Servicio General';
-    
-    if (!relevantDate || !isValid(relevantDate)) return 'Fecha inválida.';
-    const mileagePart = service.mileage ? `${service.mileage.toLocaleString('es-ES')} km - ` : '';
-    return `${mileagePart}${format(relevantDate, "dd MMM yyyy", { locale: es })} - ${description}`;
-  };
-
-  const handleViewProfile = () => {
-    if (selectedVehicle) {
-        window.open(`/vehiculos/${selectedVehicle.id}`, '_blank');
-    }
+    return `${format(new Date(date), "dd MMM yyyy", { locale: es })} - ${description}`;
   };
 
   if (selectedVehicle) {
     return (
-      <Card className="relative">
-        <CardHeader>
-          <CardTitle>Vehículo Seleccionado</CardTitle>
-        </CardHeader>
+      <Card>
+        <CardHeader><CardTitle>Vehículo Seleccionado</CardTitle></CardHeader>
         <CardContent className="space-y-4">
            <div className="p-3 border rounded-md bg-background/30">
-              <p className="text-xs text-muted-foreground">{selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
+              <p className="text-xs text-muted-foreground">{selectedVehicle.ownerName}</p>
               <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
           </div>
           <FormField
@@ -155,30 +96,19 @@ export function VehicleSelectionCard({
             name="mileage"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center gap-2">
-                    <History className="h-4 w-4 text-muted-foreground"/>
-                    Kilometraje Actual
-                </FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="Ej: 55000 km" {...field} value={field.value ?? ''} disabled={isReadOnly} />
-                </FormControl>
-                 <FormMessage />
+                <FormLabel className="flex items-center gap-2"><History className="h-4 w-4 text-muted-foreground"/>Kilometraje</FormLabel>
+                <FormControl><Input type="number" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
           <div className="text-left mt-2 pt-2 border-t">
               <p className="text-sm font-medium text-muted-foreground">Último Servicio:</p>
-              <p className="font-semibold text-base truncate" title={formatServiceInfo(lastService)}>
-                  {formatServiceInfo(lastService)}
-              </p>
+              <p className="font-semibold text-base truncate">{formatServiceInfo(lastService)}</p>
           </div>
-          <div className="flex justify-end items-center pt-2 gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={handleViewProfile}>
-                Perfil del Vehículo
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedVehicle(null); setValue('vehicleId', ''); onVehicleSelected(null); }}>
-                Cambiar Vehículo
-              </Button>
+          <div className="flex justify-end pt-2 gap-2">
+              <Button type="button" variant="link" size="sm" asChild><Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank">Ver Perfil</Link></Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setValue('vehicleId', '', { shouldValidate: true })}>Cambiar Vehículo</Button>
           </div>
         </CardContent>
       </Card>
@@ -187,73 +117,48 @@ export function VehicleSelectionCard({
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        className={cn("w-full h-24 border-2 border-dashed hover:bg-gray-100 text-muted-foreground", errors.vehicleId && "border-destructive text-destructive")}
-        onClick={() => setIsSelectionDialogOpen(true)}
-        disabled={isReadOnly}
-      >
-        <CarIcon className="mr-4 h-8 w-8" />
-        <span className="text-lg">Seleccionar Vehículo</span>
-      </Button>
+      <Controller
+        name="vehicleId"
+        control={control}
+        render={({ field }) => (
+            <Button
+                type="button"
+                variant="outline"
+                className={cn("w-full h-24 border-2 border-dashed hover:bg-gray-100 text-muted-foreground", errors.vehicleId && "border-destructive text-destructive")}
+                onClick={() => setIsSelectionDialogOpen(true)}
+                disabled={isReadOnly}
+            >
+                <CarIcon className="mr-4 h-8 w-8" />
+                <span className="text-lg">Seleccionar Vehículo</span>
+            </Button>
+        )}
+      />
 
       <Dialog open={isSelectionDialogOpen} onOpenChange={setIsSelectionDialogOpen}>
         <DialogContent className="sm:max-w-lg p-6">
-          <DialogHeader>
-            <DialogTitle>Buscar Vehículo</DialogTitle>
-            <DialogDescription>
-              Busque por placa, marca, modelo o propietario.
-            </DialogDescription>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Buscar Vehículo</DialogTitle><DialogDescription>Busque por placa, marca, modelo o propietario.</DialogDescription></DialogHeader>
           <div className="py-4 space-y-4">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar vehículo..."
-                value={vehicleLicensePlateSearch}
-                onChange={(e) => setVehicleLicensePlateSearch(e.target.value)}
-                className="pl-8"
-              />
+              <Input placeholder="Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
             </div>
-            <ScrollArea className="h-60 border rounded-md p-2 space-y-1">
-              {vehicleSearchResults.length > 0 ? (
-                vehicleSearchResults.map((v) => (
-                  <Button
-                    key={v.id}
-                    variant="ghost"
-                    className="w-full justify-start text-left h-auto py-1.5"
-                    onClick={() => handleSelectVehicle(v)}
-                  >
+            <ScrollArea className="h-60 border rounded-md p-2">
+              {filteredVehicles.length > 0 ? (
+                filteredVehicles.map((v) => (
+                  <Button key={v.id} variant="ghost" className="w-full justify-start h-auto py-1.5" onClick={() => handleSelectVehicle(v)}>
                     <div>
                       <p className="font-semibold">{v.licensePlate}</p>
                       <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
                     </div>
                   </Button>
                 ))
-              ) : (
-                <div className="text-center p-4 text-sm text-muted-foreground">
-                  {vehicleLicensePlateSearch.length > 1
-                    ? "No se encontraron vehículos."
-                    : "Escriba para buscar..."}
-                </div>
-              )}
+              ) : <div className="text-center p-4 text-sm">No se encontraron vehículos.</div>}
             </ScrollArea>
-             <Button
-                type="button"
-                variant="secondary"
-                className="w-full"
-                onClick={() => {
-                  setIsSelectionDialogOpen(false);
-                  onOpenNewVehicleDialog(vehicleLicensePlateSearch);
-                }}
-              >
+             <Button type="button" variant="secondary" className="w-full" onClick={() => onOpenNewVehicleDialog(searchTerm)}>
                 <CarIcon className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
               </Button>
           </div>
-          <DialogFooter>
-             <Button variant="outline" onClick={() => setIsSelectionDialogOpen(false)}>Cerrar</Button>
-          </DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setIsSelectionDialogOpen(false)}>Cerrar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </>
