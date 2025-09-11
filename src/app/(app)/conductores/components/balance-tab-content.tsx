@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO, isAfter, startOfDay, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, endOfDay, isBefore, min } from 'date-fns';
+import { format, parseISO, isAfter, startOfDay, eachDayOfInterval, isWithinInterval, startOfMonth, endOfMonth, endOfDay, isBefore, min, isSameDay, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, cn, calculateDriverDebt } from '@/lib/utils';
 import { PlusCircle, HandCoins, Edit, Trash2, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import type { DateRange } from 'react-day-picker';
@@ -162,16 +162,7 @@ export default function BalanceTabContent({
       transactionsInPeriod.push({ ...t, balance: runningBalance });
     });
 
-    let finalTotalBalance = 0;
-    if (calculationPreCheck.canCalculate) {
-        const contractStart = startOfDay(parseISO(driver.contractDate!));
-        if (isAfter(today, contractStart) || isSameDay(today, contractStart)) {
-            const rentalInterval = eachDayOfInterval({ start: contractStart, end: today });
-            finalTotalBalance -= rentalInterval.length * (vehicle!.dailyRentalCost as number);
-        }
-    }
-    payments.forEach(p => finalTotalBalance += p.amount);
-    (driver.manualDebts || []).forEach(d => finalTotalBalance -= d.amount);
+    const historicalDebt = calculateDriverDebt(driver, payments, vehicle ? [vehicle] : []);
 
     const periodTotals = {
       charge: transactionsInPeriod.reduce((sum, t) => sum + t.charge, 0),
@@ -180,7 +171,7 @@ export default function BalanceTabContent({
 
     return { 
       transactions: transactionsInPeriod.sort((a,b) => b.date.getTime() - a.date.getTime()),
-      totalBalance: finalTotalBalance,
+      totalBalance: historicalDebt.totalDebt > 0 ? -historicalDebt.totalDebt : historicalDebt.balance,
       periodTotals,
     };
 

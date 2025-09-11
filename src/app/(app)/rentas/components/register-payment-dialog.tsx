@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
 
 const paymentOptions: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia'];
 
@@ -56,6 +57,12 @@ export function RegisterPaymentDialog({
   const [needsMileageUpdate, setNeedsMileageUpdate] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Efectivo');
   const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
+  
+  const selectedDriver = drivers.find(d => d.id === selectedDriverId);
+  const selectedVehicle = selectedDriver ? vehicles.find(v => v.id === selectedDriver.assignedVehicleId) : null;
+  const dailyRate = selectedVehicle?.dailyRentalCost || 0;
+  const calculatedDays = (dailyRate > 0 && amount) ? (Number(amount) / dailyRate) : 0;
+
 
   useEffect(() => {
     if (!open) {
@@ -139,34 +146,43 @@ export function RegisterPaymentDialog({
                 </SelectContent>
             </Select>
           </div>
+          
            <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-                <Label htmlFor="amount-input">Monto del Pago</Label>
-                <div className="relative">
-                    <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input id="amount-input" type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8 bg-white" />
+                <div className="space-y-2">
+                    <Label htmlFor="amount-input">Cantidad a Pagar</Label>
+                    <div className="relative">
+                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input id="amount-input" type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8 bg-white" />
+                    </div>
                 </div>
-            </div>
-             <div className="space-y-2">
-                <Label htmlFor="payment-method-select">Método</Label>
-                <Select onValueChange={(value) => setPaymentMethod(value as PaymentMethod)} value={paymentMethod}>
-                    <SelectTrigger id="payment-method-select" className="bg-white"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        {paymentOptions.map(opt => {
-                            const Icon = paymentMethodIcons[opt];
-                            return (
-                                <SelectItem key={opt} value={opt}>
-                                  <div className="flex items-center gap-2">
-                                    <Icon className="h-4 w-4"/>
-                                    <span>{opt}</span>
-                                  </div>
-                                </SelectItem>
-                            )
-                        })}
-                    </SelectContent>
-                </Select>
-            </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="payment-method-select">Método</Label>
+                    <Select onValueChange={(value) => setPaymentMethod(value as PaymentMethod)} value={paymentMethod}>
+                        <SelectTrigger id="payment-method-select" className="bg-white"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {paymentOptions.map(opt => {
+                                const Icon = paymentMethodIcons[opt];
+                                return (
+                                    <SelectItem key={opt} value={opt}>
+                                      <div className="flex items-center gap-2">
+                                        <Icon className="h-4 w-4"/>
+                                        <span>{opt}</span>
+                                      </div>
+                                    </SelectItem>
+                                )
+                            })}
+                        </SelectContent>
+                    </Select>
+                </div>
            </div>
+
+            <Card className="mt-4">
+              <CardContent className="pt-6 text-center">
+                  <p className="text-xs text-muted-foreground">Este pago cubre aproximadamente</p>
+                  <p className="text-2xl font-bold">{calculatedDays.toFixed(2)} días</p>
+              </CardContent>
+            </Card>
+
            <div className="space-y-2">
              <Label>Fecha del Pago</Label>
              <Popover>

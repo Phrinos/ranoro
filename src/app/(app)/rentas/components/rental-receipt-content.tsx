@@ -144,8 +144,8 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
                 {debtInfo.manualDebt > 0 && <div className="flex justify-between"><span>Adeudos Manuales:</span><span>{formatCurrency(debtInfo.manualDebt)}</span></div>}
                 {debtInfo.balance > 0 && <div className="flex justify-between"><span>Saldo a Favor:</span><span>{formatCurrency(debtInfo.balance)}</span></div>}
                 <div className="flex justify-between font-bold mt-1 pt-1 border-t">
-                    <span className={debtInfo.totalDebt > 0 ? "text-red-700" : ""}>Deuda Total:</span>
-                    <span className={debtInfo.totalDebt > 0 ? "text-red-700" : ""}>{formatCurrency(debtInfo.totalDebt)}</span>
+                    <span className={debtInfo.totalDebt > 0 ? "text-red-700" : ""}>Saldo Total:</span>
+                    <span className={debtInfo.totalDebt > 0 ? "text-red-700" : ""}>{formatCurrency(debtInfo.totalDebt > 0 ? -debtInfo.totalDebt : debtInfo.balance)}</span>
                 </div>
                  <div className="flex justify-between font-bold mt-1 pt-1 border-t border-blue-300">
                     <span className={monthlyBalance < 0 ? "text-red-700" : "text-green-700"}>Balance del Mes:</span>
