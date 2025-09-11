@@ -16,24 +16,32 @@ import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 
 interface VehicleSelectionCardProps {
   isReadOnly?: boolean;
   vehicles: Vehicle[];
   serviceHistory: ServiceRecord[];
-  onVehicleCreated?: (newVehicleData: any) => void;
+  onVehicleCreated?: (newVehicleData: VehicleFormValues) => Promise<Vehicle>;
   onOpenNewVehicleDialog: (plate?: string) => void;
+  initialVehicleId?: string;
 }
 
 export function VehicleSelectionCard({
   isReadOnly,
   vehicles,
   serviceHistory,
+  onVehicleCreated,
   onOpenNewVehicleDialog,
+  initialVehicleId,
 }: VehicleSelectionCardProps) {
   const { control, setValue, watch, formState: { errors } } = useFormContext();
   
   const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
+  const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
+  const [newVehiclePlate, setNewVehiclePlate] = useState('');
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [lastService, setLastService] = useState<ServiceRecord | null>(null);
@@ -45,7 +53,7 @@ export function VehicleSelectionCard({
     const vehicle = localVehicles.find(v => v.id === vehicleId);
     if (vehicle) {
       setSelectedVehicle(vehicle);
-      setSearchTerm(vehicle.licensePlate);
+      setSearchTerm(vehicle.licensePlate || '');
       const vehicleServices = serviceHistory
         .filter(s => s.vehicleId === vehicle.id && s.status === 'Entregado')
         .sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
@@ -53,8 +61,11 @@ export function VehicleSelectionCard({
     } else {
       setSelectedVehicle(null);
       setLastService(null);
+      if(!isSelectionDialogOpen){
+         setSearchTerm('');
+      }
     }
-  }, [vehicleId, localVehicles, serviceHistory]);
+  }, [vehicleId, localVehicles, serviceHistory, isSelectionDialogOpen]);
 
   const handleSelectVehicle = (vehicle: Vehicle) => {
     setValue('vehicleId', vehicle.id, { shouldValidate: true, shouldDirty: true });
@@ -64,6 +75,20 @@ export function VehicleSelectionCard({
     setIsSelectionDialogOpen(false);
   };
   
+  const handleOpenNewVehicleFromSearch = () => {
+    setIsSelectionDialogOpen(false);
+    setNewVehiclePlate(searchTerm);
+    setIsNewVehicleDialogOpen(true);
+  };
+  
+  const handleNewVehicleSave = async (data: VehicleFormValues) => {
+    if (onVehicleCreated) {
+      const newVehicle = await onVehicleCreated(data);
+      handleSelectVehicle(newVehicle);
+      setIsNewVehicleDialogOpen(false);
+    }
+  };
+
   const filteredVehicles = localVehicles.filter(v => {
     const term = searchTerm.toLowerCase();
     const norm = (s?: string) => (s ?? "").toLowerCase();
@@ -127,8 +152,7 @@ export function VehicleSelectionCard({
                 type="button"
                 variant="outline"
                 className={cn(
-                  "w-full h-24 border-2 border-dashed",
-                  "bg-yellow-50 border-yellow-400 text-yellow-800 hover:bg-yellow-100",
+                  "w-full h-24 border-2 border-dashed bg-yellow-50 border-yellow-400 text-yellow-800 hover:bg-yellow-100",
                   errors.vehicleId && "border-destructive text-destructive bg-destructive/10 border-destructive/50 hover:bg-destructive/20"
                 )}
                 onClick={() => setIsSelectionDialogOpen(true)}
@@ -160,13 +184,20 @@ export function VehicleSelectionCard({
                 ))
               ) : <div className="text-center p-4 text-sm">No se encontraron vehículos.</div>}
             </ScrollArea>
-             <Button type="button" variant="secondary" className="w-full" onClick={() => onOpenNewVehicleDialog(searchTerm)}>
+             <Button type="button" variant="secondary" className="w-full" onClick={handleOpenNewVehicleFromSearch}>
                 <CarIcon className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
               </Button>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setIsSelectionDialogOpen(false)}>Cerrar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <VehicleDialog
+        open={isNewVehicleDialogOpen}
+        onOpenChange={setIsNewVehicleDialogOpen}
+        vehicle={{ licensePlate: newVehiclePlate }}
+        onSave={handleNewVehicleSave}
+      />
     </>
   );
 }

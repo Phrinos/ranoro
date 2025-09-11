@@ -192,9 +192,11 @@ export default function ServicioPage() {
     }
   };
   
-  const handleVehicleCreated = async (data: VehicleFormValues) => {
-      await inventoryService.addVehicle(data);
+  const handleVehicleCreated = async (data: VehicleFormValues): Promise<Vehicle> => {
+      const newVehicle = await inventoryService.addVehicle(data);
+      setVehicles(prev => [...prev, newVehicle]);
       toast({ title: "Vehículo Creado" });
+      return newVehicle;
   };
 
   const handleCancelService = async () => {
@@ -287,10 +289,10 @@ export default function ServicioPage() {
     
   return (
     <>
-        <PageHeader 
+      <PageHeader 
           title={pageTitle}
           description={pageDescription}
-          actions={(
+          actions={
             <div className="flex items-center gap-2">
               {isEditMode && initialData && (
                  <>
@@ -303,7 +305,7 @@ export default function ServicioPage() {
                  </>
               )}
             </div>
-          )}
+          }
         />
         <ServiceForm
             initialData={initialData}

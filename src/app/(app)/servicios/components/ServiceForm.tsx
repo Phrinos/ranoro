@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { FormProvider, useForm, useFormContext } from 'react-hook-form';
+import { FormProvider, useForm, useFormContext, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Ban, DollarSign } from 'lucide-react';
@@ -31,7 +31,7 @@ interface ServiceFormProps {
   serviceHistory: ServiceRecord[];
   onSave: (data: ServiceFormValues) => Promise<void>;
   onComplete?: (data: ServiceFormValues) => void;
-  onVehicleCreated?: (newVehicle: VehicleFormValues) => void;
+  onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
   onCancel?: () => void;
   mode: 'service' | 'quote';
 }
@@ -167,7 +167,7 @@ export function ServiceForm({
                 serviceTypes={serviceTypes}
                 categories={categories}
                 suppliers={suppliers}
-                onNewInventoryItemCreated={async () => ({} as InventoryItem)}
+                onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
                 mode={mode}
               />
             </div>

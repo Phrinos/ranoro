@@ -10,9 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 interface VehicleDialogProps {
   trigger?: React.ReactNode; 
   vehicle?: Partial<Vehicle> | null;
-  onSave?: (data: VehicleFormValues) => Promise<void>;
-  open?: boolean;
-  onOpenChange?: (isOpen: boolean) => void;
+  onSave: (data: VehicleFormValues) => Promise<void>;
+  open: boolean;
+  onOpenChange: (isOpen: boolean) => void;
 }
 
 export function VehicleDialog({
