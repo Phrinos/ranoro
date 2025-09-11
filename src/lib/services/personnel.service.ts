@@ -240,7 +240,12 @@ const getDriverDocRef = (id: string) => {
 // --- Manual Debts ---
 const onManualDebtsUpdate = (driverId: string, callback: (debts: ManualDebtEntry[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, 'manualDebts'), where('driverId', '==', driverId));
+    let q;
+    if (driverId) {
+        q = query(collection(db, 'manualDebts'), where('driverId', '==', driverId));
+    } else {
+        q = query(collection(db, 'manualDebts'));
+    }
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ManualDebtEntry)));
     });

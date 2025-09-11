@@ -306,7 +306,7 @@ export default function DriverDetailPage() {
         </TabsContent>
       </Tabs>
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-      <DriverDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} driver={driver} onSave={handleSaveDriver} allVehicles={allVehicles} />
+      <DriverDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} driver={driver} onSave={handleSaveDriver} />
       <DebtDialog open={isDebtDialogOpen} onOpenChange={setIsDebtDialogOpen} onSave={handleSaveDebt} initialData={editingDebt ?? undefined} />
       {driver && <AssignVehicleDialog open={isAssignVehicleDialogOpen} onOpenChange={setIsAssignVehicleDialogOpen} driver={driver} allVehicles={allVehicles} onSave={handleAssignVehicle} />}
     </div>
