@@ -18,6 +18,23 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+
+// NEW: helper
+function toDateSafe(v: any): Date {
+  if (!v) return new Date(NaN);
+  if (v instanceof Date) return v;
+  if (typeof v === 'number') return new Date(v); // epoch ms
+  if (typeof v?.toDate === 'function') return v.toDate(); // Firestore Timestamp
+  if (typeof v === 'object' && v.seconds != null) return new Date(v.seconds * 1000); // Timestamp-like
+  if (typeof v === 'string') {
+    // Soporta 'YYYY-MM-DD' y ISO con/ sin 'Z'
+    const d = new Date(v);
+    if (!isNaN(d.getTime())) return d;
+  }
+  // último intento: parseISO si llegó string raro
+  try { return parseISO(String(v)); } catch { return new Date(NaN); }
+}
+
 interface Transaction {
   date: Date;
   description: string;
@@ -94,7 +111,7 @@ export default function BalanceTabContent({
     
     let initialBalance = 0;
     if (calculationPreCheck.canCalculate && driver.contractDate) {
-      const contractStart = startOfDay(parseISO(driver.contractDate));
+      const contractStart = startOfDay(toDateSafe(driver.contractDate));
       if (isBefore(contractStart, from)) {
         const rentalInterval = eachDayOfInterval({ start: contractStart, end: from });
         rentalInterval.pop(); // Don't include the 'from' day itself in the initial balance
@@ -102,19 +119,19 @@ export default function BalanceTabContent({
       }
     }
     
-    const pastPayments = payments.filter(p => isBefore(parseISO(p.paymentDate), from));
+    const pastPayments = payments.filter(p => isBefore(toDateSafe(p.paymentDate), from));
     initialBalance += pastPayments.reduce((sum, p) => sum + p.amount, 0);
 
-    const pastDebts = manualDebts.filter(d => isBefore(parseISO(d.date), from));
+    const pastDebts = manualDebts.filter(d => isBefore(toDateSafe(d.date), from));
     initialBalance -= pastDebts.reduce((sum, d) => sum + d.amount, 0);
 
     let runningBalance = initialBalance;
     const transactionsInPeriod: Transaction[] = [];
     
     const paymentTransactions: Omit<Transaction, 'balance'|'isDailyCharge'>[] = payments
-      .filter(p => isWithinInterval(parseISO(p.paymentDate), interval))
+      .filter(p => isWithinInterval(toDateSafe(p.paymentDate), interval))
       .map(p => ({
-        date: parseISO(p.paymentDate),
+        date: toDateSafe(p.paymentDate),
         description: p.note || 'Pago de Renta',
         charge: 0,
         payment: p.amount,
@@ -124,9 +141,9 @@ export default function BalanceTabContent({
       }));
 
     const manualDebtTransactions: Omit<Transaction, 'balance'|'isDailyCharge'>[] = (manualDebts || [])
-      .filter(d => isWithinInterval(parseISO(d.date), interval))
+      .filter(d => isWithinInterval(toDateSafe(d.date), interval))
       .map(d => ({
-        date: parseISO(d.date),
+        date: toDateSafe(d.date),
         description: d.note,
         charge: d.amount,
         payment: 0,
@@ -137,7 +154,7 @@ export default function BalanceTabContent({
 
     const dailyCharges: Omit<Transaction, 'balance'|'isDailyCharge'>[] = [];
     if (calculationPreCheck.canCalculate && driver.contractDate) {
-      const contractStart = startOfDay(parseISO(driver.contractDate));
+      const contractStart = startOfDay(toDateSafe(driver.contractDate));
       const effectiveStart = isAfter(contractStart, from) ? contractStart : from;
       
       if (!isAfter(effectiveStart, effectiveTo)) {
@@ -259,7 +276,7 @@ export default function BalanceTabContent({
                 <TableBody>
                   {transactions.length > 0 ? (
                     transactions.map((t, index) => (
-                      <TableRow key={`${t.date.toISOString()}-${index}`}>
+                      <TableRow key={`${t.originalDebt?.id ?? t.originalPayment?.id ?? index}-${index}`}>
                         <TableCell>{format(t.date, "dd MMM yyyy", { locale: es })}</TableCell>
                         <TableCell>
                           {t.description}
