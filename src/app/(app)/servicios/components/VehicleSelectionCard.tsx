@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useFormContext, Controller } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -67,13 +67,13 @@ export function VehicleSelectionCard({
     }
   }, [vehicleId, localVehicles, serviceHistory, isSelectionDialogOpen]);
 
-  const handleSelectVehicle = (vehicle: Vehicle) => {
+  const handleSelectVehicle = useCallback((vehicle: Vehicle) => {
     setValue('vehicleId', vehicle.id, { shouldValidate: true, shouldDirty: true });
     if (vehicle.currentMileage) {
       setValue('mileage', vehicle.currentMileage, { shouldDirty: true });
     }
     setIsSelectionDialogOpen(false);
-  };
+  }, [setValue]);
   
   const handleOpenNewVehicleFromSearch = () => {
     setIsSelectionDialogOpen(false);
@@ -138,7 +138,7 @@ export function VehicleSelectionCard({
               <p className="font-semibold text-base truncate">{formatServiceInfo(lastService)}</p>
           </div>
           <div className="flex justify-end pt-2 gap-2">
-              <Button type="button" variant="link" size="sm" asChild><Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank">Ver Perfil</Link></Button>
+              <Button type="button" variant="link" size="sm" asChild><Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank">Ver vehiculo</Link></Button>
               <Button type="button" variant="outline" size="sm" onClick={() => setValue('vehicleId', '', { shouldValidate: true })}>Cambiar Vehículo</Button>
           </div>
         </CardContent>
@@ -181,7 +181,7 @@ export function VehicleSelectionCard({
                 filteredVehicles.map((v) => (
                   <Button key={v.id} variant="ghost" className="w-full justify-start h-auto py-2" onClick={() => handleSelectVehicle(v)}>
                     <p className="font-semibold truncate">
-                      {v.licensePlate}, {v.make} {v.model} {v.year}, {v.color}
+                       {v.licensePlate}, {v.make} {v.model} {v.year}, {v.color}
                     </p>
                   </Button>
                 ))
