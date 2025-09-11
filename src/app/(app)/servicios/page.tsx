@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/page.tsx
 "use client";
 import React, { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
@@ -63,7 +64,8 @@ function ServiciosPage() {
     if (storedWorkshopInfo) {
       try { setWorkshopInfo(JSON.parse(storedWorkshopInfo)); } catch (e) { console.error(e); }
     }
-
+    
+    setIsLoading(true);
     const unsubs = [
         serviceService.onServicesUpdate((services) => {
             setAllServices(services);
@@ -75,6 +77,13 @@ function ServiciosPage() {
     
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
+
+  useEffect(() => {
+    const currentTab = searchParams.get('tab');
+    if (currentTab && currentTab !== activeTab) {
+        setActiveTab(currentTab);
+    }
+  }, [searchParams, activeTab]);
   
   const handleShowShareDialog = useCallback((service: ServiceRecord) => {
     setRecordForSharing(service);
