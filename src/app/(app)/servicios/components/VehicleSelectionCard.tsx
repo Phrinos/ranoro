@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useFormContext, Controller } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -23,7 +23,7 @@ interface VehicleSelectionCardProps {
   isReadOnly?: boolean;
   vehicles: Vehicle[];
   serviceHistory: ServiceRecord[];
-  onVehicleCreated?: (newVehicleData: VehicleFormValues) => Promise<Vehicle>;
+  onVehicleCreated: (newVehicleData: VehicleFormValues) => Promise<Vehicle>;
   onOpenNewVehicleDialog: (plate?: string) => void;
   initialVehicleId?: string;
 }
@@ -82,23 +82,27 @@ export function VehicleSelectionCard({
   };
   
   const handleNewVehicleSave = async (data: VehicleFormValues) => {
-    if (onVehicleCreated) {
-      const newVehicle = await onVehicleCreated(data);
-      handleSelectVehicle(newVehicle);
-      setIsNewVehicleDialogOpen(false);
-    }
+    const newVehicle = await onVehicleCreated(data);
+    handleSelectVehicle(newVehicle);
+    setIsNewVehicleDialogOpen(false);
   };
 
-  const filteredVehicles = localVehicles.filter(v => {
-    const term = searchTerm.toLowerCase();
+  const filteredVehicles = useMemo(() => {
+    const safeVehicles: Vehicle[] = Array.isArray(vehicles) ? vehicles : [];
+    if (!searchTerm.trim()) {
+        return [];
+    }
+    const lowercasedTerm = searchTerm.toLowerCase();
+    
     const norm = (s?: string) => (s ?? "").toLowerCase();
-    return (
-      norm(v.licensePlate).includes(term) ||
-      norm(v.make).includes(term) ||
-      norm(v.model).includes(term) ||
-      norm(v.ownerName).includes(term)
-    );
-  }).slice(0, 10);
+
+    return safeVehicles.filter(v =>
+        norm(v.licensePlate).includes(lowercasedTerm) ||
+        norm(v.make).includes(lowercasedTerm) ||
+        norm(v.model).includes(lowercasedTerm) ||
+        norm(v.ownerName).includes(lowercasedTerm)
+    ).slice(0, 10);
+  },[searchTerm, vehicles]);
 
 
   const formatServiceInfo = (service: ServiceRecord | null): string => {
@@ -175,11 +179,10 @@ export function VehicleSelectionCard({
             <ScrollArea className="h-60 border rounded-md p-2">
               {filteredVehicles.length > 0 ? (
                 filteredVehicles.map((v) => (
-                  <Button key={v.id} variant="ghost" className="w-full justify-start h-auto py-1.5" onClick={() => handleSelectVehicle(v)}>
-                    <div>
-                      <p className="font-semibold">{v.licensePlate}</p>
-                      <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
-                    </div>
+                  <Button key={v.id} variant="ghost" className="w-full justify-start h-auto py-2" onClick={() => handleSelectVehicle(v)}>
+                    <p className="font-semibold truncate">
+                      {v.licensePlate}, {v.make} {v.model} {v.year}, {v.color}
+                    </p>
                   </Button>
                 ))
               ) : <div className="text-center p-4 text-sm">No se encontraron vehículos.</div>}
