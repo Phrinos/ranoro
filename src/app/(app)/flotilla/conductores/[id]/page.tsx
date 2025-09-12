@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ContactInfoCard } from '../../components/ContactInfoCard';
 import { FinancialInfoCard } from '../../components/FinancialInfoCard';
 import { DocumentsCard } from '../../components/DocumentsCard';
+import { HistoryTabContent } from './components/HistoryTabContent';
 
 export default function FlotillaConductorProfilePage() {
   const params = useParams();
@@ -98,8 +99,7 @@ export default function FlotillaConductorProfilePage() {
           </div>
         </TabsContent>
         <TabsContent value="history" className="mt-6">
-          {/* Content for the history tab will go here */}
-          <p className="text-center text-muted-foreground py-12">El historial de pagos y adeudos estará disponible aquí próximamente.</p>
+          <HistoryTabContent driver={driver} vehicle={assignedVehicle} />
         </TabsContent>
       </Tabs>
     </>

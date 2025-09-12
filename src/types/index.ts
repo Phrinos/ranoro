@@ -127,6 +127,15 @@ export type Driver = {
   };
 };
 
+export type DailyRentalCharge = {
+    id: string;
+    driverId: string;
+    vehicleId: string;
+    date: string;
+    amount: number;
+    vehicleLicensePlate: string;
+};
+
 export type ServiceRecord = {
   id: string;
   vehicleId: string;
@@ -161,7 +170,6 @@ export type SaleReceipt = {
     itemId: string;
     itemName: string;
     quantity: number;
-    unitPrice: number;
     total: number;
   }[];
   totalAmount: number;
