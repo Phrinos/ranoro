@@ -26,7 +26,7 @@ import { startOfDay, differenceInCalendarDays, addDays } from 'date-fns';
 
 const onDailyChargesUpdate = (driverId: string, callback: (charges: DailyRentalCharge[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "dailyRentalCharges"), where("driverId", "==", driverId), orderBy("date", "asc"));
+    const q = query(collection(db, "dailyRentalCharges"), where("driverId", "==", driverId), orderBy("date", "desc"));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyRentalCharge)));
     });
