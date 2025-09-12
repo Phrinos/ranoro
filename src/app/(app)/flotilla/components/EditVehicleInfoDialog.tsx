@@ -67,7 +67,7 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Editar Información del Vehículo</DialogTitle>
           <DialogDescription>

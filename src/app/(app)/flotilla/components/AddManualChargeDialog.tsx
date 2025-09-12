@@ -67,7 +67,7 @@ export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Añadir Cargo Manual</DialogTitle>
           <DialogDescription>

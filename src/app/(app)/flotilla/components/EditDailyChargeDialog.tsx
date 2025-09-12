@@ -61,7 +61,7 @@ export function EditDailyChargeDialog({ open, onOpenChange, charge, onSave }: Ed
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Cargo de Renta Diaria</DialogTitle>
           <DialogDescription>

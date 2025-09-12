@@ -56,7 +56,7 @@ export function EditFinancialInfoDialog({ open, onOpenChange, driver, onSave }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Información Financiera</DialogTitle>
           <DialogDescription>Actualiza los detalles del contrato y los depósitos.</DialogDescription>

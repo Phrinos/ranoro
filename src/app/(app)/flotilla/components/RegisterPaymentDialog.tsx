@@ -63,7 +63,7 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Registrar Pago</DialogTitle>
           <DialogDescription>Registra un nuevo abono o pago a la cuenta del conductor.</DialogDescription>

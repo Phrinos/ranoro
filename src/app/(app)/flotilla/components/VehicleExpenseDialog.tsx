@@ -47,7 +47,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Registrar Gasto de Vehículo</DialogTitle>
           <DialogDescription>Registra una salida de dinero de la caja como un gasto asociado a un vehículo.</DialogDescription>

@@ -56,7 +56,7 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{paperwork ? 'Editar Trámite' : 'Añadir Trámite'}</DialogTitle>
           <DialogDescription>

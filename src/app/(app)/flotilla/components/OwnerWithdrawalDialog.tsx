@@ -52,7 +52,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Retiro de Propietario</DialogTitle>
           <DialogDescription>Registra una salida de dinero de la caja para un propietario.</DialogDescription>

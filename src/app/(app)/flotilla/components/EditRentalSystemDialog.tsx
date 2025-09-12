@@ -60,7 +60,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Sistema de Renta</DialogTitle>
           <DialogDescription>

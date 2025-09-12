@@ -59,7 +59,7 @@ export function EditContactInfoDialog({ open, onOpenChange, driver, onSave }: Ed
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Información de Contacto</DialogTitle>
           <DialogDescription>Actualiza los datos personales del conductor.</DialogDescription>
