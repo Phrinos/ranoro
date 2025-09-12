@@ -8,7 +8,6 @@ export * from './quote.service';
 export * from './service.service';
 export * from './sale.service';
 export * from './cash.service';
-export * from './fleet.service';
 export * from './purchase.service';
 export * from './history.service';
 // The operationsService is deprecated and should not be exported.

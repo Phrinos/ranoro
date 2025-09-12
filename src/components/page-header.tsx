@@ -1,33 +1,33 @@
-import type React from 'react';
+// src/components/page-header.tsx
+import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface PageHeaderProps {
-  title: string;
-  description?: string;
+interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  title: React.ReactNode;
+  description?: React.ReactNode;
   actions?: React.ReactNode;
-  children?: React.ReactNode;
-  className?: string; // Allow passing custom classes
 }
 
-export function PageHeader({ title, description, actions, children, className }: PageHeaderProps) {
+export function PageHeader({ title, description, actions, className, ...props }: PageHeaderProps) {
   return (
-    <div className={cn("mb-4", className)}> {/* Adjusted margin */}
-      <div className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
+    <div className={cn('mb-4', className)} {...props}>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="grid gap-1">
-          <h1 className="text-xl font-bold tracking-tight md:text-2xl font-headline"> {/* Adjusted font size */}
-            {title}
-          </h1>
+          {typeof title === 'string' ? (
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{title}</h1>
+          ) : (
+            title
+          )}
           {description && (
-            <p className="text-sm text-inherit/80">{description}</p> 
+            typeof description === 'string' ? (
+              <p className="text-sm text-muted-foreground">{description}</p>
+            ) : (
+              description
+            )
           )}
         </div>
-        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
-      {children && (
-        <div className="mt-4">
-          {children}
-        </div>
-      )}
     </div>
   );
 }

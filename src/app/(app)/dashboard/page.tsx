@@ -6,34 +6,29 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
-import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense, Vehicle, Driver, PaymentMethod } from '@/types';
-import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Landmark } from 'lucide-react'; 
+import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense } from '@/types';
+import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle, Receipt } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { serviceService, saleService, inventoryService, personnelService, fleetService } from '@/lib/services';
+import { serviceService, saleService, inventoryService, personnelService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { isValid, isToday, isSameDay } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { DashboardCharts } from './components/DashboardCharts';
-import { RegisterPaymentDialog } from '../rentas/components/register-payment-dialog';
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // States for real-time data
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
-  const [allDrivers, setAllDrivers] = useState<Driver[]>([]);
-  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -41,9 +36,6 @@ export default function DashboardPage() {
   const [isCapacityLoading, setIsCapacityLoading] = useState(false);
   const [capacityError, setCapacityError] = useState<string | null>(null);
   
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  
-  // Real-time data subscriptions
   useEffect(() => {
     setIsLoading(true);
     const unsubs = [
@@ -51,26 +43,14 @@ export default function DashboardPage() {
       saleService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
       inventoryService.onFixedExpensesUpdate(setFixedExpenses),
-      personnelService.onPersonnelUpdate(setAllPersonnel),
-      personnelService.onDriversUpdate(setAllDrivers),
-      inventoryService.onVehiclesUpdate((vehicles) => {
-        setAllVehicles(vehicles);
+      personnelService.onPersonnelUpdate((personnel) => {
+        setAllPersonnel(personnel);
         setIsLoading(false);
       }),
     ];
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
-  
-  const handleSavePayment = useCallback(async (driverId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, mileage?: number, paymentDate?: Date) => {
-    try {
-        await fleetService.addRentalPayment(driverId, amount, paymentMethod, note, mileage, paymentDate);
-        toast({ title: 'Pago Registrado' });
-        setIsPaymentDialogOpen(false);
-    } catch (e: any) {
-        toast({ title: 'Error', description: e.message, variant: 'destructive' });
-    }
-  }, [toast]);
 
   const kpiData = useMemo(() => {
     const clientToday = new Date();
@@ -192,10 +172,6 @@ export default function DashboardPage() {
                   Punto de Venta
                 </Link>
               </Button>
-              <Button variant="outline" className="bg-white hover:bg-gray-100 text-black" onClick={() => setIsPaymentDialogOpen(true)}>
-                <Landmark className="mr-2 h-4 w-4" />
-                Registrar Pago Flotilla
-              </Button>
             </div>
           }
         />
@@ -269,14 +245,6 @@ export default function DashboardPage() {
         />
 
       </div>
-      
-      <RegisterPaymentDialog
-        open={isPaymentDialogOpen}
-        onOpenChange={setIsPaymentDialogOpen}
-        drivers={allDrivers}
-        vehicles={allVehicles}
-        onSave={handleSavePayment}
-      />
     </>
   );
 }

@@ -13,17 +13,21 @@ export function cn(...inputs: ClassValue[]) {
 
 export function normalizeDataUrl(dataUrl: string): string {
   if (!dataUrl) return '';
-  // Check if it's already a valid data URL or an HTTP/HTTPS URL
   if (dataUrl.startsWith('data:') || dataUrl.startsWith('http')) {
     return dataUrl;
   }
-  // Fallback for raw base64 data
   return `data:image/png;base64,${dataUrl}`;
 }
 
 
-export const calculateDriverDebt = (driver: Driver, allPayments: RentalPayment[], allVehicles: Vehicle[], manualDebts: ManualDebtEntry[]): { totalDebt: number; rentalDebt: number; depositDebt: number; manualDebt: number, balance: number } => {
+export const calculateDriverDebt = (
+    driver: Driver, 
+    allPayments: RentalPayment[], 
+    allVehicles: Vehicle[], 
+    manualDebts: ManualDebtEntry[]
+): { totalDebt: number; rentalDebt: number; depositDebt: number; manualDebt: number, balance: number } => {
     const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
+    
     if (!driver || !vehicle?.dailyRentalCost) {
       return { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0, balance: 0 };
     }
@@ -37,14 +41,12 @@ export const calculateDriverDebt = (driver: Driver, allPayments: RentalPayment[]
         totalRentalCharges = daysSinceStart * vehicle.dailyRentalCost;
     }
 
-    const totalPayments = allPayments.reduce((sum, p) => sum + p.amount, 0);
-    const manualDebtTotal = manualDebts.reduce((sum, debt) => sum + debt.amount, 0);
+    const totalPayments = (allPayments || []).reduce((sum, p) => sum + p.amount, 0);
+    const manualDebtTotal = (manualDebts || []).reduce((sum, debt) => sum + debt.amount, 0);
     const depositDebt = Math.max(0, (driver.requiredDepositAmount || 0) - (driver.depositAmount || 0));
 
-    // The driver's operative balance (rent + manual charges vs payments)
     const balance = totalPayments - (totalRentalCharges + manualDebtTotal);
     
-    // The total amount the driver owes, including the deposit
     const totalDebt = (totalRentalCharges + manualDebtTotal + depositDebt) - totalPayments;
 
     return { 
@@ -164,7 +166,6 @@ export const optimizeImage = (file: File | string, maxWidthOrHeight: number, qua
     if (isFile) {
       reader.readAsDataURL(file);
     } else {
-      // It's already a data URL string
       img.src = file;
     }
   });

@@ -46,8 +46,11 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Tablero', path: '/tablero', icon: LayoutGrid, groupTag: 'Mi Taller', permissions: ['dashboard:view'] },
   { label: 'Servicios', path: '/servicios', icon: Wrench, groupTag: 'Mi Taller', permissions: ['services:view_history'] },
   { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: 'Mi Taller', permissions: ['vehicles:manage'] },
-  { label: 'Flotilla', path: '/flotilla', icon: Truck, groupTag: 'Mi Taller', permissions: ['fleet:manage'] },
   
+  // Flotilla
+  { label: 'Vehículos', path: '/flotilla/vehiculos', icon: Truck, groupTag: 'Flotilla', permissions: ['fleet:manage'] },
+  { label: 'Conductores', path: '/flotilla/conductores', icon: Users, groupTag: 'Flotilla', permissions: ['fleet:manage'] },
+
   // Operaciones
   { label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones', permissions: ['pos:view_sales'] },
   { label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', permissions: ['inventory:view'] },
@@ -61,7 +64,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Opciones', path: '/opciones', icon: Settings, groupTag: 'Opciones', permissions: ['dashboard:view'] },
 ];
 
-const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Opciones'];
+const DESIRED_GROUP_ORDER = ['Mi Taller', 'Flotilla', 'Operaciones', 'Opciones'];
 
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
@@ -82,7 +85,6 @@ const useNavigation = (): NavigationEntry[] => {
 
   const userPermissions = React.useMemo(() => {
     if (!currentUser) return new Set<string>();
-    // Superadmin has all permissions, bypassing role lookup
     if (currentUser.role === 'Superadministrador') {
         return new Set(ALL_PERMISSIONS.map(p => p.id));
     }
@@ -104,7 +106,7 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
 
-    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/finanzas', '/flotilla', '/personal', '/opciones', '/facturacion-admin', '/administracion', '/ai'];
+    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/finanzas', '/personal', '/opciones', '/facturacion-admin', '/administracion', '/ai', '/flotilla/vehiculos', '/flotilla/conductores'];
     
     if (parentRoutes.includes(cleanEntryPath) && cleanPathname.startsWith(cleanEntryPath)) {
         if (cleanPathname === cleanEntryPath) {

@@ -14,11 +14,10 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { Technician, AdministrativeStaff, Driver, Personnel, Area, User, Vehicle, ManualDebtEntry } from "@/types";
-import type { DriverFormValues } from '@/app/(app)/conductores/components/driver-form';
+import type { Technician, AdministrativeStaff, Personnel, Area, User, Driver, Vehicle } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
-import { inventoryService } from './inventory.service';
 import type { UserFormValues } from '@/app/(app)/administracion/components/user-form';
+import { inventoryService } from './inventory.service';
 
 // --- Unified Personnel ---
 const onPersonnelUpdate = (callback: (personnel: Personnel[]) => void): (() => void) => {
@@ -90,7 +89,6 @@ const deleteArea = async (id: string): Promise<void> => {
     await deleteDoc(doc(db, 'workAreas', id));
 };
 
-
 // --- Drivers ---
 
 const onDriversUpdate = (callback: (drivers: Driver[]) => void): (() => void) => {
@@ -115,157 +113,53 @@ const getDriverById = async (id: string): Promise<Driver | undefined> => {
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Driver : undefined;
 };
 
-const saveDriver = async (data: Partial<DriverFormValues>, existingId?: string): Promise<Driver> => {
-    if (!db) throw new Error("Database not initialized.");
-    const isEditing = !!existingId;
-    const driverId = existingId || doc(collection(db, 'drivers')).id;
-
-    const dataToSave = {
-        name: data.name,
-        address: data.address,
-        phone: data.phone,
-        emergencyPhone: data.emergencyPhone,
-        requiredDepositAmount: data.requiredDepositAmount ? Number(data.requiredDepositAmount) : undefined,
-        depositAmount: data.depositAmount ? Number(data.depositAmount) : undefined,
-        contractDate: data.contractDate ? new Date(data.contractDate).toISOString() : undefined,
-    };
-    
-    const batch = writeBatch(db);
-    
-    // Save or update driver document
-    const driverRef = doc(db, 'drivers', driverId);
-    if (isEditing) {
-        batch.update(driverRef, cleanObjectForFirestore(dataToSave));
-    } else {
-        const newDriverData = { ...dataToSave, isArchived: false, documents: {} };
-        batch.set(driverRef, cleanObjectForFirestore(newDriverData));
-    }
-    
-    // Handle deposit debt in the manualDebts collection
-    const depositDifference = (data.requiredDepositAmount || 0) - (data.depositAmount || 0);
-    const q = query(collection(db, 'manualDebts'), where('driverId', '==', driverId), where('note', '==', 'Adeudo de depósito inicial'));
-    const depositDebtSnapshot = await getDocs(q);
-
-    if (depositDifference > 0) {
-        if (!depositDebtSnapshot.empty) {
-            // Update existing deposit debt
-            const debtDocRef = depositDebtSnapshot.docs[0].ref;
-            batch.update(debtDocRef, { amount: depositDifference });
-        } else {
-            // Create new deposit debt
-            const newDebtRef = doc(collection(db, 'manualDebts'));
-            batch.set(newDebtRef, {
-                driverId: driverId,
-                date: new Date().toISOString(),
-                amount: depositDifference,
-                note: 'Adeudo de depósito inicial',
-            });
-        }
-    } else if (!depositDebtSnapshot.empty) {
-        // Delete existing deposit debt if it's no longer applicable
-        const debtDocRef = depositDebtSnapshot.docs[0].ref;
-        batch.delete(debtDocRef);
-    }
-    
-    await batch.commit();
-
-    const savedDriverDoc = await getDoc(driverRef);
-    return { id: driverId, ...(savedDriverDoc.data() as Omit<Driver, 'id'>) };
-};
-
 const assignVehicleToDriver = async (
-    driver: Driver,
-    newVehicleId: string | null,
-    allVehicles: Vehicle[]
+    vehicle: Vehicle,
+    newDriverId: string | null,
+    allDrivers: Driver[]
 ): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const batch = writeBatch(db);
-    const driverRef = doc(db, 'drivers', driver.id);
-    const oldVehicleId = driver.assignedVehicleId;
+    const vehicleRef = doc(db, 'vehicles', vehicle.id);
+    const oldDriverId = vehicle.assignedDriverId;
 
-    // 1. Update the driver's assignedVehicleId
-    batch.update(driverRef, { assignedVehicleId: newVehicleId });
+    const newDriver = newDriverId ? allDrivers.find(d => d.id === newDriverId) : null;
 
-    // 2. If the vehicle assignment has changed, handle all necessary updates
-    if (oldVehicleId !== newVehicleId) {
-        // A) If there was an old vehicle, it must be un-assigned.
-        if (oldVehicleId) {
-            const oldVehicleRef = inventoryService.getVehicleDocRef(oldVehicleId);
-            batch.update(oldVehicleRef, { assignedDriverId: null });
+    // 1. Update the vehicle's assignment
+    batch.update(vehicleRef, { 
+        assignedDriverId: newDriverId,
+        assignedDriverName: newDriver?.name || null 
+    });
+
+    // 2. If the vehicle had an old driver, un-assign it from them
+    if (oldDriverId && oldDriverId !== newDriverId) {
+        const oldDriverRef = doc(db, 'drivers', oldDriverId);
+        batch.update(oldDriverRef, { 
+            assignedVehicleId: null,
+            assignedVehicleLicensePlate: null 
+        });
+    }
+    
+    // 3. If a new driver is being assigned
+    if (newDriver) {
+        // 3a. If the new driver was assigned to another vehicle, un-assign that other vehicle
+        if (newDriver.assignedVehicleId && newDriver.assignedVehicleId !== vehicle.id) {
+            const otherVehicleRef = doc(db, 'vehicles', newDriver.assignedVehicleId);
+            batch.update(otherVehicleRef, { 
+                assignedDriverId: null,
+                assignedDriverName: null 
+            });
         }
         
-        // B) If there is a new vehicle, it must be assigned.
-        if (newVehicleId) {
-            const vehicleToAssign = allVehicles.find(v => v.id === newVehicleId);
-            const newVehicleRef = inventoryService.getVehicleDocRef(newVehicleId);
-
-            // B.1) If the new vehicle was assigned to someone else, un-assign it from the other driver.
-            if (vehicleToAssign?.assignedDriverId && vehicleToAssign.assignedDriverId !== driver.id) {
-                const otherDriverRef = getDriverDocRef(vehicleToAssign.assignedDriverId);
-                batch.update(otherDriverRef, { assignedVehicleId: null });
-            }
-            
-            // B.2) Assign the current driver to the new vehicle.
-            batch.update(newVehicleRef, { assignedDriverId: driver.id });
-        }
+        // 3b. Assign the new vehicle to the new driver
+        const newDriverRef = doc(db, 'drivers', newDriver.id);
+        batch.update(newDriverRef, { 
+            assignedVehicleId: vehicle.id,
+            assignedVehicleLicensePlate: vehicle.licensePlate 
+        });
     }
     
     await batch.commit();
-};
-
-
-
-const archiveDriver = async (id: string, isArchived: boolean): Promise<void> => {
-    if (!db) throw new Error("Database not initialized.");
-    const batch = writeBatch(db);
-    const driverRef = doc(db, 'drivers', id);
-    batch.update(driverRef, { isArchived });
-    if (isArchived) {
-        const driverDoc = await getDoc(driverRef);
-        const driverData = driverDoc.data() as Driver;
-        if (driverData?.assignedVehicleId) {
-            const vehicleRef = doc(db, 'vehicles', driverData.assignedVehicleId);
-            batch.update(vehicleRef, { assignedDriverId: null });
-            batch.update(driverRef, { assignedVehicleId: null });
-        }
-    }
-    await batch.commit();
-};
-
-const getDriverDocRef = (id: string) => {
-    if (!db) throw new Error("Database not initialized.");
-    return doc(db, 'drivers', id);
-}
-
-// --- Manual Debts ---
-const onManualDebtsUpdate = (driverId: string, callback: (debts: ManualDebtEntry[]) => void): (() => void) => {
-    if (!db) return () => {};
-    let q;
-    if (driverId) {
-        q = query(collection(db, 'manualDebts'), where('driverId', '==', driverId));
-    } else {
-        q = query(collection(db, 'manualDebts'));
-    }
-    return onSnapshot(q, (snapshot) => {
-        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ManualDebtEntry)));
-    });
-};
-
-const saveManualDebt = async (driverId: string, data: Omit<ManualDebtEntry, 'id' | 'driverId' | 'date'>, id?: string): Promise<ManualDebtEntry> => {
-    if (!db) throw new Error("Database not initialized.");
-    const debtData = { ...data, driverId, date: new Date().toISOString() };
-    if (id) {
-        await updateDoc(doc(db, 'manualDebts', id), cleanObjectForFirestore(debtData));
-        return { id, ...debtData };
-    } else {
-        const docRef = await addDoc(collection(db, 'manualDebts'), cleanObjectForFirestore(debtData));
-        return { id: docRef.id, ...debtData };
-    }
-};
-
-const deleteManualDebt = async (id: string): Promise<void> => {
-    if (!db) throw new Error("Database not initialized.");
-    await deleteDoc(doc(db, 'manualDebts', id));
 };
 
 
@@ -274,17 +168,11 @@ export const personnelService = {
     onPersonnelUpdatePromise,
     savePersonnel,
     archivePersonnel,
-    onDriversUpdate,
-    onDriversUpdatePromise,
-    getDriverById,
-    getDriverDocRef,
-    saveDriver,
-    assignVehicleToDriver,
-    archiveDriver,
     onAreasUpdate,
     saveArea,
     deleteArea,
-    onManualDebtsUpdate,
-    saveManualDebt,
-    deleteManualDebt,
+    onDriversUpdate,
+    onDriversUpdatePromise,
+    getDriverById,
+    assignVehicleToDriver,
 };
