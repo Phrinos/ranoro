@@ -5,8 +5,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ChevronRight } from 'lucide-react';
-import { personnelService } from '@/lib/services';
+import { PlusCircle, ChevronRight, Wrench } from 'lucide-react';
+import { personnelService, rentalService } from '@/lib/services';
 import type { Driver } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 export default function FlotillaConductoresPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -45,16 +46,38 @@ export default function FlotillaConductoresPage() {
     router.push(`/flotilla/conductores/${driverId}`);
   };
 
+  const handleRegenerate = async () => {
+    try {
+      const count = await rentalService.regenerateAllChargesForAllDrivers();
+      toast({ title: "Proceso Completado", description: `Se han generado ${count} cargos de renta diaria.` });
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudieron regenerar los cargos.", variant: "destructive" });
+    }
+  };
+
   return (
     <>
       <PageHeader
         title="Conductores de Flotilla"
         description="Administra los perfiles de los conductores."
         actions={
-          <Button onClick={handleAddDriver}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Añadir Conductor
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleAddDriver}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Añadir Conductor
+            </Button>
+            <ConfirmDialog
+              triggerButton={
+                <Button variant="outline">
+                  <Wrench className="mr-2 h-4 w-4" />
+                  Regenerar Cargos
+                </Button>
+              }
+              title="¿Regenerar todos los cargos de renta?"
+              description="Esta acción es irreversible y generará todos los cargos de renta diarios para todos los conductores activos desde su fecha de contrato hasta hoy. Úsalo solo si has borrado los datos."
+              onConfirm={handleRegenerate}
+            />
+          </div>
         }
       />
       <div className="p-1">

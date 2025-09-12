@@ -1,4 +1,4 @@
-// src/lib/services/rental.service.ts
+
 
 import {
   collection,
@@ -17,16 +17,17 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { RentalPayment, VehicleExpense, OwnerWithdrawal, DailyRentalCharge, Driver, Vehicle } from "@/types";
+import type { RentalPayment, DailyRentalCharge, Driver, Vehicle } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
-import { startOfDay, differenceInCalendarDays, addDays } from 'date-fns';
+import { personnelService } from './personnel.service';
+import { startOfDay, differenceInCalendarDays, addDays, parseISO } from 'date-fns';
 
 // --- Daily Rental Charges ---
 
 const onDailyChargesUpdate = (driverId: string, callback: (charges: DailyRentalCharge[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "dailyRentalCharges"), where("driverId", "==", driverId), orderBy("date", "desc"));
+    const q = query(collection(db, "dailyRentalCharges"), where("driverId", "==", driverId), orderBy("date", "asc"));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyRentalCharge)));
     });
@@ -48,7 +49,7 @@ const generateMissingCharges = async (driver: Driver, vehicle: Vehicle): Promise
         lastChargeDate = addDays(startOfDay(new Date(lastCharge.date)), 1);
     }
     
-    if (lastChargeDate > today) return; // Already up to date
+    if (lastChargeDate > today) return;
 
     const daysToGenerate = differenceInCalendarDays(today, lastChargeDate) + 1;
     if (daysToGenerate <= 0) return;
@@ -69,6 +70,50 @@ const generateMissingCharges = async (driver: Driver, vehicle: Vehicle): Promise
 
     await batch.commit();
 };
+
+const regenerateAllChargesForAllDrivers = async (): Promise<number> => {
+    if (!db) throw new Error("Database not initialized.");
+
+    // 1. Fetch all active drivers and all fleet vehicles
+    const allDrivers = await personnelService.onDriversUpdatePromise();
+    const allVehicles = await inventoryService.onVehiclesUpdatePromise();
+    
+    const activeDrivers = allDrivers.filter(d => !d.isArchived && d.assignedVehicleId && d.contractDate);
+    const fleetVehicles = allVehicles.filter(v => v.isFleetVehicle);
+
+    const batch = writeBatch(db);
+    const chargesRef = collection(db, "dailyRentalCharges");
+    let chargesCount = 0;
+
+    for (const driver of activeDrivers) {
+        const vehicle = fleetVehicles.find(v => v.id === driver.assignedVehicleId);
+        if (!vehicle || !vehicle.dailyRentalCost || vehicle.dailyRentalCost <= 0) continue;
+
+        const today = startOfDay(new Date());
+        const contractStart = startOfDay(parseISO(driver.contractDate!));
+
+        const daysToGenerate = differenceInCalendarDays(today, contractStart) + 1;
+        if (daysToGenerate <= 0) continue;
+
+        for (let i = 0; i < daysToGenerate; i++) {
+            const chargeDate = addDays(contractStart, i);
+            const newCharge: Omit<DailyRentalCharge, 'id'> = {
+                driverId: driver.id,
+                vehicleId: vehicle.id,
+                date: chargeDate.toISOString(),
+                amount: vehicle.dailyRentalCost,
+                vehicleLicensePlate: vehicle.licensePlate,
+            };
+            const docRef = doc(chargesRef);
+            batch.set(docRef, newCharge);
+            chargesCount++;
+        }
+    }
+
+    await batch.commit();
+    return chargesCount;
+};
+
 
 const saveDailyCharge = async (id: string, data: { date: string; amount: number }): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
@@ -127,6 +172,7 @@ const deleteRentalPayment = async (paymentId: string): Promise<void> => {
 export const rentalService = {
   onDailyChargesUpdate,
   generateMissingCharges,
+  regenerateAllChargesForAllDrivers,
   saveDailyCharge,
   deleteDailyCharge,
   onRentalPaymentsUpdate,

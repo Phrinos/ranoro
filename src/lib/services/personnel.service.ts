@@ -1,4 +1,4 @@
-// src/lib/services/personnel.service.ts
+
 
 import {
   collection,
@@ -17,7 +17,7 @@ import {
 import { db } from '../firebaseClient';
 import type { Technician, AdministrativeStaff, Personnel, Area, User, Driver, Vehicle, ManualDebtEntry } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
-import type { UserFormValues } from '@/app/(app)/personal/components/user-form';
+import type { UserFormValues } from '@/app/(app)/administracion/components/user-form';
 import { inventoryService } from './inventory.service';
 
 // --- Unified Personnel ---
@@ -27,10 +27,7 @@ const onPersonnelUpdate = (callback: (personnel: Personnel[]) => void): (() => v
         const personnelList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel));
         callback(personnelList);
     });
-
-    return () => {
-        personnelUnsubscribe();
-    };
+    return () => personnelUnsubscribe();
 };
 
 const onPersonnelUpdatePromise = async (): Promise<Personnel[]> => {
@@ -39,23 +36,17 @@ const onPersonnelUpdatePromise = async (): Promise<Personnel[]> => {
     return personnelSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel));
 };
 
-
 const savePersonnel = async (data: UserFormValues, id?: string): Promise<User> => {
     if (!db) throw new Error("Database not initialized.");
-    const dataToSave = {
-        ...data,
-        hireDate: data.hireDate ? new Date(data.hireDate).toISOString() : undefined,
-    };
+    const dataToSave = { ...data, hireDate: data.hireDate ? new Date(data.hireDate).toISOString() : undefined };
     const cleanedData = cleanObjectForFirestore(dataToSave);
-    
     if (id) {
         await updateDoc(doc(db, 'users', id), cleanedData);
         return { id, ...dataToSave } as User;
-    } else {
-        const fullData = { ...cleanedData, isArchived: false, createdAt: new Date().toISOString() };
-        const docRef = await addDoc(collection(db, 'users'), fullData);
-        return { id: docRef.id, ...fullData } as User;
     }
+    const fullData = { ...cleanedData, isArchived: false, createdAt: new Date().toISOString() };
+    const docRef = await addDoc(collection(db, 'users'), fullData);
+    return { id: docRef.id, ...fullData } as User;
 };
 
 const archivePersonnel = async (id: string, isArchived: boolean): Promise<void> => {
@@ -63,9 +54,7 @@ const archivePersonnel = async (id: string, isArchived: boolean): Promise<void> 
     await updateDoc(doc(db, 'personnel', id), { isArchived });
 };
 
-
 // --- Areas ---
-
 const onAreasUpdate = (callback: (areas: Area[]) => void): (() => void) => {
     if (!db) return () => {};
     const unsubscribe = onSnapshot(collection(db, "workAreas"), (snapshot) => {
@@ -79,10 +68,9 @@ const saveArea = async (data: Omit<Area, 'id'>, id?: string): Promise<Area> => {
     if (id) {
         await updateDoc(doc(db, 'workAreas', id), data);
         return { id, ...data };
-    } else {
-        const docRef = await addDoc(collection(db, 'workAreas'), data);
-        return { id: docRef.id, ...data };
     }
+    const docRef = await addDoc(collection(db, 'workAreas'), data);
+    return { id: docRef.id, ...data };
 };
 
 const deleteArea = async (id: string): Promise<void> => {
@@ -91,14 +79,12 @@ const deleteArea = async (id: string): Promise<void> => {
 };
 
 // --- Drivers ---
-
 const onDriversUpdate = (callback: (drivers: Driver[]) => void): (() => void) => {
     if (!db) return () => {};
     const q = query(collection(db, "drivers"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Driver)));
     });
-    return unsubscribe;
 };
 
 const onDriversUpdatePromise = async (): Promise<Driver[]> => {
@@ -106,7 +92,6 @@ const onDriversUpdatePromise = async (): Promise<Driver[]> => {
     const snapshot = await getDocs(query(collection(db, "drivers")));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Driver));
 };
-
 
 const getDriverById = async (id: string): Promise<Driver | undefined> => {
     if (!db) throw new Error("Database not initialized.");
@@ -120,57 +105,46 @@ const saveDriver = async (data: Partial<Driver>, id: string): Promise<void> => {
     await updateDoc(doc(db, 'drivers', id), cleanObjectForFirestore(data));
 };
 
-const assignVehicleToDriver = async (
-    vehicle: Vehicle,
-    newDriverId: string | null,
-    allDrivers: Driver[]
-): Promise<void> => {
+const assignVehicleToDriver = async (vehicle: Vehicle, newDriverId: string | null, allDrivers: Driver[]): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const batch = writeBatch(db);
     const vehicleRef = doc(db, 'vehicles', vehicle.id);
     const oldDriverId = vehicle.assignedDriverId;
-
     const newDriver = newDriverId ? allDrivers.find(d => d.id === newDriverId) : null;
 
-    batch.update(vehicleRef, { 
-        assignedDriverId: newDriverId,
-        assignedDriverName: newDriver?.name || null 
-    });
+    batch.update(vehicleRef, { assignedDriverId: newDriverId, assignedDriverName: newDriver?.name || null });
 
     if (oldDriverId && oldDriverId !== newDriverId) {
         const oldDriverRef = doc(db, 'drivers', oldDriverId);
-        batch.update(oldDriverRef, { 
-            assignedVehicleId: null,
-            assignedVehicleLicensePlate: null 
-        });
+        batch.update(oldDriverRef, { assignedVehicleId: null, assignedVehicleLicensePlate: null });
     }
     
     if (newDriver) {
         if (newDriver.assignedVehicleId && newDriver.assignedVehicleId !== vehicle.id) {
             const otherVehicleRef = doc(db, 'vehicles', newDriver.assignedVehicleId);
-            batch.update(otherVehicleRef, { 
-                assignedDriverId: null,
-                assignedDriverName: null 
-            });
+            batch.update(otherVehicleRef, { assignedDriverId: null, assignedDriverName: null });
         }
         
         const newDriverRef = doc(db, 'drivers', newDriver.id);
-        batch.update(newDriverRef, { 
-            assignedVehicleId: vehicle.id,
-            assignedVehicleLicensePlate: vehicle.licensePlate 
-        });
+        batch.update(newDriverRef, { assignedVehicleId: vehicle.id, assignedVehicleLicensePlate: vehicle.licensePlate });
     }
     
     await batch.commit();
 };
 
+// --- Manual Debts ---
 const onManualDebtsUpdate = (driverId: string, callback: (debts: ManualDebtEntry[]) => void): (() => void) => {
     if (!db) return () => {};
-    const debtsRef = collection(db, 'drivers', driverId, 'manualDebts');
-    const q = query(debtsRef, orderBy("date", "asc"));
+    const q = query(collection(db, "manualDebts"), where("driverId", "==", driverId), orderBy("date", "asc"));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ManualDebtEntry)));
     });
+};
+
+const saveManualDebt = async (driverId: string, data: { date: string; amount: number; note: string; }): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const debtData = { ...data, driverId };
+    await addDoc(collection(db, 'manualDebts'), cleanObjectForFirestore(debtData));
 };
 
 
@@ -188,4 +162,5 @@ export const personnelService = {
     saveDriver,
     assignVehicleToDriver,
     onManualDebtsUpdate,
+    saveManualDebt,
 };

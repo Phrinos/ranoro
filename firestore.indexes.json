@@ -1,79 +1,77 @@
 {
-  "firestore": {
-    "database": "(default)",
-    "version": "2",
-    "indexes": [
-      {
-        "collectionGroup": "serviceRecords",
-        "queryScope": "COLLECTION",
-        "fields": [
-          {
-            "fieldPath": "status",
-            "order": "ASCENDING"
-          },
-          {
-            "fieldPath": "serviceDate",
-            "order": "DESCENDING"
-          }
-        ]
-      },
-      {
-        "collectionGroup": "serviceRecords",
-        "queryScope": "COLLECTION",
-        "fields": [
-          {
-            "fieldPath": "vehicleId",
-            "order": "ASCENDING"
-          },
-          {
-            "fieldPath": "serviceDate",
-            "order": "DESCENDING"
-          }
-        ]
-      },
-      {
-        "collectionGroup": "dailyRentalCharges",
-        "queryScope": "COLLECTION",
-        "fields": [
-          {
-            "fieldPath": "driverId",
-            "order": "ASCENDING"
-          },
-          {
-            "fieldPath": "date",
-            "order": "ASCENDING"
-          }
-        ]
-      },
-      {
-        "collectionGroup": "dailyRentalCharges",
-        "queryScope": "COLLECTION",
-        "fields": [
-          {
-            "fieldPath": "driverId",
-            "order": "ASCENDING"
-          },
-          {
-            "fieldPath": "date",
-            "order": "DESCENDING"
-          }
-        ]
-      },
-      {
-        "collectionGroup": "rentalPayments",
-        "queryScope": "COLLECTION",
-        "fields": [
-          {
-            "fieldPath": "driverId",
-            "order": "ASCENDING"
-          },
-          {
-            "fieldPath": "paymentDate",
-            "order": "ASCENDING"
-          }
-        ]
-      }
-    ],
-    "fieldOverrides": []
-  }
+  "indexes": [
+    {
+      "collectionGroup": "serviceRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "serviceDate",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "serviceRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "vehicleId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "serviceDate",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dailyRentalCharges",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "driverId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dailyRentalCharges",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "driverId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "rentalPayments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "driverId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "paymentDate",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": [],
+  "database": "(default)",
+  "version": "2"
 }

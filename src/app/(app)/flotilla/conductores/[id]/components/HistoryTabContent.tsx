@@ -2,8 +2,9 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import type { Driver, Vehicle, DailyRentalCharge, RentalPayment } from '@/types';
-import { rentalService, personnelService } from '@/lib/services';
+import type { Driver, Vehicle, DailyRentalCharge, RentalPayment, ManualDebtEntry } from '@/types';
+import { rentalService } from '@/lib/services/rental.service';
+import { personnelService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,9 +13,11 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, HandCoins } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { EditDailyChargeDialog, type DailyChargeFormValues } from '../../components/EditDailyChargeDialog';
+import { EditDailyChargeDialog, type DailyChargeFormValues } from '../../../components/EditDailyChargeDialog';
+import { RegisterPaymentDialog, type PaymentFormValues } from '../../../components/RegisterPaymentDialog';
+import { AddManualChargeDialog, type ManualChargeFormValues } from '../../../components/AddManualChargeDialog';
 
 interface HistoryTabContentProps {
   driver: Driver;
@@ -25,23 +28,32 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   const { toast } = useToast();
   const [dailyCharges, setDailyCharges] = useState<DailyRentalCharge[]>([]);
   const [payments, setPayments] = useState<RentalPayment[]>([]);
-  const [manualDebts, setManualDebts] = useState<any[]>([]);
+  const [manualDebts, setManualDebts] = useState<ManualDebtEntry[]>([]);
   const [isGenerating, setIsGenerating] = useState(true);
+  const [chargesGenerated, setChargesGenerated] = useState(false);
   
   const [editingCharge, setEditingCharge] = useState<DailyRentalCharge | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isChargeDialogOpen, setIsChargeDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (!driver || !vehicle) {
+    if (!driver || !vehicle || chargesGenerated) {
       setIsGenerating(false);
       return;
     }
     
     setIsGenerating(true);
     rentalService.generateMissingCharges(driver, vehicle)
+      .then(() => setChargesGenerated(true))
       .catch(err => toast({ title: "Error", description: "No se pudieron generar los cargos diarios.", variant: "destructive"}))
       .finally(() => setIsGenerating(false));
 
+  }, [driver, vehicle, chargesGenerated, toast]);
+
+  useEffect(() => {
+    if (!driver) return;
+    
     const unsubCharges = rentalService.onDailyChargesUpdate(driver.id, setDailyCharges);
     const unsubPayments = rentalService.onRentalPaymentsUpdate(driver.id, setPayments);
     const unsubDebts = personnelService.onManualDebtsUpdate(driver.id, setManualDebts);
@@ -51,14 +63,14 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
       unsubPayments();
       unsubDebts();
     };
-  }, [driver, vehicle, toast]);
+  }, [driver]);
 
   const transactions = useMemo(() => {
     let balance = 0;
     const allTransactions = [
-      ...dailyCharges.map(c => ({ ...c, type: 'charge' })),
-      ...payments.map(p => ({ ...p, date: p.paymentDate, type: 'payment' })),
-      ...manualDebts.map(d => ({ ...d, type: 'debt' })),
+      ...dailyCharges.map(c => ({ ...c, type: 'charge' as const, date: c.date, note: `Renta Diaria (${c.vehicleLicensePlate})`})),
+      ...payments.map(p => ({ ...p, type: 'payment' as const, date: p.paymentDate })),
+      ...manualDebts.map(d => ({ ...d, type: 'debt' as const, date: d.date })),
     ]
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .map(t => {
@@ -66,7 +78,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
       else balance -= t.amount;
       return { ...t, balance };
     });
-    return allTransactions.reverse();
+    return allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [dailyCharges, payments, manualDebts]);
   
   const handleEditCharge = (charge: DailyRentalCharge) => {
@@ -85,13 +97,33 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
     await rentalService.deleteDailyCharge(id);
     toast({ title: "Cargo Eliminado", variant: "destructive" });
   };
+  
+  const handleSavePayment = async (data: PaymentFormValues) => {
+    if (!driver || !vehicle) return;
+    await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.paymentDate);
+    toast({ title: "Pago Registrado" });
+    setIsPaymentDialogOpen(false);
+  };
+  
+  const handleSaveManualCharge = async (data: ManualChargeFormValues) => {
+    if (!driver) return;
+    await personnelService.saveManualDebt(driver.id, { ...data, date: data.date.toISOString() });
+    toast({ title: "Cargo Registrado" });
+    setIsChargeDialogOpen(false);
+  };
 
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>Historial de Movimientos</CardTitle>
-          <CardDescription>Registro de todos los cargos, pagos y adeudos.</CardDescription>
+        <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Historial de Movimientos</CardTitle>
+              <CardDescription>Registro de todos los cargos, pagos y adeudos.</CardDescription>
+            </div>
+            <div className="flex gap-2">
+                <Button onClick={() => setIsChargeDialogOpen(true)} variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" />Añadir Cargo</Button>
+                <Button onClick={() => setIsPaymentDialogOpen(true)} size="sm"><HandCoins className="mr-2 h-4 w-4" />Registrar Pago</Button>
+            </div>
         </CardHeader>
         <CardContent>
            {isGenerating && <p className="text-sm text-muted-foreground text-center">Generando cargos diarios...</p>}
@@ -111,10 +143,8 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
                     <TableRow key={`${t.type}-${t.id}`}>
                       <TableCell>{format(parseISO(t.date), "dd MMM yyyy", { locale: es })}</TableCell>
                       <TableCell>
-                        {t.type === 'charge' && `Renta Diaria (${t.vehicleLicensePlate})`}
-                        {t.type === 'payment' && (t.note || 'Pago de Renta')}
-                        {t.type === 'debt' && t.note}
-                        <Badge variant="outline" className="ml-2 capitalize">{t.type}</Badge>
+                        {t.note}
+                        <Badge variant="outline" className="ml-2 capitalize">{t.type === 'charge' ? 'Renta' : t.type}</Badge>
                       </TableCell>
                       <TableCell className="text-right text-destructive">{t.type !== 'payment' ? formatCurrency(t.amount) : '-'}</TableCell>
                       <TableCell className="text-right text-green-600">{t.type === 'payment' ? formatCurrency(t.amount) : '-'}</TableCell>
@@ -125,9 +155,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
                              <Button variant="ghost" size="icon" onClick={() => handleEditCharge(t as DailyRentalCharge)}><Edit className="h-4 w-4" /></Button>
                              <ConfirmDialog
                                 triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>}
-                                title="¿Eliminar Cargo?"
-                                onConfirm={() => handleDeleteCharge(t.id)}
-                              />
+                                title="¿Eliminar Cargo?" onConfirm={() => handleDeleteCharge(t.id)} />
                            </>
                         )}
                       </TableCell>
@@ -142,6 +170,8 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
         </CardContent>
       </Card>
       <EditDailyChargeDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} charge={editingCharge} onSave={handleSaveCharge} />
+      <RegisterPaymentDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} onSave={handleSavePayment} />
+      <AddManualChargeDialog open={isChargeDialogOpen} onOpenChange={setIsChargeDialogOpen} onSave={handleSaveManualCharge} />
     </>
   );
 }
