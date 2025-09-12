@@ -106,11 +106,17 @@ const onDriversUpdatePromise = async (): Promise<Driver[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Driver));
 };
 
+
 const getDriverById = async (id: string): Promise<Driver | undefined> => {
     if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, 'drivers', id);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Driver : undefined;
+};
+
+const saveDriver = async (data: Partial<Driver>, id: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await updateDoc(doc(db, 'drivers', id), cleanObjectForFirestore(data));
 };
 
 const assignVehicleToDriver = async (
@@ -125,13 +131,11 @@ const assignVehicleToDriver = async (
 
     const newDriver = newDriverId ? allDrivers.find(d => d.id === newDriverId) : null;
 
-    // 1. Update the vehicle's assignment
     batch.update(vehicleRef, { 
         assignedDriverId: newDriverId,
         assignedDriverName: newDriver?.name || null 
     });
 
-    // 2. If the vehicle had an old driver, un-assign it from them
     if (oldDriverId && oldDriverId !== newDriverId) {
         const oldDriverRef = doc(db, 'drivers', oldDriverId);
         batch.update(oldDriverRef, { 
@@ -140,9 +144,7 @@ const assignVehicleToDriver = async (
         });
     }
     
-    // 3. If a new driver is being assigned
     if (newDriver) {
-        // 3a. If the new driver was assigned to another vehicle, un-assign that other vehicle
         if (newDriver.assignedVehicleId && newDriver.assignedVehicleId !== vehicle.id) {
             const otherVehicleRef = doc(db, 'vehicles', newDriver.assignedVehicleId);
             batch.update(otherVehicleRef, { 
@@ -151,7 +153,6 @@ const assignVehicleToDriver = async (
             });
         }
         
-        // 3b. Assign the new vehicle to the new driver
         const newDriverRef = doc(db, 'drivers', newDriver.id);
         batch.update(newDriverRef, { 
             assignedVehicleId: vehicle.id,
@@ -174,5 +175,6 @@ export const personnelService = {
     onDriversUpdate,
     onDriversUpdatePromise,
     getDriverById,
+    saveDriver,
     assignVehicleToDriver,
 };

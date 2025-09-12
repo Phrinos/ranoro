@@ -1,113 +1,123 @@
-
-
-// src/types/index.ts
-import { type VariantProps } from "class-variance-authority"
-import { sidebarMenuButtonVariants } from './sidebar.types';
-import { serviceFormSchema } from '@/schemas/service-form';
-import { z } from 'zod';
-
-export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
-
-export interface WorkshopInfo {
-  name: string;
-  nameBold?: boolean;
-  headerFontSize?: number;
-  phone: string;
-  phoneBold?: boolean;
-  addressLine1: string;
-  addressLine1Bold?: boolean;
-  addressLine2?: string;
-  addressLine2Bold?: boolean;
-  cityState: string;
-  cityStateBold?: boolean;
-  logoUrl: string;
-  logoWidth?: number;
-  bodyFontSize?: number;
-  itemsFontSize?: number;
-  totalsFontSize?: number;
-  footerFontSize?: number;
-  blankLinesTop?: number;
-  blankLinesBottom?: number;
-  footerLine1?: string;
-  footerLine1Bold?: boolean;
-  footerLine2?: string;
-  footerLine2Bold?: boolean;
-  fixedFooterText?: string;
-  fixedFooterTextBold?: boolean;
-  googleMapsUrl?: string;
-  contactPersonName?: string;
-  contactPersonPhone?: string;
-  contactPersonRole?: string;
-  timezone?: string;
-  facturaComApiKey?: string;
-  facturaComApiSecret?: string;
-  facturaComBillingMode?: 'live' | 'test';
-}
-
-export interface Area {
+export type AppRole = {
   id: string;
   name: string;
-}
+  permissions: string[];
+};
 
-export type Personnel = User;
-
-export interface VehiclePaperwork {
+export type User = {
   id: string;
-  name:string;
-  dueDate: string; 
-  status: 'Pendiente' | 'Completado';
-  notes?: string;
+  name: string;
+  email: string;
+  role: string;
+  isArchived: boolean;
+  hireDate?: string;
+  phone?: string;
+  address?: string;
+  standardHoursPerDay?: number;
+  signatureDataUrl?: string;
+};
+
+export type Personnel = User | Technician | AdministrativeStaff;
+
+export interface Technician extends User {
+  specialty: string;
 }
 
-export interface Vehicle {
-  id: string; 
+export interface AdministrativeStaff extends User {
+  department: string;
+}
+
+export type InventoryItem = {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  supplier: string;
+  purchasePrice: number;
+  salePrice: number;
+  quantity: number;
+  lowStockThreshold: number;
+  isService: boolean;
+  sku?: string;
+};
+
+export type ServiceTypeRecord = {
+  id: string;
+  name: string;
+  description?: string;
+  estimatedHours: number;
+};
+
+export type InventoryCategory = {
+  id: string;
+  name: string;
+};
+
+export type Supplier = {
+  id: string;
+  name: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+};
+
+export type Paperwork = {
+  id: string;
+  name: string;
+  dueDate: string;
+};
+
+export type Fine = {
+  id: string;
+  date: string;
+  type: string;
+  amount: number;
+};
+
+export type FineCheck = {
+  id: string;
+  checkDate: string;
+  hasFines: boolean;
+  fines?: Fine[];
+};
+
+export type Vehicle = {
+  id: string;
   make: string;
   model: string;
   year: number;
-  vin?: string; 
-  ownerName: string;
-  ownerPhone: string;
-  ownerEmail?: string;
   licensePlate: string;
+  vin?: string;
   color?: string;
-  notes?: string;
-  lastServiceDate?: string; 
+  ownerName?: string;
+  ownerPhone?: string;
   isFleetVehicle?: boolean;
-  dailyRentalCost?: number | null;
-  gpsMonthlyCost?: number | null;
-  adminMonthlyCost?: number | null;
-  insuranceMonthlyCost?: number | null;
-  fineCheckHistory?: {
-    date: string; // ISO String
-    checkedBy: string;
-    checkedById: string;
-  }[];
-  paperwork?: VehiclePaperwork[];
+  purchasePrice?: number;
+  dailyRentalCost?: number;
+  gpsCost?: number;
+  insuranceCost?: number;
+  adminCost?: number;
   currentMileage?: number;
-  lastMileageUpdate?: string; // ISO String
-  nextServiceInfo?: {
-    date: string; // ISO String
-    mileage?: number;
-  };
+  notes?: string;
   assignedDriverId?: string | null;
-}
+  assignedDriverName?: string | null;
+  paperwork?: Paperwork[];
+  fineChecks?: FineCheck[];
+};
 
-export interface ManualDebtEntry {
-  id: string;
-  driverId: string;
-  date: string; // ISO String
-  amount: number;
-  note: string;
-}
-
-
-export interface Driver {
+export type Driver = {
   id: string;
   name: string;
-  address: string;
   phone: string;
+  address: string;
   emergencyPhone: string;
+  isArchived: boolean;
+  contractDate?: string;
+  depositAmount?: number;
+  requiredDepositAmount?: number;
   assignedVehicleId?: string | null;
+  assignedVehicleLicensePlate?: string | null;
   documents?: {
     ineFrontUrl?: string;
     ineBackUrl?: string;
@@ -115,479 +125,83 @@ export interface Driver {
     proofOfAddressUrl?: string;
     promissoryNoteUrl?: string;
   };
-  requiredDepositAmount?: number;
-  depositAmount?: number;
-  contractDate?: string; // ISO string
-  isArchived?: boolean;
-}
+};
 
-export interface RentalPayment {
-  id: string;
-  driverId: string;
-  driverName: string;
-  vehicleLicensePlate: string;
-  paymentDate: string; // ISO String
-  amount: number;
-  daysCovered: number;
-  note?: string;
-  registeredBy?: string;
-  paymentMethod?: 'Efectivo' | 'Tarjeta' | 'Transferencia';
-}
-
-export interface OwnerWithdrawal {
-  id: string;
-  ownerName: string;
-  date: string; // ISO String
-  amount: number;
-  reason?: string;
-  paymentMethod?: 'Efectivo' | 'Tarjeta' | 'Transferencia';
-}
-
-export interface VehicleExpense {
+export type ServiceRecord = {
   id: string;
   vehicleId: string;
-  vehicleLicensePlate: string;
-  date: string; // ISO String
-  amount: number;
-  description: string;
-  paymentMethod?: 'Efectivo' | 'Tarjeta' | 'Transferencia';
-}
-
-
-export interface ServiceSupply {
-  supplyId: string; 
-  supplyName: string; 
-  quantity: number;
-  unitPrice: number;
-  sellingPrice?: number;
-  unitType?: 'units' | 'ml' | 'liters';
-  isService?: boolean;
-}
-
-export interface ServiceItem {
-  id: string;
-  name: string;
-  price: number;
-  serviceType?: string; // Type of service for this specific item
-  suppliesUsed: ServiceSupply[];
-}
-
-export type SafetyCheckStatus = 'ok' | 'atencion' | 'inmediata' | 'na';
-
-export interface SafetyCheckValue {
-  status: SafetyCheckStatus;
-  photos: string[];
-  notes?: string;
-}
-
-export interface SafetyInspection {
-    luces_altas_bajas_niebla?: SafetyCheckValue;
-    luces_cuartos?: SafetyCheckValue;
-    luces_direccionales?: SafetyCheckValue;
-    luces_frenos_reversa?: SafetyCheckValue;
-    luces_interiores?: SafetyCheckValue;
-    fugas_refrigerante?: SafetyCheckValue;
-    fugas_limpiaparabrisas?: SafetyCheckValue;
-    fugas_frenos_embrague?: SafetyCheckValue;
-    fugas_transmision?: SafetyCheckValue;
-    fugas_direccion_hidraulica?: SafetyCheckValue;
-    carroceria_cristales_espejos?: SafetyCheckValue;
-    carroceria_puertas_cofre?: SafetyCheckValue;
-    carroceria_asientos_tablero?: SafetyCheckValue;
-    carroceria_plumas?: SafetyCheckValue;
-    suspension_rotulas?: SafetyCheckValue;
-    suspension_amortiguadores?: SafetyCheckValue;
-    suspension_caja_direccion?: SafetyCheckValue;
-    suspension_terminales?: SafetyCheckValue;
-    llantas_delanteras_traseras?: SafetyCheckValue;
-    llantas_refaccion?: SafetyCheckValue;
-    frenos_discos_delanteros?: SafetyCheckValue;
-    frenos_discos_traseros?: SafetyCheckValue;
-    otros_tuberia_escape?: SafetyCheckValue;
-    otros_soportes_motor?: SafetyCheckValue;
-    otros_claxon?: SafetyCheckValue;
-    otros_inspeccion_sdb?: SafetyCheckValue;
-    inspectionNotes?: string;
-    technicianSignature?: string; 
-}
-
-
-export interface PhotoReportGroup {
-  id: string;
-  date: string; // ISO string
-  description: string;
-  photos: string[];
-  type?: 'Recepción' | 'Entrega' | 'General';
-}
-
-// Define specific sub-statuses for clarity and type safety
-export type AgendadoSubStatus = 'Sin Confirmar' | 'Confirmada' | 'Cancelada';
-export type EnTallerSubStatus = 'Ingresado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado';
-
-export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Proveedor Externo' | 'Entregado' | 'Cancelado';
-
-// Combine all possible sub-statuses into one union type
-export type ServiceSubStatus = AgendadoSubStatus | EnTallerSubStatus;
-
-
-export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Tarjeta MSI' | 'Transferencia';
-
-export interface Payment {
-    method: PaymentMethod;
-    amount?: number;
-    folio?: string;
-}
-
-export interface ServiceRecord {
-  id: string;
-  publicId?: string;
-  vehicleId: string;
-  vehicleIdentifier?: string;
-  serviceDate: string; // Creation date
-  quoteDate?: string; // DEPRECATED
-  appointmentDateTime?: string; // Specific for the appointment
-  appointmentStatus?: 'Confirmada' | 'Sin Confirmar' | 'Cancelada';
-  description?: string;
-  technicianId: string;
-  technicianName?: string;
-  serviceItems: ServiceItem[];
-  originalQuoteItems?: ServiceItem[];
-  subTotal: number; 
-  taxAmount: number;
-  totalCost: number;
-  totalSuppliesWorkshopCost: number; 
-  serviceProfit: number; 
-  status: ServiceStatus;
-  subStatus?: ServiceSubStatus;
-  cancellationReason?: string;
-  cancelledBy?: string;
-  notes?: string;
-  mileage?: number;
-  receptionDateTime?: string;
-  deliveryDateTime?: string;
-  vehicleConditions?: string;
-  fuelLevel?: string;
-  customerItems?: string;
-  customerSignatureReception?: string;
-  customerSignatureDelivery?: string;
-  receptionSignatureViewed?: boolean;
-  deliverySignatureViewed?: boolean;
-  safetyInspection?: SafetyInspection;
-  serviceAdvisorId?: string;
-  serviceAdvisorName?: string;
-  serviceAdvisorSignatureDataUrl?: string | null; 
-  workshopInfo?: WorkshopInfo;
-  payments?: Payment[]; // <-- New payment structure
-  cardCommission?: number;
-  // Deprecated payment fields
-  paymentMethod?: string;
-  cardFolio?: string;
-  transferFolio?: string;
-  amountInCash?: number;
-  amountInCard?: number;
-  amountInTransfer?: number;
-  
-  nextServiceInfo?: {
-    date: string;
-    mileage?: number;
-  };
-  photoReports?: PhotoReportGroup[];
-  customerName?: string;
-}
-
-export interface Technician {
-  id: string;
-  name: string;
-  area: string; 
-  specialty: string;
-  contactInfo?: string; 
-  hireDate?: string; 
-  monthlySalary?: number; 
-  notes?: string; 
-  commissionRate?: number;
-  standardHoursPerDay?: number;
-  isArchived?: boolean;
-}
-
-export interface AdministrativeStaff {
-  id: string;
-  name: string;
-  roleOrArea: string; 
-  contactInfo?: string;
-  hireDate?: string;
-  monthlySalary?: number;
-  notes?: string;
-  commissionRate?: number;
-  isArchived?: boolean;
-}
-
-export interface TechnicianMonthlyPerformance {
-  id: string; 
-  technicianId: string;
-  monthYear: string; 
-  servicesCount: number;
-  revenueGenerated: number; 
-  earnings: number; 
-  penalties: number;
-}
-
-
-export interface InventoryItem {
-  id: string;
-  name: string;
-  brand?: string;
-  sku: string; 
-  description?: string;
-  quantity: number;
-  unitPrice: number;
-  sellingPrice: number;
-  supplier: string; 
-  lowStockThreshold: number;
-  category: string;
-  isService?: boolean;
-  unitType?: 'units' | 'ml' | 'liters';
-  rendimiento?: number;
-}
-
-export interface InventoryCategory {
-  id: string;
-  name: string;
-}
-
-export interface ServiceTypeRecord {
-  id: string;
-  name: string;
-}
-
-export interface Supplier {
-  id: string;
-  name: string;
-  description?: string;
-  contactPerson?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  rfc?: string;
-  taxRegime?: string;
-  debtAmount?: number;
-}
-
-export interface PurchaseEntryFormValues {
-  sku: string;
-  quantity: number;
-  purchasePrice: number;
-}
-
-export interface SaleItem {
-  inventoryItemId: string;
-  itemName:string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  isService?: boolean;
-  unitType?: 'units' | 'ml' | 'liters';
-}
-
-export interface SaleReceipt {
-  id: string;
-  saleDate: string; 
-  items: SaleItem[];
-  subTotal: number;
-  tax: number;
-  totalAmount: number;
-  payments?: Payment[]; // <-- New payment structure
-  cardCommission?: number; // New field for card commission cost
-  // Deprecated payment fields
-  paymentMethod?: string;
-  customerName?: string;
-  cardFolio?: string;
-  transferFolio?: string;
-  status?: 'Completado' | 'Cancelado';
-  cancellationReason?: string;
-  cancelledBy?: string;
-  amountInCash?: number;
-  amountInCard?: number;
-  amountInTransfer?: number;
-  registeredById?: string;
-  registeredByName?: string;
-}
-
-export type QuoteRecord = ServiceRecord;
-
-
-export interface DashboardMetrics {
-  activeServices: number;
-  technicianEarnings: number; 
-  dailyRevenue: number;
-  lowStockAlerts: number;
-}
-
-export interface FinancialOperation {
-  id: string;
-  date: string;
-  type: string;
-  description: string; 
-  totalAmount: number;
-  profit: number;
-  originalObject: SaleReceipt | ServiceRecord; 
-}
-
-export type UserRole = string;
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  password?: string;
-  phone?: string;
-  signatureDataUrl?: string;
-  monthlySalary?: number;
-  commissionRate?: number;
-  standardHoursPerDay?: number;
-  isArchived?: boolean;
-  hireDate?: string;
-}
-
-export interface AppRole {
-  id: string;
-  name: string;
-  permissions: string[];
-}
-
-export interface MonthlyFixedExpense {
-  id: string;
-  name: string;
-  amount: number;
-  notes?: string;
-  category?: 'Renta' | 'Servicios' | 'Otros';
-  createdAt?: string; // ISO String
-}
-
-export interface InitialCashBalance {
-  date: string;
-  amount: number;
-  userId: string;
-  userName: string;
-}
-
-export interface CashDrawerTransaction {
-  id: string;
-  date: string; // ISO String
-  type: 'Entrada' | 'Salida';
-  amount: number;
-  concept: string;
-  userId: string;
-  userName: string;
-  relatedType?: 'Venta' | 'Servicio' | 'Compra' | 'InitialBalance' | 'Flotilla';
-  relatedId?: string;
-}
-
-export interface PurchaseRecommendation {
-  supplier: string;
-  items: {
+  serviceDate: Date | string;
+  status: 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado' | 'Cotizacion';
+  serviceItems: {
+    itemId: string;
     itemName: string;
     quantity: number;
-    serviceId: string;
-    inventoryId: string;
+    unitPrice: number;
+    total: number;
   }[];
-}
+  customerSignatureDataUrl?: string;
+  serviceAdvisorSignatureDataUrl?: string;
+  description?: string;
+  mechanicId?: string;
+  mechanicName?: string;
+  serviceAdvisorId?: string;
+  serviceAdvisorName?: string;
+  totalCost?: number;
+  vehicleIdentifier?: string;
+  deliveryDateTime?: string;
+  serviceProfit?: number;
+  receptionDateTime?: string;
+  appointmentDateTime?: string;
+};
 
-export interface NavigationEntry {
-  label: string;
-  icon: React.ElementType;
-  path: string;
-  isActive?: boolean;
-  groupTag: string;
-  permissions?: string[];
-}
-
-export interface PricedService {
-    id: string;
-    serviceName: string;
-    description?: string;
-    customerPrice: number;
-    estimatedTimeHours?: number;
-    supplies: ServiceSupply[];
-}
-
-export interface VehiclePriceList {
-  id:string;
-  make: string;
-  model: string;
-  years: number[];
-  services: PricedService[];
-}
-
-export interface VehicleMonthlyReport {
-  vehicleId: string;
-  vehicleInfo: string;
-  daysRented: number;
-  rentalIncome: number;
-  maintenanceAndExpensesCost: number;
-  administrationCost: number;
-  totalDeductions: number;
-  services?: { id: string; description?: string; totalCost: number }[];
-}
-
-export interface PublicOwnerReport {
-  publicId: string;
-  ownerName: string;
-  generatedDate: string; // ISO String
-  reportMonth: string;
-  detailedReport: VehicleMonthlyReport[];
-  totalRentalIncome: number;
-  totalDeductions: number;
-  totalNetBalance: number;
-  workshopInfo?: WorkshopInfo;
-}
-
-export interface AggregatedInventoryItem {
-  itemId: string;
-  name: string;
-  sku: string;
-  totalQuantity: number;
-  totalRevenue: number;
-}
-
-export interface AuditLog {
+export type SaleReceipt = {
   id: string;
-  date: string; // ISO string
-  userId: string;
-  userName: string;
-  actionType: 'Crear' | 'Editar' | 'Eliminar' | 'Cancelar' | 'Archivar' | 'Pagar' | 'Registrar' | 'Acceso' | 'Otro';
-  description: string;
-  entityType?: 'Usuario' | 'Rol' | 'Servicio' | 'Cotización' | 'Producto' | 'Categoría' | 'Proveedor' | 'Venta' | 'Vehículo' | 'Conductor' | 'Pago' | 'Gasto' | 'Compra' | 'Personal' | 'Cuentas Por Pagar' | 'Transacción de Caja';
-  entityId?: string;
-}
+  saleDate: Date;
+  items: {
+    itemId: string;
+    itemName: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+  }[];
+  totalAmount: number;
+  paymentMethod: PaymentMethod;
+  status?: 'Completado' | 'Cancelado';
+  profit?: number;
+};
 
-export interface CapacityAnalysisInput {
+export type MonthlyFixedExpense = {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+};
+
+export type CashMovement = {
+  id: string;
+  date: string;
+  type: 'Ingreso' | 'Egreso';
+  category: string;
+  amount: number;
+  description: string;
+  paymentMethod: PaymentMethod;
+  relatedId?: string;
+};
+
+export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Tarjeta MSI';
+export type ServiceSubStatus = 'Ingresado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Confirmada' | 'Cancelada';
+export type NavigationEntry = { label: string; path: string; icon: React.ElementType; groupTag: string; isActive: boolean; permissions?: string[] };
+export type Permission = { id: string; name: string; description: string; };
+
+export type CapacityAnalysisInput = {
   servicesForDay: { description: string }[];
   technicians: { id: string; standardHoursPerDay: number }[];
   serviceHistory: { description: string; serviceDate?: string; deliveryDateTime?: string }[];
-}
+};
 
-export interface CapacityAnalysisOutput {
+export type CapacityAnalysisOutput = {
   totalRequiredHours: number;
   totalAvailableHours: number;
   capacityPercentage: number;
   recommendation: string;
-}
-
-export interface InventoryMovement {
-  id: string;
-  date: string; // ISO String
-  type: 'Venta' | 'Servicio' | 'Compra';
-  relatedId: string;
-  itemName: string;
-  quantity: number;
-  unitCost: number;
-  totalCost: number;
-}
-
-export type SidebarMenuButtonProps = React.ComponentProps<"button"> & {
-  asChild?: boolean
-  isActive?: boolean
-  tooltipLabel?: string;
-  tooltipClassName?: string;
-} & VariantProps<typeof sidebarMenuButtonVariants>
+};

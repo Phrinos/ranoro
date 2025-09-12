@@ -1,19 +1,20 @@
 // src/app/(app)/flotilla/conductores/[id]/page.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, User, Phone, Home, AlertTriangle, FileText, DollarSign } from 'lucide-react';
-import { personnelService } from '@/lib/services';
-import type { Driver } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, Edit } from 'lucide-react';
+import { personnelService, inventoryService } from '@/lib/services';
+import type { Driver, Vehicle } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { ContactInfoCard } from '../../components/ContactInfoCard';
+import { FinancialInfoCard } from '../../components/FinancialInfoCard';
+import { DocumentsCard } from '../../components/DocumentsCard';
 
 export default function FlotillaConductorProfilePage() {
   const params = useParams();
@@ -22,48 +23,53 @@ export default function FlotillaConductorProfilePage() {
   const { toast } = useToast();
   
   const [driver, setDriver] = useState<Driver | null>(null);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!driverId) return;
     
-    personnelService.getDriverById(driverId).then(data => {
-      if (data) {
-        setDriver(data);
-      } else {
-        toast({ title: "Error", description: "Conductor no encontrado.", variant: "destructive" });
-        router.push('/flotilla/conductores');
-      }
+    const unsubDriver = personnelService.onDriversUpdate((drivers) => {
+      const currentDriver = drivers.find(d => d.id === driverId);
+      setDriver(currentDriver || null);
       setIsLoading(false);
     });
+
+    const unsubVehicles = inventoryService.onVehiclesUpdate(setVehicles);
+
+    return () => {
+      unsubDriver();
+      unsubVehicles();
+    };
   }, [driverId, router, toast]);
+
+  const assignedVehicle = useMemo(() => {
+    if (!driver?.assignedVehicleId) return null;
+    return vehicles.find(v => v.id === driver.assignedVehicleId) || null;
+  }, [driver, vehicles]);
 
   const handleEdit = () => {
     toast({ title: "Función en desarrollo", description: "Pronto podrás editar los datos del conductor." });
   };
 
-  const InfoCard = ({ title, items }: { title: string; items: { icon: React.ElementType; label: string; value?: string | number | null }[] }) => (
-    <Card>
-      <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
-      <CardContent className="space-y-4">
-        {items.map((item, index) => (
-          <div key={index} className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-3">
-              <item.icon className="h-5 w-5 text-muted-foreground" />
-              <span>{item.label}</span>
-            </div>
-            <span className="font-semibold">{item.value || 'N/A'}</span>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
+  if (isLoading || !driver) {
+    return (
+      <div className="p-1">
+        <PageHeader title={<Skeleton className="h-8 w-1/2" />} description={<Skeleton className="h-4 w-1/3" />} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="h-64 rounded-lg" />
+        </div>
+        <Skeleton className="h-96 rounded-lg mt-6" />
+      </div>
+    );
+  }
 
   return (
     <>
       <PageHeader
-        title={isLoading ? <Skeleton className="h-8 w-1/2" /> : `Perfil de ${driver?.name}`}
-        description="Información detallada del conductor."
+        title={`Perfil de ${driver.name}`}
+        description="Información detallada, contrato y documentos del conductor."
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => router.push('/flotilla/conductores')}>
@@ -77,28 +83,25 @@ export default function FlotillaConductorProfilePage() {
           </div>
         }
       />
-      <div className="p-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-64" />
-            <Skeleton className="h-64" />
-          </>
-        ) : driver && (
-          <>
-            <InfoCard title="Información de Contacto" items={[
-              { icon: User, label: "Nombre Completo", value: driver.name },
-              { icon: Phone, label: "Teléfono", value: driver.phone },
-              { icon: AlertTriangle, label: "Tel. Emergencia", value: driver.emergencyPhone },
-              { icon: Home, label: "Dirección", value: driver.address },
-            ]} />
-            <InfoCard title="Información Financiera y de Contrato" items={[
-              { icon: FileText, label: "Fecha de Contrato", value: driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'N/A' },
-              { icon: DollarSign, label: "Depósito Requerido", value: formatCurrency(driver.requiredDepositAmount) },
-              { icon: DollarSign, label: "Depósito Entregado", value: formatCurrency(driver.depositAmount) },
-            ]} />
-          </>
-        )}
-      </div>
+      <Tabs defaultValue="info" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="info">Información</TabsTrigger>
+          <TabsTrigger value="history">Historial</TabsTrigger>
+        </TabsList>
+        <TabsContent value="info" className="mt-6">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ContactInfoCard driver={driver} />
+              <FinancialInfoCard driver={driver} assignedVehicle={assignedVehicle} />
+            </div>
+            <DocumentsCard driver={driver} />
+          </div>
+        </TabsContent>
+        <TabsContent value="history" className="mt-6">
+          {/* Content for the history tab will go here */}
+          <p className="text-center text-muted-foreground py-12">El historial de pagos y adeudos estará disponible aquí próximamente.</p>
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

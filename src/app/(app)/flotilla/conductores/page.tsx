@@ -1,17 +1,18 @@
 // src/app/(app)/flotilla/conductores/page.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ChevronRight, UserCheck, UserX } from 'lucide-react';
+import { PlusCircle, ChevronRight } from 'lucide-react';
 import { personnelService } from '@/lib/services';
 import type { Driver } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 export default function FlotillaConductoresPage() {
@@ -27,6 +28,14 @@ export default function FlotillaConductoresPage() {
     });
     return () => unsubscribe();
   }, []);
+
+  const sortedDrivers = useMemo(() => {
+    return [...drivers].sort((a, b) => {
+      if (a.isArchived && !b.isArchived) return 1;
+      if (!a.isArchived && b.isArchived) return -1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [drivers]);
 
   const handleAddDriver = () => {
     toast({ title: "Función en desarrollo", description: "Pronto podrás añadir nuevos conductores desde aquí." });
@@ -69,18 +78,17 @@ export default function FlotillaConductoresPage() {
                         <Skeleton className="h-6 w-full" />
                       </TableCell>
                     </TableRow>
-                  ) : drivers.length > 0 ? (
-                    drivers.map(driver => (
+                  ) : sortedDrivers.length > 0 ? (
+                    sortedDrivers.map(driver => (
                       <TableRow 
                         key={driver.id} 
                         onClick={() => handleRowClick(driver.id)}
                         className="cursor-pointer hover:bg-muted/50"
                       >
                         <TableCell>
-                          {driver.isArchived 
-                            ? <UserX className="h-5 w-5 text-muted-foreground" title="Archivado"/> 
-                            : <UserCheck className="h-5 w-5 text-green-600" title="Activo"/>
-                          }
+                          <Badge variant={driver.isArchived ? 'secondary' : 'success'}>
+                            {driver.isArchived ? 'Inactivo' : 'Activo'}
+                          </Badge>
                         </TableCell>
                         <TableCell className={cn("font-semibold", driver.isArchived && "text-muted-foreground")}>{driver.name}</TableCell>
                         <TableCell>{driver.phone}</TableCell>

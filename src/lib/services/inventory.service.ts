@@ -14,8 +14,9 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense } from "@/types";
+import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
+import { nanoid } from 'nanoid';
 
 // --- Items ---
 
@@ -168,6 +169,12 @@ const getVehicleById = async (id: string): Promise<Vehicle | undefined> => {
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Vehicle : undefined;
 };
 
+const saveVehicle = async (id: string, data: Partial<Vehicle>): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const vehicleRef = doc(db, 'vehicles', id);
+    await updateDoc(vehicleRef, cleanObjectForFirestore(data));
+};
+
 const addVehicle = async (data: Partial<Vehicle>): Promise<Vehicle> => {
     if (!db) throw new Error("Database not initialized.");
     const docRef = await addDoc(collection(db, 'vehicles'), cleanObjectForFirestore(data));
@@ -178,6 +185,48 @@ const getVehicleDocRef = (id: string) => {
     if (!db) throw new Error("Database not initialized.");
     return doc(db, 'vehicles', id);
 }
+
+// --- Paperwork and Fines (Sub-collections of Vehicle) ---
+
+const savePaperwork = async (vehicleId: string, paperwork: Omit<Paperwork, 'id'>, id?: string): Promise<void> => {
+    const vehicleRef = doc(db, 'vehicles', vehicleId);
+    const vehicleDoc = await getDoc(vehicleRef);
+    if (!vehicleDoc.exists()) throw new Error("Vehicle not found.");
+    
+    const existingPaperwork: Paperwork[] = vehicleDoc.data().paperwork || [];
+    if (id) {
+        const index = existingPaperwork.findIndex(p => p.id === id);
+        existingPaperwork[index] = { ...paperwork, id };
+    } else {
+        existingPaperwork.push({ ...paperwork, id: nanoid() });
+    }
+    await updateDoc(vehicleRef, { paperwork: existingPaperwork });
+};
+
+const deletePaperwork = async (vehicleId: string, paperworkId: string): Promise<void> => {
+    const vehicleRef = doc(db, 'vehicles', vehicleId);
+    const vehicleDoc = await getDoc(vehicleRef);
+    if (!vehicleDoc.exists()) throw new Error("Vehicle not found.");
+    
+    const existingPaperwork: Paperwork[] = vehicleDoc.data().paperwork || [];
+    const updatedPaperwork = existingPaperwork.filter(p => p.id !== paperworkId);
+    await updateDoc(vehicleRef, { paperwork: updatedPaperwork });
+};
+
+const saveFineCheck = async (vehicleId: string, fineCheck: Omit<FineCheck, 'id'>, id?: string): Promise<void> => {
+    const vehicleRef = doc(db, 'vehicles', vehicleId);
+    const vehicleDoc = await getDoc(vehicleRef);
+    if (!vehicleDoc.exists()) throw new Error("Vehicle not found.");
+    
+    const existingFineChecks: FineCheck[] = vehicleDoc.data().fineChecks || [];
+    if (id) {
+        const index = existingFineChecks.findIndex(f => f.id === id);
+        existingFineChecks[index] = { ...fineCheck, id };
+    } else {
+        existingFineChecks.push({ ...fineCheck, id: nanoid() });
+    }
+    await updateDoc(vehicleRef, { fineChecks: existingFineChecks });
+};
 
 // --- Monthly Fixed Expenses ---
 const onFixedExpensesUpdate = (callback: (expenses: MonthlyFixedExpense[]) => void): (() => void) => {
@@ -225,7 +274,11 @@ export const inventoryService = {
   onVehiclesUpdatePromise,
   getVehicleById,
   addVehicle,
+  saveVehicle,
   getVehicleDocRef,
+  savePaperwork,
+  deletePaperwork,
+  saveFineCheck,
   onFixedExpensesUpdate,
   saveFixedExpense,
   deleteFixedExpense,

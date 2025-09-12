@@ -19,22 +19,28 @@ interface AssignDriverCardProps {
 }
 
 export function AssignDriverCard({ vehicle, allDrivers, onAssignmentChange }: AssignDriverCardProps) {
+  // Asegura string para comparaciones estables
+  const initialSelected = vehicle.assignedDriverId != null ? String(vehicle.assignedDriverId) : null;
+  const [selectedDriverId, setSelectedDriverId] = useState<string | null>(initialSelected);
   const [open, setOpen] = useState(false);
-  const [selectedDriverId, setSelectedDriverId] = useState<string | null>(vehicle.assignedDriverId || null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const driverOptions = useMemo(() => {
-    return allDrivers.map(driver => ({
-      value: driver.id,
-      label: driver.name,
-      assignedVehicle: driver.assignedVehicleLicensePlate ? `Asignado a ${driver.assignedVehicleLicensePlate}` : 'Disponible',
-    }));
+    return allDrivers
+      .filter(d => !d.isArchived)
+      .map(d => ({
+        id: String(d.id),
+        label: d.name || 'Sin nombre',
+        assignedVehicle: d.assignedVehicleLicensePlate
+          ? `Asignado a ${d.assignedVehicleLicensePlate}`
+          : 'Disponible',
+      }));
   }, [allDrivers]);
 
   const handleAssignDriver = async () => {
-    if (selectedDriverId === vehicle.assignedDriverId) return;
-    
+    if (String(selectedDriverId ?? '') === String(vehicle.assignedDriverId ?? '')) return;
+
     setIsSubmitting(true);
     try {
       await personnelService.assignVehicleToDriver(vehicle, selectedDriverId, allDrivers);
@@ -42,7 +48,7 @@ export function AssignDriverCard({ vehicle, allDrivers, onAssignmentChange }: As
         title: "Asignación Actualizada",
         description: selectedDriverId ? `El conductor ha sido asignado.` : `El vehículo ahora está disponible.`
       });
-      onAssignmentChange(); // Refresh parent data
+      onAssignmentChange();
     } catch (error) {
       console.error("Failed to assign driver:", error);
       toast({ title: "Error", description: "No se pudo actualizar la asignación.", variant: "destructive" });
@@ -53,56 +59,71 @@ export function AssignDriverCard({ vehicle, allDrivers, onAssignmentChange }: As
   };
 
   const currentDriverName = useMemo(() => {
-    return allDrivers.find(d => d.id === vehicle.assignedDriverId)?.name || 'Sin Asignar';
+    return allDrivers.find(d => String(d.id) === String(vehicle.assignedDriverId))?.name || 'Sin Asignar';
   }, [vehicle.assignedDriverId, allDrivers]);
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <CardTitle>Conductor Asignado</CardTitle>
         <CardDescription>Asigna o cambia el conductor de este vehículo.</CardDescription>
       </CardHeader>
+
       <CardContent className="space-y-4">
         <div className="p-4 border rounded-lg bg-muted/50">
           <p className="text-sm text-muted-foreground">Conductor Actual</p>
           <p className="text-lg font-semibold">{currentDriverName}</p>
         </div>
-        
+
         <div className="space-y-2">
           <label className="text-sm font-medium">Cambiar Asignación</label>
+
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-full justify-between"
-              >
+              <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
                 {selectedDriverId
-                  ? driverOptions.find(d => d.value === selectedDriverId)?.label
+                  ? (driverOptions.find(d => d.id === selectedDriverId)?.label ?? "Seleccionar conductor...")
                   : "Seleccionar conductor..."}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+
+            <PopoverContent
+              className="z-50 w-[var(--radix-popover-trigger-width)] p-0 max-h-80 overflow-y-auto"
+              onOpenAutoFocus={(e) => e.preventDefault()} // evita robar foco sin romper onSelect
+            >
               <Command>
                 <CommandInput placeholder="Buscar conductor..." />
                 <CommandList>
-                  <CommandEmpty>No se encontraron conductores.</CommandEmpty>
-                  <CommandGroup>
-                    {driverOptions.map((driver) => (
+                  <CommandEmpty>No se encontraron conductores activos.</CommandEmpty>
+
+                  <CommandGroup heading="Opciones">
+                    <CommandItem
+                      value="__none__"
+                      onSelect={() => {
+                        setSelectedDriverId(null);
+                        setOpen(false);
+                      }}
+                    >
+                      <Check className={cn("mr-2 h-4 w-4", selectedDriverId === null ? "opacity-100" : "opacity-0")} />
+                      Sin asignar
+                    </CommandItem>
+                  </CommandGroup>
+
+                  <CommandGroup heading="Conductores">
+                    {driverOptions.map((opt) => (
                       <CommandItem
-                        key={driver.value}
-                        value={driver.label}
-                        onSelect={() => {
-                          setSelectedDriverId(driver.value === selectedDriverId ? null : driver.value);
+                        key={opt.id}
+                        value={opt.id} // id limpio: cmdk devuelve este mismo valor en onSelect
+                        onSelect={(val) => {
+                          setSelectedDriverId(val);
                           setOpen(false);
                         }}
                       >
-                        <Check className={cn("mr-2 h-4 w-4", selectedDriverId === driver.value ? "opacity-100" : "opacity-0")} />
-                        <div>
-                          <p>{driver.label}</p>
-                          <p className="text-xs text-muted-foreground">{driver.assignedVehicle}</p>
+                        <Check className={cn("mr-2 h-4 w-4", selectedDriverId === opt.id ? "opacity-100" : "opacity-0")} />
+                        <div className="flex flex-col">
+                          <span>{opt.label}</span>
+                          <span className="text-xs text-muted-foreground">{opt.assignedVehicle}</span>
                         </div>
                       </CommandItem>
                     ))}
@@ -113,7 +134,13 @@ export function AssignDriverCard({ vehicle, allDrivers, onAssignmentChange }: As
           </Popover>
         </div>
 
-        <Button onClick={handleAssignDriver} disabled={isSubmitting || selectedDriverId === vehicle.assignedDriverId}>
+        <Button
+          onClick={handleAssignDriver}
+          disabled={
+            isSubmitting ||
+            String(selectedDriverId ?? '') === String(vehicle.assignedDriverId ?? '')
+          }
+        >
           {isSubmitting ? 'Guardando...' : 'Guardar Asignación'}
         </Button>
       </CardContent>

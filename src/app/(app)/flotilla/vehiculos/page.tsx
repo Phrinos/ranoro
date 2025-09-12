@@ -1,7 +1,7 @@
 // src/app/(app)/flotilla/vehiculos/page.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,15 @@ export default function FlotillaVehiculosPage() {
     });
     return () => unsubscribe();
   }, []);
+
+  const sortedVehicles = useMemo(() => {
+    return [...vehicles].sort((a, b) => {
+      const plateComparison = a.licensePlate.localeCompare(b.licensePlate);
+      if (plateComparison !== 0) return plateComparison;
+      
+      return `${a.make} ${a.model}`.localeCompare(`${b.make} ${b.model}`);
+    });
+  }, [vehicles]);
 
   const handleAddVehicle = () => {
     toast({ title: "Función en desarrollo", description: "Pronto podrás añadir vehículos a tu flotilla desde aquí." });
@@ -70,8 +79,8 @@ export default function FlotillaVehiculosPage() {
                         <Skeleton className="h-6 w-full" />
                       </TableCell>
                     </TableRow>
-                  ) : vehicles.length > 0 ? (
-                    vehicles.map(vehicle => (
+                  ) : sortedVehicles.length > 0 ? (
+                    sortedVehicles.map(vehicle => (
                       <TableRow 
                         key={vehicle.id} 
                         onClick={() => handleRowClick(vehicle.id)}

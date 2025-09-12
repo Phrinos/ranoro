@@ -4,14 +4,16 @@
 import React from 'react';
 import type { Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DollarSign, Signal, ShieldCheck, Cog } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DollarSign, Signal, ShieldCheck, Cog, Edit } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 interface RentalSystemCardProps {
   vehicle: Vehicle;
+  onEdit: () => void;
 }
 
-export function RentalSystemCard({ vehicle }: RentalSystemCardProps) {
+export function RentalSystemCard({ vehicle, onEdit }: RentalSystemCardProps) {
   const rentalInfo = [
     { icon: DollarSign, label: "Renta Diaria", value: formatCurrency(vehicle.dailyRentalCost) },
     { icon: Signal, label: "GPS (Mensual)", value: formatCurrency(vehicle.gpsCost) },
@@ -21,9 +23,14 @@ export function RentalSystemCard({ vehicle }: RentalSystemCardProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Sistema de Renta</CardTitle>
-        <CardDescription>Costos fijos y de operación del vehículo.</CardDescription>
+      <CardHeader className="flex-row items-center justify-between">
+        <div>
+          <CardTitle>Sistema de Renta</CardTitle>
+          <CardDescription>Costos fijos y de operación.</CardDescription>
+        </div>
+        <Button variant="outline" size="icon" onClick={onEdit}>
+          <Edit className="h-4 w-4" />
+        </Button>
       </CardHeader>
       <CardContent className="space-y-2">
         {rentalInfo.map(item => (
