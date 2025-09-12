@@ -16,17 +16,17 @@ export function FlotillaHeader({ onAddPayment, onAddCharge }: FlotillaHeaderProp
       <Button
         onClick={onAddCharge}
         variant="outline"
-        className="border-red-500/50 text-red-600 hover:bg-red-50 hover:text-red-700"
+        className="bg-white border-red-500 text-black font-bold hover:bg-red-50"
       >
-        <MinusCircle className="mr-2 h-4 w-4" />
+        <MinusCircle className="mr-2 h-4 w-4 text-red-500" />
         Generar Cargo
       </Button>
       <Button
         onClick={onAddPayment}
         variant="outline"
-        className="border-green-600/50 text-green-700 hover:bg-green-50 hover:text-green-800"
+        className="bg-white border-green-500 text-black font-bold hover:bg-green-50"
       >
-        <PlusCircle className="mr-2 h-4 w-4" />
+        <PlusCircle className="mr-2 h-4 w-4 text-green-700" />
         Registrar Pago
       </Button>
     </div>
