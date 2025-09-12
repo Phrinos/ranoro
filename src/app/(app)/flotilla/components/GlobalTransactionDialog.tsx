@@ -76,58 +76,56 @@ export function GlobalTransactionDialog({ open, onOpenChange, onSave, transactio
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-            <div className="p-4 space-y-4">
-                <FormField control={form.control} name="driverId" render={({ field }) => (
-                  <FormItem className="flex flex-col"><FormLabel>Conductor</FormLabel>
-                    <Popover open={isDriverPopoverOpen} onOpenChange={setIsDriverPopoverOpen}>
-                      <PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className={cn("justify-between", !field.value && "text-muted-foreground")}>
-                          {field.value ? drivers.find(d => d.id === field.value)?.name : "Seleccionar conductor"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button></FormControl></PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command>
-                        <CommandInput placeholder="Buscar conductor..." />
-                        <CommandList><CommandEmpty>No se encontraron conductores.</CommandEmpty><CommandGroup>
-                          {drivers.map(driver => (
-                            <CommandItem value={driver.name} key={driver.id} onSelect={() => { form.setValue("driverId", driver.id); setIsDriverPopoverOpen(false); }}>
-                              <Check className={cn("mr-2 h-4 w-4", driver.id === field.value ? "opacity-100" : "opacity-0")} />
-                              {driver.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup></CommandList>
-                      </Command></PopoverContent>
-                    </Popover>
-                  <FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="date" render={({ field }) => (
-                  <FormItem className="flex flex-col"><FormLabel>Fecha</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                          {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button></FormControl></PopoverTrigger>
-                      <PopoverContent><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
-                    </Popover>
-                  <FormMessage /></FormItem>
-                )}/>
-                 {transactionType === 'payment' && (
-                  <FormField control={form.control} name="paymentMethod" render={({ field }) => (
-                    <FormItem><FormLabel>Método de Pago</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent><SelectItem value="Efectivo">Efectivo</SelectItem><SelectItem value="Transferencia">Transferencia</SelectItem></SelectContent>
-                      </Select>
-                    <FormMessage /></FormItem>
-                  )}/>
-                )}
-                <FormField control={form.control} name="amount" render={({ field }) => (
-                  <FormItem><FormLabel>Monto ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="note" render={({ field }) => (
-                  <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-            </div>
-            <DialogFooter className="p-4 pt-0">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
+            <FormField control={form.control} name="driverId" render={({ field }) => (
+              <FormItem className="flex flex-col"><FormLabel>Conductor</FormLabel>
+                <Popover open={isDriverPopoverOpen} onOpenChange={setIsDriverPopoverOpen}>
+                  <PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className={cn("justify-between", !field.value && "text-muted-foreground")}>
+                      {field.value ? drivers.find(d => d.id === field.value)?.name : "Seleccionar conductor"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button></FormControl></PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0"><Command>
+                    <CommandInput placeholder="Buscar conductor..." />
+                    <CommandList><CommandEmpty>No se encontraron conductores.</CommandEmpty><CommandGroup>
+                      {drivers.map(driver => (
+                        <CommandItem value={driver.name} key={driver.id} onSelect={() => { form.setValue("driverId", driver.id); setIsDriverPopoverOpen(false); }}>
+                          <Check className={cn("mr-2 h-4 w-4", driver.id === field.value ? "opacity-100" : "opacity-0")} />
+                          {driver.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup></CommandList>
+                  </Command></PopoverContent>
+                </Popover>
+              <FormMessage /></FormItem>
+            )}/>
+            <FormField control={form.control} name="date" render={({ field }) => (
+              <FormItem className="flex flex-col"><FormLabel>Fecha</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                      {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button></FormControl></PopoverTrigger>
+                  <PopoverContent><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                </Popover>
+              <FormMessage /></FormItem>
+            )}/>
+             {transactionType === 'payment' && (
+              <FormField control={form.control} name="paymentMethod" render={({ field }) => (
+                <FormItem><FormLabel>Método de Pago</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent><SelectItem value="Efectivo">Efectivo</SelectItem><SelectItem value="Transferencia">Transferencia</SelectItem></SelectContent>
+                  </Select>
+                <FormMessage /></FormItem>
+              )}/>
+            )}
+            <FormField control={form.control} name="amount" render={({ field }) => (
+              <FormItem><FormLabel>Monto ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+            )}/>
+            <FormField control={form.control} name="note" render={({ field }) => (
+              <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+            )}/>
+            <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
