@@ -10,4 +10,5 @@ export * from './sale.service';
 export * from './cash.service';
 export * from './purchase.service';
 export * from './history.service';
+export * from './rental.service';
 // The operationsService is deprecated and should not be exported.
