@@ -53,7 +53,7 @@ export default function FlotillaVehiculoProfilePage() {
         setVehicle(currentVehicle);
       } else if (!isLoading) {
         toast({ title: "Error", description: "Vehículo no encontrado.", variant: "destructive" });
-        router.push('/flotilla/vehiculos');
+        router.push('/flotilla');
       }
       setIsLoading(false);
     });
@@ -137,7 +137,7 @@ export default function FlotillaVehiculoProfilePage() {
         title={`Perfil de ${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`}
         description="Gestiona la asignación, información y mantenimiento del vehículo."
         actions={
-          <Button variant="outline" onClick={() => router.push('/flotilla/vehiculos')}>
+          <Button variant="outline" onClick={() => router.push('/flotilla')}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Volver
           </Button>
         }
