@@ -91,8 +91,8 @@ export default function FlotillaConductorProfilePage() {
         <TabsContent value="info" className="mt-6">
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ContactInfoCard driver={driver} />
-              <FinancialInfoCard driver={driver} assignedVehicle={assignedVehicle} />
+              <ContactInfoCard driver={driver} assignedVehicle={assignedVehicle} />
+              <FinancialInfoCard driver={driver} />
             </div>
             <DocumentsCard driver={driver} />
           </div>

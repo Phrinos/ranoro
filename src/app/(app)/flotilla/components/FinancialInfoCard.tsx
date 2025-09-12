@@ -12,10 +12,9 @@ import Link from 'next/link';
 
 interface FinancialInfoCardProps {
   driver: Driver;
-  assignedVehicle: Vehicle | null;
 }
 
-export function FinancialInfoCard({ driver, assignedVehicle }: FinancialInfoCardProps) {
+export function FinancialInfoCard({ driver }: FinancialInfoCardProps) {
   const financialInfo = [
     { icon: FileText, label: "Fecha de Contrato", value: driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'N/A' },
     { icon: DollarSign, label: "Depósito Requerido", value: formatCurrency(driver.requiredDepositAmount) },
@@ -39,22 +38,6 @@ export function FinancialInfoCard({ driver, assignedVehicle }: FinancialInfoCard
               <span className="font-semibold">{item.value || '$0.00'}</span>
             </div>
           ))}
-        </div>
-        <div>
-          <h4 className="font-semibold text-sm mb-2">Vehículo Vinculado</h4>
-          <div className="flex items-center justify-between text-sm p-3 bg-muted/50 rounded-md">
-            <div className="flex items-center gap-3">
-              <Car className="h-5 w-5 text-muted-foreground" />
-              <span className="text-muted-foreground">Vehículo Actual</span>
-            </div>
-            {assignedVehicle ? (
-              <Link href={`/flotilla/vehiculos/${assignedVehicle.id}`} className="font-semibold hover:underline">
-                {assignedVehicle.make} {assignedVehicle.model} ({assignedVehicle.licensePlate})
-              </Link>
-            ) : (
-              <span className="font-semibold">Sin vehículo asignado</span>
-            )}
-          </div>
         </div>
       </CardContent>
     </Card>
