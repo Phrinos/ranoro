@@ -329,3 +329,4 @@ export default function BalanceTabContent({
     </div>
   );
 }
+
