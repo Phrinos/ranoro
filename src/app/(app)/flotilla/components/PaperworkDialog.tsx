@@ -56,7 +56,7 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-6">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{paperwork ? 'Editar Trámite' : 'Añadir Trámite'}</DialogTitle>
           <DialogDescription>
@@ -64,7 +64,7 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSave)} className="space-y-4 pt-4">
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem><FormLabel>Nombre del Trámite</FormLabel><FormControl><Input {...field} placeholder="Ej: Verificación, Tenencia..." /></FormControl><FormMessage /></FormItem>
             )}/>
@@ -85,7 +85,7 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
                 </Popover>
               <FormMessage /></FormItem>
             )}/>
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit">Guardar</Button>
             </DialogFooter>

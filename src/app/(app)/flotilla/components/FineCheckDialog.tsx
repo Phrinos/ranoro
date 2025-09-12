@@ -72,7 +72,7 @@ export function FineCheckDialog({ open, onOpenChange, fineCheck, onSave }: FineC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-6">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{fineCheck ? 'Ver Revisión de Multas' : 'Nueva Revisión de Multas'}</DialogTitle>
           <DialogDescription>
@@ -80,7 +80,7 @@ export function FineCheckDialog({ open, onOpenChange, fineCheck, onSave }: FineC
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSave)} className="space-y-4 pt-4">
             <FormField control={form.control} name="checkDate" render={({ field }) => (
               <FormItem><FormLabel>Fecha de Revisión</FormLabel>
                 <Popover>
@@ -121,7 +121,7 @@ export function FineCheckDialog({ open, onOpenChange, fineCheck, onSave }: FineC
               </div>
             )}
 
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit">Guardar Revisión</Button>
             </DialogFooter>

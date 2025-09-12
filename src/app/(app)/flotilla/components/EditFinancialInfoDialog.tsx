@@ -62,29 +62,25 @@ export function EditFinancialInfoDialog({ open, onOpenChange, driver, onSave }: 
           <DialogDescription>Actualiza los detalles del contrato y los depósitos.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-            <div className="p-4 space-y-4">
-              <FormField control={form.control} name="contractDate" render={({ field }) => (
-                <FormItem className="flex flex-col"><FormLabel>Fecha de Contrato</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                          {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button></FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent>
-                  </Popover>
-                <FormMessage /></FormItem>
-              )}/>
-              <FormField control={form.control} name="requiredDepositAmount" render={({ field }) => (
-                <FormItem><FormLabel>Depósito Requerido ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
-              )}/>
-               <FormField control={form.control} name="depositAmount" render={({ field }) => (
-                <FormItem><FormLabel>Depósito Entregado ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
-              )}/>
-            </div>
-            <DialogFooter className="p-4 pt-0">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
+            <FormField control={form.control} name="contractDate" render={({ field }) => (
+              <FormItem className="flex flex-col"><FormLabel>Fecha de Contrato</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                      {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button></FormControl></PopoverTrigger>
+                  <PopoverContent><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent>
+                </Popover>
+              <FormMessage /></FormItem>
+            )}/>
+            <FormField control={form.control} name="requiredDepositAmount" render={({ field }) => (
+              <FormItem><FormLabel>Depósito Requerido ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+            )}/>
+             <FormField control={form.control} name="depositAmount" render={({ field }) => (
+              <FormItem><FormLabel>Depósito Entregado ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+            )}/>
+            <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

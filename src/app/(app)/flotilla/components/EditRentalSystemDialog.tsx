@@ -60,7 +60,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-6">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Editar Sistema de Renta</DialogTitle>
           <DialogDescription>
@@ -68,7 +68,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
               <FormField control={form.control} name="dailyRentalCost" render={({ field }) => (
                 <FormItem><FormLabel>Renta Diaria ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
               )}/>
@@ -81,7 +81,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
               <FormField control={form.control} name="adminCost" render={({ field }) => (
                 <FormItem><FormLabel>Administración Mensual ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
               )}/>
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
