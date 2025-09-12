@@ -29,7 +29,6 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { cn } from '@/lib/utils';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { ServiceSheetContent } from '@/components/ServiceSheetContent';
 import ReactDOMServer from 'react-dom/server';
 
 const cashTransactionSchema = z.object({
