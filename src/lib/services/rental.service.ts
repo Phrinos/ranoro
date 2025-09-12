@@ -17,7 +17,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { RentalPayment, DailyRentalCharge, Driver, Vehicle } from "@/types";
+import type { RentalPayment, DailyRentalCharge, Driver, Vehicle, OwnerWithdrawal, VehicleExpense } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
 import { personnelService } from './personnel.service';
@@ -25,13 +25,19 @@ import { startOfDay, differenceInCalendarDays, addDays, parseISO } from 'date-fn
 
 // --- Daily Rental Charges ---
 
-const onDailyChargesUpdate = (driverId: string, callback: (charges: DailyRentalCharge[]) => void): (() => void) => {
+const onDailyChargesUpdate = (callback: (charges: DailyRentalCharge[]) => void, driverId?: string): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "dailyRentalCharges"), where("driverId", "==", driverId), orderBy("date", "asc"));
+    let q;
+    if (driverId) {
+        q = query(collection(db, "dailyRentalCharges"), where("driverId", "==", driverId), orderBy("date", "asc"));
+    } else {
+        q = query(collection(db, "dailyRentalCharges"), orderBy("date", "asc"));
+    }
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyRentalCharge)));
     });
 };
+
 
 const generateMissingCharges = async (driver: Driver, vehicle: Vehicle): Promise<void> => {
     if (!db || !driver.contractDate || !vehicle.dailyRentalCost || vehicle.dailyRentalCost <= 0) return;
@@ -73,8 +79,7 @@ const generateMissingCharges = async (driver: Driver, vehicle: Vehicle): Promise
 
 const regenerateAllChargesForAllDrivers = async (): Promise<number> => {
     if (!db) throw new Error("Database not initialized.");
-
-    // 1. Fetch all active drivers and all fleet vehicles
+    
     const allDrivers = await personnelService.onDriversUpdatePromise();
     const allVehicles = await inventoryService.onVehiclesUpdatePromise();
     
@@ -127,12 +132,16 @@ const deleteDailyCharge = async (id: string): Promise<void> => {
 };
 
 
-// --- Manual Debts (Handled in personnelService) ---
 // --- Rental Payments ---
 
-const onRentalPaymentsUpdate = (driverId: string, callback: (payments: RentalPayment[]) => void): (() => void) => {
+const onRentalPaymentsUpdate = (callback: (payments: RentalPayment[]) => void, driverId?: string): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "rentalPayments"), where("driverId", "==", driverId), orderBy("paymentDate", "asc"));
+    let q;
+    if (driverId) {
+        q = query(collection(db, "rentalPayments"), where("driverId", "==", driverId), orderBy("paymentDate", "asc"));
+    } else {
+        q = query(collection(db, "rentalPayments"), orderBy("paymentDate", "asc"));
+    }
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RentalPayment)));
     });
@@ -168,6 +177,37 @@ const deleteRentalPayment = async (paymentId: string): Promise<void> => {
   await deleteDoc(doc(db, "rentalPayments", paymentId));
 };
 
+// --- Owner Withdrawals ---
+const onOwnerWithdrawalsUpdate = (callback: (withdrawals: OwnerWithdrawal[]) => void): (() => void) => {
+    if (!db) return () => {};
+    return onSnapshot(query(collection(db, "ownerWithdrawals"), orderBy("date", "desc")), (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as OwnerWithdrawal)));
+    });
+};
+
+const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): Promise<OwnerWithdrawal> => {
+    const newWithdrawal = { ...data, date: new Date().toISOString() };
+    const docRef = await addDoc(collection(db, 'ownerWithdrawals'), cleanObjectForFirestore(newWithdrawal));
+    return { id: docRef.id, ...newWithdrawal };
+};
+
+// --- Vehicle Expenses ---
+const onVehicleExpensesUpdate = (callback: (expenses: VehicleExpense[]) => void): (() => void) => {
+    if (!db) return () => {};
+    return onSnapshot(query(collection(db, "vehicleExpenses"), orderBy("date", "desc")), (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehicleExpense)));
+    });
+};
+
+const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'vehicleLicensePlate'>): Promise<VehicleExpense> => {
+    const vehicle = await inventoryService.getVehicleById(data.vehicleId);
+    if (!vehicle) throw new Error("Vehicle not found");
+
+    const newExpense = { ...data, date: new Date().toISOString(), vehicleLicensePlate: vehicle.licensePlate };
+    const docRef = await addDoc(collection(db, 'vehicleExpenses'), cleanObjectForFirestore(newExpense));
+    return { id: docRef.id, ...newExpense };
+};
+
 
 export const rentalService = {
   onDailyChargesUpdate,
@@ -178,4 +218,8 @@ export const rentalService = {
   onRentalPaymentsUpdate,
   addRentalPayment,
   deleteRentalPayment,
+  onOwnerWithdrawalsUpdate,
+  addOwnerWithdrawal,
+  onVehicleExpensesUpdate,
+  addVehicleExpense,
 };

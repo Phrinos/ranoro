@@ -1,38 +1,28 @@
-// src/app/(app)/flotilla/vehiculos/page.tsx
+// src/app/(app)/flotilla/vehiculos/components/FlotillaVehiculosTab.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, ChevronRight } from 'lucide-react';
-import { inventoryService } from '@/lib/services';
 import type { Vehicle } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
 
-export default function FlotillaVehiculosPage() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface FlotillaVehiculosTabProps {
+  vehicles: Vehicle[];
+}
+
+export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
   const { toast } = useToast();
   const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = inventoryService.onVehiclesUpdate((allVehicles) => {
-      setVehicles(allVehicles.filter(v => v.isFleetVehicle === true));
-      setIsLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const sortedVehicles = useMemo(() => {
     return [...vehicles].sort((a, b) => {
       const plateComparison = a.licensePlate.localeCompare(b.licensePlate);
       if (plateComparison !== 0) return plateComparison;
-      
       return `${a.make} ${a.model}`.localeCompare(`${b.make} ${b.model}`);
     });
   }, [vehicles]);
@@ -46,40 +36,29 @@ export default function FlotillaVehiculosPage() {
   };
 
   return (
-    <>
-      <PageHeader
-        title="Vehículos de Flotilla"
-        description="Administra los vehículos que forman parte de tu flotilla de renta."
-        actions={
+    <div className="space-y-4">
+       <div className="flex justify-end">
           <Button onClick={handleAddVehicle}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Añadir Vehículo
           </Button>
-        }
-      />
-      <div className="p-1">
+        </div>
         <Card>
           <CardContent className="pt-6">
             <div className="rounded-md border">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-black">
                   <TableRow>
-                    <TableHead>Placa</TableHead>
-                    <TableHead>Marca y Modelo</TableHead>
-                    <TableHead>Año</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Conductor Asignado</TableHead>
-                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="text-white font-bold">Placa</TableHead>
+                    <TableHead className="text-white font-bold">Marca y Modelo</TableHead>
+                    <TableHead className="text-white font-bold">Año</TableHead>
+                    <TableHead className="text-white font-bold">Estado</TableHead>
+                    <TableHead className="text-white font-bold">Conductor Asignado</TableHead>
+                    <TableHead className="w-10 text-white font-bold"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
-                        <Skeleton className="h-6 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ) : sortedVehicles.length > 0 ? (
+                  {sortedVehicles.length > 0 ? (
                     sortedVehicles.map(vehicle => (
                       <TableRow 
                         key={vehicle.id} 
@@ -110,7 +89,6 @@ export default function FlotillaVehiculosPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </>
+    </div>
   );
 }

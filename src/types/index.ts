@@ -136,6 +136,42 @@ export type DailyRentalCharge = {
     vehicleLicensePlate: string;
 };
 
+export type RentalPayment = {
+    id: string;
+    driverId: string;
+    driverName: string;
+    vehicleLicensePlate: string;
+    paymentDate: string;
+    amount: number;
+    daysCovered: number;
+    note?: string;
+};
+
+export type OwnerWithdrawal = {
+    id: string;
+    ownerName: string;
+    date: string;
+    amount: number;
+    note?: string;
+};
+
+export type VehicleExpense = {
+    id: string;
+    vehicleId: string;
+    vehicleLicensePlate: string;
+    date: string;
+    amount: number;
+    description: string;
+};
+
+export type ManualDebtEntry = {
+    id: string;
+    driverId: string;
+    date: string;
+    amount: number;
+    note: string;
+};
+
 export type ServiceRecord = {
   id: string;
   vehicleId: string;
@@ -145,7 +181,6 @@ export type ServiceRecord = {
     itemId: string;
     itemName: string;
     quantity: number;
-    unitPrice: number;
     total: number;
   }[];
   customerSignatureDataUrl?: string;

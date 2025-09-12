@@ -48,8 +48,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: 'Mi Taller', permissions: ['vehicles:manage'] },
   
   // Flotilla
-  { label: 'Vehículos', path: '/flotilla/vehiculos', icon: Truck, groupTag: 'Flotilla', permissions: ['fleet:manage'] },
-  { label: 'Conductores', path: '/flotilla/conductores', icon: Users, groupTag: 'Flotilla', permissions: ['fleet:manage'] },
+  { label: 'Flotilla', path: '/flotilla', icon: Truck, groupTag: 'Flotilla', permissions: ['fleet:manage'] },
 
   // Operaciones
   { label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones', permissions: ['pos:view_sales'] },
@@ -106,7 +105,7 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
 
-    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/finanzas', '/personal', '/opciones', '/facturacion-admin', '/administracion', '/ai', '/flotilla/vehiculos', '/flotilla/conductores'];
+    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/finanzas', '/personal', '/opciones', '/facturacion-admin', '/administracion', '/ai', '/flotilla'];
     
     if (parentRoutes.includes(cleanEntryPath) && cleanPathname.startsWith(cleanEntryPath)) {
         if (cleanPathname === cleanEntryPath) {

@@ -2,19 +2,20 @@
 "use client";
 
 import React from 'react';
-import type { Driver, Vehicle } from '@/types';
+import type { Driver } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { FileText, DollarSign, Car } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, DollarSign, Edit } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import Link from 'next/link';
 
 interface FinancialInfoCardProps {
   driver: Driver;
+  onEdit: () => void;
 }
 
-export function FinancialInfoCard({ driver }: FinancialInfoCardProps) {
+export function FinancialInfoCard({ driver, onEdit }: FinancialInfoCardProps) {
   const financialInfo = [
     { icon: FileText, label: "Fecha de Contrato", value: driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'N/A' },
     { icon: DollarSign, label: "Depósito Requerido", value: formatCurrency(driver.requiredDepositAmount) },
@@ -23,22 +24,25 @@ export function FinancialInfoCard({ driver }: FinancialInfoCardProps) {
 
   return (
     <Card className="h-full">
-      <CardHeader>
-        <CardTitle>Información Financiera y Contrato</CardTitle>
-        <CardDescription>Detalles del acuerdo y estado financiero.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-3">
-          {financialInfo.map(item => (
-            <div key={item.label} className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-3">
-                <item.icon className="h-5 w-5 text-muted-foreground" />
-                <span className="text-muted-foreground">{item.label}</span>
-              </div>
-              <span className="font-semibold">{item.value || '$0.00'}</span>
-            </div>
-          ))}
+      <CardHeader className="flex-row items-center justify-between">
+        <div>
+          <CardTitle>Información Financiera y Contrato</CardTitle>
+          <CardDescription>Detalles del acuerdo y estado financiero.</CardDescription>
         </div>
+        <Button variant="outline" size="icon" onClick={onEdit}>
+          <Edit className="h-4 w-4" />
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {financialInfo.map(item => (
+          <div key={item.label} className="flex items-center justify-between text-sm py-2 border-b last:border-b-0">
+            <div className="flex items-center gap-3">
+              <item.icon className="h-5 w-5 text-muted-foreground" />
+              <span className="text-muted-foreground">{item.label}</span>
+            </div>
+            <span className="font-semibold">{item.value || '$0.00'}</span>
+          </div>
+        ))}
       </CardContent>
     </Card>
   );

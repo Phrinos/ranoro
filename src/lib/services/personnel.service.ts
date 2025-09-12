@@ -23,28 +23,26 @@ import { inventoryService } from './inventory.service';
 // --- Unified Personnel ---
 const onPersonnelUpdate = (callback: (personnel: Personnel[]) => void): (() => void) => {
     if (!db) return () => {};
-    const personnelUnsubscribe = onSnapshot(query(collection(db, "users")), (snapshot) => {
-        const personnelList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel));
-        callback(personnelList);
+    const unsub = onSnapshot(query(collection(db, "users")), (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel)));
     });
-    return () => personnelUnsubscribe();
+    return () => unsub();
 };
 
 const onPersonnelUpdatePromise = async (): Promise<Personnel[]> => {
     if (!db) return [];
-    const personnelSnapshot = await getDocs(collection(db, "users"));
-    return personnelSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel));
+    const snapshot = await getDocs(collection(db, "users"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Personnel));
 };
 
 const savePersonnel = async (data: UserFormValues, id?: string): Promise<User> => {
     if (!db) throw new Error("Database not initialized.");
     const dataToSave = { ...data, hireDate: data.hireDate ? new Date(data.hireDate).toISOString() : undefined };
-    const cleanedData = cleanObjectForFirestore(dataToSave);
     if (id) {
-        await updateDoc(doc(db, 'users', id), cleanedData);
+        await updateDoc(doc(db, 'users', id), cleanObjectForFirestore(dataToSave));
         return { id, ...dataToSave } as User;
     }
-    const fullData = { ...cleanedData, isArchived: false, createdAt: new Date().toISOString() };
+    const fullData = { ...cleanObjectForFirestore(dataToSave), isArchived: false, createdAt: new Date().toISOString() };
     const docRef = await addDoc(collection(db, 'users'), fullData);
     return { id: docRef.id, ...fullData } as User;
 };
@@ -57,10 +55,10 @@ const archivePersonnel = async (id: string, isArchived: boolean): Promise<void> 
 // --- Areas ---
 const onAreasUpdate = (callback: (areas: Area[]) => void): (() => void) => {
     if (!db) return () => {};
-    const unsubscribe = onSnapshot(collection(db, "workAreas"), (snapshot) => {
+    const unsub = onSnapshot(collection(db, "workAreas"), (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Area)));
     });
-    return unsubscribe;
+    return unsub;
 };
 
 const saveArea = async (data: Omit<Area, 'id'>, id?: string): Promise<Area> => {
@@ -81,8 +79,7 @@ const deleteArea = async (id: string): Promise<void> => {
 // --- Drivers ---
 const onDriversUpdate = (callback: (drivers: Driver[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "drivers"));
-    return onSnapshot(q, (snapshot) => {
+    return onSnapshot(query(collection(db, "drivers")), (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Driver)));
     });
 };
@@ -133,18 +130,33 @@ const assignVehicleToDriver = async (vehicle: Vehicle, newDriverId: string | nul
 };
 
 // --- Manual Debts ---
-const onManualDebtsUpdate = (driverId: string, callback: (debts: ManualDebtEntry[]) => void): (() => void) => {
+const onManualDebtsUpdate = (callback: (debts: ManualDebtEntry[]) => void, driverId?: string): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "manualDebts"), where("driverId", "==", driverId), orderBy("date", "asc"));
+    let q;
+    if (driverId) {
+        q = query(collection(db, "manualDebts"), where("driverId", "==", driverId), orderBy("date", "asc"));
+    } else {
+        q = query(collection(db, "manualDebts"), orderBy("date", "asc"));
+    }
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ManualDebtEntry)));
     });
 };
 
-const saveManualDebt = async (driverId: string, data: { date: string; amount: number; note: string; }): Promise<void> => {
+
+const saveManualDebt = async (driverId: string, data: { date: string; amount: number; note: string; }, debtId?: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const debtData = { ...data, driverId };
-    await addDoc(collection(db, 'manualDebts'), cleanObjectForFirestore(debtData));
+    if (debtId) {
+        await updateDoc(doc(db, 'manualDebts', debtId), cleanObjectForFirestore(debtData));
+    } else {
+        await addDoc(collection(db, 'manualDebts'), cleanObjectForFirestore(debtData));
+    }
+};
+
+const deleteManualDebt = async (debtId: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await deleteDoc(doc(db, 'manualDebts', debtId));
 };
 
 
@@ -163,4 +175,5 @@ export const personnelService = {
     assignVehicleToDriver,
     onManualDebtsUpdate,
     saveManualDebt,
+    deleteManualDebt,
 };

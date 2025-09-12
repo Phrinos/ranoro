@@ -44,6 +44,8 @@ export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualC
     resolver: zodResolver(chargeSchema),
     defaultValues: {
       date: new Date(),
+      amount: 0,
+      note: '',
     },
   });
 
@@ -73,17 +75,17 @@ export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualC
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-4">
-             <FormField control={form.control} name="date" render={({ field }) => (
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
+            <FormField control={form.control} name="date" render={({ field }) => (
               <FormItem className="flex flex-col"><FormLabel>Fecha del Cargo</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                         {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
                       </Button></FormControl>
                   </PopoverTrigger>
-                  <PopoverContent><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                  <PopoverContent><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent>
                 </Popover>
               <FormMessage /></FormItem>
             )}/>
@@ -93,7 +95,7 @@ export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualC
             <FormField control={form.control} name="note" render={({ field }) => (
               <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
             )}/>
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
