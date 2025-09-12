@@ -1,4 +1,4 @@
-
+// src/lib/services/personnel.service.ts
 
 import {
   collection,
@@ -12,11 +12,12 @@ import {
   query,
   where,
   getDocs,
+  orderBy,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { Technician, AdministrativeStaff, Personnel, Area, User, Driver, Vehicle } from "@/types";
+import type { Technician, AdministrativeStaff, Personnel, Area, User, Driver, Vehicle, ManualDebtEntry } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
-import type { UserFormValues } from '@/app/(app)/administracion/components/user-form';
+import type { UserFormValues } from '@/app/(app)/personal/components/user-form';
 import { inventoryService } from './inventory.service';
 
 // --- Unified Personnel ---
@@ -163,6 +164,15 @@ const assignVehicleToDriver = async (
     await batch.commit();
 };
 
+const onManualDebtsUpdate = (driverId: string, callback: (debts: ManualDebtEntry[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const debtsRef = collection(db, 'drivers', driverId, 'manualDebts');
+    const q = query(debtsRef, orderBy("date", "asc"));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ManualDebtEntry)));
+    });
+};
+
 
 export const personnelService = {
     onPersonnelUpdate,
@@ -177,4 +187,5 @@ export const personnelService = {
     getDriverById,
     saveDriver,
     assignVehicleToDriver,
+    onManualDebtsUpdate,
 };

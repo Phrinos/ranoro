@@ -1,4 +1,4 @@
-
+// src/lib/services/rental.service.ts
 
 import {
   collection,
