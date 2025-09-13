@@ -1,7 +1,8 @@
 // src/app/(app)/flotilla/page.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { inventoryService, personnelService, rentalService } from '@/lib/services';
@@ -9,18 +10,20 @@ import type { Vehicle, Driver, DailyRentalCharge, RentalPayment, ManualDebtEntry
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+import { Button } from '@/components/ui/button';
+import { Loader2, MinusCircle, PlusCircle } from 'lucide-react';
 
 import { FlotillaVehiculosTab } from './vehiculos/components/FlotillaVehiculosTab';
 import { FlotillaConductoresTab } from './conductores/components/FlotillaConductoresTab';
 import { FlotillaBalanceTab } from './balance/components/FlotillaBalanceTab';
 import { FlotillaCajaTab } from './caja/components/FlotillaCajaTab';
-import { FlotillaHeader } from './components/FlotillaHeader';
 
 import { GlobalTransactionDialog, type GlobalTransactionFormValues } from './components/GlobalTransactionDialog';
 import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/OwnerWithdrawalDialog';
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/VehicleExpenseDialog';
 
-export default function FlotillaPage() {
+function FlotillaPageComponent({ tab }: { tab?: string }) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [dailyCharges, setDailyCharges] = useState<DailyRentalCharge[]>([]);
@@ -35,6 +38,10 @@ export default function FlotillaPage() {
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const { toast } = useToast();
+  
+  const defaultTab = tab || 'balance';
+  const [activeTab, setActiveTab] = useState(defaultTab);
+
 
   useEffect(() => {
     const unsubs = [
@@ -99,51 +106,43 @@ export default function FlotillaPage() {
       toast({ title: "Error", description: "No se pudo registrar el gasto.", variant: "destructive" });
     }
   };
+  
+  const pageActions = (
+    <div className="flex flex-col sm:flex-row gap-2">
+        <Button onClick={() => handleOpenTransactionDialog('charge')} variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50">
+            <MinusCircle className="mr-2 h-4 w-4 text-red-500" /> Generar Cargo
+        </Button>
+        <Button onClick={() => handleOpenTransactionDialog('payment')} variant="outline" className="w-full sm:w-auto bg-white border-green-500 text-black font-bold hover:bg-green-50">
+            <PlusCircle className="mr-2 h-4 w-4 text-green-700" /> Registrar Pago
+        </Button>
+    </div>
+  );
+
+  const tabs = [
+    { value: 'balance', label: 'Balance General', content: isLoading ? <Skeleton className="h-96" /> : <FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} /> },
+    { value: 'conductores', label: 'Conductores', content: isLoading ? <Skeleton className="h-96" /> : <FlotillaConductoresTab drivers={drivers} /> },
+    { value: 'vehiculos', label: 'Vehículos', content: isLoading ? <Skeleton className="h-96" /> : <FlotillaVehiculosTab vehicles={vehicles.filter(v => v.isFleetVehicle)} /> },
+    { value: 'caja', label: 'Caja', content: isLoading ? <Skeleton className="h-96" /> : <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allDailyCharges={dailyCharges} allManualDebts={manualDebts} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} /> },
+  ];
+
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    );
+  }
 
   return (
     <>
-      <PageHeader
-        title="Gestión de Flotilla"
-        description="Administra tus vehículos, conductores y finanzas de la flotilla."
-      />
-      
-      <FlotillaHeader 
-        onAddPayment={() => handleOpenTransactionDialog('payment')}
-        onAddCharge={() => handleOpenTransactionDialog('charge')}
-      />
-
-      <Tabs defaultValue="balance" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="balance">Balance General</TabsTrigger>
-          <TabsTrigger value="conductores">Conductores</TabsTrigger>
-          <TabsTrigger value="vehiculos">Vehículos</TabsTrigger>
-          <TabsTrigger value="caja">Caja</TabsTrigger>
-        </TabsList>
-        <TabsContent value="balance" className="mt-6">
-          {isLoading ? <Skeleton className="h-96" /> : <FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} />}
-        </TabsContent>
-        <TabsContent value="conductores" className="mt-6">
-          {isLoading ? <Skeleton className="h-96" /> : <FlotillaConductoresTab drivers={drivers} />}
-        </TabsContent>
-        <TabsContent value="vehiculos" className="mt-6">
-          {isLoading ? <Skeleton className="h-96" /> : <FlotillaVehiculosTab vehicles={vehicles.filter(v => v.isFleetVehicle)} />}
-        </TabsContent>
-        <TabsContent value="caja" className="mt-6">
-            {isLoading ? <Skeleton className="h-96" /> : 
-              <FlotillaCajaTab 
-                payments={payments} 
-                withdrawals={withdrawals} 
-                expenses={expenses}
-                drivers={drivers}
-                vehicles={vehicles}
-                allDailyCharges={dailyCharges}
-                allManualDebts={manualDebts}
-                onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)}
-                onAddExpense={() => setIsExpenseDialogOpen(true)}
-              />
-            }
-        </TabsContent>
-      </Tabs>
+       <TabbedPageLayout
+            title="Gestión de Flotilla"
+            description="Administra tus vehículos, conductores y finanzas de la flotilla."
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={tabs}
+            actions={pageActions}
+        />
       
       <GlobalTransactionDialog
         open={isTransactionDialogOpen}
@@ -155,5 +154,17 @@ export default function FlotillaPage() {
       <OwnerWithdrawalDialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen} vehicles={vehicles} onSave={handleSaveWithdrawal} />
       <VehicleExpenseDialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen} vehicles={vehicles} onSave={handleSaveExpense} />
     </>
+  );
+}
+
+export default function FlotillaPageWrapper() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tab = searchParams.get('tab') as string | undefined;
+
+  return (
+    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+        <FlotillaPageComponent tab={tab} />
+    </Suspense>
   );
 }
