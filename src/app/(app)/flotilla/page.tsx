@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { inventoryService, personnelService, rentalService } from '@/lib/services';
@@ -23,7 +23,10 @@ import { GlobalTransactionDialog, type GlobalTransactionFormValues } from './com
 import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/OwnerWithdrawalDialog';
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/VehicleExpenseDialog';
 
-function FlotillaPageComponent({ tab }: { tab?: string }) {
+function FlotillaPageComponent() {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get('tab');
+  
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [dailyCharges, setDailyCharges] = useState<DailyRentalCharge[]>([]);
@@ -158,13 +161,9 @@ function FlotillaPageComponent({ tab }: { tab?: string }) {
 }
 
 export default function FlotillaPageWrapper() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tab = searchParams.get('tab') as string | undefined;
-
   return (
     <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-        <FlotillaPageComponent tab={tab} />
+        <FlotillaPageComponent />
     </Suspense>
   );
 }
