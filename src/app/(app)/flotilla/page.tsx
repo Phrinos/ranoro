@@ -67,7 +67,7 @@ export default function FlotillaPage() {
       if (transactionType === 'payment') {
         const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
         if (!vehicle) throw new Error("Vehicle not found for payment.");
-        await rentalService.addRentalPayment(driver, vehicle, values.amount, values.note, values.date);
+        await rentalService.addRentalPayment(driver, vehicle, values.amount, values.note, values.date, values.paymentMethod);
         toast({ title: "Pago Registrado" });
       } else {
         await personnelService.saveManualDebt(values.driverId, { ...values, date: values.date.toISOString() });
@@ -135,6 +135,8 @@ export default function FlotillaPage() {
                 expenses={expenses}
                 drivers={drivers}
                 vehicles={vehicles}
+                allDailyCharges={dailyCharges}
+                allManualDebts={manualDebts}
                 onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)}
                 onAddExpense={() => setIsExpenseDialogOpen(true)}
               />

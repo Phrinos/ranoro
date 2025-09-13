@@ -2,10 +2,10 @@
 "use client";
 
 import React, { useMemo, useState, useRef } from 'react';
-import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, WorkshopInfo } from '@/types';
+import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, WorkshopInfo, ManualDebtEntry, DailyRentalCharge } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, cn, calculateDriverDebt } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -27,13 +27,26 @@ interface FlotillaCajaTabProps {
   expenses: VehicleExpense[];
   drivers: Driver[];
   vehicles: Vehicle[];
+  allManualDebts: ManualDebtEntry[];
+  allDailyCharges: DailyRentalCharge[];
   onAddWithdrawal: () => void;
   onAddExpense: () => void;
 }
 
-export function FlotillaCajaTab({ payments, withdrawals, expenses, drivers, vehicles, onAddWithdrawal, onAddExpense }: FlotillaCajaTabProps) {
+export function FlotillaCajaTab({ 
+    payments, 
+    withdrawals, 
+    expenses, 
+    drivers, 
+    vehicles,
+    allManualDebts,
+    allDailyCharges,
+    onAddWithdrawal, 
+    onAddExpense 
+}: FlotillaCajaTabProps) {
   const [isTicketOpen, setIsTicketOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<RentalPayment | null>(null);
+  const [selectedDriverBalance, setSelectedDriverBalance] = useState(0);
   const ticketContentRef = useRef<HTMLDivElement>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
 
@@ -80,6 +93,20 @@ export function FlotillaCajaTab({ payments, withdrawals, expenses, drivers, vehi
   };
 
   const handleShowTicket = (payment: RentalPayment) => {
+    const driver = drivers.find(d => d.id === payment.driverId);
+    if (!driver) return;
+
+    const driverPayments = payments.filter(p => p.driverId === driver.id);
+    const driverDebts = allManualDebts.filter(d => d.driverId === driver.id);
+    const driverDailyCharges = allDailyCharges.filter(c => c.driverId === driver.id);
+    
+    const totalPayments = driverPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalCharges = driverDailyCharges.reduce((sum, c) => sum + c.amount, 0);
+    const totalManualDebts = driverDebts.reduce((sum, d) => sum + d.amount, 0);
+
+    const balance = totalPayments - (totalCharges + totalManualDebts);
+
+    setSelectedDriverBalance(balance);
     setSelectedPayment(payment);
     setIsTicketOpen(true);
   };
@@ -184,6 +211,7 @@ export function FlotillaCajaTab({ payments, withdrawals, expenses, drivers, vehi
                 payment={selectedPayment}
                 driver={drivers.find(d => d.id === selectedPayment.driverId)}
                 vehicle={vehicles.find(v => v.id === drivers.find(d => d.id === selectedPayment.driverId)?.assignedVehicleId)}
+                driverBalance={selectedDriverBalance}
                 previewWorkshopInfo={workshopInfo || undefined}
             />
           </UnifiedPreviewDialog>

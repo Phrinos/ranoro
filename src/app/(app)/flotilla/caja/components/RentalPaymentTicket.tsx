@@ -19,11 +19,12 @@ interface RentalPaymentTicketProps {
   payment: RentalPayment;
   driver?: Driver;
   vehicle?: Vehicle;
+  driverBalance: number;
   previewWorkshopInfo?: Partial<WorkshopInfo>;
 }
 
 export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymentTicketProps>(
-  ({ payment, driver, vehicle, previewWorkshopInfo }, ref) => {
+  ({ payment, driver, vehicle, driverBalance, previewWorkshopInfo }, ref) => {
     const workshopInfo = { ...initialWorkshopInfo, ...previewWorkshopInfo };
 
     const formattedDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
@@ -71,7 +72,7 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
             <p><strong>Vehículo:</strong> {vehicle?.make} {vehicle?.model} ({payment.vehicleLicensePlate})</p>
             <div className="border-t border-dashed border-neutral-400 my-2"></div>
             <p><strong>Fecha del Pago:</strong> {formattedPaymentDate}</p>
-            <p><strong>Método de Pago:</strong> Abono a cuenta</p>
+            <p><strong>Método de Pago:</strong> {payment.paymentMethod || 'Efectivo'}</p>
             <p><strong>Descripción:</strong> {payment.note || 'Abono de Renta'}</p>
             <div className="border-t border-dashed border-neutral-400 my-2"></div>
         </div>
@@ -80,6 +81,10 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
             <div className="flex justify-between font-bold text-lg">
                 <span>Total Pagado:</span>
                 <span>{formatCurrency(payment.amount)}</span>
+            </div>
+            <div className={cn("flex justify-between font-semibold text-base", driverBalance >= 0 ? 'text-green-700' : 'text-red-700')}>
+                <span>Saldo Global:</span>
+                <span>{formatCurrency(driverBalance)}</span>
             </div>
         </div>
         

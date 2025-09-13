@@ -17,7 +17,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { RentalPayment, DailyRentalCharge, Driver, Vehicle, OwnerWithdrawal, VehicleExpense } from "@/types";
+import type { RentalPayment, DailyRentalCharge, Driver, Vehicle, OwnerWithdrawal, VehicleExpense, PaymentMethod } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
 import { personnelService } from './personnel.service';
@@ -152,7 +152,8 @@ const addRentalPayment = async (
   vehicle: Vehicle,
   amount: number,
   note?: string,
-  paymentDate: Date = new Date()
+  paymentDate: Date = new Date(),
+  paymentMethod: PaymentMethod = 'Efectivo'
 ): Promise<RentalPayment> => {
     if (!db) throw new Error("Database not initialized.");
 
@@ -164,6 +165,7 @@ const addRentalPayment = async (
         vehicleLicensePlate: vehicle.licensePlate,
         paymentDate: paymentDate.toISOString(),
         amount,
+        paymentMethod,
         daysCovered: dailyRate > 0 ? amount / dailyRate : 0,
         note: note || `Abono de Renta`,
     };
@@ -171,6 +173,7 @@ const addRentalPayment = async (
     const docRef = await addDoc(collection(db, 'rentalPayments'), cleanObjectForFirestore(newPayment));
     return { id: docRef.id, ...newPayment };
 };
+
 
 const deleteRentalPayment = async (paymentId: string): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");

@@ -129,7 +129,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   
   const handleSavePayment = async (data: PaymentFormValues) => {
     if (!driver || !vehicle) return;
-    const savedPayment = await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.paymentDate);
+    const savedPayment = await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.paymentDate, data.paymentMethod);
     toast({ title: "Pago Registrado" });
     setIsPaymentDialogOpen(false);
     setSelectedPayment(savedPayment);
@@ -242,6 +242,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
                 payment={selectedPayment}
                 driver={driver}
                 vehicle={vehicle}
+                driverBalance={totalBalance}
                 previewWorkshopInfo={workshopInfo || undefined}
             />
           </UnifiedPreviewDialog>
