@@ -49,14 +49,14 @@ export function FlotillaConductoresTab({ drivers }: FlotillaConductoresTabProps)
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end gap-2">
-        <Button onClick={handleAddDriver}>
+      <div className="flex flex-col sm:flex-row justify-end gap-2">
+        <Button onClick={handleAddDriver} className="w-full sm:w-auto">
           <PlusCircle className="mr-2 h-4 w-4" />
           Añadir Conductor
         </Button>
         <ConfirmDialog
           triggerButton={
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Wrench className="mr-2 h-4 w-4" />
               Regenerar Cargos
             </Button>
@@ -68,13 +68,13 @@ export function FlotillaConductoresTab({ drivers }: FlotillaConductoresTabProps)
       </div>
       <Card>
         <CardContent className="pt-6">
-          <div className="rounded-md border">
+          <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader className="bg-black">
                 <TableRow>
                   <TableHead className="text-white font-bold">Estado</TableHead>
                   <TableHead className="text-white font-bold">Nombre</TableHead>
-                  <TableHead className="text-white font-bold">Teléfono</TableHead>
+                  <TableHead className="text-white font-bold hidden sm:table-cell">Teléfono</TableHead>
                   <TableHead className="text-white font-bold">Vehículo Asignado</TableHead>
                   <TableHead className="w-10 text-white font-bold"></TableHead>
                 </TableRow>
@@ -93,7 +93,7 @@ export function FlotillaConductoresTab({ drivers }: FlotillaConductoresTabProps)
                         </Badge>
                       </TableCell>
                       <TableCell className={cn("font-semibold", driver.isArchived && "text-muted-foreground")}>{driver.name}</TableCell>
-                      <TableCell>{driver.phone}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{driver.phone}</TableCell>
                       <TableCell className="font-semibold">{driver.assignedVehicleLicensePlate || 'N/A'}</TableCell>
                       <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground" /></TableCell>
                     </TableRow>

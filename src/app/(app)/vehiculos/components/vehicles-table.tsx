@@ -45,12 +45,12 @@ export const VehiclesTable = React.memo(({ vehicles }: VehiclesTableProps) => {
         <TableHeader className="bg-black">
           <TableRow>
             <TableHead className="font-bold text-white">Placa</TableHead>
-            <TableHead className="font-bold text-white">Marca</TableHead>
-            <TableHead className="font-bold text-white">Modelo</TableHead>
-            <TableHead className="font-bold text-white">Año</TableHead>
+            <TableHead className="font-bold text-white hidden sm:table-cell">Marca</TableHead>
+            <TableHead className="font-bold text-white hidden md:table-cell">Modelo</TableHead>
+            <TableHead className="font-bold text-white hidden lg:table-cell">Año</TableHead>
             <TableHead className="font-bold text-white">Propietario</TableHead>
-            <TableHead className="font-bold text-white">Teléfono</TableHead>
-            <TableHead className="font-bold text-white">Último Servicio</TableHead>
+            <TableHead className="font-bold text-white hidden lg:table-cell">Teléfono</TableHead>
+            <TableHead className="font-bold text-white hidden md:table-cell">Último Servicio</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -66,12 +66,12 @@ export const VehiclesTable = React.memo(({ vehicles }: VehiclesTableProps) => {
                   <span>{vehicle.licensePlate}</span>
                   {vehicle.isFleetVehicle && <Badge variant="secondary" className="ml-2">Flotilla</Badge>}
                 </TableCell>
-                <TableCell>{vehicle.make}</TableCell>
-                <TableCell>{vehicle.model}</TableCell>
-                <TableCell>{vehicle.year}</TableCell>
+                <TableCell className="hidden sm:table-cell">{vehicle.make}</TableCell>
+                <TableCell className="hidden md:table-cell">{vehicle.model}</TableCell>
+                <TableCell className="hidden lg:table-cell">{vehicle.year}</TableCell>
                 <TableCell>{vehicle.ownerName}</TableCell>
-                <TableCell>{vehicle.ownerPhone}</TableCell>
-                <TableCell>
+                <TableCell className="hidden lg:table-cell">{vehicle.ownerPhone}</TableCell>
+                <TableCell className="hidden md:table-cell">
                   {lastServiceDate && isValid(lastServiceDate)
                     ? format(lastServiceDate, "dd MMM yyyy", { locale: es }) 
                     : 'N/A'}

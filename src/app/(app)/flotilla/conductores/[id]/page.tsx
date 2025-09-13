@@ -76,16 +76,14 @@ export default function FlotillaConductorProfilePage() {
 
   if (isLoading || !driver) {
     return (
-      <div className="p-1">
+      <div className="p-1 space-y-6">
         <PageHeader title={<Skeleton className="h-8 w-1/2" />} description={<Skeleton className="h-4 w-1/3" />} />
-        <div className="space-y-6 mt-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Skeleton className="h-64 rounded-lg" />
-              <Skeleton className="h-64 rounded-lg" />
-            </div>
-            <Skeleton className="h-48 rounded-lg" />
-            <Skeleton className="h-96 rounded-lg" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="h-64 rounded-lg" />
         </div>
+        <Skeleton className="h-48 rounded-lg" />
+        <Skeleton className="h-96 rounded-lg" />
       </div>
     );
   }
@@ -108,13 +106,15 @@ export default function FlotillaConductorProfilePage() {
           <TabsTrigger value="history">Historial</TabsTrigger>
         </TabsList>
         <TabsContent value="info" className="mt-6">
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
               <ContactInfoCard driver={driver} onEdit={() => setIsContactInfoDialogOpen(true)} />
-              <FinancialInfoCard driver={driver} assignedVehicle={assignedVehicle} onEdit={() => setIsFinancialInfoDialogOpen(true)} />
+              <AssignedVehicleCard assignedVehicle={assignedVehicle} />
             </div>
-            <AssignedVehicleCard assignedVehicle={assignedVehicle} />
-            <DocumentsCard driver={driver} />
+            <div className="space-y-6">
+              <FinancialInfoCard driver={driver} onEdit={() => setIsFinancialInfoDialogOpen(true)} />
+              <DocumentsCard driver={driver} />
+            </div>
           </div>
         </TabsContent>
         <TabsContent value="history" className="mt-6">

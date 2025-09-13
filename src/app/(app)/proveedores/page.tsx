@@ -124,7 +124,7 @@ export default function ProveedoresPageComponent() {
   ];
   
   const pageActions = (
-    <Button onClick={() => setIsRegisterPurchaseOpen(true)}>
+    <Button onClick={() => setIsRegisterPurchaseOpen(true)} className="w-full sm:w-auto">
       <PlusCircle className="mr-2 h-4 w-4" /> Registrar Compra
     </Button>
   );

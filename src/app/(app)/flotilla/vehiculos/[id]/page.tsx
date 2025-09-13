@@ -113,9 +113,9 @@ export default function FlotillaVehiculoProfilePage() {
 
   if (isLoading || !vehicle) {
     return (
-        <div className="p-1">
+        <div className="p-1 space-y-6">
             <PageHeader title={<Skeleton className="h-8 w-1/2" />} description={<Skeleton className="h-4 w-1/3" />} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-6">
                     <Skeleton className="h-80 rounded-lg" />
                     <Skeleton className="h-96 rounded-lg" />
@@ -137,28 +137,28 @@ export default function FlotillaVehiculoProfilePage() {
         title={`Perfil de ${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`}
         description="Gestiona la asignación, información y mantenimiento del vehículo."
         actions={
-          <Button variant="outline" onClick={() => router.push('/flotilla')}>
+          <Button variant="outline" onClick={() => router.push('/flotilla?tab=vehiculos')}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Volver
           </Button>
         }
       />
-      <div className="p-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Column */}
-        <div className="flex flex-col gap-6">
+        <div className="space-y-6">
           <VehicleInfoCard vehicle={vehicle} onEdit={() => setIsVehicleInfoDialogOpen(true)} />
           <MaintenanceCard vehicle={vehicle} serviceHistory={serviceHistory} />
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-6">
+          <AssignDriverCard vehicle={vehicle} allDrivers={allDrivers} onAssignmentChange={() => {}} />
+          <RentalSystemCard vehicle={vehicle} onEdit={() => setIsRentalSystemDialogOpen(true)} />
           <PaperworkCard 
             vehicle={vehicle} 
             onAdd={() => { setEditingPaperwork(null); setIsPaperworkDialogOpen(true); }}
             onEdit={(p) => { setEditingPaperwork(p); setIsPaperworkDialogOpen(true); }}
             onDelete={handleDeletePaperwork}
           />
-        </div>
-
-        {/* Right Column */}
-        <div className="flex flex-col gap-6">
-          <AssignDriverCard vehicle={vehicle} allDrivers={allDrivers} onAssignmentChange={() => {}} />
-          <RentalSystemCard vehicle={vehicle} onEdit={() => setIsRentalSystemDialogOpen(true)} />
           <FineCheckCard 
             vehicle={vehicle}
             onAdd={() => { setViewingFineCheck(null); setIsFineCheckDialogOpen(true); }}

@@ -8,6 +8,7 @@ import { inventoryService, personnelService, rentalService } from '@/lib/service
 import type { Vehicle, Driver, DailyRentalCharge, RentalPayment, ManualDebtEntry, OwnerWithdrawal, VehicleExpense } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 import { FlotillaVehiculosTab } from './vehiculos/components/FlotillaVehiculosTab';
 import { FlotillaConductoresTab } from './conductores/components/FlotillaConductoresTab';
@@ -112,7 +113,7 @@ export default function FlotillaPage() {
       />
 
       <Tabs defaultValue="balance" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="balance">Balance General</TabsTrigger>
           <TabsTrigger value="conductores">Conductores</TabsTrigger>
           <TabsTrigger value="vehiculos">Vehículos</TabsTrigger>

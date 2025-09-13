@@ -172,23 +172,13 @@ function VehiculosPage() {
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="w-full">
-                    <div className="flex flex-wrap w-full gap-2 sm:gap-4">
+                    <TabsList className="grid w-full grid-cols-2">
                         {tabs.map((tabInfo) => (
-                            <button
-                                key={tabInfo.value}
-                                onClick={() => setActiveTab(tabInfo.value)}
-                                className={cn(
-                                    'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
-                                    'break-words whitespace-normal leading-snug',
-                                    activeTab === tabInfo.value
-                                    ? 'bg-primary text-primary-foreground shadow'
-                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                )}
-                            >
-                            {tabInfo.label}
-                            </button>
+                            <TabsTrigger key={tabInfo.value} value={tabInfo.value}>
+                              {tabInfo.label}
+                            </TabsTrigger>
                         ))}
-                    </div>
+                    </TabsList>
                 </div>
 
                 <TabsContent value="vehiculos" className="mt-6">
@@ -225,7 +215,7 @@ function VehiculosPage() {
                                 <h2 className="text-2xl font-semibold tracking-tight">Lista de Precios de Vehículos</h2>
                                 <p className="text-muted-foreground">Precios estandarizados por modelo para agilizar cotizaciones.</p>
                             </div>
-                            <Button onClick={() => handleOpenPriceListDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nueva Lista de Precios</Button>
+                            <Button onClick={() => handleOpenPriceListDialog()} className="w-full sm:w-auto"><PlusCircle className="mr-2 h-4 w-4" />Nueva Lista de Precios</Button>
                         </div>
                          <Card>
                             <CardContent className="pt-6">

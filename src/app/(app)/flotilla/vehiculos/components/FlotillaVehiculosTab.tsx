@@ -38,20 +38,20 @@ export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
   return (
     <div className="space-y-4">
        <div className="flex justify-end">
-          <Button onClick={handleAddVehicle}>
+          <Button onClick={handleAddVehicle} className="w-full sm:w-auto">
             <PlusCircle className="mr-2 h-4 w-4" />
             Añadir Vehículo
           </Button>
         </div>
         <Card>
           <CardContent className="pt-6">
-            <div className="rounded-md border">
+            <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader className="bg-black">
                   <TableRow>
                     <TableHead className="text-white font-bold">Placa</TableHead>
-                    <TableHead className="text-white font-bold">Marca y Modelo</TableHead>
-                    <TableHead className="text-white font-bold">Año</TableHead>
+                    <TableHead className="text-white font-bold hidden sm:table-cell">Marca y Modelo</TableHead>
+                    <TableHead className="text-white font-bold hidden lg:table-cell">Año</TableHead>
                     <TableHead className="text-white font-bold">Estado</TableHead>
                     <TableHead className="text-white font-bold">Conductor Asignado</TableHead>
                     <TableHead className="w-10 text-white font-bold"></TableHead>
@@ -66,8 +66,8 @@ export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
                         className="cursor-pointer hover:bg-muted/50"
                       >
                         <TableCell className="font-medium">{vehicle.licensePlate}</TableCell>
-                        <TableCell>{vehicle.make} {vehicle.model}</TableCell>
-                        <TableCell>{vehicle.year}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{vehicle.make} {vehicle.model}</TableCell>
+                        <TableCell className="hidden lg:table-cell">{vehicle.year}</TableCell>
                         <TableCell>
                           <Badge variant={vehicle.assignedDriverId ? 'success' : 'outline'}>
                             {vehicle.assignedDriverId ? 'Asignado' : 'Disponible'}

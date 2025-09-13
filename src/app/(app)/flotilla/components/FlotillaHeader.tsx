@@ -12,11 +12,11 @@ interface FlotillaHeaderProps {
 
 export function FlotillaHeader({ onAddPayment, onAddCharge }: FlotillaHeaderProps) {
   return (
-    <div className="mb-6 flex justify-end gap-2">
+    <div className="mb-6 flex flex-col sm:flex-row justify-end gap-2">
       <Button
         onClick={onAddCharge}
         variant="outline"
-        className="bg-white border-red-500 text-black font-bold hover:bg-red-50"
+        className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50"
       >
         <MinusCircle className="mr-2 h-4 w-4 text-red-500" />
         Generar Cargo
@@ -24,7 +24,7 @@ export function FlotillaHeader({ onAddPayment, onAddCharge }: FlotillaHeaderProp
       <Button
         onClick={onAddPayment}
         variant="outline"
-        className="bg-white border-green-500 text-black font-bold hover:bg-green-50"
+        className="w-full sm:w-auto bg-white border-green-500 text-black font-bold hover:bg-green-50"
       >
         <PlusCircle className="mr-2 h-4 w-4 text-green-700" />
         Registrar Pago

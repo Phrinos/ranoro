@@ -188,7 +188,7 @@ export function FlotillaCajaTab({
             <CardDescription>Historial de todos los ingresos y salidas de dinero.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
+            <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader className="bg-black">
                   <TableRow>
