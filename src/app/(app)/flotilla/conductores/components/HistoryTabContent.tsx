@@ -1,8 +1,8 @@
 // src/app/(app)/flotilla/conductores/components/HistoryTabContent.tsx
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
-import type { Driver, Vehicle, DailyRentalCharge, RentalPayment, ManualDebtEntry } from '@/types';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import type { Driver, Vehicle, DailyRentalCharge, RentalPayment, ManualDebtEntry, WorkshopInfo } from '@/types';
 import { rentalService } from '@/lib/services/rental.service';
 import { personnelService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
@@ -13,11 +13,15 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, PlusCircle, HandCoins } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, HandCoins, Printer, Copy, Share2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { EditDailyChargeDialog, type DailyChargeFormValues } from '../../components/EditDailyChargeDialog';
-import { RegisterPaymentDialog, type PaymentFormValues } from '../../components/RegisterPaymentDialog';
-import { AddManualChargeDialog, type ManualChargeFormValues } from '../../components/AddManualChargeDialog';
+import { EditDailyChargeDialog, type DailyChargeFormValues } from '../../../components/EditDailyChargeDialog';
+import { RegisterPaymentDialog, type PaymentFormValues } from '../../../components/RegisterPaymentDialog';
+import { AddManualChargeDialog, type ManualChargeFormValues } from '../../../components/AddManualChargeDialog';
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { RentalPaymentTicket } from '../../caja/components/RentalPaymentTicket';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 type Transaction = 
     | (DailyRentalCharge & { type: 'charge'; note: string; })
@@ -43,6 +47,22 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isChargeDialogOpen, setIsChargeDialogOpen] = useState(false);
+  
+  const [isTicketOpen, setIsTicketOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<RentalPayment | null>(null);
+  const ticketContentRef = useRef<HTMLDivElement>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+
+  useEffect(() => {
+    const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
+     if (storedWorkshopInfo) {
+      try {
+        setWorkshopInfo(JSON.parse(storedWorkshopInfo));
+      } catch (e) {
+        console.error("Failed to parse workshop info from localStorage", e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!driver || !vehicle || chargesGenerated) {
@@ -109,9 +129,11 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   
   const handleSavePayment = async (data: PaymentFormValues) => {
     if (!driver || !vehicle) return;
-    await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.paymentDate);
+    const savedPayment = await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.paymentDate);
     toast({ title: "Pago Registrado" });
     setIsPaymentDialogOpen(false);
+    setSelectedPayment(savedPayment);
+    setIsTicketOpen(true);
   };
   
   const handleSaveManualCharge = async (data: ManualChargeFormValues) => {
@@ -128,70 +150,102 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
     toast({ title: "Cargo Actualizado" });
     setIsEditDialogOpen(false);
   };
+
+  const handlePrintTicket = () => {
+    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
+  };
   
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader><CardTitle>Balance General</CardTitle><CardDescription>Saldo total actual del conductor.</CardDescription></CardHeader>
-        <CardContent><div className={cn("text-3xl font-bold text-center", totalBalance >= 0 ? 'text-green-600' : 'text-destructive')}>{formatCurrency(totalBalance)}</div></CardContent>
-      </Card>
+    <>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader><CardTitle>Balance General</CardTitle><CardDescription>Saldo total actual del conductor.</CardDescription></CardHeader>
+          <CardContent><div className={cn("text-3xl font-bold text-center", totalBalance >= 0 ? 'text-green-600' : 'text-destructive')}>{formatCurrency(totalBalance)}</div></CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-            <div><CardTitle>Historial de Movimientos</CardTitle><CardDescription>Registro de todos los cargos, pagos y adeudos.</CardDescription></div>
-            <div className="flex gap-2">
-                <Button onClick={() => { setEditingDebt(null); setIsChargeDialogOpen(true); }} variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" />Añadir Cargo</Button>
-                <Button onClick={() => setIsPaymentDialogOpen(true)} size="sm"><HandCoins className="mr-2 h-4 w-4" />Registrar Pago</Button>
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+              <div><CardTitle>Historial de Movimientos</CardTitle><CardDescription>Registro de todos los cargos, pagos y adeudos.</CardDescription></div>
+              <div className="flex gap-2">
+                  <Button onClick={() => { setEditingDebt(null); setIsChargeDialogOpen(true); }} variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" />Añadir Cargo</Button>
+                  <Button onClick={() => setIsPaymentDialogOpen(true)} size="sm"><HandCoins className="mr-2 h-4 w-4" />Registrar Pago</Button>
+              </div>
+          </CardHeader>
+          <CardContent>
+            {isGenerating && <p className="text-sm text-muted-foreground text-center py-2">Generando cargos diarios...</p>}
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>Fecha</TableHead><TableHead>Tipo</TableHead><TableHead>Descripción</TableHead>
+                  <TableHead className="text-right">Cargo</TableHead><TableHead className="text-right">Abono</TableHead>
+                  <TableHead className="text-right">Balance</TableHead><TableHead className="text-right">Acciones</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {transactions.length > 0 ? (
+                    transactions.map(t => (
+                      <TableRow key={`${t.type}-${t.id}`}>
+                        <TableCell>{format(parseISO(t.date), "dd MMM yyyy", { locale: es })}</TableCell>
+                        <TableCell>
+                          <Badge variant={t.type === 'payment' ? 'success' : 'destructive'}>
+                            {t.type === 'charge' ? 'Renta' : t.type === 'debt' ? 'Adeudo' : 'Pago'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{t.note}</TableCell>
+                        <TableCell className="text-right text-destructive">{t.type !== 'payment' ? formatCurrency(t.amount) : '-'}</TableCell>
+                        <TableCell className="text-right text-green-600">{t.type === 'payment' ? formatCurrency(t.amount) : '-'}</TableCell>
+                        <TableCell className={cn("text-right font-bold", t.balance >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(t.balance)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => {
+                              if (t.type === 'debt') { setEditingDebt(t); setIsChargeDialogOpen(true); }
+                              if (t.type === 'charge') { setEditingCharge(t); setIsEditDialogOpen(true); }
+                          }} disabled={t.type === 'payment'}><Edit className="h-4 w-4" /></Button>
+                          <ConfirmDialog
+                            triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                            title={`¿Eliminar ${t.type === 'payment' ? 'Pago' : 'Cargo'}?`}
+                            onConfirm={() => {
+                              if (t.type === 'debt') personnelService.deleteManualDebt(t.id);
+                              if (t.type === 'payment') rentalService.deleteRentalPayment(t.id);
+                              if (t.type === 'charge') rentalService.deleteDailyCharge(t.id);
+                            }} />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : <TableRow><TableCell colSpan={7} className="h-24 text-center">No hay movimientos.</TableCell></TableRow>}
+                </TableBody>
+              </Table>
             </div>
-        </CardHeader>
-        <CardContent>
-           {isGenerating && <p className="text-sm text-muted-foreground text-center py-2">Generando cargos diarios...</p>}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Fecha</TableHead><TableHead>Tipo</TableHead><TableHead>Descripción</TableHead>
-                <TableHead className="text-right">Cargo</TableHead><TableHead className="text-right">Abono</TableHead>
-                <TableHead className="text-right">Balance</TableHead><TableHead className="text-right">Acciones</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {transactions.length > 0 ? (
-                  transactions.map(t => (
-                    <TableRow key={`${t.type}-${t.id}`}>
-                      <TableCell>{format(parseISO(t.date), "dd MMM yyyy", { locale: es })}</TableCell>
-                      <TableCell>
-                        <Badge variant={t.type === 'payment' ? 'success' : 'destructive'}>
-                          {t.type === 'charge' ? 'Renta' : t.type === 'debt' ? 'Adeudo' : 'Pago'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{t.note}</TableCell>
-                      <TableCell className="text-right text-destructive">{t.type !== 'payment' ? formatCurrency(t.amount) : '-'}</TableCell>
-                      <TableCell className="text-right text-green-600">{t.type === 'payment' ? formatCurrency(t.amount) : '-'}</TableCell>
-                      <TableCell className={cn("text-right font-bold", t.balance >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(t.balance)}</TableCell>
-                      <TableCell className="text-right">
-                         <Button variant="ghost" size="icon" onClick={() => {
-                            if (t.type === 'debt') { setEditingDebt(t); setIsChargeDialogOpen(true); }
-                            if (t.type === 'charge') { setEditingCharge(t); setIsEditDialogOpen(true); }
-                         }} disabled={t.type === 'payment'}><Edit className="h-4 w-4" /></Button>
-                         <ConfirmDialog
-                           triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>}
-                           title={`¿Eliminar ${t.type === 'payment' ? 'Pago' : 'Cargo'}?`}
-                           onConfirm={() => {
-                             if (t.type === 'debt') personnelService.deleteManualDebt(t.id);
-                             if (t.type === 'payment') rentalService.deleteRentalPayment(t.id);
-                             if (t.type === 'charge') rentalService.deleteDailyCharge(t.id);
-                           }} />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : <TableRow><TableCell colSpan={7} className="h-24 text-center">No hay movimientos.</TableCell></TableRow>}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
+      
       <EditDailyChargeDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} charge={editingCharge} onSave={handleSaveCharge} />
       <RegisterPaymentDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} onSave={handleSavePayment} />
       <AddManualChargeDialog open={isChargeDialogOpen} onOpenChange={setIsChargeDialogOpen} onSave={handleSaveManualCharge} />
-    </div>
+
+      {selectedPayment && (
+          <UnifiedPreviewDialog
+            open={isTicketOpen}
+            onOpenChange={setIsTicketOpen}
+            title={`Ticket de Pago`}
+            footerContent={
+                <div className="flex w-full justify-end gap-2">
+                    <TooltipProvider>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Copy className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"><Share2 className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrintTicket}><Printer className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
+                    </TooltipProvider>
+                </div>
+            }
+          >
+            <RentalPaymentTicket
+                ref={ticketContentRef}
+                payment={selectedPayment}
+                driver={driver}
+                vehicle={vehicle}
+                previewWorkshopInfo={workshopInfo || undefined}
+            />
+          </UnifiedPreviewDialog>
+      )}
+    </>
   );
 }

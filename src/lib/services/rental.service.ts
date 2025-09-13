@@ -29,7 +29,7 @@ const onDailyChargesUpdate = (callback: (charges: DailyRentalCharge[]) => void, 
     if (!db) return () => {};
     let q;
     if (driverId) {
-        q = query(collection(db, "dailyRentalCharges"), where("driverId", "==", driverId), orderBy("date", "asc"));
+        q = query(collection(db, "dailyRentalCharges"), where("driverId", "==", driverId), orderBy("date", "desc"));
     } else {
         q = query(collection(db, "dailyRentalCharges"), orderBy("date", "asc"));
     }
@@ -165,7 +165,7 @@ const addRentalPayment = async (
         paymentDate: paymentDate.toISOString(),
         amount,
         daysCovered: dailyRate > 0 ? amount / dailyRate : 0,
-        note: note || `Pago de renta`,
+        note: note || `Abono de Renta`,
     };
     
     const docRef = await addDoc(collection(db, 'rentalPayments'), cleanObjectForFirestore(newPayment));

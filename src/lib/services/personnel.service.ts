@@ -17,7 +17,7 @@ import {
 import { db } from '../firebaseClient';
 import type { Technician, AdministrativeStaff, Personnel, Area, User, Driver, Vehicle, ManualDebtEntry } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
-import type { UserFormValues } from '@/app/(app)/administracion/components/user-form';
+import type { UserFormValues } from '@/app/(app)/personal/components/user-form';
 import { inventoryService } from './inventory.service';
 
 // --- Unified Personnel ---
