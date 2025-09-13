@@ -88,17 +88,21 @@ export function FlotillaCajaTab({
     }
   }, []);
 
-  const { transactions, summary, totalIncome } = useMemo(() => {
+  const { transactions, summary } = useMemo(() => {
+    // Normaliza: todos con propiedad "date" para poder filtrar/ordenar/mostrar
     const paymentsWithDate = payments
-      .filter(p => p.paymentDate)
+      .filter(p => p.paymentDate) // <-- era p.date
       .map(p => ({ ...p, date: p.paymentDate })) as Array<RentalPayment & { date: string }>;
+  
     const withdrawalsWithDate = withdrawals
       .filter(w => w.date)
       .map(w => ({ ...w, date: w.date })) as Array<OwnerWithdrawal & { date: string }>;
+  
     const expensesWithDate = expenses
       .filter(e => e.date)
       .map(e => ({ ...e, date: e.date })) as Array<VehicleExpense & { date: string }>;
-
+  
+    // Filtro por mes (o todos)
     const filterByMonth = <T extends { date: string }>(items: T[]): T[] => {
       if (selectedMonth === 'all') return items;
       const [year, month] = selectedMonth.split('-').map(Number);
@@ -109,25 +113,35 @@ export function FlotillaCajaTab({
         return isValid(d) && isWithinInterval(d, { start: startDate, end: endDate });
       });
     };
-
+  
     const monthlyPayments = filterByMonth(paymentsWithDate);
     const monthlyWithdrawals = filterByMonth(withdrawalsWithDate);
     const monthlyExpenses = filterByMonth(expensesWithDate);
-    
+  
+    // Arma transacciones con su tipo
     const allTransactions: CashBoxTransaction[] = [
       ...monthlyPayments.map(p => ({ ...p, transactionType: 'income' as const })),
       ...monthlyWithdrawals.map(w => ({ ...w, transactionType: 'withdrawal' as const })),
       ...monthlyExpenses.map(e => ({ ...e, transactionType: 'expense' as const })),
     ];
+  
+    // Orden descendente por fecha
     allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    const totalCash = monthlyPayments.filter(p => p.paymentMethod === 'Efectivo').reduce((sum, p) => sum + p.amount, 0);
-    const totalTransfers = monthlyPayments.filter(p => p.paymentMethod === 'Transferencia').reduce((sum, p) => sum + p.amount, 0);
+  
+    // Totales
+    const totalCash = monthlyPayments
+      .filter(p => p.paymentMethod === 'Efectivo')
+      .reduce((sum, p) => sum + p.amount, 0);
+  
+    const totalTransfers = monthlyPayments
+      .filter(p => p.paymentMethod === 'Transferencia')
+      .reduce((sum, p) => sum + p.amount, 0);
+  
     const totalWithdrawals = monthlyWithdrawals.reduce((sum, w) => sum + w.amount, 0);
     const totalExpenses = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
-    
+  
     const cashBalance = totalCash - totalWithdrawals - totalExpenses;
-
+  
     return {
       transactions: allTransactions,
       summary: {
@@ -137,9 +151,8 @@ export function FlotillaCajaTab({
         totalCash,
         totalTransfers,
       },
-      totalIncome: totalCash + totalTransfers
     };
-    }, [payments, withdrawals, expenses, selectedMonth]);
+  }, [payments, withdrawals, expenses, selectedMonth]);
 
     const currentCashBalance = useMemo(() => {
         const totalCashIncome = payments
@@ -262,7 +275,7 @@ export function FlotillaCajaTab({
                 </CardHeader>
                 <CardContent>
                     <div className="text-4xl font-bold text-center text-black">
-                        {formatCurrency(totalIncome)}
+                        {formatCurrency(summary.totalCash + summary.totalTransfers)}
                     </div>
                 </CardContent>
             </Card>
