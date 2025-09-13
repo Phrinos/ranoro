@@ -133,6 +133,8 @@ export default function FlotillaPage() {
                 payments={payments} 
                 withdrawals={withdrawals} 
                 expenses={expenses}
+                drivers={drivers}
+                vehicles={vehicles}
                 onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)}
                 onAddExpense={() => setIsExpenseDialogOpen(true)}
               />
