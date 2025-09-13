@@ -54,17 +54,6 @@ export function FlotillaConductoresTab({ drivers }: FlotillaConductoresTabProps)
           <PlusCircle className="mr-2 h-4 w-4" />
           Añadir Conductor
         </Button>
-        <ConfirmDialog
-          triggerButton={
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Wrench className="mr-2 h-4 w-4" />
-              Regenerar Cargos
-            </Button>
-          }
-          title="¿Regenerar todos los cargos de renta?"
-          description="Esta acción es irreversible y generará todos los cargos de renta diarios para todos los conductores activos desde su fecha de contrato hasta hoy. Úsalo solo si has borrado los datos."
-          onConfirm={handleRegenerate}
-        />
       </div>
       <Card>
         <CardContent className="pt-6">
