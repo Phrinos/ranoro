@@ -35,18 +35,21 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
     resolver: zodResolver(withdrawalSchema),
     defaultValues: {
         ownerName: '',
-        amount: undefined,
+        amount: 0,
         note: ''
     }
   });
 
   const owners = useMemo(() => {
-    const ownerNames = vehicles.map(v => v.ownerName).filter(Boolean);
+    const ownerNames = vehicles
+        .filter(v => v.isFleetVehicle)
+        .map(v => v.ownerName)
+        .filter(Boolean);
     return [...new Set(ownerNames)];
   }, [vehicles]);
 
   useEffect(() => {
-    if (open) form.reset({ ownerName: '', amount: undefined, note: '' });
+    if (open) form.reset({ ownerName: '', amount: 0, note: '' });
   }, [open, form]);
 
   const handleFormSubmit = async (values: OwnerWithdrawalFormValues) => {
