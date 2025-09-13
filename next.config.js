@@ -37,6 +37,12 @@ const nextConfig = {
       devIndicators: {
         position: 'bottom-right',
       },
+
+      // 6. Allow cross-origin requests in development (CORRECTED PLACEMENT)
+      allowedDevOrigins: [
+          "https://3001-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
+          "https://9000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
+      ],
 };
 
 module.exports = nextConfig;
