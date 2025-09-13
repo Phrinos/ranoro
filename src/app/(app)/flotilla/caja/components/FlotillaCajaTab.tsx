@@ -6,7 +6,7 @@ import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, W
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, cn, capitalizeWords } from '@/lib/utils';
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -89,14 +89,18 @@ export function FlotillaCajaTab({
   }, []);
 
   const { transactions, summary } = useMemo(() => {
+    if (!selectedMonth) {
+        return { transactions: [], summary: { totalBalance: 0, totalWithdrawals: 0, totalExpenses: 0, totalCash: 0, totalTransfers: 0 } };
+    }
     const [year, month] = selectedMonth.split('-').map(Number);
     const startDate = startOfMonth(new Date(year, month - 1));
     const endDate = endOfMonth(startDate);
 
     const filterByMonth = <T extends { date: string }>(items: T[]): T[] => {
       return items.filter(item => {
+        if (!item.date) return false;
         const itemDate = parseISO(item.date);
-        return isWithinInterval(itemDate, { start: startDate, end: endDate });
+        return isValid(itemDate) && isWithinInterval(itemDate, { start: startDate, end: endDate });
       });
     };
 
