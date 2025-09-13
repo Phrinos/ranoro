@@ -61,6 +61,7 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
         <div style={{ fontSize: `${workshopInfo.bodyFontSize || 10}px` }}>
             <div>Fecha Emisión: {formattedDateTime}</div>
             <div>Folio de Pago: {payment.id}</div>
+            {payment.registeredByName && <div>Recibió: {payment.registeredByName}</div>}
         </div>
         
         <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>

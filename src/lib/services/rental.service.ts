@@ -49,20 +49,22 @@ const generateMissingCharges = async (driver: Driver, vehicle: Vehicle): Promise
     const q = query(chargesRef, where("driverId", "==", driver.id), orderBy("date", "desc"), limit(1));
     const lastChargeSnapshot = await getDocs(q);
     
-    let lastChargeDate = contractStart;
+    let lastChargeDate = addDays(contractStart, -1); // Start from the day before the contract
     if (!lastChargeSnapshot.empty) {
         const lastCharge = lastChargeSnapshot.docs[0].data() as DailyRentalCharge;
-        lastChargeDate = addDays(startOfDay(new Date(lastCharge.date)), 1); // Start from the day AFTER the last charge
+        lastChargeDate = startOfDay(new Date(lastCharge.date)); 
     }
     
-    if (lastChargeDate > today) return; // Already up to date
+    const nextChargeDate = addDays(lastChargeDate, 1);
 
-    const daysToGenerate = differenceInCalendarDays(today, lastChargeDate) + 1;
+    if (nextChargeDate > today) return; // Already up to date
+
+    const daysToGenerate = differenceInCalendarDays(today, nextChargeDate) + 1;
     if (daysToGenerate <= 0) return;
 
     const batch = writeBatch(db);
     for (let i = 0; i < daysToGenerate; i++) {
-        const chargeDate = addDays(lastChargeDate, i);
+        const chargeDate = addDays(nextChargeDate, i);
         const newCharge: Omit<DailyRentalCharge, 'id'> = {
             driverId: driver.id,
             vehicleId: vehicle.id,
@@ -159,6 +161,10 @@ const addRentalPayment = async (
 
     const dailyRate = vehicle.dailyRentalCost || 0;
     
+    // Get current user from localStorage
+    const authUserString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
+    const currentUser = authUserString ? JSON.parse(authUserString) : null;
+    
     const newPayment: Omit<RentalPayment, 'id'> = {
         driverId: driver.id,
         driverName: driver.name,
@@ -168,6 +174,7 @@ const addRentalPayment = async (
         paymentMethod,
         daysCovered: dailyRate > 0 ? amount / dailyRate : 0,
         note: note || `Abono de Renta`,
+        registeredByName: currentUser?.name || 'Sistema',
     };
     
     const docRef = await addDoc(collection(db, 'rentalPayments'), cleanObjectForFirestore(newPayment));
