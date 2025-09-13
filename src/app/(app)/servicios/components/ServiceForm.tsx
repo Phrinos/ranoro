@@ -45,6 +45,7 @@ const ServiceFormFooter = ({ onCancel, onComplete, mode, initialData, isSubmitti
 }) => {
     const { getValues, reset, watch } = useFormContext<ServiceFormValues>();
     const watchedStatus = watch('status');
+    const isEditMode = !!initialData?.id;
 
     return (
         <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
@@ -62,17 +63,15 @@ const ServiceFormFooter = ({ onCancel, onComplete, mode, initialData, isSubmitti
             </div>
             <div className="flex items-center gap-2">
               <Button type="button" variant="outline" onClick={() => reset(initialData || {})}>Descartar</Button>
-              {initialData?.id && watchedStatus === 'En Taller' && onComplete ? (
-                <Button type="button" onClick={() => onComplete(getValues())} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
-                  {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <DollarSign className="mr-2 h-4 w-4"/>}
-                  Completar y Cobrar
-                </Button>
-              ) : (
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-                  {initialData?.id ? 'Guardar Cambios' : 'Crear Registro'}
-                </Button>
-              )}
+               {isEditMode && onComplete && watchedStatus !== 'Entregado' && watchedStatus !== 'Cancelado' && (
+                 <Button type="button" onClick={() => onComplete(getValues())} disabled={isSubmitting} variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700">
+                    <DollarSign className="mr-2 h-4 w-4"/> Completar y Cobrar
+                 </Button>
+               )}
+              <Button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
+                {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
+                {isEditMode ? 'Guardar Cambios' : 'Crear Registro'}
+              </Button>
             </div>
           </div>
         </footer>
@@ -112,14 +111,8 @@ export function ServiceForm({
   const { handleSubmit, getValues, setValue, formState: { isSubmitting }, reset } = methods;
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
-    if (values.status === 'Entregado' && initialData?.status !== 'Entregado') {
-      toast({
-        title: "Acción Requerida",
-        description: "Para finalizar un servicio, utiliza el botón 'Completar y Cobrar'. No se puede cambiar el estado a 'Entregado' manualmente.",
-        variant: "destructive",
-        duration: 7000,
-      });
-      setValue('status', initialData?.status || 'En Taller'); // Revert status
+    if (values.status === 'Entregado' && initialData?.status !== 'Entregado' && onComplete) {
+      handleCompleteClick();
       return;
     }
     await onSave(values);
