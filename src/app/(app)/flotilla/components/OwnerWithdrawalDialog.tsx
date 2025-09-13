@@ -33,6 +33,11 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<OwnerWithdrawalFormValues>({
     resolver: zodResolver(withdrawalSchema),
+    defaultValues: {
+        ownerName: '',
+        amount: undefined,
+        note: ''
+    }
   });
 
   const owners = useMemo(() => {
@@ -41,7 +46,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
   }, [vehicles]);
 
   useEffect(() => {
-    if (open) form.reset();
+    if (open) form.reset({ ownerName: '', amount: undefined, note: '' });
   }, [open, form]);
 
   const handleFormSubmit = async (values: OwnerWithdrawalFormValues) => {

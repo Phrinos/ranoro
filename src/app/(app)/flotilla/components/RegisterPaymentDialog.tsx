@@ -39,6 +39,7 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPa
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       paymentDate: new Date(),
+      amount: undefined,
       note: 'Abono de Renta',
       paymentMethod: 'Efectivo',
     },
@@ -63,13 +64,13 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle>Registrar Pago</DialogTitle>
           <DialogDescription>Registra un nuevo abono o pago a la cuenta del conductor.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-6">
             <FormField control={form.control} name="paymentDate" render={({ field }) => (
               <FormItem className="flex flex-col"><FormLabel>Fecha del Pago</FormLabel>
                 <Popover>
@@ -83,19 +84,19 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPa
             )}/>
             <FormField control={form.control} name="paymentMethod" render={({ field }) => (
               <FormItem><FormLabel>Método de Pago</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="Efectivo">Efectivo</SelectItem><SelectItem value="Transferencia">Transferencia</SelectItem></SelectContent>
                 </Select>
               <FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="amount" render={({ field }) => (
-              <FormItem><FormLabel>Monto del Pago ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Monto del Pago ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="note" render={({ field }) => (
-              <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
             )}/>
-            <DialogFooter className="pt-4">
+            <DialogFooter className="pt-4 px-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

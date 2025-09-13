@@ -51,15 +51,21 @@ export function GlobalTransactionDialog({
 
   const form = useForm<GlobalTransactionFormValues>({
     resolver: zodResolver(transactionSchema),
-    defaultValues: { date: new Date(), paymentMethod: 'Efectivo' },
+    defaultValues: { 
+        driverId: undefined, 
+        date: new Date(), 
+        paymentMethod: 'Efectivo',
+        amount: undefined,
+        note: ''
+    },
   });
 
   useEffect(() => {
     if (open) {
       form.reset({
-        driverId: undefined as unknown as string, // se resuelve al seleccionar
+        driverId: undefined,
         date: new Date(),
-        amount: undefined as unknown as number,
+        amount: undefined,
         note: transactionType === 'payment' ? 'Abono de Renta' : '',
         paymentMethod: 'Efectivo',
       });
@@ -89,14 +95,14 @@ export function GlobalTransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-6">
             {/* Conductor */}
             <FormField
               control={form.control}
