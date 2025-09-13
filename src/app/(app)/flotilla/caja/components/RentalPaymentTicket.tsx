@@ -78,16 +78,18 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
             <div className="border-t border-dashed border-neutral-400 my-2"></div>
         </div>
 
-        <div className="space-y-1 mt-2" style={{ fontSize: `${workshopInfo.totalsFontSize || 12}px` }}>
-            <div className="flex justify-between font-bold text-lg">
-                <span>Total Pagado:</span>
-                <span>{formatCurrency(payment.amount)}</span>
-            </div>
-            <div className={cn("flex justify-between font-semibold text-base", driverBalance >= 0 ? 'text-green-700' : 'text-red-700')}>
-                <span>Saldo Global:</span>
-                <span>{formatCurrency(driverBalance)}</span>
-            </div>
-        </div>
+        <table className="w-full mt-2" style={{ fontSize: `${workshopInfo.totalsFontSize || 12}px` }}>
+            <tbody>
+                <tr className="font-bold text-lg">
+                    <td className="text-left">Total Pagado:</td>
+                    <td className="text-right">{formatCurrency(payment.amount)}</td>
+                </tr>
+                 <tr className={cn("font-semibold text-base", driverBalance >= 0 ? 'text-green-700' : 'text-red-700')}>
+                    <td className="text-left">Saldo Global:</td>
+                    <td className="text-right">{formatCurrency(driverBalance)}</td>
+                </tr>
+            </tbody>
+        </table>
         
         <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
 
