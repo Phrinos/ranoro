@@ -133,7 +133,7 @@ export function GlobalTransactionDialog({
                         onOpenAutoFocus={(e) => e.preventDefault()}
                       >
                         {/* Deja el filtro por defecto para que funcione la búsqueda */}
-                        <Command>
+                        <Command filter={(value, search) => 1}>
                           <CommandInput placeholder="Buscar conductor..." autoFocus />
                           {/* El scroll vive en el CommandList */}
                           <CommandList className="max-h-64 overflow-y-auto">
