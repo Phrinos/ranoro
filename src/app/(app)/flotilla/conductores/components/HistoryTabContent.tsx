@@ -1,7 +1,7 @@
 // src/app/(app)/flotilla/conductores/components/HistoryTabContent.tsx
 "use client";
 
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import type { Driver, Vehicle, DailyRentalCharge, RentalPayment, ManualDebtEntry, WorkshopInfo } from '@/types';
 import { rentalService } from '@/lib/services/rental.service';
 import { personnelService } from '@/lib/services';
@@ -21,6 +21,7 @@ import { AddManualChargeDialog, type ManualChargeFormValues } from '../../compon
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { RentalPaymentTicket } from '../../caja/components/RentalPaymentTicket';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import html2canvas from 'html2canvas';
 
 
 type Transaction = 
@@ -151,6 +152,46 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
     setIsEditDialogOpen(false);
   };
 
+  const handleCopyTicketAsImage = useCallback(async (isForSharing: boolean = false) => {
+    if (!ticketContentRef.current || !selectedPayment) return null;
+    try {
+      const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null, useCORS: true });
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error("No se pudo crear el blob de la imagen.");
+
+      if (isForSharing) {
+          return new File([blob], `ticket_pago_${selectedPayment.id}.png`, { type: 'image/png' });
+      } else {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+          return null;
+      }
+    } catch (e) {
+      console.error("Error al manejar la imagen:", e);
+      toast({ title: "Error", description: "No se pudo procesar la imagen del ticket.", variant: "destructive" });
+      return null;
+    }
+  }, [selectedPayment, toast]);
+
+  const handleShareTicket = async () => {
+      const imageFile = await handleCopyTicketAsImage(true);
+      if (imageFile && navigator.share) {
+          try {
+              await navigator.share({
+                  files: [imageFile],
+                  title: 'Ticket de Pago',
+                  text: `Recibo de pago de ${selectedPayment?.driverName}.`,
+              });
+          } catch (error) {
+              if (!String(error).includes('AbortError')) {
+                 toast({ title: 'No se pudo compartir', description: 'Ocurrió un error al intentar compartir.', variant: 'default' });
+              }
+          }
+      } else {
+          toast({ title: 'No disponible', description: 'La función de compartir no está disponible en este navegador.', variant: 'default' });
+      }
+  };
+
   const handlePrintTicket = () => {
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
@@ -227,11 +268,12 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
             open={isTicketOpen}
             onOpenChange={setIsTicketOpen}
             title={`Ticket de Pago`}
+            rentalPayment={selectedPayment}
             footerContent={
                 <div className="flex w-full justify-end gap-2">
                     <TooltipProvider>
-                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Copy className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
-                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"><Share2 className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyTicketAsImage(false)}><Copy className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareTicket}><Share2 className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
                         <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrintTicket}><Printer className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
                     </TooltipProvider>
                 </div>
