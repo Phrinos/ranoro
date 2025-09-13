@@ -160,21 +160,21 @@ export default function DashboardPage() {
           description="Vista del estado actual de los servicios y herramientas de IA."
           actions={
             <div className="flex flex-wrap gap-2">
-              <Button asChild>
+              <Button asChild variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50">
                 <Link href="/servicios/nuevo">
-                  <Wrench className="mr-2 h-4 w-4" />
+                  <Wrench className="mr-2 h-4 w-4 text-red-500" />
                   Nuevo Servicio
                 </Link>
               </Button>
-               <Button asChild variant="outline" className="bg-white hover:bg-gray-100 text-black">
+               <Button asChild variant="outline" className="w-full sm:w-auto bg-white border-blue-500 text-black font-bold hover:bg-blue-50">
                 <Link href="/pos/nuevo">
-                  <Receipt className="mr-2 h-4 w-4" />
+                  <Receipt className="mr-2 h-4 w-4 text-blue-500" />
                   Punto de Venta
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="bg-white hover:bg-gray-100 text-black">
+              <Button asChild variant="outline" className="w-full sm:w-auto bg-white border-orange-500 text-black font-bold hover:bg-orange-50">
                 <Link href="/flotilla?tab=balance&action=payment">
-                  <Truck className="mr-2 h-4 w-4" />
+                  <Truck className="mr-2 h-4 w-4 text-orange-600" />
                   Pago de Flotilla
                 </Link>
               </Button>
