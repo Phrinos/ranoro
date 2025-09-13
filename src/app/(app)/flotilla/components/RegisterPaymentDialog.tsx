@@ -35,6 +35,7 @@ interface RegisterPaymentDialogProps {
 
 export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPaymentDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
@@ -73,12 +74,23 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPa
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-6">
             <FormField control={form.control} name="paymentDate" render={({ field }) => (
               <FormItem className="flex flex-col"><FormLabel>Fecha del Pago</FormLabel>
-                <Popover>
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                       {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button></FormControl></PopoverTrigger>
-                  <PopoverContent><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={(date) => {
+                        field.onChange(date);
+                        setIsCalendarOpen(false);
+                      }}
+                      initialFocus
+                      locale={es}
+                    />
+                  </PopoverContent>
                 </Popover>
               <FormMessage /></FormItem>
             )}/>

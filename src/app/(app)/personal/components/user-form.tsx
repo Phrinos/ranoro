@@ -25,6 +25,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
 import { parseDate } from "@/lib/forms";
+import { useState } from "react";
 
 
 const userFormSchema = z.object({
@@ -47,6 +48,7 @@ interface UserFormProps {
 }
 
 export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: initialData ? {
@@ -89,7 +91,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Fecha de Contratación</FormLabel>
-              <Popover>
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
@@ -112,7 +114,10 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                   <Calendar
                     mode="single"
                     selected={field.value}
-                    onSelect={field.onChange}
+                    onSelect={(date) => {
+                      field.onChange(date);
+                      setIsCalendarOpen(false);
+                    }}
                     disabled={(date) =>
                       date > new Date() || date < new Date("1980-01-01")
                     }
@@ -133,7 +138,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="commissionRate" render={({ field }) => (
-                <FormItem><FormLabel>Comisión (%)</FormLabel><FormControl><Input type="number" placeholder="Ej: 5 para 5%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>% Comisión</FormLabel><FormControl><Input type="number" placeholder="Ej: 5 para 5%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
             )}/>
         </div>
       </form>

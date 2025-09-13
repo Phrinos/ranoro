@@ -40,6 +40,7 @@ interface AddManualChargeDialogProps {
 
 export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualChargeDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const form = useForm<ManualChargeFormValues>({
     resolver: zodResolver(chargeSchema),
     defaultValues: {
@@ -78,14 +79,24 @@ export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualC
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
             <FormField control={form.control} name="date" render={({ field }) => (
               <FormItem className="flex flex-col"><FormLabel>Fecha del Cargo</FormLabel>
-                <Popover>
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                         {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                         <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
                       </Button></FormControl>
                   </PopoverTrigger>
-                  <PopoverContent><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent>
+                  <PopoverContent>
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={(date) => {
+                        field.onChange(date);
+                        setIsCalendarOpen(false);
+                      }}
+                      locale={es}
+                    />
+                  </PopoverContent>
                 </Popover>
               <FormMessage /></FormItem>
             )}/>

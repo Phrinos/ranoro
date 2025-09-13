@@ -48,24 +48,25 @@ export function GlobalTransactionDialog({
 }: GlobalTransactionDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDriverPopoverOpen, setIsDriverPopoverOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const form = useForm<GlobalTransactionFormValues>({
     resolver: zodResolver(transactionSchema),
-    defaultValues: { 
-        driverId: undefined, 
-        date: new Date(), 
-        paymentMethod: 'Efectivo',
-        amount: undefined,
-        note: ''
+    defaultValues: {
+      driverId: undefined as unknown as string,
+      date: new Date(),
+      paymentMethod: 'Efectivo',
+      amount: undefined as unknown as number,
+      note: '',
     },
   });
 
   useEffect(() => {
     if (open) {
       form.reset({
-        driverId: undefined,
+        driverId: undefined as unknown as string,
         date: new Date(),
-        amount: undefined,
+        amount: undefined as unknown as number,
         note: transactionType === 'payment' ? 'Abono de Renta' : '',
         paymentMethod: 'Efectivo',
       });
@@ -85,12 +86,10 @@ export function GlobalTransactionDialog({
       ? 'Registra un abono para cualquier conductor.'
       : 'Registra un cargo para cualquier conductor.';
 
-  // Orden A-Z con soporte de acentos
+  // Orden A–Z con soporte de acentos
   const sortedDrivers = useMemo(() => {
     const collator = new Intl.Collator('es', { sensitivity: 'base', ignorePunctuation: true });
-    return [...drivers].sort((a, b) =>
-      collator.compare(a?.name ?? '', b?.name ?? '')
-    );
+    return [...drivers].sort((a, b) => collator.compare(a?.name ?? '', b?.name ?? ''));
   }, [drivers]);
 
   return (
@@ -129,25 +128,30 @@ export function GlobalTransactionDialog({
                       </PopoverTrigger>
 
                       <PopoverContent
-                        className="z-50 w-[var(--radix-popover-trigger-width)] p-0 max-h-80 overflow-y-auto"
+                        align="start"
+                        className="z-50 w-[var(--radix-popover-trigger-width)] p-0"
                         onOpenAutoFocus={(e) => e.preventDefault()}
                       >
-                        {/* 1) Nunca deshabilitar por filtro */}
-                        <Command filter={() => 1}>
-                          <CommandInput placeholder="Buscar conductor..." />
-                          <CommandList>
+                        {/* Deja el filtro por defecto para que funcione la búsqueda */}
+                        <Command>
+                          <CommandInput placeholder="Buscar conductor..." autoFocus />
+                          {/* El scroll vive en el CommandList */}
+                          <CommandList className="max-h-64 overflow-y-auto">
                             <CommandEmpty>No se encontraron conductores.</CommandEmpty>
                             <CommandGroup>
                               {sortedDrivers.map((driver) => {
                                 const label = driver.name || driver.phone || String(driver.id);
+                                // value = texto buscable; incluye teléfono para mejorar la búsqueda
+                                const searchValue = `${label} ${driver.phone ?? ""}`;
                                 return (
                                   <CommandItem
                                     key={driver.id}
-                                    value={label} // texto buscable
-                                    // 2) Blindaje contra data-disabled
-                                    className="data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
+                                    value={searchValue}
                                     onSelect={() => {
-                                      form.setValue("driverId", String(driver.id), { shouldValidate: true, shouldDirty: true });
+                                      form.setValue("driverId", String(driver.id), {
+                                        shouldValidate: true,
+                                        shouldDirty: true,
+                                      });
                                       setIsDriverPopoverOpen(false);
                                     }}
                                   >
@@ -157,7 +161,12 @@ export function GlobalTransactionDialog({
                                         String(driver.id) === String(field.value) ? "opacity-100" : "opacity-0"
                                       )}
                                     />
-                                    {label}
+                                    <span className="truncate">{label}</span>
+                                    {driver.phone && (
+                                      <span className="ml-2 text-xs text-muted-foreground">
+                                        {driver.phone}
+                                      </span>
+                                    )}
                                   </CommandItem>
                                 );
                               })}
@@ -179,7 +188,7 @@ export function GlobalTransactionDialog({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Fecha</FormLabel>
-                  <Popover>
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -191,8 +200,17 @@ export function GlobalTransactionDialog({
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent>
-                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                    <PopoverContent align="start" className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(date) => {
+                          field.onChange(date);
+                          setIsCalendarOpen(false);
+                        }}
+                        initialFocus
+                        locale={es}
+                      />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
