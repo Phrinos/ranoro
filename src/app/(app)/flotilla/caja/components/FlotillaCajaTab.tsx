@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo, useState, useRef, useCallback } from 'react';
-import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, WorkshopInfo, ManualDebtEntry, DailyRentalCharge } from '@/types';
+import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, WorkshopInfo, ManualDebtEntry, DailyRentalCharge, PaymentMethod } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, cn, calculateDriverDebt } from '@/lib/utils';
@@ -10,7 +10,7 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowDown, Printer, Copy, Share2 } from 'lucide-react';
+import { ArrowDown, Printer, Copy, Share2, Wallet, CreditCard, Landmark, TrendingUp, TrendingDown as TrendingDownIcon, Wrench } from 'lucide-react';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { RentalPaymentTicket } from './RentalPaymentTicket';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -34,6 +34,13 @@ interface FlotillaCajaTabProps {
   onAddWithdrawal: () => void;
   onAddExpense: () => void;
 }
+
+const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Tarjeta MSI": CreditCard,
+  "Transferencia": Landmark,
+};
 
 export function FlotillaCajaTab({ 
     payments, 
@@ -64,7 +71,7 @@ export function FlotillaCajaTab({
     }
   }, []);
 
-  const { transactions, totalBalance } = useMemo(() => {
+  const { transactions, summary } = useMemo(() => {
     const allTransactions: CashBoxTransaction[] = [
       ...payments.map(p => ({ ...p, transactionType: 'income' as const, date: p.paymentDate })),
       ...withdrawals.map(w => ({ ...w, transactionType: 'withdrawal' as const })),
@@ -74,24 +81,46 @@ export function FlotillaCajaTab({
     allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     let balance = 0;
-    payments.forEach(p => balance += p.amount);
-    withdrawals.forEach(w => balance -= w.amount);
-    expenses.forEach(e => balance -= e.amount);
+    let totalWithdrawals = 0;
+    let totalExpenses = 0;
+    let totalCash = 0;
+    let totalTransfers = 0;
+    
+    payments.forEach(p => {
+        balance += p.amount;
+        if (p.paymentMethod === 'Efectivo') totalCash += p.amount;
+        if (p.paymentMethod === 'Transferencia') totalTransfers += p.amount;
+    });
+    withdrawals.forEach(w => {
+        balance -= w.amount;
+        totalWithdrawals += w.amount;
+    });
+    expenses.forEach(e => {
+        balance -= e.amount;
+        totalExpenses += e.amount;
+    });
 
     return {
       transactions: allTransactions,
-      totalBalance: balance,
+      summary: {
+        totalBalance: balance,
+        totalWithdrawals,
+        totalExpenses,
+        totalCash,
+        totalTransfers,
+      }
     };
   }, [payments, withdrawals, expenses]);
 
   const getTransactionDetails = (t: CashBoxTransaction) => {
     switch (t.transactionType) {
       case 'income':
-        return { variant: 'success', label: 'Ingreso', description: `Pago de ${t.driverName}` };
+        const Icon = paymentMethodIcons[t.paymentMethod as PaymentMethod] || Wallet;
+        return { variant: 'success', label: 'Ingreso', description: `Pago de ${t.driverName}`, methodIcon: <Icon className="h-4 w-4" />, methodName: t.paymentMethod };
       case 'withdrawal':
-        return { variant: 'destructive', label: 'Retiro', description: `Retiro de ${t.ownerName}` };
+        return { variant: 'destructive', label: 'Retiro', description: `Retiro de ${t.ownerName}`, methodIcon: null, methodName: 'N/A' };
       case 'expense':
-        return { variant: 'secondary', label: 'Gasto', description: `${t.description} (${t.vehicleLicensePlate})` };
+        return { variant: 'secondary', label: 'Gasto', description: `${t.description} (${t.vehicleLicensePlate})`, methodIcon: null, methodName: 'N/A' };
     }
   };
 
@@ -162,26 +191,32 @@ export function FlotillaCajaTab({
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex justify-end gap-2">
           <Button onClick={onAddWithdrawal} variant="outline" className="bg-white border-red-500 text-black font-bold hover:bg-red-50">
-            <ArrowDown className="mr-2 h-4 w-4 text-red-500" /> Retiro
+            <TrendingDownIcon className="mr-2 h-4 w-4 text-red-500" /> Retiro
           </Button>
           <Button onClick={onAddExpense} variant="outline" className="bg-white border-red-500 text-black font-bold hover:bg-red-50">
-            <ArrowDown className="mr-2 h-4 w-4 text-red-500" /> Gasto
+            <Wrench className="mr-2 h-4 w-4 text-red-500" /> Gasto
           </Button>
         </div>
-        <Card>
+        <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Balance de Caja</CardTitle>
-            <CardDescription>Saldo actual de la caja de la flotilla.</CardDescription>
+            <CardTitle>Balance de Caja de Flotilla</CardTitle>
+            <CardDescription>Saldo total actual de la caja de la flotilla.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className={cn("text-3xl font-bold text-center", totalBalance >= 0 ? 'text-green-600' : 'text-destructive')}>
-              {formatCurrency(totalBalance)}
+            <div className={cn("text-4xl font-bold text-center", summary.totalBalance >= 0 ? 'text-green-600' : 'text-destructive')}>
+              {formatCurrency(summary.totalBalance)}
             </div>
           </CardContent>
         </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Wallet className="h-4 w-4 text-green-600"/>Ingresos Efectivo</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(summary.totalCash)}</div></CardContent></Card>
+            <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Landmark className="h-4 w-4 text-blue-600"/>Ingresos Transferencia</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-blue-600">{formatCurrency(summary.totalTransfers)}</div></CardContent></Card>
+            <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><TrendingDownIcon className="h-4 w-4 text-red-500"/>Total Retiros</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-red-500">{formatCurrency(summary.totalWithdrawals)}</div></CardContent></Card>
+            <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Wrench className="h-4 w-4 text-orange-500"/>Total Gastos</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-orange-500">{formatCurrency(summary.totalExpenses)}</div></CardContent></Card>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Movimientos de Caja</CardTitle>
@@ -195,6 +230,7 @@ export function FlotillaCajaTab({
                     <TableHead className="text-white font-bold">Fecha</TableHead>
                     <TableHead className="text-white font-bold">Tipo</TableHead>
                     <TableHead className="text-white font-bold">Descripción</TableHead>
+                    <TableHead className="text-center text-white font-bold">Método Pago</TableHead>
                     <TableHead className="text-right text-white font-bold">Monto</TableHead>
                     <TableHead className="text-right text-white font-bold">Acciones</TableHead>
                   </TableRow>
@@ -205,11 +241,27 @@ export function FlotillaCajaTab({
                       const details = getTransactionDetails(t);
                       return (
                         <TableRow key={`${t.transactionType}-${t.id}`}>
-                          <TableCell>{format(parseISO(t.date), "dd MMM yyyy", { locale: es })}</TableCell>
+                          <TableCell>{format(parseISO(t.date), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
                           <TableCell>
                             <Badge variant={details.variant as any}>{details.label}</Badge>
                           </TableCell>
                           <TableCell>{details.description}</TableCell>
+                           <TableCell className="text-center">
+                            {details.methodName !== 'N/A' && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <div className="flex items-center justify-center">
+                                                {details.methodIcon}
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{details.methodName}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
+                           </TableCell>
                           <TableCell className={cn("text-right font-semibold", details.variant === 'success' ? 'text-green-600' : 'text-destructive')}>
                             {details.variant === 'success' ? '+' : '-'} {formatCurrency(t.amount)}
                           </TableCell>
@@ -225,7 +277,7 @@ export function FlotillaCajaTab({
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">No hay movimientos de caja.</TableCell>
+                      <TableCell colSpan={6} className="h-24 text-center">No hay movimientos de caja.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
