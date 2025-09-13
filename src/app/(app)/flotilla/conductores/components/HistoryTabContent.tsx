@@ -152,6 +152,11 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
     setIsEditDialogOpen(false);
   };
 
+  const handleShowTicket = (payment: RentalPayment) => {
+      setSelectedPayment(payment);
+      setIsTicketOpen(true);
+  };
+
   const handleCopyTicketAsImage = useCallback(async (isForSharing: boolean = false) => {
     if (!ticketContentRef.current || !selectedPayment) return null;
     try {
@@ -236,6 +241,11 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
                         <TableCell className="text-right text-green-600">{t.type === 'payment' ? formatCurrency(t.amount) : '-'}</TableCell>
                         <TableCell className={cn("text-right font-bold", t.balance >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(t.balance)}</TableCell>
                         <TableCell className="text-right">
+                           {t.type === 'payment' && (
+                            <Button variant="ghost" size="icon" onClick={() => handleShowTicket(t as RentalPayment)}>
+                                <Printer className="h-4 w-4"/>
+                            </Button>
+                           )}
                           <Button variant="ghost" size="icon" onClick={() => {
                               if (t.type === 'debt') { setEditingDebt(t); setIsChargeDialogOpen(true); }
                               if (t.type === 'charge') { setEditingCharge(t); setIsEditDialogOpen(true); }
