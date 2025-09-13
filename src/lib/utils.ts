@@ -4,7 +4,8 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle } from 'lucide-react';
 import type { PaymentMethod, ServiceSubStatus, Driver, RentalPayment, Vehicle, ManualDebtEntry } from '@/types';
-import { parseISO, isAfter, startOfDay, differenceInCalendarDays } from 'date-fns';
+import { parseISO, isAfter, startOfDay, differenceInCalendarDays, format as formatFns } from 'date-fns';
+import { es } from 'date-fns/locale';
 export { toNumber, formatMXN as formatCurrency, IVA_RATE } from './money';
 
 export function cn(...inputs: ClassValue[]) {
@@ -175,4 +176,10 @@ export const optimizeImage = (file: File | string, maxWidthOrHeight: number, qua
 export function capitalizeSentences(str: string): string {
     if (!str) return "";
     return str.toLowerCase().replace(/(^\s*\w|[\.\!\?]\s*\w)/g, (c) => c.toUpperCase());
+}
+
+export function getMonthName(monthNumber: number): string {
+    const date = new Date();
+    date.setMonth(monthNumber - 1);
+    return formatFns(date, 'MMMM', { locale: es });
 }

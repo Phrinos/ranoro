@@ -6,7 +6,7 @@ import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, W
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, cn, calculateDriverDebt } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { RentalPaymentTicket } from './RentalPaymentTicket';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getMonthName } from '@/lib/utils';
 
 
 type CashBoxTransaction = 
@@ -42,6 +44,21 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Transferencia": Landmark,
 };
 
+const generateMonthOptions = () => {
+    const options = [];
+    const today = new Date();
+    for (let i = 0; i < 12; i++) {
+        const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const value = format(date, 'yyyy-MM');
+        const label = capitalize(format(date, 'MMMM yyyy', { locale: es }));
+        options.push({ value, label });
+    }
+    return options;
+};
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+
 export function FlotillaCajaTab({ 
     payments, 
     withdrawals, 
@@ -59,6 +76,10 @@ export function FlotillaCajaTab({
   const [selectedDriverBalance, setSelectedDriverBalance] = useState(0);
   const ticketContentRef = useRef<HTMLDivElement>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+  
+  const monthOptions = useMemo(() => generateMonthOptions(), []);
+  const [selectedMonth, setSelectedMonth] = useState<string>(monthOptions[0].value);
+
 
   React.useEffect(() => {
     const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
@@ -72,51 +93,53 @@ export function FlotillaCajaTab({
   }, []);
 
   const { transactions, summary } = useMemo(() => {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const startDate = startOfMonth(new Date(year, month - 1));
+    const endDate = endOfMonth(startDate);
+
+    const filterByMonth = <T extends { date: string }>(items: T[]): T[] => {
+      return items.filter(item => {
+        const itemDate = parseISO(item.date);
+        return isWithinInterval(itemDate, { start: startDate, end: endDate });
+      });
+    };
+
+    const monthlyPayments = filterByMonth(payments);
+    const monthlyWithdrawals = filterByMonth(withdrawals);
+    const monthlyExpenses = filterByMonth(expenses);
+    
     const allTransactions: CashBoxTransaction[] = [
-      ...payments.map(p => ({ ...p, transactionType: 'income' as const, date: p.paymentDate })),
-      ...withdrawals.map(w => ({ ...w, transactionType: 'withdrawal' as const })),
-      ...expenses.map(e => ({ ...e, transactionType: 'expense' as const })),
+      ...monthlyPayments.map(p => ({ ...p, transactionType: 'income' as const })),
+      ...monthlyWithdrawals.map(w => ({ ...w, transactionType: 'withdrawal' as const })),
+      ...monthlyExpenses.map(e => ({ ...e, transactionType: 'expense' as const })),
     ];
 
     allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
-    let balance = 0;
-    let totalWithdrawals = 0;
-    let totalExpenses = 0;
-    let totalCash = 0;
-    let totalTransfers = 0;
+    const totalCash = monthlyPayments.filter(p => p.paymentMethod === 'Efectivo').reduce((sum, p) => sum + p.amount, 0);
+    const totalTransfers = monthlyPayments.filter(p => p.paymentMethod === 'Transferencia').reduce((sum, p) => sum + p.amount, 0);
+    const totalWithdrawals = monthlyWithdrawals.reduce((sum, w) => sum + w.amount, 0);
+    const totalExpenses = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
     
-    payments.forEach(p => {
-        balance += p.amount;
-        if (p.paymentMethod === 'Efectivo') totalCash += p.amount;
-        if (p.paymentMethod === 'Transferencia') totalTransfers += p.amount;
-    });
-    withdrawals.forEach(w => {
-        balance -= w.amount;
-        totalWithdrawals += w.amount;
-    });
-    expenses.forEach(e => {
-        balance -= e.amount;
-        totalExpenses += e.amount;
-    });
+    const cashBalance = totalCash - totalWithdrawals - totalExpenses;
 
     return {
       transactions: allTransactions,
       summary: {
-        totalBalance: balance,
+        totalBalance: cashBalance,
         totalWithdrawals,
         totalExpenses,
         totalCash,
         totalTransfers,
       }
     };
-  }, [payments, withdrawals, expenses]);
+  }, [payments, withdrawals, expenses, selectedMonth]);
 
   const getTransactionDetails = (t: CashBoxTransaction) => {
     switch (t.transactionType) {
       case 'income':
         const Icon = paymentMethodIcons[t.paymentMethod as PaymentMethod] || Wallet;
-        return { variant: 'success', label: 'Ingreso', description: `Pago de ${t.driverName}`, methodIcon: <Icon className="h-4 w-4" />, methodName: t.paymentMethod };
+        return { variant: t.paymentMethod === 'Transferencia' ? 'info' : 'success', label: 'Ingreso', description: `Pago de ${t.driverName}`, methodIcon: <Icon className="h-4 w-4" />, methodName: t.paymentMethod };
       case 'withdrawal':
         return { variant: 'destructive', label: 'Retiro', description: `Retiro de ${t.ownerName}`, methodIcon: null, methodName: 'N/A' };
       case 'expense':
@@ -192,7 +215,17 @@ export function FlotillaCajaTab({
   return (
     <>
       <div className="space-y-6">
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 flex-wrap">
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-full sm:w-auto bg-card">
+              <SelectValue placeholder="Seleccionar mes..." />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button onClick={onAddWithdrawal} variant="outline" className="bg-white border-red-500 text-black font-bold hover:bg-red-50">
             <TrendingDownIcon className="mr-2 h-4 w-4 text-red-500" /> Retiro
           </Button>
@@ -202,8 +235,8 @@ export function FlotillaCajaTab({
         </div>
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Balance de Caja de Flotilla</CardTitle>
-            <CardDescription>Saldo total actual de la caja de la flotilla.</CardDescription>
+            <CardTitle>Balance de Caja de Flotilla (Efectivo)</CardTitle>
+            <CardDescription>Saldo del mes seleccionado, considerando solo efectivo.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className={cn("text-4xl font-bold text-center", summary.totalBalance >= 0 ? 'text-green-600' : 'text-destructive')}>
@@ -220,7 +253,7 @@ export function FlotillaCajaTab({
         <Card>
           <CardHeader>
             <CardTitle>Movimientos de Caja</CardTitle>
-            <CardDescription>Historial de todos los ingresos y salidas de dinero.</CardDescription>
+            <CardDescription>Historial de todos los ingresos y salidas de dinero del mes seleccionado.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto rounded-md border">
@@ -262,8 +295,8 @@ export function FlotillaCajaTab({
                                 </TooltipProvider>
                             )}
                            </TableCell>
-                          <TableCell className={cn("text-right font-semibold", details.variant === 'success' ? 'text-green-600' : 'text-destructive')}>
-                            {details.variant === 'success' ? '+' : '-'} {formatCurrency(t.amount)}
+                          <TableCell className={cn("text-right font-semibold", details.variant === 'success' ? 'text-green-600' : details.variant === 'info' ? 'text-blue-600' : 'text-destructive')}>
+                            {details.variant !== 'destructive' && details.variant !== 'secondary' ? '+' : '-'} {formatCurrency(t.amount)}
                           </TableCell>
                           <TableCell className="text-right">
                             {t.transactionType === 'income' && (
@@ -277,7 +310,7 @@ export function FlotillaCajaTab({
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">No hay movimientos de caja.</TableCell>
+                      <TableCell colSpan={6} className="h-24 text-center">No hay movimientos de caja para el mes seleccionado.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -315,4 +348,8 @@ export function FlotillaCajaTab({
       )}
     </>
   );
+}
+
+function getMonthName(arg0: number) {
+    throw new Error('Function not implemented.');
 }
