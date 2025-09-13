@@ -67,7 +67,7 @@ export function EditFinancialInfoDialog({ open, onOpenChange, driver, onSave }: 
             <FormField control={form.control} name="contractDate" render={({ field }) => (
               <FormItem className="flex flex-col"><FormLabel>Fecha de Contrato</FormLabel>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                  <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}>
                       {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button></FormControl></PopoverTrigger>
@@ -86,10 +86,10 @@ export function EditFinancialInfoDialog({ open, onOpenChange, driver, onSave }: 
               <FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="requiredDepositAmount" render={({ field }) => (
-              <FormItem><FormLabel>Depósito Requerido ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Depósito Requerido ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
              <FormField control={form.control} name="depositAmount" render={({ field }) => (
-              <FormItem><FormLabel>Depósito Entregado ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Depósito Entregado ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

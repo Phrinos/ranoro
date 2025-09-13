@@ -57,7 +57,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
             <FormField control={form.control} name="vehicleId" render={({ field }) => (
               <FormItem><FormLabel>Vehículo</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar vehículo..." /></SelectTrigger></FormControl>
+                  <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccionar vehículo..." /></SelectTrigger></FormControl>
                   <SelectContent>
                     {vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} ({v.licensePlate})</SelectItem>)}
                   </SelectContent>
@@ -65,10 +65,10 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
               <FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="amount" render={({ field }) => (
-              <FormItem><FormLabel>Monto del Gasto ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Monto del Gasto ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="description" render={({ field }) => (
-              <FormItem><FormLabel>Descripción del Gasto</FormLabel><FormControl><Textarea {...field} placeholder="Ej: Cambio de aceite, llanta nueva..."/></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Descripción del Gasto</FormLabel><FormControl><Textarea {...field} placeholder="Ej: Cambio de aceite, llanta nueva..." className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

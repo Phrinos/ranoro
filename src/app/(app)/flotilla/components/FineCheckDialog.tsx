@@ -86,7 +86,7 @@ export function FineCheckDialog({ open, onOpenChange, fineCheck, onSave }: FineC
               <FormItem><FormLabel>Fecha de Revisión</FormLabel>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
-                    <FormControl><Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                    <FormControl><Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}>
                         {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button></FormControl>
@@ -119,10 +119,10 @@ export function FineCheckDialog({ open, onOpenChange, fineCheck, onSave }: FineC
                 {fields.map((field, index) => (
                   <div key={field.id} className="grid grid-cols-3 gap-2 items-end border p-2 rounded-md">
                     <FormField control={form.control} name={`fines.${index}.type`} render={({ field }) => (
-                      <FormItem><FormLabel>Tipo</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                      <FormItem><FormLabel>Tipo</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem>
                     )}/>
                     <FormField control={form.control} name={`fines.${index}.amount`} render={({ field }) => (
-                      <FormItem><FormLabel>Monto</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                      <FormItem><FormLabel>Monto</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>
                     )}/>
                     <Button type="button" variant="ghost" size="icon" className="text-destructive" onClick={() => remove(index)}><Trash2 className="h-4 w-4" /></Button>
                   </div>

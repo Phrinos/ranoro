@@ -78,26 +78,26 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="make" render={({ field }) => (
-                  <FormItem><FormLabel>Marca</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Marca</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="model" render={({ field }) => (
-                  <FormItem><FormLabel>Modelo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Modelo</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="year" render={({ field }) => (
-                  <FormItem><FormLabel>Año</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Año</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="color" render={({ field }) => (
-                  <FormItem><FormLabel>Color</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Color</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="ownerName" render={({ field }) => (
-                  <FormItem><FormLabel>Nombre Propietario</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Nombre Propietario</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="ownerPhone" render={({ field }) => (
-                  <FormItem><FormLabel>Teléfono Propietario</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Teléfono Propietario</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
                 )}/>
               </div>
               <FormField control={form.control} name="notes" render={({ field }) => (
-                <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
               )}/>
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

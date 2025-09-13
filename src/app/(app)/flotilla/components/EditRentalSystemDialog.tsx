@@ -70,16 +70,16 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
               <FormField control={form.control} name="dailyRentalCost" render={({ field }) => (
-                <FormItem><FormLabel>Renta Diaria ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Renta Diaria ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="gpsCost" render={({ field }) => (
-                <FormItem><FormLabel>GPS Mensual ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>GPS Mensual ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="insuranceCost" render={({ field }) => (
-                <FormItem><FormLabel>Seguro Mensual ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Seguro Mensual ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="adminCost" render={({ field }) => (
-                <FormItem><FormLabel>Administración Mensual ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Administración Mensual ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
               )}/>
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

@@ -86,7 +86,6 @@ export function GlobalTransactionDialog({
       ? 'Registra un abono para cualquier conductor.'
       : 'Registra un cargo para cualquier conductor.';
 
-  // Orden A–Z con soporte de acentos
   const sortedDrivers = useMemo(() => {
     const collator = new Intl.Collator('es', { sensitivity: 'base', ignorePunctuation: true });
     return [...drivers].sort((a, b) => collator.compare(a?.name ?? '', b?.name ?? ''));
@@ -102,7 +101,6 @@ export function GlobalTransactionDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-6">
-            {/* Conductor */}
             <FormField
               control={form.control}
               name="driverId"
@@ -119,7 +117,7 @@ export function GlobalTransactionDialog({
                           <Button
                             variant="outline"
                             role="combobox"
-                            className={cn("justify-between", !field.value && "text-muted-foreground")}
+                            className={cn("justify-between bg-white", !field.value && "text-muted-foreground")}
                           >
                             {field.value ? selectedName : "Seleccionar conductor"}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -132,21 +130,19 @@ export function GlobalTransactionDialog({
                         className="z-50 w-[var(--radix-popover-trigger-width)] p-0"
                         onOpenAutoFocus={(e) => e.preventDefault()}
                       >
-                        {/* Deja el filtro por defecto para que funcione la búsqueda */}
                         <Command filter={(value, search) => 1}>
                           <CommandInput placeholder="Buscar conductor..." autoFocus />
-                          {/* El scroll vive en el CommandList */}
                           <CommandList className="max-h-64 overflow-y-auto">
                             <CommandEmpty>No se encontraron conductores.</CommandEmpty>
                             <CommandGroup>
                               {sortedDrivers.map((driver) => {
                                 const label = driver.name || driver.phone || String(driver.id);
-                                // value = texto buscable; incluye teléfono para mejorar la búsqueda
                                 const searchValue = `${label} ${driver.phone ?? ""}`;
                                 return (
                                   <CommandItem
                                     key={driver.id}
                                     value={searchValue}
+                                    className="data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
                                     onSelect={() => {
                                       form.setValue("driverId", String(driver.id), {
                                         shouldValidate: true,
@@ -181,7 +177,6 @@ export function GlobalTransactionDialog({
               }}
             />
 
-            {/* Fecha */}
             <FormField
               control={form.control}
               name="date"
@@ -193,7 +188,7 @@ export function GlobalTransactionDialog({
                       <FormControl>
                         <Button
                           variant={"outline"}
-                          className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                          className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}
                         >
                           {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -205,8 +200,8 @@ export function GlobalTransactionDialog({
                         mode="single"
                         selected={field.value}
                         onSelect={(date) => {
-                           field.onChange(date);
-                           setIsCalendarOpen(false);
+                          field.onChange(date);
+                          setIsCalendarOpen(false);
                         }}
                         initialFocus
                         locale={es}
@@ -218,7 +213,6 @@ export function GlobalTransactionDialog({
               )}
             />
 
-            {/* Método de pago solo para pagos */}
             {transactionType === 'payment' && (
               <FormField
                 control={form.control}
@@ -228,7 +222,7 @@ export function GlobalTransactionDialog({
                     <FormLabel>Método de Pago</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
@@ -243,7 +237,6 @@ export function GlobalTransactionDialog({
               />
             )}
 
-            {/* Monto */}
             <FormField
               control={form.control}
               name="amount"
@@ -251,14 +244,13 @@ export function GlobalTransactionDialog({
                 <FormItem>
                   <FormLabel>Monto ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} />
+                    <Input type="number" step="0.01" {...field} className="bg-white" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Descripción */}
             <FormField
               control={form.control}
               name="note"
@@ -266,7 +258,7 @@ export function GlobalTransactionDialog({
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea {...field} className="bg-white" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

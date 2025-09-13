@@ -67,14 +67,14 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSave)} className="space-y-4 pt-4">
             <FormField control={form.control} name="name" render={({ field }) => (
-              <FormItem><FormLabel>Nombre del Trámite</FormLabel><FormControl><Input {...field} placeholder="Ej: Verificación, Tenencia..." /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Nombre del Trámite</FormLabel><FormControl><Input {...field} placeholder="Ej: Verificación, Tenencia..." className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="dueDate" render={({ field }) => (
               <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}>
                         {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>

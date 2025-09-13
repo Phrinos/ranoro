@@ -76,7 +76,7 @@ export function EditDailyChargeDialog({ open, onOpenChange, charge, onSave }: Ed
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}>
                         {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
@@ -98,7 +98,7 @@ export function EditDailyChargeDialog({ open, onOpenChange, charge, onSave }: Ed
               <FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="amount" render={({ field }) => (
-                <FormItem><FormLabel>Monto del Cargo ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Monto del Cargo ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

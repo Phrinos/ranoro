@@ -75,7 +75,7 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPa
             <FormField control={form.control} name="paymentDate" render={({ field }) => (
               <FormItem className="flex flex-col"><FormLabel>Fecha del Pago</FormLabel>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                  <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}>
                       {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button></FormControl></PopoverTrigger>
@@ -97,16 +97,16 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPa
             <FormField control={form.control} name="paymentMethod" render={({ field }) => (
               <FormItem><FormLabel>Método de Pago</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                  <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="Efectivo">Efectivo</SelectItem><SelectItem value="Transferencia">Transferencia</SelectItem></SelectContent>
                 </Select>
               <FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="amount" render={({ field }) => (
-              <FormItem><FormLabel>Monto del Pago ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Monto del Pago ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="note" render={({ field }) => (
-              <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <DialogFooter className="pt-4 px-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

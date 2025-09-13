@@ -49,7 +49,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
   }, [vehicles]);
 
   useEffect(() => {
-    if (open) form.reset({ ownerName: '', amount: 0, note: '' });
+    if (open) form.reset({ ownerName: '', amount: undefined, note: '' });
   }, [open, form]);
 
   const handleFormSubmit = async (values: OwnerWithdrawalFormValues) => {
@@ -70,7 +70,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
             <FormField control={form.control} name="ownerName" render={({ field }) => (
               <FormItem><FormLabel>Propietario</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar propietario..." /></SelectTrigger></FormControl>
+                  <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccionar propietario..." /></SelectTrigger></FormControl>
                   <SelectContent>
                     {owners.map(owner => <SelectItem key={owner} value={owner!}>{owner}</SelectItem>)}
                   </SelectContent>
@@ -78,10 +78,10 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
               <FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="amount" render={({ field }) => (
-              <FormItem><FormLabel>Monto a Retirar ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Monto a Retirar ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="note" render={({ field }) => (
-              <FormItem><FormLabel>Nota o Descripción</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Nota o Descripción</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

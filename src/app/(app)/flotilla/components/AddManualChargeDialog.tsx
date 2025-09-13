@@ -81,7 +81,7 @@ export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualC
               <FormItem className="flex flex-col"><FormLabel>Fecha del Cargo</FormLabel>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
-                    <FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                    <FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}>
                         {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                         <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
                       </Button></FormControl>
@@ -101,10 +101,10 @@ export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualC
               <FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="amount" render={({ field }) => (
-              <FormItem><FormLabel>Monto del Cargo ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Monto del Cargo ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="note" render={({ field }) => (
-              <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
