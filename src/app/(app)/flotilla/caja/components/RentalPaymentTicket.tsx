@@ -35,7 +35,7 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
       <div 
         ref={ref}
         data-format="receipt"
-        className="font-mono bg-white text-black p-2 max-w-[300px] mx-auto print-format-receipt"
+        className="font-mono bg-white text-black p-4 max-w-[300px] mx-auto print-format-receipt"
       >
         <div className="text-center mb-1 space-y-0 leading-tight">
           {workshopInfo.logoUrl && (
