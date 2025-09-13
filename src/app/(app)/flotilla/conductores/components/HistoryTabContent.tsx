@@ -152,7 +152,15 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
     setIsEditDialogOpen(false);
   };
 
-  const handleShowTicket = (payment: RentalPayment) => {
+  const handleShowTicket = async (payment: RentalPayment) => {
+      if (!driver || !vehicle) return;
+      
+      try {
+        await rentalService.generateMissingCharges(driver, vehicle);
+      } catch (err) {
+        toast({ title: "Error", description: "No se pudieron generar los cargos diarios antes de mostrar el ticket.", variant: "destructive"});
+      }
+
       setSelectedPayment(payment);
       setIsTicketOpen(true);
   };

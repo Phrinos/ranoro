@@ -52,10 +52,10 @@ const generateMissingCharges = async (driver: Driver, vehicle: Vehicle): Promise
     let lastChargeDate = contractStart;
     if (!lastChargeSnapshot.empty) {
         const lastCharge = lastChargeSnapshot.docs[0].data() as DailyRentalCharge;
-        lastChargeDate = addDays(startOfDay(new Date(lastCharge.date)), 1);
+        lastChargeDate = addDays(startOfDay(new Date(lastCharge.date)), 1); // Start from the day AFTER the last charge
     }
     
-    if (lastChargeDate > today) return;
+    if (lastChargeDate > today) return; // Already up to date
 
     const daysToGenerate = differenceInCalendarDays(today, lastChargeDate) + 1;
     if (daysToGenerate <= 0) return;
