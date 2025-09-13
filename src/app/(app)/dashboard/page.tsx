@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
 import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense } from '@/types';
-import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle, Receipt } from 'lucide-react'; 
+import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Truck } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Button } from '@/components/ui/button';
@@ -170,6 +170,12 @@ export default function DashboardPage() {
                 <Link href="/pos/nuevo">
                   <Receipt className="mr-2 h-4 w-4" />
                   Punto de Venta
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="bg-white hover:bg-gray-100 text-black">
+                <Link href="/flotilla?tab=balance&action=payment">
+                  <Truck className="mr-2 h-4 w-4" />
+                  Pago de Flotilla
                 </Link>
               </Button>
             </div>

@@ -19,7 +19,7 @@ import html2canvas from 'html2canvas';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
-type CashBoxTransaction = 
+type CashBoxTransaction =
     | (RentalPayment & { transactionType: 'income' })
     | (OwnerWithdrawal & { transactionType: 'withdrawal' })
     | (VehicleExpense & { transactionType: 'expense' });
@@ -44,7 +44,7 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
 };
 
 const generateMonthOptions = () => {
-    const options = [];
+    const options = [{ value: 'all', label: 'Todos los meses' }];
     const today = new Date();
     for (let i = 0; i < 12; i++) {
         const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
@@ -55,16 +55,16 @@ const generateMonthOptions = () => {
     return options;
 };
 
-export function FlotillaCajaTab({ 
-    payments, 
-    withdrawals, 
-    expenses, 
-    drivers, 
+export function FlotillaCajaTab({
+    payments,
+    withdrawals,
+    expenses,
+    drivers,
     vehicles,
     allManualDebts,
     allDailyCharges,
-    onAddWithdrawal, 
-    onAddExpense 
+    onAddWithdrawal,
+    onAddExpense
 }: FlotillaCajaTabProps) {
   const { toast } = useToast();
   const [isTicketOpen, setIsTicketOpen] = useState(false);
@@ -72,9 +72,9 @@ export function FlotillaCajaTab({
   const [selectedDriverBalance, setSelectedDriverBalance] = useState(0);
   const ticketContentRef = useRef<HTMLDivElement>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
-  
+
   const monthOptions = useMemo(() => generateMonthOptions(), []);
-  const [selectedMonth, setSelectedMonth] = useState<string>(monthOptions[0].value);
+  const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
 
 
   React.useEffect(() => {
@@ -88,32 +88,37 @@ export function FlotillaCajaTab({
     }
   }, []);
 
-  const { transactions, summary } = useMemo(() => {
-    if (!selectedMonth) {
-        return { transactions: [], summary: { totalBalance: 0, totalWithdrawals: 0, totalExpenses: 0, totalCash: 0, totalTransfers: 0 } };
-    }
-    const [year, month] = selectedMonth.split('-').map(Number);
-    const startDate = startOfMonth(new Date(year, month - 1));
-    const endDate = endOfMonth(startDate);
+  const { transactions, summary, totalIncome } = useMemo(() => {
+    const paymentsWithDate = payments
+      .filter(p => p.paymentDate)
+      .map(p => ({ ...p, date: p.paymentDate })) as Array<RentalPayment & { date: string }>;
+    const withdrawalsWithDate = withdrawals
+      .filter(w => w.date)
+      .map(w => ({ ...w, date: w.date })) as Array<OwnerWithdrawal & { date: string }>;
+    const expensesWithDate = expenses
+      .filter(e => e.date)
+      .map(e => ({ ...e, date: e.date })) as Array<VehicleExpense & { date: string }>;
 
     const filterByMonth = <T extends { date: string }>(items: T[]): T[] => {
+      if (selectedMonth === 'all') return items;
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const startDate = startOfMonth(new Date(year, month - 1));
+      const endDate = endOfMonth(startDate);
       return items.filter(item => {
-        if (!item.date) return false;
-        const itemDate = parseISO(item.date);
-        return isValid(itemDate) && isWithinInterval(itemDate, { start: startDate, end: endDate });
+        const d = parseISO(item.date);
+        return isValid(d) && isWithinInterval(d, { start: startDate, end: endDate });
       });
     };
 
-    const monthlyPayments = filterByMonth(payments);
-    const monthlyWithdrawals = filterByMonth(withdrawals);
-    const monthlyExpenses = filterByMonth(expenses);
+    const monthlyPayments = filterByMonth(paymentsWithDate);
+    const monthlyWithdrawals = filterByMonth(withdrawalsWithDate);
+    const monthlyExpenses = filterByMonth(expensesWithDate);
     
     const allTransactions: CashBoxTransaction[] = [
       ...monthlyPayments.map(p => ({ ...p, transactionType: 'income' as const })),
       ...monthlyWithdrawals.map(w => ({ ...w, transactionType: 'withdrawal' as const })),
       ...monthlyExpenses.map(e => ({ ...e, transactionType: 'expense' as const })),
     ];
-
     allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     const totalCash = monthlyPayments.filter(p => p.paymentMethod === 'Efectivo').reduce((sum, p) => sum + p.amount, 0);
@@ -131,9 +136,24 @@ export function FlotillaCajaTab({
         totalExpenses,
         totalCash,
         totalTransfers,
-      }
+      },
+      totalIncome: totalCash + totalTransfers
     };
-  }, [payments, withdrawals, expenses, selectedMonth]);
+    }, [payments, withdrawals, expenses, selectedMonth]);
+
+    const currentCashBalance = useMemo(() => {
+        const totalCashIncome = payments
+            .filter(p => p.paymentMethod === 'Efectivo' && p.paymentDate)
+            .reduce((sum, p) => sum + p.amount, 0);
+        const totalWithdrawals = withdrawals
+            .filter(w => w.date)
+            .reduce((sum, w) => sum + w.amount, 0);
+        const totalExpenses = expenses
+            .filter(e => e.date)
+            .reduce((sum, e) => sum + e.amount, 0);
+        return totalCashIncome - totalWithdrawals - totalExpenses;
+    }, [payments, withdrawals, expenses]);
+
 
   const getTransactionDetails = (t: CashBoxTransaction) => {
     switch (t.transactionType) {
@@ -233,17 +253,43 @@ export function FlotillaCajaTab({
             <Wrench className="mr-2 h-4 w-4 text-red-500" /> Gasto
           </Button>
         </div>
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Balance de Caja de Flotilla (Efectivo)</CardTitle>
-            <CardDescription>Saldo del mes seleccionado, considerando solo efectivo.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className={cn("text-4xl font-bold text-center", summary.totalBalance >= 0 ? 'text-green-600' : 'text-destructive')}>
-              {formatCurrency(summary.totalBalance)}
-            </div>
-          </CardContent>
-        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>Total de Ingresos (Mensual)</CardTitle>
+                    <CardDescription>Suma de todos los ingresos del mes seleccionado.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-4xl font-bold text-center text-black">
+                        {formatCurrency(totalIncome)}
+                    </div>
+                </CardContent>
+            </Card>
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>Balance de Caja (Mensual)</CardTitle>
+                    <CardDescription>Balance de efectivo del mes seleccionado.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className={cn("text-4xl font-bold text-center", summary.totalBalance >= 0 ? 'text-green-600' : 'text-destructive')}>
+                        {formatCurrency(summary.totalBalance)}
+                    </div>
+                </CardContent>
+            </Card>
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>Balance de Caja (Actual)</CardTitle>
+                    <CardDescription>Dinero total disponible en caja.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className={cn("text-4xl font-bold text-center", currentCashBalance >= 0 ? 'text-blue-600' : 'text-destructive')}>
+                        {formatCurrency(currentCashBalance)}
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Wallet className="h-4 w-4 text-green-600"/>Ingresos Efectivo</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(summary.totalCash)}</div></CardContent></Card>
             <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Landmark className="h-4 w-4 text-blue-600"/>Ingresos Transferencia</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-blue-600">{formatCurrency(summary.totalTransfers)}</div></CardContent></Card>
