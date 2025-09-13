@@ -114,117 +114,6 @@ function FlotillaLayout({ children }: { children: React.ReactNode }) {
     );
 }
 
-function FlotillaLayoutWrapper() {
-  return (
-    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
-        <FlotillaLayout>
-          <PageContent />
-        </FlotillaLayout>
-    </Suspense>
-  );
-}
-
-function PageContent() {
-    const searchParams = useSearchParams();
-    const tab = searchParams.get('tab');
-    const defaultTab = tab || 'balance';
-    const [activeTab, setActiveTab] = useState(defaultTab);
-    const { vehicles, drivers, dailyCharges, payments, manualDebts, withdrawals, expenses, handleShowTicket } = useFlotillaData();
-    const { toast } = useToast();
-    const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
-    const [transactionType, setTransactionType] = useState<'payment' | 'charge'>('payment');
-    const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
-    const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
-
-    const handleOpenTransactionDialog = (type: 'payment' | 'charge') => {
-        setTransactionType(type);
-        setIsTransactionDialogOpen(true);
-    };
-
-    const handleSaveTransaction = async (values: GlobalTransactionFormValues) => {
-        try {
-            const driver = drivers.find(d => d.id === values.driverId);
-            if (!driver) throw new Error("Driver not found.");
-
-            if (transactionType === 'payment') {
-                const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
-                if (!vehicle) throw new Error("Vehicle not found for payment.");
-                const newPayment = await rentalService.addRentalPayment(driver, vehicle, values.amount, values.note, values.date, values.paymentMethod as PaymentMethod);
-                toast({ title: "Pago Registrado" });
-                if (newPayment) {
-                    handleShowTicket(newPayment);
-                }
-            } else {
-                await personnelService.saveManualDebt(values.driverId, { ...values, date: values.date.toISOString() });
-                toast({ title: "Cargo Registrado" });
-            }
-            setIsTransactionDialogOpen(false);
-        } catch (error) {
-            toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
-        }
-    };
-    
-      const handleSaveWithdrawal = async (values: OwnerWithdrawalFormValues) => {
-    try {
-      await rentalService.addOwnerWithdrawal(values);
-      toast({ title: "Retiro Registrado" });
-      setIsWithdrawalDialogOpen(false);
-    } catch (error) {
-      toast({ title: "Error", description: "No se pudo registrar el retiro.", variant: "destructive" });
-    }
-  };
-  
-  const handleSaveExpense = async (values: VehicleExpenseFormValues) => {
-     try {
-      await rentalService.addVehicleExpense(values);
-      toast({ title: "Gasto Registrado" });
-      setIsExpenseDialogOpen(false);
-    } catch (error) {
-      toast({ title: "Error", description: "No se pudo registrar el gasto.", variant: "destructive" });
-    }
-  };
-
-    const pageActions = (
-        <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={() => handleOpenTransactionDialog('charge')} variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50">
-                <MinusCircle className="mr-2 h-4 w-4 text-red-500" /> Generar Cargo
-            </Button>
-            <Button onClick={() => handleOpenTransactionDialog('payment')} variant="outline" className="w-full sm:w-auto bg-white border-green-500 text-black font-bold hover:bg-green-50">
-                <PlusCircle className="mr-2 h-4 w-4 text-green-700" /> Registrar Pago
-            </Button>
-        </div>
-    );
-
-    const tabs = [
-        { value: 'balance', label: 'Balance', content: <FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} /> },
-        { value: 'conductores', label: 'Conductores', content: <FlotillaConductoresTab drivers={drivers} /> },
-        { value: 'vehiculos', label: 'Vehículos', content: <FlotillaVehiculosTab vehicles={vehicles.filter(v => v.isFleetVehicle)} /> },
-        { value: 'caja', label: 'Caja', content: <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allDailyCharges={dailyCharges} allManualDebts={manualDebts} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} handleShowTicket={handleShowTicket} /> },
-    ];
-    
-    return (
-        <>
-            <TabbedPageLayout
-                title="Gestión de Flotilla"
-                description="Administra vehículos, conductores y finanzas de la flotilla."
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                tabs={tabs}
-                actions={pageActions}
-            />
-            <GlobalTransactionDialog
-                open={isTransactionDialogOpen}
-                onOpenChange={setIsTransactionDialogOpen}
-                onSave={handleSaveTransaction}
-                transactionType={transactionType}
-                drivers={drivers.filter(d => !d.isArchived)}
-            />
-            <OwnerWithdrawalDialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen} vehicles={vehicles} onSave={handleSaveWithdrawal} />
-            <VehicleExpenseDialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen} vehicles={vehicles} onSave={handleSaveExpense} />
-        </>
-    )
-}
-
 function PageTicket({ isOpen, onOpenChange, payment, driverBalance }: { isOpen: boolean, onOpenChange: (open: boolean) => void, payment: RentalPayment, driverBalance: number }) {
     const { toast } = useToast();
     const ticketContentRef = useRef<HTMLDivElement>(null);
@@ -320,4 +209,16 @@ function PageTicket({ isOpen, onOpenChange, payment, driverBalance }: { isOpen: 
     );
 }
 
-export default FlotillaLayoutWrapper;
+export default function FlotillaLayoutWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+        <FlotillaLayout>
+          {children}
+        </FlotillaLayout>
+    </Suspense>
+  );
+}
