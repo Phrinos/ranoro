@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RentalPayment } from '@/types';
 
 const paymentSchema = z.object({
   paymentDate: z.date({ required_error: "La fecha es obligatoria." }),
@@ -31,9 +32,10 @@ interface RegisterPaymentDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSave: (values: PaymentFormValues) => Promise<void>;
+  paymentToEdit?: RentalPayment | null;
 }
 
-export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPaymentDialogProps) {
+export function RegisterPaymentDialog({ open, onOpenChange, onSave, paymentToEdit = null }: RegisterPaymentDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const form = useForm<PaymentFormValues>({
@@ -48,14 +50,23 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPa
 
   useEffect(() => {
     if (open) {
-      form.reset({
-        paymentDate: new Date(),
-        amount: undefined,
-        note: 'Abono de Renta',
-        paymentMethod: 'Efectivo',
-      });
+      if (paymentToEdit) {
+        form.reset({
+          paymentDate: new Date(paymentToEdit.paymentDate),
+          amount: paymentToEdit.amount,
+          note: paymentToEdit.note || 'Abono de Renta',
+          paymentMethod: paymentToEdit.paymentMethod || 'Efectivo',
+        });
+      } else {
+        form.reset({
+          paymentDate: new Date(),
+          amount: undefined,
+          note: 'Abono de Renta',
+          paymentMethod: 'Efectivo',
+        });
+      }
     }
-  }, [open, form]);
+  }, [open, paymentToEdit, form]);
 
   const handleFormSubmit = async (values: PaymentFormValues) => {
     setIsSubmitting(true);
@@ -67,8 +78,10 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0">
         <DialogHeader className="p-6 pb-4">
-          <DialogTitle>Registrar Pago</DialogTitle>
-          <DialogDescription>Registra un nuevo abono o pago a la cuenta del conductor.</DialogDescription>
+          <DialogTitle>{paymentToEdit ? 'Editar Pago' : 'Registrar Pago'}</DialogTitle>
+          <DialogDescription>
+            {paymentToEdit ? 'Actualiza los detalles del pago.' : 'Registra un nuevo abono a la cuenta del conductor.'}
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-6">
@@ -112,7 +125,7 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave }: RegisterPa
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Guardar Pago
+                {paymentToEdit ? 'Actualizar Pago' : 'Guardar Pago'}
               </Button>
             </DialogFooter>
           </form>

@@ -44,6 +44,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   
   const [editingCharge, setEditingCharge] = useState<DailyRentalCharge | null>(null);
   const [editingDebt, setEditingDebt] = useState<ManualDebtEntry | null>(null);
+  const [editingPayment, setEditingPayment] = useState<RentalPayment | null>(null);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -130,11 +131,15 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   
   const handleSavePayment = async (data: PaymentFormValues) => {
     if (!driver || !vehicle) return;
-    const savedPayment = await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.paymentDate, data.paymentMethod);
+    const savedPayment = await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.paymentDate, data.paymentMethod, editingPayment?.id);
     toast({ title: "Pago Registrado" });
     setIsPaymentDialogOpen(false);
-    setSelectedPayment(savedPayment);
-    setIsTicketOpen(true);
+    
+    if(!editingPayment) {
+        setSelectedPayment(savedPayment);
+        setIsTicketOpen(true);
+    }
+    setEditingPayment(null);
   };
   
   const handleSaveManualCharge = async (data: ManualChargeFormValues) => {
@@ -222,7 +227,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
               <div><CardTitle>Historial de Movimientos</CardTitle><CardDescription>Registro de todos los cargos, pagos y adeudos.</CardDescription></div>
               <div className="flex gap-2">
                   <Button onClick={() => { setEditingDebt(null); setIsChargeDialogOpen(true); }} variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" />Añadir Cargo</Button>
-                  <Button onClick={() => setIsPaymentDialogOpen(true)} size="sm"><HandCoins className="mr-2 h-4 w-4" />Registrar Pago</Button>
+                  <Button onClick={() => { setEditingPayment(null); setIsPaymentDialogOpen(true); }} size="sm"><HandCoins className="mr-2 h-4 w-4" />Registrar Pago</Button>
               </div>
           </CardHeader>
           <CardContent>
@@ -257,7 +262,8 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
                           <Button variant="ghost" size="icon" onClick={() => {
                               if (t.type === 'debt') { setEditingDebt(t); setIsChargeDialogOpen(true); }
                               if (t.type === 'charge') { setEditingCharge(t); setIsEditDialogOpen(true); }
-                          }} disabled={t.type === 'payment'}><Edit className="h-4 w-4" /></Button>
+                              if (t.type === 'payment') { setEditingPayment(t); setIsPaymentDialogOpen(true); }
+                          }}><Edit className="h-4 w-4" /></Button>
                           <ConfirmDialog
                             triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                             title={`¿Eliminar ${t.type === 'payment' ? 'Pago' : 'Cargo'}?`}
@@ -278,7 +284,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
       </div>
       
       <EditDailyChargeDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} charge={editingCharge} onSave={handleSaveCharge} />
-      <RegisterPaymentDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} onSave={handleSavePayment} />
+      <RegisterPaymentDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} onSave={handleSavePayment} paymentToEdit={editingPayment} />
       <AddManualChargeDialog open={isChargeDialogOpen} onOpenChange={setIsChargeDialogOpen} onSave={handleSaveManualCharge} />
 
       {selectedPayment && (

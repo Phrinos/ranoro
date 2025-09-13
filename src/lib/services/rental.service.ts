@@ -1,4 +1,4 @@
-
+// src/lib/services/rental.service.ts
 
 import {
   collection,
@@ -155,7 +155,8 @@ const addRentalPayment = async (
   amount: number,
   note?: string,
   paymentDate: Date = new Date(),
-  paymentMethod: PaymentMethod = 'Efectivo'
+  paymentMethod: PaymentMethod = 'Efectivo',
+  paymentId?: string,
 ): Promise<RentalPayment> => {
     if (!db) throw new Error("Database not initialized.");
 
@@ -165,7 +166,7 @@ const addRentalPayment = async (
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
     const currentUser = authUserString ? JSON.parse(authUserString) : null;
     
-    const newPayment: Omit<RentalPayment, 'id'> = {
+    const paymentData: Omit<RentalPayment, 'id'> = {
         driverId: driver.id,
         driverName: driver.name,
         vehicleLicensePlate: vehicle.licensePlate,
@@ -177,8 +178,13 @@ const addRentalPayment = async (
         registeredByName: currentUser?.name || 'Sistema',
     };
     
-    const docRef = await addDoc(collection(db, 'rentalPayments'), cleanObjectForFirestore(newPayment));
-    return { id: docRef.id, ...newPayment };
+    if (paymentId) {
+        await updateDoc(doc(db, 'rentalPayments', paymentId), cleanObjectForFirestore(paymentData));
+        return { id: paymentId, ...paymentData };
+    } else {
+        const docRef = await addDoc(collection(db, 'rentalPayments'), cleanObjectForFirestore(paymentData));
+        return { id: docRef.id, ...paymentData };
+    }
 };
 
 
