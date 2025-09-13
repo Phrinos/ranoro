@@ -5,7 +5,7 @@ import React, { useMemo, useState, useRef, useCallback } from 'react';
 import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, WorkshopInfo, ManualDebtEntry, DailyRentalCharge, PaymentMethod } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatCurrency, cn, calculateDriverDebt } from '@/lib/utils';
+import { formatCurrency, cn, capitalizeWords } from '@/lib/utils';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,6 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/comp
 import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getMonthName } from '@/lib/utils';
 
 
 type CashBoxTransaction = 
@@ -50,14 +49,11 @@ const generateMonthOptions = () => {
     for (let i = 0; i < 12; i++) {
         const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
         const value = format(date, 'yyyy-MM');
-        const label = capitalize(format(date, 'MMMM yyyy', { locale: es }));
+        const label = capitalizeWords(format(date, 'MMMM yyyy', { locale: es }));
         options.push({ value, label });
     }
     return options;
 };
-
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
 
 export function FlotillaCajaTab({ 
     payments, 
@@ -348,8 +344,4 @@ export function FlotillaCajaTab({
       )}
     </>
   );
-}
-
-function getMonthName(arg0: number) {
-    throw new Error('Function not implemented.');
 }
