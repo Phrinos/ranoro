@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/page.tsx
 
 "use client";
@@ -88,7 +87,6 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
     const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
     const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
     const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
-    const [cashTransactions, setCashTransactions] = useState<CashDrawerTransaction[]>([]);
     
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
@@ -100,7 +98,6 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
             serviceService.onServicesUpdate(setAllServices),
             inventoryService.onItemsUpdate(setAllInventory),
             personnelService.onPersonnelUpdate(setAllPersonnel),
-            cashService.onCashTransactionsUpdate(setCashTransactions),
             inventoryService.onFixedExpensesUpdate((expenses) => {
                 setFixedExpenses(expenses);
                 setIsLoading(false);
@@ -322,9 +319,7 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
             label: 'Caja',
             content: (
                  <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
-                    <CajaContent 
-                      cashTransactions={cashTransactions}
-                    />
+                    <CajaContent />
                  </Suspense>
             )
         }

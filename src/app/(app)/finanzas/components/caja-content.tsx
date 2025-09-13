@@ -1,7 +1,7 @@
 // src/app/(app)/finanzas/components/caja-content.tsx
 "use client";
 
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { DateRange } from "react-day-picker";
 import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment, WorkshopInfo, Vehicle } from '@/types';
@@ -42,11 +42,7 @@ type EnhancedCashDrawerTransaction = CashDrawerTransaction & {
     fullDescription?: string;
 };
 
-interface CajaContentProps {
-  cashTransactions: CashDrawerTransaction[];
-}
-
-export default function CajaContent({ cashTransactions }: CajaContentProps) {
+export default function CajaContent() {
   const { toast } = useToast();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -56,18 +52,28 @@ export default function CajaContent({ cashTransactions }: CajaContentProps) {
     return { from: startOfMonth(now), to: endOfMonth(now) };
   });
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [cashTransactions, setCashTransactions] = useState<CashDrawerTransaction[]>([]);
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    setIsLoading(true);
+    const unsub = cashService.onCashTransactionsUpdate((transactions) => {
+        setCashTransactions(transactions);
+        setIsLoading(false);
+    });
+
     const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
-     if (storedWorkshopInfo) {
+    if (storedWorkshopInfo) {
       try {
         setWorkshopInfo(JSON.parse(storedWorkshopInfo));
       } catch (e) {
         console.error("Failed to parse workshop info from localStorage", e);
       }
     }
+    
+    return () => unsub();
   }, []);
   
   const form = useForm<CashTransactionFormValues>({
@@ -166,6 +172,10 @@ export default function CajaContent({ cashTransactions }: CajaContentProps) {
             break;
     }
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <div className="space-y-6">
