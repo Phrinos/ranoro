@@ -32,7 +32,8 @@ export function UnifiedPreviewDialog({
   
   const isTicket = sale !== undefined || rentalPayment !== undefined || cashEntry !== undefined || (service !== undefined && title.toLowerCase().includes('ticket'));
   
-  const dialogWidthClass = isTicket ? 'sm:max-w-xs' : 'sm:max-w-4xl';
+  // Use a specific class for ticket previews to control width, otherwise use a larger default
+  const dialogWidthClass = isTicket ? 'sm:max-w-[350px]' : 'sm:max-w-4xl';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -43,8 +44,14 @@ export function UnifiedPreviewDialog({
             Contenido del documento listo para imprimir o compartir.
           </DialogDescription>
         </DialogHeader>
-        <div className="printable-content flex-grow overflow-y-auto px-6 bg-muted/30 pb-6 print:bg-white print:p-0">
-          <div className="bg-white mx-auto my-4 shadow-lg w-full print:shadow-none">
+        <div className={cn(
+          "printable-content flex-grow overflow-y-auto px-6 bg-muted/30 pb-6 print:bg-white print:p-0",
+          isTicket && "flex justify-center" // Center the ticket within the scroll area
+        )}>
+          <div className={cn(
+            "bg-white mx-auto my-4 shadow-lg w-full print:shadow-none",
+            isTicket && "w-[300px]" // Fix ticket width for consistent rendering
+          )}>
             {children}
           </div>
         </div>
