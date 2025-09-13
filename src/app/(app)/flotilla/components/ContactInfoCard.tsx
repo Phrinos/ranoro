@@ -21,7 +21,7 @@ export function ContactInfoCard({ driver, onEdit }: ContactInfoCardProps) {
   ];
 
   return (
-    <Card className="h-full">
+    <Card>
       <CardHeader className="flex-row items-center justify-between">
         <div>
           <CardTitle>Información de Contacto</CardTitle>

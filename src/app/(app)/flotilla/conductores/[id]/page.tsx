@@ -94,7 +94,7 @@ export default function FlotillaConductorProfilePage() {
         title={`Perfil de ${driver.name}`}
         description="Información detallada, contrato y documentos del conductor."
         actions={
-          <Button variant="outline" onClick={() => router.push('/flotilla?tab=conductores')}>
+          <Button variant="outline" onClick={() => router.push('/flotilla?tab=conductores')} className="bg-white">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
           </Button>
@@ -106,13 +106,13 @@ export default function FlotillaConductorProfilePage() {
           <TabsTrigger value="history">Historial</TabsTrigger>
         </TabsList>
         <TabsContent value="info" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ContactInfoCard driver={driver} onEdit={() => setIsContactInfoDialogOpen(true)} />
-              <AssignedVehicleCard assignedVehicle={assignedVehicle} />
+              <FinancialInfoCard driver={driver} onEdit={() => setIsFinancialInfoDialogOpen(true)} />
             </div>
             <div className="space-y-6">
-              <FinancialInfoCard driver={driver} onEdit={() => setIsFinancialInfoDialogOpen(true)} />
+              <AssignedVehicleCard assignedVehicle={assignedVehicle} />
               <DocumentsCard driver={driver} />
             </div>
           </div>

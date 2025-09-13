@@ -23,7 +23,7 @@ export function FinancialInfoCard({ driver, onEdit }: FinancialInfoCardProps) {
   ];
 
   return (
-    <Card className="h-full">
+    <Card>
       <CardHeader className="flex-row items-center justify-between">
         <div>
           <CardTitle>Información Financiera y Contrato</CardTitle>
