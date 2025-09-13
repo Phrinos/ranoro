@@ -68,15 +68,18 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
         <div className="font-semibold text-center my-1" style={{ fontSize: `${workshopInfo.bodyFontSize || 10}px` }}>RECIBO DE PAGO</div>
         <div className="border-t border-dashed border-neutral-400 mt-1 mb-2"></div>
 
-        <div className="space-y-1" style={{ fontSize: `${workshopInfo.itemsFontSize || 10}px` }}>
-            <p><strong>Recibimos de:</strong> {driver?.name || payment.driverName}</p>
-            <p><strong>Vehículo:</strong> {vehicle?.make} {vehicle?.model} ({payment.vehicleLicensePlate})</p>
-            <div className="border-t border-dashed border-neutral-400 my-2"></div>
-            <p><strong>Fecha del Pago:</strong> {formattedPaymentDate}</p>
-            <p><strong>Método de Pago:</strong> {payment.paymentMethod || 'Efectivo'}</p>
-            <p><strong>Descripción:</strong> {payment.note || 'Abono de Renta'}</p>
-            <div className="border-t border-dashed border-neutral-400 my-2"></div>
-        </div>
+        <table className="w-full text-left" style={{ fontSize: `${workshopInfo.itemsFontSize || 10}px` }}>
+            <tbody>
+                <tr><td className="pr-2"><span className="font-semibold">Recibimos de:</span></td><td>{driver?.name || payment.driverName}</td></tr>
+                <tr><td className="pr-2"><span className="font-semibold">Vehículo:</span></td><td>{vehicle?.make} {vehicle?.model} ({payment.vehicleLicensePlate})</td></tr>
+                <tr><td colSpan={2}><div className="border-t border-dashed border-neutral-400 my-2"></div></td></tr>
+                <tr><td className="pr-2"><span className="font-semibold">Fecha del Pago:</span></td><td>{formattedPaymentDate}</td></tr>
+                <tr><td className="pr-2"><span className="font-semibold">Método de Pago:</span></td><td>{payment.paymentMethod || 'Efectivo'}</td></tr>
+                <tr><td className="pr-2"><span className="font-semibold">Descripción:</span></td><td>{payment.note || 'Abono de Renta'}</td></tr>
+                 <tr><td colSpan={2}><div className="border-t border-dashed border-neutral-400 my-2"></div></td></tr>
+            </tbody>
+        </table>
+
 
         <table className="w-full mt-2" style={{ fontSize: `${workshopInfo.totalsFontSize || 12}px` }}>
             <tbody>
