@@ -16,7 +16,7 @@ export const serviceItemSchema = z.object({
   name: z.string().min(3, 'El nombre del servicio es requerido.'),
   price: z.coerce.number({ invalid_type_error: 'El precio debe ser un número.' }).optional(),
   suppliesUsed: z.array(supplySchema),
-  serviceType: z.string().optional(), // Moved from root
+  serviceType: z.string().optional(),
 });
 
 export const photoReportSchema = z.object({
@@ -24,7 +24,7 @@ export const photoReportSchema = z.object({
   date: z.string(),
   description: z.string().optional(),
   photos: z.array(z.string().url('URL de foto inválida.')),
-  type: z.enum(['Recepción', 'Entrega', 'General']).optional(), // Added type
+  type: z.enum(['Recepción', 'Entrega', 'General']).optional(),
 });
 
 export const safetyCheckValueSchema = z.object({
@@ -102,7 +102,6 @@ export const serviceFormSchema = z.object({
     serviceAdvisorSignatureDataUrl: z.string().url().optional().nullable().transform(v => (v === '' || v == null ? undefined : v)), 
     payments: z.array(paymentSchema).optional(),
     cardCommission: z.number().optional(),
-    // Deprecated payment fields
     paymentMethod: z.string().optional(),
     cardFolio: z.string().optional(),
     transferFolio: z.string().optional(),
@@ -111,9 +110,10 @@ export const serviceFormSchema = z.object({
     amountInTransfer: z.number().optional(),
     
     nextServiceInfo: z.object({
-        date: z.string().optional(),
-        mileage: z.coerce.number().optional().nullable(), 
+        nextServiceDate: z.date().optional().nullable(),
+        nextServiceMileage: z.coerce.number().optional().nullable(),
     }).optional().nullable(),
+
     photoReports: z.array(photoReportSchema).optional(),
     customerName: z.string().optional(),
     totalCost: z.number().optional(),
@@ -164,6 +164,5 @@ export const serviceFormSchema = z.object({
         });
     }
 });
-
 
 export type ServiceFormValues = z.infer<typeof serviceFormSchema>;

@@ -1,205 +1,153 @@
 // src/app/(app)/servicios/components/VehicleSelectionCard.tsx
-
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useFormContext, Controller } from "react-hook-form";
+import React, { useEffect, useState } from 'react';
+import { useFormContext, Controller } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Car as CarIcon, History, Search } from 'lucide-react';
-import type { Vehicle, ServiceRecord } from '@/types';
-import { format, isValid, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { cn } from "@/lib/utils";
-import Link from 'next/link';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
-import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { PlusCircle, Info, Car } from 'lucide-react';
+import { Vehicle, ServiceRecord } from '@/types';
+import { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+import { ServiceFormValues } from '@/schemas/service-form';
+import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
 
 interface VehicleSelectionCardProps {
-  isReadOnly?: boolean;
   vehicles: Vehicle[];
   serviceHistory: ServiceRecord[];
-  onVehicleCreated: (newVehicleData: VehicleFormValues) => Promise<Vehicle>;
-  onOpenNewVehicleDialog: (plate?: string) => void;
+  onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
+  onOpenNewVehicleDialog: () => void;
   initialVehicleId?: string;
 }
 
 export function VehicleSelectionCard({
-  isReadOnly,
   vehicles,
-  serviceHistory,
   onVehicleCreated,
-  onOpenNewVehicleDialog,
   initialVehicleId,
 }: VehicleSelectionCardProps) {
-  const { control, setValue, watch, formState: { errors } } = useFormContext();
-  
-  const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
-  const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
-  const [newVehiclePlate, setNewVehiclePlate] = useState('');
+  const { control, watch, setValue, formState: { errors } } = useFormContext<ServiceFormValues>();
+  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
+  const router = useRouter();
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [lastService, setLastService] = useState<ServiceRecord | null>(null);
-  
-  const vehicleId = watch('vehicleId');
-  const localVehicles: Vehicle[] = Array.isArray(vehicles) ? vehicles : [];
+  const selectedVehicleId = watch('vehicleId');
+  const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
 
   useEffect(() => {
-    const vehicle = localVehicles.find(v => v.id === vehicleId);
-    if (vehicle) {
-      setSelectedVehicle(vehicle);
-      setSearchTerm(vehicle.licensePlate || '');
-      const vehicleServices = serviceHistory
-        .filter(s => s.vehicleId === vehicle.id && s.status === 'Entregado')
-        .sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
-      setLastService(vehicleServices[0] || null);
-    } else {
-      setSelectedVehicle(null);
-      setLastService(null);
-      if(!isSelectionDialogOpen){
-         setSearchTerm('');
-      }
+    if (selectedVehicleId && selectedVehicle) {
+      setValue('vehicleIdentifier', `${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.licensePlate})`);
+      setValue('customerName', selectedVehicle.ownerName || 'N/A');
     }
-  }, [vehicleId, localVehicles, serviceHistory, isSelectionDialogOpen]);
-
-  const handleSelectVehicle = useCallback((vehicle: Vehicle) => {
-    setValue('vehicleId', vehicle.id, { shouldValidate: true, shouldDirty: true });
-    if (vehicle.currentMileage) {
-      setValue('mileage', vehicle.currentMileage, { shouldDirty: true });
-    }
-    setIsSelectionDialogOpen(false);
-  }, [setValue]);
+  }, [selectedVehicleId, selectedVehicle, setValue]);
   
-  const handleOpenNewVehicleFromSearch = () => {
-    setIsSelectionDialogOpen(false);
-    setNewVehiclePlate(searchTerm);
-    setIsNewVehicleDialogOpen(true);
-  };
-  
-  const handleNewVehicleSave = async (data: VehicleFormValues) => {
+  const handleVehicleCreatedAndSelect = async (data: VehicleFormValues) => {
+    if (!onVehicleCreated) return;
     const newVehicle = await onVehicleCreated(data);
-    handleSelectVehicle(newVehicle);
-    setIsNewVehicleDialogOpen(false);
+    setValue('vehicleId', newVehicle.id, { shouldValidate: true, shouldDirty: true });
+    setIsVehicleDialogOpen(false);
   };
 
-  const filteredVehicles = useMemo(() => {
-    const safeVehicles: Vehicle[] = Array.isArray(vehicles) ? vehicles : [];
-    if (!searchTerm.trim()) {
-        return [];
-    }
-    const lowercasedTerm = searchTerm.toLowerCase();
-    
-    const norm = (s?: string) => (s ?? "").toLowerCase();
-
-    return safeVehicles.filter(v =>
-        norm(v.licensePlate).includes(lowercasedTerm) ||
-        norm(v.make).includes(lowercasedTerm) ||
-        norm(v.model).includes(lowercasedTerm) ||
-        norm(v.ownerName).includes(lowercasedTerm)
-    ).slice(0, 10);
-  },[searchTerm, vehicles]);
-
-
-  const formatServiceInfo = (service: ServiceRecord | null): string => {
-    if (!service) return 'No hay registro de servicio previo.';
-    const date = service.deliveryDateTime || service.serviceDate;
-    if (!date || !isValid(new Date(date))) return 'Fecha inválida';
-    const description = service.serviceItems?.map(item => item.name).join(', ') || service.description || 'Servicio General';
-    return `${format(new Date(date), "dd MMM yyyy", { locale: es })} - ${description}`;
-  };
-
-  if (selectedVehicle) {
-    return (
-      <Card>
-        <CardHeader><CardTitle>Vehículo Seleccionado</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-           <div className="p-3 border rounded-md bg-background/30">
-              <p className="text-xs text-muted-foreground">{selectedVehicle.ownerName}</p>
-              <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
-          </div>
-          <FormField
-            control={control}
-            name="mileage"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="flex items-center gap-2"><History className="h-4 w-4 text-muted-foreground"/>Kilometraje</FormLabel>
-                <FormControl><Input type="number" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="text-left mt-2 pt-2 border-t">
-              <p className="text-sm font-medium text-muted-foreground">Último Servicio:</p>
-              <p className="font-semibold text-base truncate">{formatServiceInfo(lastService)}</p>
-          </div>
-          <div className="flex justify-end pt-2 gap-2">
-              <Button type="button" variant="link" size="sm" asChild><Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank">Ver vehiculo</Link></Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setValue('vehicleId', '', { shouldValidate: true })}>Cambiar Vehículo</Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  const handleShowHistory = () => {
+      if (selectedVehicleId) {
+          router.push(`/vehiculos/${selectedVehicleId}`);
+      }
   }
 
   return (
     <>
-      <Controller
-        name="vehicleId"
-        control={control}
-        render={({ field }) => (
-            <Button
-                type="button"
-                variant="outline"
-                className={cn(
-                  "w-full h-24 border-2 border-dashed bg-yellow-50 border-yellow-400 text-yellow-800 hover:bg-yellow-100",
-                  errors.vehicleId && "border-destructive text-destructive bg-destructive/10 border-destructive/50 hover:bg-destructive/20"
-                )}
-                onClick={() => setIsSelectionDialogOpen(true)}
-                disabled={isReadOnly}
-            >
-                <CarIcon className="mr-4 h-8 w-8" />
-                <span className="text-lg">Seleccionar Vehículo</span>
-            </Button>
-        )}
-      />
-
-      <Dialog open={isSelectionDialogOpen} onOpenChange={setIsSelectionDialogOpen}>
-        <DialogContent className="sm:max-w-lg p-6">
-          <DialogHeader><DialogTitle>Buscar Vehículo</DialogTitle><DialogDescription>Busque por placa, marca, modelo o propietario.</DialogDescription></DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
-            </div>
-            <ScrollArea className="h-60 border rounded-md p-2">
-              {filteredVehicles.length > 0 ? (
-                filteredVehicles.map((v) => (
-                  <Button key={v.id} variant="ghost" className="w-full justify-start h-auto py-2" onClick={() => handleSelectVehicle(v)}>
-                    <p className="font-semibold truncate">
-                       {v.licensePlate}, {v.make} {v.model} {v.year}, {v.color}
-                    </p>
-                  </Button>
-                ))
-              ) : <div className="text-center p-4 text-sm">No se encontraron vehículos.</div>}
-            </ScrollArea>
-             <Button type="button" variant="secondary" className="w-full" onClick={handleOpenNewVehicleFromSearch}>
-                <CarIcon className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
-              </Button>
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg">Vehículo</CardTitle>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setIsSelectionDialogOpen(false)}>Cerrar</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <FormField
+            control={control}
+            name="vehicleId"
+            render={({ field }) => (
+              <FormItem>
+                <div className="p-3 border rounded-lg bg-muted/50">
+                  {selectedVehicle ? (
+                     <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-3">
+                          <Car className="h-6 w-6 text-muted-foreground" />
+                           <div>
+                              <p className="font-semibold">{selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.licensePlate})</p>
+                              <p className="text-sm text-muted-foreground">Propietario: {selectedVehicle.ownerName}</p>
+                           </div>
+                       </div>
+                     </div>
+                  ) : (
+                     <p className="text-sm text-muted-foreground text-center py-2">Ningún vehículo seleccionado.</p>
+                  )}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+              control={control}
+              name="mileage"
+              render={({ field }) => (
+                  <FormItem>
+                      <FormLabel className={cn(errors.mileage && "text-destructive")}>KM Actual</FormLabel>
+                      <FormControl>
+                          <Input
+                              type="number"
+                              placeholder="Ej. 75000"
+                              {...field}
+                              value={field.value ?? ''}
+                              onChange={e => field.onChange(parseInt(e.target.value, 10) || null)}
+                              className={cn(errors.mileage && "border-destructive focus-visible:ring-destructive")}
+                          />
+                      </FormControl>
+                      <FormMessage />
+                  </FormItem>
+              )}
+          />
+          <div className="flex gap-2">
+             <FormField
+                control={control}
+                name="vehicleId"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <Select onValueChange={field.onChange} value={field.value} disabled={!!initialVehicleId}>
+                      <FormControl>
+                        <SelectTrigger className={cn("bg-white", errors.vehicleId && "border-destructive")}>
+                          <SelectValue placeholder="Cambiar vehículo..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {vehicles.map((vehicle) => (
+                          <SelectItem key={vehicle.id} value={vehicle.id}>
+                            {vehicle.licensePlate} - {vehicle.make} {vehicle.model}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+            />
+            {selectedVehicleId && (
+              <Button type="button" variant="secondary" onClick={handleShowHistory}>
+                <Info className="mr-2 h-4 w-4" /> Ver Perfil
+              </Button>
+            )}
+            <Button type="button" variant="outline" onClick={() => setIsVehicleDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Nuevo
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <VehicleDialog
-        open={isNewVehicleDialogOpen}
-        onOpenChange={setIsNewVehicleDialogOpen}
-        vehicle={{ licensePlate: newVehiclePlate }}
-        onSave={handleNewVehicleSave}
+        open={isVehicleDialogOpen}
+        onOpenChange={setIsVehicleDialogOpen}
+        onSave={handleVehicleCreatedAndSelect}
       />
     </>
   );

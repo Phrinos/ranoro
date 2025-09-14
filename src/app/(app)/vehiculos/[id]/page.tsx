@@ -73,24 +73,21 @@ export default function VehicleDetailPage() {
   const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceRecord | null>(null);
 
-  const fetchVehicleAndServices = useCallback(async () => {
-    const fetchedVehicle = await inventoryService.getVehicleById(vehicleId);
-    setVehicle(fetchedVehicle || null);
-    if(fetchedVehicle) {
-        const vehicleServices = await serviceService.getServicesForVehicle(vehicleId);
-        setServices(vehicleServices);
-    }
-  }, [vehicleId]);
-
   useEffect(() => {
-    fetchVehicleAndServices();
-  }, [fetchVehicleAndServices]);
+    const fetchVehicle = async () => {
+        const fetchedVehicle = await inventoryService.getVehicleById(vehicleId);
+        setVehicle(fetchedVehicle || null);
+    };
+    fetchVehicle();
+
+    const unsubscribe = serviceService.onServicesForVehicleUpdate(vehicleId, setServices);
+    return () => unsubscribe();
+  }, [vehicleId]);
 
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
     if (!vehicle) return;
     try {
       await inventoryService.saveVehicle(formData, vehicle.id);
-      await fetchVehicleAndServices();
       setIsEditDialogOpen(false);
       toast({ title: "Vehículo Actualizado" });
     } catch (e) {

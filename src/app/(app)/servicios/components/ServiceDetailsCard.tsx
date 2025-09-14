@@ -1,24 +1,21 @@
-
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
-
 "use client";
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useFormContext, Controller } from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Loader2, Signature } from "lucide-react";
+import { CalendarIcon, Signature } from "lucide-react";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import type { User, ServiceTypeRecord } from "@/types";
 import { cn } from "@/lib/utils";
 import { format, setHours, setMinutes, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useState } from 'react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Textarea } from '@/components/ui/textarea';
 
 const statusOptions: { value: ServiceFormValues['status'], label: string }[] = [
     { value: 'Cotizacion', label: 'Cotización' },
@@ -51,7 +48,6 @@ interface ServiceDetailsCardProps {
 export function ServiceDetailsCard({
   isReadOnly,
   users,
-  serviceTypes,
   onOpenSignature,
   isNew
 }: ServiceDetailsCardProps) {
@@ -103,7 +99,7 @@ export function ServiceDetailsCard({
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
-            <CardTitle className="text-lg">Detalles Generales</CardTitle>
+            <CardTitle className="text-lg">Detalles del Servicio</CardTitle>
             <div className="text-right text-sm text-muted-foreground">
               {watchedAdvisorName && <p>Asesor: {watchedAdvisorName}</p>}
               {watchedStatus === 'Entregado' && technicianName && <p>Técnico: {technicianName}</p>}
@@ -172,6 +168,25 @@ export function ServiceDetailsCard({
               )}
             />
         )}
+        
+        <FormField
+            control={control}
+            name="notes"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Observaciones Generales</FormLabel>
+                    <FormControl>
+                        <Textarea
+                            placeholder="Anotaciones sobre el servicio, ruidos, comportamiento del vehículo, etc."
+                            {...field}
+                            rows={4}
+                            disabled={isReadOnly}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
 
         <Button type="button" variant="outline" className="w-full" onClick={() => onOpenSignature('advisor')} disabled={isReadOnly}>
           <Signature className="mr-2 h-4 w-4" />

@@ -15,13 +15,14 @@ import {
   orderBy,
   limit,
   Timestamp,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { RentalPayment, DailyRentalCharge, Driver, Vehicle, OwnerWithdrawal, VehicleExpense, PaymentMethod } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
 import { personnelService } from './personnel.service';
-import { startOfDay, differenceInCalendarDays, addDays, parseISO } from 'date-fns';
+import { startOfDay, differenceInCalendarDays, addDays, parseISO, format as formatDate } from 'date-fns';
 
 // --- Daily Rental Charges ---
 
@@ -38,89 +39,67 @@ const onDailyChargesUpdate = (callback: (charges: DailyRentalCharge[]) => void, 
     });
 };
 
-
 const generateMissingCharges = async (driver: Driver, vehicle: Vehicle): Promise<void> => {
     if (!db || !driver.contractDate || !vehicle.dailyRentalCost || vehicle.dailyRentalCost <= 0) return;
     
-    const today = startOfDay(new Date());
-    const contractStart = startOfDay(new Date(driver.contractDate));
+    const lockRef = doc(db, 'app-locks', 'generateCharges');
 
-    const chargesRef = collection(db, "dailyRentalCharges");
-    const q = query(chargesRef, where("driverId", "==", driver.id), orderBy("date", "desc"), limit(1));
-    const lastChargeSnapshot = await getDocs(q);
-    
-    let lastChargeDate = addDays(contractStart, -1); // Start from the day before the contract
-    if (!lastChargeSnapshot.empty) {
-        const lastCharge = lastChargeSnapshot.docs[0].data() as DailyRentalCharge;
-        lastChargeDate = startOfDay(new Date(lastCharge.date)); 
+    try {
+        await runTransaction(db, async (transaction) => {
+            const lockDoc = await transaction.get(lockRef);
+            if (lockDoc.exists() && lockDoc.data()?.locked) {
+                const lockTime = (lockDoc.data()?.timestamp as Timestamp).toDate();
+                // If lock is older than 5 minutes, release it
+                if (new Date().getTime() - lockTime.getTime() > 5 * 60 * 1000) {
+                   console.warn("Stale lock found. Releasing.");
+                } else {
+                  console.log("Charge generation is already in progress.");
+                  return;
+                }
+            }
+            transaction.set(lockRef, { locked: true, timestamp: new Date() });
+            
+            const today = startOfDay(new Date());
+            const contractStart = startOfDay(new Date(driver.contractDate));
+            
+            const chargesRef = collection(db, "dailyRentalCharges");
+            const q = query(chargesRef, where("driverId", "==", driver.id), orderBy("date", "desc"), limit(1));
+            const lastChargeSnapshot = await getDocs(q);
+            
+            let lastChargeDate = addDays(contractStart, -1);
+            if (!lastChargeSnapshot.empty) {
+                lastChargeDate = startOfDay(new Date(lastChargeSnapshot.docs[0].data().date)); 
+            }
+            
+            let nextChargeDate = addDays(lastChargeDate, 1);
+            if (nextChargeDate > today) return;
+
+            const daysToGenerate = differenceInCalendarDays(today, nextChargeDate) + 1;
+            if (daysToGenerate <= 0) return;
+
+            const existingChargesSnap = await getDocs(query(chargesRef, where("driverId", "==", driver.id), where("date", ">=", nextChargeDate.toISOString())));
+            const existingDates = new Set(existingChargesSnap.docs.map(d => startOfDay(new Date(d.data().date)).getTime()));
+
+            for (let i = 0; i < daysToGenerate; i++) {
+                const chargeDate = addDays(nextChargeDate, i);
+                if (!existingDates.has(chargeDate.getTime())) {
+                    const newCharge: Omit<DailyRentalCharge, 'id'> = {
+                        driverId: driver.id,
+                        vehicleId: vehicle.id,
+                        date: chargeDate.toISOString(),
+                        amount: vehicle.dailyRentalCost,
+                        vehicleLicensePlate: vehicle.licensePlate,
+                    };
+                    const docRef = doc(chargesRef);
+                    transaction.set(docRef, newCharge);
+                }
+            }
+        });
+    } finally {
+        // Unlock
+        await updateDoc(lockRef, { locked: false });
     }
-    
-    const nextChargeDate = addDays(lastChargeDate, 1);
-
-    if (nextChargeDate > today) return; // Already up to date
-
-    const daysToGenerate = differenceInCalendarDays(today, nextChargeDate) + 1;
-    if (daysToGenerate <= 0) return;
-
-    const batch = writeBatch(db);
-    for (let i = 0; i < daysToGenerate; i++) {
-        const chargeDate = addDays(nextChargeDate, i);
-        const newCharge: Omit<DailyRentalCharge, 'id'> = {
-            driverId: driver.id,
-            vehicleId: vehicle.id,
-            date: chargeDate.toISOString(),
-            amount: vehicle.dailyRentalCost,
-            vehicleLicensePlate: vehicle.licensePlate,
-        };
-        const docRef = doc(chargesRef);
-        batch.set(docRef, newCharge);
-    }
-
-    await batch.commit();
 };
-
-const regenerateAllChargesForAllDrivers = async (): Promise<number> => {
-    if (!db) throw new Error("Database not initialized.");
-    
-    const allDrivers = await personnelService.onDriversUpdatePromise();
-    const allVehicles = await inventoryService.onVehiclesUpdatePromise();
-    
-    const activeDrivers = allDrivers.filter(d => !d.isArchived && d.assignedVehicleId && d.contractDate);
-    const fleetVehicles = allVehicles.filter(v => v.isFleetVehicle);
-
-    const batch = writeBatch(db);
-    const chargesRef = collection(db, "dailyRentalCharges");
-    let chargesCount = 0;
-
-    for (const driver of activeDrivers) {
-        const vehicle = fleetVehicles.find(v => v.id === driver.assignedVehicleId);
-        if (!vehicle || !vehicle.dailyRentalCost || vehicle.dailyRentalCost <= 0) continue;
-
-        const today = startOfDay(new Date());
-        const contractStart = startOfDay(parseISO(driver.contractDate!));
-
-        const daysToGenerate = differenceInCalendarDays(today, contractStart) + 1;
-        if (daysToGenerate <= 0) continue;
-
-        for (let i = 0; i < daysToGenerate; i++) {
-            const chargeDate = addDays(contractStart, i);
-            const newCharge: Omit<DailyRentalCharge, 'id'> = {
-                driverId: driver.id,
-                vehicleId: vehicle.id,
-                date: chargeDate.toISOString(),
-                amount: vehicle.dailyRentalCost,
-                vehicleLicensePlate: vehicle.licensePlate,
-            };
-            const docRef = doc(chargesRef);
-            batch.set(docRef, newCharge);
-            chargesCount++;
-        }
-    }
-
-    await batch.commit();
-    return chargesCount;
-};
-
 
 const saveDailyCharge = async (id: string, data: { date: string; amount: number }): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
@@ -162,7 +141,6 @@ const addRentalPayment = async (
 
     const dailyRate = vehicle.dailyRentalCost || 0;
     
-    // Get current user from localStorage
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
     const currentUser = authUserString ? JSON.parse(authUserString) : null;
     
@@ -224,11 +202,9 @@ const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'veh
     return { id: docRef.id, ...newExpense };
 };
 
-
 export const rentalService = {
   onDailyChargesUpdate,
   generateMissingCharges,
-  regenerateAllChargesForAllDrivers,
   saveDailyCharge,
   deleteDailyCharge,
   onRentalPaymentsUpdate,
