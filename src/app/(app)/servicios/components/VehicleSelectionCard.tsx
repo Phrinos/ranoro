@@ -102,7 +102,7 @@ export function VehicleSelectionCard({
                               {...field}
                               value={field.value ?? ''}
                               onChange={e => field.onChange(parseInt(e.target.value, 10) || null)}
-                              className={cn(errors.mileage && "border-destructive focus-visible:ring-destructive")}
+                              className={cn("bg-white", errors.mileage && "border-destructive focus-visible:ring-destructive")}
                           />
                       </FormControl>
                       <FormMessage />
@@ -110,28 +110,6 @@ export function VehicleSelectionCard({
               )}
           />
           <div className="flex gap-2">
-             <FormField
-                control={control}
-                name="vehicleId"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <Select onValueChange={field.onChange} value={field.value} disabled={!!initialVehicleId}>
-                      <FormControl>
-                        <SelectTrigger className={cn("bg-white", errors.vehicleId && "border-destructive")}>
-                          <SelectValue placeholder="Cambiar vehículo..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {vehicles.map((vehicle) => (
-                          <SelectItem key={vehicle.id} value={vehicle.id}>
-                            {vehicle.licensePlate} - {vehicle.make} {vehicle.model}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-            />
             {selectedVehicleId && (
               <Button type="button" variant="secondary" onClick={handleShowHistory}>
                 <Info className="mr-2 h-4 w-4" /> Ver Perfil
