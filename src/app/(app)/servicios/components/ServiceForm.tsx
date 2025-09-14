@@ -218,7 +218,9 @@ export function ServiceForm({
                 </TabsContent>
             </div>
         </Tabs>
+
         <NextServiceInfoCard currentMileage={currentMileage} />
+
        </div>
         <ServiceFormFooter
             onCancel={onCancel}
