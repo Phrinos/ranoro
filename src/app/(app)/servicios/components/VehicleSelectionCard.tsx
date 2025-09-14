@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 "use client";
 
@@ -5,9 +6,8 @@ import React, { useEffect, useState } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Info, Car } from 'lucide-react';
+import { PlusCircle, Info, Car, Repeat } from 'lucide-react';
 import { Vehicle, ServiceRecord } from '@/types';
 import { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
@@ -52,7 +52,7 @@ export function VehicleSelectionCard({
 
   const handleShowHistory = () => {
       if (selectedVehicleId) {
-          router.push(`/vehiculos/${selectedVehicleId}`);
+          window.open(`/vehiculos/${selectedVehicleId}`, '_blank');
       }
   }
 
@@ -110,14 +110,16 @@ export function VehicleSelectionCard({
               )}
           />
           <div className="flex gap-2">
+            <Button type="button" variant="secondary" onClick={() => setIsVehicleDialogOpen(true)}>
+              <Repeat className="mr-2 h-4 w-4" />
+              Cambiar Vehículo
+            </Button>
             {selectedVehicleId && (
-              <Button type="button" variant="secondary" onClick={handleShowHistory}>
-                <Info className="mr-2 h-4 w-4" /> Ver Perfil
+              <Button type="button" variant="outline" onClick={handleShowHistory}>
+                <Info className="mr-2 h-4 w-4" />
+                Ver Vehículo
               </Button>
             )}
-            <Button type="button" variant="outline" onClick={() => setIsVehicleDialogOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Nuevo
-            </Button>
           </div>
         </CardContent>
       </Card>
