@@ -1,7 +1,7 @@
 // src/app/(app)/flotilla/balance/components/FlotillaBalanceTab.tsx
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { Driver, Vehicle, DailyRentalCharge, RentalPayment, ManualDebtEntry } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,6 +9,8 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ArrowUpDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface FlotillaBalanceTabProps {
   drivers: Driver[];
@@ -18,13 +20,16 @@ interface FlotillaBalanceTabProps {
   manualDebts: ManualDebtEntry[];
 }
 
+type SortKey = 'name' | 'totalCharges' | 'totalPayments' | 'balance' | 'lastPaymentDate';
+
 export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, manualDebts }: FlotillaBalanceTabProps) {
   const router = useRouter();
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
 
   const driverBalances = useMemo(() => {
     const activeDrivers = drivers.filter(d => !d.isArchived);
     
-    return activeDrivers.map(driver => {
+    const balances = activeDrivers.map(driver => {
       const driverCharges = dailyCharges.filter(c => c.driverId === driver.id).reduce((sum, c) => sum + c.amount, 0);
       const driverDebts = manualDebts.filter(d => d.driverId === driver.id).reduce((sum, d) => sum + d.amount, 0);
       const driverPayments = payments.filter(p => p.driverId === driver.id);
@@ -47,12 +52,60 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
         balance,
         lastPaymentDate: lastPayment ? lastPayment.paymentDate : null,
       };
-    }).sort((a, b) => a.name.localeCompare(b.name));
-  }, [drivers, dailyCharges, payments, manualDebts]);
+    });
+
+    // Sorting logic
+    balances.sort((a, b) => {
+        const valA = a[sortConfig.key];
+        const valB = b[sortConfig.key];
+        
+        let comparison = 0;
+        if (valA === null || valA === undefined) comparison = 1;
+        else if (valB === null || valB === undefined) comparison = -1;
+        else if (typeof valA === 'number' && typeof valB === 'number') {
+            comparison = valA - valB;
+        } else if (typeof valA === 'string' && typeof valB === 'string') {
+            if (sortConfig.key === 'lastPaymentDate') {
+                 const dateA = parseISO(valA);
+                 const dateB = parseISO(valB);
+                 if (isValid(dateA) && isValid(dateB)) {
+                    comparison = dateA.getTime() - dateB.getTime();
+                 }
+            } else {
+                 comparison = valA.localeCompare(valB, 'es', { numeric: true });
+            }
+        }
+        
+        return sortConfig.direction === 'ascending' ? comparison : -comparison;
+    });
+
+    return balances;
+
+  }, [drivers, dailyCharges, payments, manualDebts, sortConfig]);
+  
+  const requestSort = (key: SortKey) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const handleRowClick = (driverId: string) => {
     router.push(`/flotilla/conductores/${driverId}?tab=history`);
   };
+  
+  const SortableHeader = ({ sortKey, label }: { sortKey: SortKey, label: string }) => (
+    <TableHead
+      className="text-white font-bold cursor-pointer hover:bg-gray-800"
+      onClick={() => requestSort(sortKey)}
+    >
+      <div className="flex items-center justify-end">
+        {label}
+        <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === sortKey ? 'text-white' : 'text-gray-400'}`} />
+      </div>
+    </TableHead>
+  );
 
   return (
     <div className="space-y-4">
@@ -66,11 +119,16 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
                     <Table>
                         <TableHeader className="bg-black">
                             <TableRow>
-                                <TableHead className="text-white font-bold">Conductor</TableHead>
-                                <TableHead className="text-right text-white font-bold">Total Cargos</TableHead>
-                                <TableHead className="text-right text-white font-bold">Total Abonos</TableHead>
-                                <TableHead className="text-right text-white font-bold">Balance Actual</TableHead>
-                                <TableHead className="text-right text-white font-bold">Último Pago</TableHead>
+                                <TableHead className="text-white font-bold cursor-pointer hover:bg-gray-800" onClick={() => requestSort('name')}>
+                                    <div className="flex items-center">
+                                      Conductor
+                                      <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === 'name' ? 'text-white' : 'text-gray-400'}`} />
+                                    </div>
+                                </TableHead>
+                                <SortableHeader sortKey="totalCharges" label="Total Cargos" />
+                                <SortableHeader sortKey="totalPayments" label="Total Abonos" />
+                                <SortableHeader sortKey="balance" label="Balance Actual" />
+                                <SortableHeader sortKey="lastPaymentDate" label="Último Pago" />
                             </TableRow>
                         </TableHeader>
                         <TableBody>
