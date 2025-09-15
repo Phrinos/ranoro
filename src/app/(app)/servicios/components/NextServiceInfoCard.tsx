@@ -21,12 +21,11 @@ interface NextServiceInfoCardProps {
 }
 
 export function NextServiceInfoCard({ isReadOnly, currentMileage = 0 }: NextServiceInfoCardProps) {
-  const { control, formState: { errors }, setValue, getValues } = useFormContext<ServiceFormValues>();
+  const { control, formState: { errors }, setValue } = useFormContext<ServiceFormValues>();
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-  const addMonthsToDate = (months: number) => {
-    const currentDate = getValues("nextServiceInfo.nextServiceDate") || new Date();
-    setValue("nextServiceInfo.nextServiceDate", addMonths(currentDate, months), { shouldValidate: true, shouldDirty: true });
+  const addMonthsToCurrentDate = (months: number) => {
+    setValue("nextServiceInfo.nextServiceDate", addMonths(new Date(), months), { shouldValidate: true, shouldDirty: true });
   };
 
   const addMileage = (amount: number) => {
@@ -74,8 +73,8 @@ export function NextServiceInfoCard({ isReadOnly, currentMileage = 0 }: NextServ
                   </PopoverContent>
                 </Popover>
                 <div className="flex gap-2 mt-2">
-                    <Button type="button" variant="outline" size="sm" onClick={() => addMonthsToDate(6)} disabled={isReadOnly}>+6 Meses</Button>
-                    <Button type="button" variant="outline" size="sm" onClick={() => addMonthsToDate(12)} disabled={isReadOnly}>+12 Meses</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => addMonthsToCurrentDate(6)} disabled={isReadOnly}>+6 Meses</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => addMonthsToCurrentDate(12)} disabled={isReadOnly}>+12 Meses</Button>
                 </div>
                 <FormMessage />
               </FormItem>

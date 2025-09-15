@@ -72,7 +72,7 @@ const ServiceFormFooter = ({ onCancel, onComplete, mode, initialData, isSubmitti
                )}
               <Button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
                 {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-                {isEditMode ? 'Guardar Cambios' : 'Crear Registro'}
+                Guardar Cambios
               </Button>
             </div>
           </div>
@@ -97,13 +97,12 @@ const getErrorMessages = (errors: FieldErrors<ServiceFormValues>): string => {
             if (subErrors.length > 0) return fieldLabels['nextServiceInfo'];
         }
         return fieldLabels[key] || key;
-    }).filter(Boolean); // Remove empty entries
+    }).filter(Boolean);
 
     const uniqueMessages = [...new Set(messages)];
     if (uniqueMessages.length === 0) return "Por favor, revise los campos marcados en rojo.";
     return `Por favor, revise los siguientes campos: ${uniqueMessages.join(', ')}.`;
 };
-
 
 export function ServiceForm({
   initialData,
@@ -132,6 +131,10 @@ export function ServiceForm({
       appointmentDateTime: initialData?.appointmentDateTime ? new Date(initialData.appointmentDateTime) : undefined,
       receptionDateTime: initialData?.receptionDateTime ? new Date(initialData.receptionDateTime) : undefined,
       deliveryDateTime: initialData?.deliveryDateTime ? new Date(initialData.deliveryDateTime) : undefined,
+      nextServiceInfo: initialData?.nextServiceInfo ? {
+          ...initialData.nextServiceInfo,
+          nextServiceDate: initialData.nextServiceInfo.nextServiceDate ? new Date(initialData.nextServiceInfo.nextServiceDate) : null,
+      } : { nextServiceDate: null, nextServiceMileage: null },
     },
   });
 
@@ -139,7 +142,7 @@ export function ServiceForm({
   
   const selectedVehicleId = watch('vehicleId');
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
-  const currentMileage = selectedVehicle?.currentMileage;
+  const currentMileage = selectedVehicle?.mileage;
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     await onSave(values);
@@ -178,7 +181,7 @@ export function ServiceForm({
             onOpenSignature={() => {}}
             isNew={!initialData?.id}
         />
-        
+        <NextServiceInfoCard currentMileage={currentMileage} />
         <Tabs defaultValue="service-items">
             <div className="sticky top-0 z-10 border-b bg-background/95 p-1 backdrop-blur-sm">
                 <TabsList className="grid w-full grid-cols-3 h-12">
@@ -218,9 +221,6 @@ export function ServiceForm({
                 </TabsContent>
             </div>
         </Tabs>
-
-        <NextServiceInfoCard currentMileage={currentMileage} />
-
        </div>
         <ServiceFormFooter
             onCancel={onCancel}
