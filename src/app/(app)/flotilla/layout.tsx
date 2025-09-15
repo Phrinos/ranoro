@@ -48,6 +48,7 @@ const FlotillaContext = React.createContext<{
 export const useFlotillaData = () => React.useContext(FlotillaContext);
 
 function FlotillaLayout({ children }: { children: React.ReactNode }) {
+    const { toast } = useToast();
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
     const [drivers, setDrivers] = useState<Driver[]>([]);
     const [dailyCharges, setDailyCharges] = useState<DailyRentalCharge[]>([]);
@@ -79,6 +80,8 @@ function FlotillaLayout({ children }: { children: React.ReactNode }) {
     };
 
     useEffect(() => {
+        setIsLoading(true);
+    
         const unsubs = [
             inventoryService.onVehiclesUpdate(setVehicles),
             personnelService.onDriversUpdate(setDrivers),
@@ -88,14 +91,29 @@ function FlotillaLayout({ children }: { children: React.ReactNode }) {
             rentalService.onOwnerWithdrawalsUpdate(setWithdrawals),
             rentalService.onVehicleExpensesUpdate(setExpenses),
         ];
-        
-        Promise.all([
-            inventoryService.onVehiclesUpdatePromise(),
-            personnelService.onDriversUpdatePromise(),
-        ]).then(() => setIsLoading(false));
+
+        // We need drivers and vehicles to generate charges
+        const loadInitialDataAndGenerateCharges = async () => {
+            const [vehiclesData, driversData] = await Promise.all([
+                inventoryService.onVehiclesUpdatePromise(),
+                personnelService.onDriversUpdatePromise(),
+            ]);
+
+            try {
+                // This will run once when the component mounts with all necessary data
+                await rentalService.generateMissingChargesForAllDrivers(driversData, vehiclesData);
+            } catch (err) {
+                 toast({ title: "Error de Sincronización", description: "No se pudieron generar los cargos de renta diarios automáticamente.", variant: "destructive"});
+            }
+
+            setIsLoading(false);
+        };
+
+        loadInitialDataAndGenerateCharges();
 
         return () => unsubs.forEach(unsub => unsub());
-    }, []);
+    }, [toast]);
+
 
     const value = { vehicles, drivers, dailyCharges, payments, manualDebts, withdrawals, expenses, isLoading, handleShowTicket };
 

@@ -39,8 +39,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   const [dailyCharges, setDailyCharges] = useState<DailyRentalCharge[]>([]);
   const [payments, setPayments] = useState<RentalPayment[]>([]);
   const [manualDebts, setManualDebts] = useState<ManualDebtEntry[]>([]);
-  const [isGenerating, setIsGenerating] = useState(true);
-  const [chargesGenerated, setChargesGenerated] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const [editingCharge, setEditingCharge] = useState<DailyRentalCharge | null>(null);
   const [editingDebt, setEditingDebt] = useState<ManualDebtEntry | null>(null);
@@ -65,20 +64,6 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
       }
     }
   }, []);
-
-  useEffect(() => {
-    if (!driver || !vehicle || chargesGenerated) {
-      setIsGenerating(false);
-      return;
-    }
-    
-    setIsGenerating(true);
-    rentalService.generateMissingCharges(driver, vehicle)
-      .then(() => setChargesGenerated(true))
-      .catch(err => toast({ title: "Error", description: "No se pudieron generar los cargos diarios.", variant: "destructive"}))
-      .finally(() => setIsGenerating(false));
-
-  }, [driver, vehicle, chargesGenerated, toast]);
 
   useEffect(() => {
     if (!driver?.id) return;
@@ -131,7 +116,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   
   const handleSavePayment = async (data: PaymentFormValues) => {
     if (!driver || !vehicle) return;
-    const savedPayment = await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.paymentDate, data.paymentMethod, editingPayment?.id);
+    const savedPayment = await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.paymentDate, data.paymentMethod as any, editingPayment?.id);
     toast({ title: "Pago Registrado" });
     setIsPaymentDialogOpen(false);
     
@@ -160,12 +145,6 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   const handleShowTicket = async (payment: RentalPayment) => {
       if (!driver || !vehicle) return;
       
-      try {
-        await rentalService.generateMissingCharges(driver, vehicle);
-      } catch (err) {
-        toast({ title: "Error", description: "No se pudieron generar los cargos diarios antes de mostrar el ticket.", variant: "destructive"});
-      }
-
       setSelectedPayment(payment);
       setIsTicketOpen(true);
   };

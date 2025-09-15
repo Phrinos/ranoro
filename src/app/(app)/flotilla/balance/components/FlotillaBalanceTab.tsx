@@ -1,7 +1,7 @@
 // src/app/(app)/flotilla/balance/components/FlotillaBalanceTab.tsx
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import type { Driver, Vehicle, DailyRentalCharge, RentalPayment, ManualDebtEntry } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,6 +11,9 @@ import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { rentalService } from '@/lib/services';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface FlotillaBalanceTabProps {
   drivers: Driver[];
@@ -24,6 +27,7 @@ type SortKey = 'name' | 'totalCharges' | 'totalPayments' | 'balance' | 'lastPaym
 
 export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, manualDebts }: FlotillaBalanceTabProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
 
   const driverBalances = useMemo(() => {
