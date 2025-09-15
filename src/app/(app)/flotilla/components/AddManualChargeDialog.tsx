@@ -23,6 +23,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import type { ManualDebtEntry } from '@/types';
 
 const chargeSchema = z.object({
   date: z.date({ required_error: "La fecha es obligatoria." }),
@@ -36,9 +37,10 @@ interface AddManualChargeDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSave: (values: ManualChargeFormValues) => Promise<void>;
+  debtToEdit?: ManualDebtEntry | null;
 }
 
-export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualChargeDialogProps) {
+export function AddManualChargeDialog({ open, onOpenChange, onSave, debtToEdit = null }: AddManualChargeDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const form = useForm<ManualChargeFormValues>({
@@ -52,27 +54,38 @@ export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualC
 
   useEffect(() => {
     if (open) {
-      form.reset({
-        date: new Date(),
-        amount: undefined,
-        note: '',
-      });
+      if (debtToEdit) {
+        form.reset({
+          date: new Date(debtToEdit.date),
+          amount: debtToEdit.amount,
+          note: debtToEdit.note,
+        });
+      } else {
+        form.reset({
+          date: new Date(),
+          amount: undefined,
+          note: '',
+        });
+      }
     }
-  }, [open, form]);
+  }, [open, debtToEdit, form]);
 
   const handleFormSubmit = async (values: ManualChargeFormValues) => {
     setIsSubmitting(true);
     await onSave(values);
     setIsSubmitting(false);
   };
+  
+  const title = debtToEdit ? "Editar Cargo Manual" : "Añadir Cargo Manual";
+  const description = debtToEdit ? "Modifica los detalles del cargo existente." : "Registra un nuevo cargo a la cuenta del conductor (ej. multas, reparaciones).";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Añadir Cargo Manual</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Registra un nuevo cargo a la cuenta del conductor (ej. multas, reparaciones).
+            {description}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -110,7 +123,7 @@ export function AddManualChargeDialog({ open, onOpenChange, onSave }: AddManualC
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Guardar Cargo
+                {debtToEdit ? 'Actualizar Cargo' : 'Guardar Cargo'}
               </Button>
             </DialogFooter>
           </form>

@@ -264,7 +264,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
       
       <EditDailyChargeDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} charge={editingCharge} onSave={handleSaveCharge} />
       <RegisterPaymentDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} onSave={handleSavePayment} paymentToEdit={editingPayment} />
-      <AddManualChargeDialog open={isChargeDialogOpen} onOpenChange={setIsChargeDialogOpen} onSave={handleSaveManualCharge} />
+      <AddManualChargeDialog open={isChargeDialogOpen} onOpenChange={setIsChargeDialogOpen} onSave={handleSaveManualCharge} debtToEdit={editingDebt} />
 
       {selectedPayment && (
           <UnifiedPreviewDialog
