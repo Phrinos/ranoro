@@ -59,10 +59,16 @@ const itemSortOptions = [
     { value: 'default_order', label: 'Orden Personalizado' },
     { value: 'name_asc', label: 'Nombre (A-Z)' },
     { value: 'name_desc', label: 'Nombre (Z-A)' },
+    { value: 'category_asc', label: 'Categoría (A-Z)' },
+    { value: 'isService_asc', label: 'Tipo (Producto/Servicio)' },
     { value: 'quantity_asc', label: 'Stock (Menor a Mayor)' },
     { value: 'quantity_desc', label: 'Stock (Mayor a Menor)' },
+    { value: 'unitPrice_asc', label: 'Costo (Menor a Mayor)' },
+    { value: 'unitPrice_desc', label: 'Costo (Mayor a Menor)' },
+    { value: 'sellingPrice_asc', label: 'Precio Venta (Menor a Mayor)' },
     { value: 'sellingPrice_desc', label: 'Precio Venta (Mayor a Menor)' },
 ];
+
 
 const getSortPriority = (item: InventoryItem) => {
     if (item.isService) return 3;
@@ -121,6 +127,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                     <TableHead className="text-white hidden lg:table-cell">Proveedor</TableHead>
                     <TableHead className="text-white">Tipo</TableHead>
                     <TableHead className="text-right text-white">Stock</TableHead>
+                    <TableHead className="text-right text-white">Costo</TableHead>
                     <TableHead className="text-right text-white">Precio de Venta</TableHead>
                 </TableRow>
               </TableHeader>
@@ -138,13 +145,14 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                             <TableCell className="hidden lg:table-cell">{item.supplier}</TableCell>
                             <TableCell><Badge variant={item.isService ? "outline" : "secondary"}>{item.isService ? 'Servicio' : 'Producto'}</Badge></TableCell>
                             <TableCell className={cn("text-right font-semibold", isLowStock && "text-orange-600")}>{item.isService ? 'N/A' : item.quantity}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
                             <TableCell className="text-right font-bold text-primary">{formatCurrency(item.sellingPrice)}</TableCell>
                         </TableRow>
                     )
                   })
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center">
+                        <TableCell colSpan={7} className="h-24 text-center">
                           {tableManager.searchTerm ? (
                             <Button variant="link" onClick={() => onNewItemFromSearch(tableManager.searchTerm)}>
                               <PlusCircle className="mr-2 h-4 w-4" />
@@ -288,8 +296,8 @@ export default function InventarioPage() {
       if (item.isService) services++;
       else {
         products++;
-        cost += (item.quantity || 0) * (item.unitPrice || 0);
-        sellingPriceValue += (item.quantity || 0) * (item.sellingPrice || 0);
+        cost += (item.quantity || 0) * (item.purchasePrice || 0);
+        sellingPriceValue += (item.quantity || 0) * (item.salePrice || 0);
         if ((item.quantity || 0) <= (item.lowStockThreshold || 0)) lowStock++;
       }
     });
