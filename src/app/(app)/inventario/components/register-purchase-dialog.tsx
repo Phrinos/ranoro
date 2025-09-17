@@ -119,7 +119,7 @@ export function RegisterPurchaseDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl p-0">
-          <DialogHeader className="p-6 pb-4 border-b">
+          <DialogHeader className="p-6 pb-4 border-b bg-white">
             <DialogTitle>Registrar Nueva Compra</DialogTitle>
             <DialogDescription>
               Seleccione un proveedor, añada los productos comprados y especifique los detalles del pago.
@@ -193,7 +193,7 @@ export function RegisterPurchaseDialog({
                         )}
                     </div>
                 </div>
-                <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 flex-col-reverse sm:flex-row sm:justify-between items-center w-full">
+                <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 flex-col-reverse sm:flex-row sm:justify-between items-center w-full bg-white">
                      <div className="text-right font-bold text-lg">
                         Total: {formatCurrency(watch('invoiceTotal'))}
                     </div>
@@ -253,7 +253,7 @@ function SearchItemDialog({ open, onOpenChange, inventoryItems, onItemSelected, 
 
   return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="sm:max-w-lg p-0">
+          <DialogContent className="sm:max-w-lg p-0 bg-white">
               <DialogHeader className="p-6 pb-4 border-b">
                   <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
                   <DialogDescription>Seleccione un artículo para añadir a la compra o cree uno nuevo.</DialogDescription>

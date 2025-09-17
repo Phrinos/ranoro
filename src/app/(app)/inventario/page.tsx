@@ -45,7 +45,7 @@ const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { s
             <Button className="w-full flex-1" onClick={onNewItemClick}>
                 <PlusCircle className="mr-2 h-5 w-5" /> Registrar Ítem
             </Button>
-            <Button className="w-full flex-1" variant="outline" onClick={onNewPurchaseClick}>
+            <Button className="w-full flex-1" variant="outline" onClick={onNewPurchaseClick} >
                 <PlusCircle className="mr-2 h-5 w-5" /> Registrar Compra
             </Button>
         </div>
