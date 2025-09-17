@@ -42,11 +42,11 @@ const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { s
         <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
         <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.productsCount + summaryData.servicesCount}</div><p className="text-xs text-muted-foreground">{summaryData.productsCount} Productos y {summaryData.servicesCount} Servicios.</p></CardContent></Card>
         <div className="lg:col-span-2 xl:col-span-2 flex flex-col sm:flex-row gap-2">
-            <Button className="w-full flex-1" onClick={onNewItemClick}>
-                <PlusCircle className="mr-2 h-5 w-5" /> Registrar Ítem
+            <Button variant="outline" className="w-full flex-1 bg-white border-red-500 text-black hover:bg-red-50" onClick={onNewItemClick}>
+                <PlusCircle className="mr-2 h-5 w-5 text-red-500" /> Registrar Ítem
             </Button>
-            <Button className="w-full flex-1" variant="outline" onClick={onNewPurchaseClick} >
-                <PlusCircle className="mr-2 h-5 w-5" /> Registrar Compra
+            <Button variant="outline" className="w-full flex-1 bg-white border-red-500 text-black font-bold hover:bg-red-50" onClick={onNewPurchaseClick} >
+                <PlusCircle className="mr-2 h-5 w-5 text-red-500" /> Registrar Compra
             </Button>
         </div>
     </div>
