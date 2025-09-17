@@ -46,14 +46,14 @@ export function FormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className={cn("sm:max-w-lg max-h-[90vh] flex flex-col p-0", dialogContentClassName)}>
-        <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b">
+        <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b bg-white">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto px-6 py-4">
           {children}
         </div>
-        <DialogFooter className="p-6 pt-4 border-t bg-background flex-shrink-0 flex justify-end gap-2">
+        <DialogFooter className="p-6 pt-4 border-t bg-white flex-shrink-0 flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancelar
           </Button>
