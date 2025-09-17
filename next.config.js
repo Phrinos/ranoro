@@ -3,6 +3,10 @@ const nextConfig = {
   // 1. Ajustes de compilación
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  
+  experimental: {
+    ppr: false,
+  },
 
   // 2. Indicador de dev
   devIndicators: {
@@ -17,7 +21,7 @@ const nextConfig = {
     ],
   },
   
-  // 4. CORS global (ajustado para desarrollo)
+  // 4. CORS global y redirecciones
   async headers() {
     return [
       {
@@ -30,6 +34,17 @@ const nextConfig = {
         ],
       },
     ];
+  },
+  
+  async redirects() {
+    return [
+      // Evita el error de CORS al intentar cargar el manifest.json en el entorno de desarrollo
+      {
+        source: '/manifest.json',
+        destination: '/404',
+        permanent: false,
+      },
+    ]
   },
 
   // 5. Webpack config
