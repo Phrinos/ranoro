@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -22,6 +21,10 @@ import { ServiceDetailsCard } from './ServiceDetailsCard';
 import { NextServiceInfoCard } from './NextServiceInfoCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { FieldErrors } from 'react-hook-form';
+import { ReceptionAndDelivery } from './ReceptionAndDelivery';
+import { SignatureDialog } from './signature-dialog';
+import { enhanceText } from '@/ai/flows/text-enhancement-flow';
+
 
 interface ServiceFormProps {
   initialData: ServiceRecord | null;
@@ -150,6 +153,10 @@ export function ServiceForm({
   mode,
 }: ServiceFormProps) {
   const { toast } = useToast();
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
+  const [signatureType, setSignatureType] = React.useState<'reception' | 'delivery' | 'advisor' | null>(null);
+  const [isEnhancingText, setIsEnhancingText] = React.useState<string | null>(null);
+
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
@@ -168,7 +175,7 @@ export function ServiceForm({
     },
   });
 
-  const { handleSubmit, getValues, formState: { isSubmitting }, reset, watch } = methods;
+  const { handleSubmit, getValues, setValue, formState: { isSubmitting }, reset, watch } = methods;
   
   const selectedVehicleId = watch('vehicleId');
   const watchedStatus = watch('status');
@@ -197,6 +204,51 @@ export function ServiceForm({
     });
   };
 
+  const handleOpenSignatureDialog = (type: 'reception' | 'delivery' | 'advisor') => {
+    setSignatureType(type);
+    setIsSignatureDialogOpen(true);
+  };
+  
+  const handleSaveSignature = (dataUrl: string) => {
+    let fieldName: keyof ServiceFormValues | undefined;
+    if (signatureType === 'reception') fieldName = 'customerSignatureReception';
+    if (signatureType === 'delivery') fieldName = 'customerSignatureDelivery';
+    if (signatureType === 'advisor') fieldName = 'serviceAdvisorSignatureDataUrl';
+    
+    if (fieldName) {
+      setValue(fieldName, dataUrl, { shouldDirty: true, shouldValidate: true });
+    }
+    setIsSignatureDialogOpen(false);
+  };
+
+  const handleEnhanceText = async (
+    fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | `photoReports.${number}.description`
+  ) => {
+    const contextMap = {
+        notes: "Notas Adicionales del Servicio",
+        vehicleConditions: "Condiciones del Vehículo",
+        customerItems: "Pertenencias del Cliente",
+    };
+    
+    const textToEnhance = getValues(fieldName);
+    const context = fieldName.startsWith('photoReports') ? 'Descripción de Foto' : contextMap[fieldName];
+    
+    if (!textToEnhance) return;
+    setIsEnhancingText(fieldName);
+    
+    try {
+        const enhancedText = await enhanceText({ text: textToEnhance, context });
+        setValue(fieldName, enhancedText, { shouldDirty: true });
+    } catch (error) {
+        console.error("Error enhancing text:", error);
+        toast({ title: 'Error de IA', description: 'No se pudo mejorar el texto.', variant: 'destructive' });
+    } finally {
+        setIsEnhancingText(null);
+    }
+  };
+
+  const isQuote = initialData?.status === 'Cotizacion' || mode === 'quote';
+
   return (
     <FormProvider {...methods}>
       <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
@@ -212,7 +264,7 @@ export function ServiceForm({
             isReadOnly={false}
             users={technicians}
             serviceTypes={serviceTypes}
-            onOpenSignature={() => {}}
+            onOpenSignature={handleOpenSignatureDialog}
             isNew={!initialData?.id}
         />
         {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
@@ -220,8 +272,9 @@ export function ServiceForm({
         )}
         <Tabs defaultValue="service-items">
             <div className="sticky top-0 z-10 border-b bg-background/95 p-1 backdrop-blur-sm">
-                <TabsList className="grid w-full grid-cols-3 h-12">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
                 <TabsTrigger value="service-items">Trabajos y Refacciones</TabsTrigger>
+                <TabsTrigger value="reception-delivery">Recepción/Entrega</TabsTrigger>
                 <TabsTrigger value="photo-report">Reporte de Fotos</TabsTrigger>
                 <TabsTrigger value="safety-checklist">Revisión de Seguridad</TabsTrigger>
                 </TabsList>
@@ -237,6 +290,8 @@ export function ServiceForm({
                                 suppliers={suppliers}
                                 onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
                                 mode={mode}
+                                isEnhancingText={isEnhancingText}
+                                handleEnhanceText={handleEnhanceText as any}
                             />
                         </CardContent>
                     </Card>
@@ -248,6 +303,20 @@ export function ServiceForm({
                             />
                         </CardContent>
                     </Card>
+                </TabsContent>
+                <TabsContent value="reception-delivery" className="space-y-6">
+                    <ReceptionAndDelivery
+                        part="reception"
+                        isEnhancingText={isEnhancingText}
+                        handleEnhanceText={handleEnhanceText as any}
+                        onOpenSignature={handleOpenSignatureDialog}
+                    />
+                    <ReceptionAndDelivery
+                        part="delivery"
+                        isEnhancingText={isEnhancingText}
+                        handleEnhanceText={handleEnhanceText as any}
+                        onOpenSignature={handleOpenSignatureDialog}
+                    />
                 </TabsContent>
                 <TabsContent value="photo-report">
                     <PhotoReportTab />
@@ -266,6 +335,11 @@ export function ServiceForm({
             isSubmitting={isSubmitting}
         />
       </form>
+       <SignatureDialog
+          open={isSignatureDialogOpen}
+          onOpenChange={setIsSignatureDialogOpen}
+          onSave={handleSaveSignature}
+       />
     </FormProvider>
   );
 }
