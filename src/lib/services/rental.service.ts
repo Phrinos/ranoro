@@ -62,8 +62,9 @@ const generateMissingCharges = async (driver: Driver, vehicle: Vehicle): Promise
 
     const batch = writeBatch(db);
 
-    const existingChargesSnap = await getDocs(query(chargesRef, where("driverId", "==", driver.id), where("date", ">=", nextChargeDate.toISOString())));
-    const existingDates = new Set(existingChargesSnap.docs.map(d => startOfDay(new Date(d.data().date)).getTime()));
+    // Get ALL existing charges for this driver to prevent any duplicates
+    const allChargesSnap = await getDocs(query(chargesRef, where("driverId", "==", driver.id)));
+    const existingDates = new Set(allChargesSnap.docs.map(d => startOfDay(new Date(d.data().date)).getTime()));
 
     for (let i = 0; i < daysToGenerate; i++) {
         const chargeDate = addDays(nextChargeDate, i);
