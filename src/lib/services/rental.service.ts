@@ -39,83 +39,6 @@ const onDailyChargesUpdate = (callback: (charges: DailyRentalCharge[]) => void, 
     });
 };
 
-const generateMissingCharges = async (driver: Driver, vehicle: Vehicle): Promise<void> => {
-    if (!db || !driver.contractDate || !vehicle.dailyRentalCost || vehicle.dailyRentalCost <= 0) return;
-    
-    const today = startOfDay(new Date());
-    const contractStart = startOfDay(new Date(driver.contractDate));
-    
-    const chargesRef = collection(db, "dailyRentalCharges");
-    const q = query(chargesRef, where("driverId", "==", driver.id), orderBy("date", "desc"), limit(1));
-    const lastChargeSnapshot = await getDocs(q);
-    
-    let lastChargeDate = addDays(contractStart, -1);
-    if (!lastChargeSnapshot.empty) {
-        lastChargeDate = startOfDay(new Date(lastChargeSnapshot.docs[0].data().date)); 
-    }
-    
-    let nextChargeDate = addDays(lastChargeDate, 1);
-    if (nextChargeDate > today) return;
-
-    const daysToGenerate = differenceInCalendarDays(today, nextChargeDate) + 1;
-    if (daysToGenerate <= 0) return;
-
-    const batch = writeBatch(db);
-
-    // Get ALL existing charges for this driver to prevent any duplicates
-    const allChargesSnap = await getDocs(query(chargesRef, where("driverId", "==", driver.id)));
-    const existingDates = new Set(allChargesSnap.docs.map(d => startOfDay(new Date(d.data().date)).getTime()));
-
-    for (let i = 0; i < daysToGenerate; i++) {
-        const chargeDate = addDays(nextChargeDate, i);
-        if (!existingDates.has(chargeDate.getTime())) {
-            const newCharge: Omit<DailyRentalCharge, 'id'> = {
-                driverId: driver.id,
-                vehicleId: vehicle.id,
-                date: chargeDate.toISOString(),
-                amount: vehicle.dailyRentalCost,
-                vehicleLicensePlate: vehicle.licensePlate,
-            };
-            const docRef = doc(chargesRef);
-            batch.set(docRef, newCharge);
-        }
-    }
-    
-    await batch.commit();
-};
-
-const generateMissingChargesForAllDrivers = async (drivers: Driver[], vehicles: Vehicle[]): Promise<void> => {
-    if (!db) return;
-    const lockRef = doc(db, 'app-locks', 'generateCharges');
-    
-    try {
-        await runTransaction(db, async (transaction) => {
-            const lockDoc = await transaction.get(lockRef);
-            if (lockDoc.exists() && lockDoc.data()?.locked) {
-                const lockTime = (lockDoc.data()?.timestamp as Timestamp).toDate();
-                if (new Date().getTime() - lockTime.getTime() > 5 * 60 * 1000) {
-                   console.warn("Stale charge generation lock found. Releasing.");
-                } else {
-                  return; // Exit if another process is running
-                }
-            }
-            transaction.set(lockRef, { locked: true, timestamp: new Date() });
-        });
-
-        const activeDrivers = drivers.filter(d => !d.isArchived && d.assignedVehicleId);
-        
-        for (const driver of activeDrivers) {
-            const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
-            if (vehicle) {
-                await generateMissingCharges(driver, vehicle);
-            }
-        }
-
-    } finally {
-        await updateDoc(lockRef, { locked: false });
-    }
-};
-
 const saveDailyCharge = async (id: string, data: { date: string; amount: number }): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, 'dailyRentalCharges', id);
@@ -219,8 +142,6 @@ const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'veh
 
 export const rentalService = {
   onDailyChargesUpdate,
-  generateMissingCharges,
-  generateMissingChargesForAllDrivers,
   saveDailyCharge,
   deleteDailyCharge,
   onRentalPaymentsUpdate,
