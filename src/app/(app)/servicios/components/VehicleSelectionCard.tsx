@@ -115,15 +115,17 @@ export function VehicleSelectionCard({
             )}
           />
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" onClick={() => setIsVehicleSelectionDialogOpen(true)}>
-              <Repeat className="mr-2 h-4 w-4" />
-              Cambiar Vehículo
-            </Button>
             {selectedVehicle && (
-              <Button type="button" variant="outline" onClick={handleShowHistory}>
-                <Info className="mr-2 h-4 w-4" />
-                Ver Vehículo
-              </Button>
+                <>
+                    <Button type="button" variant="secondary" onClick={() => setIsVehicleSelectionDialogOpen(true)}>
+                        <Repeat className="mr-2 h-4 w-4" />
+                        Cambiar Vehículo
+                    </Button>
+                    <Button type="button" variant="outline" onClick={handleShowHistory}>
+                        <Info className="mr-2 h-4 w-4" />
+                        Ver Vehículo
+                    </Button>
+                </>
             )}
           </div>
         </CardContent>
