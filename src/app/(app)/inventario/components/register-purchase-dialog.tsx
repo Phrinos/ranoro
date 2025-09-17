@@ -133,13 +133,13 @@ export function RegisterPurchaseDialog({
                       <FormField control={control} name="supplierId" render={({ field }) => (
                         <FormItem><FormLabel>Proveedor</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un proveedor" /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione un proveedor" /></SelectTrigger></FormControl>
                             <SelectContent><ScrollArea className="h-48">{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</ScrollArea></SelectContent>
                           </Select><FormMessage />
                         </FormItem>
                       )}/>
                        <FormField control={control} name="invoiceId" render={({ field }) => (
-                         <FormItem><FormLabel>Folio de Factura (Opcional)</FormLabel><FormControl><Input placeholder="F-12345" {...field} value={field.value ?? ''} /></FormControl></FormItem>
+                         <FormItem><FormLabel>Folio de Factura (Opcional)</FormLabel><FormControl><Input placeholder="F-12345" {...field} value={field.value ?? ''} className="bg-white" /></FormControl></FormItem>
                        )}/>
                     </div>
                     
@@ -152,10 +152,10 @@ export function RegisterPurchaseDialog({
                                        <div key={field.id} className="flex items-center gap-2">
                                          <span className="flex-1 text-sm font-medium truncate" title={field.itemName}>{field.itemName}</span>
                                          <FormField control={control} name={`items.${index}.quantity`} render={({ field }) => (
-                                            <Input type="number" step="1" className="w-20 h-8" placeholder="Cant." {...field}/>
+                                            <Input type="number" step="1" className="w-20 h-8 bg-white" placeholder="Cant." {...field}/>
                                          )}/>
                                          <FormField control={control} name={`items.${index}.purchasePrice`} render={({ field }) => (
-                                            <div className="relative"><DollarSign className="absolute left-2.5 top-1.5 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" className="w-28 h-8 pl-8" placeholder="Costo U." {...field}/></div>
+                                            <div className="relative"><DollarSign className="absolute left-2.5 top-1.5 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" className="w-28 h-8 pl-8 bg-white" placeholder="Costo U." {...field}/></div>
                                          )}/>
                                          <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                        </div>
@@ -163,7 +163,7 @@ export function RegisterPurchaseDialog({
                                 </div>
                             </ScrollArea>
                             <div className="pt-2 border-t">
-                                <Button type="button" variant="outline" size="sm" onClick={() => setIsItemSearchOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/>Añadir Artículo</Button>
+                                <Button type="button" variant="outline" size="sm" onClick={() => setIsItemSearchOpen(true)} className="bg-white"><PlusCircle className="mr-2 h-4 w-4"/>Añadir Artículo</Button>
                             </div>
                         </div>
                         <FormMessage>{form.formState.errors.items?.message || form.formState.errors.items?.root?.message}</FormMessage>
@@ -172,7 +172,7 @@ export function RegisterPurchaseDialog({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <FormField control={control} name="paymentMethod" render={({ field }) => (
                             <FormItem><FormLabel>Método de Pago</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                              <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="Efectivo">Efectivo</SelectItem>
                                     <SelectItem value="Tarjeta">Tarjeta</SelectItem>
@@ -185,7 +185,7 @@ export function RegisterPurchaseDialog({
                         {paymentMethod === 'Crédito' && (
                             <FormField control={control} name="dueDate" render={({ field }) => (
                                 <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel>
-                                    <Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value ? formatDate(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button></FormControl></PopoverTrigger>
+                                    <Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal bg-white",!field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value ? formatDate(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button></FormControl></PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent>
                                     </Popover><FormMessage/>
                                 </FormItem>
