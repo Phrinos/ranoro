@@ -166,7 +166,6 @@ export function RegisterPurchaseDialog({
                                 >
                                   <Command>
                                     <CommandInput placeholder="Buscar proveedor..." />
-                                    {/* Scroll aquí */}
                                     <CommandList className="max-h-60 overflow-y-auto">
                                       <CommandEmpty>No se encontraron proveedores.</CommandEmpty>
                                       <CommandGroup>
@@ -204,7 +203,7 @@ export function RegisterPurchaseDialog({
                        )}/>
                     </div>
                     
-                    <div>
+                    <div className="bg-white">
                         <FormLabel>Artículos Comprados</FormLabel>
                         <div className="space-y-2 mt-2 rounded-md border p-4 bg-white">
                             <ScrollArea className="max-h-48 pr-3">
