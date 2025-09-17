@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, PackagePlus, Plus, Minus, ArrowLeft, DollarSign, PlusCircle, Trash2, CalendarIcon } from 'lucide-react';
+import { Search, PackagePlus, Plus, Minus, ArrowLeft, DollarSign, PlusCircle, Trash2, CalendarIcon, ChevronsUpDown, Check } from 'lucide-react';
 import type { InventoryItem, Supplier, InventoryCategory, PaymentMethod } from '@/types';
 import { formatCurrency, capitalizeWords } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ import { format as formatDate } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 
 const purchaseItemSchema = z.object({
@@ -81,11 +82,16 @@ export function RegisterPurchaseDialog({
   const [isItemSearchOpen, setIsItemSearchOpen] = useState(false);
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   const [newItemSearchTerm, setNewItemSearchTerm] = useState('');
+  const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
 
   useEffect(() => {
     const total = watchedItems.reduce((sum, item) => sum + (item.quantity * item.purchasePrice), 0);
     setValue('invoiceTotal', total, { shouldValidate: true });
   }, [watchedItems, setValue]);
+
+  const sortedSuppliers = useMemo(() => {
+    return [...suppliers].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+  }, [suppliers]);
 
 
   const handleAddItem = (item: InventoryItem) => {
@@ -130,14 +136,55 @@ export function RegisterPurchaseDialog({
               <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-4">
                 <div className="px-6 py-4 max-h-[calc(80vh-150px)] overflow-y-auto space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField control={control} name="supplierId" render={({ field }) => (
-                        <FormItem><FormLabel>Proveedor</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione un proveedor" /></SelectTrigger></FormControl>
-                            <SelectContent><ScrollArea className="h-48">{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</ScrollArea></SelectContent>
-                          </Select><FormMessage />
-                        </FormItem>
-                      )}/>
+                      <FormField
+                        control={control}
+                        name="supplierId"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Proveedor</FormLabel>
+                                <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className={cn("w-full justify-between bg-white", !field.value && "text-muted-foreground")}
+                                            >
+                                                {field.value ? sortedSuppliers.find(s => s.id === field.value)?.name : "Seleccionar proveedor..."}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Buscar proveedor..." />
+                                            <CommandList>
+                                                <CommandEmpty>No se encontraron proveedores.</CommandEmpty>
+                                                <CommandGroup>
+                                                  <ScrollArea className="h-48">
+                                                    {sortedSuppliers.map(s => (
+                                                        <CommandItem
+                                                            key={s.id}
+                                                            value={s.name}
+                                                            onSelect={() => {
+                                                                field.onChange(s.id);
+                                                                setIsSupplierPopoverOpen(false);
+                                                            }}
+                                                        >
+                                                            <Check className={cn("mr-2 h-4 w-4", field.value === s.id ? "opacity-100" : "opacity-0")} />
+                                                            {s.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                  </ScrollArea>
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                      />
                        <FormField control={control} name="invoiceId" render={({ field }) => (
                          <FormItem><FormLabel>Folio de Factura (Opcional)</FormLabel><FormControl><Input placeholder="F-12345" {...field} value={field.value ?? ''} className="bg-white" /></FormControl></FormItem>
                        )}/>
