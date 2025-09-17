@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -50,7 +49,7 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
 };
 
-const getDocById = async (collectionName: 'serviceRecords' | 'quotes', id: string): Promise<any> => {
+const getDocById = async (collectionName: 'serviceRecords', id: string): Promise<any> => {
     if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, collectionName, id);
     const docSnap = await getDoc(docRef);
@@ -59,10 +58,9 @@ const getDocById = async (collectionName: 'serviceRecords' | 'quotes', id: strin
 
 const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
-    const collectionName = data.status === 'Cotizacion' ? 'quotes' : 'serviceRecords';
+    const collectionName = 'serviceRecords';
     
     const docRef = doc(db, collectionName, data.id);
-    // Use setDoc with merge: true to create or update the document.
     await setDoc(docRef, cleanObjectForFirestore(data), { merge: true });
 
     const savedDoc = await getDoc(docRef);
@@ -97,10 +95,25 @@ const cancelService = async (id: string, reason: string): Promise<void> => {
 
     if (serviceDoc.exists()) {
         const service = serviceDoc.data() as ServiceRecord;
-        batch.update(serviceRef, { status: 'Cancelado', cancellationReason: reason });
+        
+        if (service.status === 'Agendado') {
+            // If the service was scheduled, revert it to a quote
+            batch.update(serviceRef, { 
+                status: 'Cotizacion', 
+                subStatus: null,
+                appointmentDateTime: null,
+                cancellationReason: reason 
+            });
+        } else {
+            // For any other status, mark as Cancelado and restock items
+            batch.update(serviceRef, { 
+                status: 'Cancelado', 
+                cancellationReason: reason 
+            });
 
-        if (service.items && service.items.length > 0) {
-            await inventoryService.updateInventoryStock(batch, service.items, 'add');
+            if (service.items && service.items.length > 0) {
+                await inventoryService.updateInventoryStock(batch, service.items, 'add');
+            }
         }
     }
 
@@ -110,6 +123,12 @@ const cancelService = async (id: string, reason: string): Promise<void> => {
 const deleteService = async (id: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     await deleteDoc(doc(db, 'serviceRecords', id));
+};
+
+const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const serviceRef = doc(db, 'serviceRecords', id);
+    await updateDoc(serviceRef, data);
 };
 
 
@@ -122,4 +141,5 @@ export const serviceService = {
     completeService,
     cancelService,
     deleteService,
+    updateService,
 };

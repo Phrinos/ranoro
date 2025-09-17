@@ -1,7 +1,8 @@
+
 // src/app/(app)/servicios/page.tsx
 "use client";
 import React, { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Loader2, PlusCircle, Printer, Copy, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,14 +29,14 @@ const CotizacionesTabContent = lazy(() => import('./components/tab-cotizaciones'
 const PaymentDetailsDialog = lazy(() => import('@/components/shared/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 
 function ServiciosPage() {
-  const searchParams = useSearchParams();
-  const tab = searchParams.get('tab');
-  const { toast } = useToast();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState(tab || 'activos');
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+
+  const activeTab = searchParams.get('tab') || 'activos';
 
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [personnel, setPersonnel] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,12 +78,11 @@ function ServiciosPage() {
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
 
-  useEffect(() => {
-    const currentTab = searchParams.get('tab');
-    if (currentTab && currentTab !== activeTab) {
-        setActiveTab(currentTab);
-    }
-  }, [searchParams, activeTab]);
+  const handleTabChange = useCallback((tab: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    router.push(`${pathname}?${params.toString()}`);
+  }, [searchParams, router, pathname]);
   
   const handleShowShareDialog = useCallback((service: ServiceRecord) => {
     setRecordForSharing(service);
@@ -209,7 +209,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
             title="Gestión de Servicios"
             description="Planifica, gestiona y consulta todo el ciclo de vida de los servicios."
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
             tabs={tabs}
             actions={pageActions}
         />
@@ -225,7 +225,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
             {serviceToComplete && (
             <PaymentDetailsDialog
                 open={isPaymentDialogOpen}
-                onOpenChange={setIsPaymentDialogOpen}
+                onOpen-change={setIsPaymentDialogOpen}
                 record={serviceToComplete}
                 onConfirm={(id, details) => handleConfirmCompletion(serviceToComplete, details, serviceToComplete.nextServiceInfo)}
                 recordType="service"

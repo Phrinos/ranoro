@@ -10,17 +10,7 @@ import { isSameDay, parseISO, format, isValid, compareAsc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Wrench, Clock, CheckCircle, CalendarCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Helper function to safely parse a date that might be a string or a Date object
-const safeParseISO = (date: string | Date | undefined): Date => {
-  if (!date) return new Date(0); // Return an invalid date if input is null/undefined
-  if (date instanceof Date) return date;
-  if (typeof date === 'string') {
-    const parsed = parseISO(date);
-    return parsed;
-  }
-  return new Date(0); // Return an invalid date for other types
-};
+import { parseDate } from '@/lib/forms';
 
 interface ServiceCalendarProps {
   services: ServiceRecord[];
@@ -35,9 +25,11 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
   const eventsByDate = useMemo(() => {
     const map = new Map<string, ServiceRecord[]>();
     services.forEach(service => {
-      const serviceDate = safeParseISO(service.serviceDate);
-      if (isValid(serviceDate)) {
-        const dateKey = format(serviceDate, 'yyyy-MM-dd');
+      // Prioritize appointmentDateTime for scheduled services, fallback to serviceDate
+      const eventDate = parseDate(service.appointmentDateTime || service.serviceDate);
+      
+      if (isValid(eventDate)) {
+        const dateKey = format(eventDate, 'yyyy-MM-dd');
         if (!map.has(dateKey)) {
           map.set(dateKey, []);
         }
@@ -50,11 +42,17 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
   const selectedDayServices = useMemo(() => {
     if (!selectedDate) return [];
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
-    return eventsByDate.get(dateKey) || [];
+    const unsortedServices = eventsByDate.get(dateKey) || [];
+    
+    // Sort services by time for the selected day
+    return unsortedServices.sort((a, b) => {
+        const dateA = parseDate(a.appointmentDateTime || a.serviceDate) || new Date(0);
+        const dateB = parseDate(b.appointmentDateTime || b.serviceDate) || new Date(0);
+        return compareAsc(dateA, dateB);
+    });
   }, [selectedDate, eventsByDate]);
 
   const eventDays = useMemo(() => {
-      // Need to adjust date to avoid timezone issues when converting from string
       return Array.from(eventsByDate.keys()).map(dateStr => new Date(dateStr.replace(/-/g, '/')));
   }, [eventsByDate]);
 
@@ -62,14 +60,10 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
     hasEvent: eventDays,
   };
 
-  const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
-    switch (status) {
-      case "Completado": return "success"; 
-      case "Reparando": return "secondary"; 
-      case "Cancelado": return "destructive"; 
-      case "Agendado": return "default"; 
-      default: return "default";
-    }
+  const getStatusVariant = (status: ServiceRecord['status'], subStatus?: ServiceRecord['subStatus']): "default" | "secondary" | "outline" | "destructive" | "success" => {
+    if (status === 'Agendado' && subStatus === 'Confirmada') return 'success';
+    if (status === 'Agendado' && subStatus === 'Sin Confirmar') return 'secondary';
+    return 'default';
   };
 
   return (
@@ -93,20 +87,20 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
         </h2>
         {selectedDayServices.length > 0 ? (
           <div className="space-y-4">
-            {selectedDayServices.sort((a,b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate))).map(service => {
+            {selectedDayServices.map(service => {
               const vehicle = vehicles.find(v => v.id === service.vehicleId);
               const technician = technicians.find(t => t.id === service.technicianId);
-              const serviceDateObj = safeParseISO(service.serviceDate);
+              const serviceDateObj = parseDate(service.appointmentDateTime || service.serviceDate);
               return (
                 <Card key={service.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => onServiceClick(service)}>
                   <CardContent className="p-4 flex items-center justify-between gap-4">
                     <div className="flex-grow">
                       <p className="font-bold">{vehicle ? `${vehicle.make} ${vehicle.model}` : 'Vehículo no encontrado'}</p>
                       <p className="text-sm text-muted-foreground">{vehicle?.licensePlate}</p>
-                      <p className="text-sm mt-1">{service.description}</p>
+                      <p className="text-sm mt-1">{service.description || 'Sin descripción'}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2 text-sm shrink-0">
-                      <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
+                      <Badge variant={getStatusVariant(service.status, service.subStatus)}>{service.subStatus || service.status}</Badge>
                       <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {isValid(serviceDateObj) ? format(serviceDateObj, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</span>
                       <span className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5" /> {technician?.name || 'N/A'}</span>
                     </div>

@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 "use client";
 
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { format, setHours, setMinutes, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 
 const statusOptions: { value: ServiceFormValues['status'], label: string }[] = [

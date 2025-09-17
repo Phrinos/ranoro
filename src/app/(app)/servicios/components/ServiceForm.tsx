@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -31,7 +32,8 @@ interface ServiceFormProps {
   categories: InventoryCategory[];
   suppliers: Supplier[];
   serviceHistory: ServiceRecord[];
-  onSave: (data: ServiceFormValues) => Promise<void>;
+  onSave: (data: ServiceFormValues) => Promise<ServiceRecord | void>;
+  onSaveSuccess?: (service: ServiceRecord) => void;
   onComplete?: (data: ServiceFormValues) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
   onCancel?: () => void;
@@ -49,20 +51,47 @@ const ServiceFormFooter = ({ onCancel, onComplete, mode, initialData, isSubmitti
     const isEditMode = !!initialData?.id;
     const { status } = useWatch();
 
+    const isQuoteMode = status === 'Cotizacion';
+    const isScheduledMode = status === 'Agendado';
+
+    let cancelTexts = {
+        button: 'Cancelar Servicio',
+        title: '¿Cancelar servicio?',
+        description: 'El servicio se marcará como cancelado y los insumos se devolverán al inventario.',
+        confirm: 'Sí, Cancelar Servicio'
+    };
+
+    if (isQuoteMode) {
+        cancelTexts = {
+            button: 'Eliminar Cotización',
+            title: '¿Eliminar cotización?',
+            description: 'Esta acción es permanente y no se puede deshacer.',
+            confirm: 'Sí, Eliminar'
+        };
+    } else if (isScheduledMode) {
+        cancelTexts = {
+            button: 'Cancelar Cita',
+            title: '¿Cancelar cita?',
+            description: 'La cita se cancelará y el registro volverá a ser una cotización.',
+            confirm: 'Sí, Cancelar Cita'
+        };
+    }
+
+
     return (
         <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {onCancel && (
                 <ConfirmDialog
-                  triggerButton={<Button variant="destructive" type="button"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar' : 'Cancelar'}</Button>}
-                  title={mode === 'quote' ? '¿Eliminar cotización?' : '¿Cancelar servicio?'}
-                  description={mode === 'quote' ? 'Esto es permanente.' : 'El servicio se marcará como cancelado.'}
+                  triggerButton={<Button variant="destructive" type="button"><Ban className="mr-2 h-4 w-4" />{cancelTexts.button}</Button>}
+                  title={cancelTexts.title}
+                  description={cancelTexts.description}
                   onConfirm={onCancel}
-                  confirmText={mode === 'quote' ? 'Sí, Eliminar' : 'Sí, Cancelar'}
+                  confirmText={cancelTexts.confirm}
                 />
               )}
-              <Button type="button" variant="outline" onClick={() => reset(initialData || {})}>Descartar</Button>
+              <Button type="button" variant="outline" onClick={() => reset(initialData || {})}>Descartar Cambios</Button>
             </div>
             <div className="flex items-center gap-2">
                {isEditMode && onComplete && status !== 'Entregado' && status !== 'Cancelado' && (
@@ -114,6 +143,7 @@ export function ServiceForm({
   suppliers,
   serviceHistory,
   onSave,
+  onSaveSuccess,
   onComplete,
   onVehicleCreated,
   onCancel,
@@ -146,7 +176,10 @@ export function ServiceForm({
   const currentMileage = selectedVehicle?.mileage;
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
-    await onSave(values);
+    const savedService = await onSave(values);
+    if (savedService && onSaveSuccess) {
+      onSaveSuccess(savedService);
+    }
   };
   
   const handleCompleteClick = () => {

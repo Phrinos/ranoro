@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -47,6 +48,8 @@ export default function ServicioPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const redirectUrl = useRef<string | null>(null);
 
   const ticketContentRef = React.useRef<HTMLDivElement>(null);
 
@@ -118,24 +121,34 @@ export default function ServicioPage() {
     fetchData();
   }, [serviceId, isEditMode, isQuoteModeParam, router, toast]);
   
-  const handleShowShareDialog = useCallback((service: ServiceRecord) => {
+  const handleShowShareDialog = useCallback((service: ServiceRecord, redirect?: string) => {
     setRecordForPreview(service);
     setIsShareDialogOpen(true);
+    if(redirect) redirectUrl.current = redirect;
   }, []);
   
+  const handleShareDialogClose = (isOpen: boolean) => {
+    setIsShareDialogOpen(isOpen);
+    if (!isOpen && redirectUrl.current) {
+        router.push(redirectUrl.current);
+        redirectUrl.current = null;
+    }
+  };
+
   const handleShowTicketDialog = useCallback((service: ServiceRecord) => {
     setRecordForPreview(service); 
     setIsTicketDialogOpen(true);
   }, []);
 
-  const handleSaveService = async (values: ServiceFormValues) => {
+  const handleSaveService = async (values: ServiceFormValues): Promise<ServiceRecord | void> => {
     setIsSubmitting(true);
     try {
       const savedRecord = await serviceService.saveService(values as ServiceRecord);
       toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id.slice(-6)} se ha guardado.` });
       
       const targetTab = savedRecord.status === 'Cotizacion' ? 'cotizaciones' : 'activos';
-      router.push(`/servicios?tab=${targetTab}`);
+      redirectUrl.current = `/servicios?tab=${targetTab}`;
+      return savedRecord;
         
     } catch(e) {
       console.error(e);
@@ -145,13 +158,14 @@ export default function ServicioPage() {
     }
   };
 
-  const handleUpdateService = async (values: ServiceFormValues) => {
+  const handleUpdateService = async (values: ServiceFormValues): Promise<ServiceRecord | void> => {
     if (!initialData) return;
     setIsSubmitting(true);
     try {
-      await serviceService.saveService({ ...values, id: serviceId });
+      const updatedRecord = await serviceService.saveService({ ...values, id: serviceId });
       toast({ title: 'Servicio Actualizado', description: `El registro #${serviceId?.slice(-6)} ha sido actualizado.` });
-      router.push(`/servicios?tab=activos`);
+      redirectUrl.current = `/servicios?tab=activos`;
+      return updatedRecord;
     } catch(e) {
       console.error(e);
       toast({ title: 'Error al Actualizar', variant: 'destructive'});
@@ -317,6 +331,7 @@ export default function ServicioPage() {
             suppliers={suppliers}
             serviceHistory={serviceHistory}
             onSave={isEditMode ? handleUpdateService : handleSaveService}
+            onSaveSuccess={handleShowShareDialog}
             onComplete={handleCompleteService}
             onVehicleCreated={handleVehicleCreated}
             onCancel={isQuote ? handleDeleteQuote : handleCancelService}
@@ -326,7 +341,7 @@ export default function ServicioPage() {
           <>
             <ShareServiceDialog 
               open={isShareDialogOpen} 
-              onOpenChange={setIsShareDialogOpen} 
+              onOpenChange={handleShareDialogClose} 
               service={recordForPreview}
               vehicle={vehicles.find(v => v.id === recordForPreview.vehicleId)}
             />

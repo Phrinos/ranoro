@@ -1,10 +1,10 @@
+
 // src/app/(app)/servicios/components/tab-activos.tsx
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
 import {
@@ -26,26 +26,18 @@ interface ActivosTabContentProps {
   personnel: User[];
   currentUser: User | null;
   onShowShareDialog: (service: ServiceRecord) => void;
-  onShowTicket: (service: ServiceRecord) => void; // New prop
+  onShowTicket: (service: ServiceRecord) => void;
   onCompleteService: (service: ServiceRecord) => void;
   onDelete: (serviceId: string) => void;
 }
 
 const getStatusPriority = (service: ServiceRecord): number => {
-  if (service.status === 'Agendado') {
-    return service.appointmentStatus === 'Confirmada' ? 1 : 2;
-  }
-  if (service.status === 'En Taller') {
-    switch (service.subStatus) {
-      case 'En Espera de Refacciones': return 3;
-      case 'Reparando': return 4;
-      case 'Completado': return 5;
-      default: return 4; // default para En Taller sin subStatus
-    }
-  }
-  if (service.status === 'Entregado') return 6;
-  if (service.status === 'Cancelado') return 8;
-  return 7; // otros
+    if (service.status === 'Agendado') return 1;
+    if (service.status === 'En Taller') return 2;
+    if (service.status === 'Completado') return 3;
+    if (service.status === 'Entregado') return 4;
+    if (service.status === 'Cancelado') return 5;
+    return 6; 
 };
 
 export default function ActivosTabContent({
@@ -54,54 +46,45 @@ export default function ActivosTabContent({
   personnel,
   currentUser,
   onShowShareDialog,
-  onShowTicket, // New prop
+  onShowTicket,
   onCompleteService,
   onDelete,
 }: ActivosTabContentProps) {
   const router = useRouter();
   const { toast } = useToast();
 
-  const visibleServices = useMemo(() => {
-    const start = startOfDay(new Date());
-    const end = endOfDay(new Date());
+  const activeServices = useMemo(() => {
+    const todayStart = startOfDay(new Date());
+    const todayEnd = endOfDay(new Date());
 
-    return allServices.filter((s) => {
-      if (s.status === 'En Taller') return true;
-
+    return allServices.filter(s => {
+      // Exclude quotes and cancelled services
+      if (s.status === 'Cotizacion' || s.status === 'Cancelado') {
+        return false;
+      }
+      // Include services delivered today
       if (s.status === 'Entregado') {
-        const d = parseDate(s.deliveryDateTime);
-        return d && isValid(d) && isWithinInterval(d, { start, end });
+        const deliveryDate = parseDate(s.deliveryDateTime);
+        return deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, { start: todayStart, end: todayEnd });
       }
-      
-      if (s.status === 'Completado' || s.subStatus === 'Completado') {
-        const completedAt =
-          parseDate((s as any).completionDateTime) ||
-          parseDate(s.deliveryDateTime) ||
-          parseDate(s.receptionDateTime) ||
-          parseDate(s.serviceDate);
-
-        return completedAt && isValid(completedAt) && isWithinInterval(completedAt, { start, end });
-      }
-
-      return false;
+      // Include all other statuses
+      return true;
     });
   }, [allServices]);
 
   const sortedServices = useMemo(() => {
-    return [...visibleServices].sort((a, b) => {
-      const dateA = parseDate(a.receptionDateTime) || parseDate(a.serviceDate) || parseDate(a.appointmentDateTime);
-      const dateB = parseDate(b.receptionDateTime) || parseDate(b.serviceDate) || parseDate(b.appointmentDateTime);
-
+    return [...activeServices].sort((a, b) => {
       const priorityA = getStatusPriority(a);
       const priorityB = getStatusPriority(b);
       if (priorityA !== priorityB) return priorityA - priorityB;
 
+      const dateA = parseDate(a.receptionDateTime || a.serviceDate);
+      const dateB = parseDate(b.receptionDateTime || b.serviceDate);
       if (dateA && dateB) return compareDesc(dateA, dateB);
-      if (dateA) return -1;
-      if (dateB) return 1;
+      
       return 0;
     });
-  }, [visibleServices]);
+  }, [activeServices]);
 
   const totalEarningsToday = useMemo(() => {
     return allServices
@@ -128,7 +111,7 @@ export default function ActivosTabContent({
       }
     }
   };
-
+  
   const renderServiceCard = useCallback(
     (service: ServiceRecord) => (
       <ServiceAppointmentCard
@@ -146,6 +129,7 @@ export default function ActivosTabContent({
     ),
     [vehicles, personnel, currentUser, onShowShareDialog, onDelete, handleEditService, handleCancelService, onShowTicket]
   );
+
 
   return (
     <Card>

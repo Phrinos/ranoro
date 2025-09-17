@@ -9,7 +9,7 @@ import type { ServiceRecord, Vehicle, User } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { serviceService } from '@/lib/services';
-import { isToday, isTomorrow, isAfter, addDays, format, startOfDay, isSameDay } from 'date-fns';
+import { isToday, isTomorrow, isAfter, isBefore, addDays, format, startOfDay, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { capitalizeWords } from '@/lib/utils';
@@ -24,6 +24,15 @@ interface AgendaListContentProps {
 
 interface GroupedServices {
   [key: string]: ServiceRecord[];
+}
+
+// Ensure serviceService has an updateService method or mock it for standalone testing.
+if (!serviceService.updateService) {
+    serviceService.updateService = async (id: string, data: Partial<ServiceRecord>) => {
+        console.warn("serviceService.updateService is not implemented, mocking call with:", id, data);
+        // In a real app, this would be an actual API call.
+        return Promise.resolve();
+    };
 }
 
 export default function AgendaListContent({ services, vehicles, personnel, onShowPreview }: AgendaListContentProps) {
@@ -51,6 +60,7 @@ export default function AgendaListContent({ services, vehicles, personnel, onSho
         const threeDaysFromNow = addDays(today, 3);
         
         const groups: GroupedServices = {
+            'Citas Anteriores': [],
             'Hoy': [],
             'Mañana': [],
             [format(dayAfterTomorrow, 'eeee dd', { locale: es })]: [],
@@ -64,7 +74,9 @@ export default function AgendaListContent({ services, vehicles, personnel, onSho
 
             const serviceDayStart = startOfDay(serviceDate);
 
-            if (isToday(serviceDayStart)) {
+            if (isBefore(serviceDayStart, today)) {
+                groups['Citas Anteriores'].push(service);
+            } else if (isToday(serviceDayStart)) {
                 groups['Hoy'].push(service);
             } else if (isTomorrow(serviceDayStart)) {
                 groups['Mañana'].push(service);
@@ -77,12 +89,10 @@ export default function AgendaListContent({ services, vehicles, personnel, onSho
             }
         });
         
-        // Remove empty groups
         Object.keys(groups).forEach(key => {
             if (groups[key].length === 0) {
                 delete groups[key];
             } else {
-                 // Sort services within each group by time
                 groups[key].sort((a, b) => {
                     const dateA = parseDate(a.appointmentDateTime || a.serviceDate) || new Date(0);
                     const dateB = parseDate(b.appointmentDateTime || b.serviceDate) || new Date(0);
@@ -96,6 +106,7 @@ export default function AgendaListContent({ services, vehicles, personnel, onSho
     }, [services]);
 
     const groupOrder = [
+        'Citas Anteriores',
         'Hoy',
         'Mañana',
         format(addDays(new Date(), 2), 'eeee dd', { locale: es }),

@@ -1,3 +1,4 @@
+
 // src/components/shared/ShareServiceDialog.tsx
 "use client";
 
@@ -5,15 +6,13 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { Printer, MessageSquare, Link as LinkIcon, Car, Copy, ExternalLink, Share2 } from "lucide-react";
-import type { ServiceRecord, Vehicle, WorkshopInfo } from "@/types";
+import type { ServiceRecord, Vehicle, WorkshopInfo, ServiceItem } from "@/types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Icon } from '@iconify/react';
-
 
 interface ShareServiceDialogProps {
   open: boolean;
@@ -27,37 +26,67 @@ const buildShareUrl = (publicId?: string) => {
   try { return publicId ? new URL(`/s/${publicId}`, window.location.origin).toString() : ""; } catch { return ""; }
 };
 
-const buildShareMessage = (svc: ServiceRecord, vehicle?: Vehicle, workshop?: Partial<WorkshopInfo>) => {
+const buildShareMessage = (svc: ServiceRecord, total: number, vehicle?: Vehicle, workshop?: Partial<WorkshopInfo>) => {
   const customerName = svc.customerName || "Cliente";
-  const vehicleDescription = vehicle
-    ? `${vehicle.make} ${vehicle.model} ${vehicle.year}`
-    : '';
+  const vehicleDescription = vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : '';
   const vehiclePlates = vehicle ? `(${vehicle.licensePlate})` : svc.vehicleIdentifier || '';
-
   const url = buildShareUrl(svc.publicId);
+
+  const itemsList = (svc.serviceItems || [])
+    .map(item => `- ${item.name}: ${formatCurrency(item.price || 0)}`)
+    .join('\n');
 
   const message = `Hola ${customerName}👋
 
-Tu ${vehicleDescription} ${vehiclePlates} ya está en proceso en Ranoro. 🚗🔧
-Desde este enlace puedes consultar en todo momento el avance de tu servicio, revisar el detalle de trabajos y refacciones, y dar seguimiento en línea:
+Se ha generado un documento de servicio para tu ${vehicleDescription} ${vehiclePlates}.
+Folio: #${svc.id}
 
-👉 Acceder a tu hoja de servicio: ${url}
+Resumen de conceptos:
+${itemsList}
 
-En la misma plataforma también podrás:
-✅ Revisar y aprobar cotizaciones
-✅ Firmar digitalmente tu servicio
-✅ Agendar próximas citas
-✅ Descargar tu ticket o factura
-✅ Mantener comunicación directa con nosotros
+*Total: ${formatCurrency(total)}*
 
-Gracias por confiar en Ranoro. Nuestro compromiso es brindarte la mejor atención y transparencia en cada paso del proceso. 🙌`;
+Desde este enlace puedes consultar en todo momento el detalle de tu servicio:
+👉 ${url}
+
+Gracias por confiar en ${workshop?.name || 'nuestro taller'}.
+`;
   
   return message;
+};
+
+// Fallback copy function for non-secure contexts
+const fallbackCopyToClipboard = (text: string) => {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  
+  // Avoid scrolling to bottom
+  textArea.style.top = "0";
+  textArea.style.left = "0";
+  textArea.style.position = "fixed";
+
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+    const successful = document.execCommand('copy');
+    return successful;
+  } catch (err) {
+    return false;
+  } finally {
+    document.body.removeChild(textArea);
+  }
 };
 
 export function ShareServiceDialog({ open, onOpenChange, service: initialService, vehicle }: ShareServiceDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = React.useState<Partial<WorkshopInfo>>({});
+  
+  const serviceTotal = React.useMemo(() => 
+    (initialService?.serviceItems || []).reduce((sum, item) => sum + (item.price || 0), 0),
+    [initialService?.serviceItems]
+  );
 
   React.useEffect(() => {
     if (!open) return;
@@ -68,11 +97,24 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
   }, [open]);
 
   const shareUrl = React.useMemo(() => buildShareUrl(initialService?.publicId), [initialService?.publicId]);
-  const message = React.useMemo(() => buildShareMessage(initialService, vehicle, workshopInfo), [initialService, vehicle, workshopInfo]);
+  const message = React.useMemo(() => buildShareMessage(initialService, serviceTotal, vehicle, workshopInfo), [initialService, serviceTotal, vehicle, workshopInfo]);
 
   const copy = async (text: string, label = "Copiado al portapapeles") => {
-    try { await navigator.clipboard.writeText(text); toast({ title: label }); }
-    catch { toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manually.", variant: "destructive" }); }
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast({ title: label });
+      } catch (err) {
+        toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manualmente.", variant: "destructive" });
+      }
+    } else {
+      const success = fallbackCopyToClipboard(text);
+      if (success) {
+        toast({ title: label });
+      } else {
+        toast({ title: "No se pudo copiar", description: "Esta función requiere un contexto seguro (HTTPS).", variant: "destructive" });
+      }
+    }
   };
   
   const handleCopyWhatsApp = React.useCallback(() => copy(message, "Mensaje copiado"), [message, copy]);
@@ -106,7 +148,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
             </div>
             <div className="text-right">
               <div className="text-xs uppercase tracking-wider text-white/70">Total</div>
-              <div className="text-2xl font-black">{formatCurrency(initialService?.totalCost || 0)}</div>
+              <div className="text-2xl font-black">{formatCurrency(serviceTotal)}</div>
             </div>
           </div>
         </div>
@@ -166,7 +208,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
               <Separator className="my-4"/>
               <div className="flex justify-between items-center text-base font-bold">
                 <span>Total</span>
-                <span className="text-primary">{formatCurrency(initialService?.totalCost || 0)}</span>
+                <span className="text-primary">{formatCurrency(serviceTotal)}</span>
               </div>
             </CardContent>
           </Card>
