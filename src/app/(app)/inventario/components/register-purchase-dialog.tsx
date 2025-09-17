@@ -253,19 +253,19 @@ function SearchItemDialog({ open, onOpenChange, inventoryItems, onItemSelected, 
 
   return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="sm:max-w-lg p-0 bg-white">
-              <DialogHeader className="p-6 pb-4 border-b">
+          <DialogContent className="sm:max-w-lg p-0 bg-muted/30">
+              <DialogHeader className="p-6 pb-4 border-b bg-white">
                   <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
                   <DialogDescription>Seleccione un artículo para añadir a la compra o cree uno nuevo.</DialogDescription>
               </DialogHeader>
               <div className="px-6">
                 <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Buscar por nombre o SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                    <Input placeholder="Buscar por nombre o SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                 </div>
               </div>
               <div className="px-6 pb-6">
-                <ScrollArea className="h-72 border rounded-md">
+                <ScrollArea className="h-72 border rounded-md bg-white">
                     <div className="p-2 space-y-1">
                         {filteredItems.map(item => (
                             <Button key={item.id} variant="ghost" className="w-full justify-start text-left h-auto py-1.5 px-2" onClick={() => onItemSelected(item)}>
