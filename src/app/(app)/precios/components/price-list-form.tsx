@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Trash2, Wrench, X, Tags } from "lucide-react";
-import type { VehiclePriceList, InventoryItem, ServiceSupply, InventoryCategory, Supplier } from "@/types";
+import type { VehiclePriceList, InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, Vehicle, ServiceTypeRecord } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -96,7 +96,7 @@ export function PriceListForm({ initialData, onSubmit, onClose, inventoryItems, 
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField control={form.control} name="make" render={({ field }) => ( <FormItem><FormLabel>Marca</FormLabel><FormControl><Input placeholder="Ej: Nissan" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
             <FormField control={form.control} name="model" render={({ field }) => ( <FormItem><FormLabel>Modelo</FormLabel><FormControl><Input placeholder="Ej: Versa" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
-             <FormField control={form.control} name="years" render={() => ( <FormItem className="md:col-span-2"><FormLabel>Años Aplicables</FormLabel><Card><CardContent className="p-2"><ScrollArea className="h-40"><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 p-4">{yearsToShow.map((year) => ( <FormField key={year} control={form.control} name="years" render={({ field }) => ( <FormItem className="flex flex-row items-start space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(year)} onCheckedChange={(checked) => { const currentYears = field.value || []; const newYears = checked ? [...currentYears, year] : currentYears.filter((y) => y !== year); field.onChange(newYears.sort((a, b) => b - a)); }} /></FormControl><FormLabel className="text-sm font-normal">{year}</FormLabel></FormItem> )}/> ))}</div></ScrollArea></CardContent></Card><FormMessage /></FormItem> )}/>
+             <FormField control={form.control} name="years" render={() => ( <FormItem className="md:col-span-2"><FormLabel>Años Aplicables</FormLabel><Card><CardContent className="p-2"><ScrollArea className="h-40"><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 p-4">{yearsToShow.map((year) => ( <FormField key={year} control={form.control} name="years" render={({ field }) => ( <FormItem className="flex flex-row items-start space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(year)} onCheckedChange={(checked) => { const currentYears = field.value || []; const newYears = checked ? [...currentYears, year] : currentYears.filter((y) => y !== year); field.onChange(newYears.sort((a, b) => b - a)); }} className="bg-white" /></FormControl><FormLabel className="text-sm font-normal">{year}</FormLabel></FormItem> )}/> ))}</div></ScrollArea></CardContent></Card><FormMessage /></FormItem> )}/>
           </CardContent>
         </Card>
         

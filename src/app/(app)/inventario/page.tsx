@@ -162,7 +162,13 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                   </TableHead>
               
                   <TableHead className="text-white hidden lg:table-cell">
-                    Proveedor
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('supplier')}
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                    >
+                      Proveedor {renderSortArrow('supplier')}
+                    </Button>
                   </TableHead>
               
                   <TableHead className="text-white">
