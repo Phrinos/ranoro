@@ -44,13 +44,15 @@ export function VehicleSelectionDialog({
   };
   
   const filteredVehicles = vehicles.filter(vehicle => {
+    if (!vehicle) return false;
     const lowerSearch = searchTerm.toLowerCase();
-    return (
-      vehicle.licensePlate.toLowerCase().includes(lowerSearch) ||
-      vehicle.make.toLowerCase().includes(lowerSearch) ||
-      vehicle.model.toLowerCase().includes(lowerSearch) ||
-      (vehicle.ownerName && vehicle.ownerName.toLowerCase().includes(lowerSearch))
-    );
+    
+    const licensePlateMatch = vehicle.licensePlate && vehicle.licensePlate.toLowerCase().includes(lowerSearch);
+    const makeMatch = vehicle.make && vehicle.make.toLowerCase().includes(lowerSearch);
+    const modelMatch = vehicle.model && vehicle.model.toLowerCase().includes(lowerSearch);
+    const ownerNameMatch = vehicle.ownerName && vehicle.ownerName.toLowerCase().includes(lowerSearch);
+
+    return licensePlateMatch || makeMatch || modelMatch || ownerNameMatch;
   });
 
   return (
@@ -72,7 +74,7 @@ export function VehicleSelectionDialog({
                     <p>No se encontraron vehículos.</p>
                     <Button variant="link" onClick={onOpenNewVehicleDialog} className="mt-2">
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Registrar Nuevo Vehículo
+                        Registrar Nuevo Vehículo "{searchTerm}"
                     </Button>
                 </div>
             </CommandEmpty>
