@@ -8,9 +8,9 @@ admin.initializeApp();
 const db = admin.firestore();
 
 export const generateDailyRentalCharges = functions.pubsub
-  .schedule('0 3 * * *') // Runs every day at 3:00 AM
+  .schedule('0 3 * * *')
   .timeZone('America/Mexico_City')
-  .onRun(async (context) => {
+  .onRun(async (_context) => {
     console.log('Starting daily rental charge generation...');
     const today = startOfDay(new Date());
     const todayStr = formatDate(today, 'yyyy-MM-dd');
@@ -21,7 +21,7 @@ export const generateDailyRentalCharges = functions.pubsub
     const activeDriversSnap = await activeDriversQuery.get();
     
     if (activeDriversSnap.empty) {
-        console.log("No active drivers found.");
+        console.log('No active drivers found.');
         return null;
     }
 
@@ -39,7 +39,6 @@ export const generateDailyRentalCharges = functions.pubsub
         const vehicle = vehicleDoc.data();
         const dailyRentalCost = vehicle?.dailyRentalCost;
 
-        // Check if a charge for today already exists
         const chargesRef = db.collection('dailyRentalCharges');
         const existingChargeQuery = chargesRef
             .where('driverId', '==', driverDoc.id)
@@ -52,7 +51,6 @@ export const generateDailyRentalCharges = functions.pubsub
             return;
         }
 
-        // Create the new charge
         const newCharge = {
             driverId: driverDoc.id,
             vehicleId: vehicleDoc.id,
