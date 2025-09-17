@@ -57,7 +57,7 @@ function FlotillaLayout({ children }: { children: React.ReactNode }) {
     const [withdrawals, setWithdrawals] = useState<OwnerWithdrawal[]>([]);
     const [expenses, setExpenses] = useState<VehicleExpense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedPayment, setSelectedPayment] = useState<RentalPayment | null>(null);
+    const [selectedPayment, setSelectedPayment] = useState<RentalPayment | null>([]);
     const [isTicketOpen, setIsTicketOpen] = useState(false);
     const [selectedDriverBalance, setSelectedDriverBalance] = useState(0);
 
@@ -92,27 +92,10 @@ function FlotillaLayout({ children }: { children: React.ReactNode }) {
             rentalService.onVehicleExpensesUpdate(setExpenses),
         ];
 
-        // We need drivers and vehicles to generate charges
-        const loadInitialDataAndGenerateCharges = async () => {
-            const [vehiclesData, driversData] = await Promise.all([
-                inventoryService.onVehiclesUpdatePromise(),
-                personnelService.onDriversUpdatePromise(),
-            ]);
-
-            try {
-                // This will run once when the component mounts with all necessary data
-                await rentalService.generateMissingChargesForAllDrivers(driversData, vehiclesData);
-            } catch (err) {
-                 toast({ title: "Error de Sincronización", description: "No se pudieron generar los cargos de renta diarios automáticamente.", variant: "destructive"});
-            }
-
-            setIsLoading(false);
-        };
-
-        loadInitialDataAndGenerateCharges();
+        setIsLoading(false);
 
         return () => unsubs.forEach(unsub => unsub());
-    }, [toast]);
+    }, []);
 
 
     const value = { vehicles, drivers, dailyCharges, payments, manualDebts, withdrawals, expenses, isLoading, handleShowTicket };

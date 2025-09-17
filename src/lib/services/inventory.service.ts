@@ -12,6 +12,7 @@ import {
   query,
   getDocs,
   where,
+  WriteBatch,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck } from "@/types";
@@ -48,6 +49,35 @@ const saveItem = async (data: Partial<InventoryItem>, id?: string): Promise<Inve
 const deleteItem = async (id: string): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
   await deleteDoc(doc(db, "inventory", id));
+};
+
+const updateInventoryStock = async (
+    batch: WriteBatch,
+    items: { id: string; quantity: number; unitPrice?: number }[],
+    operation: 'add' | 'subtract'
+) => {
+    if (!db) throw new Error("Database not initialized.");
+
+    const itemUpdates = items.map(async (item) => {
+        const itemRef = doc(db, 'inventory', item.id);
+        const itemDoc = await getDoc(itemRef);
+
+        if (itemDoc.exists()) {
+            const currentStock = itemDoc.data().stock || 0;
+            const newStock = operation === 'add'
+                ? currentStock + item.quantity
+                : currentStock - item.quantity;
+            
+            const updateData: { stock: number; unitPrice?: number } = { stock: newStock };
+            if (item.unitPrice !== undefined) {
+                updateData.unitPrice = item.unitPrice;
+            }
+
+            batch.update(itemRef, updateData);
+        }
+    });
+
+    await Promise.all(itemUpdates);
 };
 
 // --- Service Types ---
@@ -258,6 +288,7 @@ export const inventoryService = {
   onItemsUpdatePromise,
   saveItem,
   deleteItem,
+  updateInventoryStock,
   onServiceTypesUpdate,
   onServiceTypesUpdatePromise,
   saveServiceType,

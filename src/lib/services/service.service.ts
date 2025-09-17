@@ -18,6 +18,7 @@ import {
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
+import { inventoryService } from './inventory.service';
 
 // --- Service Records ---
 
@@ -75,12 +76,29 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
         paymentDetails 
     };
     batch.update(serviceRef, cleanObjectForFirestore(updatedService));
+
+    if (service.items && service.items.length > 0) {
+        await inventoryService.updateInventoryStock(batch, service.items, 'subtract');
+    }
 };
 
 const cancelService = async (id: string, reason: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
+    
+    const batch = writeBatch(db);
     const serviceRef = doc(db, 'serviceRecords', id);
-    await updateDoc(serviceRef, { status: 'Cancelado', cancellationReason: reason });
+    const serviceDoc = await getDoc(serviceRef);
+
+    if (serviceDoc.exists()) {
+        const service = serviceDoc.data() as ServiceRecord;
+        batch.update(serviceRef, { status: 'Cancelado', cancellationReason: reason });
+
+        if (service.items && service.items.length > 0) {
+            await inventoryService.updateInventoryStock(batch, service.items, 'add');
+        }
+    }
+
+    await batch.commit();
 };
 
 const deleteService = async (id: string): Promise<void> => {

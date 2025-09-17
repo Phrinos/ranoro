@@ -93,16 +93,25 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
 
     useEffect(() => {
         setIsLoading(true);
-        const unsubs: (() => void)[] = [
-            saleService.onSalesUpdate(setAllSales),
-            serviceService.onServicesUpdate(setAllServices),
-            inventoryService.onItemsUpdate(setAllInventory),
-            personnelService.onPersonnelUpdate(setAllPersonnel),
-            inventoryService.onFixedExpensesUpdate((expenses) => {
-                setFixedExpenses(expenses);
+        const unsubs: (() => void)[] = [];
+
+        const fetchData = async () => {
+            try {
+                await Promise.all([
+                    new Promise<void>(resolve => unsubs.push(saleService.onSalesUpdate(data => { setAllSales(data); resolve(); }))),
+                    new Promise<void>(resolve => unsubs.push(serviceService.onServicesUpdate(data => { setAllServices(data); resolve(); }))),
+                    new Promise<void>(resolve => unsubs.push(inventoryService.onItemsUpdate(data => { setAllInventory(data); resolve(); }))),
+                    new Promise<void>(resolve => unsubs.push(personnelService.onPersonnelUpdate(data => { setAllPersonnel(data); resolve(); }))),
+                    new Promise<void>(resolve => unsubs.push(inventoryService.onFixedExpensesUpdate(data => { setFixedExpenses(data); resolve(); })))
+                ]);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            } finally {
                 setIsLoading(false);
-            })
-        ];
+            }
+        };
+
+        fetchData();
 
         return () => unsubs.forEach(unsub => unsub());
     }, []);

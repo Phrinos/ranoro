@@ -21,6 +21,7 @@ import type { SaleReceipt, InventoryItem, User, Payment } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { adminService } from './admin.service';
 import { cashService } from './cash.service';
+import { inventoryService } from './inventory.service';
 import type { POSFormValues } from '@/schemas/pos-form-schema';
 
 const onSalesUpdate = (callback: (sales: SaleReceipt[]) => void): (() => void) => {
@@ -49,7 +50,7 @@ const registerSale = async (
   saleData: POSFormValues, 
   inventoryItems: InventoryItem[], 
   currentUser: User,
-  batch?: any // Accept an optional batch
+  batch?: any
 ): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     
@@ -58,7 +59,6 @@ const registerSale = async (
 
     const saleRef = doc(db, 'sales', saleId);
     
-    const inventoryMap = new Map(inventoryItems.map(i => [i.id, i]));
     const totalAmount = saleData.items.reduce((acc, item) => acc + item.totalPrice, 0);
     const subTotal = totalAmount / 1.16;
     const tax = totalAmount - subTotal;
@@ -79,15 +79,12 @@ const registerSale = async (
 
     workBatch.set(saleRef, cleanObjectForFirestore(newSale));
 
-    for (const item of saleData.items) {
-        if (!item.isService) {
-            const inventoryItem = inventoryMap.get(item.inventoryItemId);
-            if (inventoryItem) {
-                const itemRef = doc(db, 'inventory', item.inventoryItemId);
-                const newQuantity = inventoryItem.quantity - item.quantity;
-                workBatch.update(itemRef, { quantity: newQuantity });
-            }
-        }
+    const inventoryUpdateItems = saleData.items
+        .filter(item => !item.isService)
+        .map(item => ({ id: item.inventoryItemId, quantity: item.quantity }));
+
+    if (inventoryUpdateItems.length > 0) {
+        await inventoryService.updateInventoryStock(workBatch, inventoryUpdateItems, 'subtract');
     }
 
     for (const payment of saleData.payments) {
@@ -123,19 +120,14 @@ const cancelSale = async (saleId: string, reason: string, currentUser: User | nu
     const batch = writeBatch(db);
     batch.update(saleRef, { status: 'Cancelado', cancellationReason: reason });
     
-    // Restore inventory
-    for (const item of saleData.items) {
-        if (!item.isService) {
-            const itemRef = doc(db, 'inventory', item.inventoryItemId);
-            const inventoryDoc = await getDoc(itemRef);
-            if (inventoryDoc.exists()) {
-                const currentQuantity = inventoryDoc.data().quantity || 0;
-                batch.update(itemRef, { quantity: currentQuantity + item.quantity });
-            }
-        }
+    const inventoryUpdateItems = saleData.items
+        .filter(item => !item.isService)
+        .map(item => ({ id: item.inventoryItemId, quantity: item.quantity }));
+
+    if (inventoryUpdateItems.length > 0) {
+        await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'add');
     }
     
-    // Remove cash transactions related to this sale
     const cashQuery = query(collection(db, "cashDrawerTransactions"), where("relatedId", "==", saleId));
     const cashDocs = await getDocs(cashQuery);
     cashDocs.forEach(doc => {
@@ -154,33 +146,26 @@ const deleteSale = async (saleId: string, currentUser: User | null): Promise<voi
     if (!saleDoc.exists()) return;
 
     const saleData = saleDoc.data() as SaleReceipt;
+    const batch = writeBatch(db);
 
-    // Restore stock if the sale was not already cancelled
     if (saleData.status !== 'Cancelado') {
-        const batch = writeBatch(db);
-        for (const item of saleData.items) {
-            if (!item.isService) {
-                const itemRef = doc(db, 'inventory', item.inventoryItemId);
-                const invDoc = await getDoc(itemRef);
-                if (invDoc.exists()) {
-                    const currentQuantity = invDoc.data().quantity || 0;
-                    batch.update(itemRef, { quantity: currentQuantity + item.quantity });
-                }
-            }
+        const inventoryUpdateItems = saleData.items
+            .filter(item => !item.isService)
+            .map(item => ({ id: item.inventoryItemId, quantity: item.quantity }));
+        
+        if (inventoryUpdateItems.length > 0) {
+            await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'add');
         }
-        await batch.commit();
     }
     
-    // Delete cash transactions related to this sale
     const cashQuery = query(collection(db, "cashDrawerTransactions"), where("relatedId", "==", saleId));
     const cashDocs = await getDocs(cashQuery);
-    const deleteBatch = writeBatch(db);
     cashDocs.forEach(doc => {
-        deleteBatch.delete(doc.ref);
+        batch.delete(doc.ref);
     });
-    await deleteBatch.commit();
 
-    await deleteDoc(saleRef);
+    batch.delete(saleRef);
+    await batch.commit();
     
     await adminService.logAudit('Eliminar', `Eliminó permanentemente la venta #${saleId.slice(-6)}.`, {
       entityType: 'Venta',

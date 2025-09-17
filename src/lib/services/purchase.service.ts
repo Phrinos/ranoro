@@ -23,17 +23,15 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   const userString = localStorage.getItem('authUser');
   const user: User | null = userString ? JSON.parse(userString) : null;
 
-  // 1. Update inventory quantities for each item
-  for (const item of data.items) {
-    const itemRef = doc(db, 'inventory', item.inventoryItemId);
-    const itemSnap = await getDoc(itemRef);
-    if(itemSnap.exists()) {
-      const currentQuantity = itemSnap.data().quantity || 0;
-      batch.update(itemRef, { 
-        quantity: currentQuantity + item.quantity,
-        unitPrice: item.purchasePrice // Also update the cost price
-      });
-    }
+  // 1. Update inventory quantities and unit prices for each item
+  const inventoryUpdateItems = data.items.map(item => ({
+    id: item.inventoryItemId,
+    quantity: item.quantity,
+    unitPrice: item.purchasePrice,
+  }));
+
+  if (inventoryUpdateItems.length > 0) {
+    await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'add');
   }
 
   // 2. If it's a credit purchase, create or update a payable account
