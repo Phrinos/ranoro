@@ -30,9 +30,9 @@ interface TableToolbarProps {
   onSearchTermChange: (value: string) => void;
   dateRange?: DateRange;
   onDateRangeChange?: (range?: DateRange) => void;
-  sortOption: string;
-  onSortOptionChange: (value: string) => void;
-  sortOptions: Option[];
+  sortOption?: string;
+  onSortOptionChange?: (value: string) => void;
+  sortOptions?: Option[];
   otherFilters?: Record<string, string | 'all'>;
   onFilterChange?: (filters: Record<string, string | 'all'>) => void;
   filterOptions?: FilterGroup[];
@@ -42,6 +42,7 @@ interface TableToolbarProps {
   canGoNext?: boolean;
   onPreviousPage?: () => void;
   onNextPage?: () => void;
+  actions?: React.ReactNode;
 }
 
 export const TableToolbar: React.FC<TableToolbarProps> = ({
@@ -61,6 +62,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   canGoNext,
   onPreviousPage,
   onNextPage,
+  actions,
 }) => {
     
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -114,8 +116,10 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                 />
             </div>
             <div className="flex items-center gap-2 flex-wrap justify-start">
+                {actions}
+                
                 {/* Sort Dropdown */}
-                {sortOptions.length > 0 && (
+                {sortOptions && sortOptions.length > 0 && onSortOptionChange && sortOption &&(
                   <DropdownMenu>
                       <DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" /><span>Ordenar</span></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

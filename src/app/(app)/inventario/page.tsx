@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2, ArrowUpDown } from "lucide-react";
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -106,12 +106,29 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
     return items;
   }, [tableManager.fullFilteredData, tableManager.sortOption]);
 
+  const handleSort = (column: keyof InventoryItem | 'default_order') => {
+    if (column === 'default_order') {
+      tableManager.onSortOptionChange('default_order');
+      return;
+    }
+    const currentSort = tableManager.sortOption;
+    const isAsc = currentSort === `${String(column)}_asc`;
+    tableManager.onSortOptionChange(isAsc ? `${String(column)}_desc` : `${String(column)}_asc`);
+  };
+
+  const renderSortArrow = (column: keyof InventoryItem | 'default_order') => {
+    const { sortOption } = tableManager;
+    if (sortOption.startsWith(String(column))) {
+      return sortOption.endsWith('_asc') ? '▲' : '▼';
+    }
+    return null;
+  };
+
 
   return (
     <div className="space-y-4">
       <TableToolbar
           {...tableManager}
-          sortOptions={itemSortOptions}
           searchPlaceholder="Buscar por nombre, SKU, marca..."
           actions={<Button onClick={() => onPrint(customSortedItems)} variant="outline" size="sm"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>}
       />
@@ -122,13 +139,13 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
             <Table>
               <TableHeader className="bg-black text-white">
                 <TableRow>
-                    <TableHead className="text-white">Nombre</TableHead>
-                    <TableHead className="text-white hidden md:table-cell">Categoría</TableHead>
+                    <TableHead className="text-white"><Button variant="ghost" onClick={() => handleSort('name')} className="text-white hover:bg-gray-700 p-2">Nombre {renderSortArrow('name')}</Button></TableHead>
+                    <TableHead className="text-white hidden md:table-cell"><Button variant="ghost" onClick={() => handleSort('category')} className="text-white hover:bg-gray-700 p-2">Categoría {renderSortArrow('category')}</Button></TableHead>
                     <TableHead className="text-white hidden lg:table-cell">Proveedor</TableHead>
-                    <TableHead className="text-white">Tipo</TableHead>
-                    <TableHead className="text-right text-white">Stock</TableHead>
-                    <TableHead className="text-right text-white">Costo</TableHead>
-                    <TableHead className="text-right text-white">Precio de Venta</TableHead>
+                    <TableHead className="text-white"><Button variant="ghost" onClick={() => handleSort('isService')} className="text-white hover:bg-gray-700 p-2">Tipo {renderSortArrow('isService')}</Button></TableHead>
+                    <TableHead className="text-right text-white"><Button variant="ghost" onClick={() => handleSort('quantity')} className="text-white hover:bg-gray-700 p-2">Stock {renderSortArrow('quantity')}</Button></TableHead>
+                    <TableHead className="text-right text-white"><Button variant="ghost" onClick={() => handleSort('unitPrice')} className="text-white hover:bg-gray-700 p-2">Costo {renderSortArrow('unitPrice')}</Button></TableHead>
+                    <TableHead className="text-right text-white"><Button variant="ghost" onClick={() => handleSort('sellingPrice')} className="text-white hover:bg-gray-700 p-2">Precio Venta {renderSortArrow('sellingPrice')}</Button></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -296,8 +313,8 @@ export default function InventarioPage() {
       if (item.isService) services++;
       else {
         products++;
-        cost += (item.quantity || 0) * (item.purchasePrice || 0);
-        sellingPriceValue += (item.quantity || 0) * (item.salePrice || 0);
+        cost += (item.quantity || 0) * (item.unitPrice || 0);
+        sellingPriceValue += (item.quantity || 0) * (item.sellingPrice || 0);
         if ((item.quantity || 0) <= (item.lowStockThreshold || 0)) lowStock++;
       }
     });
