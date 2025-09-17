@@ -243,7 +243,12 @@ function SearchItemDialog({ open, onOpenChange, inventoryItems, onItemSelected, 
 
   const filteredItems = useMemo(() => {
     const physicalItems = inventoryItems.filter(item => !item.isService);
-    if (!searchTerm.trim()) return physicalItems; // Show all items initially
+    
+    if (!searchTerm.trim()) {
+      // Sort by quantity descending when no search term is present
+      return physicalItems.sort((a, b) => b.quantity - a.quantity);
+    }
+    
     const lowerSearchTerm = searchTerm.toLowerCase();
     return physicalItems.filter(item => 
         item.name.toLowerCase().includes(lowerSearchTerm) || 
@@ -253,7 +258,7 @@ function SearchItemDialog({ open, onOpenChange, inventoryItems, onItemSelected, 
 
   return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="sm:max-w-lg p-0 bg-muted/30">
+          <DialogContent className="sm:max-w-lg p-0 bg-muted">
               <DialogHeader className="p-6 pb-4 border-b bg-white">
                   <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
                   <DialogDescription>Seleccione un artículo para añadir a la compra o cree uno nuevo.</DialogDescription>
