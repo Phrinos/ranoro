@@ -19,11 +19,17 @@ import { VehicleSelectionDialog } from './VehicleSelectionDialog';
 interface VehicleSelectionCardProps {
   vehicles: Vehicle[];
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
+  serviceHistory: ServiceRecord[];
+  onOpenNewVehicleDialog: () => void;
+  initialVehicleId?: string;
 }
 
 export function VehicleSelectionCard({
   vehicles,
   onVehicleCreated,
+  serviceHistory,
+  onOpenNewVehicleDialog,
+  initialVehicleId,
 }: VehicleSelectionCardProps) {
   const { control, watch, setValue, formState: { errors } } = useFormContext<ServiceFormValues>();
   const [isVehicleCreateDialogOpen, setIsVehicleCreateDialogOpen] = useState(false);
@@ -87,7 +93,10 @@ export function VehicleSelectionCard({
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center py-2">Ningún vehículo seleccionado</p>
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground text-center py-2">
+                      <Car className="h-5 w-5" />
+                      <span>Seleccionar Vehículo</span>
+                    </div>
                   )}
                 </button>
                 <FormMessage />
