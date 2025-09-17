@@ -546,7 +546,13 @@ export default function InventarioPage() {
 
         <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
           <DialogContent className="max-w-4xl p-0 no-print">
-            <div className="printable-content bg-white">
+            <DialogHeader className="p-6 pb-2">
+                <DialogTitle>Reporte de Inventario</DialogTitle>
+                <DialogDescription>
+                    Vista previa del reporte de inventario actual.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="printable-content bg-white max-h-[70vh] overflow-y-auto">
                 <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
                     <InventoryReportContent items={itemsToPrint} />
                 </Suspense>
