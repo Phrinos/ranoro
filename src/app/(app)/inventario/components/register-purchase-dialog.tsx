@@ -137,67 +137,74 @@ export function RegisterPurchaseDialog({
                 <div className="px-6 py-4 max-h-[calc(80vh-150px)] overflow-y-auto space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
-                          control={control}
-                          name="supplierId"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                              <FormLabel>Proveedor</FormLabel>
-                        
-                              <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                  <FormControl>
-                                    <Button
-                                      variant="outline"
-                                      role="combobox"
-                                      className={cn("w-full justify-between bg-white", !field.value && "text-muted-foreground")}
-                                    >
-                                      {field.value
-                                        ? sortedSuppliers.find(s => s.id === field.value)?.name
-                                        : "Seleccionar proveedor..."}
-                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                  </FormControl>
-                                </PopoverTrigger>
-                        
-                                <PopoverContent
-                                  className="w-[var(--radix-popover-trigger-width)] p-0"
-                                  onOpenAutoFocus={(e) => e.preventDefault()}
-                                  align="start"
-                                >
-                                  <Command>
-                                    <CommandInput placeholder="Buscar proveedor..." />
-                                    <CommandList className="max-h-60 overflow-y-auto">
-                                      <CommandEmpty>No se encontraron proveedores.</CommandEmpty>
-                                      <CommandGroup>
-                                        {sortedSuppliers.map((s) => (
-                                          <CommandItem
-                                            key={s.id}
-                                            value={`${s.name} ${s.phone ?? ""} ${s.email ?? ""}`}
-                                            className="data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
-                                            onSelect={() => {
-                                              field.onChange(s.id);
-                                              setIsSupplierPopoverOpen(false);
-                                            }}
-                                          >
-                                            <Check
-                                              className={cn(
-                                                "mr-2 h-4 w-4",
-                                                field.value === s.id ? "opacity-100" : "opacity-0"
-                                              )}
-                                            />
-                                            {s.name}
-                                          </CommandItem>
-                                        ))}
-                                      </CommandGroup>
-                                    </CommandList>
-                                  </Command>
-                                </PopoverContent>
-                              </Popover>
-                        
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        control={control}
+                        name="supplierId"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Proveedor</FormLabel>
+
+                            <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className={cn("w-full justify-between bg-white", !field.value && "text-muted-foreground")}
+                                  >
+                                    {field.value
+                                      ? sortedSuppliers.find(s => s.id === field.value)?.name
+                                      : "Seleccionar proveedor..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+
+                              <PopoverContent
+                                align="start"
+                                // ⬇️ Altura máxima del popover y sin scroll aquí
+                                className="w-[var(--radix-popover-trigger-width)] p-0 max-h-[70vh] overflow-hidden"
+                                onOpenAutoFocus={(e) => e.preventDefault()}
+                              >
+                                <Command>
+                                  <CommandInput placeholder="Buscar proveedor..." />
+
+                                  {/* ⬇️ El scroll va en la lista */}
+                                  <CommandList
+                                    className="max-h-[55vh] overflow-y-auto overscroll-contain"
+                                    style={{ WebkitOverflowScrolling: 'touch' }}
+                                  >
+                                    <CommandEmpty>No se encontraron proveedores.</CommandEmpty>
+                                    <CommandGroup>
+                                      {sortedSuppliers.map((s) => (
+                                        <CommandItem
+                                          key={s.id}
+                                          value={`${s.name} ${s.phone ?? ""} ${s.email ?? ""}`}
+                                          // ⬇️ Blindaje: clickeables aunque cmdk marque data-disabled
+                                          className="data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
+                                          onSelect={() => {
+                                            field.onChange(s.id);
+                                            setIsSupplierPopoverOpen(false);
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              field.value === s.id ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          {s.name}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                        <FormField control={control} name="invoiceId" render={({ field }) => (
                          <FormItem><FormLabel>Folio de Factura (Opcional)</FormLabel><FormControl><Input placeholder="F-12345" {...field} value={field.value ?? ''} className="bg-white" /></FormControl></FormItem>
                        )}/>
