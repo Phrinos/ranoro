@@ -134,7 +134,14 @@ export function RegisterPurchaseDialog({
           <FormProvider {...form}>
             <Form {...form}>
               <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-4">
-                <div className="px-6 py-4 max-h-[calc(80vh-150px)] overflow-y-auto space-y-6">
+                <div
+                  className="px-6 py-4 overflow-y-auto space-y-6"
+                  style={{
+                    maxHeight: 'calc(90vh - 160px)',        // margen superior/inferior
+                    WebkitOverflowScrolling: 'touch',       // inercia iOS
+                    overscrollBehavior: 'contain',          // evita que el fondo se mueva
+                  }}
+                >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={control}
@@ -161,14 +168,11 @@ export function RegisterPurchaseDialog({
 
                               <PopoverContent
                                 align="start"
-                                // ⬇️ Altura máxima del popover y sin scroll aquí
                                 className="w-[var(--radix-popover-trigger-width)] p-0 max-h-[70vh] overflow-hidden"
                                 onOpenAutoFocus={(e) => e.preventDefault()}
                               >
                                 <Command>
                                   <CommandInput placeholder="Buscar proveedor..." />
-
-                                  {/* ⬇️ El scroll va en la lista */}
                                   <CommandList
                                     className="max-h-[55vh] overflow-y-auto overscroll-contain"
                                     style={{ WebkitOverflowScrolling: 'touch' }}
@@ -178,8 +182,7 @@ export function RegisterPurchaseDialog({
                                       {sortedSuppliers.map((s) => (
                                         <CommandItem
                                           key={s.id}
-                                          value={`${s.name} ${s.phone ?? ""} ${s.email ?? ""}`}
-                                          // ⬇️ Blindaje: clickeables aunque cmdk marque data-disabled
+                                          value={`${s.name} ${s.phone ?? ''} ${s.email ?? ''}`}
                                           className="data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
                                           onSelect={() => {
                                             field.onChange(s.id);
