@@ -145,7 +145,7 @@ export function RegisterPurchaseDialog({
                     
                     <div>
                         <FormLabel>Artículos Comprados</FormLabel>
-                        <div className="space-y-2 mt-2 rounded-md border p-4">
+                        <div className="space-y-2 mt-2 rounded-md border p-4 bg-white">
                             <ScrollArea className="max-h-48 pr-3">
                                 <div className="space-y-3">
                                     {fields.map((field, index) => (
