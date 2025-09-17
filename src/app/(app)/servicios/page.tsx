@@ -225,7 +225,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
             {serviceToComplete && (
             <PaymentDetailsDialog
                 open={isPaymentDialogOpen}
-                onOpen-change={setIsPaymentDialogOpen}
+                onOpenChange={setIsPaymentDialogOpen}
                 record={serviceToComplete}
                 onConfirm={(id, details) => handleConfirmCompletion(serviceToComplete, details, serviceToComplete.nextServiceInfo)}
                 recordType="service"
