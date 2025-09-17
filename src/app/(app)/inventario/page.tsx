@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/page.tsx
 
 "use client";
@@ -132,7 +133,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
           onSearchTermChange={tableManager.onSearchTermChange}
           onSortOptionChange={tableManager.onSortOptionChange}
           searchPlaceholder="Buscar por nombre, SKU, marca..."
-          actions={<Button onClick={() => onPrint(customSortedItems)} variant="outline" size="sm"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>}
+          actions={<Button onClick={() => onPrint(customSortedItems)} variant="destructive" size="sm" className="font-bold"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>}
       />
 
       <Card>
@@ -474,7 +475,7 @@ export default function InventarioPage() {
         
         <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={() => handleOpenItemDialog()}
+          onNewItemClick={handleOpenItemDialog}
           onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
         
