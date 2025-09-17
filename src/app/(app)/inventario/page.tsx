@@ -129,6 +129,8 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
     <div className="space-y-4">
       <TableToolbar
           {...tableManager}
+          onSearchTermChange={tableManager.onSearchTermChange}
+          onSortOptionChange={tableManager.onSortOptionChange}
           searchPlaceholder="Buscar por nombre, SKU, marca..."
           actions={<Button onClick={() => onPrint(customSortedItems)} variant="outline" size="sm"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>}
       />
@@ -139,13 +141,13 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
             <Table>
               <TableHeader className="bg-black text-white">
                 <TableRow>
-                    <TableHead className="text-white"><Button variant="ghost" onClick={() => handleSort('name')} className="text-white hover:bg-gray-700 p-2">Nombre {renderSortArrow('name')}</Button></TableHead>
-                    <TableHead className="text-white hidden md:table-cell"><Button variant="ghost" onClick={() => handleSort('category')} className="text-white hover:bg-gray-700 p-2">Categoría {renderSortArrow('category')}</Button></TableHead>
+                    <TableHead className="text-white hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('name')}><Button variant="ghost" className="text-white p-2">Nombre {renderSortArrow('name')}</Button></TableHead>
+                    <TableHead className="text-white hidden md:table-cell hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('category')}><Button variant="ghost" className="text-white p-2">Categoría {renderSortArrow('category')}</Button></TableHead>
                     <TableHead className="text-white hidden lg:table-cell">Proveedor</TableHead>
-                    <TableHead className="text-white"><Button variant="ghost" onClick={() => handleSort('isService')} className="text-white hover:bg-gray-700 p-2">Tipo {renderSortArrow('isService')}</Button></TableHead>
-                    <TableHead className="text-right text-white"><Button variant="ghost" onClick={() => handleSort('quantity')} className="text-white hover:bg-gray-700 p-2">Stock {renderSortArrow('quantity')}</Button></TableHead>
-                    <TableHead className="text-right text-white"><Button variant="ghost" onClick={() => handleSort('unitPrice')} className="text-white hover:bg-gray-700 p-2">Costo {renderSortArrow('unitPrice')}</Button></TableHead>
-                    <TableHead className="text-right text-white"><Button variant="ghost" onClick={() => handleSort('sellingPrice')} className="text-white hover:bg-gray-700 p-2">Precio Venta {renderSortArrow('sellingPrice')}</Button></TableHead>
+                    <TableHead className="text-white hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('isService')}><Button variant="ghost" className="text-white p-2">Tipo {renderSortArrow('isService')}</Button></TableHead>
+                    <TableHead className="text-right text-white hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('quantity')}><Button variant="ghost" className="text-white p-2">Stock {renderSortArrow('quantity')}</Button></TableHead>
+                    <TableHead className="text-right text-white hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('unitPrice')}><Button variant="ghost" className="text-white p-2">Costo {renderSortArrow('unitPrice')}</Button></TableHead>
+                    <TableHead className="text-right text-white hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('sellingPrice')}><Button variant="ghost" className="text-white p-2">Precio Venta {renderSortArrow('sellingPrice')}</Button></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -394,7 +396,7 @@ export default function InventarioPage() {
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
-
+  
   const tabsConfig = [
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
