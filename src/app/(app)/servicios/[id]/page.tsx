@@ -193,7 +193,15 @@ export default function ServicioPage() {
         description: `El servicio #${recordId.slice(-6)} ha sido completado y cobrado.`,
       });
       setIsPaymentDialogOpen(false);
-      router.push('/servicios?tab=historial');
+      
+      // Instead of redirecting, show the share/print dialog
+      const updatedServiceData = await serviceService.getDocById('serviceRecords', recordId);
+      if (updatedServiceData) {
+        handleShowShareDialog(updatedServiceData, '/servicios?tab=historial');
+      } else {
+        router.push('/servicios?tab=historial');
+      }
+
     } catch (e: any) {
       console.error("Error al completar el servicio:", e);
       toast({
