@@ -41,7 +41,7 @@ export const logAudit = async (
     ...details,
     actionType,
     description,
-    date: Timestamp.now().toISOString(),
+    date: new Date().toISOString(),
   };
   try {
     await addDoc(collection(db, 'auditLogs'), newLog);
