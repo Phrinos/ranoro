@@ -14,6 +14,7 @@ import {
   getDocs,
   orderBy,
   limit,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord } from "@/types";
@@ -61,9 +62,14 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
     const collectionName = data.status === 'Cotizacion' ? 'quotes' : 'serviceRecords';
     
     const docRef = doc(db, collectionName, data.id);
-    await updateDoc(docRef, cleanObjectForFirestore(data), { merge: true });
+    // Use setDoc with merge: true to create or update the document.
+    await setDoc(docRef, cleanObjectForFirestore(data), { merge: true });
 
-    return { ...(await getDoc(docRef)).data(), id: data.id } as ServiceRecord;
+    const savedDoc = await getDoc(docRef);
+    if (!savedDoc.exists()) {
+        throw new Error("Failed to save or retrieve the document.");
+    }
+    return { ...savedDoc.data(), id: data.id } as ServiceRecord;
 };
 
 const completeService = async (service: ServiceRecord, paymentDetails: any, batch: any): Promise<void> => {
