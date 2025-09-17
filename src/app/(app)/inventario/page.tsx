@@ -106,7 +106,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
     return items;
   }, [tableManager.fullFilteredData, tableManager.sortOption]);
 
-  const handleSort = (column: keyof InventoryItem | 'default_order') => {
+  const handleSort = (column: keyof InventoryItem | 'default_order' | 'supplier') => {
     if (column === 'default_order') {
       tableManager.onSortOptionChange('default_order');
       return;
@@ -116,7 +116,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
     tableManager.onSortOptionChange(isAsc ? `${String(column)}_desc` : `${String(column)}_asc`);
   };
 
-  const renderSortArrow = (column: keyof InventoryItem | 'default_order') => {
+  const renderSortArrow = (column: keyof InventoryItem | 'supplier') => {
     const { sortOption } = tableManager;
     if (sortOption.startsWith(String(column))) {
       return sortOption.endsWith('_asc') ? '▲' : '▼';
@@ -145,7 +145,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('name')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
                     >
                       Nombre {renderSortArrow('name')}
                     </Button>
@@ -155,7 +155,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('category')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
                     >
                       Categoría {renderSortArrow('category')}
                     </Button>
@@ -165,7 +165,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('supplier')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
                     >
                       Proveedor {renderSortArrow('supplier')}
                     </Button>
@@ -175,7 +175,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('isService')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
                     >
                       Tipo {renderSortArrow('isService')}
                     </Button>
@@ -185,7 +185,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('quantity')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
                     >
                       Stock {renderSortArrow('quantity')}
                     </Button>
@@ -195,7 +195,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('unitPrice')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
                     >
                       Costo {renderSortArrow('unitPrice')}
                     </Button>
@@ -205,7 +205,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort('sellingPrice')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
                     >
                       Precio Venta {renderSortArrow('sellingPrice')}
                     </Button>
