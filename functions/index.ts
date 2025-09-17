@@ -1,19 +1,21 @@
 // functions/index.ts
-import * as functions from 'firebase-functions';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
-import { startOfDay, format as formatDate } from 'date-fns';
+import { startOfDay, endOfDay } from 'date-fns';
+import * as logger from 'firebase-functions/logger';
 
 admin.initializeApp();
 
 const db = admin.firestore();
 
-export const generateDailyRentalCharges = functions.pubsub
-  .schedule('0 3 * * *')
-  .timeZone('America/Mexico_City')
-  .onRun(async (_context) => {
-    console.log('Starting daily rental charge generation...');
-    const today = startOfDay(new Date());
-    const todayStr = formatDate(today, 'yyyy-MM-dd');
+export const generateDailyRentalCharges = onSchedule({
+  schedule: '0 3 * * *',
+  timeZone: 'America/Mexico_City',
+}, async (_context) => {
+    logger.info('Starting daily rental charge generation...');
+    const now = new Date();
+    const todayStart = startOfDay(now);
+    const todayEnd = endOfDay(now);
 
     const driversRef = db.collection('drivers');
     const activeDriversQuery = driversRef.where('isArchived', '==', false).where('assignedVehicleId', '!=', null);
@@ -21,8 +23,8 @@ export const generateDailyRentalCharges = functions.pubsub
     const activeDriversSnap = await activeDriversQuery.get();
     
     if (activeDriversSnap.empty) {
-        console.log('No active drivers found.');
-        return null;
+        logger.info('No active drivers found.');
+        return;
     }
 
     const promises = activeDriversSnap.docs.map(async (driverDoc) => {
@@ -32,7 +34,7 @@ export const generateDailyRentalCharges = functions.pubsub
         const vehicleRef = db.collection('vehicles').doc(driver.assignedVehicleId);
         const vehicleDoc = await vehicleRef.get();
         if (!vehicleDoc.exists || !vehicleDoc.data()?.dailyRentalCost) {
-            console.log(`Vehicle ${driver.assignedVehicleId} not found or has no daily rental cost.`);
+            logger.warn(`Vehicle ${driver.assignedVehicleId} not found or has no daily rental cost.`);
             return;
         }
         
@@ -42,28 +44,28 @@ export const generateDailyRentalCharges = functions.pubsub
         const chargesRef = db.collection('dailyRentalCharges');
         const existingChargeQuery = chargesRef
             .where('driverId', '==', driverDoc.id)
-            .where('date', '>=', todayStr);
+            .where('date', '>=', todayStart)
+            .where('date', '<=', todayEnd);
             
         const existingChargeSnap = await existingChargeQuery.get();
         
         if (!existingChargeSnap.empty) {
-            console.log(`Charge already exists for driver ${driver.name} for date ${todayStr}.`);
+            logger.info(`Charge already exists for driver ${driver.name} for today.`);
             return;
         }
 
         const newCharge = {
             driverId: driverDoc.id,
             vehicleId: vehicleDoc.id,
-            date: today.toISOString(),
+            date: now.toISOString(),
             amount: dailyRentalCost,
             vehicleLicensePlate: vehicle?.licensePlate || '',
         };
         
         await chargesRef.add(newCharge);
-        console.log(`Created charge for driver ${driver.name} for date ${todayStr}.`);
+        logger.info(`Created charge for driver ${driver.name} for today.`);
     });
 
     await Promise.all(promises);
-    console.log('Daily rental charge generation finished.');
-    return null;
+    logger.info('Daily rental charge generation finished.');
 });
