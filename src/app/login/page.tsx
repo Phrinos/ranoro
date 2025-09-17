@@ -144,68 +144,44 @@ export default function LoginPage() {
             <p className="text-lg italic text-muted-foreground -mt-2">Tu Taller en una App</p>
           </CardHeader>
           <CardContent>
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                  <TabsTrigger value="register">Registrarse</TabsTrigger>
-                </TabsList>
-                <TabsContent value="login">
-                    <CardDescription className="text-center pt-4">
-                        Ingresa tus credenciales para acceder al sistema.
-                    </CardDescription>
-                    <form onSubmit={handleLogin} className="space-y-4 pt-4">
-                        <div className="grid gap-2 text-left">
-                            <Label htmlFor="email-login">Correo Electrónico</Label>
-                            <Input id="email-login" type="email" placeholder="usuario@ranoro.mx" required value={emailLogin} onChange={(e) => setEmailLogin(e.target.value)} disabled={isLoading || googleIsLoading} />
-                        </div>
-                        <div className="grid gap-2 text-left">
-                            <Label htmlFor="password-login">Contraseña</Label>
-                            <Input id="password-login" type="password" required value={passwordLogin} onChange={(e) => setPasswordLogin(e.target.value)} disabled={isLoading || googleIsLoading} />
-                        </div>
-                        <Button type="submit" className="w-full" disabled={isLoading || googleIsLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Ingresar al Sistema
-                        </Button>
-                         <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || googleIsLoading}>
-                            {googleIsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Icon icon="flat-color-icons:google" className="h-5 w-5 mr-3" />}
-                            <span>Continuar con Google</span>
-                        </Button>
-                    </form>
-                    <div className="mt-4 text-center text-sm text-muted-foreground">
-                      Al iniciar sesión aceptas nuestros{" "}
-                      <Link href="/legal/terminos" className="underline hover:text-primary">
-                        Términos de Servicio
-                      </Link> y {" "}
-                      <Link href="/legal/privacidad" className="underline hover:text-primary">
-                        Aviso de Privacidad
-                      </Link>.
+            <CardDescription className="text-center pt-4">
+                Ingresa tus credenciales para acceder al sistema.
+            </CardDescription>
+            <form onSubmit={handleLogin} className="space-y-4 pt-4">
+                <div className="grid gap-2 text-left">
+                    <Label htmlFor="email-login">Correo Electrónico</Label>
+                    <Input id="email-login" type="email" placeholder="usuario@ranoro.mx" required value={emailLogin} onChange={(e) => setEmailLogin(e.target.value)} disabled={isLoading || googleIsLoading} />
+                </div>
+                <div className="grid gap-2 text-left">
+                    <Label htmlFor="password-login">Contraseña</Label>
+                    <Input id="password-login" type="password" required value={passwordLogin} onChange={(e) => setPasswordLogin(e.target.value)} disabled={isLoading || googleIsLoading} />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading || googleIsLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Ingresar al Sistema
+                </Button>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
                     </div>
-                </TabsContent>
-                <TabsContent value="register">
-                   <CardDescription className="text-center pt-4">
-                      Crea tu cuenta para empezar a optimizar tu taller.
-                   </CardDescription>
-                   <div className="space-y-4 pt-4">
-                       <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || googleIsLoading}>
-                        {googleIsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Icon icon="flat-color-icons:google" className="h-5 w-5 mr-3"/>}
-                        Registrarse con Google
-                       </Button>
-                       <div className="flex items-center p-3 text-sm text-amber-800 bg-amber-100 rounded-md border border-amber-200">
-                           <AlertTriangle className="h-4 w-4 mr-2" />
-                           <span>El registro por correo está en desarrollo.</span>
-                       </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">O</span>
                     </div>
-                     <div className="mt-4 text-center text-sm text-muted-foreground">
-                        Al registrarte, aceptas nuestros{" "}
-                        <Link href="/legal/terminos" className="underline hover:text-primary">
-                          Términos de Servicio
-                        </Link> y {" "}
-                        <Link href="/legal/privacidad" className="underline hover:text-primary">
-                          Aviso de Privacidad
-                        </Link>.
-                      </div>
-                </TabsContent>
-              </Tabs>
+                  </div>
+                 <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || googleIsLoading}>
+                    {googleIsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Icon icon="flat-color-icons:google" className="h-5 w-5 mr-3" />}
+                    <span>Continuar con Google</span>
+                </Button>
+            </form>
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              Al iniciar sesión aceptas nuestros{" "}
+              <Link href="/legal/terminos" className="underline hover:text-primary">
+                Términos de Servicio
+              </Link> y {" "}
+              <Link href="/legal/privacidad" className="underline hover:text-primary">
+                Aviso de Privacidad
+              </Link>.
+            </div>
           </CardContent>
         </Card>
       </div>
