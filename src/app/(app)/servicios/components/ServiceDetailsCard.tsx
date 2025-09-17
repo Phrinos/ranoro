@@ -169,25 +169,6 @@ export function ServiceDetailsCard({
             />
         )}
         
-        <FormField
-            control={control}
-            name="notes"
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Observaciones Generales</FormLabel>
-                    <FormControl>
-                        <Textarea
-                            placeholder="Anotaciones sobre el servicio, ruidos, comportamiento del vehículo, etc."
-                            {...field}
-                            rows={4}
-                            disabled={isReadOnly}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-
         <Button type="button" variant="outline" className="w-full" onClick={() => onOpenSignature('advisor')} disabled={isReadOnly}>
           <Signature className="mr-2 h-4 w-4" />
           {watch('serviceAdvisorSignatureDataUrl') ? 'Cambiar Firma del Asesor' : 'Firmar como Asesor'}

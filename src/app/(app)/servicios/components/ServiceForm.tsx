@@ -141,6 +141,7 @@ export function ServiceForm({
   const { handleSubmit, getValues, formState: { isSubmitting }, reset, watch } = methods;
   
   const selectedVehicleId = watch('vehicleId');
+  const watchedStatus = watch('status');
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
   const currentMileage = selectedVehicle?.mileage;
 
@@ -181,7 +182,9 @@ export function ServiceForm({
             onOpenSignature={() => {}}
             isNew={!initialData?.id}
         />
-        <NextServiceInfoCard currentMileage={currentMileage} />
+        {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
+            <NextServiceInfoCard currentMileage={currentMileage} />
+        )}
         <Tabs defaultValue="service-items">
             <div className="sticky top-0 z-10 border-b bg-background/95 p-1 backdrop-blur-sm">
                 <TabsList className="grid w-full grid-cols-3 h-12">
