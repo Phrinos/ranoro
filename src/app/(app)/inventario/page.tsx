@@ -140,14 +140,70 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
           <div className="rounded-md border">
             <Table>
               <TableHeader className="bg-black text-white">
-                <TableRow>
-                    <TableHead className="text-white hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('name')}><Button variant="ghost" className="text-white p-2">Nombre {renderSortArrow('name')}</Button></TableHead>
-                    <TableHead className="text-white hidden md:table-cell hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('category')}><Button variant="ghost" className="text-white p-2">Categoría {renderSortArrow('category')}</Button></TableHead>
-                    <TableHead className="text-white hidden lg:table-cell">Proveedor</TableHead>
-                    <TableHead className="text-white hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('isService')}><Button variant="ghost" className="text-white p-2">Tipo {renderSortArrow('isService')}</Button></TableHead>
-                    <TableHead className="text-right text-white hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('quantity')}><Button variant="ghost" className="text-white p-2">Stock {renderSortArrow('quantity')}</Button></TableHead>
-                    <TableHead className="text-right text-white hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('unitPrice')}><Button variant="ghost" className="text-white p-2">Costo {renderSortArrow('unitPrice')}</Button></TableHead>
-                    <TableHead className="text-right text-white hover:bg-gray-700 cursor-pointer" onClick={() => handleSort('sellingPrice')}><Button variant="ghost" className="text-white p-2">Precio Venta {renderSortArrow('sellingPrice')}</Button></TableHead>
+                <TableRow className="hover:!bg-transparent">
+                  <TableHead className="text-white">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('name')}
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                    >
+                      Nombre {renderSortArrow('name')}
+                    </Button>
+                  </TableHead>
+              
+                  <TableHead className="text-white hidden md:table-cell">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('category')}
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                    >
+                      Categoría {renderSortArrow('category')}
+                    </Button>
+                  </TableHead>
+              
+                  <TableHead className="text-white hidden lg:table-cell">
+                    Proveedor
+                  </TableHead>
+              
+                  <TableHead className="text-white">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('isService')}
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                    >
+                      Tipo {renderSortArrow('isService')}
+                    </Button>
+                  </TableHead>
+              
+                  <TableHead className="text-right text-white">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('quantity')}
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                    >
+                      Stock {renderSortArrow('quantity')}
+                    </Button>
+                  </TableHead>
+              
+                  <TableHead className="text-right text-white">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('unitPrice')}
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                    >
+                      Costo {renderSortArrow('unitPrice')}
+                    </Button>
+                  </TableHead>
+              
+                  <TableHead className="text-right text-white">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('sellingPrice')}
+                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-gray-700"
+                    >
+                      Precio Venta {renderSortArrow('sellingPrice')}
+                    </Button>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
