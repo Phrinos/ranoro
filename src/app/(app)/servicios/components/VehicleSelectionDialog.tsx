@@ -1,13 +1,13 @@
-
 // src/app/(app)/servicios/components/VehicleSelectionDialog.tsx
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Command,
@@ -36,19 +36,36 @@ export function VehicleSelectionDialog({
   onVehicleSelect,
   onOpenNewVehicleDialog
 }: VehicleSelectionDialogProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+
   const handleSelect = (vehicleId: string) => {
     onVehicleSelect(vehicleId);
     onOpenChange(false);
   };
+  
+  const filteredVehicles = vehicles.filter(vehicle => {
+    const lowerSearch = searchTerm.toLowerCase();
+    return (
+      vehicle.licensePlate.toLowerCase().includes(lowerSearch) ||
+      vehicle.make.toLowerCase().includes(lowerSearch) ||
+      vehicle.model.toLowerCase().includes(lowerSearch) ||
+      (vehicle.ownerName && vehicle.ownerName.toLowerCase().includes(lowerSearch))
+    );
+  });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px] h-[70vh] flex flex-col">
-        <DialogHeader>
+    <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if(!isOpen) setSearchTerm(''); }}>
+      <DialogContent className="sm:max-w-[525px] h-[70vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle>Seleccionar Vehículo</DialogTitle>
+          <DialogDescription>Busca un vehículo existente o crea uno nuevo.</DialogDescription>
         </DialogHeader>
         <Command>
-          <CommandInput placeholder="Buscar vehículo por placa, marca, modelo..." />
+          <CommandInput 
+            placeholder="Buscar por placa, marca, modelo, propietario..." 
+            value={searchTerm}
+            onValueChange={setSearchTerm}
+          />
           <CommandList className="flex-grow">
             <CommandEmpty>
                 <div className="text-center p-4">
@@ -60,10 +77,9 @@ export function VehicleSelectionDialog({
                 </div>
             </CommandEmpty>
             <CommandGroup>
-              {vehicles.map((vehicle) => (
+              {filteredVehicles.map((vehicle) => (
                 <CommandItem
                   key={vehicle.id}
-                  value={`${vehicle.make} ${vehicle.model} ${vehicle.licensePlate} ${vehicle.ownerName}`}
                   onSelect={() => handleSelect(vehicle.id)}
                   className="flex items-center gap-3 cursor-pointer"
                 >
