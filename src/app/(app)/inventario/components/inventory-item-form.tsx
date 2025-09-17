@@ -62,7 +62,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
           control={form.control}
           name="isService"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-white">
               <div className="space-y-0.5">
                 <FormLabel className="text-base">¿Es un Servicio?</FormLabel>
                 <FormDescription>
@@ -73,25 +73,25 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
             </FormItem>
           )}
         />
-        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder={isService ? "Mano de Obra" : "Filtro de Aceite"} {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))}/></FormControl><FormMessage /></FormItem> )}/>
+        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder={isService ? "Mano de Obra" : "Filtro de Aceite"} {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-white"/></FormControl><FormMessage /></FormItem> )}/>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Categoría</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione categoría" /></SelectTrigger></FormControl><SelectContent>{categories.map(c=><SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-          <FormField control={form.control} name="supplier" render={({ field }) => ( <FormItem><FormLabel>Proveedor</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione proveedor" /></SelectTrigger></FormControl><SelectContent>{suppliers.map(s=><SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+          <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Categoría</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione categoría" /></SelectTrigger></FormControl><SelectContent>{categories.map(c=><SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+          <FormField control={form.control} name="supplier" render={({ field }) => ( <FormItem><FormLabel>Proveedor</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione proveedor" /></SelectTrigger></FormControl><SelectContent>{suppliers.map(s=><SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Marca</FormLabel><FormControl><Input placeholder="Ej: Gonher, LTH" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
-          <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><FormLabel>SKU / Código</FormLabel><FormControl><Input placeholder="Ej: G-123" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value.toUpperCase())}/></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>Marca</FormLabel><FormControl><Input placeholder="Ej: Gonher, LTH" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-white" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><FormLabel>SKU / Código</FormLabel><FormControl><Input placeholder="Ej: G-123" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value.toUpperCase())} className="bg-white"/></FormControl><FormMessage /></FormItem> )}/>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-            <FormField control={form.control} name="unitPrice" render={({ field }) => ( <FormItem><FormLabel>Costo (Taller)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input type="number" placeholder="100.00" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
-            <FormField control={form.control} name="sellingPrice" render={({ field }) => ( <FormItem><FormLabel>Precio (Público)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input type="number" placeholder="150.00" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="unitPrice" render={({ field }) => ( <FormItem><FormLabel>Costo (Taller)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input type="number" placeholder="100.00" {...field} value={field.value ?? ''} className="pl-8 bg-white"/></FormControl></div><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="sellingPrice" render={({ field }) => ( <FormItem><FormLabel>Precio (Público)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input type="number" placeholder="150.00" {...field} value={field.value ?? ''} className="pl-8 bg-white"/></FormControl></div><FormMessage /></FormItem> )}/>
         </div>
         {!isService && (
           <div className="space-y-4 pt-4 border-t">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Cantidad Actual</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )}/>
-                  <FormField control={form.control} name="lowStockThreshold" render={({ field }) => ( <FormItem><FormLabel>Alerta Stock Bajo</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )}/>
-                  <FormField control={form.control} name="unitType" render={({ field }) => ( <FormItem><FormLabel>Unidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="units">Unidades</SelectItem><SelectItem value="ml">Mililitros</SelectItem><SelectItem value="liters">Litros</SelectItem></SelectContent></Select><FormMessage /></FormItem> )}/>
+                  <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Cantidad Actual</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} className="bg-white" /></FormControl><FormMessage /></FormItem> )}/>
+                  <FormField control={form.control} name="lowStockThreshold" render={({ field }) => ( <FormItem><FormLabel>Alerta Stock Bajo</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} className="bg-white" /></FormControl><FormMessage /></FormItem> )}/>
+                  <FormField control={form.control} name="unitType" render={({ field }) => ( <FormItem><FormLabel>Unidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="units">Unidades</SelectItem><SelectItem value="ml">Mililitros</SelectItem><SelectItem value="liters">Litros</SelectItem></SelectContent></Select><FormMessage /></FormItem> )}/>
               </div>
                {unitType === 'liters' && (
                 <FormField
@@ -100,7 +100,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Rendimiento (ml)</FormLabel>
-                      <FormControl><Input type="number" placeholder="5000" {...field} value={field.value ?? ''} /></FormControl>
+                      <FormControl><Input type="number" placeholder="5000" {...field} value={field.value ?? ''} className="bg-white" /></FormControl>
                       <FormDescription>Total de mililitros en esta unidad. Ej: un bidón de 5L tiene un rendimiento de 5000 ml.</FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -109,7 +109,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
               )}
           </div>
         )}
-        <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea placeholder="Información adicional sobre el producto o servicio." {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )}/>
+        <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea placeholder="Información adicional sobre el producto o servicio." {...field} value={field.value ?? ''} className="bg-white"/></FormControl><FormMessage /></FormItem> )}/>
       </form>
     </Form>
   );
