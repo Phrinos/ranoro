@@ -1,24 +1,45 @@
 
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
-import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense } from '@/types';
+import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense, Driver, Vehicle, PaymentMethod } from '@/types';
 import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Truck } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { serviceService, saleService, inventoryService, personnelService } from '@/lib/services';
+import { serviceService, saleService, inventoryService, personnelService, rentalService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { isValid, isToday, isSameDay } from 'date-fns';
+import { isValid, isToday, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { DashboardCharts } from './components/DashboardCharts';
+import { toZonedTime } from 'date-fns-tz';
+import { GlobalTransactionDialog, GlobalTransactionFormValues } from '../flotilla/components/GlobalTransactionDialog';
+
+
+const getDeliveredDate = (s: ServiceRecord): Date | null => (
+  parseDate(s.deliveryDateTime) ||
+  parseDate((s as any).completedAt) ||
+  parseDate(s.serviceDate) ||
+  parseDate((s as any).updatedAt) ||
+  parseDate((s as any).createdAt) ||
+  null
+);
+
+const getScheduledDate = (s: ServiceRecord): Date | null => (
+  parseDate((s as any).appointmentDateTime) || // cita real
+  parseDate(s.serviceDate) ||                  // fallback viejo
+  null
+);
+
+const getSaleDate = (sale: SaleReceipt): Date | null => (
+  parseDate(sale.saleDate) || parseDate((sale as any).createdAt) || null
+);
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
@@ -29,12 +50,16 @@ export default function DashboardPage() {
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
-  
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
 
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(false);
   const [capacityError, setCapacityError] = useState<string | null>(null);
+
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   
   useEffect(() => {
     setIsLoading(true);
@@ -43,8 +68,10 @@ export default function DashboardPage() {
       saleService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
       inventoryService.onFixedExpensesUpdate(setFixedExpenses),
-      personnelService.onPersonnelUpdate((personnel) => {
-        setAllPersonnel(personnel);
+      personnelService.onPersonnelUpdate(setAllPersonnel),
+      personnelService.onDriversUpdate(setDrivers),
+      inventoryService.onVehiclesUpdate((vehicles) => {
+        setVehicles(vehicles);
         setIsLoading(false);
       }),
     ];
@@ -53,37 +80,41 @@ export default function DashboardPage() {
   }, []);
 
   const kpiData = useMemo(() => {
-    const clientToday = new Date();
-    
+    const timeZone = 'America/Mexico_City';
+    const nowInLA = toZonedTime(new Date(), timeZone);
+    const start = startOfDay(nowInLA);
+    const end = endOfDay(nowInLA);
+
     const repairingServices = allServices.filter(s => s.status === 'En Taller');
+
     const scheduledTodayServices = allServices.filter(s => {
       if (s.status !== 'Agendado') return false;
-      const serviceDay = parseDate(s.serviceDate);
-      return serviceDay && isValid(serviceDay) && isToday(serviceDay);
+      const d = getScheduledDate(s);
+      return d && isValid(d) && isWithinInterval(toZonedTime(d, timeZone), { start, end });
     });
 
-    const salesToday = allSales.filter(s => {
-        const saleDay = parseDate(s.saleDate);
-        return saleDay && isValid(saleDay) && isSameDay(saleDay, clientToday) && s.status !== 'Cancelado';
-    });
-    
-    const servicesCompletedToday = allServices.filter(s => {
+    const deliveredToday = allServices.filter(s => {
       if (s.status !== 'Entregado') return false;
-      const deliveryDay = parseDate(s.deliveryDateTime);
-      return deliveryDay && isValid(deliveryDay) && isSameDay(deliveryDay, clientToday);
+      const d = getDeliveredDate(s);
+      return d && isValid(d) && isWithinInterval(toZonedTime(d, timeZone), { start, end });
     });
-    
-    const revenueFromSales = salesToday.reduce((sum, s) => sum + s.totalAmount, 0);
-    const revenueFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-    
+
+    const salesToday = allSales.filter(sale => {
+      const d = getSaleDate(sale);
+      return d && isValid(d) && isWithinInterval(toZonedTime(d, timeZone), { start, end }) && sale.status !== 'Cancelado';
+    });
+
+    const revenueFromSales = salesToday.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+    const revenueFromServices = deliveredToday.reduce((sum, s) => sum + (Number(s.totalCost) || 0), 0);
+
     const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
-    const profitFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    const profitFromServices = deliveredToday.reduce((sum, s) => sum + (Number(s.serviceProfit) || 0), 0);
 
     return {
-        dailyRevenue: revenueFromSales + revenueFromServices,
-        dailyProfit: profitFromSales + profitFromServices,
-        activeServices: repairingServices.length + scheduledTodayServices.length + servicesCompletedToday.length,
-        lowStockAlerts: allInventory.filter(item => !item.isService && item.quantity <= item.lowStockThreshold).length
+      dailyRevenue: revenueFromSales + revenueFromServices,
+      dailyProfit:  profitFromSales + profitFromServices,
+      activeServices: repairingServices.length + scheduledTodayServices.length + deliveredToday.length,
+      lowStockAlerts: allInventory.filter(it => !it.isService && (it.quantity || 0) <= (it.lowStockThreshold || 0)).length,
     };
   }, [allServices, allSales, allInventory]);
 
@@ -145,6 +176,21 @@ export default function DashboardPage() {
     }
   }, [allServices, allPersonnel, toast]);
 
+  const handleSaveTransaction = async (values: GlobalTransactionFormValues) => {
+    try {
+        const driver = drivers.find(d => d.id === values.driverId);
+        if (!driver) throw new Error("Driver not found.");
+
+        const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
+        if (!vehicle) throw new Error("Vehicle not found for payment.");
+        await rentalService.addRentalPayment(driver, vehicle, values.amount, values.note, values.date, values.paymentMethod as PaymentMethod);
+        toast({ title: "Pago Registrado" });
+        setIsTransactionDialogOpen(false);
+    } catch (error) {
+        toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
+    }
+  };
+
   useEffect(() => {
     if (!isLoading) {
       runCapacityAnalysis();
@@ -172,11 +218,9 @@ export default function DashboardPage() {
                   Punto de Venta
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="w-full sm:w-auto bg-white border-orange-500 text-black font-bold hover:bg-orange-50">
-                <Link href="/flotilla?tab=balance&action=payment">
-                  <Truck className="mr-2 h-4 w-4 text-orange-600" />
-                  Pago de Flotilla
-                </Link>
+              <Button variant="outline" className="w-full sm:w-auto bg-white border-orange-500 text-black font-bold hover:bg-orange-50" onClick={() => setIsTransactionDialogOpen(true)}>
+                <Truck className="mr-2 h-4 w-4 text-orange-600" />
+                Pago de Flotilla
               </Button>
             </div>
           }
@@ -251,6 +295,13 @@ export default function DashboardPage() {
         />
 
       </div>
+      <GlobalTransactionDialog
+        open={isTransactionDialogOpen}
+        onOpenChange={setIsTransactionDialogOpen}
+        onSave={handleSaveTransaction}
+        transactionType="payment"
+        drivers={drivers.filter(d => !d.isArchived)}
+    />
     </>
   );
 }

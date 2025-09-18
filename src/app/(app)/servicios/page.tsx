@@ -46,7 +46,11 @@ function ServiciosPage() {
 
   const activeTab = searchParams.get('tab') || 'activos';
 
-  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [activeServices, setActiveServices] = useState<ServiceRecord[]>([]);
+  const [scheduledServices, setScheduledServices] = useState<ServiceRecord[]>([]);
+  const [quoteServices, setQuoteServices] = useState<ServiceRecord[]>([]);
+  const [historicalServices, setHistoricalServices] = useState<ServiceRecord[]>([]);
+  
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [personnel, setPersonnel] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,25 +71,28 @@ function ServiciosPage() {
   useEffect(() => {
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
     if (authUserString) {
-      try { setCurrentUser(JSON.parse(authUserString)); } catch (e) { console.error("Error parsing auth user", e); }
+        try { setCurrentUser(JSON.parse(authUserString)); } catch (e) { console.error("Error parsing auth user", e); }
     }
-    
     const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
     if (storedWorkshopInfo) {
-      try { setWorkshopInfo(JSON.parse(storedWorkshopInfo)); } catch (e) { console.error(e); }
+        try { setWorkshopInfo(JSON.parse(storedWorkshopInfo)); } catch (e) { console.error(e); }
     }
-    
     setIsLoading(true);
+
     const unsubs = [
-        serviceService.onServicesUpdate((services) => {
-            setAllServices(services);
-            setIsLoading(false);
+        serviceService.onServicesByStatusUpdate(['En Taller', 'Agendado', 'Entregado', 'Completado'], (services) => {
+            setActiveServices(services);
+            setIsLoading(false); 
         }),
+        serviceService.onServicesByStatusUpdate(['Agendado'], setScheduledServices),
+        serviceService.onServicesByStatusUpdate(['Cotizacion'], setQuoteServices),
+        serviceService.onServicesByStatusUpdate(['Entregado', 'Cancelado'], setHistoricalServices),
+
         inventoryService.onVehiclesUpdate(setVehicles),
         adminService.onUsersUpdate(setPersonnel),
     ];
-    
-    return () => unsubs.forEach((unsub) => unsub());
+
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
 
   const handleTabChange = useCallback((tab: string) => {
@@ -231,10 +238,10 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
   );
 
   const tabs = [
-    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={allServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog}/> },
-    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowShareDialog} /> },
-    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService}/> },
-    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog} /> }
+    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog}/> },
+    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={scheduledServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowShareDialog} /> },
+    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quoteServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService}/> },
+    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historicalServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog} /> }
   ];
 
   return (

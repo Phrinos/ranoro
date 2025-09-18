@@ -189,17 +189,6 @@ function VehiculosPage() {
                             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos Inactivos</CardTitle><CalendarX className="h-4 w-4 text-orange-500"/></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{vehicleSummary.inactive6Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 6 meses.</p></CardContent></Card>
                             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos en Riesgo</CardTitle><AlertTriangle className="h-4 w-4 text-red-500"/></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{vehicleSummary.inactive12Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 12 meses.</p></CardContent></Card>
                         </div>
-                        <div className="flex justify-end">
-                            <Button onClick={() => handleOpenVehicleDialog()} className="w-full sm:w-auto">
-                                <PlusCircle className="mr-2 h-4 w-4" /> Registrar Vehículo
-                            </Button>
-                        </div>
-                         <TableToolbar
-                            {...tableManager}
-                            sortOptions={vehicleSortOptions}
-                            onSearchTermChange={tableManager.onSearchTermChange}
-                            searchPlaceholder="Buscar por placa, marca, modelo..."
-                        />
                         <Card>
                             <CardContent className="pt-6">
                                 <VehiclesTable vehicles={filteredVehicles} />

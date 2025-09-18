@@ -9,10 +9,11 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
-import { Printer, MessageSquare, Link as LinkIcon, Car, Copy, ExternalLink, Share2 } from "lucide-react";
+import { Printer, Car, ExternalLink, Share2 } from "lucide-react";
 import type { ServiceRecord, Vehicle, WorkshopInfo, ServiceItem } from "@/types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Icon } from '@iconify/react';
+import { useIsMobile } from "@/hooks/use-mobile"; // Import the mobile hook
 
 interface ShareServiceDialogProps {
   open: boolean;
@@ -55,22 +56,17 @@ Gracias por confiar en ${workshop?.name || 'nuestro taller'}.
   return message;
 };
 
-// Fallback copy function for non-secure contexts
 const fallbackCopyToClipboard = (text: string) => {
   const textArea = document.createElement("textarea");
   textArea.value = text;
-  
   textArea.style.top = "0";
   textArea.style.left = "0";
   textArea.style.position = "fixed";
-
   document.body.appendChild(textArea);
   textArea.focus();
   textArea.select();
-
   try {
-    const successful = document.execCommand('copy');
-    return successful;
+    return document.execCommand('copy');
   } catch (err) {
     return false;
   } finally {
@@ -81,6 +77,7 @@ const fallbackCopyToClipboard = (text: string) => {
 export function ShareServiceDialog({ open, onOpenChange, service: initialService, vehicle }: ShareServiceDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = React.useState<Partial<WorkshopInfo>>({});
+  const isMobile = useIsMobile();
   
   const serviceTotal = React.useMemo(() => 
     (initialService?.serviceItems || []).reduce((sum, item) => sum + (item.price || 0), 0),
@@ -99,20 +96,15 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
   const message = React.useMemo(() => buildShareMessage(initialService, serviceTotal, vehicle, workshopInfo), [initialService, serviceTotal, vehicle, workshopInfo]);
 
   const copy = async (text: string, label = "Copiado al portapapeles") => {
-    if (navigator.clipboard && window.isSecureContext) {
-      try {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
-        toast({ title: label });
-      } catch (err) {
-        toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manually.", variant: "destructive" });
+      } else if (!fallbackCopyToClipboard(text)) {
+        throw new Error("Copy failed");
       }
-    } else {
-      const success = fallbackCopyToClipboard(text);
-      if (success) {
-        toast({ title: label });
-      } else {
-        toast({ title: "No se pudo copiar", description: "Esta función requiere un contexto seguro (HTTPS).", variant: "destructive" });
-      }
+      toast({ title: label });
+    } catch (err) {
+      toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manualmente.", variant: "destructive" });
     }
   };
   
@@ -133,7 +125,6 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl md:max-w-2xl p-0 overflow-hidden" hideCloseButton={true}>
-        {/* Header visual */}
         <div className="bg-gradient-to-r from-primary to-rose-700 text-white px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -152,7 +143,6 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
           </div>
         </div>
 
-        {/* Body */}
         <div className="p-6 space-y-6">
           <Card className="border-slate-200 relative">
             <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
@@ -204,19 +194,21 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
           </Card>
         </div>
 
-        {/* Footer actions */}
         <DialogFooter className="px-6 pb-6 pt-4 border-t flex-col-reverse sm:flex-row gap-2 justify-between items-center w-full">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-2 justify-end flex-wrap">
+                {initialService.publicId && (
+                  <Button variant="secondary" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}>
+                    <ExternalLink className="mr-2 h-4 w-4"/>
+                    Ver documento publico
+                  </Button>
+                )}
                 <TooltipProvider>
-                    {initialService.publicId && (
-                        <Tooltip><TooltipTrigger asChild>
-                            <Button size="icon" variant="outline" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")} className="h-12 w-12"><ExternalLink className="h-6 w-6"/></Button>
-                        </TooltipTrigger><TooltipContent><p>Abrir enlace público</p></TooltipContent></Tooltip>
-                    )}
                     <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleCopyWhatsApp} className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar para WhatsApp</p></TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleNativeShare} className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
-                    <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={() => window.print()} className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200"><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
+                    {!isMobile && (
+                      <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={() => window.print()} className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200"><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
+                    )}
                 </TooltipProvider>
             </div>
         </DialogFooter>

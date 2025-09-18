@@ -1,88 +1,98 @@
 
 "use client";
-
-import React from "react";
-import { useRouter } from "next/navigation";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import type { Vehicle } from "@/types";
-import { format, isValid } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Car } from "lucide-react";
-import { parseDate } from "@/lib/forms";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from 'react';
+import type { Vehicle } from '@/types';
+import { useTableManager } from '@/hooks/useTableManager';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableToolbar } from '@/components/shared/table-toolbar';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
+import { VehicleDialog } from './vehicle-dialog';
+import { VehicleFormValues } from './vehicle-form';
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
+  onSave: (data: VehicleFormValues, id?: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
-export const VehiclesTable = React.memo(({ vehicles }: VehiclesTableProps) => {
-  const router = useRouter();
+const sortOptions = [
+  { value: 'make_asc', label: 'Marca (A-Z)' },
+  { value: 'make_desc', label: 'Marca (Z-A)' },
+  { value: 'model_asc', label: 'Modelo (A-Z)' },
+  { value: 'model_desc', label: 'Modelo (Z-A)' },
+];
 
-  const handleRowClick = (vehicleId: string) => {
-    router.push(`/vehiculos/${vehicleId}`);
-  };
+export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps) {
+  const { paginatedData, ...tableManager } = useTableManager<Vehicle>({
+    initialData: vehicles,
+    searchKeys: ["make", "model", "year", "licensePlate", "ownerName"],
+    initialSortOption: "make_asc",
+    itemsPerPage: 10,
+  });
   
-  if (!vehicles.length) {
-    return (
-        <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
-            <Car className="h-12 w-12 mb-2" />
-            <h3 className="text-lg font-semibold text-foreground">No se encontraron vehículos</h3>
-            <p className="text-sm">Intente cambiar su búsqueda o agregue un nuevo vehículo.</p>
-        </div>
-    );
-  }
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+
+  const handleOpenDialog = (vehicle: Vehicle | null = null) => {
+    setEditingVehicle(vehicle);
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = async (data: VehicleFormValues) => {
+    await onSave(data, editingVehicle?.id);
+    setIsDialogOpen(false);
+  };
 
   return (
-    <div className="rounded-lg border shadow-sm overflow-x-auto">
-      <Table>
-        <TableHeader className="bg-black">
-          <TableRow>
-            <TableHead className="font-bold text-white">Placa</TableHead>
-            <TableHead className="font-bold text-white hidden sm:table-cell">Marca</TableHead>
-            <TableHead className="font-bold text-white hidden md:table-cell">Modelo</TableHead>
-            <TableHead className="font-bold text-white hidden lg:table-cell">Año</TableHead>
-            <TableHead className="font-bold text-white">Propietario</TableHead>
-            <TableHead className="font-bold text-white hidden lg:table-cell">Teléfono</TableHead>
-            <TableHead className="font-bold text-white hidden md:table-cell">Último Servicio</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {vehicles.map((vehicle) => {
-            const lastServiceDate = parseDate(vehicle.lastServiceDate);
-            return (
-              <TableRow 
-                key={vehicle.id} 
-                onClick={() => handleRowClick(vehicle.id)}
-                className="cursor-pointer hover:bg-muted/50"
-              >
-                <TableCell className="font-semibold">
-                  <span>{vehicle.licensePlate}</span>
-                  {vehicle.isFleetVehicle && <Badge variant="secondary" className="ml-2">Flotilla</Badge>}
-                </TableCell>
-                <TableCell className="hidden sm:table-cell">{vehicle.make}</TableCell>
-                <TableCell className="hidden md:table-cell">{vehicle.model}</TableCell>
-                <TableCell className="hidden lg:table-cell">{vehicle.year}</TableCell>
+    <div className="space-y-4">
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Marca</TableHead>
+              <TableHead>Modelo</TableHead>
+              <TableHead>Año</TableHead>
+              <TableHead>Placa</TableHead>
+              <TableHead>Propietario</TableHead>
+              <TableHead>Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedData.map((vehicle) => (
+              <TableRow key={vehicle.id} onClick={() => handleOpenDialog(vehicle)} className="cursor-pointer">
+                <TableCell>{vehicle.make}</TableCell>
+                <TableCell>{vehicle.model}</TableCell>
+                <TableCell>{vehicle.year}</TableCell>
+                <TableCell>{vehicle.licensePlate}</TableCell>
                 <TableCell>{vehicle.ownerName}</TableCell>
-                <TableCell className="hidden lg:table-cell">{vehicle.ownerPhone}</TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {lastServiceDate && isValid(lastServiceDate)
-                    ? format(lastServiceDate, "dd MMM yyyy", { locale: es }) 
-                    : 'N/A'}
+                <TableCell>
+                  <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleOpenDialog(vehicle); }}>
+                    Editar
+                  </Button>
                 </TableCell>
               </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
+        <div className="flex items-center space-x-2">
+          <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline">
+            <ChevronLeft className="h-4 w-4" /> Anterior
+          </Button>
+          <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline">
+            Siguiente <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <VehicleDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSave={handleSave}
+        vehicle={editingVehicle}
+      />
     </div>
   );
-});
-
-VehiclesTable.displayName = 'VehiclesTable';
+}

@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { serviceService, inventoryService, adminService } from '@/lib/services';
-import { Loader2, Share2, Save, Ban, Trash2, Printer, Copy } from 'lucide-react';
+import { Loader2, Share2, Save, Ban, Trash2, Printer, Copy, FileWarning } from 'lucide-react';
 import { ServiceForm } from '../components/ServiceForm';
 import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
@@ -42,6 +42,7 @@ export default function ServicioPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
+  const [notFound, setNotFound] = useState(false);
   
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
@@ -60,6 +61,7 @@ export default function ServicioPage() {
   useEffect(() => {
     const fetchData = async () => {
         setIsLoading(true);
+        setNotFound(false);
         try {
             const [
               vehiclesData, usersData, inventoryData,
@@ -85,12 +87,16 @@ export default function ServicioPage() {
             if (isEditMode && serviceId) {
                 const serviceData = await serviceService.getDocById('serviceRecords', serviceId);
                 if (!serviceData) {
-                  toast({ title: 'Error', description: 'Servicio no encontrado.', variant: 'destructive' });
-                  router.push('/servicios/historial');
+                  setNotFound(true);
+                  toast({ 
+                      title: 'Error al Cargar',
+                      description: `El documento con ID "${serviceId.slice(0,12)}..." no fue encontrado.`, 
+                      variant: 'destructive' 
+                  });
                   return;
                 }
                 setInitialData(serviceData);
-                setRecordForPreview(serviceData); // Pre-load data for preview
+                setRecordForPreview(serviceData);
             } else {
                 const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
                 const currentUser = authUserString ? JSON.parse(authUserString) : null;
@@ -100,8 +106,8 @@ export default function ServicioPage() {
                     id: newId,
                     status: 'Cotizacion',
                     serviceDate: new Date(),
-                    vehicleId: '', // Ensure vehicleId is initialized
-                    serviceItems: [], // Ensure serviceItems is initialized
+                    vehicleId: '', 
+                    serviceItems: [],
                     ...(currentUser && {
                         serviceAdvisorId: currentUser.id,
                         serviceAdvisorName: currentUser.name,
@@ -194,7 +200,6 @@ export default function ServicioPage() {
       });
       setIsPaymentDialogOpen(false);
       
-      // Instead of redirecting, show the share/print dialog
       const updatedServiceData = await serviceService.getDocById('serviceRecords', recordId);
       if (updatedServiceData) {
         handleShowShareDialog(updatedServiceData, '/servicios?tab=historial');
@@ -223,7 +228,6 @@ export default function ServicioPage() {
 
   const handleCancelService = async () => {
       if (!initialData?.id) return;
-      // Removed prompt, reason will be handled by the service
       await serviceService.cancelService(initialData.id, "Cancelado desde el panel");
       toast({ title: "Servicio Cancelado" });
       router.push('/servicios?tab=historial');
@@ -280,12 +284,23 @@ export default function ServicioPage() {
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
 
-  if (isLoading || (isEditMode && !initialData)) {
+  if (isLoading || (isEditMode && !initialData && !notFound)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="mr-2 h-8 w-8 animate-spin" />
         {isEditMode ? 'Cargando servicio...' : 'Cargando...'}
       </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+        <div className="flex h-screen w-full flex-col items-center justify-center text-center">
+            <FileWarning className="h-16 w-16 text-destructive mb-4" />
+            <h1 className="text-2xl font-bold">Documento no Encontrado</h1>
+            <p className="text-muted-foreground mb-6">El servicio que buscas no existe o ha sido eliminado.</p>
+            <Button onClick={() => router.push('/servicios')}>Volver a Servicios</Button>
+        </div>
     );
   }
 

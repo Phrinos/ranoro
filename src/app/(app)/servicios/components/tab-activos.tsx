@@ -12,6 +12,7 @@ import { parseDate } from '@/lib/forms';
 import { formatCurrency } from '@/lib/utils';
 import { serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
+import { toZonedTime } from 'date-fns-tz';
 
 interface ActivosTabContentProps {
   allServices: ServiceRecord[];
@@ -44,6 +45,17 @@ const getDateForService = (service: ServiceRecord): Date | null => {
         default:
             return parseDate(service.serviceDate); // Fallback
     }
+};
+
+const getDeliveredDate = (s: ServiceRecord): Date | null => {
+  return (
+    parseDate(s.deliveryDateTime) ||
+    parseDate((s as any).completedAt) ||
+    parseDate(s.serviceDate) ||
+    parseDate((s as any).updatedAt) ||
+    parseDate((s as any).createdAt) ||
+    null
+  );
 };
 
 export default function ActivosTabContent({
@@ -100,13 +112,22 @@ export default function ActivosTabContent({
   }, [activeServices]);
 
   const totalEarningsToday = useMemo(() => {
-    return allServices
-      .filter((s) => {
-        if (s.status !== 'Entregado') return false;
-        const deliveryDate = parseDate(s.deliveryDateTime);
-        return deliveryDate && isValid(deliveryDate) && isToday(deliveryDate);
-      })
-      .reduce((sum, s) => sum + (s.totalCost || 0), 0);
+    const timeZone = 'America/Mexico_City';
+    const nowInLA = toZonedTime(new Date(), timeZone);
+    const start = startOfDay(nowInLA);
+    const end = endOfDay(nowInLA);
+
+    return allServices.reduce((sum, s) => {
+      if (s.status !== 'Entregado') return sum;
+
+      const when = getDeliveredDate(s);
+      if (!when || !isValid(when)) return sum;
+
+      if (isWithinInterval(toZonedTime(when, timeZone), { start, end })) {
+        return sum + (Number(s.totalCost) || 0);
+      }
+      return sum;
+    }, 0);
   }, [allServices]);
 
   const handleEditService = (serviceId: string) => {

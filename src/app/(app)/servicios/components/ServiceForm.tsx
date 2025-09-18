@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -24,6 +25,7 @@ import { FieldErrors } from 'react-hook-form';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 import { SignatureDialog } from './signature-dialog';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 
 interface ServiceFormProps {
@@ -83,28 +85,28 @@ const ServiceFormFooter = ({ onCancel, onComplete, mode, initialData, isSubmitti
 
     return (
         <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               {onCancel && (
                 <ConfirmDialog
-                  triggerButton={<Button variant="destructive" type="button"><Ban className="mr-2 h-4 w-4" />{cancelTexts.button}</Button>}
+                  triggerButton={<Button variant="destructive" type="button" className="w-full sm:w-auto"><Ban className="mr-2 h-4 w-4" />{cancelTexts.button}</Button>}
                   title={cancelTexts.title}
                   description={cancelTexts.description}
                   onConfirm={onCancel}
                   confirmText={cancelTexts.confirm}
                 />
               )}
-              <Button type="button" variant="outline" onClick={() => reset(initialData || {})}>Descartar Cambios</Button>
+              <Button type="button" variant="outline" onClick={() => reset(initialData || {})} className="w-full sm:w-auto">Descartar</Button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
                {isEditMode && onComplete && status !== 'Entregado' && status !== 'Cancelado' && (
-                 <Button type="button" onClick={() => onComplete(getValues())} disabled={isSubmitting} variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700">
+                 <Button type="button" onClick={() => onComplete(getValues())} disabled={isSubmitting} variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700 w-full sm:w-auto">
                     <DollarSign className="mr-2 h-4 w-4"/> Completar y Cobrar
                  </Button>
                )}
-              <Button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
+              <Button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
                 {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-                Guardar Cambios
+                Guardar
               </Button>
             </div>
           </div>
@@ -247,8 +249,6 @@ export function ServiceForm({
     }
   };
 
-  const isQuote = initialData?.status === 'Cotizacion' || mode === 'quote';
-
   return (
     <FormProvider {...methods}>
       <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
@@ -272,58 +272,43 @@ export function ServiceForm({
         )}
         <Tabs defaultValue="service-items">
             <div className="sticky top-0 z-10 border-b bg-background/95 p-1 backdrop-blur-sm">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
-                <TabsTrigger value="service-items">Trabajos y Refacciones</TabsTrigger>
-                <TabsTrigger value="reception-delivery">Recepción/Entrega</TabsTrigger>
-                <TabsTrigger value="photo-report">Reporte de Fotos</TabsTrigger>
-                <TabsTrigger value="safety-checklist">Revisión de Seguridad</TabsTrigger>
-                </TabsList>
+                <ScrollArea className="w-full whitespace-nowrap">
+                    <TabsList className="w-max">
+                        <TabsTrigger value="service-items">Trabajos y Refacciones</TabsTrigger>
+                        <TabsTrigger value="reception-delivery">Recepción/Entrega</TabsTrigger>
+                        <TabsTrigger value="photo-report">Reporte de Fotos</TabsTrigger>
+                        <TabsTrigger value="safety-checklist">Revisión de Seguridad</TabsTrigger>
+                    </TabsList>
+                    <ScrollBar orientation="horizontal" />
+                </ScrollArea>
             </div>
             <div className="mt-4">
                 <TabsContent value="service-items" className="space-y-6">
-                    <Card>
-                        <CardContent className="pt-6">
-                            <ServiceItemsList
-                                inventoryItems={inventoryItems}
-                                serviceTypes={serviceTypes}
-                                categories={categories}
-                                suppliers={suppliers}
-                                onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
-                                mode={mode}
-                                isEnhancingText={isEnhancingText}
-                                handleEnhanceText={handleEnhanceText as any}
-                            />
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="pt-6">
-                             <ServiceSummary
-                                onOpenValidateDialog={() => {}}
-                                validatedFolios={{}}
-                            />
-                        </CardContent>
-                    </Card>
+                    <Card><CardContent className="pt-6">
+                        <ServiceItemsList
+                            inventoryItems={inventoryItems}
+                            serviceTypes={serviceTypes}
+                            categories={categories}
+                            suppliers={suppliers}
+                            onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
+                            mode={mode}
+                            isEnhancingText={isEnhancingText}
+                            handleEnhanceText={handleEnhanceText as any}
+                        />
+                    </CardContent></Card>
+                    <Card><CardContent className="pt-6">
+                         <ServiceSummary
+                            onOpenValidateDialog={() => {}}
+                            validatedFolios={{}}
+                        />
+                    </CardContent></Card>
                 </TabsContent>
                 <TabsContent value="reception-delivery" className="space-y-6">
-                    <ReceptionAndDelivery
-                        part="reception"
-                        isEnhancingText={isEnhancingText}
-                        handleEnhanceText={handleEnhanceText as any}
-                        onOpenSignature={handleOpenSignatureDialog}
-                    />
-                    <ReceptionAndDelivery
-                        part="delivery"
-                        isEnhancingText={isEnhancingText}
-                        handleEnhanceText={handleEnhanceText as any}
-                        onOpenSignature={handleOpenSignatureDialog}
-                    />
+                    <ReceptionAndDelivery part="reception" isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignatureDialog}/>
+                    <ReceptionAndDelivery part="delivery" isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignatureDialog}/>
                 </TabsContent>
-                <TabsContent value="photo-report">
-                    <PhotoReportTab />
-                </TabsContent>
-                <TabsContent value="safety-checklist">
-                    <SafetyChecklist />
-                </TabsContent>
+                <TabsContent value="photo-report"><PhotoReportTab /></TabsContent>
+                <TabsContent value="safety-checklist"><SafetyChecklist /></TabsContent>
             </div>
         </Tabs>
        </div>

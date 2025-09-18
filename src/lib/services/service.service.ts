@@ -31,6 +31,29 @@ const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() =>
     });
 };
 
+const onServicesByStatusUpdate = (
+    statuses: ServiceRecord['status'][],
+    callback: (services: ServiceRecord[]) => void
+): (() => void) => {
+    if (!db || statuses.length === 0) return () => {};
+
+    // Firestore 'in' query requires a non-empty array
+    if (statuses.length > 10) {
+        console.warn("Firestore 'in' query has a limit of 10 items. Consider multiple queries.");
+        // You might want to chunk the statuses array into multiple queries if you expect more than 10.
+    }
+
+    const q = query(
+        collection(db, "serviceRecords"),
+        where("status", "in", statuses)
+    );
+
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord)));
+    });
+};
+
+
 const onServicesForVehicleUpdate = (vehicleId: string, callback: (services: ServiceRecord[]) => void): (() => void) => {
     if (!db) return () => {};
     const q = query(
@@ -152,6 +175,7 @@ const createOrUpdatePublicService = async (service: ServiceRecord): Promise<void
 
 export const serviceService = {
     onServicesUpdate,
+    onServicesByStatusUpdate,
     onServicesForVehicleUpdate,
     onServicesUpdatePromise,
     getDocById,
