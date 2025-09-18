@@ -41,7 +41,7 @@ function FlotillaPageComponent() {
     
     const handleSaveDriver = async (values: ContactInfoFormValues) => {
         try {
-            await personnelService.saveDriver({ ...values, isArchived: false }, '');
+            await personnelService.saveDriver({ ...values, isArchived: false });
             toast({ title: "Conductor Creado" });
             setIsDriverDialogOpen(false);
         } catch (error) {

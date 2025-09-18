@@ -97,9 +97,14 @@ const getDriverById = async (id: string): Promise<Driver | undefined> => {
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Driver : undefined;
 };
 
-const saveDriver = async (data: Partial<Driver>, id: string): Promise<void> => {
+const saveDriver = async (data: Partial<Driver>, id?: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
-    await updateDoc(doc(db, 'drivers', id), cleanObjectForFirestore(data));
+    const cleanedData = cleanObjectForFirestore(data);
+    if (id) {
+        await updateDoc(doc(db, 'drivers', id), cleanedData);
+    } else {
+        await addDoc(collection(db, 'drivers'), cleanedData);
+    }
 };
 
 const assignVehicleToDriver = async (vehicle: Vehicle, newDriverId: string | null, allDrivers: Driver[]): Promise<void> => {
