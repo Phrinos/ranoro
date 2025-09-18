@@ -1,7 +1,7 @@
 // src/app/(app)/servicios/components/VehicleSelectionDialog.tsx
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,10 +17,10 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Vehicle } from "@/types";
-import { Car, PlusCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button";
+import { Car, PlusCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { Vehicle } from "@/types";
 
 interface VehicleSelectionDialogProps {
   open: boolean;
@@ -35,101 +35,111 @@ export function VehicleSelectionDialog({
   onOpenChange,
   vehicles,
   onVehicleSelect,
-  onOpenNewVehicleDialog
+  onOpenNewVehicleDialog,
 }: VehicleSelectionDialogProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const handleSelect = (vehicleId: string) => {
-    onVehicleSelect(vehicleId);
-    onOpenChange(false);
-  };
-
-  const filteredVehicles = useMemo(() => {
-    const q = (searchTerm || '').trim().toLowerCase();
+  const filtered = useMemo(() => {
+    const q = (searchTerm || "").trim().toLowerCase();
     if (!q) return vehicles;
     return vehicles.filter((v) => {
       if (!v) return false;
-      const plate = (v.licensePlate || '').toLowerCase();
-      const make  = (v.make || '').toLowerCase();
-      const model = (v.model || '').toLowerCase();
-      const owner = (v.ownerName || '').toLowerCase();
+      const plate = (v.licensePlate || "").toLowerCase();
+      const make = (v.make || "").toLowerCase();
+      const model = (v.model || "").toLowerCase();
+      const owner = (v.ownerName || "").toLowerCase();
       return (
-        plate.includes(q) ||
-        make.includes(q) ||
-        model.includes(q) ||
-        owner.includes(q)
+        plate.includes(q) || make.includes(q) || model.includes(q) || owner.includes(q)
       );
     });
   }, [vehicles, searchTerm]);
+
+  const handleSelect = (id: string) => {
+    onVehicleSelect(id);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog
       open={open}
       onOpenChange={(isOpen) => {
         onOpenChange(isOpen);
-        if (!isOpen) setSearchTerm('');
+        if (!isOpen) setSearchTerm("");
       }}
     >
-      {/* padding consistente y contenido en columna */}
-      <DialogContent className="sm:max-w-[560px] h-[70vh] flex flex-col p-0">
+      {/* overflow-hidden para que respete los bordes redondeados, y sin padding exterior raro */}
+      <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-3">
           <DialogTitle>Seleccionar Vehículo</DialogTitle>
-          <DialogDescription>Busca un vehículo existente o crea uno nuevo.</DialogDescription>
+          <DialogDescription>
+            Busca un vehículo existente o crea uno nuevo.
+          </DialogDescription>
         </DialogHeader>
 
-        {/* Command sin filtro interno: usamos nuestro filtro => no se deshabilitan items */}
-        <Command
-          shouldFilter={false}
-          className="mx-6 mb-6 rounded-md border"
-        >
-          <CommandInput
-            placeholder="Buscar por placa, marca, modelo, propietario..."
-            value={searchTerm}
-            onValueChange={setSearchTerm}
-          />
+        {/* Contenedor visual del buscador + lista */}
+        <div className="px-6 pb-6">
+          {/* Command con estilos “card”: fondo blanco, borde y radios consistentes */}
+          <Command
+            shouldFilter={false}
+            className={cn(
+              "rounded-lg border bg-white",
+              // afinamos paddings/alturas de cmdk internos
+              "[&_[cmdk-input-wrapper]]:px-3 [&_[cmdk-input-wrapper]]:h-12",
+              "[&_[cmdk-input]]:text-sm [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
+            )}
+          >
+            {/* Barra de búsqueda sticky para que quede fija al hacer scroll */}
+            <div className="sticky top-0 z-10 border-b bg-white">
+              <CommandInput
+                placeholder="Buscar por placa, marca, modelo, propietario..."
+                value={searchTerm}
+                onValueChange={setSearchTerm}
+              />
+            </div>
 
-          <CommandList className="max-h-[48vh] overflow-y-auto">
-            <CommandEmpty>
-              <div className="text-center p-4">
-                <p>No se encontraron vehículos.</p>
-                <Button
-                  variant="link"
-                  onClick={onOpenNewVehicleDialog}
-                  className="mt-2"
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Registrar Nuevo Vehículo{searchTerm ? ` “${searchTerm}”` : ''}
-                </Button>
-              </div>
-            </CommandEmpty>
-
-            <CommandGroup>
-              {filteredVehicles.map((vehicle) => {
-                const title = `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`;
-                return (
-                  <CommandItem
-                    key={vehicle.id}
-                    // Blindaje por si cmdk marca data-disabled por accidente
-                    className={cn(
-                      "flex items-center gap-3 cursor-pointer",
-                      "data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
-                    )}
-                    value={`${vehicle.licensePlate} ${vehicle.make} ${vehicle.model} ${vehicle.ownerName ?? ''}`}
-                    onSelect={() => handleSelect(vehicle.id)}
+            {/* La lista SÍ scrollea; el popover/modal no */}
+            <CommandList className="max-h-[52vh] overflow-y-auto">
+              <CommandEmpty>
+                <div className="text-center p-4">
+                  <p>No se encontraron vehículos.</p>
+                  <Button
+                    variant="link"
+                    onClick={onOpenNewVehicleDialog}
+                    className="mt-2"
                   >
-                    <Car className="h-5 w-5 text-muted-foreground" />
-                    <div className="min-w-0">
-                      <p className="font-semibold truncate">{title}</p>
-                      <p className="text-sm text-muted-foreground truncate">
-                        Propietario: {vehicle.ownerName || '—'}
-                      </p>
-                    </div>
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Registrar Nuevo Vehículo
+                    {searchTerm ? ` “${searchTerm}”` : ""}
+                  </Button>
+                </div>
+              </CommandEmpty>
+
+              <CommandGroup>
+                {filtered.map((v) => {
+                  const title = `${v.make} ${v.model} (${v.licensePlate})`;
+                  const searchValue = `${v.licensePlate} ${v.make} ${v.model} ${v.ownerName ?? ""}`;
+                  return (
+                    <CommandItem
+                      key={v.id}
+                      value={searchValue}
+                      onSelect={() => handleSelect(v.id)}
+                      // blindaje: aunque cmdk marque disabled por error, seguimos pudiendo clickear
+                      className="flex items-center gap-3 data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
+                    >
+                      <Car className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-semibold truncate">{title}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          Propietario: {v.ownerName || "—"}
+                        </p>
+                      </div>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </div>
       </DialogContent>
     </Dialog>
   );
