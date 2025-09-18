@@ -7,6 +7,29 @@ import { getAdminDb } from '@/lib/firebaseAdmin';
 import type { ServiceRecord } from '@/types';
 import { cleanObjectForFirestore } from '@/lib/forms';
 
+/**
+ * Finds the main service record ID based on the public ID.
+ * @param db - The Firestore admin instance.
+ * @param publicId - The public ID of the service.
+ * @returns The main document ID.
+ */
+const getMainDocIdFromPublicId = async (db: FirebaseFirestore.Firestore, publicId: string): Promise<string> => {
+    const publicRef = db.collection('publicServices').doc(publicId);
+    const publicSnap = await publicRef.get();
+    if (!publicSnap.exists) {
+        // As a fallback, check if the publicId is actually a main doc ID (older records might behave this way)
+        const mainRef = db.collection('serviceRecords').doc(publicId);
+        const mainSnap = await mainRef.get();
+        if (mainSnap.exists()) {
+            return publicId;
+        }
+        throw new Error('Documento público no encontrado.');
+    }
+    // The public document ID should be the same as the main document ID.
+    return publicSnap.id;
+};
+
+
 export async function saveSignatureAction(
   publicId: string,
   signatureDataUrl: string,
@@ -18,7 +41,9 @@ export async function saveSignatureAction(
     }
     
     const db = getAdminDb();
-    const mainRef = db.collection('serviceRecords').doc(publicId);
+    const mainDocId = await getMainDocIdFromPublicId(db, publicId);
+
+    const mainRef = db.collection('serviceRecords').doc(mainDocId);
     const publicRef = db.collection('publicServices').doc(publicId);
 
     const fieldToUpdate = signatureType === 'reception' 
@@ -31,10 +56,8 @@ export async function saveSignatureAction(
     
     const batch = db.batch();
     
-    // Update the main service record
     batch.update(mainRef, updatePayload);
     
-    // Update the public-facing service record if it exists
     const publicSnap = await publicRef.get();
     if (publicSnap.exists) {
       batch.update(publicRef, updatePayload);
@@ -59,7 +82,9 @@ export async function scheduleAppointmentAction(
     if (!publicId || !appointmentDateTime) throw new Error('Información de cita inválida.');
 
     const db = getAdminDb();
-    const mainRef  = db.collection('serviceRecords').doc(publicId);
+    const mainDocId = await getMainDocIdFromPublicId(db, publicId);
+
+    const mainRef  = db.collection('serviceRecords').doc(mainDocId);
     const publicRef = db.collection('publicServices').doc(publicId);
 
     const mainSnap = await mainRef.get();
@@ -101,7 +126,9 @@ export async function cancelAppointmentAction(
     if (!publicId) throw new Error('ID de servicio inválido.');
 
     const db = getAdminDb();
-    const mainRef  = db.collection('serviceRecords').doc(publicId);
+    const mainDocId = await getMainDocIdFromPublicId(db, publicId);
+
+    const mainRef  = db.collection('serviceRecords').doc(mainDocId);
     const publicRef = db.collection('publicServices').doc(publicId);
 
     const update = {
@@ -112,7 +139,10 @@ export async function cancelAppointmentAction(
 
     const batch = db.batch();
     batch.update(mainRef, update);
-    batch.update(publicRef, update);
+
+    const publicSnap = await publicRef.get();
+    if (publicSnap.exists) batch.update(publicRef, update);
+    
     await batch.commit();
 
     revalidatePath(`/s/${publicId}`);
@@ -130,7 +160,8 @@ export async function confirmAppointmentAction(
     if (!publicId) throw new Error('Falta el ID del servicio.');
 
     const db = getAdminDb();
-    const mainRef = db.collection('serviceRecords').doc(publicId);
+    const mainDocId = await getMainDocIdFromPublicId(db, publicId);
+    const mainRef = db.collection('serviceRecords').doc(mainDocId);
     const mainSnap = await mainRef.get();
     if (!mainSnap.exists) return { success: false, error: 'El servicio no fue encontrado.' };
 
