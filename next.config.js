@@ -4,10 +4,6 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
   
-  experimental: {
-    ppr: true,
-  },
-
   // 2. Indicador de dev
   devIndicators: {
     position: 'bottom-right',
