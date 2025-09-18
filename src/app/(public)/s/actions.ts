@@ -20,7 +20,7 @@ const getMainDocIdFromPublicId = async (db: FirebaseFirestore.Firestore, publicI
         // As a fallback, check if the publicId is actually a main doc ID (older records might behave this way)
         const mainRef = db.collection('serviceRecords').doc(publicId);
         const mainSnap = await mainRef.get();
-        if (mainSnap.exists()) {
+        if (mainSnap.exists) {
             return publicId;
         }
         throw new Error('Documento público no encontrado.');
@@ -163,7 +163,7 @@ export async function confirmAppointmentAction(
     const mainDocId = await getMainDocIdFromPublicId(db, publicId);
     const mainRef = db.collection('serviceRecords').doc(mainDocId);
     const mainSnap = await mainRef.get();
-    if (!mainSnap.exists()) return { success: false, error: 'El servicio no fue encontrado.' };
+    if (!mainSnap.exists) return { success: false, error: 'El servicio no fue encontrado.' };
 
     const data = mainSnap.data() as any;
     const status = String(data.status || '').toLowerCase();
