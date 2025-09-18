@@ -35,12 +35,12 @@ export function TableToolbar({
         placeholder={searchPlaceholder}
         value={searchTerm}
         onChange={(event) => onSearchTermChange(event.target.value)}
-        className="h-10 w-full sm:w-[150px] lg:w-[250px]"
+        className="h-10 w-full sm:w-auto sm:flex-grow lg:w-full bg-white"
       />
       <div className="flex w-full sm:w-auto items-center gap-2">
         {sortOptions && onSortOptionChange && sortOption && (
           <Select value={sortOption} onValueChange={onSortOptionChange}>
-            <SelectTrigger className="h-10 w-full sm:w-auto">
+            <SelectTrigger className="h-10 w-full sm:w-auto bg-white">
               <SelectValue placeholder="Ordenar por..." />
             </SelectTrigger>
             <SelectContent>
