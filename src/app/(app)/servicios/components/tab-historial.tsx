@@ -66,6 +66,13 @@ const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
   "Transferencia": Landmark,
 };
 
+const paymentMethodBadgeVariants: Record<Payment['method'], 'success' | 'blue' | 'lightPurple'> = {
+  "Efectivo": "success",
+  "Tarjeta": "blue",
+  "Tarjeta MSI": "blue",
+  "Transferencia": "lightPurple",
+};
+
 export default function HistorialTabContent({
   services,
   vehicles,
@@ -172,8 +179,9 @@ export default function HistorialTabContent({
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
                         const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || Wallet;
+                        const variant = paymentMethodBadgeVariants[method as keyof typeof paymentMethodBadgeVariants] || 'secondary';
                         return (
-                            <Badge key={method} variant="secondary" className="text-sm">
+                            <Badge key={method} variant={variant} className="text-sm">
                                 <Icon className="h-3 w-3 mr-1" />
                                 {method}:<span className="font-semibold ml-1">{formatCurrency(data.total)}</span>
                             </Badge>
