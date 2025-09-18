@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { inventoryService, personnelService, rentalService } from '@/lib/services';
 import type { Vehicle, Driver, DailyRentalCharge, RentalPayment, ManualDebtEntry, OwnerWithdrawal, VehicleExpense, PaymentMethod, WorkshopInfo } from '@/types';
 import { Loader2, MinusCircle, PlusCircle } from 'lucide-react';
@@ -17,6 +17,8 @@ import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './compone
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/VehicleExpenseDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useFlotillaData } from './layout';
+import { EditContactInfoDialog, type ContactInfoFormValues } from './components/EditContactInfoDialog';
+
 
 function FlotillaPageComponent() {
     const searchParams = useSearchParams();
@@ -29,11 +31,24 @@ function FlotillaPageComponent() {
     const [transactionType, setTransactionType] = useState<'payment' | 'charge'>('payment');
     const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
     const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+    const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
+
 
     const handleOpenTransactionDialog = (type: 'payment' | 'charge') => {
         setTransactionType(type);
         setIsTransactionDialogOpen(true);
     };
+    
+    const handleSaveDriver = async (values: ContactInfoFormValues) => {
+        try {
+            await personnelService.saveDriver({ ...values, isArchived: false }, '');
+            toast({ title: "Conductor Creado" });
+            setIsDriverDialogOpen(false);
+        } catch (error) {
+            toast({ title: "Error", description: "No se pudo crear el conductor.", variant: "destructive"});
+        }
+    };
+
 
     const handleSaveTransaction = async (values: GlobalTransactionFormValues) => {
         try {
@@ -91,7 +106,7 @@ function FlotillaPageComponent() {
 
     const tabs = [
         { value: 'balance', label: 'Balance', content: <FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} /> },
-        { value: 'conductores', label: 'Conductores', content: <FlotillaConductoresTab drivers={drivers} /> },
+        { value: 'conductores', label: 'Conductores', content: <FlotillaConductoresTab drivers={drivers} onAddDriver={() => setIsDriverDialogOpen(true)} /> },
         { value: 'vehiculos', label: 'Vehículos', content: <FlotillaVehiculosTab vehicles={vehicles.filter(v => v.isFleetVehicle)} /> },
         { value: 'caja', label: 'Caja', content: <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allDailyCharges={dailyCharges} allManualDebts={manualDebts} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} handleShowTicket={handleShowTicket} /> },
     ];
@@ -119,6 +134,12 @@ function FlotillaPageComponent() {
             />
             <OwnerWithdrawalDialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen} vehicles={vehicles} onSave={handleSaveWithdrawal} />
             <VehicleExpenseDialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen} vehicles={vehicles} onSave={handleSaveExpense} />
+            <EditContactInfoDialog
+                open={isDriverDialogOpen}
+                onOpenChange={setIsDriverDialogOpen}
+                driver={{} as Driver}
+                onSave={handleSaveDriver}
+            />
         </>
     )
 }

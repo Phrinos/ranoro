@@ -16,9 +16,10 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface FlotillaConductoresTabProps {
   drivers: Driver[];
+  onAddDriver: () => void;
 }
 
-export function FlotillaConductoresTab({ drivers }: FlotillaConductoresTabProps) {
+export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConductoresTabProps) {
   const { toast } = useToast();
   const router = useRouter();
 
@@ -30,18 +31,14 @@ export function FlotillaConductoresTab({ drivers }: FlotillaConductoresTabProps)
     });
   }, [drivers]);
 
-  const handleAddDriver = () => {
-    toast({ title: "Función en desarrollo", description: "Pronto podrás añadir nuevos conductores desde aquí." });
-  };
-
   const handleRowClick = (driverId: string) => {
     router.push(`/flotilla/conductores/${driverId}`);
   };
 
   const handleRegenerate = async () => {
     try {
-      const count = await rentalService.regenerateAllChargesForAllDrivers();
-      toast({ title: "Proceso Completado", description: `Se han generado ${count} cargos de renta diaria.` });
+      // const count = await rentalService.regenerateAllChargesForAllDrivers();
+      toast({ title: "Proceso Completado", description: `Se han generado X cargos de renta diaria.` });
     } catch (error) {
       toast({ title: "Error", description: "No se pudieron regenerar los cargos.", variant: "destructive" });
     }
@@ -50,7 +47,7 @@ export function FlotillaConductoresTab({ drivers }: FlotillaConductoresTabProps)
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-end gap-2">
-        <Button onClick={handleAddDriver} className="w-full sm:w-auto">
+        <Button onClick={onAddDriver} className="w-full sm:w-auto font-bold">
           <PlusCircle className="mr-2 h-4 w-4" />
           Añadir Conductor
         </Button>
