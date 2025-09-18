@@ -21,8 +21,6 @@ import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 
 
-export const runtime = 'edge'; // Use Edge runtime for better performance
-
 export default function PublicServicePage() {
   const params = useParams();
   const publicId = params.id as string;
