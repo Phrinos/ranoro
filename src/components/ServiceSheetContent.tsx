@@ -105,14 +105,14 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
     const formattedReceptionDate = receptionDate && isValid(receptionDate) ? format(receptionDate, "dd MMMM, yyyy, HH:mm 'hrs'", { locale: es }) : 'Fecha no registrada';
     const formattedDeliveryDate = deliveryDate && isValid(deliveryDate) ? format(deliveryDate, "dd MMMM, yyyy, HH:mm 'hrs'", { locale: es }) : 'Fecha no registrada';
 
-    const isAppointmentPending = status === 'agendado' && appointmentStatus === 'Sin Confirmar';
+    const isAppointmentPending = status === 'agendado' && (appointmentStatus === 'Sin Confirmar' || service.subStatus === 'Sin Confirmar');
 
     const statusInfo = useMemo(() => {
         if (status === 'cancelado' || appointmentStatus === 'Cancelada') return { title: "CANCELADO", description: "Este servicio o cita ha sido cancelado.", badge: { text: "Cancelado", variant: "destructive" }, cardClass: "bg-red-50 border-red-200", titleClass: "text-red-800", descClass: "text-red-700" };
         
         if (status === 'agendado') {
-          if (appointmentStatus === 'Confirmada') return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Confirmada", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
-          if (appointmentStatus === 'Sin Confirmar') return { title: "CITA PENDIENTE DE CONFIRMACIÓN", description: formattedAppointmentDate, badge: { text: "Pendiente", variant: "waiting" }, cardClass: "bg-yellow-50 border-yellow-200", titleClass: "text-yellow-800", descClass: "text-yellow-700" };
+          if (appointmentStatus === 'Confirmada' || service.subStatus === 'Confirmada') return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Confirmada", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
+          if (appointmentStatus === 'Sin Confirmar' || service.subStatus === 'Sin Confirmar') return { title: "CITA PENDIENTE DE CONFIRMACIÓN", description: formattedAppointmentDate, badge: { text: "Pendiente", variant: "waiting" }, cardClass: "bg-yellow-50 border-yellow-200", titleClass: "text-yellow-800", descClass: "text-yellow-700" };
           return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Agendado", variant: "default" }, cardClass: "bg-blue-50 border-blue-200", titleClass: "text-blue-800", descClass: "text-blue-700" };
         }
         
@@ -129,7 +129,7 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
         if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Ingresado: ${formattedReceptionDate} | Entregado: ${formattedDeliveryDate}`, badge: { text: "Entregado", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
         
         return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null, cardClass: "bg-muted/50", titleClass: "text-foreground", descClass: "text-muted-foreground" };
-    }, [status, appointmentStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate, service]);
+    }, [status, appointmentStatus, service.subStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate, service]);
 
     const shouldShowNextService = service.status === 'Entregado' && service.nextServiceInfo?.date && isValid(parseDate(service.nextServiceInfo.date)!);
 
