@@ -194,7 +194,14 @@ export default function HistorialTabContent({
           </Card>
         </div>
       <TableToolbar
-        {...tableManager}
+        searchTerm={tableManager.searchTerm}
+        onSearchTermChange={tableManager.onSearchTermChange}
+        sortOption={tableManager.sortOption}
+        onSortOptionChange={tableManager.onSortOptionChange}
+        dateRange={tableManager.dateRange}
+        onDateRangeChange={tableManager.onDateRangeChange}
+        otherFilters={tableManager.otherFilters}
+        setOtherFilters={tableManager.setOtherFilters}
         searchPlaceholder="Buscar por folio, placa..."
         sortOptions={sortOptions}
         filterOptions={[

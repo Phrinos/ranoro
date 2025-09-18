@@ -1,3 +1,4 @@
+
 // src/app/(public)/s/actions.ts
 'use server';
 
@@ -7,41 +8,28 @@ import type { ServiceRecord } from '@/types';
 import { cleanObjectForFirestore } from '@/lib/forms';
 
 /**
- * Finds the main service record ID based on the public ID.
- * This function first attempts to find a document by the given ID directly.
- * If not found, it queries the publicServices collection to find a match.
+ * Finds the main service record ID based on its public ID.
+ * This is the definitive method for resolving a public ID to its source document.
  * @param db - The Firestore admin instance.
  * @param publicId - The public ID of the service from the URL.
- * @returns The main document ID.
+ * @returns The main document ID from the 'serviceRecords' collection.
  * @throws An error if the document cannot be found.
  */
 const getMainDocIdFromPublicId = async (db: FirebaseFirestore.Firestore, publicId: string): Promise<string> => {
     if (!publicId) throw new Error("ID público no proporcionado.");
-  
-    // 1. Try to get the document directly by ID, as it might be the main ID.
-    const mainDocRef = db.collection('serviceRecords').doc(publicId);
-    const mainDocSnap = await mainDocRef.get();
-    if (mainDocSnap.exists) {
-        return publicId;
+
+    // Query the main service records collection to find the document containing the matching publicId.
+    // This is the correct and most robust way to find the document.
+    const query = db.collection('serviceRecords').where('publicId', '==', publicId).limit(1);
+    const querySnap = await query.get();
+
+    if (querySnap.empty) {
+        // If no document is found, the link is invalid or the data is out of sync.
+        throw new Error('Documento de servicio no encontrado.');
     }
 
-    // 2. If not found, query the publicServices collection by the publicId field.
-    // This is the standard flow for newer documents.
-    const publicQuery = db.collection('publicServices').where('publicId', '==', publicId).limit(1);
-    const publicQuerySnap = await publicQuery.get();
-    if (!publicQuerySnap.empty) {
-        // The public document's ID is the same as the main document's ID.
-        return publicQuerySnap.docs[0].id;
-    }
-    
-    // 3. If still not found, check if the publicId exists in the main collection's publicId field
-    const mainQuery = db.collection('serviceRecords').where('publicId', '==', publicId).limit(1);
-    const mainQuerySnap = await mainQuery.get();
-    if(!mainQuerySnap.empty) {
-        return mainQuerySnap.docs[0].id;
-    }
-
-    throw new Error('Documento de servicio no encontrado.');
+    // Return the ID of the found document.
+    return querySnap.docs[0].id;
 };
 
 
@@ -59,7 +47,7 @@ export async function saveSignatureAction(
     const mainDocId = await getMainDocIdFromPublicId(db, publicId);
 
     const mainRef = db.collection('serviceRecords').doc(mainDocId);
-    const publicRef = db.collection('publicServices').doc(mainDocId);
+    const publicRef = db.collection('publicServices').doc(publicId); // The public doc ID is the publicId
 
     const fieldToUpdate = signatureType === 'reception' 
       ? 'customerSignatureReception' 
@@ -100,7 +88,7 @@ export async function scheduleAppointmentAction(
     const mainDocId = await getMainDocIdFromPublicId(db, publicId);
 
     const mainRef  = db.collection('serviceRecords').doc(mainDocId);
-    const publicRef = db.collection('publicServices').doc(mainDocId);
+    const publicRef = db.collection('publicServices').doc(publicId);
 
     const mainSnap = await mainRef.get();
     if (!mainSnap.exists) return { success: false, error: 'El servicio solicitado no existe.' };
@@ -114,7 +102,6 @@ export async function scheduleAppointmentAction(
       status: 'Agendado',
       subStatus: 'Sin Confirmar',
       appointmentDateTime: new Date(appointmentDateTime).toISOString(),
-      appointmentStatus: 'Sin Confirmar',
     };
 
     const batch = db.batch();
@@ -144,12 +131,11 @@ export async function cancelAppointmentAction(
     const mainDocId = await getMainDocIdFromPublicId(db, publicId);
 
     const mainRef  = db.collection('serviceRecords').doc(mainDocId);
-    const publicRef = db.collection('publicServices').doc(mainDocId);
+    const publicRef = db.collection('publicServices').doc(publicId);
 
     const update = {
-      appointmentStatus: 'Cancelada' as const,
       status: 'Cancelado' as const,
-      cancellationReason: 'Cancelado por el cliente',
+      cancellationReason: 'Cancelado por el cliente desde el enlace público',
     };
 
     const batch = db.batch();
@@ -183,16 +169,14 @@ export async function confirmAppointmentAction(
     }
 
     const data = mainSnap.data() as any;
-    const status = String(data.status || '').toLowerCase();
-    const appt   = String(data.appointmentStatus || '').toLowerCase();
-
-    if (!(status === 'agendado' && (appt === 'sin confirmar' || data.subStatus === 'Sin Confirmar'))) {
+    
+    if (data.status !== 'Agendado' || data.subStatus !== 'Sin Confirmar') {
         return { success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' };
     }
 
-    const update = { appointmentStatus: 'Confirmada' as const, subStatus: 'Confirmada' as const };
+    const update = { subStatus: 'Confirmada' as const };
 
-    const publicRef = db.collection('publicServices').doc(mainDocId);
+    const publicRef = db.collection('publicServices').doc(publicId);
     const publicSnap = await publicRef.get();
 
     const batch = db.batch();

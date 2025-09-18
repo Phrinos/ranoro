@@ -74,16 +74,16 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
     <Form {...form}>
       <form id={id} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 pb-4">
         <FormField control={form.control} name="name" render={({ field }) => (
-          <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="text-white" /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={form.control} name="email" render={({ field }) => (
-          <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="usuario@ranoro.mx" {...field} value={field.value ?? ''} disabled={!!initialData} /></FormControl><FormDescription>El email se usa para iniciar sesión y no se puede cambiar.</FormDescription><FormMessage /></FormItem>
+          <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="usuario@ranoro.mx" {...field} value={field.value ?? ''} disabled={!!initialData} className="text-white" /></FormControl><FormDescription>El email se usa para iniciar sesión y no se puede cambiar.</FormDescription><FormMessage /></FormItem>
         )}/>
         <FormField control={form.control} name="phone" render={({ field }) => (
-          <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="4491234567" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="4491234567" {...field} value={field.value ?? ''} className="text-white" /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={form.control} name="role" render={({ field }) => (
-          <FormItem><FormLabel>Rol del Usuario</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+          <FormItem><FormLabel>Rol del Usuario</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="text-white"><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
         )}/>
          <FormField
           control={form.control}
@@ -97,7 +97,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                     <Button
                       variant={"outline"}
                       className={cn(
-                        "w-full pl-3 text-left font-normal",
+                        "w-full pl-3 text-left font-normal text-white",
                         !field.value && "text-muted-foreground"
                       )}
                     >
@@ -135,10 +135,10 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         />
         <div className="grid grid-cols-2 gap-4">
             <FormField control={form.control} name="monthlySalary" render={({ field }) => (
-                <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} className="text-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="commissionRate" render={({ field }) => (
-                <FormItem><FormLabel>% Comisión</FormLabel><FormControl><Input type="number" placeholder="Ej: 5 para 5%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>% Comisión</FormLabel><FormControl><Input type="number" placeholder="Ej: 5 para 5%" {...field} value={field.value ?? ''} className="text-white" /></FormControl><FormMessage /></FormItem>
             )}/>
         </div>
       </form>
