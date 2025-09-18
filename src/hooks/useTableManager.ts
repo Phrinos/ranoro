@@ -1,4 +1,4 @@
-// src/hooks/useTableManager.ts
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -39,14 +39,17 @@ export function useTableManager<T extends Record<string, any>>({
   const [otherFilters, setOtherFilters] = useState<Record<string, string | 'all'>>({});
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ⬇️ Solo inicializa 1 vez; evita re-setear en cada render por identidad nueva
   const didInitRange = useRef(false);
   useEffect(() => {
-    if (!didInitRange.current && initialDateRange) {
-      setDateRange(initialDateRange);
-      didInitRange.current = true;
-    }
-  }, [initialDateRange]);
+    if (!initialDateRange) return;
+    setDateRange(prev => {
+      const same =
+        prev?.from?.getTime() === initialDateRange.from?.getTime() &&
+        prev?.to?.getTime() === initialDateRange.to?.getTime();
+      return same ? prev : initialDateRange;
+    });
+    if (!didInitRange.current) didInitRange.current = true;
+  }, [initialDateRange?.from?.getTime(), initialDateRange?.to?.getTime()]);
 
   const fullFilteredData = useMemo(() => {
     let data = [...initialData];
@@ -96,8 +99,7 @@ export function useTableManager<T extends Record<string, any>>({
       data.sort((a, b) => {
         const [sortKey, dir] = sortOption.split('_');
         const isAsc = dir === 'asc';
-        const isDateKey =
-          sortKey.toLowerCase().includes('date') || sortKey.toLowerCase().includes('datetime');
+        const isDateKey = sortKey.toLowerCase().includes('date');
 
         if (isDateKey) {
           const da = getSortDate(a, sortKey);
@@ -121,9 +123,8 @@ export function useTableManager<T extends Record<string, any>>({
     }
 
     return data;
-  }, [initialData, searchTerm, sortOption, dateRange, otherFilters, searchKeys, dateFilterKey]);
+  }, [initialData, searchTerm, sortOption, dateRange?.from?.getTime(), dateRange?.to?.getTime(), JSON.stringify(otherFilters), searchKeys, dateFilterKey]);
 
-  // Reset de página cuando cambian filtros
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, sortOption, dateRange?.from?.getTime(), dateRange?.to?.getTime(), JSON.stringify(otherFilters)]);

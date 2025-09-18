@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -22,6 +21,7 @@ import { adminService } from '@/lib/services';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient';
 import { capitalizeWords } from '@/lib/utils';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 const profileSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -132,41 +132,53 @@ export function PerfilPageContent() {
 
   return (
     <>
-      <Card className="max-w-2xl mx-auto shadow-lg">
-        <CardHeader><CardTitle>Mi Perfil</CardTitle><CardDescription>Actualiza tu información personal y de acceso.</CardDescription></CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Correo Electrónico</FormLabel><FormControl><Input type="email" {...field} value={field.value ?? ''} disabled /></FormControl><FormDescription>El correo electrónico no se puede cambiar.</FormDescription></FormItem>)}/>
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" {...field} value={field.value ?? ''} /></FormControl></FormItem>)}/>
-              
-              <Card className="pt-4 border-dashed"><CardContent className="space-y-2">
-                <FormLabel>Firma Digital</FormLabel>
-                <FormDescription>Esta firma se usará en los documentos que generes.</FormDescription>
-                <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
-                    {form.watch('signatureDataUrl') ? 
-                        <img src={form.watch('signatureDataUrl')} alt="Firma guardada" className="max-w-[250px] max-h-[125px] object-contain"/> : 
-                        <span className="text-sm text-muted-foreground">No hay firma guardada.</span>
-                    }
-                </div>
-                <Button type="button" variant="outline" onClick={() => setIsSignatureDialogOpen(true)} className="w-full" aria-label={form.watch('signatureDataUrl') ? 'Cambiar Firma' : 'Capturar Firma'}>
-                    <Signature className="mr-2 h-4 w-4" />{form.watch('signatureDataUrl') ? 'Cambiar Firma' : 'Capturar Firma'}
-                </Button>
-              </CardContent></Card>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Card className="shadow-lg">
+          <CardHeader><CardTitle>Mi Perfil</CardTitle><CardDescription>Actualiza tu información personal y de acceso.</CardDescription></CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Correo Electrónico</FormLabel><FormControl><Input type="email" {...field} value={field.value ?? ''} disabled /></FormControl><FormDescription>El correo electrónico no se puede cambiar.</FormDescription></FormItem>)}/>
+                <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" {...field} value={field.value ?? ''} /></FormControl></FormItem>)}/>
+                
+                <Card className="pt-4 border-dashed"><CardContent className="space-y-2">
+                  <FormLabel>Firma Digital</FormLabel>
+                  <FormDescription>Esta firma se usará en los documentos que generes.</FormDescription>
+                  <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
+                      {form.watch('signatureDataUrl') ? 
+                          <img src={form.watch('signatureDataUrl')} alt="Firma guardada" className="max-w-[250px] max-h-[125px] object-contain"/> : 
+                          <span className="text-sm text-muted-foreground">No hay firma guardada.</span>
+                      }
+                  </div>
+                  <Button type="button" variant="outline" onClick={() => setIsSignatureDialogOpen(true)} className="w-full" aria-label={form.watch('signatureDataUrl') ? 'Cambiar Firma' : 'Capturar Firma'}>
+                      <Signature className="mr-2 h-4 w-4" />{form.watch('signatureDataUrl') ? 'Cambiar Firma' : 'Capturar Firma'}
+                  </Button>
+                </CardContent></Card>
 
-              <CardDescription className="pt-6 border-t">Cambiar contraseña (dejar en blanco para no modificar)</CardDescription>
-              <FormField control={form.control} name="currentPassword" render={({ field }) => (<FormItem><FormLabel>Contraseña Actual</FormLabel><FormControl><Input type="password" {...field} autoComplete="current-password" placeholder="••••••••" /></FormControl><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="newPassword" render={({ field }) => (<FormItem><FormLabel>Nueva Contraseña</FormLabel><FormControl><Input type="password" {...field} autoComplete="new-password" placeholder="Mínimo 6 caracteres" /></FormControl><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="confirmNewPassword" render={({ field }) => (<FormItem><FormLabel>Confirmar Nueva Contraseña</FormLabel><FormControl><Input type="password" {...field} autoComplete="new-password" placeholder="Repite la nueva contraseña" /></FormControl><FormMessage /></FormItem>)}/>
-              
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                <Save className="mr-2 h-4 w-4" />{form.formState.isSubmitting ? "Guardando..." : "Guardar Cambios"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                <CardDescription className="pt-6 border-t">Cambiar contraseña (dejar en blanco para no modificar)</CardDescription>
+                <FormField control={form.control} name="currentPassword" render={({ field }) => (<FormItem><FormLabel>Contraseña Actual</FormLabel><FormControl><Input type="password" {...field} autoComplete="current-password" placeholder="••••••••" /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="newPassword" render={({ field }) => (<FormItem><FormLabel>Nueva Contraseña</FormLabel><FormControl><Input type="password" {...field} autoComplete="new-password" placeholder="Mínimo 6 caracteres" /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={form.control} name="confirmNewPassword" render={({ field }) => (<FormItem><FormLabel>Confirmar Nueva Contraseña</FormLabel><FormControl><Input type="password" {...field} autoComplete="new-password" placeholder="Repite la nueva contraseña" /></FormControl><FormMessage /></FormItem>)}/>
+                
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  <Save className="mr-2 h-4 w-4" />{form.formState.isSubmitting ? "Guardando..." : "Guardar Cambios"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg">
+            <CardHeader>
+                <CardTitle>Apariencia</CardTitle>
+                <CardDescription>Selecciona cómo se ve la interfaz.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ThemeToggle />
+            </CardContent>
+        </Card>
+      </div>
       <SignatureDialog 
         open={isSignatureDialogOpen} 
         onOpenChange={setIsSignatureDialogOpen} 

@@ -150,7 +150,7 @@ export default function ServicioPage() {
     setIsSubmitting(true);
     try {
       const savedRecord = await serviceService.saveService(values as ServiceRecord);
-      toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id.slice(-6)} se ha guardado.` });
+      toast({ title: 'Registro Creado', description: `El folio #${savedRecord.folio} se ha guardado.` });
       
       const targetTab = savedRecord.status === 'Cotizacion' ? 'cotizaciones' : 'activos';
       redirectUrl.current = `/servicios?tab=${targetTab}`;
@@ -169,7 +169,7 @@ export default function ServicioPage() {
     setIsSubmitting(true);
     try {
       const updatedRecord = await serviceService.saveService({ ...values, id: serviceId });
-      toast({ title: 'Servicio Actualizado', description: `El registro #${serviceId?.slice(-6)} ha sido actualizado.` });
+      toast({ title: 'Servicio Actualizado', description: `El folio #${updatedRecord.folio} ha sido actualizado.` });
       redirectUrl.current = `/servicios?tab=activos`;
       return updatedRecord;
     } catch(e) {
@@ -196,7 +196,7 @@ export default function ServicioPage() {
       
       toast({
         title: "Servicio Completado",
-        description: `El servicio #${recordId.slice(-6)} ha sido completado y cobrado.`,
+        description: `El servicio #${initialData.folio} ha sido completado y cobrado.`,
       });
       setIsPaymentDialogOpen(false);
       
@@ -307,7 +307,7 @@ export default function ServicioPage() {
   const isQuote = initialData?.status === 'Cotizacion' || isQuoteModeParam;
   
   const pageTitle = isEditMode 
-    ? `Editar ${isQuote ? 'Cotización' : 'Servicio'} #${initialData?.id?.slice(-6)}`
+    ? `Editar ${isQuote ? 'Cotización' : 'Servicio'} #${initialData?.folio || initialData?.id?.slice(-6)}`
     : `Nueva ${isQuote ? 'Cotización' : 'Servicio'}`;
     
   const pageDescription = isEditMode 

@@ -1,6 +1,4 @@
 
-// src/app/(app)/servicios/components/tab-historial.tsx
-
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -66,13 +64,6 @@ const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
   "Transferencia": Landmark,
 };
 
-const paymentMethodBadgeVariants: Record<Payment['method'], 'success' | 'blue' | 'lightPurple'> = {
-  "Efectivo": "success",
-  "Tarjeta": "blue",
-  "Tarjeta MSI": "blue",
-  "Transferencia": "lightPurple",
-};
-
 export default function HistorialTabContent({
   services,
   vehicles,
@@ -90,6 +81,11 @@ export default function HistorialTabContent({
     [services]
   );
   
+  const defaultRange = React.useMemo(
+    () => ({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) }),
+    []
+  );
+
   const {
     paginatedData,
     fullFilteredData,
@@ -99,7 +95,7 @@ export default function HistorialTabContent({
     searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
     dateFilterKey: "deliveryDateTime",
     initialSortOption: "deliveryDateTime_desc",
-    initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
+    initialDateRange: defaultRange,
     itemsPerPage: 50,
   });
 
@@ -179,9 +175,8 @@ export default function HistorialTabContent({
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
                         const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || Wallet;
-                        const variant = paymentMethodBadgeVariants[method as keyof typeof paymentMethodBadgeVariants] || 'secondary';
                         return (
-                            <Badge key={method} variant={variant} className="text-sm">
+                            <Badge key={method} variant="secondary" className="text-sm">
                                 <Icon className="h-3 w-3 mr-1" />
                                 {method}:<span className="font-semibold ml-1">{formatCurrency(data.total)}</span>
                             </Badge>
@@ -201,7 +196,7 @@ export default function HistorialTabContent({
                 placeholder="Buscar por folio, placa..."
                 value={tableManager.searchTerm}
                 onChange={(event) => tableManager.onSearchTermChange(event.target.value)}
-                className="h-10 w-full lg:w-[250px] bg-white"
+                className="h-10 w-full lg:w-[250px]"
             />
             <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
         </div>
@@ -210,7 +205,7 @@ export default function HistorialTabContent({
                 value={tableManager.otherFilters['status'] || 'all'}
                 onValueChange={(value) => tableManager.setOtherFilters({ ...tableManager.otherFilters, 'status': value })}
             >
-                <SelectTrigger className="h-10 w-full sm:w-[180px] bg-white">
+                <SelectTrigger className="h-10 w-full sm:w-[180px]">
                     <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
@@ -224,7 +219,7 @@ export default function HistorialTabContent({
                 value={tableManager.otherFilters['paymentMethod'] || 'all'}
                 onValueChange={(value) => tableManager.setOtherFilters({ ...tableManager.otherFilters, 'paymentMethod': value })}
             >
-                <SelectTrigger className="h-10 w-full sm:w-[180px] bg-white">
+                <SelectTrigger className="h-10 w-full sm:w-[180px]">
                     <SelectValue placeholder="Método de Pago" />
                 </SelectTrigger>
                 <SelectContent>
@@ -235,7 +230,7 @@ export default function HistorialTabContent({
             </Select>
 
             <Select value={tableManager.sortOption} onValueChange={tableManager.onSortOptionChange}>
-                <SelectTrigger className="h-10 w-full sm:w-[180px] bg-white">
+                <SelectTrigger className="h-10 w-full sm:w-[180px]">
                     <SelectValue placeholder="Ordenar por..." />
                 </SelectTrigger>
                 <SelectContent>

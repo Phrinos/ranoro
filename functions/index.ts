@@ -1,13 +1,17 @@
 // functions/index.ts
 import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { firestore } from 'firebase-admin';
 import * as admin from 'firebase-admin';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay, format } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 import * as logger from 'firebase-functions/logger';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 
 admin.initializeApp();
 
 const db = admin.firestore();
 
+// --- Daily Rental Charges Generation ---
 export const generateDailyRentalCharges = onSchedule({
   schedule: '0 3 * * *',
   timeZone: 'America/Mexico_City',
@@ -68,4 +72,37 @@ export const generateDailyRentalCharges = onSchedule({
 
     await Promise.all(promises);
     logger.info('Daily rental charge generation finished.');
+});
+
+
+// --- Service Folio Generation ---
+export const generateServiceFolio = onDocumentCreated('serviceRecords/{serviceId}', async (event) => {
+    const serviceId = event.params.serviceId;
+    const serviceRef = db.collection('serviceRecords').doc(serviceId);
+    
+    const timeZone = 'America/Mexico_City';
+    const now = utcToZonedTime(new Date(), timeZone);
+    const datePrefix = format(now, 'yyMMdd');
+    
+    const counterRef = db.collection('counters').doc(`folio_${datePrefix}`);
+
+    try {
+        const newFolioNumber = await db.runTransaction(async (transaction) => {
+            const counterDoc = await transaction.get(counterRef);
+            const currentCount = counterDoc.exists ? counterDoc.data()?.count || 0 : 0;
+            const newCount = currentCount + 1;
+            
+            transaction.set(counterRef, { count: newCount }, { merge: true });
+            
+            return newCount;
+        });
+
+        const folio = `${datePrefix}-${String(newFolioNumber).padStart(4, '0')}`;
+        
+        await serviceRef.update({ folio });
+        logger.info(`Generated folio ${folio} for service ${serviceId}`);
+
+    } catch (error) {
+        logger.error(`Failed to generate folio for service ${serviceId}:`, error);
+    }
 });

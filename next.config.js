@@ -5,7 +5,7 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   
   experimental: {
-    ppr: false,
+    ppr: true,
   },
 
   // 2. Indicador de dev

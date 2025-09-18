@@ -54,7 +54,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
     } = workshopInfo;
 
     const operation = sale || service;
-    const operationId = sale?.id || service?.id;
+    const operationId = sale?.id || service?.folio || service?.id;
     
     const formattedDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
     

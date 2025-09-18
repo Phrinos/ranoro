@@ -37,10 +37,8 @@ const onServicesByStatusUpdate = (
 ): (() => void) => {
     if (!db || statuses.length === 0) return () => {};
 
-    // Firestore 'in' query requires a non-empty array
     if (statuses.length > 10) {
         console.warn("Firestore 'in' query has a limit of 10 items. Consider multiple queries.");
-        // You might want to chunk the statuses array into multiple queries if you expect more than 10.
     }
 
     const q = query(
@@ -98,19 +96,16 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
     if (!db) throw new Error("Database not initialized.");
     const serviceRef = doc(db, 'serviceRecords', service.id);
     
-    // Combine existing service data with payment details and set final status
     const updatedServiceData = {
         ...service,
         status: 'Entregado',
-        deliveryDateTime: new Date().toISOString(),
-        payments: paymentDetails.payments, // Add the payment details from the dialog
-        // Also include nextServiceInfo if it's part of the flow
+        deliveryDateTime: new Date().toISOString(), // Garantiza la fecha actual
+        payments: paymentDetails.payments,
         ...(paymentDetails.nextServiceInfo && { nextServiceInfo: paymentDetails.nextServiceInfo }),
     };
 
     batch.update(serviceRef, cleanObjectForFirestore(updatedServiceData));
 
-    // Update inventory stock based on the items used in the service
     if (service.serviceItems && service.serviceItems.length > 0) {
         const suppliesToSubtract = service.serviceItems.flatMap(item => 
             item.suppliesUsed?.map(supply => ({ id: supply.supplyId, quantity: supply.quantity })) || []
@@ -133,7 +128,6 @@ const cancelService = async (id: string, reason: string): Promise<void> => {
         const service = serviceDoc.data() as ServiceRecord;
         
         if (service.status === 'Agendado') {
-            // If the service was scheduled, revert it to a quote
             batch.update(serviceRef, { 
                 status: 'Cotizacion', 
                 subStatus: null,
@@ -141,7 +135,6 @@ const cancelService = async (id: string, reason: string): Promise<void> => {
                 cancellationReason: reason 
             });
         } else {
-            // For any other status, mark as Cancelado and restock items
             batch.update(serviceRef, { 
                 status: 'Cancelado', 
                 cancellationReason: reason 

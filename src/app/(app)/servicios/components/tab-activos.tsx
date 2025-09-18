@@ -72,21 +72,23 @@ export default function ActivosTabContent({
   const { toast } = useToast();
 
   const activeServices = useMemo(() => {
-    return allServices.filter(s => {
-      const todayStart = startOfDay(new Date());
-      const todayEnd = endOfDay(new Date());
+    const timeZone = 'America/Mexico_City';
+    const nowInLA = toZonedTime(new Date(), timeZone);
+    const start = startOfDay(nowInLA);
+    const end = endOfDay(nowInLA);
 
+    return allServices.filter(s => {
       switch (s.status) {
         case 'Agendado':
           const appointmentDate = parseDate(s.appointmentDateTime);
-          return appointmentDate && isValid(appointmentDate) && isWithinInterval(appointmentDate, { start: todayStart, end: todayEnd });
+          return appointmentDate && isValid(appointmentDate) && isWithinInterval(toZonedTime(appointmentDate, timeZone), { start, end });
         
         case 'En Taller':
           return true;
 
         case 'Entregado':
-          const deliveryDate = parseDate(s.deliveryDateTime);
-          return deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, { start: todayStart, end: todayEnd });
+          const deliveryDate = getDeliveredDate(s);
+          return deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, timeZone), { start, end });
 
         default:
           return false;
@@ -112,23 +114,10 @@ export default function ActivosTabContent({
   }, [activeServices]);
 
   const totalEarningsToday = useMemo(() => {
-    const timeZone = 'America/Mexico_City';
-    const nowInLA = toZonedTime(new Date(), timeZone);
-    const start = startOfDay(nowInLA);
-    const end = endOfDay(nowInLA);
-
-    return allServices.reduce((sum, s) => {
-      if (s.status !== 'Entregado') return sum;
-
-      const when = getDeliveredDate(s);
-      if (!when || !isValid(when)) return sum;
-
-      if (isWithinInterval(toZonedTime(when, timeZone), { start, end })) {
-        return sum + (Number(s.totalCost) || 0);
-      }
-      return sum;
-    }, 0);
-  }, [allServices]);
+    return activeServices
+      .filter((s) => s.status === 'Entregado')
+      .reduce((sum, s) => sum + (Number(s.totalCost) || 0), 0);
+  }, [activeServices]);
 
   const handleEditService = (serviceId: string) => {
     router.push(`/servicios/${serviceId}`);
