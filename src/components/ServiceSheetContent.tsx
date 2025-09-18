@@ -113,6 +113,7 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
         if (status === 'agendado') {
           if (appointmentStatus === 'Confirmada') return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Confirmada", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
           if (appointmentStatus === 'Sin Confirmar') return { title: "CITA PENDIENTE DE CONFIRMACIÓN", description: formattedAppointmentDate, badge: { text: "Pendiente", variant: "waiting" }, cardClass: "bg-yellow-50 border-yellow-200", titleClass: "text-yellow-800", descClass: "text-yellow-700" };
+          return { title: "CITA AGENDADA", description: formattedAppointmentDate, badge: { text: "Agendado", variant: "default" }, cardClass: "bg-blue-50 border-blue-200", titleClass: "text-blue-800", descClass: "text-blue-700" };
         }
         
         if (status === 'en taller') {
