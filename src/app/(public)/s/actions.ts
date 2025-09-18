@@ -1,4 +1,3 @@
-
 // src/app/(public)/s/actions.ts
 'use server';
 
@@ -163,7 +162,9 @@ export async function confirmAppointmentAction(
     const mainDocId = await getMainDocIdFromPublicId(db, publicId);
     const mainRef = db.collection('serviceRecords').doc(mainDocId);
     const mainSnap = await mainRef.get();
-    if (!mainSnap.exists) return { success: false, error: 'El servicio no fue encontrado.' };
+    if (!mainSnap.exists) {
+      return { success: false, error: 'El servicio no fue encontrado.' };
+    }
 
     const data = mainSnap.data() as any;
     const status = String(data.status || '').toLowerCase();
