@@ -70,12 +70,17 @@ export default function HistorialTabContent({
   const router = useRouter();
   const { toast } = useToast();
   
+  const historicalServices = useMemo(() => 
+    services.filter(s => s.status === 'Entregado' || s.status === 'Cancelado'),
+    [services]
+  );
+  
   const {
     paginatedData,
     fullFilteredData,
     ...tableManager
   } = useTableManager<ServiceRecord>({
-    initialData: services,
+    initialData: historicalServices,
     searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
     dateFilterKey: "deliveryDateTime", // Primary date key
     initialSortOption: "deliveryDateTime_desc",
