@@ -73,16 +73,28 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
 const completeService = async (service: ServiceRecord, paymentDetails: any, batch: any): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const serviceRef = doc(db, 'serviceRecords', service.id);
-    const updatedService = { 
-        ...service, 
-        status: 'Entregado', 
+    
+    // Combine existing service data with payment details and set final status
+    const updatedServiceData = {
+        ...service,
+        status: 'Entregado',
         deliveryDateTime: new Date().toISOString(),
-        paymentDetails 
+        payments: paymentDetails.payments, // Add the payment details from the dialog
+        // Also include nextServiceInfo if it's part of the flow
+        ...(paymentDetails.nextServiceInfo && { nextServiceInfo: paymentDetails.nextServiceInfo }),
     };
-    batch.update(serviceRef, cleanObjectForFirestore(updatedService));
 
-    if (service.items && service.items.length > 0) {
-        await inventoryService.updateInventoryStock(batch, service.items, 'subtract');
+    batch.update(serviceRef, cleanObjectForFirestore(updatedServiceData));
+
+    // Update inventory stock based on the items used in the service
+    if (service.serviceItems && service.serviceItems.length > 0) {
+        const suppliesToSubtract = service.serviceItems.flatMap(item => 
+            item.suppliesUsed?.map(supply => ({ id: supply.supplyId, quantity: supply.quantity })) || []
+        ).filter(supply => supply.id && supply.quantity > 0);
+
+        if (suppliesToSubtract.length > 0) {
+            await inventoryService.updateInventoryStock(batch, suppliesToSubtract, 'subtract');
+        }
     }
 };
 
