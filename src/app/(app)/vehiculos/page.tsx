@@ -1,3 +1,4 @@
+
 // src/app/(app)/vehiculos/page.tsx
 "use client";
 
@@ -22,17 +23,6 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
-
-const vehicleSortOptions = [
-    { value: 'lastServiceDate_desc', label: 'Último Servicio (Más Reciente)' },
-    { value: 'lastServiceDate_asc', label: 'Último Servicio (Más Antiguo)' },
-    { value: 'licensePlate_asc', label: 'Placa (A-Z)' },
-    { value: 'licensePlate_desc', label: 'Placa (Z-A)' },
-    { value: 'make_asc', label: 'Marca (A-Z)' },
-    { value: 'make_desc', label: 'Marca (Z-A)' },
-    { value: 'ownerName_asc', label: 'Propietario (A-Z)' },
-    { value: 'ownerName_desc', label: 'Propietario (Z-A)' },
-];
 
 function VehiculosPage() {
     const searchParams = useSearchParams();
@@ -73,7 +63,7 @@ function VehiculosPage() {
             unsubscribeSuppliers();
         };
     }, []);
-
+    
     const {
       paginatedData: filteredVehicles,
       ...tableManager
@@ -81,9 +71,10 @@ function VehiculosPage() {
       initialData: allVehicles,
       searchKeys: ['licensePlate', 'make', 'model', 'ownerName'],
       dateFilterKey: 'lastServiceDate',
-      initialSortOption: 'lastServiceDate_desc', // Default sort
-      itemsPerPage: 100,
+      initialSortOption: 'lastServiceDate_desc',
+      itemsPerPage: 10,
     });
+
 
     const vehicleSummary = useMemo(() => {
         const now = new Date();
@@ -102,7 +93,6 @@ function VehiculosPage() {
                     if (monthsSinceService >= 12) inactive12Months++;
                 }
             } else {
-                // Si no tiene fecha de último servicio, cuenta como inactivo
                 inactive6Months++;
                 inactive12Months++;
             }
@@ -126,6 +116,10 @@ function VehiculosPage() {
             console.error("Error saving vehicle: ", error);
             toast({ title: "Error", description: `No se pudo guardar el vehículo. ${error instanceof Error ? error.message : ''}`, variant: "destructive" });
         }
+    };
+
+    const handleDeleteVehicle = async (id: string) => {
+        // Implement deletion logic if needed
     };
 
     const handleOpenPriceListDialog = useCallback((record: VehiclePriceList | null = null) => {
@@ -166,8 +160,15 @@ function VehiculosPage() {
     return (
         <>
             <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-                <h1 className="text-3xl font-bold tracking-tight">Gestión de Vehículos</h1>
-                <p className="text-primary-foreground/80 mt-1">Administra la información, historial y precios de tus vehículos.</p>
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Gestión de Vehículos</h1>
+                        <p className="text-primary-foreground/80 mt-1">Administra la información, historial y precios de tus vehículos.</p>
+                    </div>
+                    <Button onClick={() => handleOpenVehicleDialog()} className="bg-white text-primary hover:bg-gray-100">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Registrar Vehículo
+                    </Button>
+                </div>
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -191,7 +192,11 @@ function VehiculosPage() {
                         </div>
                         <Card>
                             <CardContent className="pt-6">
-                                <VehiclesTable vehicles={filteredVehicles} />
+                                <VehiclesTable 
+                                    vehicles={filteredVehicles} 
+                                    onSave={handleSaveVehicle}
+                                    onDelete={handleDeleteVehicle}
+                                />
                             </CardContent>
                         </Card>
                     </div>
