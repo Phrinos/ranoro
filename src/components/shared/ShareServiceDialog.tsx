@@ -1,4 +1,3 @@
-
 // src/components/shared/ShareServiceDialog.tsx
 "use client";
 
@@ -9,11 +8,11 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
-import { Printer, Car, ExternalLink, Share2 } from "lucide-react";
+import { Printer, Car, ExternalLink, Share2, Copy } from "lucide-react";
 import type { ServiceRecord, Vehicle, WorkshopInfo, ServiceItem } from "@/types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Icon } from '@iconify/react';
-import { useIsMobile } from "@/hooks/use-mobile"; // Import the mobile hook
+import { useIsMobile } from "@/hooks/use-is-mobile"; // Import the mobile hook
 
 interface ShareServiceDialogProps {
   open: boolean;
@@ -197,13 +196,17 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
         <DialogFooter className="px-6 pb-6 pt-4 border-t flex-col-reverse sm:flex-row gap-2 justify-between items-center w-full">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
             <div className="flex gap-2 justify-end flex-wrap">
-                {initialService.publicId && (
-                  <Button variant="secondary" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}>
-                    <ExternalLink className="mr-2 h-4 w-4"/>
-                    Ver documento publico
-                  </Button>
-                )}
                 <TooltipProvider>
+                    {initialService.publicId && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}>
+                            <ExternalLink className="h-6 w-6"/>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Ver Documento Público</p></TooltipContent>
+                      </Tooltip>
+                    )}
                     <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleCopyWhatsApp} className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar para WhatsApp</p></TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleNativeShare} className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
                     {!isMobile && (
