@@ -183,7 +183,7 @@ const OperationsVolumeChart = React.memo(({ data }: { data: any[] }) => (
           <YAxis />
           <Tooltip />
           <Legend wrapperStyle={{fontSize: '0.8rem'}}/>
-          {Object.keys(data[0] || {}).filter(key => key !== 'name').map((key, index) => (
+          {data.length > 0 && Object.keys(data[0] || {}).filter(key => key !== 'name').map((key, index) => (
              <Line key={key} type="monotone" dataKey={key} stroke={COLORS[index % COLORS.length]} name={key} strokeWidth={2}/>
           ))}
         </LineChart>
@@ -229,7 +229,7 @@ ServiceDistributionChart.displayName = 'ServiceDistributionChart';
 
 // --- Main Component ---
 
-export function DashboardCharts({ services, sales, inventory, fixedExpenses, personnel }: {
+export const DashboardCharts = React.memo(function DashboardCharts({ services, sales, inventory, fixedExpenses, personnel }: {
     services: ServiceRecord[];
     sales: SaleReceipt[];
     inventory: InventoryItem[];
@@ -246,4 +246,6 @@ export function DashboardCharts({ services, sales, inventory, fixedExpenses, per
       <ServiceDistributionChart data={operationalData.pieData} />
     </div>
   );
-}
+});
+
+DashboardCharts.displayName = 'DashboardCharts';

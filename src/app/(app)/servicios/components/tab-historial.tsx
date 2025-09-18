@@ -1,17 +1,25 @@
 
+// src/app/(app)/servicios/components/tab-historial.tsx
 
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { TableToolbar } from '@/components/shared/table-toolbar';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import type { ServiceRecord, Vehicle, User, Payment, PaymentMethod } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
-import { startOfMonth, endOfMonth, subDays, startOfDay } from 'date-fns';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, FileText, Wrench, DollarSign, TrendingUp, LineChart, Wallet, CreditCard, Send, Landmark } from 'lucide-react';
-import { parseDate } from '@/lib/forms';
+import { ChevronLeft, ChevronRight, FileText, Wrench, DollarSign, Wallet, CreditCard, Landmark } from 'lucide-react';
 import { serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,20 +90,17 @@ export default function HistorialTabContent({
   } = useTableManager<ServiceRecord>({
     initialData: historicalServices,
     searchKeys: ["id", "vehicleIdentifier", "description", "serviceItems.name"],
-    dateFilterKey: "deliveryDateTime", // Primary date key
+    dateFilterKey: "deliveryDateTime",
     initialSortOption: "deliveryDateTime_desc",
     initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
     itemsPerPage: 50,
   });
 
   const summaryData = useMemo(() => {
-    const servicesToSummarize = fullFilteredData; // Use the full filtered data for summary
+    const servicesToSummarize = fullFilteredData;
     const servicesCount = servicesToSummarize.length;
     const totalRevenue = servicesToSummarize.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-    
-    // Use the new helper to calculate profit accurately
     const totalProfit = servicesToSummarize.reduce((sum, s) => sum + calcEffectiveProfit(s), 0);
-
     const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();
 
     servicesToSummarize.forEach(service => {
@@ -106,7 +111,7 @@ export default function HistorialTabContent({
                 current.total += p.amount || 0;
                 paymentsSummary.set(p.method, current);
             });
-        } else if (service.paymentMethod) { // Fallback for older records
+        } else if (service.paymentMethod) {
              const current = paymentsSummary.get(service.paymentMethod as Payment['method']) || { count: 0, total: 0 };
              current.count += 1;
              current.total += service.totalCost || 0;
@@ -119,18 +124,6 @@ export default function HistorialTabContent({
   
   const handleEditService = (serviceId: string) => {
     router.push(`/servicios/${serviceId}`);
-  };
-
-  const handleCancelService = async (serviceId: string) => {
-    const reason = prompt("Motivo de la cancelación:");
-    if (reason) {
-        try {
-            await serviceService.cancelService(serviceId, reason);
-            toast({ title: 'Servicio Cancelado' });
-        } catch(e) {
-            toast({ title: 'Error', description: 'No se pudo cancelar el servicio.', variant: 'destructive'});
-        }
-    }
   };
 
   const renderServiceCard = useCallback((record: ServiceRecord) => (
@@ -193,30 +186,59 @@ export default function HistorialTabContent({
             </CardContent>
           </Card>
         </div>
-      <TableToolbar
-        searchTerm={tableManager.searchTerm}
-        onSearchTermChange={tableManager.onSearchTermChange}
-        sortOption={tableManager.sortOption}
-        onSortOptionChange={tableManager.onSortOptionChange}
-        dateRange={tableManager.dateRange}
-        onDateRangeChange={tableManager.onDateRangeChange}
-        otherFilters={tableManager.otherFilters}
-        setOtherFilters={tableManager.setOtherFilters}
-        searchPlaceholder="Buscar por folio, placa..."
-        sortOptions={sortOptions}
-        filterOptions={[
-          {
-            value: 'status',
-            label: 'Estado',
-            options: serviceStatusOptions,
-          },
-          {
-            value: 'paymentMethod',
-            label: 'Método de Pago',
-            options: paymentMethodOptions,
-          },
-        ]}
-      />
+        
+      <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+            <Input
+                placeholder="Buscar por folio, placa..."
+                value={tableManager.searchTerm}
+                onChange={(event) => tableManager.onSearchTermChange(event.target.value)}
+                className="h-10 w-full lg:w-[250px] bg-white"
+            />
+            <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
+        </div>
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+            <Select
+                value={tableManager.otherFilters['status'] || 'all'}
+                onValueChange={(value) => tableManager.setOtherFilters({ ...tableManager.otherFilters, 'status': value })}
+            >
+                <SelectTrigger className="h-10 w-full sm:w-[180px] bg-white">
+                    <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                    {serviceStatusOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            <Select
+                value={tableManager.otherFilters['paymentMethod'] || 'all'}
+                onValueChange={(value) => tableManager.setOtherFilters({ ...tableManager.otherFilters, 'paymentMethod': value })}
+            >
+                <SelectTrigger className="h-10 w-full sm:w-[180px] bg-white">
+                    <SelectValue placeholder="Método de Pago" />
+                </SelectTrigger>
+                <SelectContent>
+                    {paymentMethodOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            <Select value={tableManager.sortOption} onValueChange={tableManager.onSortOptionChange}>
+                <SelectTrigger className="h-10 w-full sm:w-[180px] bg-white">
+                    <SelectValue placeholder="Ordenar por..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {sortOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
         <div className="flex items-center space-x-2">

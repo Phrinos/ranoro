@@ -1,10 +1,11 @@
+
 // src/components/ticket-content.tsx
 "use client";
 
 import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem, WorkshopInfo } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { cn, formatCurrency, formatNumber } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
 import Image from 'next/image';
@@ -38,6 +39,8 @@ interface TicketContentProps {
   previewWorkshopInfo?: Partial<WorkshopInfo>;
 }
 
+const IVA_RATE = 0.16;
+
 export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps>(
   ({ sale, service, vehicle, technician, previewWorkshopInfo }, ref) => {
     const workshopInfo = { ...initialWorkshopInfo, ...previewWorkshopInfo };
@@ -53,14 +56,28 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
     const operation = sale || service;
     const operationId = sale?.id || service?.id;
     
-    // Always use the current time for ticket generation
     const formattedDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
     
+    const calculatedTotals = useMemo(() => {
+        if (sale) {
+            return {
+                subTotal: sale.subTotal || 0,
+                tax: sale.tax || 0,
+                totalAmount: sale.totalAmount || 0,
+            };
+        }
+        if (service) {
+            const itemsTotal = (service.serviceItems || []).reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+            const subTotal = itemsTotal / (1 + IVA_RATE);
+            const tax = itemsTotal - subTotal;
+            return { subTotal, tax, totalAmount: itemsTotal };
+        }
+        return { subTotal: 0, tax: 0, totalAmount: 0 };
+    }, [sale, service]);
+
+    const { subTotal, tax, totalAmount } = calculatedTotals;
     const items = sale?.items || [];
     const serviceItems = service?.serviceItems || [];
-    const subTotal = sale?.subTotal || service?.subTotal || 0;
-    const tax = sale?.tax || service?.taxAmount || 0;
-    const totalAmount = sale?.totalAmount || service?.totalCost || 0;
 
     const renderLine = (label: string, value: string, isBold: boolean = false) => (
       <div className="flex justify-between">
@@ -94,7 +111,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
                   style={{ objectFit: 'contain' }}
                   crossOrigin="anonymous"
                   data-ai-hint="workshop logo"
-                  unoptimized // Add this to prevent Next.js image optimization issues in some contexts
+                  unoptimized
                 />
             </div>
           )}
