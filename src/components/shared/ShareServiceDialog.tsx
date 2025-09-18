@@ -12,7 +12,7 @@ import { Printer, Car, ExternalLink, Share2, Copy } from "lucide-react";
 import type { ServiceRecord, Vehicle, WorkshopInfo, ServiceItem } from "@/types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Icon } from '@iconify/react';
-import { useIsMobile } from "@/hooks/use-is-mobile"; // Import the mobile hook
+import { useIsMobile } from "@/hooks/use-mobile"; // Import the mobile hook
 
 interface ShareServiceDialogProps {
   open: boolean;
