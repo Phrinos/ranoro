@@ -19,6 +19,7 @@ import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
+import { savePublicDocument } from '../public-document';
 
 // --- Service Records ---
 
@@ -143,6 +144,11 @@ const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<
     await updateDoc(serviceRef, data);
 };
 
+const createOrUpdatePublicService = async (service: ServiceRecord): Promise<void> => {
+    if (!service.publicId) throw new Error("Public ID is required to create a public service document.");
+    const vehicle = await inventoryService.getVehicleById(service.vehicleId);
+    await savePublicDocument('service', service, vehicle);
+};
 
 export const serviceService = {
     onServicesUpdate,
@@ -154,4 +160,5 @@ export const serviceService = {
     cancelService,
     deleteService,
     updateService,
+    createOrUpdatePublicService,
 };

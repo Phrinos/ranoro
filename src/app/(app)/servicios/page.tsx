@@ -96,23 +96,21 @@ function ServiciosPage() {
   
   const handleShowShareDialog = useCallback(async (service: ServiceRecord) => {
     if (service.publicId) {
+      await serviceService.createOrUpdatePublicService(service);
       setRecordForSharing(service);
       setIsShareDialogOpen(true);
       return;
     }
-
+  
     try {
       toast({ title: "Generando enlace público..." });
       const newPublicId = generatePublicId();
+      
+      const updatedServiceWithId = { ...service, publicId: newPublicId };
       await serviceService.updateService(service.id, { publicId: newPublicId });
+      await serviceService.createOrUpdatePublicService(updatedServiceWithId);
       
-      const updatedService = { ...service, publicId: newPublicId };
-
-      setAllServices(prevServices => 
-          prevServices.map(s => s.id === service.id ? updatedService : s)
-      );
-      
-      setRecordForSharing(updatedService);
+      setRecordForSharing(updatedServiceWithId);
       setIsShareDialogOpen(true);
       
     } catch (error) {

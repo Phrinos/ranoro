@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 
 
-export const runtime = 'nodejs'; // Use Node.js runtime for firebase-admin in server actions
+export const runtime = 'edge'; // Use Edge runtime for better performance
 
 export default function PublicServicePage() {
   const params = useParams();
