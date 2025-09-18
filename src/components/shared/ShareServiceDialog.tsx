@@ -60,7 +60,6 @@ const fallbackCopyToClipboard = (text: string) => {
   const textArea = document.createElement("textarea");
   textArea.value = text;
   
-  // Avoid scrolling to bottom
   textArea.style.top = "0";
   textArea.style.left = "0";
   textArea.style.position = "fixed";
@@ -105,7 +104,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
         await navigator.clipboard.writeText(text);
         toast({ title: label });
       } catch (err) {
-        toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manualmente.", variant: "destructive" });
+        toast({ title: "No se pudo copiar", description: "Intenta de nuevo o pega manually.", variant: "destructive" });
       }
     } else {
       const success = fallbackCopyToClipboard(text);
@@ -157,15 +156,6 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
         <div className="p-6 space-y-6">
           <Card className="border-slate-200 relative">
             <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
-               {initialService.publicId && (
-                <TooltipProvider>
-                    <Tooltip><TooltipTrigger asChild>
-                         <Button size="icon" variant="ghost" className="absolute top-2 right-2 h-7 w-7" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}>
-                            <ExternalLink className="h-4 w-4"/>
-                         </Button>
-                    </TooltipTrigger><TooltipContent><p>Abrir enlace público</p></TooltipContent></Tooltip>
-                </TooltipProvider>
-               )}
               <div className="h-9 w-9 rounded-lg bg-slate-100 grid place-items-center"><Car className="h-5 w-5 text-muted-foreground"/></div>
               <div className="min-w-0">
                 <p className="font-bold truncate">{initialService?.vehicleIdentifier}</p>
@@ -219,6 +209,11 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
             <div className="flex gap-2 justify-end">
                 <TooltipProvider>
+                    {initialService.publicId && (
+                        <Tooltip><TooltipTrigger asChild>
+                            <Button size="icon" variant="outline" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")} className="h-12 w-12"><ExternalLink className="h-6 w-6"/></Button>
+                        </TooltipTrigger><TooltipContent><p>Abrir enlace público</p></TooltipContent></Tooltip>
+                    )}
                     <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleCopyWhatsApp} className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar para WhatsApp</p></TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleNativeShare} className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={() => window.print()} className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200"><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>

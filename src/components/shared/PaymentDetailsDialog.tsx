@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +19,7 @@ import {
 import type { ServiceRecord, PaymentMethod, SaleReceipt, Payment } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentSection } from '@/components/shared/PaymentSection';
 import { paymentDetailsSchema, PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
@@ -53,17 +52,23 @@ export function PaymentDetailsDialog({
     }
   });
   
-  const { watch, control, handleSubmit, reset } = form;
+  const { handleSubmit, reset } = form;
   
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
+  const prevOpenRef = useRef(open);
 
   useEffect(() => {
-    if (open) {
+    // Only reset the form when the dialog transitions from closed to open.
+    // This prevents an infinite loop if the `record` prop is a new object on every render.
+    if (open && !prevOpenRef.current) {
       reset({
         payments: record.payments?.length ? record.payments : [{ method: 'Efectivo', amount: totalAmount || undefined, folio: '' }],
       });
       setValidatedFolios({});
     }
+    
+    // Always update the ref to the current `open` state at the end of the effect.
+    prevOpenRef.current = open;
   }, [open, record, totalAmount, reset]);
 
   const handleFormSubmit = (values: PaymentDetailsFormValues) => {
@@ -80,7 +85,6 @@ export function PaymentDetailsDialog({
   };
   
   const handleOpenValidateDialog = (index: number) => {
-    // This functionality is now inside PaymentSection, but the dialog logic could be handled here
     console.log("Validation requested for index:", index);
     toast({ title: "Validación no implementada en este diálogo." });
   };

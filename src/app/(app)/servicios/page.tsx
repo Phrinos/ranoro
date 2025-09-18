@@ -28,6 +28,16 @@ const AgendaTabContent = lazy(() => import('./components/tab-agenda'));
 const CotizacionesTabContent = lazy(() => import('./components/tab-cotizaciones'));
 const PaymentDetailsDialog = lazy(() => import('@/components/shared/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 
+const generatePublicId = (length = 16) => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+};
+
+
 function ServiciosPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -84,10 +94,36 @@ function ServiciosPage() {
     router.push(`${pathname}?${params.toString()}`);
   }, [searchParams, router, pathname]);
   
-  const handleShowShareDialog = useCallback((service: ServiceRecord) => {
-    setRecordForSharing(service);
-    setIsShareDialogOpen(true);
-  }, []);
+  const handleShowShareDialog = useCallback(async (service: ServiceRecord) => {
+    if (service.publicId) {
+      setRecordForSharing(service);
+      setIsShareDialogOpen(true);
+      return;
+    }
+
+    try {
+      toast({ title: "Generando enlace público..." });
+      const newPublicId = generatePublicId();
+      await serviceService.updateService(service.id, { publicId: newPublicId });
+      
+      const updatedService = { ...service, publicId: newPublicId };
+
+      setAllServices(prevServices => 
+          prevServices.map(s => s.id === service.id ? updatedService : s)
+      );
+      
+      setRecordForSharing(updatedService);
+      setIsShareDialogOpen(true);
+      
+    } catch (error) {
+      console.error("Error generating public link:", error);
+      toast({
+        title: "Error al crear enlace",
+        description: "No se pudo generar el enlace público para compartir.",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
 
   const handleShowTicketDialog = useCallback((service: ServiceRecord) => {
     setServiceForTicket(service);

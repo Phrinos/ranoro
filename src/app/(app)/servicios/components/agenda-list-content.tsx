@@ -9,7 +9,7 @@ import type { ServiceRecord, Vehicle, User } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { serviceService } from '@/lib/services';
-import { isToday, isTomorrow, isAfter, isBefore, addDays, format, startOfDay, isSameDay } from 'date-fns';
+import { isToday, isTomorrow, isAfter, isBefore, addDays, format, startOfDay, isSameDay, compareDesc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { capitalizeWords } from '@/lib/utils';
@@ -24,15 +24,6 @@ interface AgendaListContentProps {
 
 interface GroupedServices {
   [key: string]: ServiceRecord[];
-}
-
-// Ensure serviceService has an updateService method or mock it for standalone testing.
-if (!serviceService.updateService) {
-    serviceService.updateService = async (id: string, data: Partial<ServiceRecord>) => {
-        console.warn("serviceService.updateService is not implemented, mocking call with:", id, data);
-        // In a real app, this would be an actual API call.
-        return Promise.resolve();
-    };
 }
 
 export default function AgendaListContent({ services, vehicles, personnel, onShowPreview }: AgendaListContentProps) {
@@ -55,20 +46,22 @@ export default function AgendaListContent({ services, vehicles, personnel, onSho
 
     const groupedServices = useMemo(() => {
         const today = startOfDay(new Date());
-        const tomorrow = addDays(today, 1);
-        const dayAfterTomorrow = addDays(today, 2);
-        const threeDaysFromNow = addDays(today, 3);
         
+        // Sort all services by appointment date descendingly first
+        const sortedServices = services.sort((a, b) => {
+            const dateA = parseDate(a.appointmentDateTime || a.serviceDate) || new Date(0);
+            const dateB = parseDate(b.appointmentDateTime || b.serviceDate) || new Date(0);
+            return compareDesc(dateA, dateB);
+        });
+
         const groups: GroupedServices = {
-            'Citas Anteriores': [],
             'Hoy': [],
             'Mañana': [],
-            [format(dayAfterTomorrow, 'eeee dd', { locale: es })]: [],
-            [format(threeDaysFromNow, 'eeee dd', { locale: es })]: [],
-            'Próximas Citas': []
+            'Próximas Citas': [],
+            'Citas Anteriores': []
         };
         
-        services.forEach(service => {
+        sortedServices.forEach(service => {
             const serviceDate = parseDate(service.appointmentDateTime || service.serviceDate);
             if (!serviceDate) return;
 
@@ -80,24 +73,15 @@ export default function AgendaListContent({ services, vehicles, personnel, onSho
                 groups['Hoy'].push(service);
             } else if (isTomorrow(serviceDayStart)) {
                 groups['Mañana'].push(service);
-            } else if (isSameDay(serviceDayStart, dayAfterTomorrow)) {
-                groups[format(dayAfterTomorrow, 'eeee dd', { locale: es })].push(service);
-            } else if (isSameDay(serviceDayStart, threeDaysFromNow)) {
-                groups[format(threeDaysFromNow, 'eeee dd', { locale: es })].push(service);
-            } else if (isAfter(serviceDayStart, threeDaysFromNow)) {
+            } else {
                 groups['Próximas Citas'].push(service);
             }
         });
         
+        // Remove empty groups
         Object.keys(groups).forEach(key => {
             if (groups[key].length === 0) {
                 delete groups[key];
-            } else {
-                groups[key].sort((a, b) => {
-                    const dateA = parseDate(a.appointmentDateTime || a.serviceDate) || new Date(0);
-                    const dateB = parseDate(b.appointmentDateTime || b.serviceDate) || new Date(0);
-                    return dateA.getTime() - dateB.getTime();
-                });
             }
         });
         
@@ -105,15 +89,7 @@ export default function AgendaListContent({ services, vehicles, personnel, onSho
 
     }, [services]);
 
-    const groupOrder = [
-        'Citas Anteriores',
-        'Hoy',
-        'Mañana',
-        format(addDays(new Date(), 2), 'eeee dd', { locale: es }),
-        format(addDays(new Date(), 3), 'eeee dd', { locale: es }),
-        'Próximas Citas'
-    ];
-
+    const groupOrder = ['Hoy', 'Mañana', 'Próximas Citas', 'Citas Anteriores'];
 
     return (
         <div className="space-y-6">

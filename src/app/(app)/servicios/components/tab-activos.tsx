@@ -7,14 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
-import {
-  isToday,
-  isValid,
-  compareDesc,
-  startOfDay,
-  endOfDay,
-  isWithinInterval,
-} from 'date-fns';
+import { isToday, isValid, compareDesc, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { formatCurrency } from '@/lib/utils';
 import { serviceService } from '@/lib/services';
@@ -31,13 +24,26 @@ interface ActivosTabContentProps {
   onDelete: (serviceId: string) => void;
 }
 
-const getStatusPriority = (service: ServiceRecord): number => {
-    if (service.status === 'Agendado') return 1;
-    if (service.status === 'En Taller') return 2;
-    if (service.status === 'Completado') return 3;
-    if (service.status === 'Entregado') return 4;
-    if (service.status === 'Cancelado') return 5;
-    return 6; 
+const getStatusPriority = (status: ServiceRecord['status']): number => {
+    switch (status) {
+        case 'Agendado': return 1;
+        case 'En Taller': return 2;
+        case 'Entregado': return 3;
+        default: return 4;
+    }
+};
+
+const getDateForService = (service: ServiceRecord): Date | null => {
+    switch (service.status) {
+        case 'Agendado':
+            return parseDate(service.appointmentDateTime);
+        case 'En Taller':
+            return parseDate(service.receptionDateTime);
+        case 'Entregado':
+            return parseDate(service.deliveryDateTime);
+        default:
+            return parseDate(service.serviceDate); // Fallback
+    }
 };
 
 export default function ActivosTabContent({
@@ -54,33 +60,40 @@ export default function ActivosTabContent({
   const { toast } = useToast();
 
   const activeServices = useMemo(() => {
-    const todayStart = startOfDay(new Date());
-    const todayEnd = endOfDay(new Date());
-
     return allServices.filter(s => {
-      // Exclude quotes and cancelled services
-      if (s.status === 'Cotizacion' || s.status === 'Cancelado') {
-        return false;
+      const todayStart = startOfDay(new Date());
+      const todayEnd = endOfDay(new Date());
+
+      switch (s.status) {
+        case 'Agendado':
+          const appointmentDate = parseDate(s.appointmentDateTime);
+          return appointmentDate && isValid(appointmentDate) && isWithinInterval(appointmentDate, { start: todayStart, end: todayEnd });
+        
+        case 'En Taller':
+          return true;
+
+        case 'Entregado':
+          const deliveryDate = parseDate(s.deliveryDateTime);
+          return deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, { start: todayStart, end: todayEnd });
+
+        default:
+          return false;
       }
-      // Include services delivered today
-      if (s.status === 'Entregado') {
-        const deliveryDate = parseDate(s.deliveryDateTime);
-        return deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, { start: todayStart, end: todayEnd });
-      }
-      // Include all other statuses
-      return true;
     });
   }, [allServices]);
 
   const sortedServices = useMemo(() => {
     return [...activeServices].sort((a, b) => {
-      const priorityA = getStatusPriority(a);
-      const priorityB = getStatusPriority(b);
+      const priorityA = getStatusPriority(a.status);
+      const priorityB = getStatusPriority(b.status);
       if (priorityA !== priorityB) return priorityA - priorityB;
 
-      const dateA = parseDate(a.receptionDateTime || a.serviceDate);
-      const dateB = parseDate(b.receptionDateTime || b.serviceDate);
+      const dateA = getDateForService(a);
+      const dateB = getDateForService(b);
+
       if (dateA && dateB) return compareDesc(dateA, dateB);
+      if (dateA) return -1;
+      if (dateB) return 1;
       
       return 0;
     });
@@ -129,7 +142,6 @@ export default function ActivosTabContent({
     ),
     [vehicles, personnel, currentUser, onShowShareDialog, onDelete, handleEditService, handleCancelService, onShowTicket]
   );
-
 
   return (
     <Card>
