@@ -64,18 +64,6 @@ function VehiculosPage() {
         };
     }, []);
     
-    const {
-      paginatedData: filteredVehicles,
-      ...tableManager
-    } = useTableManager<Vehicle>({
-      initialData: allVehicles,
-      searchKeys: ['licensePlate', 'make', 'model', 'ownerName'],
-      dateFilterKey: 'lastServiceDate',
-      initialSortOption: 'lastServiceDate_desc',
-      itemsPerPage: 10,
-    });
-
-
     const vehicleSummary = useMemo(() => {
         const now = new Date();
         const total = allVehicles.length;
@@ -165,9 +153,6 @@ function VehiculosPage() {
                         <h1 className="text-3xl font-bold tracking-tight">Gestión de Vehículos</h1>
                         <p className="text-primary-foreground/80 mt-1">Administra la información, historial y precios de tus vehículos.</p>
                     </div>
-                    <Button onClick={() => handleOpenVehicleDialog()} className="bg-white text-primary hover:bg-gray-100">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Registrar Vehículo
-                    </Button>
                 </div>
             </div>
             
@@ -193,7 +178,7 @@ function VehiculosPage() {
                         <Card>
                             <CardContent className="pt-6">
                                 <VehiclesTable 
-                                    vehicles={filteredVehicles} 
+                                    vehicles={allVehicles} 
                                     onSave={handleSaveVehicle}
                                     onDelete={handleDeleteVehicle}
                                 />

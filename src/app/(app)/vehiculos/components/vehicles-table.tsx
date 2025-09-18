@@ -81,9 +81,12 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
         searchTerm={tableManager.searchTerm}
         onSearchTermChange={tableManager.onSearchTermChange}
         searchPlaceholder="Buscar por placa, marca, modelo..."
-        sortOption={tableManager.sortOption}
-        onSortOptionChange={tableManager.onSortOptionChange}
-        sortOptions={sortOptions}
+        actions={
+          <Button onClick={() => handleOpenDialog()}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Agregar Vehículo
+          </Button>
+        }
       />
       <div className="rounded-md border">
         <Table>
