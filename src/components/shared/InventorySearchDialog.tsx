@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -66,7 +67,13 @@ export function InventorySearchDialog({
     return safeInventory
       .filter((item) => {
         const haystack = normalize(
-          [item.name, item.sku, (item as any).brand, (item as any).category, (item as any).keywords]
+          [
+            item.name,
+            item.sku,
+            (item as any).brand,
+            (item as any).category,
+            (item as any).keywords,
+          ]
             .filter(Boolean)
             .join(" ")
         );
@@ -90,16 +97,18 @@ export function InventorySearchDialog({
   };
   
   const handleNewItem = () => {
-    onNewItemRequest?.(searchTerm);
+    if(onNewItemRequest) {
+      onNewItemRequest(searchTerm);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2">
-          <DialogTitle>Añadir Artículo/Servicio</DialogTitle>
+          <DialogTitle>Buscar en Inventario</DialogTitle>
           <DialogDescription>
-            Busque un artículo en su inventario para añadirlo.
+            Busca y selecciona un producto o servicio.
           </DialogDescription>
         </DialogHeader>
 
@@ -124,10 +133,10 @@ export function InventorySearchDialog({
                 <div className="text-center p-4">
                   <p>No se encontraron artículos.</p>
                   {onNewItemRequest && (
-                    <Button variant="link" onClick={handleNewItem} className="mt-2">
+                    <Button variant="link" onClick={handleNewItem} className="mt-2 text-destructive">
                       <PackagePlus className="mr-2 h-4 w-4" />
                       Registrar Nuevo Artículo
-                      {searchTerm ? ` "${searchTerm}"` : ""}
+                      {searchTerm ? ` “${searchTerm}”` : ""}
                     </Button>
                   )}
                 </div>
