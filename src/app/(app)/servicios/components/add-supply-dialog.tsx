@@ -143,10 +143,10 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
                           <Button key={item.id} variant="ghost" className="w-full justify-start text-left h-auto py-1.5 px-2" onClick={() => handleSelectItem(item)}>
                             <div>
                                 <p className="font-medium">
-                                    {item.brand || ''} {item.name} <span className="text-xs text-muted-foreground">({item.sku || 'N/A'})</span>
+                                    {item.category} - {item.name}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    Cat: {item.category} | Stock: {item.isService ? 'N/A' : item.quantity} | Costo: {formatCurrency(item.unitPrice)}
+                                    SKU: {item.sku || 'N/A'} | Stock: {item.isService ? 'N/A' : item.quantity} | Precio: {formatCurrency(item.unitPrice)}
                                 </p>
                             </div>
                           </Button>
