@@ -230,10 +230,6 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
-.aria-selected\:bg-\[var\(--rdp-range_middle-background\)\][aria-selected="true"] {
-  background-color: var(--rdp-range_middle-background);
-}
-
 
 /* For calendar event dots */
 .rdp-day_has-event {
