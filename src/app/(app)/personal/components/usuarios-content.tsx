@@ -8,19 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from '@/hooks/use-toast';
 import type { User, AppRole } from "@/types";
-import { PlusCircle, Trash2, Edit, Search, Users } from 'lucide-react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { PlusCircle, Search, Users, Eye, EyeOff } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { adminService } from '@/lib/services/admin.service';
 import { UserDialog } from './user-dialog';
 import type { UserFormValues } from './user-form';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { TableToolbar } from '@/components/shared/table-toolbar';
 import { useTableManager } from '@/hooks/useTableManager';
+import { Badge } from '@/components/ui/badge';
 
 export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: User | null, initialUsers: User[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
@@ -28,6 +26,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
   const availableRoles = initialRoles;
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   
   const {
     filteredData,
@@ -38,6 +37,11 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     dateFilterKey: 'hireDate',
     initialSortOption: 'name_asc'
   });
+
+  const finalData = useMemo(() => {
+    return filteredData.filter(user => showArchived ? true : !user.isArchived);
+  }, [filteredData, showArchived]);
+
 
   const canEditOrDelete = (user: User): boolean => {
     if (!currentUser) return false;
@@ -80,13 +84,14 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     }
   };
   
-  const handleDeleteUser = async (userId: string) => {
+  const handleArchiveUser = async (userId: string, archive: boolean) => {
     if (!currentUser) return;
     try {
-        await adminService.deleteUser(userId, currentUser);
-        toast({ title: "Usuario eliminado." });
+        await adminService.archiveUser(userId, archive, currentUser);
+        toast({ title: `Usuario ${archive ? 'archivado' : 'restaurado'}.` });
+        setIsFormOpen(false);
     } catch (error: any) {
-        toast({ title: "Error al eliminar", description: error.message, variant: 'destructive'});
+        toast({ title: "Error", description: error.message, variant: 'destructive'});
     }
   };
 
@@ -103,14 +108,20 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                     onChange={(e) => tableManager.onSearchTermChange(e.target.value)}
                 />
             </div>
-            <Button onClick={() => handleOpenForm()} className="w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Integrante
-            </Button>
+            <div className="flex w-full sm:w-auto gap-2">
+                <Button variant="outline" className="w-full sm:w-auto" onClick={() => setShowArchived(!showArchived)}>
+                    {showArchived ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                    {showArchived ? 'Ocultar Archivados' : 'Ver Archivados'}
+                </Button>
+                <Button onClick={() => handleOpenForm()} className="w-full sm:w-auto">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Integrante
+                </Button>
+            </div>
         </div>
         
         <Card>
             <CardContent className="pt-6">
-                {filteredData.length > 0 ? (
+                {finalData.length > 0 ? (
                   <div className="overflow-x-auto rounded-md border">
                   <Table>
                     <TableHeader className="bg-black">
@@ -120,30 +131,27 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                           <TableHead className="text-white">Fecha Contratación</TableHead>
                           <TableHead className="text-white">Sueldo Base</TableHead>
                           <TableHead className="text-white">% Comisión</TableHead>
-                          <TableHead className="text-right text-white">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredData.map(user => {
+                      {finalData.map(user => {
                         const hireDate = user.hireDate ? parseDate(user.hireDate) : null;
                         return (
-                          <TableRow key={user.id}>
-                            <TableCell className="font-medium">{user.name}</TableCell>
+                          <TableRow 
+                            key={user.id} 
+                            onClick={() => handleOpenForm(user)} 
+                            className={cn("cursor-pointer hover:bg-muted/50", user.isArchived && "bg-gray-100/80 dark:bg-gray-800/20 text-muted-foreground")}
+                          >
+                            <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  {user.name}
+                                  {user.isArchived && <Badge variant="secondary">Archivado</Badge>}
+                                </div>
+                            </TableCell>
                             <TableCell><span className={`px-2 py-1 text-xs rounded-full font-medium ${ user.role === 'Superadministrador' ? 'bg-red-100 text-red-700' : user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }`}>{user.role}</span></TableCell>
                             <TableCell>{hireDate ? format(hireDate, "dd MMM, yyyy", { locale: es }) : 'N/A'}</TableCell>
                             <TableCell>{formatCurrency(user.monthlySalary)}</TableCell>
                             <TableCell>{user.commissionRate || 0}%</TableCell>
-                            <TableCell className="text-right">
-                              {canEditOrDelete(user) && ( <> 
-                                  <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2"><Edit className="h-4 w-4" /></Button>
-                                  <ConfirmDialog
-                                    triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>}
-                                    title="¿Eliminar Usuario?"
-                                    description={`¿Seguro que quieres eliminar a "${user.name}"? Esta acción es permanente.`}
-                                    onConfirm={() => handleDeleteUser(user.id)}
-                                  />
-                              </>)}
-                            </TableCell>
                           </TableRow>
                         )
                       })}
@@ -165,6 +173,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                 user={editingUser}
                 roles={assignableRoles}
                 onSave={onSubmit}
+                onArchive={handleArchiveUser}
             />
         )}
     </div>

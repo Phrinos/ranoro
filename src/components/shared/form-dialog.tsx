@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState } from 'react';
@@ -27,6 +28,7 @@ interface FormDialogProps {
   children: React.ReactNode;
   submitButtonText?: string;
   dialogContentClassName?: string;
+  customFooterContent?: React.ReactNode;
 }
 
 export function FormDialog({
@@ -40,6 +42,7 @@ export function FormDialog({
   children,
   submitButtonText = "Guardar",
   dialogContentClassName,
+  customFooterContent
 }: FormDialogProps) {
 
   return (
@@ -53,14 +56,19 @@ export function FormDialog({
         <div className="flex-grow overflow-y-auto px-6 py-4">
           {children}
         </div>
-        <DialogFooter className="p-6 pt-4 border-t bg-white flex-shrink-0 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button type="submit" form={formId} disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? "Guardando..." : submitButtonText}
-          </Button>
+        <DialogFooter className="p-6 pt-4 border-t bg-white flex-shrink-0 flex justify-between items-center w-full">
+          <div>
+            {customFooterContent}
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              Cancelar
+            </Button>
+            <Button type="submit" form={formId} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting ? "Guardando..." : submitButtonText}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

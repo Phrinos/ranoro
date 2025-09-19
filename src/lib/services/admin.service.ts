@@ -137,11 +137,12 @@ const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => 
 };
 
 /**
- * Deletes a user from Firestore.
- * @param userId - The ID of the user to delete.
+ * Archives or un-archives a user in Firestore.
+ * @param userId - The ID of the user to archive/un-archive.
+ * @param archive - Boolean indicating whether to archive (true) or un-archive (false).
  * @param adminUser - The administrator performing the action.
  */
-const deleteUser = async (userId: string, adminUser: User): Promise<void> => {
+const archiveUser = async (userId: string, archive: boolean, adminUser: User): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const userDocRef = doc(db, 'users', userId);
     
@@ -149,13 +150,17 @@ const deleteUser = async (userId: string, adminUser: User): Promise<void> => {
         const userDoc = await getDoc(userDocRef);
         const userName = userDoc.exists() ? userDoc.data().name : `ID ${userId}`;
 
-        await deleteDoc(userDocRef);
-        await logAudit('Eliminar', `Eliminó al usuario "${userName}".`, { entityType: 'Usuario', entityId: userId, userId: adminUser.id, userName: adminUser.name });
+        await updateDoc(userDocRef, { isArchived: archive });
+
+        const action = archive ? 'Archivar' : 'Restaurar';
+        const description = `${archive ? 'Archivó' : 'Restauró'} al usuario "${userName}".`;
+        await logAudit(action, description, { entityType: 'Usuario', entityId: userId, userId: adminUser.id, userName: adminUser.name });
     } catch (error) {
-        console.error(`Error deleting user ${userId}:`, error instanceof Error ? error.message : String(error));
-        throw new Error(`Failed to delete user. ${error instanceof Error ? error.message : ''}`);
+        console.error(`Error archiving user ${userId}:`, error instanceof Error ? error.message : String(error));
+        throw new Error(`Failed to archive user. ${error instanceof Error ? error.message : ''}`);
     }
 };
+
 
 /**
  * Creates or updates an application role in Firestore.
@@ -235,7 +240,7 @@ export const adminService = {
     onRolesUpdate,
     onAuditLogsUpdate,
     saveUser,
-    deleteUser,
+    archiveUser,
     saveRole,
     deleteRole,
     updateUserProfile,
