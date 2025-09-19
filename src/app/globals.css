@@ -53,8 +53,8 @@
     /* Vars para react-day-picker */
     --rdp-accent-color: hsl(var(--primary));
     --rdp-accent-background: hsl(var(--primary));
-    --rdp-range_middle-background: hsl(var(--accent));        /* fondo del tramo (gris claro en light) */
-    --rdp-range_middle-color: hsl(var(--foreground));         /* texto del tramo */
+    --rdp-range_middle-background: hsl(var(--accent));
+    --rdp-range_middle-color: hsl(var(--foreground));
   }
   .dark {
     --background: 240 10% 3.9%;
@@ -101,7 +101,7 @@
     /* Vars para react-day-picker */
     --rdp-accent-color: hsl(var(--primary));
     --rdp-accent-background: hsl(var(--primary));
-    --rdp-range_middle-background: hsl(var(--accent));        /* gris oscuro en dark */
+    --rdp-range_middle-background: hsl(var(--accent));
     --rdp-range_middle-color: hsl(var(--foreground));
   }
 }
