@@ -175,8 +175,12 @@ export default function HistorialTabContent({
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
                         const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || Wallet;
+                        let variant: 'lightGreen' | 'lightPurple' | 'blue' | 'secondary' = 'secondary';
+                        if (method === 'Efectivo') variant = 'lightGreen';
+                        if (method.includes('Tarjeta')) variant = 'lightPurple';
+                        if (method === 'Transferencia') variant = 'blue';
                         return (
-                            <Badge key={method} variant="secondary" className="text-sm">
+                            <Badge key={method} variant={variant} className="text-sm">
                                 <Icon className="h-3 w-3 mr-1" />
                                 {method}:<span className="font-semibold ml-1">{formatCurrency(data.total)}</span>
                             </Badge>
@@ -196,7 +200,7 @@ export default function HistorialTabContent({
                 placeholder="Buscar por folio, placa..."
                 value={tableManager.searchTerm}
                 onChange={(event) => tableManager.onSearchTermChange(event.target.value)}
-                className="h-10 w-full lg:w-[250px]"
+                className="h-10 w-full lg:w-[250px] bg-white"
             />
             <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
         </div>
@@ -205,7 +209,7 @@ export default function HistorialTabContent({
                 value={tableManager.otherFilters['status'] || 'all'}
                 onValueChange={(value) => tableManager.setOtherFilters({ ...tableManager.otherFilters, 'status': value })}
             >
-                <SelectTrigger className="h-10 w-full sm:w-[180px]">
+                <SelectTrigger className="h-10 w-full sm:w-[180px] bg-white">
                     <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
@@ -219,7 +223,7 @@ export default function HistorialTabContent({
                 value={tableManager.otherFilters['paymentMethod'] || 'all'}
                 onValueChange={(value) => tableManager.setOtherFilters({ ...tableManager.otherFilters, 'paymentMethod': value })}
             >
-                <SelectTrigger className="h-10 w-full sm:w-[180px]">
+                <SelectTrigger className="h-10 w-full sm:w-[180px] bg-white">
                     <SelectValue placeholder="Método de Pago" />
                 </SelectTrigger>
                 <SelectContent>
@@ -230,7 +234,7 @@ export default function HistorialTabContent({
             </Select>
 
             <Select value={tableManager.sortOption} onValueChange={tableManager.onSortOptionChange}>
-                <SelectTrigger className="h-10 w-full sm:w-[180px]">
+                <SelectTrigger className="h-10 w-full sm:w-[180px] bg-white">
                     <SelectValue placeholder="Ordenar por..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -245,10 +249,10 @@ export default function HistorialTabContent({
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
         <div className="flex items-center space-x-2">
-          <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
+          <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card border-gray-300">
             <ChevronLeft className="h-4 w-4" /> Anterior
           </Button>
-          <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
+          <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card border-gray-300">
             Siguiente <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

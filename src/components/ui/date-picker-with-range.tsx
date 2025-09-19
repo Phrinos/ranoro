@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -62,7 +63,7 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
           <Button
             id="date"
             variant="outline"
-            className={cn("w-full sm:w-[300px] justify-start text-left font-normal", !date && "text-muted-foreground")}
+            className={cn("w-full sm:w-[300px] justify-start text-left font-normal bg-white", !date && "text-muted-foreground")}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date?.from ? (
