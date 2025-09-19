@@ -27,15 +27,6 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      style={
-        {
-          "--rdp-accent-color": "hsl(var(--primary))",
-          "--rdp-background-color": "hsl(var(--primary-foreground))",
-          "--rdp-accent-color-dark": "hsl(var(--primary))",
-          "--rdp-background-color-dark": "hsl(var(--primary-foreground))",
-          "--rdp-range-middle-background-color": "hsl(var(--accent))",
-        } as React.CSSProperties
-      }
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
@@ -46,17 +37,17 @@ function Calendar({
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-6 w-6 bg-transparent p-0 opacity-70 hover:opacity-100"
+          "h-6 w-6 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
         head_cell:
-          "text-muted-foreground rounded-md w-7 font-normal text-[0.75rem]",
+          "text-muted-foreground rounded-md w-8 font-normal text-[0.75rem]",
         row: "flex w-full mt-2",
         cell:
-          "h-7 w-7 text-center text-sm p-0 relative " +
+          "h-8 w-8 text-center text-sm p-0 relative " +
           "[&:has([aria-selected].day-range-end)]:rounded-r-md " +
           "[&:has([aria-selected].day-outside)]:bg-accent/50 " +
           "[&:has([aria-selected])]:bg-accent " +
@@ -65,7 +56,7 @@ function Calendar({
           "focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-7 w-7 p-0 font-normal aria-selected:opacity-100"
+          "h-8 w-8 p-0 font-normal aria-selected:opacity-100"
         ),
         day_range_end: "day-range-end",
         day_selected:
