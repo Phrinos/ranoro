@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -83,9 +82,6 @@ export function InventorySearchDialog({
       .slice(0, 100);
   }, [safeInventory, searchTerm, frequentItems]);
 
-  const getPrice = (it: any) => it.sellingPrice ?? it.price ?? it.unitPrice ?? 0;
-  const getCost = (it: any) => it.unitPrice ?? 0;
-
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item, 1);
     setSearchTerm("");
@@ -105,7 +101,7 @@ export function InventorySearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle>Buscar en Inventario</DialogTitle>
           <DialogDescription>
@@ -151,7 +147,7 @@ export function InventorySearchDialog({
 
                 {filteredItems.map((item) => {
                   const searchValue = [
-                    item.id, // CORRECCIÓN: Añadir ID para unicidad
+                    item.id, 
                     item.name,
                     item.sku,
                     (item as any).brand,
@@ -170,14 +166,14 @@ export function InventorySearchDialog({
                     >
                       <p className="font-semibold">
                         <span className="text-primary">{item.category || "Sin categoría"}</span>
-                        {" — "}
+                        {" - "}
                         {item.name}
                       </p>
-                      <p className="text-xs text-muted-foreground space-x-2">
-                        <span>SKU: <span className="font-semibold">{item.sku || "N/A"}</span></span>
-                        <span>Stock: <span className="font-semibold">{item.isService ? "N/A" : item.quantity ?? 0}</span></span>
-                        <span>Venta: <span className="font-semibold">{formatCurrency(getPrice(item))}</span></span>
-                        <span>Costo: <span className="font-semibold">{formatCurrency(getCost(item))}</span></span>
+                      <p className="text-xs text-muted-foreground">
+                        SKU: <span className="font-semibold">{item.sku || "N/A"}</span> | 
+                        Stock: <span className="font-semibold">{item.isService ? "N/A" : item.quantity ?? 0}</span> | 
+                        Venta: <span className="font-semibold">{formatCurrency(item.sellingPrice)}</span> | 
+                        Costo: <span className="font-semibold">{formatCurrency(item.unitPrice)}</span>
                       </p>
                     </CommandItem>
                   );
