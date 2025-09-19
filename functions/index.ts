@@ -17,7 +17,8 @@ export const generateDailyRentalCharges = onSchedule({
   timeZone: 'America/Mexico_City',
 }, async (_context) => {
     logger.info('Starting daily rental charge generation...');
-    const now = new Date();
+    const timeZone = 'America/Mexico_City';
+    const now = utcToZonedTime(new Date(), timeZone);
     const todayStart = startOfDay(now);
     const todayEnd = endOfDay(now);
 
