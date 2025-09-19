@@ -53,7 +53,7 @@ export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
                     <TableHead className="text-white font-bold hidden sm:table-cell">Marca y Modelo</TableHead>
                     <TableHead className="text-white font-bold hidden lg:table-cell">Año</TableHead>
                     <TableHead className="text-white font-bold">Estado</TableHead>
-                    <TableHead className="text-white font-bold">Conductor Asignado</TableHead>
+                    <TableHead className="text-white font-bold hidden md:table-cell">Conductor</TableHead>
                     <TableHead className="w-10 text-white font-bold"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -73,7 +73,7 @@ export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
                             {vehicle.assignedDriverId ? 'Asignado' : 'Disponible'}
                           </Badge>
                         </TableCell>
-                        <TableCell>{vehicle.assignedDriverName || 'N/A'}</TableCell>
+                        <TableCell className="hidden md:table-cell">{vehicle.assignedDriverName || 'N/A'}</TableCell>
                         <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground" /></TableCell>
                       </TableRow>
                     ))

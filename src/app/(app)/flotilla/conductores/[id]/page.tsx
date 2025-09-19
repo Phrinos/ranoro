@@ -106,8 +106,8 @@ export default function FlotillaConductorProfilePage() {
           <TabsTrigger value="history">Historial</TabsTrigger>
         </TabsList>
         <TabsContent value="info" className="mt-6">
-          <div className="grid grid-cols-1 gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
               <ContactInfoCard driver={driver} onEdit={() => setIsContactInfoDialogOpen(true)} />
               <FinancialInfoCard driver={driver} onEdit={() => setIsFinancialInfoDialogOpen(true)} />
             </div>

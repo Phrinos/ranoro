@@ -99,9 +99,9 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
     router.push(`/flotilla/conductores/${driverId}?tab=history`);
   };
   
-  const SortableHeader = ({ sortKey, label }: { sortKey: SortKey, label: string }) => (
+  const SortableHeader = ({ sortKey, label, className }: { sortKey: SortKey, label: string, className?: string }) => (
     <TableHead
-      className="text-white font-bold cursor-pointer hover:bg-gray-800"
+      className={cn("text-white font-bold cursor-pointer hover:bg-gray-800", className)}
       onClick={() => requestSort(sortKey)}
     >
       <div className="flex items-center justify-end">
@@ -129,10 +129,10 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
                                       <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === 'name' ? 'text-white' : 'text-gray-400'}`} />
                                     </div>
                                 </TableHead>
-                                <SortableHeader sortKey="totalCharges" label="Total Cargos" />
-                                <SortableHeader sortKey="totalPayments" label="Total Abonos" />
-                                <SortableHeader sortKey="balance" label="Balance Actual" />
-                                <SortableHeader sortKey="lastPaymentDate" label="Último Pago" />
+                                <SortableHeader sortKey="totalCharges" label="Cargos" className="hidden sm:table-cell" />
+                                <SortableHeader sortKey="totalPayments" label="Abonos" className="hidden sm:table-cell" />
+                                <SortableHeader sortKey="balance" label="Balance" />
+                                <SortableHeader sortKey="lastPaymentDate" label="Último Pago" className="hidden md:table-cell" />
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -142,12 +142,12 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
                                   return (
                                     <TableRow key={item.id} onClick={() => handleRowClick(item.id)} className="cursor-pointer">
                                         <TableCell className="font-medium">{item.name}</TableCell>
-                                        <TableCell className="text-right text-destructive">{formatCurrency(item.totalCharges)}</TableCell>
-                                        <TableCell className="text-right text-green-600">{formatCurrency(item.totalPayments)}</TableCell>
+                                        <TableCell className="text-right text-destructive hidden sm:table-cell">{formatCurrency(item.totalCharges)}</TableCell>
+                                        <TableCell className="text-right text-green-600 hidden sm:table-cell">{formatCurrency(item.totalPayments)}</TableCell>
                                         <TableCell className={cn("text-right font-bold", item.balance >= 0 ? 'text-green-700' : 'text-red-700')}>
                                             {formatCurrency(item.balance)}
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right hidden md:table-cell">
                                           {lastPaymentDate && isValid(lastPaymentDate) ? format(lastPaymentDate, 'dd MMM yyyy', { locale: es }) : 'N/A'}
                                         </TableCell>
                                     </TableRow>

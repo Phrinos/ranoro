@@ -66,7 +66,7 @@ export default function FlotillaVehiculoProfilePage() {
       unsubDrivers();
       unsubServices();
     };
-  }, [vehicleId, router, toast]);
+  }, [vehicleId, router, toast, isLoading]);
 
   const handleSaveVehicleInfo = async (data: VehicleInfoFormValues) => {
     if (!vehicle) return;

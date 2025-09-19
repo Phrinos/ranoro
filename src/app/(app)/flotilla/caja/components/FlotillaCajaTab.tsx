@@ -199,8 +199,8 @@ export function FlotillaCajaTab({
                 <TableRow>
                   <TableHead className="text-white font-bold">Fecha</TableHead>
                   <TableHead className="text-white font-bold">Tipo</TableHead>
-                  <TableHead className="text-white font-bold">Descripción</TableHead>
-                  <TableHead className="text-center text-white font-bold">Método Pago</TableHead>
+                  <TableHead className="text-white font-bold hidden sm:table-cell">Descripción</TableHead>
+                  <TableHead className="text-center text-white font-bold">Método</TableHead>
                   <TableHead className="text-right text-white font-bold">Monto</TableHead>
                   <TableHead className="text-right text-white font-bold">Acciones</TableHead>
                 </TableRow>
@@ -211,9 +211,9 @@ export function FlotillaCajaTab({
                     const details = getTransactionDetails(t);
                     return (
                       <TableRow key={`${t.transactionType}-${t.id}`}>
-                        <TableCell>{format(parseISO(t.date), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
+                        <TableCell>{format(parseISO(t.date), "dd MMM, HH:mm", { locale: es })}</TableCell>
                         <TableCell><Badge variant={details.variant as any}>{details.label}</Badge></TableCell>
-                        <TableCell>{details.description}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{details.description}</TableCell>
                          <TableCell className="text-center">
                           {details.methodName !== 'N/A' && (
                               <TooltipProvider>
