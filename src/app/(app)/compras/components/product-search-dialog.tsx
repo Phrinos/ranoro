@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -16,6 +17,9 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+
 
 export interface InventoryItem {
   id: string;
@@ -76,50 +80,59 @@ export function ProductSearchDialog({ isOpen, onOpenChange, onProductSelect }: P
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl p-0">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle>Buscar Producto en Inventario</DialogTitle>
           <DialogDescription>
             Busca por nombre o SKU y añade productos a tu compra.
           </DialogDescription>
         </DialogHeader>
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nombre o SKU..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
+        <div className="px-6 pb-6">
+            <Command
+                shouldFilter={false}
+                className={cn(
+                    "rounded-lg border bg-white",
+                    "[&_[cmdk-input-wrapper]]:px-3 [&_[cmdk-input-wrapper]]:h-12",
+                    "[&_[cmdk-input]]:text-sm [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
+                )}
+            >
+                <CommandInput
+                    placeholder="Buscar por nombre, SKU, marca..."
+                    value={searchTerm}
+                    onValueChange={setSearchTerm}
+                />
+                <CommandList className="max-h-[52vh] overflow-y-auto">
+                    {isLoading ? (
+                        <div className="p-4 text-center">Cargando...</div>
+                    ) : filteredInventory.length === 0 ? (
+                        <CommandEmpty>
+                            <div className="text-center p-4">No se encontraron productos.</div>
+                        </CommandEmpty>
+                    ) : (
+                       <CommandGroup>
+                         {filteredInventory.map((item) => {
+                            const searchValue = [item.name, item.sku, (item as any).brand, (item as any).category].filter(Boolean).join(" ");
+                            return (
+                                <CommandItem
+                                key={item.id}
+                                value={searchValue}
+                                onSelect={() => handleSelect(item)}
+                                className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
+                                >
+                                <p className="font-semibold">{item.category} - {item.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                    SKU: {item.sku || 'N/A'} | Stock: {item.quantity} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
+                                </p>
+                                </CommandItem>
+                            );
+                         })}
+                       </CommandGroup>
+                    )}
+                </CommandList>
+            </Command>
         </div>
-        <ScrollArea className="h-72">
-          {isLoading ? (
-            <div className="space-y-2 pr-4">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-            </div>
-          ) : (
-            <div className="pr-4 space-y-2">
-              {filteredInventory.length > 0 ? (
-                filteredInventory.map((item) => (
-                  <Button 
-                    key={item.id} 
-                    variant="ghost" 
-                    className="flex flex-col items-start w-full p-2 h-auto text-left hover:bg-muted"
-                    onClick={() => handleSelect(item)}
-                  >
-                     <p className="font-semibold">{item.category} - {item.name}</p>
-                     <p className="text-xs text-muted-foreground">
-                        SKU: {item.sku || 'N/A'} | Stock: {item.quantity} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
-                     </p>
-                  </Button>
-                ))
-              ) : (
-                <p className="text-center text-muted-foreground py-8">No se encontraron productos.</p>
-              )}
-            </div>
-          )}
-        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
 }
+
