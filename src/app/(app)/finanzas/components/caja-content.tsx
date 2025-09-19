@@ -12,9 +12,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 import { format, isValid, isSameDay, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { FileText, ShoppingCart, Wrench, Wallet, CreditCard, Send, LineChart, DollarSign, ArrowDown, ArrowUp, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { FileText, ShoppingCart, Wrench, Wallet, CreditCard, Send, LineChart, DollarSign, ArrowDown, ArrowUp, Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -30,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import ReactDOMServer from 'react-dom/server';
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 
 const cashTransactionSchema = z.object({
   description: z.string().min(3, "La descripción debe tener al menos 3 caracteres."),
@@ -186,28 +185,7 @@ export default function CajaContent() {
                 <Button variant="outline" size="sm" onClick={() => setPresetRange('yesterday')} className="bg-card">Ayer</Button>
                 <Button variant="outline" size="sm" onClick={() => setPresetRange('week')} className="bg-card">Semana</Button>
                 <Button variant="outline" size="sm" onClick={() => setPresetRange('month')} className="bg-card">Mes</Button>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn("w-[280px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange?.from ? (
-                        dateRange.to ? (
-                            `${format(dateRange.from, "LLL dd, y", {locale: es})} - ${format(dateRange.to, "LLL dd, y", {locale: es})}`
-                        ) : (
-                            format(dateRange.from, "LLL dd, y", {locale: es})
-                        )
-                    ) : (
-                        <span>Seleccione rango</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar mode="range" selected={dateRange} onSelect={setDateRange} initialFocus locale={es}/>
-                </PopoverContent>
-              </Popover>
+              <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
             </div>
         </div>
 

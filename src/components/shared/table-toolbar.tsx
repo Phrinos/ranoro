@@ -5,13 +5,7 @@ import { ReactNode, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { DateRange } from "react-day-picker";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 
 type Option = { value: string; label: string };
 
@@ -95,30 +89,7 @@ export function TableToolbar({
 
         {/* Rango de fechas */}
         {onDateRangeChange && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="h-10 bg-white w-full sm:w-auto justify-start text-left">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                <span className="truncate">
-                  {dateRange?.from
-                    ? dateRange.to
-                      ? `${format(dateRange.from, "dd MMM yyyy", { locale: es })} – ${format(dateRange.to, "dd MMM yyyy", { locale: es })}`
-                      : `${format(dateRange.from, "dd MMM yyyy", { locale: es })}`
-                    : "Rango de fechas"}
-                </span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="p-0">
-              <Calendar
-                mode="range"
-                selected={dateRange}
-                onSelect={onDateRangeChange}
-                numberOfMonths={2}
-                locale={es}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <DatePickerWithRange date={dateRange} onDateChange={onDateRangeChange} />
         )}
         
         {actions}

@@ -6,8 +6,6 @@ import React, { useState, useMemo, useEffect, Suspense, lazy } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import {
   calculateSaleProfit,
 } from '@/lib/placeholder-data';
@@ -20,7 +18,7 @@ import {
   startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc, isAfter, differenceInDays, getDaysInMonth, subDays
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon, Wrench, ShoppingCart, Wallet, CreditCard, Send, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon, Wrench, ShoppingCart, Wallet, CreditCard, Send, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn, formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
 import { serviceService, saleService, inventoryService, personnelService, cashService } from '@/lib/services';
@@ -34,6 +32,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipTrigger, TooltipProvider, TooltipContent } from '@/components/ui/tooltip';
 import { calcEffectiveProfit } from "@/lib/money-helpers";
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 
 
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
@@ -88,9 +87,6 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
     const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
     const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
     
-    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
-
     useEffect(() => {
         setIsLoading(true);
         const unsubs: (() => void)[] = [];
@@ -221,30 +217,12 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
         };
     }, [dateRange, isLoading, allSales, allServices, allInventory, allPersonnel, fixedExpenses]);
 
-    const handleApplyDateFilter = () => {
-        setDateRange(tempDateRange);
-        setIsCalendarOpen(false);
-    };
-
     const dateFilterComponent = (
         <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
-            <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfDay(new Date()), to: endOfDay(new Date()) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Hoy</Button>
-            <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Esta Semana</Button>
-            <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfMonth(new Date()), to: endOfMonth(new Date()) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Este Mes</Button>
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                    <Button variant={'outline'} className={cn('w-full sm:w-[240px] justify-start text-left font-normal bg-card', !dateRange && 'text-muted-foreground')}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(dateRange.to, 'dd MMM, yyyy', { locale: es })}`) : format(dateRange.from, 'dd \'de\' MMMM, yyyy', { locale: es })) : (<span>Seleccione rango</span>)}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} locale={es} showOutsideDays={false}/>
-                    <div className="p-2 border-t flex justify-end">
-                        <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
-                    </div>
-                </PopoverContent>
-            </Popover>
+            <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) })} className="bg-card">Hoy</Button>
+            <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) })} className="bg-card">Esta Semana</Button>
+            <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })} className="bg-card">Este Mes</Button>
+            <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
         </div>
     );
 

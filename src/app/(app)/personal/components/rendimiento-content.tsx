@@ -3,19 +3,16 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import type { ServiceRecord, User } from '@/types';
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, isValid, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon as CalendarDateIcon } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
 import { serviceService, adminService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from "@/components/ui/badge";
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 
 const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | "black" => {
     const lowerCaseRole = role.toLowerCase();
@@ -111,10 +108,7 @@ export function RendimientoPersonalContent() {
                   <CardTitle>Rendimiento Individual</CardTitle>
                   <CardDescription>Resumen de ingresos, comisiones y sueldos del personal.</CardDescription>
               </div>
-              <Popover>
-                <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? `${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}` : format(dateRange.from, "MMMM yyyy", { locale: es })) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end"><Calendar mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent>
-              </Popover>
+              <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
           </div>
       </CardHeader>
       <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
