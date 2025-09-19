@@ -26,8 +26,9 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import ReactDOMServer from 'react-dom/server';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
+import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
 
 
 export default function NuevaVentaPage() {
@@ -49,6 +50,11 @@ export default function NuevaVentaPage() {
   const [validationFolio, setValidationFolio] = useState('');
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
 
+  // States for dialogs managed by the page
+  const [isInventorySearchDialogOpen, setIsInventorySearchDialogOpen] = useState(false);
+  const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
+  const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
+
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
     defaultValues: {
@@ -58,7 +64,7 @@ export default function NuevaVentaPage() {
     },
   });
 
-  const { watch } = methods;
+  const { watch, setValue, getValues } = methods;
 
   useEffect(() => {
     const unsubs = [
@@ -222,6 +228,37 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     }
     setIsValidationDialogOpen(false);
   };
+  
+  const handleAddItem = useCallback((item: InventoryItem, quantity: number) => {
+    const currentItems = getValues('items') || [];
+    setValue('items', [...currentItems, {
+        inventoryItemId: item.id,
+        itemName: item.name,
+        quantity: quantity,
+        unitPrice: item.sellingPrice,
+        totalPrice: item.sellingPrice * quantity,
+        isService: item.isService || false,
+        unitType: item.unitType,
+    }], { shouldValidate: false });
+    setIsInventorySearchDialogOpen(false);
+  }, [setValue, getValues]);
+  
+  const handleRequestNewItem = useCallback((searchTerm: string) => {
+      setNewItemInitialData({
+          name: searchTerm,
+          category: allCategories.length > 0 ? allCategories[0].name : "",
+          supplier: allSuppliers.length > 0 ? allSuppliers[0].name : "",
+      });
+      setIsInventorySearchDialogOpen(false);
+      setIsNewInventoryItemDialogOpen(true);
+  }, [allCategories, allSuppliers]);
+
+  const handleNewItemSaved = async (formData: InventoryItemFormValues) => {
+    const newItem = await handleNewInventoryItemCreated(formData);
+    handleAddItem(newItem, 1);
+    setIsNewInventoryItemDialogOpen(false);
+  };
+
 
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
@@ -241,14 +278,33 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
       <FormProvider {...methods}>
         <PosForm
           inventoryItems={currentInventoryItems} 
-          onSaleComplete={handleSaleCompletion}
-          onInventoryItemCreated={handleNewInventoryItemCreated}
           categories={allCategories}
           suppliers={allSuppliers}
+          onOpenAddItemDialog={() => setIsInventorySearchDialogOpen(true)}
+          onSaleComplete={handleSaleCompletion}
           onOpenValidateDialog={handleOpenValidateDialog}
           validatedFolios={validatedFolios}
         />
       </FormProvider>
+
+      <InventorySearchDialog
+        open={isInventorySearchDialogOpen}
+        onOpenChange={setIsInventorySearchDialogOpen}
+        inventoryItems={currentInventoryItems}
+        onItemSelected={handleAddItem}
+        onNewItemRequest={handleRequestNewItem}
+      />
+      
+      {isNewInventoryItemDialogOpen && (
+          <InventoryItemDialog
+            open={isNewInventoryItemDialogOpen}
+            onOpenChange={setIsNewInventoryItemDialogOpen}
+            item={newItemInitialData}
+            onSave={handleNewItemSaved}
+            categories={allCategories}
+            suppliers={allSuppliers}
+          />
+      )}
 
       {saleForTicket && (
           <UnifiedPreviewDialog
@@ -259,23 +315,9 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
             footerContent={
                 <div className="flex w-full justify-end gap-2">
                     <TooltipProvider>
-                        <Tooltip><TooltipTrigger asChild>
-                            <Button variant="outline" size="icon" onClick={() => handleCopyAsImage(false)}>
-                                <Copy className="h-5 w-5" />
-                            </Button>
-                        </TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
-                        
-                        <Tooltip><TooltipTrigger asChild>
-                           <Button variant="outline" size="icon" onClick={handleShareTicket}>
-                                <Share2 className="h-5 w-5" />
-                           </Button>
-                        </TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
-                        
-                         <Tooltip><TooltipTrigger asChild>
-                            <Button variant="outline" size="icon" onClick={handlePrint}>
-                                <Printer className="h-5 w-5" />
-                            </Button>
-                         </TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyAsImage(false)}><Copy className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareTicket}><Share2 className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrint}><Printer className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
                     </TooltipProvider>
                 </div>
             }

@@ -66,11 +66,11 @@ export function ServiceItemCard({
     const allVehicles = watch('allVehiclesForDialog') as Vehicle[] | undefined || [];
     const currentVehicle = allVehicles.find(v => v.id === currentVehicleId);
 
-    const handleAddSupply = (supply: ServiceSupply) => {
+    const handleAddSupply = (supply: ServiceSupply, quantity: number) => {
         append({
             supplyId: supply.supplyId || `manual_${Date.now()}`,
             supplyName: supply.supplyName || 'Insumo Manual',
-            quantity: supply.quantity || 1,
+            quantity: quantity || 1,
             unitPrice: supply.unitPrice || 0,
             sellingPrice: supply.sellingPrice,
             isService: supply.isService,
@@ -118,7 +118,7 @@ export function ServiceItemCard({
             append({
                 supplyId: newItem.id,
                 supplyName: newItem.name,
-                quantity: 1,
+                quantity: 1, // Default quantity for new items
                 unitPrice: newItem.unitPrice,
                 sellingPrice: newItem.sellingPrice,
                 isService: newItem.isService,
@@ -214,8 +214,21 @@ export function ServiceItemCard({
                     )}
                 </div>
             </div>
-             <InventorySearchDialog open={isInventorySearchDialogOpen} onOpenChange={setIsInventorySearchDialogOpen} onItemSelected={handleAddSupply} onNewItemRequest={handleNewItemRequest} />
-            <InventoryItemDialog open={isNewItemDialogOpen} onOpenChange={setIsNewItemDialogOpen} onSave={handleNewItemSaved} item={{ name: newItemSearchTerm }} categories={categories} suppliers={suppliers} />
+             <InventorySearchDialog
+                open={isInventorySearchDialogOpen}
+                onOpenChange={setIsInventorySearchDialogOpen}
+                inventoryItems={inventoryItems}
+                onItemSelected={handleAddSupply}
+                onNewItemRequest={handleNewItemRequest}
+            />
+            <InventoryItemDialog
+                open={isNewItemDialogOpen}
+                onOpenChange={setIsNewItemDialogOpen}
+                onSave={handleNewItemSaved}
+                item={{ name: newItemSearchTerm }}
+                categories={categories}
+                suppliers={suppliers}
+            />
              <AddToPriceListDialog open={isAddToPriceListDialogOpen} onOpenChange={setIsAddToPriceListDialogOpen} serviceToSave={getValues(`serviceItems.${serviceIndex}`)} currentVehicle={currentVehicle} onSave={handleSaveToPriceList} />
         </Card>
     );
