@@ -27,7 +27,7 @@ const InformePosContent = lazy(() => import('./components/informe-pos-content').
 
 
 function PosPageComponent({ tab }: { tab?: string }) {
-  const defaultTab = tab || 'ventas';
+  const defaultTab = tab || 'resumen';
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -179,7 +179,14 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
 
+  const pageActions = (
+    <Button asChild>
+      <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
+    </Button>
+  );
+
   const tabs = [
+    { value: 'resumen', label: 'Resumen', content: <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory}/> },
     { value: 'ventas', label: 'Historial de Ventas', content: (
         <VentasPosContent 
           allSales={allSales} 
@@ -193,7 +200,6 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
           onEditPayment={handleEditPayment}
         />
     )},
-    { value: 'resumen', label: 'Resumen', content: <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory}/> },
   ];
 
   if (isLoading) {
@@ -208,6 +214,7 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         tabs={tabs}
+        actions={pageActions}
       />
 
        {saleForReprint && (
@@ -222,7 +229,7 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
                     <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareTicket}><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrintTicket}><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
                 </TooltipProvider>
-            </div>
+              </div>
           }
           sale={saleForReprint}
         >
