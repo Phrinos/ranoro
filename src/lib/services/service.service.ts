@@ -97,31 +97,40 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
     if (!db) throw new Error("Database not initialized.");
     const serviceRef = doc(db, 'serviceRecords', service.id);
     
-    // --- INICIO: Nueva Lógica de Cálculo de Comisiones ---
-    let totalCommission = 0;
-    const users: User[] = await adminService.onUsersUpdatePromise(); // Obtener todos los usuarios
+    const users: User[] = await adminService.onUsersUpdatePromise();
+    const usersMap = new Map(users.map(u => [u.id, u]));
 
-    // Mapear los serviceItems para calcular y añadir la comisión
+    // --- INICIO: Lógica Unificada de Comisiones ---
+    let totalTechnicianCommission = 0;
+    let serviceAdvisorCommission = 0;
+
+    // 1. Calcular comisiones de Técnicos por item
     const serviceItemsWithCommission = service.serviceItems?.map(item => {
+        let commissionForItem = 0;
         if (item.technicianId) {
-            const technician = users.find(u => u.id === item.technicianId);
-            // Verificar que el técnico exista y tenga una tasa de comisión válida
+            const technician = usersMap.get(item.technicianId);
             if (technician && typeof technician.commissionRate === 'number' && technician.commissionRate > 0) {
-                const commissionForItem = (item.sellingPrice || 0) * (technician.commissionRate / 100);
-                totalCommission += commissionForItem;
-                // Añadir la comisión calculada al item para guardado histórico
-                return { ...item, technicianCommission: commissionForItem };
+                commissionForItem = (item.sellingPrice || 0) * (technician.commissionRate / 100);
+                totalTechnicianCommission += commissionForItem;
             }
         }
-        // Si no hay técnico o comisión, asegurar que el campo exista con valor 0
-        return { ...item, technicianCommission: 0 };
+        return { ...item, technicianCommission: commissionForItem };
     }) || [];
-    // --- FIN: Nueva Lógica de Cálculo de Comisiones ---
+
+    // 2. Calcular comisión del Asesor sobre el total del servicio
+    if (service.serviceAdvisorId) {
+        const advisor = usersMap.get(service.serviceAdvisorId);
+        if (advisor && typeof advisor.commissionRate === 'number' && advisor.commissionRate > 0) {
+            serviceAdvisorCommission = (service.total || 0) * (advisor.commissionRate / 100);
+        }
+    }
+    // --- FIN: Lógica Unificada de Comisiones ---
 
     const updatedServiceData = {
         ...service,
-        serviceItems: serviceItemsWithCommission, // Usar los items con la comisión ya calculada
-        totalCommission: totalCommission,       // Guardar el total de comisiones en el servicio
+        serviceItems: serviceItemsWithCommission,
+        totalCommission: totalTechnicianCommission, // Mantenemos este campo para comisiones de técnicos
+        serviceAdvisorCommission: serviceAdvisorCommission, // Nuevo campo para la comisión del asesor
         status: 'Entregado',
         deliveryDateTime: new Date().toISOString(),
         payments: paymentDetails.payments,
@@ -130,7 +139,6 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
 
     batch.update(serviceRef, cleanObjectForFirestore(updatedServiceData));
 
-    // La lógica para descontar insumos del inventario no cambia
     if (service.serviceItems && service.serviceItems.length > 0) {
         const suppliesToSubtract = service.serviceItems.flatMap(item => 
             item.suppliesUsed?.map(supply => ({ id: supply.supplyId, quantity: supply.quantity })) || []

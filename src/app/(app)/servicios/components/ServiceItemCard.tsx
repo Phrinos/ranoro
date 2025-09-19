@@ -9,8 +9,8 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Plus, PlusCircle, Trash2, Wrench, Tags, Minus } from 'lucide-react';
-import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord } from '@/types';
-import { useState, useCallback } from "react";
+import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord, User } from '@/types';
+import { useState, useCallback, useMemo } from "react";
 import { useToast } from '@/hooks/use-toast';
 import { AddSupplyDialog } from './add-supply-dialog';
 import { capitalizeWords, formatCurrency, cn } from '@/lib/utils';
@@ -20,7 +20,7 @@ import type { InventoryItemFormValues } from "../../inventario/components/invent
 import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
 import { inventoryService } from "@/lib/services";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-
+import { usePermissions } from '@/hooks/usePermissions'; // Importamos el hook de permisos
 
 // Sub-component for a single Service Item card
 interface ServiceItemCardProps {
@@ -29,6 +29,7 @@ interface ServiceItemCardProps {
   isReadOnly?: boolean;
   inventoryItems: InventoryItem[];
   serviceTypes: ServiceTypeRecord[];
+  technicians: User[]; // Añadimos technicians a las props
   mode: 'service' | 'quote';
   onNewInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
   categories: InventoryCategory[];
@@ -41,6 +42,7 @@ export function ServiceItemCard({
     isReadOnly, 
     inventoryItems, 
     serviceTypes,
+    technicians, // Recibimos los técnicos
     mode,
     onNewInventoryItemCreated,
     categories,
@@ -52,21 +54,19 @@ export function ServiceItemCard({
         name: `serviceItems.${serviceIndex}.suppliesUsed`
     });
     const { toast } = useToast();
+    const permissions = usePermissions(); // Usamos el hook
+    const canViewCosts = permissions.has('inventory:view_costs'); // Verificamos el permiso
 
     const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
     const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
     const [newItemSearchTerm, setNewItemSearchTerm] = useState('');
     const [isAddToPriceListDialogOpen, setIsAddToPriceListDialogOpen] = useState(false);
 
-    
     const serviceItemErrors = errors.serviceItems?.[serviceIndex];
-    
-    // Watch for the vehicleId at the top-level form
     const currentVehicleId = watch('vehicleId');
-    const allVehicles = watch('allVehiclesForDialog') as Vehicle[] | undefined || []; // Assuming you pass this down or have it in context
+    const allVehicles = watch('allVehiclesForDialog') as Vehicle[] | undefined || [];
     const currentVehicle = allVehicles.find(v => v.id === currentVehicleId);
 
-    
     const handleAddSupply = (supply: ServiceSupply) => {
         append({
             supplyId: supply.supplyId || `manual_${Date.now()}`,
@@ -84,36 +84,26 @@ export function ServiceItemCard({
         const supplyPath = `serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}`;
         const currentSupply = getValues(supplyPath);
         if (!currentSupply) return;
-        
         const newQuantity = (Number(currentSupply.quantity) || 0) + delta;
         if (newQuantity <= 0) return;
-
         const inventoryItem = inventoryItems.find(item => item.id === currentSupply.supplyId);
         if (inventoryItem && !inventoryItem.isService && newQuantity > inventoryItem.quantity) {
-            toast({
-                title: 'Stock Insuficiente',
-                description: `Solo hay ${inventoryItem.quantity} de ${inventoryItem.name} en inventario.`,
-                variant: 'destructive'
-            });
+            toast({ title: 'Stock Insuficiente', description: `Solo hay ${inventoryItem.quantity} de ${inventoryItem.name} en inventario.`, variant: 'destructive' });
             return;
         }
-        
         update(supplyIndex, { ...currentSupply, quantity: newQuantity });
     };
     
     const handleManualQuantitySet = (index: number, value: string) => {
         const itemInSale = getValues(`serviceItems.${serviceIndex}.suppliesUsed.${index}`);
         if (!itemInSale) return;
-        
         const newQuantity = Number(value);
         if (isNaN(newQuantity) || newQuantity < 0) return;
-
         const itemDetails = inventoryItems.find(inv => inv.id === itemInSale.supplyId);
         if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
             toast({ title: 'Stock Insuficiente', description: `Solo hay ${itemDetails.quantity} de ${itemDetails.name}.`, variant: 'destructive' });
             return;
         }
-        
         setValue(`serviceItems.${serviceIndex}.suppliesUsed.${index}.quantity`, newQuantity, { shouldDirty: true });
     };
 
@@ -129,7 +119,7 @@ export function ServiceItemCard({
             append({
                 supplyId: newItem.id,
                 supplyName: newItem.name,
-                quantity: 1, // Default quantity for new items
+                quantity: 1,
                 unitPrice: newItem.unitPrice,
                 sellingPrice: newItem.sellingPrice,
                 isService: newItem.isService,
@@ -155,7 +145,6 @@ export function ServiceItemCard({
       }
     };
 
-
     return (
         <Card className="p-4 bg-muted/30">
             <div className="flex justify-between items-start mb-4">
@@ -175,63 +164,11 @@ export function ServiceItemCard({
                 </div>
             </div>
              <div className="space-y-4">
-                <FormField
-                    control={control}
-                    name={`serviceItems.${serviceIndex}.serviceType`}
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Tipo de Servicio</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            {serviceTypes && serviceTypes.slice().sort((a,b)=>a.name.localeCompare(b.name)).map((type) => (
-                                <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                    </FormItem>
-                    )}
-                />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={control}
-                        name={`serviceItems.${serviceIndex}.name`}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>Nombre del Servicio</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        placeholder="Afinación Mayor"
-                                        {...field}
-                                        disabled={isReadOnly}
-                                        onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
-                                        className={cn("bg-white", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
-                                    />
-                                </FormControl>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={control}
-                        name={`serviceItems.${serviceIndex}.price`}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Precio Cliente (IVA Inc.)</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="number"
-                                        placeholder="0.00"
-                                        {...field}
-                                        value={field.value ?? ''}
-                                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                                        disabled={isReadOnly}
-                                        className="bg-white"
-                                    />
-                                </FormControl>
-                            </FormItem>
-                        )}
-                    />
+                    <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => ( <FormItem><FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>Nombre del Servicio</FormLabel><FormControl><Input placeholder="Afinación Mayor" {...field} disabled={isReadOnly} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className={cn("bg-white", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")} /></FormControl></FormItem> )}/>
+                    <FormField control={control} name={`serviceItems.${serviceIndex}.sellingPrice`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente (IVA Inc.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} disabled={isReadOnly} className="bg-white" /></FormControl></FormItem> )}/>
                 </div>
+                 <FormField control={control} name={`serviceItems.${serviceIndex}.technicianId`} render={({ field }) => ( <FormItem><FormLabel>Asignar Técnico</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}><FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map(t => (<SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>))}</SelectContent></Select></FormItem> )}/>
             </div>
 
             <div className="mt-4">
@@ -248,19 +185,19 @@ export function ServiceItemCard({
                                 <div className="col-span-6 sm:col-span-3">
                                   <div className="flex items-center gap-1">
                                       {!isReadOnly && (<Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSupplyQuantityChange(supplyIndex, -1)} disabled={isReadOnly}><Minus className="h-3 w-3"/></Button>)}
-                                      <FormField
-                                          control={control}
-                                          name={`serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}.quantity`}
-                                          render={({ field }) => ( <Input type="number" step="any" min="0.001" {...field} value={field.value ?? ''} onChange={(e) => handleManualQuantitySet(supplyIndex, e.target.value)} className="w-16 text-center h-7 text-sm bg-white" disabled={isReadOnly}/> )}
-                                      />
+                                      <FormField control={control} name={`serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}.quantity`} render={({ field }) => ( <Input type="number" step="any" min="0.001" {...field} value={field.value ?? ''} onChange={(e) => handleManualQuantitySet(supplyIndex, e.target.value)} className="w-16 text-center h-7 text-sm bg-white" disabled={isReadOnly}/> )} />
                                       {!isReadOnly && (<Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSupplyQuantityChange(supplyIndex, 1)} disabled={isReadOnly}><Plus className="h-3 w-3" /></Button>)}
                                       <span className="text-xs w-8 text-center">{supplyField.unitType === 'ml' ? 'ml' : supplyField.unitType === 'liters' ? 'L' : 'uds.'}</span>
                                   </div>
                                 </div>
-                                <div className="col-span-6 sm:col-span-3 text-right">
-                                    <p className="text-xs text-muted-foreground">Costo Unit.</p>
-                                    <p className="text-sm font-semibold">{formatCurrency(supplyField.unitPrice || 0)}</p>
-                                </div>
+                                {/* --- INICIO: Renderizado Condicional de Costos --- */}
+                                {canViewCosts && (
+                                  <div className="col-span-6 sm:col-span-3 text-right">
+                                      <p className="text-xs text-muted-foreground">Costo Unit.</p>
+                                      <p className="text-sm font-semibold">{formatCurrency(supplyField.unitPrice || 0)}</p>
+                                  </div>
+                                )}
+                                {/* --- FIN: Renderizado Condicional de Costos --- */}
                                 {!isReadOnly && (
                                 <div className="sm:col-span-1 text-right">
                                     <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => remove(supplyIndex)}><Trash2 className="h-4 w-4"/></Button>
@@ -278,28 +215,9 @@ export function ServiceItemCard({
                     )}
                 </div>
             </div>
-             <AddSupplyDialog
-                open={isAddSupplyDialogOpen}
-                onOpenChange={setIsAddSupplyDialogOpen}
-                inventoryItems={inventoryItems}
-                onAddSupply={handleAddSupply}
-                onNewItemRequest={handleNewItemRequest}
-            />
-            <InventoryItemDialog
-                open={isNewItemDialogOpen}
-                onOpenChange={setIsNewItemDialogOpen}
-                onSave={handleNewItemSaved}
-                item={{ name: newItemSearchTerm }}
-                categories={categories}
-                suppliers={suppliers}
-            />
-             <AddToPriceListDialog
-                open={isAddToPriceListDialogOpen}
-                onOpenChange={setIsAddToPriceListDialogOpen}
-                serviceToSave={getValues(`serviceItems.${serviceIndex}`)}
-                currentVehicle={currentVehicle}
-                onSave={handleSaveToPriceList}
-            />
+             <AddSupplyDialog open={isAddSupplyDialogOpen} onOpenChange={setIsAddSupplyDialogOpen} inventoryItems={inventoryItems} onAddSupply={handleAddSupply} onNewItemRequest={handleNewItemRequest} />
+            <InventoryItemDialog open={isNewItemDialogOpen} onOpenChange={setIsNewItemDialogOpen} onSave={handleNewItemSaved} item={{ name: newItemSearchTerm }} categories={categories} suppliers={suppliers} />
+             <AddToPriceListDialog open={isAddToPriceListDialogOpen} onOpenChange={setIsAddToPriceListDialogOpen} serviceToSave={getValues(`serviceItems.${serviceIndex}`)} currentVehicle={currentVehicle} onSave={handleSaveToPriceList} />
         </Card>
     );
 }

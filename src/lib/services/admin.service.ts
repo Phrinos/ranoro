@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -41,7 +40,8 @@ export const logAudit = async (
     ...details,
     actionType,
     description,
-    date: new Date().toISOString(),
+    // CORRECCIÓN: Usar Timestamp para consistencia y queries
+    date: Timestamp.now(),
   };
   try {
     await addDoc(collection(db, 'auditLogs'), newLog);
@@ -120,7 +120,8 @@ const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => 
             if(!userId) throw new Error("User ID is missing for an update operation.");
             await updateDoc(doc(db, 'users', userId), cleanedData);
         } else {
-            const newUserRef = await addDoc(collection(db, 'users'), { ...cleanedData, createdAt: Timestamp.now().toISOString() });
+            // CORRECCIÓN: Se elimina .toISOString() y se pasa el Timestamp directamente.
+            const newUserRef = await addDoc(collection(db, 'users'), { ...cleanedData, createdAt: Timestamp.now() });
             userId = newUserRef.id;
         }
 

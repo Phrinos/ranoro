@@ -42,7 +42,6 @@ export function RendimientoPersonalContent() {
     setIsLoading(true);
     const unsubs: (() => void)[] = [
       adminService.onUsersUpdate(setAllUsers),
-      // Suscripción a servicios y marcamos la carga como finalizada aquí
       serviceService.onServicesUpdate((services) => {
         setAllServices(services);
         setIsLoading(false);
@@ -58,7 +57,6 @@ export function RendimientoPersonalContent() {
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    // 1. Filtrar solo los servicios completados dentro del rango de fechas
     const completedServicesInRange = allServices.filter(s => {
         const deliveryDate = parseDate(s.deliveryDateTime);
         return s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, interval);
@@ -66,20 +64,22 @@ export function RendimientoPersonalContent() {
 
     const activeUsers = allUsers.filter(u => !u.isArchived);
     
-    // 2. Calcular rendimiento para cada usuario
     return activeUsers.map(user => {
         let generatedRevenue = 0;
         let commission = 0;
 
-        // Iterar sobre los servicios completados
         for (const service of completedServicesInRange) {
-            // Iterar sobre los items de cada servicio (mano de obra y refacciones)
+            
+            // 1. Sumar comisión como ASESOR (si fue guardada)
+            if (service.serviceAdvisorId === user.id) {
+                generatedRevenue += service.total || 0;
+                commission += service.serviceAdvisorCommission || 0;
+            }
+
+            // 2. Sumar comisión como TÉCNICO (si fue guardada)
             for (const item of service.serviceItems || []) {
-                // Si el item fue asignado a este técnico
                 if (item.technicianId === user.id) {
-                    // Sumar el precio de venta al trabajo ingresado por el técnico
                     generatedRevenue += item.sellingPrice || 0;
-                    // Sumar la comisión pre-calculada y guardada en el item
                     commission += item.technicianCommission || 0;
                 }
             }

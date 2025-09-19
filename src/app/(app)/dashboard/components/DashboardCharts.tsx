@@ -7,7 +7,7 @@ import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
   ResponsiveContainer, PieChart, Pie, Cell, TooltipProps 
 } from 'recharts';
-import type { ServiceRecord, SaleReceipt, InventoryItem, MonthlyFixedExpense, Personnel } from '@/types';
+import type { ServiceRecord, SaleReceipt, InventoryItem, MonthlyFixedExpense, User as Personnel } from '@/types';
 import { format, parseISO, startOfMonth, subMonths, isValid, endOfMonth, isWithinInterval, getDaysInMonth, differenceInDays, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency, formatNumber } from '@/lib/utils';
@@ -25,7 +25,8 @@ const processFinancialChartData = (
     const dataByMonth: { 
         [key: string]: { 
             name: string;
-            ingresos: number; 
+            ingresos: number;
+            costoInsumos: number;
             gananciaBruta: number;
             gastosFijos: number;
             utilidadNeta: number;
@@ -37,26 +38,65 @@ const processFinancialChartData = (
         const date = subMonths(now, i);
         const monthKey = format(date, 'yyyy-MM');
         const monthName = format(date, 'MMM yy', { locale: es });
-        dataByMonth[monthKey] = { name: monthName, ingresos: 0, gananciaBruta: 0, gastosFijos: 0, utilidadNeta: 0 };
+        dataByMonth[monthKey] = { name: monthName, ingresos: 0, costoInsumos: 0, gananciaBruta: 0, gastosFijos: 0, utilidadNeta: 0 };
     }
+    
+    const inventoryMap = new Map(inventory.map(i => [i.id, i]));
 
-    const allOperations = [
-        ...services.filter(s => s.status === 'Entregado' && s.deliveryDateTime),
-        ...sales.filter(s => s.status !== 'Cancelado')
-    ];
+    // 1. Procesar servicios completados con la lógica de cálculo correcta
+    services.forEach(service => {
+        if (service.status !== 'Entregado') return;
 
-    allOperations.forEach(op => {
-        const opDate = parseDate('deliveryDateTime' in op ? op.deliveryDateTime : op.saleDate);
-        if (opDate && isValid(opDate)) {
-            const monthKey = format(opDate, 'yyyy-MM');
+        // Lógica de fecha robusta con fallbacks
+        const completionDate =
+            parseDate(service.deliveryDateTime) ??
+            parseDate(service.serviceDate) ??
+            parseDate(service.receptionDateTime);
+
+        if (completionDate && isValid(completionDate)) {
+            const monthKey = format(completionDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
-                const income = 'totalCost' in op ? (op.totalCost || 0) : op.totalAmount;
-                const costOfGoods = 'totalSuppliesWorkshopCost' in op 
-                    ? (op.totalSuppliesWorkshopCost || 0) 
-                    : ('items' in op ? op.items.reduce((sum, item) => sum + ((inventory.find(i => i.id === item.inventoryItemId)?.unitPrice || 0) * item.quantity), 0) : 0);
+                // Lógica de ingresos robusta: suma de pagos o totalCost
+                const grossRevenue =
+                    (Array.isArray(service.payments) && service.payments.length > 0
+                        ? service.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)
+                        : Number(service.totalCost) || 0);
+                
+                const costOfGoods = service.serviceItems?.reduce((totalCost, item) => {
+                    const itemSuppliesCost = item.suppliesUsed?.reduce((supplySum, supply) => {
+                        return supplySum + ((supply.unitPrice || 0) * (supply.quantity || 0));
+                    }, 0) || 0;
+                    return totalCost + itemSuppliesCost;
+                }, 0) || 0;
+
+                dataByMonth[monthKey].ingresos += grossRevenue;
+                dataByMonth[monthKey].costoInsumos += costOfGoods;
+            }
+        }
+    });
+
+    // 2. Procesar ventas del POS con la lógica de costo correcta
+    sales.forEach(sale => {
+        if (sale.status === 'Cancelado' || !sale.saleDate) return;
+        const saleDate = parseDate(sale.saleDate);
+        if (isValid(saleDate)) {
+            const monthKey = format(saleDate, 'yyyy-MM');
+            if (dataByMonth[monthKey]) {
+                const income = sale.totalAmount;
+                const costOfGoods = sale.items.reduce((sum, item) => {
+                    const inventoryItem = inventoryMap.get(item.inventoryItemId);
+                    // Lógica de costo robusta con fallbacks
+                    const itemUnitCost =
+                        inventoryItem?.purchasePrice ??
+                        inventoryItem?.costPrice ??
+                        inventoryItem?.averageCost ??
+                        inventoryItem?.unitCost ??
+                        0;
+                    return sum + (itemUnitCost * item.quantity);
+                }, 0);
                 
                 dataByMonth[monthKey].ingresos += income;
-                dataByMonth[monthKey].gananciaBruta += (income - costOfGoods);
+                dataByMonth[monthKey].costoInsumos += costOfGoods;
             }
         }
     });
@@ -65,19 +105,25 @@ const processFinancialChartData = (
     const totalOtherFixedExpenses = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     const totalMonthlyFixedExpenses = totalMonthlyFixedSalaries + totalOtherFixedExpenses;
 
+    // 3. Calcular Ganancia Bruta, Gastos Fijos y Utilidad Neta
     Object.keys(dataByMonth).forEach(monthKey => {
+        const monthData = dataByMonth[monthKey];
+        monthData.gananciaBruta = monthData.ingresos - monthData.costoInsumos;
+        
         const [year, month] = monthKey.split('-').map(Number);
         const monthStartDate = new Date(year, month - 1, 1);
-        const daysInMonth = getDaysInMonth(monthStartDate);
         
-        let expenseFactor = 1.0;
-        if (isSameDay(startOfMonth(now), monthStartDate)) {
-            expenseFactor = (differenceInDays(now, monthStartDate) + 1) / daysInMonth;
+        if (monthStartDate > now) {
+            monthData.gastosFijos = 0;
+        } else if (monthStartDate.getFullYear() === now.getFullYear() && monthStartDate.getMonth() === now.getMonth()) {
+            const daysInMonth = getDaysInMonth(monthStartDate);
+            const dayOfMonth = now.getDate();
+            const expenseFactor = dayOfMonth / daysInMonth;
+            monthData.gastosFijos = totalMonthlyFixedExpenses * expenseFactor;
+        } else {
+            monthData.gastosFijos = totalMonthlyFixedExpenses;
         }
-
-        const proportionalFixedExpenses = totalMonthlyFixedExpenses * expenseFactor;
-        dataByMonth[monthKey].gastosFijos = proportionalFixedExpenses;
-        dataByMonth[monthKey].utilidadNeta = dataByMonth[monthKey].gananciaBruta - proportionalFixedExpenses;
+        monthData.utilidadNeta = monthData.gananciaBruta - monthData.gastosFijos;
     });
 
     return Object.values(dataByMonth);
@@ -96,17 +142,26 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
         dataByMonth[monthKey] = { name: monthName };
     }
 
-    const allOperations = [
-        ...services.map(s => ({ ...s, type: s.serviceType || 'Servicio General', date: s.deliveryDateTime || s.serviceDate })),
-        ...sales.map(s => ({ ...s, type: 'Ventas POS', date: s.saleDate }))
-    ];
-
-    allOperations.forEach(op => {
-        const opDate = parseDate(op.date);
+    services.forEach(s => {
+        if (s.status !== 'Entregado') return;
+        const opDate = parseDate(s.deliveryDateTime) ?? parseDate(s.serviceDate);
         if (opDate && isValid(opDate)) {
             const monthKey = format(opDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
-                const type = op.type || 'Otro';
+                const type = s.serviceType || 'Servicio General';
+                dataByMonth[monthKey][type] = (dataByMonth[monthKey][type] || 0) + 1;
+                serviceTypeCounts[type] = (serviceTypeCounts[type] || 0) + 1;
+            }
+        }
+    });
+
+    sales.forEach(s => {
+        if (s.status === 'Cancelado' || !s.saleDate) return;
+        const opDate = parseDate(s.saleDate);
+        if (isValid(opDate)) {
+            const monthKey = format(opDate, 'yyyy-MM');
+            if (dataByMonth[monthKey]) {
+                const type = 'Ventas POS';
                 dataByMonth[monthKey][type] = (dataByMonth[monthKey][type] || 0) + 1;
                 serviceTypeCounts[type] = (serviceTypeCounts[type] || 0) + 1;
             }
@@ -129,7 +184,7 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
     return { lineData: Object.values(dataByMonth), pieData };
 };
 
-// --- Optimized Chart Components ---
+// --- Optimized Chart Components (Sin cambios aquí) ---
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#00C49F', '#FFBB28', '#FF8042', '#0088FE'];
 
@@ -159,6 +214,7 @@ const FinancialChart = React.memo(({ data }: { data: any[] }) => (
           <Tooltip formatter={(value: number) => formatCurrency(value)} />
           <Legend />
           <Line type="monotone" dataKey="ingresos" stroke="#3b82f6" strokeWidth={2} name="Ingresos Totales" />
+          <Line type="monotone" dataKey="costoInsumos" stroke="#f97316" strokeWidth={2} name="Costo de Insumos" />
           <Line type="monotone" dataKey="gananciaBruta" stroke="#84cc16" strokeWidth={2} name="Ganancia Bruta" />
           <Line type="monotone" dataKey="gastosFijos" stroke="#ef4444" strokeWidth={2} name="Gastos Fijos" />
           <Line type="monotone" dataKey="utilidadNeta" stroke="#16a34a" strokeWidth={3} name="Utilidad Neta" />

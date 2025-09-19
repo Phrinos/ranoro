@@ -15,7 +15,7 @@ import { formatCurrency } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import type { Vehicle, InventoryItem } from '@/types';
-import * as XLSX from 'xlsx';
+// import * as XLSX from 'xlsx'; // Comentado para eliminar la dependencia
 
 type MigrationType = 'operaciones' | 'productos';
 type AnalysisResult = MigrateDataOutput & { products?: ExtractedProduct[] } & { type: MigrationType };
@@ -90,6 +90,14 @@ export function MigracionPageContent() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // --- INICIO: Lógica de XLSX deshabilitada ---
+        if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+            toast({ title: "Funcionalidad no disponible", description: "La importación desde archivos Excel está temporalmente deshabilitada.", variant: "default" });
+            e.target.value = '';
+            return;
+        }
+        // --- FIN: Lógica de XLSX deshabilitada ---
+
         const reader = new FileReader();
         reader.onload = (event) => {
             const data = event.target?.result;
@@ -98,17 +106,11 @@ export function MigracionPageContent() {
             try {
                 if (file.name.endsWith('.csv') && typeof data === 'string') {
                     csvText = data;
-                } else if (data instanceof ArrayBuffer) {
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    csvText = XLSX.utils.sheet_to_csv(worksheet);
                 } else {
-                     toast({ title: "Error de Formato", description: "No se pudo procesar el archivo. Intente con CSV o XLSX.", variant: "destructive" });
+                     toast({ title: "Error de Formato", description: "No se pudo procesar el archivo. Intente con CSV.", variant: "destructive" });
                      return;
                 }
     
-                // Instead of pasting, directly run the analysis
                 runAnalysis(csvText);
                 
             } catch (error) {
@@ -121,13 +123,10 @@ export function MigracionPageContent() {
         
         if (file.name.endsWith('.csv')) {
              reader.readAsText(file);
-        } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-             reader.readAsArrayBuffer(file);
         } else {
-             toast({ title: "Formato no Soportado", description: "Por favor, suba un archivo .csv, .xls, o .xlsx.", variant: "destructive" });
+             toast({ title: "Formato no Soportado", description: "Por favor, suba un archivo .csv.", variant: "destructive" });
         }
         
-        // Clear the file input so the same file can be re-uploaded
         e.target.value = '';
     };
 
@@ -270,9 +269,9 @@ export function MigracionPageContent() {
                             <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                     <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click para subir</span> o arrastra y suelta</p>
-                                    <p className="text-xs text-gray-500">XLSX, XLS, CSV</p>
+                                    <p className="text-xs text-gray-500">CSV (XLSX deshabilitado)</p>
                                 </div>
-                                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".xlsx, .xls, .csv" />
+                                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".csv" />
                             </label>
                         </div>
                     </div>

@@ -7,7 +7,7 @@ import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Info, Car, Repeat } from 'lucide-react';
+import { PlusCircle, Info, Car, Repeat, ShieldCheck } from 'lucide-react';
 import { Vehicle } from '@/types';
 import { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
@@ -15,6 +15,7 @@ import { ServiceFormValues } from '@/schemas/service-form';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { VehicleSelectionDialog } from './VehicleSelectionDialog';
+import { usePermissions } from '@/hooks/usePermissions'; // Importamos nuestro hook de permisos
 
 interface VehicleSelectionCardProps {
   vehicles: Vehicle[];
@@ -34,6 +35,10 @@ export function VehicleSelectionCard({
   const { control, watch, setValue, formState: { errors } } = useFormContext<ServiceFormValues>();
   const [isVehicleCreateDialogOpen, setIsVehicleCreateDialogOpen] = useState(false);
   const [isVehicleSelectionDialogOpen, setIsVehicleSelectionDialogOpen] = useState(false);
+  
+  // Usamos el hook para obtener los permisos del usuario actual
+  const permissions = usePermissions();
+  const canViewSensitiveData = permissions.has('customers:view_sensitive_data');
 
   const selectedVehicleId = watch('vehicleId');
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
@@ -41,9 +46,17 @@ export function VehicleSelectionCard({
   useEffect(() => {
     if (selectedVehicleId && selectedVehicle) {
       setValue('vehicleIdentifier', `${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.licensePlate})`);
-      setValue('customerName', selectedVehicle.ownerName || 'N/A');
+      
+      // Lógica Condicional: solo establecemos el nombre real si tiene permisos
+      if (canViewSensitiveData) {
+        setValue('customerName', selectedVehicle.ownerName || 'N/A');
+        setValue('customerPhone', selectedVehicle.ownerPhone || '');
+      } else {
+        setValue('customerName', `[ Protegido ]`);
+        setValue('customerPhone', `[ Protegido ]`);
+      }
     }
-  }, [selectedVehicleId, selectedVehicle, setValue]);
+  }, [selectedVehicleId, selectedVehicle, setValue, canViewSensitiveData]);
 
   const handleVehicleCreatedAndSelect = async (data: VehicleFormValues) => {
     if (!onVehicleCreated) return;
@@ -68,7 +81,7 @@ export function VehicleSelectionCard({
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle className="text-lg">Vehículo</CardTitle>
+            <CardTitle className="text-lg">Información del Cliente y Vehículo</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -88,7 +101,10 @@ export function VehicleSelectionCard({
                         <Car className="h-6 w-6 text-muted-foreground" />
                         <div>
                           <p className="font-semibold">{selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.licensePlate})</p>
-                          <p className="text-sm text-muted-foreground">Propietario: {selectedVehicle.ownerName}</p>
+                          {/* Lógica Condicional en la UI */}
+                          <p className="text-sm text-muted-foreground">
+                            Propietario: {canViewSensitiveData ? selectedVehicle.ownerName : '[ Protegido ]'}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -103,6 +119,12 @@ export function VehicleSelectionCard({
               </FormItem>
             )}
           />
+          {selectedVehicle && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField control={control} name="customerName" render={({ field }) => (<FormItem><FormLabel>Nombre del Cliente</FormLabel><FormControl><Input {...field} disabled={!canViewSensitiveData} /></FormControl></FormItem>)} />
+              <FormField control={control} name="customerPhone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input {...field} disabled={!canViewSensitiveData} /></FormControl></FormItem>)} />
+            </div>
+          )}
           <FormField
             control={control}
             name="mileage"

@@ -17,7 +17,6 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { isValid, isToday, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
-import { DashboardCharts } from './components/DashboardCharts';
 import { toZonedTime } from 'date-fns-tz';
 import { GlobalTransactionDialog, GlobalTransactionFormValues } from '../flotilla/components/GlobalTransactionDialog';
 
@@ -59,7 +58,6 @@ export default function DashboardPage() {
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
-  const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 
@@ -77,7 +75,6 @@ export default function DashboardPage() {
       serviceService.onServicesUpdate(setAllServices),
       saleService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
-      inventoryService.onFixedExpensesUpdate(setFixedExpenses),
       personnelService.onPersonnelUpdate(setAllPersonnel),
       personnelService.onDriversUpdate(setDrivers),
       inventoryService.onVehiclesUpdate((vehicles) => {
@@ -312,14 +309,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-
-        <DashboardCharts 
-          services={allServices} 
-          sales={allSales}
-          inventory={allInventory}
-          fixedExpenses={fixedExpenses}
-          personnel={allPersonnel}
-        />
+        
+        {/* Las gráficas han sido removidas de aquí */}
 
       </div>
       <GlobalTransactionDialog

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient.js';
-import Facturapi from 'facturapi';
+// import Facturapi from 'facturapi'; // Comentado para eliminar la dependencia
 
 // --- Zod Schemas ---
 const billingFormSchema = z.object({
@@ -58,10 +58,11 @@ export async function createInvoice(
   input: z.infer<typeof CreateInvoiceInputSchema>
 ): Promise<z.infer<typeof CreateInvoiceOutputSchema>> {
   try {
-    return await createInvoiceFlow(input);
+    // La funcionalidad real está deshabilitada temporalmente
+    // return await createInvoiceFlow(input);
+    throw new Error('La funcionalidad de facturación está deshabilitada temporalmente.');
   } catch (e: any) {
     console.error('❌ Error en createInvoice wrapper:', e);
-    // Attempt to extract a meaningful message from Facturapi's error object
     const errorMessage = e?.message || (e?.data?.message ? `${e.data.message} (${e.data.code})` : 'Error inesperado en el wrapper de facturación.');
     return {
       success: false,
@@ -77,6 +78,8 @@ const createInvoiceFlow = ai.defineFlow(
     outputSchema: CreateInvoiceOutputSchema,
   },
   async (input) => {
+    throw new Error('La funcionalidad de facturación está deshabilitada temporalmente. El paquete "facturapi" no está instalado.');
+    /*
     const facturaComCredentials = await getFacturaComInstance();
     if (!facturaComCredentials) {
       throw new Error('La configuración de facturación no ha sido establecida. Contacte al administrador del taller.');
@@ -157,6 +160,7 @@ const createInvoiceFlow = ai.defineFlow(
       invoiceUrl: invoice.pdf_url,
       status: invoice.status,
     };
+    */
   }
 );
 
@@ -166,6 +170,9 @@ const createInvoiceFlow = ai.defineFlow(
  * ------------------------------------- */
 
 export async function cancelInvoice(invoiceId: string): Promise<{ success: boolean; error?: string }> {
+  // Funcionalidad deshabilitada
+  return { success: false, error: 'La funcionalidad de facturación está deshabilitada temporalmente.' };
+  /*
   try {
     const facturaComCredentials = await getFacturaComInstance();
     if (!facturaComCredentials) throw new Error('Credenciales de facturación no configuradas.');
@@ -182,6 +189,7 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
     console.error('Cancelación de factura fallida:', e.message);
     return { success: false, error: e?.data?.message || e.message || 'Error desconocido' };
   }
+  */
 }
 
 
@@ -190,8 +198,9 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
  * ------------------------------------- */
 
 export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: boolean; url?: string; error?: string }> {
-  // This function is less common with the library, as the URL is returned on creation.
-  // We'll keep it for fetching old invoices if needed, but it's not a primary flow.
+    // Funcionalidad deshabilitada
+    return { success: false, error: 'La funcionalidad de facturación está deshabilitada temporalmente.' };
+  /*
   try {
     const facturaComCredentials = await getFacturaComInstance();
     if (!facturaComCredentials) throw new Error('Credenciales de facturación no configuradas.');
@@ -209,6 +218,7 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
      console.error('Get PDF URL error:', e.message);
      return { success: false, error: e?.data?.message || e.message || 'Error desconocido' };
   }
+  */
 }
 
 /* -------------------------------------
@@ -216,6 +226,9 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
  * ------------------------------------- */
 
 export async function getInvoices(): Promise<{ data: any[], error?: string, page?: number, total_pages?: number, total_results?: number }> {
+  // Funcionalidad deshabilitada
+  return { data: [], error: 'La funcionalidad de facturación está deshabilitada temporalmente.' };
+  /*
   try {
     const facturaComCredentials = await getFacturaComInstance();
     if (facturaComCredentials === null) {
@@ -236,5 +249,5 @@ export async function getInvoices(): Promise<{ data: any[], error?: string, page
     console.error('Factura.com list invoices error:', e);
     return { data: [], error: e?.data?.message || e.message || 'Error al obtener facturas' };
   }
+  */
 }
-

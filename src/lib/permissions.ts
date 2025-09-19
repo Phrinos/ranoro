@@ -7,6 +7,12 @@ export const PERMISSION_GROUPS = [
         ]
     },
     {
+        groupName: "Clientes y Datos Sensibles",
+        permissions: [
+            { id: 'customers:view_sensitive_data', label: 'Ver Nombre y Teléfono de Clientes' },
+        ]
+    },
+    {
         groupName: "Servicios y Cotizaciones",
         permissions: [
             { id: 'services:create', label: 'Crear Servicios/Cotizaciones' },
@@ -15,10 +21,12 @@ export const PERMISSION_GROUPS = [
         ]
     },
     {
-        groupName: "Inventario y Ventas",
+        groupName: "Inventario, Compras y Ventas",
         permissions: [
-            { id: 'inventory:manage', label: 'Gestionar Inventario' },
-            { id: 'inventory:view', label: 'Ver Inventario' },
+            { id: 'inventory:manage', label: 'Gestionar Inventario (Añadir/Editar)' },
+            { id: 'inventory:view_public_info', label: 'Ver Inventario (Info. Pública)' },
+            { id: 'inventory:view_costs', label: 'Ver Costos y Ganancias de Inventario' },
+            { id: 'purchases:manage', label: 'Gestionar Compras a Proveedores' },
             { id: 'pos:create_sale', label: 'Registrar Ventas (POS)' },
             { id: 'pos:view_sales', label: 'Ver Registro de Ventas' },
         ]

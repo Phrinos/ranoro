@@ -26,13 +26,14 @@ import { format } from "date-fns";
 import { es } from 'date-fns/locale';
 import { parseDate } from "@/lib/forms";
 import { useState } from "react";
-
+import { Checkbox } from "@/components/ui/checkbox";
 
 const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Ingrese un correo electrónico válido."),
   phone: z.string().optional(),
   role: z.string({ required_error: "Seleccione un rol." }).min(1, "Debe seleccionar un rol."),
+  functions: z.array(z.string()).optional(), // Campo para las funciones operativas
   monthlySalary: z.coerce.number().optional(),
   commissionRate: z.coerce.number().optional(),
   hireDate: z.date().optional(),
@@ -47,6 +48,11 @@ interface UserFormProps {
   onSubmit: (values: UserFormValues) => Promise<void>;
 }
 
+const OPERATIVE_FUNCTIONS = [
+    { id: 'asesor', label: 'Asesor de Servicio' },
+    { id: 'tecnico', label: 'Técnico Mecánico' },
+]
+
 export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const form = useForm<UserFormValues>({
@@ -56,6 +62,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         email: initialData.email,
         phone: initialData.phone || '',
         role: initialData.role || '',
+        functions: initialData.functions || [],
         monthlySalary: initialData.monthlySalary || 0,
         commissionRate: initialData.commissionRate || 0,
         hireDate: initialData.hireDate ? parseDate(initialData.hireDate) : undefined,
@@ -64,6 +71,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
       email: "",
       phone: "",
       role: "",
+      functions: [],
       monthlySalary: 0,
       commissionRate: 0,
       hireDate: new Date(),
@@ -82,9 +90,46 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         <FormField control={form.control} name="phone" render={({ field }) => (
           <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="4491234567" {...field} value={field.value ?? ''} className="bg-white text-black" /></FormControl><FormMessage /></FormItem>
         )}/>
-        <FormField control={form.control} name="role" render={({ field }) => (
-          <FormItem><FormLabel>Rol del Usuario</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white text-black"><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
-        )}/>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField control={form.control} name="role" render={({ field }) => (
+              <FormItem><FormLabel>Rol de Permisos</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white text-black"><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+            )}/>
+             <FormField
+              control={form.control}
+              name="functions"
+              render={() => (
+                <FormItem>
+                    <FormLabel>Funciones Operativas</FormLabel>
+                    <div className="flex flex-col space-y-2 pt-2">
+                        {OPERATIVE_FUNCTIONS.map((item) => (
+                            <FormField
+                                key={item.id}
+                                control={form.control}
+                                name="functions"
+                                render={({ field }) => {
+                                    return (
+                                        <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={field.value?.includes(item.id)}
+                                                    onCheckedChange={(checked) => {
+                                                        return checked
+                                                        ? field.onChange([...(field.value || []), item.id])
+                                                        : field.onChange(field.value?.filter((value) => value !== item.id))
+                                                    }}
+                                                />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">{item.label}</FormLabel>
+                                        </FormItem>
+                                    )
+                                }}
+                            />
+                        ))}
+                    </div>
+                </FormItem>
+              )}
+            />
+        </div>
          <FormField
           control={form.control}
           name="hireDate"

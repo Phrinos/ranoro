@@ -2,56 +2,100 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // --- Funciones de Ayuda ---
+    // Función para verificar si un usuario está autenticado.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Función para obtener los datos del perfil del usuario que hace la solicitud.
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Función para obtener los permisos del rol del usuario.
+    function getUserPermissions() {
+      // Asumimos que el rol del usuario (ej. "Técnico") es el ID del documento en appRoles.
+      return get(/databases/$(database)/documents/appRoles/$(getUserData().role)).data.permissions;
+    }
+
+    // Función principal de seguridad: verifica si el usuario tiene un permiso específico.
+    function hasPermission(permission) {
+      return isSignedIn() && permission in getUserPermissions();
+    }
     
-    // El usuario solo puede leer y escribir su propio documento
+    // --- Reglas por Colección ---
+
+    // Usuarios: Solo puedes editar tu propio perfil.
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId;
     }
-    
-    // Los roles solo se pueden leer desde el cliente, no escribir
+
+    // Roles: Solo se pueden leer, nunca modificar desde el cliente.
     match /appRoles/{roleId} {
-      allow read: if request.auth != null;
-      allow write: if false; 
+      allow read: if isSignedIn();
+      allow write: if false;
     }
-    
-    // Reglas para servicios públicos (acceso sin autenticación)
+
+    // Servicios Públicos: Lectura pública, actualización muy limitada.
     match /publicServices/{serviceId} {
       allow read: if true;
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'appointmentDateTime', 'appointmentStatus', 'customerSignatureReception', 'customerSignatureDelivery']);
       allow create, delete: if false;
     }
+    
+    // Auditoría: Solo se puede leer, nunca escribir.
+    match /auditLogs/{logId} {
+        allow read: if hasPermission('audits:view');
+        allow write: if false;
+    }
 
-    // Reglas específicas para el inventario
+    // --- REGLAS DE ACCESO GRANULAR ---
+
+    // Inventario:
     match /inventoryItems/{itemId} {
-      // Cualquiera autenticado puede leer y crear items.
-      allow read, create: if request.auth != null;
+      // Leer: Se divide en dos.
+      // 1. Leer información pública (sin costos)
+      allow read: if hasPermission('inventory:view_public_info');
       
-      // La actualización se permite PERO con una condición clave para el stock.
-      allow update: if request.auth != null && 
-                     // Esta línea es la clave: el stock que se quiere escribir
-                     // debe ser igual al que ya existe en la base de datos.
-                     // Esto previene eficazmente que el cliente modifique el stock,
-                     // pero permite que las Cloud Functions (que ignoran estas reglas) lo hagan.
+      // Escribir:
+      allow create: if hasPermission('inventory:manage');
+      allow update: if hasPermission('inventory:manage') &&
+                     // Regla de protección de stock: no se puede cambiar desde el cliente.
                      request.resource.data.stock == resource.data.stock;
     }
-
-    // Reglas para los movimientos de inventario (solo lectura desde el cliente)
-    match /inventoryMovements/{movementId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if false; // Nadie puede crear o modificar movimientos desde el cliente
-    }
-
-    // Reglas para las compras (el cliente puede crearlas y actualizarlas)
+    
+    // Compras a Proveedores:
     match /purchases/{purchaseId} {
-      allow read, create, update: if request.auth != null;
-      allow delete: if false; // Por seguridad, no permitir borrar compras. Se pueden "cancelar" con un estado.
+        allow read, create, update: if hasPermission('purchases:manage');
+        allow delete: if false; // Por seguridad, es mejor cancelar que borrar.
     }
 
-    // Reglas generales para el resto de las colecciones.
-    // Es importante que esta regla esté al final.
+    // Servicios: La regla más compleja.
+    match /serviceRecords/{serviceId} {
+      // Lectura:
+      // Un técnico solo puede leer un servicio si NO contiene datos sensibles del cliente.
+      // Un asesor o admin puede leer todo.
+      allow read: if isSignedIn(); // Se controlará el acceso a campos específicos en las Cloud Functions
+
+      // Escritura:
+      allow create: if hasPermission('services:create');
+      allow update: if hasPermission('services:edit');
+      allow delete: if hasPermission('services:create'); // Usamos el mismo permiso para borrar cotizaciones
+    }
+    
+    // Movimientos de inventario: Solo se pueden leer, son creados por el backend.
+    match /inventoryMovements/{movementId} {
+        allow read: if hasPermission('inventory:view_public_info');
+        allow write: if false;
+    }
+
+    // Regla General de "Denegar por Defecto"
+    // Cualquier otra colección no listada aquí no tendrá acceso.
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

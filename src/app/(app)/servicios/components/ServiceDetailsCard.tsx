@@ -17,7 +17,6 @@ import { format, setHours, setMinutes, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Textarea } from '@/components/ui/textarea';
 
 const statusOptions: { value: ServiceFormValues['status'], label: string }[] = [
     { value: 'Cotizacion', label: 'Cotización' },
@@ -41,7 +40,8 @@ const subStatusOptions: Record<string, { value: ServiceFormValues['subStatus'], 
 
 interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
-  users: User[];
+  advisors: User[]; // Acepta la lista de asesores
+  technicians: User[]; // Acepta la lista de técnicos
   serviceTypes: ServiceTypeRecord[];
   onOpenSignature: (type: 'reception' | 'delivery' | 'advisor') => void;
   isNew: boolean;
@@ -49,14 +49,15 @@ interface ServiceDetailsCardProps {
 
 export function ServiceDetailsCard({
   isReadOnly,
-  users,
+  advisors,
+  technicians,
   onOpenSignature,
   isNew
 }: ServiceDetailsCardProps) {
   const { control, watch, formState: { errors }, setValue } = useFormContext<ServiceFormValues>();
   
   const watchedStatus = watch('status');
-  const watchedAdvisorName = watch('serviceAdvisorName');
+  const watchedAdvisorId = watch('serviceAdvisorId');
   const watchedTechnicianId = watch('technicianId');
   
   const isFinalStatus = watchedStatus === 'Cancelado' && !isReadOnly;
@@ -65,22 +66,29 @@ export function ServiceDetailsCard({
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isQuoteDatePickerOpen, setIsQuoteDatePickerOpen] = useState(false);
 
-  const technicians = useMemo(() => {
-    const safeUsers: User[] = Array.isArray(users) ? users : [];
-    return safeUsers.filter(u => u.role.toLowerCase().includes('tecnico') || u.role.toLowerCase().includes('admin'));
-  }, [users]);
-
   const showAppointmentFields = useMemo(() => watchedStatus === 'Agendado', [watchedStatus]);
   const showTechnicianField = useMemo(() => watchedStatus === 'En Taller', [watchedStatus]);
   const showQuoteDateField = useMemo(() => isNew && watchedStatus === 'Cotizacion', [watchedStatus, isNew]);
   const showSubStatusField = useMemo(() => watchedStatus === 'En Taller' || watchedStatus === 'Agendado', [watchedStatus]);
   
+  const advisorName = useMemo(() => {
+    if (!watchedAdvisorId) return null;
+    return advisors.find(u => u.id === watchedAdvisorId)?.name || null;
+  }, [watchedAdvisorId, advisors]);
+
   const technicianName = useMemo(() => {
     if (!watchedTechnicianId) return null;
-    return users.find(u => u.id === watchedTechnicianId)?.name || null;
-  }, [watchedTechnicianId, users]);
+    return technicians.find(u => u.id === watchedTechnicianId)?.name || null;
+  }, [watchedTechnicianId, technicians]);
 
-  
+  const handleAdvisorChange = (advisorId: string) => {
+    const selectedAdvisor = advisors.find(a => a.id === advisorId);
+    if (selectedAdvisor) {
+        setValue('serviceAdvisorId', selectedAdvisor.id, { shouldDirty: true });
+        setValue('serviceAdvisorName', selectedAdvisor.name, { shouldDirty: true });
+    }
+  };
+
   const handleStatusChange = (newStatus: ServiceFormValues['status']) => {
     setValue('status', newStatus);
     if (newStatus === 'Agendado') {
@@ -103,8 +111,8 @@ export function ServiceDetailsCard({
         <div className="flex justify-between items-center">
             <CardTitle className="text-lg">Detalles del Servicio</CardTitle>
             <div className="text-right text-sm text-muted-foreground">
-              {watchedAdvisorName && <p>Asesor: {watchedAdvisorName}</p>}
-              {watchedStatus === 'Entregado' && technicianName && <p>Técnico: {technicianName}</p>}
+              {advisorName && <p>Asesor: {advisorName}</p>}
+              {technicianName && <p>Técnico: {technicianName}</p>}
             </div>
         </div>
       </CardHeader>
@@ -121,11 +129,7 @@ export function ServiceDetailsCard({
                   value={field.value || ''}
                   disabled={isFinalStatus}
                 >
-                  <FormControl>
-                    <SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}>
-                      <SelectValue placeholder="Seleccione un estado" />
-                    </SelectTrigger>
-                  </FormControl>
+                  <FormControl><SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl>
                   <SelectContent>{statusOptions.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                 </Select>
               </FormItem>
@@ -133,43 +137,29 @@ export function ServiceDetailsCard({
           />
 
           {showSubStatusField && (
-             <FormField
-                control={control}
-                name="subStatus"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sub-Estado</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {relevantSubStatusOptions.map(s => <SelectItem key={s.value} value={s.value!}>{s.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
+             <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{relevantSubStatusOptions.map(s => <SelectItem key={s.value} value={s.value!}>{s.label}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
           )}
-        </div>
-        
-        {showTechnicianField && (
-            <FormField
-              control={control}
-              name="technicianId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Técnico Asignado</FormLabel>
+          
+          <FormField control={control} name="serviceAdvisorId" render={({ field }) => (
+              <FormItem><FormLabel>Asesor de Servicio</FormLabel>
+                <Select onValueChange={handleAdvisorChange} value={field.value || ''} disabled={isReadOnly}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un asesor" /></SelectTrigger></FormControl>
+                    <SelectContent>{advisors.filter(a => !a.isArchived).map(advisor => ( <SelectItem key={advisor.id} value={advisor.id}>{advisor.name}</SelectItem> ))}</SelectContent>
+                </Select>
+              </FormItem>
+          )}/>
+
+          {showTechnicianField && (
+            <FormField control={control} name="technicianId" render={({ field }) => (
+                <FormItem><FormLabel>Técnico Principal</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {technicians.filter((t) => !t.isArchived).map((technician) => (
-                        <SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>
-                      ))}
-                    </SelectContent>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl>
+                      <SelectContent>{technicians.filter(t => !t.isArchived).map(tech => ( <SelectItem key={tech.id} value={tech.id}>{tech.name}</SelectItem> ))}</SelectContent>
                   </Select>
                 </FormItem>
-              )}
-            />
-        )}
+            )}/>
+          )}
+        </div>
         
         <Button type="button" variant="outline" className="w-full" onClick={() => onOpenSignature('advisor')} disabled={isReadOnly}>
           <Signature className="mr-2 h-4 w-4" />
@@ -178,98 +168,14 @@ export function ServiceDetailsCard({
         
         {showQuoteDateField && (
           <div className="pt-4 border-t">
-            <Controller
-              name="serviceDate"
-              control={control}
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className={cn(errors.serviceDate && "text-destructive")}>Fecha de Cotización</FormLabel>
-                  <Popover open={isQuoteDatePickerOpen} onOpenChange={setIsQuoteDatePickerOpen}>
-                    <PopoverTrigger asChild disabled={isReadOnly}>
-                      <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", errors.serviceDate && "border-destructive focus-visible:ring-destructive")} disabled={isReadOnly}>
-                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(date) => {
-                           const newDate = date || new Date();
-                           field.onChange(newDate);
-                           setIsQuoteDatePickerOpen(false);
-                        }}
-                        disabled={isReadOnly}
-                        locale={es}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <Controller name="serviceDate" control={control} render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel className={cn(errors.serviceDate && "text-destructive")}>Fecha de Cotización</FormLabel><Popover open={isQuoteDatePickerOpen} onOpenChange={setIsQuoteDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", errors.serviceDate && "border-destructive focus-visible:ring-destructive")} disabled={isReadOnly}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const newDate = date || new Date(); field.onChange(newDate); setIsQuoteDatePickerOpen(false); }} disabled={isReadOnly} locale={es} /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
           </div>
         )}
 
         {showAppointmentFields && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t items-end">
-            <Controller
-              name="appointmentDateTime"
-              control={control}
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className={cn(errors.appointmentDateTime && "text-destructive")}>Fecha de Cita</FormLabel>
-                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <PopoverTrigger asChild disabled={isReadOnly}>
-                      <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", errors.appointmentDateTime && "border-destructive focus-visible:ring-destructive")} disabled={isReadOnly}>
-                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(date) => {
-                          const currentTime = field.value || new Date();
-                          const newDate = date ? setMinutes(setHours(date, currentTime.getHours()), currentTime.getMinutes()) : undefined;
-                          field.onChange(newDate);
-                          setIsDatePickerOpen(false);
-                        }}
-                        disabled={isReadOnly}
-                        locale={es}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Controller
-              name="appointmentDateTime"
-              control={control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora de la Cita</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="time"
-                      value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                      onChange={(e) => {
-                        if (!e.target.value) {
-                            field.onChange(null);
-                            return;
-                        };
-                        const [h, m] = e.target.value.split(':').map(Number);
-                        field.onChange(setMinutes(setHours(field.value || new Date(), h), m));
-                      }}
-                      disabled={isReadOnly}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            <Controller name="appointmentDateTime" control={control} render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel className={cn(errors.appointmentDateTime && "text-destructive")}>Fecha de Cita</FormLabel><Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", errors.appointmentDateTime && "border-destructive focus-visible:ring-destructive")} disabled={isReadOnly}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDate = date ? setMinutes(setHours(date, currentTime.getHours()), currentTime.getMinutes()) : undefined; field.onChange(newDate); setIsDatePickerOpen(false); }} disabled={isReadOnly} locale={es} /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+            <Controller name="appointmentDateTime" control={control} render={({ field }) => ( <FormItem><FormLabel>Hora de la Cita</FormLabel><FormControl><Input type="time" value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""} onChange={(e) => { if (!e.target.value) { field.onChange(null); return; }; const [h, m] = e.target.value.split(':').map(Number); field.onChange(setMinutes(setHours(field.value || new Date(), h), m)); }} disabled={isReadOnly} /></FormControl></FormItem> )}/>
           </div>
         )}
       </CardContent>
