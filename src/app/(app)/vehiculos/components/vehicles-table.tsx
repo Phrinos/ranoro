@@ -12,6 +12,7 @@ import { VehicleFormValues } from './vehicle-form';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
+import { cn } from '@/lib/utils';
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
