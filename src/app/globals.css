@@ -41,13 +41,13 @@
     --radius: 0.5rem;
 
     /* Sidebar specific colors */
-    --sidebar-background: 240 5% 15%; /* Dark gray/charcoal for sidebar */
+    --sidebar-background: 0 0% 8%; /* Black for sidebar */
     --sidebar-foreground: 0 0% 95%; /* Light text on dark sidebar */
     --sidebar-primary: 3 70% 45%; /* Slightly lighter red for active on dark sidebar */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5% 25%; /* Hover bg for items on dark sidebar */
+    --sidebar-accent: 0 0% 18%; /* Hover bg for items on dark sidebar */
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 5% 25%;
+    --sidebar-border: 0 0% 18%;
     --sidebar-ring: 3 70% 45%;
   }
   .dark {

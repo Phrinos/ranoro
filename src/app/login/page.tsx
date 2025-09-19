@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -135,7 +135,6 @@ export default function LoginPage() {
                   alt="Ranoro Logo"
                   fill
                   style={{objectFit: 'contain'}}
-                  className="dark:invert"
                   sizes="180px"
                   priority
                   data-ai-hint="ranoro logo"

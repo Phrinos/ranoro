@@ -45,7 +45,6 @@ export default function LandingPage() {
               alt="Ranoro Logo"
               fill
               style={{objectFit: 'contain'}}
-              className="dark:invert"
               sizes="140px"
               data-ai-hint="ranoro logo"
               priority

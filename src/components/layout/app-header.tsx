@@ -112,7 +112,6 @@ export function AppHeader() {
                     alt="Ranoro Logo"
                     fill
                     style={{objectFit: 'contain'}}
-                    className="dark:invert"
                     sizes="120px"
                     data-ai-hint="ranoro logo"
                   />
@@ -129,7 +128,6 @@ export function AppHeader() {
                 alt="Ranoro Logo"
                 fill
                 style={{objectFit: 'contain'}}
-                className="dark:invert"
                 sizes="120px"
                 data-ai-hint="ranoro logo"
               />
