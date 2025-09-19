@@ -137,13 +137,13 @@ export function AddItemDialog({
                         {filteredItems.map((item) => (
                            <CommandItem
                              key={item.id}
-                             value={`${item.name} ${item.sku ?? ''}`}
+                             value={`${item.category} - ${item.name} ${item.sku ?? ''}`}
                              onSelect={() => handleSelect(item)}
                              className="flex flex-col items-start gap-1 cursor-pointer"
                            >
-                              <p className="font-semibold">{item.name}</p>
+                              <p className="font-semibold">{item.category} - {item.name}</p>
                               <p className="text-xs text-muted-foreground">
-                                Stock: {item.isService ? 'N/A' : item.quantity ?? 0} | Precio: {formatCurrency(getPrice(item))}
+                                SKU: {item.sku || 'N/A'} | Stock: {item.isService ? 'N/A' : item.quantity ?? 0} | Precio: {formatCurrency(getPrice(item))}
                               </p>
                            </CommandItem>
                         ))}
