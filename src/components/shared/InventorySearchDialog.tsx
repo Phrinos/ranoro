@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -47,16 +46,16 @@ export function InventorySearchDialog({
     [inventoryItems]
   );
 
-  // ranking para “más frecuentes”
-  const score = (it: any) =>
+  const score = useCallback((it: any) =>
     (it.timesSold || it.salesCount || 0) * 3 +
     (it.timesUsed || it.serviceUsageCount || 0) * 3 +
     (it.lastSoldAt ? 2 : 0) +
-    ((it.quantity ?? 0) > 0 ? 1 : 0);
+    ((it.quantity ?? 0) > 0 ? 1 : 0)
+  , []);
 
   const frequentItems = useMemo(
     () => [...safeInventory].sort((a, b) => score(b) - score(a)).slice(0, 30),
-    [safeInventory]
+    [safeInventory, score]
   );
 
   const filteredItems = useMemo(() => {
@@ -81,23 +80,23 @@ export function InventorySearchDialog({
       })
       .sort((a, b) => score(b) - score(a))
       .slice(0, 100);
-  }, [safeInventory, searchTerm, frequentItems]);
+  }, [safeInventory, searchTerm, frequentItems, score]);
 
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item, 1);
     setSearchTerm("");
     onOpenChange(false);
   };
-
-  const handleOpenChange = (next: boolean) => {
-    if (!next) setSearchTerm("");
-    onOpenChange(next);
-  };
   
   const handleNewItem = () => {
     if (onNewItemRequest) {
       onNewItemRequest(searchTerm);
     }
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) setSearchTerm("");
+    onOpenChange(next);
   };
 
   return (
@@ -152,6 +151,7 @@ export function InventorySearchDialog({
 
                 {filteredItems.map((item) => {
                   const searchValue = [
+                    item.id,
                     item.name,
                     item.sku,
                     (item as any).brand,
@@ -183,4 +183,3 @@ export function InventorySearchDialog({
     </Dialog>
   );
 }
-
