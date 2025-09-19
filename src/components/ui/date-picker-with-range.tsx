@@ -23,20 +23,36 @@ export function DatePickerWithRange({
   className,
   date,
   onDateChange,
-  months = 2,
+  months = 1, // Default to 1 month to make it smaller
 }: DatePickerWithRangeProps) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [tempDate, setTempDate] = React.useState<DateRange | undefined>(date);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setTempDate(date);
+    }
+  }, [isOpen, date]);
+
+  const handleApply = () => {
+    onDateChange(tempDate);
+    setIsOpen(false);
+  };
+
   const setPreset = (preset: "last_month" | "last_3" | "last_6" | "clear") => {
     const now = new Date();
-    if (preset === "clear") return onDateChange(undefined);
-    if (preset === "last_month") {
+    let newRange: DateRange | undefined;
+    if (preset === "clear") {
+      newRange = undefined;
+    } else if (preset === "last_month") {
       const last = subMonths(now, 1);
-      return onDateChange({ from: startOfMonth(last), to: endOfMonth(last) });
+      newRange = { from: startOfMonth(last), to: endOfMonth(last) };
+    } else if (preset === "last_3") {
+      newRange = { from: startOfMonth(subMonths(now, 2)), to: endOfMonth(now) };
+    } else { // last_6
+      newRange = { from: startOfMonth(subMonths(now, 5)), to: endOfMonth(now) };
     }
-    if (preset === "last_3") {
-      return onDateChange({ from: startOfMonth(subMonths(now, 2)), to: endOfMonth(now) });
-    }
-    // last_6
-    return onDateChange({ from: startOfMonth(subMonths(now, 5)), to: endOfMonth(now) });
+    setTempDate(newRange);
   };
 
   const label =
@@ -48,7 +64,7 @@ export function DatePickerWithRange({
 
   return (
     <div className={cn("grid gap-2", className)}>
-      <Popover>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
             id="date"
@@ -104,9 +120,9 @@ export function DatePickerWithRange({
               fixedWeeks
               numberOfMonths={months}
               mode="range"
-              defaultMonth={date?.from}
-              selected={date}
-              onSelect={onDateChange}
+              defaultMonth={tempDate?.from}
+              selected={tempDate}
+              onSelect={setTempDate}
               fromYear={2018}
               toYear={2032}
               className="bg-white rounded-md"
@@ -117,6 +133,9 @@ export function DatePickerWithRange({
               }}
               weekStartsOn={1}
             />
+          </div>
+          <div className="flex justify-end p-2 border-t">
+              <Button size="sm" onClick={handleApply}>Aceptar</Button>
           </div>
         </PopoverContent>
       </Popover>
