@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Building } from "lucide-react";
+import { Edit, Trash2, Building, ArrowUpDown } from "lucide-react";
 import type { Supplier } from "@/types";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { formatCurrency } from "@/lib/utils";
@@ -24,9 +24,26 @@ interface SuppliersTableProps {
   onEdit: (supplier: Supplier) => void;
   onDelete: (supplierId: string) => void;
   onRowClick: (supplier: Supplier) => void;
+  sortOption: string;
+  onSortOptionChange: (value: string) => void;
 }
 
-export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowClick }: SuppliersTableProps) => {
+type SortKey = 'name' | 'contactPerson' | 'phone' | 'debtAmount';
+
+
+export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowClick, sortOption, onSortOptionChange }: SuppliersTableProps) => {
+    
+  const handleSort = (key: SortKey) => {
+    const isAsc = sortOption === `${key}_asc`;
+    onSortOptionChange(isAsc ? `${key}_desc` : `${key}_asc`);
+  };
+
+  const renderSortArrow = (key: SortKey) => {
+    if (sortOption.startsWith(key)) {
+      return sortOption.endsWith('_asc') ? '▲' : '▼';
+    }
+    return null;
+  };
     
   if (!suppliers.length) {
     return (
@@ -42,11 +59,19 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowCl
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
         <TableHeader className="bg-black">
-          <TableRow>
-            <TableHead className="font-bold text-white">Nombre</TableHead>
-            <TableHead className="font-bold text-white">Contacto</TableHead>
-            <TableHead className="font-bold text-white">Teléfono</TableHead>
-            <TableHead className="text-right font-bold text-white">Deuda</TableHead>
+          <TableRow className="hover:bg-black">
+            <TableHead className="font-bold text-white cursor-pointer" onClick={() => handleSort('name')}>
+              <div className="flex items-center">Nombre {renderSortArrow('name')}</div>
+            </TableHead>
+            <TableHead className="font-bold text-white cursor-pointer" onClick={() => handleSort('contactPerson')}>
+              <div className="flex items-center">Contacto {renderSortArrow('contactPerson')}</div>
+            </TableHead>
+            <TableHead className="font-bold text-white cursor-pointer" onClick={() => handleSort('phone')}>
+              <div className="flex items-center">Teléfono {renderSortArrow('phone')}</div>
+            </TableHead>
+            <TableHead className="text-right font-bold text-white cursor-pointer" onClick={() => handleSort('debtAmount')}>
+              <div className="flex items-center justify-end">Deuda {renderSortArrow('debtAmount')}</div>
+            </TableHead>
             <TableHead className="text-right font-bold text-white print:hidden">Acciones</TableHead>
           </TableRow>
         </TableHeader>

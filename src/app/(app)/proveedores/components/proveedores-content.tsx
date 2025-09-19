@@ -1,4 +1,3 @@
-
 // src/app/(app)/proveedores/components/proveedores-content.tsx
 "use client";
 
@@ -14,8 +13,12 @@ import { SuppliersTable } from './suppliers-table';
 const sortOptions = [
     { value: 'name_asc', label: 'Nombre (A-Z)' },
     { value: 'name_desc', label: 'Nombre (Z-A)' },
-    { value: 'debt_desc', label: 'Deuda (Mayor a Menor)' },
-    { value: 'debt_asc', label: 'Deuda (Menor a Mayor)' },
+    { value: 'contactPerson_asc', label: 'Contacto (A-Z)' },
+    { value: 'contactPerson_desc', label: 'Contacto (Z-A)' },
+    { value: 'phone_asc', label: 'Teléfono (A-Z)' },
+    { value: 'phone_desc', label: 'Teléfono (Z-A)' },
+    { value: 'debtAmount_desc', label: 'Deuda (Mayor a Menor)' },
+    { value: 'debtAmount_asc', label: 'Deuda (Menor a Mayor)' },
 ];
 
 interface ProveedoresContentProps {
@@ -71,6 +74,8 @@ export function ProveedoresContent({
                     onEdit={onEdit} 
                     onDelete={onDelete}
                     onRowClick={onRowClick}
+                    sortOption={tableManager.sortOption}
+                    onSortOptionChange={tableManager.onSortOptionChange}
                 />
             </CardContent>
         </Card>
