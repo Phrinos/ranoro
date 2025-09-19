@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PackagePlus } from "lucide-react";
 import type { InventoryItem } from "@/types";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 
 interface InventorySearchDialogProps {
   open: boolean;
@@ -32,6 +32,12 @@ interface InventorySearchDialogProps {
 const normalize = (s?: string) =>
   (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 
+const score = (it: any) =>
+  (it.timesSold || it.salesCount || 0) * 3 +
+  (it.timesUsed || it.serviceUsageCount || 0) * 3 +
+  (it.lastSoldAt ? 2 : 0) +
+  ((it.quantity ?? 0) > 0 ? 1 : 0);
+
 export function InventorySearchDialog({
   open,
   onOpenChange,
@@ -39,66 +45,29 @@ export function InventorySearchDialog({
   onItemSelected,
   onNewItemRequest,
 }: InventorySearchDialogProps) {
-  const [searchTerm, setSearchTerm] = useState("");
 
   const safeInventory = useMemo(
     () => (Array.isArray(inventoryItems) ? inventoryItems.filter(Boolean) : []),
     [inventoryItems]
   );
   
-  const score = (it: any) =>
-    (it.timesSold || it.salesCount || 0) * 3 +
-    (it.timesUsed || it.serviceUsageCount || 0) * 3 +
-    (it.lastSoldAt ? 2 : 0) +
-    ((it.quantity ?? 0) > 0 ? 1 : 0);
-
-  const filteredItems = useMemo(() => {
-    const q = normalize(searchTerm.trim());
-    
-    if (!q) {
-        return [...safeInventory].sort((a, b) => score(b) - score(a)).slice(0, 30);
-    }
-
-    const tokens = q.split(/\s+/).filter(Boolean);
-    return safeInventory
-      .filter((item) => {
-        const haystack = normalize(
-          [
-            item.name,
-            item.sku,
-            (item as any).brand,
-            item.category,
-            (item as any).keywords,
-          ]
-            .filter(Boolean)
-            .join(" ")
-        );
-        return tokens.every((t) => haystack.includes(t));
-      })
-      .sort((a, b) => score(b) - score(a))
-      .slice(0, 100);
-  }, [safeInventory, searchTerm, score]);
-
-
+  const sortedInventory = useMemo(() => {
+    return [...safeInventory].sort((a, b) => score(b) - score(a));
+  }, [safeInventory]);
+  
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item, 1);
-    setSearchTerm("");
     onOpenChange(false);
   };
   
-  const handleNewItem = () => {
+  const handleNewItem = (currentValue: string) => {
     if (onNewItemRequest) {
-      onNewItemRequest(searchTerm);
+      onNewItemRequest(currentValue);
     }
   };
 
-  const handleOpenChange = (next: boolean) => {
-    if (!next) setSearchTerm("");
-    onOpenChange(next);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle>Buscar en Inventario</DialogTitle>
@@ -109,17 +78,10 @@ export function InventorySearchDialog({
 
         <div className="px-6 pb-6">
           <Command
-            shouldFilter={false}
-            className={cn(
-              "rounded-lg border bg-white",
-              "[&_[cmdk-input-wrapper]]:px-3 [&_[cmdk-input-wrapper]]:h-12",
-              "[&_[cmdk-input]]:text-sm [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
-            )}
+            className="rounded-lg border bg-white"
           >
             <CommandInput
               placeholder="Buscar por nombre, SKU, marca..."
-              value={searchTerm}
-              onValueChange={setSearchTerm}
             />
 
             <CommandList className="max-h-[52vh] overflow-y-auto">
@@ -129,53 +91,44 @@ export function InventorySearchDialog({
                   {!!onNewItemRequest && (
                     <Button
                       variant="link"
-                      onClick={handleNewItem}
+                      onClick={() => handleNewItem("")} // Pass current search term if needed
                       className="mt-2"
                     >
                       <PackagePlus className="mr-2 h-4 w-4" />
                       Registrar Nuevo Artículo
-                      {searchTerm ? ` “${searchTerm}”` : ""}
                     </Button>
                   )}
                 </div>
               </CommandEmpty>
 
-             {filteredItems.length > 0 && (
-                  <CommandGroup>
-                    {!searchTerm.trim() && (
-                      <li className="px-2 py-1.5 text-xs text-muted-foreground font-medium">
-                        Sugeridos (más frecuentes)
-                      </li>
-                    )}
-    
-                    {filteredItems.map((item) => {
-                      const searchValue = [
-                        item.id,
-                        item.name,
-                        item.sku,
-                        (item as any).brand,
-                        item.category,
-                        (item as any).keywords,
-                      ]
-                        .filter(Boolean)
-                        .join(" ");
-    
-                      return (
-                        <CommandItem
-                          key={item.id}
-                          value={searchValue}
-                          onSelect={() => handleSelect(item)}
-                          className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
-                        >
-                          <p className="font-semibold">{item.category} - {item.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            SKU: {item.sku || 'N/A'} | Stock: {item.isService ? "N/A" : item.quantity ?? 0} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
-                          </p>
-                        </CommandItem>
-                      );
-                    })}
-                  </CommandGroup>
-             )}
+             <CommandGroup>
+                {sortedInventory.map((item) => {
+                  const searchValue = [
+                    item.id,
+                    item.name,
+                    item.sku,
+                    (item as any).brand,
+                    item.category,
+                    (item as any).keywords,
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+
+                  return (
+                    <CommandItem
+                      key={item.id}
+                      value={searchValue}
+                      onSelect={() => handleSelect(item)}
+                      className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
+                    >
+                      <p className="font-semibold">{item.category} - {item.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        SKU: {item.sku || 'N/A'} | Stock: {item.isService ? "N/A" : item.quantity ?? 0} | Venta: {formatCurrency(item.sellingPrice)}
+                      </p>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
             </CommandList>
           </Command>
         </div>
