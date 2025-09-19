@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { serviceService, inventoryService, adminService } from '@/lib/services';
-import { Loader2, Share2, Save, Ban, Trash2, Printer, Copy, FileWarning } from 'lucide-react';
+import { Loader2, Share2, Save, Ban, Trash2, Printer, Copy, FileWarning, MessageSquare } from 'lucide-react';
 import { ServiceForm } from '../components/ServiceForm';
 import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
@@ -24,7 +24,7 @@ import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
 import { writeBatch, doc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
-
+import { NotificationDialog } from '../components/notification-dialog';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -47,6 +47,7 @@ export default function ServicioPage() {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isNotificationDialogOpen, setIsNotificationDialogOpen] = useState(false);
   const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -333,7 +334,10 @@ export default function ServicioPage() {
             <div className="flex items-center gap-2">
               {isEditMode && initialData && (
                  <>
-                    <Button variant="destructive" onClick={() => handleShowTicketDialog(initialData)} size="sm" title="Imprimir Ticket">
+                    <Button variant="outline" onClick={() => setIsNotificationDialogOpen(true)} size="sm" title="Notificar al Cliente">
+                      <MessageSquare className="h-4 w-4"/>
+                    </Button>
+                    <Button variant="outline" onClick={() => handleShowTicketDialog(initialData)} size="sm" title="Imprimir Ticket">
                       <Printer className="h-4 w-4"/>
                     </Button>
                     <Button onClick={() => handleShowShareDialog(initialData)} size="sm" title="Compartir Documento" className="bg-green-600 hover:bg-green-700 text-white">
@@ -360,6 +364,14 @@ export default function ServicioPage() {
             onCancel={isQuote ? handleDeleteQuote : handleCancelService}
             mode={isQuote ? 'quote' : 'service'}
         />
+
+       <NotificationDialog
+        isOpen={isNotificationDialogOpen}
+        onOpenChange={setIsNotificationDialogOpen}
+        service={initialData}
+        vehicle={vehicles.find(v => v.id === initialData?.vehicleId) || null}
+      />
+
        {recordForPreview && (
           <>
             <ShareServiceDialog 

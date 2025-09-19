@@ -1,32 +1,55 @@
+rules_version = '2';
 
-rules_version = '2;
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // El usuario solo puede leer y escribir su propio documento
     match /users/{userId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
+    // Los roles solo se pueden leer desde el cliente, no escribir
     match /appRoles/{roleId} {
       allow read: if request.auth != null;
       allow write: if false; 
     }
     
+    // Reglas para servicios públicos (acceso sin autenticación)
     match /publicServices/{serviceId} {
       allow read: if true;
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'appointmentDateTime', 'appointmentStatus', 'customerSignatureReception', 'customerSignatureDelivery']);
       allow create, delete: if false;
     }
 
-    match /serviceRecords/{serviceId} {
-      allow read, write: if request.auth != null;
-
-      allow update: if request.auth != null &&
-                      (request.resource.data.status != 'Entregado' || 
-                       (request.resource.data.deliveryDateTime is timestamp && request.resource.data.deliveryDateTime != null));
+    // Reglas específicas para el inventario
+    match /inventoryItems/{itemId} {
+      // Cualquiera autenticado puede leer y crear items.
+      allow read, create: if request.auth != null;
+      
+      // La actualización se permite PERO con una condición clave para el stock.
+      allow update: if request.auth != null && 
+                     // Esta línea es la clave: el stock que se quiere escribir
+                     // debe ser igual al que ya existe en la base de datos.
+                     // Esto previene eficazmente que el cliente modifique el stock,
+                     // pero permite que las Cloud Functions (que ignoran estas reglas) lo hagan.
+                     request.resource.data.stock == resource.data.stock;
     }
 
+    // Reglas para los movimientos de inventario (solo lectura desde el cliente)
+    match /inventoryMovements/{movementId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if false; // Nadie puede crear o modificar movimientos desde el cliente
+    }
+
+    // Reglas para las compras (el cliente puede crearlas y actualizarlas)
+    match /purchases/{purchaseId} {
+      allow read, create, update: if request.auth != null;
+      allow delete: if false; // Por seguridad, no permitir borrar compras. Se pueden "cancelar" con un estado.
+    }
+
+    // Reglas generales para el resto de las colecciones.
+    // Es importante que esta regla esté al final.
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

@@ -28,32 +28,47 @@ export default function AppLayout({
   const router = useRouter();
 
   useEffect(() => {
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    if (authUserString) {
+      try {
+        const user: User = JSON.parse(authUserString);
+        setCurrentUser(user);
+        setIsLoading(false);
+      } catch (e) {
+        // Fallback to auth state change if local storage is invalid
+        console.error('Failed to parse authUser:', e);
+      }
+    }
+    
     if (!auth || !db) {
-        setIsLoading(true);
+        // If Firebase isn't initialized, we can't proceed.
+        // This case should ideally not happen if firebaseClient.js is correct.
+        setIsLoading(false);
+        router.push('/login');
         return;
     }
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
         if (user) {
             const userDocRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userDocRef);
-
-            if (userDoc.exists()) {
-                const userData = { id: user.uid, ...userDoc.data() } as User;
-                localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
-                setCurrentUser(userData);
-            } else {
-                await signOut(auth);
-                localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
-                setCurrentUser(null);
-                router.push('/login');
-            }
+            const unsubscribeDoc = onSnapshot(userDocRef, (userDoc) => {
+                 if (userDoc.exists()) {
+                    const userData = { id: user.uid, ...userDoc.data() } as User;
+                    localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
+                    setCurrentUser(userData);
+                } else {
+                    // This case handles if the user is deleted from Firestore but still has an active auth session
+                    signOut(auth); 
+                }
+                setIsLoading(false);
+            });
+            return () => unsubscribeDoc();
         } else {
             setCurrentUser(null);
             localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
             router.push('/login');
+            setIsLoading(false);
         }
-        setIsLoading(false);
     });
     
     return () => {

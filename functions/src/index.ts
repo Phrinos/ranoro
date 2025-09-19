@@ -6,6 +6,7 @@ import { startOfDay, endOfDay, format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import * as logger from "firebase-functions/logger";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import * as inventory from "./inventory";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -119,3 +120,9 @@ export const generateServiceFolio = onDocumentCreated(
     }
   }
 );
+
+// ===== INVENTORY FUNCTIONS =====
+export const onStockExit = inventory.onStockExit;
+export const onPurchaseCreated = inventory.onPurchaseCreated;
+export const onPurchaseUpdated = inventory.onPurchaseUpdated;
+export const adjustStock = inventory.adjustStock;

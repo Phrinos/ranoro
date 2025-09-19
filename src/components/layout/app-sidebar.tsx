@@ -52,6 +52,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones', permissions: ['pos:view_sales'] },
   { label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', permissions: ['inventory:view'] },
   { label: 'Proveedores', path: '/proveedores', icon: Building, groupTag: 'Operaciones', permissions: ['inventory:manage'] },
+  { label: 'Compras', path: '/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['inventory:manage'] },
   { label: 'Finanzas', path: '/finanzas', icon: LineChart, groupTag: 'Operaciones', permissions: ['finances:view_report'] },
   { label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Operaciones', permissions: ['billing:manage'] },
   { label: 'I.A.', path: '/ai', icon: BrainCircuit, groupTag: 'Operaciones', permissions: ['dashboard:view'] },
@@ -103,7 +104,7 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
 
-    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/finanzas', '/personal', '/opciones', '/facturacion-admin', '/administracion', '/ai', '/flotilla'];
+    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/compras', '/finanzas', '/personal', '/opciones', '/facturacion-admin', '/administracion', '/ai', '/flotilla'];
     
     if (parentRoutes.includes(cleanEntryPath) && cleanPathname.startsWith(cleanEntryPath)) {
         if (cleanPathname === cleanEntryPath) {

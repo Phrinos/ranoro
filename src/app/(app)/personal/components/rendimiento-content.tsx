@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -7,14 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { calculateSaleProfit } from '@/lib/placeholder-data';
-import type { MonthlyFixedExpense, InventoryItem, SaleReceipt, ServiceRecord, User } from '@/types';
+import type { ServiceRecord, User } from '@/types';
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, isValid, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon as CalendarDateIcon, Wallet } from 'lucide-react';
+import { CalendarIcon as CalendarDateIcon } from 'lucide-react';
 import { cn, formatCurrency } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
-import { saleService, serviceService, inventoryService, adminService } from '@/lib/services';
+import { serviceService, adminService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from "@/components/ui/badge";
@@ -30,20 +28,9 @@ const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | 
     return 'outline';
 };
 
-const normalizeRole = (role: string) => {
-    return role
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, ""); // Remove accents
-};
-
-
 export function RendimientoPersonalContent() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  const [allInventory, setAllInventory] = useState<any[]>([]);
-  const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
@@ -55,74 +42,64 @@ export function RendimientoPersonalContent() {
     setIsLoading(true);
     const unsubs: (() => void)[] = [
       adminService.onUsersUpdate(setAllUsers),
-      saleService.onSalesUpdate(setAllSales),
-      serviceService.onServicesUpdate(setAllServices),
-      inventoryService.onItemsUpdate(setAllInventory),
-      inventoryService.onFixedExpensesUpdate((expenses) => {
-          setFixedExpenses(expenses);
-          setIsLoading(false);
+      // Suscripción a servicios y marcamos la carga como finalizada aquí
+      serviceService.onServicesUpdate((services) => {
+        setAllServices(services);
+        setIsLoading(false);
       })
     ];
     return () => unsubs.forEach(unsub => unsub());
   }, []);
   
   const performanceData = useMemo(() => {
-    if (!dateRange?.from) return [];
+    if (!dateRange?.from || allUsers.length === 0) return [];
     
     const from = startOfDay(dateRange.from);
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
+    // 1. Filtrar solo los servicios completados dentro del rango de fechas
     const completedServicesInRange = allServices.filter(s => {
         const deliveryDate = parseDate(s.deliveryDateTime);
         return s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, interval);
     });
 
-    const grossProfit = completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-    
     const activeUsers = allUsers.filter(u => !u.isArchived);
-    const fixedSalaries = activeUsers.reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
-    const otherFixedExpenses = fixedExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const totalFixedExpenses = fixedSalaries + otherFixedExpenses;
-
-    const netProfitForCommissions = Math.max(0, grossProfit - totalFixedExpenses);
     
+    // 2. Calcular rendimiento para cada usuario
     return activeUsers.map(user => {
-        const normalizedUserRole = normalizeRole(user.role);
-        const isAdvisor = normalizedUserRole.includes('asesor') || normalizedUserRole === 'admin' || normalizedUserRole === 'superadministrador';
-        const isTechnician = normalizedUserRole.includes('tecnico');
-
         let generatedRevenue = 0;
-        
-        // Revenue for Technicians: Based on completed services assigned to them.
-        if (isTechnician) {
-            generatedRevenue += completedServicesInRange
-                .filter(s => s.technicianId === user.id)
-                .reduce((sum, s) => sum + (s.totalCost || 0), 0);
+        let commission = 0;
+
+        // Iterar sobre los servicios completados
+        for (const service of completedServicesInRange) {
+            // Iterar sobre los items de cada servicio (mano de obra y refacciones)
+            for (const item of service.serviceItems || []) {
+                // Si el item fue asignado a este técnico
+                if (item.technicianId === user.id) {
+                    // Sumar el precio de venta al trabajo ingresado por el técnico
+                    generatedRevenue += item.sellingPrice || 0;
+                    // Sumar la comisión pre-calculada y guardada en el item
+                    commission += item.technicianCommission || 0;
+                }
+            }
         }
         
-        // Revenue for Advisors: Based on completed services they managed.
-        if (isAdvisor) {
-             generatedRevenue += completedServicesInRange
-                .filter(s => s.serviceAdvisorId === user.id)
-                .reduce((sum, s) => sum + (s.totalCost || 0), 0);
-        }
-        
-        const commission = netProfitForCommissions * ((user.commissionRate || 0) / 100);
-        const totalSalary = (user.monthlySalary || 0) + commission;
+        const baseSalary = user.monthlySalary || 0;
+        const totalSalary = baseSalary + commission;
 
         return {
           id: user.id,
           name: user.name,
           role: user.role,
-          baseSalary: user.monthlySalary || 0,
+          baseSalary,
           generatedRevenue,
           commission,
           totalSalary
         };
       })
       .sort((a,b) => b.totalSalary - a.totalSalary);
-  }, [dateRange, allUsers, allServices, allInventory, fixedExpenses]);
+  }, [dateRange, allUsers, allServices]);
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
   
@@ -132,7 +109,7 @@ export function RendimientoPersonalContent() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                   <CardTitle>Rendimiento Individual</CardTitle>
-                  <CardDescription>Resumen de ingresos, ganancias y comisiones del personal en el mes.</CardDescription>
+                  <CardDescription>Resumen de ingresos, comisiones y sueldos del personal.</CardDescription>
               </div>
               <Popover>
                 <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? `${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}` : format(dateRange.from, "MMMM yyyy", { locale: es })) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger>

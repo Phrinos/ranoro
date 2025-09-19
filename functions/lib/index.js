@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateServiceFolio = exports.generateDailyRentalCharges = void 0;
+exports.adjustStock = exports.onPurchaseUpdated = exports.onPurchaseCreated = exports.onStockExit = exports.generateServiceFolio = exports.generateDailyRentalCharges = void 0;
 // functions/src/index.ts
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const admin = __importStar(require("firebase-admin"));
@@ -42,6 +42,7 @@ const date_fns_1 = require("date-fns");
 const date_fns_tz_1 = require("date-fns-tz");
 const logger = __importStar(require("firebase-functions/logger"));
 const firestore_1 = require("firebase-functions/v2/firestore");
+const inventory = __importStar(require("./inventory"));
 admin.initializeApp();
 const db = admin.firestore();
 /**
@@ -129,3 +130,8 @@ exports.generateServiceFolio = (0, firestore_1.onDocumentCreated)({ document: "s
         logger.error(`Failed to generate folio for service ${serviceId}:`, error);
     }
 });
+// ===== INVENTORY FUNCTIONS =====
+exports.onStockExit = inventory.onStockExit;
+exports.onPurchaseCreated = inventory.onPurchaseCreated;
+exports.onPurchaseUpdated = inventory.onPurchaseUpdated;
+exports.adjustStock = inventory.adjustStock;

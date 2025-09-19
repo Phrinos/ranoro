@@ -16,10 +16,11 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord } from "@/types";
+import type { ServiceRecord, QuoteRecord, User } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
 import { savePublicDocument } from '../public-document';
+import { adminService } from './admin.service';
 
 // --- Service Records ---
 
@@ -96,16 +97,40 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
     if (!db) throw new Error("Database not initialized.");
     const serviceRef = doc(db, 'serviceRecords', service.id);
     
+    // --- INICIO: Nueva Lógica de Cálculo de Comisiones ---
+    let totalCommission = 0;
+    const users: User[] = await adminService.onUsersUpdatePromise(); // Obtener todos los usuarios
+
+    // Mapear los serviceItems para calcular y añadir la comisión
+    const serviceItemsWithCommission = service.serviceItems?.map(item => {
+        if (item.technicianId) {
+            const technician = users.find(u => u.id === item.technicianId);
+            // Verificar que el técnico exista y tenga una tasa de comisión válida
+            if (technician && typeof technician.commissionRate === 'number' && technician.commissionRate > 0) {
+                const commissionForItem = (item.sellingPrice || 0) * (technician.commissionRate / 100);
+                totalCommission += commissionForItem;
+                // Añadir la comisión calculada al item para guardado histórico
+                return { ...item, technicianCommission: commissionForItem };
+            }
+        }
+        // Si no hay técnico o comisión, asegurar que el campo exista con valor 0
+        return { ...item, technicianCommission: 0 };
+    }) || [];
+    // --- FIN: Nueva Lógica de Cálculo de Comisiones ---
+
     const updatedServiceData = {
         ...service,
+        serviceItems: serviceItemsWithCommission, // Usar los items con la comisión ya calculada
+        totalCommission: totalCommission,       // Guardar el total de comisiones en el servicio
         status: 'Entregado',
-        deliveryDateTime: new Date().toISOString(), // Garantiza la fecha actual
+        deliveryDateTime: new Date().toISOString(),
         payments: paymentDetails.payments,
         ...(paymentDetails.nextServiceInfo && { nextServiceInfo: paymentDetails.nextServiceInfo }),
     };
 
     batch.update(serviceRef, cleanObjectForFirestore(updatedServiceData));
 
+    // La lógica para descontar insumos del inventario no cambia
     if (service.serviceItems && service.serviceItems.length > 0) {
         const suppliesToSubtract = service.serviceItems.flatMap(item => 
             item.suppliesUsed?.map(supply => ({ id: supply.supplyId, quantity: supply.quantity })) || []
