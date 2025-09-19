@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +37,7 @@ export function ProductSearchDialog({ isOpen, onOpenChange, onProductSelect }: P
   const [isLoading, setIsLoading] = useState(true);
 
   // Efecto para cargar los productos del inventario
-  React.useEffect(() => {
+  useEffect(() => {
     // Escuchamos solo productos que no son servicios
     const q = query(collection(db, "inventoryItems"), where("isService", "==", false));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -54,7 +54,7 @@ export function ProductSearchDialog({ isOpen, onOpenChange, onProductSelect }: P
   }, []);
 
   // Efecto para filtrar el inventario cuando el término de búsqueda cambia
-  React.useEffect(() => {
+  useEffect(() => {
     const lowercasedFilter = searchTerm.toLowerCase();
     const filtered = inventory.filter(item =>
       item.name.toLowerCase().includes(lowercasedFilter) ||
