@@ -164,19 +164,22 @@ export function ServiceForm({
 
   // --- INICIO: Nueva Lógica de Filtrado por Funciones ---
   const { advisors, technicians } = React.useMemo(() => {
-    const advisors: User[] = [];
-    const technicians: User[] = [];
+    const advisorsList: User[] = [];
+    const techniciansList: User[] = [];
+    
+    // Safety check to ensure `users` is an iterable array
+    const validUsers = Array.isArray(users) ? users : [];
     
     // Iteramos sobre la lista completa de usuarios
-    for (const user of users) {
+    for (const user of validUsers) {
       if (user.functions?.includes('asesor')) {
-        advisors.push(user);
+        advisorsList.push(user);
       }
       if (user.functions?.includes('tecnico')) {
-        technicians.push(user);
+        techniciansList.push(user);
       }
     }
-    return { advisors, technicians };
+    return { advisors: advisorsList, technicians: techniciansList };
   }, [users]);
   // --- FIN: Nueva Lógica de Filtrado por Funciones ---
 
