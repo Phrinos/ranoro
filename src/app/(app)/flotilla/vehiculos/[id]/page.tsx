@@ -47,26 +47,33 @@ export default function FlotillaVehiculoProfilePage() {
     if (!vehicleId) return;
     setIsLoading(true);
 
+    let didNotifyNotFound = false;
+    let isMounted = true;
+
     const unsubVehicle = inventoryService.onVehiclesUpdate((vehicles) => {
+      if (!isMounted) return;
       const currentVehicle = vehicles.find(v => v.id === vehicleId);
+
       if (currentVehicle) {
         setVehicle(currentVehicle);
-      } else if (!isLoading) {
+      } else if (!didNotifyNotFound) {
+        didNotifyNotFound = true;
         toast({ title: "Error", description: "Vehículo no encontrado.", variant: "destructive" });
         router.push('/flotilla');
       }
       setIsLoading(false);
     });
-
-    const unsubDrivers = personnelService.onDriversUpdate(setAllDrivers);
-    const unsubServices = serviceService.onServicesForVehicleUpdate(vehicleId, setServiceHistory);
+    
+    const unsubDrivers  = personnelService.onDriversUpdate((d) => { if (isMounted) setAllDrivers(d); });
+    const unsubServices = serviceService.onServicesForVehicleUpdate(vehicleId, (s) => { if (isMounted) setServiceHistory(s); });
 
     return () => {
+      isMounted = false;
       unsubVehicle();
       unsubDrivers();
       unsubServices();
     };
-  }, [vehicleId, router, toast, isLoading]);
+  }, [vehicleId, router, toast]);
 
   const handleSaveVehicleInfo = async (data: VehicleInfoFormValues) => {
     if (!vehicle) return;
