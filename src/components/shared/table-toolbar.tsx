@@ -79,7 +79,7 @@ export function TableToolbar({
               defaultValue={current}
               onValueChange={(val) => handleFilterChange(block.value, val)}
             >
-              <SelectTrigger className="h-10 min-w-[12rem] bg-white">
+              <SelectTrigger className="h-10 min-w-[10rem] w-full sm:w-auto bg-white">
                 <SelectValue placeholder={block.label} />
               </SelectTrigger>
               <SelectContent>
@@ -97,13 +97,15 @@ export function TableToolbar({
         {onDateRangeChange && (
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="h-10 bg-white">
+              <Button variant="outline" className="h-10 bg-white w-full sm:w-auto justify-start text-left">
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange?.from
-                  ? dateRange.to
-                    ? `${format(dateRange.from, "dd MMM yyyy", { locale: es })} – ${format(dateRange.to, "dd MMM yyyy", { locale: es })}`
-                    : format(dateRange.from, "dd MMM yyyy", { locale: es })
-                  : "Rango de fechas"}
+                <span className="truncate">
+                  {dateRange?.from
+                    ? dateRange.to
+                      ? `${format(dateRange.from, "dd MMM yyyy", { locale: es })} – ${format(dateRange.to, "dd MMM yyyy", { locale: es })}`
+                      : `${format(dateRange.from, "dd MMM yyyy", { locale: es })}`
+                    : "Rango de fechas"}
+                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="p-0">
