@@ -77,9 +77,7 @@ export function TableToolbar({
   );
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      {/* El campo de búsqueda ha sido eliminado de aquí */}
-
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-start">
       <div className="flex w-full sm:w-auto flex-wrap items-center gap-2">
         {/* Filtros */}
         {filterOptions?.map((block) => {
@@ -128,26 +126,6 @@ export function TableToolbar({
               />
             </PopoverContent>
           </Popover>
-        )}
-
-        {/* Orden */}
-        {sortOptions && onSortOptionChange && (
-          <Select
-            key={`sort:${sortOption ?? 'none'}`}
-            defaultValue={sortOption ?? undefined}
-            onValueChange={handleSortChange}
-          >
-            <SelectTrigger className="h-10 min-w-[12rem] bg-white">
-              <SelectValue placeholder="Ordenar por..." />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         )}
 
         {actions}

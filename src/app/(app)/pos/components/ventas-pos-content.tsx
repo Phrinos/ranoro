@@ -182,7 +182,6 @@ export function VentasPosContent({
             </div>
             <TableToolbar
                 {...tableManager}
-                sortOptions={sortOptions}
                 filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
                 dateRange={tableManager.dateRange}
                 onDateRangeChange={tableManager.onDateRangeChange}
