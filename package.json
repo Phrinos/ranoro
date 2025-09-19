@@ -43,11 +43,11 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.441.0",
-    "next": "14.2.5",
+    "next": "^15.5.3",
     "postcss": "8.4.47",
-    "react": "^18.2.0",
+    "react": "^19.0.0-rc-f994737d-20240516",
     "react-day-picker": "^9.10.0",
-    "react-dom": "^18.2.0",
+    "react-dom": "^19.0.0-rc-f994737d-20240516",
     "react-hook-form": "^7.53.0",
     "react-image-crop": "^11.0.5",
     "react-signature-canvas": "^1.0.6",
@@ -65,10 +65,10 @@
     "@eslint/eslintrc": "^3.2.0",
     "@iconify/react": "^4.1.1",
     "@types/node": "22.7.4",
-    "@types/react": "18.2.15",
+    "@types/react": "^18.3.3",
     "@types/react-dom": "18.2.6",
     "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.5"
+    "eslint-config-next": "^15.5.3"
   },
   "overrides": {
     "undici": "^6.21.2",
