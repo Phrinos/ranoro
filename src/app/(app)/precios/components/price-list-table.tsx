@@ -64,7 +64,7 @@ export const PriceListTable = React.memo(({ records, onEdit, onDelete }: PriceLi
             <TableHead className="font-bold text-white">Marca</TableHead>
             <TableHead className="font-bold text-white">Modelo</TableHead>
             <TableHead className="font-bold text-white">Años</TableHead>
-            <TableHead className="text-right font-bold text-white"># Servicios</TableHead>
+            <TableHead className="text-right font-bold text-white hidden sm:table-cell"># Servicios</TableHead>
             <TableHead className="text-right font-bold text-white">Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -74,35 +74,37 @@ export const PriceListTable = React.memo(({ records, onEdit, onDelete }: PriceLi
               <TableCell className="font-semibold">{record.make}</TableCell>
               <TableCell>{record.model}</TableCell>
               <TableCell>{formatYears(record.years)}</TableCell>
-              <TableCell className="text-right">{record.services.length}</TableCell>
+              <TableCell className="text-right hidden sm:table-cell">{record.services.length}</TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="icon" onClick={() => onEdit(record)} className="mr-2">
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>¿Eliminar esta lista de precios?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta acción no se puede deshacer. ¿Seguro que quieres eliminar la lista para {record.make} {record.model}?
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => onDelete(record.id)}
-                        className="bg-destructive hover:bg-destructive/90"
-                      >
-                        Sí, Eliminar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <div className="flex flex-col sm:flex-row justify-end items-end sm:items-center gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => onEdit(record)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Eliminar esta lista de precios?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta acción no se puede deshacer. ¿Seguro que quieres eliminar la lista para {record.make} {record.model}?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => onDelete(record.id)}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Sí, Eliminar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </TableCell>
             </TableRow>
           ))}
