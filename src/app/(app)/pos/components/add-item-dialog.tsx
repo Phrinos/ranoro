@@ -82,7 +82,9 @@ export function AddItemDialog({
       .slice(0, 100);
   }, [safeInventory, searchTerm, frequentItems]);
 
-  const getPrice = (it: any) => it.sellingPrice ?? it.price ?? it.unitPrice ?? 0;
+  const getSalePrice = (it: any) => it.sellingPrice ?? 0;
+  const getCostPrice = (it: any) => it.unitPrice ?? 0;
+
 
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item);
@@ -165,14 +167,10 @@ export function AddItemDialog({
                       className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
                     >
                       <p className="font-semibold">
-                        {item.name}{" "}
-                        <span className="text-muted-foreground">
-                          ({item.sku ?? "N/A"})
-                        </span>
+                        {item.category} - {item.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Stock: {item.isService ? "N/A" : item.quantity ?? 0} |
-                        {" "}Precio: {formatCurrency(getPrice(item))}
+                        SKU: {item.sku ?? 'N/A'} | Stock: {item.isService ? "N/A" : item.quantity ?? 0} | Venta: {formatCurrency(getSalePrice(item))} | Costo: {formatCurrency(getCostPrice(item))}
                       </p>
                     </CommandItem>
                   );
