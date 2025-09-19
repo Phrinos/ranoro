@@ -67,15 +67,6 @@ export function TableToolbar({
     [setOtherFilters]
   );
 
-  const handleSortChange = useCallback(
-    (val: string) => {
-      if (!onSortOptionChange) return;
-      if (val === sortOption) return; // evita sets redundantes
-      onSortOptionChange(val);
-    },
-    [onSortOptionChange, sortOption]
-  );
-
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-start">
       <div className="flex w-full sm:w-auto flex-wrap items-center gap-2">
@@ -127,7 +118,7 @@ export function TableToolbar({
             </PopoverContent>
           </Popover>
         )}
-
+        
         {actions}
       </div>
     </div>
