@@ -13,7 +13,7 @@ import { inventoryService, saleService } from '@/lib/services';
 import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import { db } from '@/lib/firebaseClient';
-import { writeBatch, doc } from 'firebase/firestore';
+import { writeBatch, doc, collection } from 'firebase/firestore';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
