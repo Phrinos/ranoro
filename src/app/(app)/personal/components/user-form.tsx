@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,19 +28,8 @@ import { es } from 'date-fns/locale';
 import { parseDate } from "@/lib/forms";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { userFormSchema, type UserFormValues } from "@/schemas/user-form-schema";
 
-const userFormSchema = z.object({
-  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
-  email: z.string().email("Ingrese un correo electrónico válido."),
-  phone: z.string().optional(),
-  role: z.string({ required_error: "Seleccione un rol." }).min(1, "Debe seleccionar un rol."),
-  functions: z.array(z.string()).optional(), // Campo para las funciones operativas
-  monthlySalary: z.coerce.number().optional(),
-  commissionRate: z.coerce.number().optional(),
-  hireDate: z.date().optional(),
-});
-
-export type UserFormValues = z.infer<typeof userFormSchema>;
 
 interface UserFormProps {
   id?: string;

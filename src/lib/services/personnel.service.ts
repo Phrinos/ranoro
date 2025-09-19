@@ -37,7 +37,11 @@ const onPersonnelUpdatePromise = async (): Promise<Personnel[]> => {
 
 const savePersonnel = async (data: UserFormValues, id?: string): Promise<User> => {
     if (!db) throw new Error("Database not initialized.");
-    const dataToSave = { ...data, hireDate: data.hireDate ? new Date(data.hireDate).toISOString() : undefined };
+    const dataToSave = { 
+        ...data, 
+        hireDate: data.hireDate ? new Date(data.hireDate).toISOString() : undefined,
+        functions: data.functions || [], // Asegurarnos que functions se guarda
+    };
     if (id) {
         await updateDoc(doc(db, 'users', id), cleanObjectForFirestore(dataToSave));
         return { id, ...dataToSave } as User;
