@@ -36,10 +36,10 @@ export function InventorySearchDialog({
 
   // Si no recibimos inventoryItems, cargamos de Firestore
   useEffect(() => {
-    if (!open || (inventoryItems && inventoryItems.length > 0)) {
-        setAutoLoaded(null);
-        setIsLoading(false);
-        return;
+    if (inventoryItems && inventoryItems.length > 0) {
+      setAutoLoaded(null); // Clear auto-loaded if items are passed via props
+      setIsLoading(false);
+      return;
     }
 
     setIsLoading(true);
@@ -171,7 +171,7 @@ export function InventorySearchDialog({
                           {(item.category ?? "Sin categoría")} - {item.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          SKU: {item.sku || "N/A"} | Stock: {item.isService ? "N/A" : (item.quantity ?? 0)} | Venta: {formatCurrency(item.sellingPrice ?? 0)} | Costo: {formatCurrency(item.unitPrice ?? 0)}
+                          SKU: {item.sku || 'N/A'} | Stock: {item.isService ? "N/A" : (item.quantity ?? 0)} | Costo: {formatCurrency(item.unitPrice ?? 0)} | <span className="font-bold text-foreground">Venta: {formatCurrency(item.sellingPrice ?? 0)}</span>
                         </p>
                       </CommandItem>
                     );
