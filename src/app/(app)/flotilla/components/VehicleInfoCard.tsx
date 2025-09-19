@@ -26,7 +26,7 @@ export function VehicleInfoCard({ vehicle, onEdit }: VehicleInfoCardProps) {
   ];
 
   return (
-    <Card className="flex flex-col h-full">
+    <Card>
       <CardHeader className="flex-row items-center justify-between">
         <div>
           <CardTitle>Información del Vehículo</CardTitle>
@@ -36,7 +36,7 @@ export function VehicleInfoCard({ vehicle, onEdit }: VehicleInfoCardProps) {
           <Edit className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="flex flex-col flex-grow space-y-6">
+      <CardContent className="space-y-6">
         <div>
           <h4 className="font-semibold text-sm mb-2">Detalles del Vehículo</h4>
           <div className="space-y-2">
