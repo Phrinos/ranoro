@@ -111,7 +111,7 @@ export function AssignDriverCard({
   }, [vehicle.assignedDriverId, allDrivers]);
 
   return (
-    <Card className="h-full">
+    <Card>
       <CardHeader>
         <CardTitle>Conductor Asignado</CardTitle>
         <CardDescription>
