@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, PackagePlus, Plus, Minus, ArrowLeft, Pencil } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import type { InventoryItem, ServiceSupply } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { capitalizeWords, formatCurrency } from '@/lib/utils';
+import { capitalizeWords } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
 
 interface AddSupplyDialogProps {
   open: boolean;
@@ -24,9 +24,6 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState('buscar');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [quantity, setQuantity] = useState(1);
   
   // State for manual entry
   const [manualName, setManualName] = useState('');
@@ -34,60 +31,19 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
   const [manualPrice, setManualPrice] = useState<number | ''>('');
   const [manualSellingPrice, setManualSellingPrice] = useState<number | ''>('');
 
-
-  const filteredItems = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return inventoryItems.slice(0, 10);
-    }
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    return inventoryItems.filter(item =>
-        item.name.toLowerCase().includes(lowerSearchTerm) ||
-        (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm))
-    ).slice(0, 10);
-  }, [searchTerm, inventoryItems]);
-
-  const resetState = () => {
-    setSearchTerm('');
-    setSelectedItem(null);
-    setQuantity(1);
+  const resetManualState = () => {
     setManualName('');
     setManualQuantity(1);
     setManualPrice('');
     setManualSellingPrice('');
-    setActiveTab('buscar');
   };
   
-  useEffect(() => {
-    if (open) {
-      resetState();
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+        resetManualState();
+        setActiveTab('buscar');
     }
-  }, [open]);
-
-  const handleSelectItem = (item: InventoryItem) => {
-    setSelectedItem(item);
-    setQuantity(1);
-  };
-
-  const handleConfirmAdd = () => {
-    if (!selectedItem) return;
-    if (quantity <= 0) {
-      toast({ title: 'Cantidad inválida', variant: 'destructive' });
-      return;
-    }
-    if (!selectedItem.isService && selectedItem.quantity < quantity) {
-      toast({ title: 'Sin Stock', description: `Solo hay ${selectedItem.quantity} de ${selectedItem.name}.`, variant: 'destructive' });
-      return;
-    }
-    onAddSupply({
-      supplyId: selectedItem.id,
-      supplyName: selectedItem.name,
-      quantity: quantity,
-      unitPrice: selectedItem.unitPrice,
-      sellingPrice: selectedItem.sellingPrice,
-      isService: selectedItem.isService,
-      unitType: selectedItem.unitType,
-    });
-    onOpenChange(false);
+    onOpenChange(isOpen);
   };
   
   const handleConfirmManualAdd = () => {
@@ -107,11 +63,24 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
         sellingPrice: Number(manualSellingPrice) || 0,
         isService: true, // Manual items are treated as one-off services/items not in stock
     });
-    onOpenChange(false);
+    handleOpenChange(false);
+  };
+
+  const handleItemSelectedFromSearch = (item: InventoryItem) => {
+      onAddSupply({
+        supplyId: item.id,
+        supplyName: item.name,
+        quantity: 1, // Default quantity
+        unitPrice: item.unitPrice,
+        sellingPrice: item.sellingPrice,
+        isService: item.isService,
+        unitType: item.unitType,
+      });
+      handleOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md w-full p-0">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle>Añadir Insumo al Servicio</DialogTitle>
@@ -128,71 +97,14 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
               </TabsList>
             </div>
           
-            <TabsContent value="buscar" className="p-6 pt-4 space-y-4 min-h-[350px]">
-              {!selectedItem ? (
-                <>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Buscar por nombre o SKU..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
-                  </div>
-                  <ScrollArea className="h-60 border rounded-md">
-                    <div className="p-2 space-y-1">
-                      {filteredItems.length > 0 ? (
-                        filteredItems.map((item) => (
-                          <Button 
-                            key={item.id} 
-                            variant="ghost" 
-                            className="flex flex-col items-start w-full p-2 h-auto text-left hover:bg-muted"
-                            onClick={() => handleSelectItem(item)}
-                          >
-                             <p className="font-semibold">{item.category} - {item.name}</p>
-                             <p className="text-xs text-muted-foreground">
-                                SKU: {item.sku || 'N/A'} | Stock: {item.isService ? 'N/A' : item.quantity} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
-                             </p>
-                          </Button>
-                        ))
-                      ) : (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                          {searchTerm ? (
-                            <div className="flex flex-col items-center gap-2">
-                              <span>No se encontraron resultados.</span>
-                              <Button variant="link" size="sm" onClick={() => onNewItemRequest(searchTerm)}>
-                                <PackagePlus className="mr-2 h-4 w-4" />
-                                Crear Nuevo Artículo "{searchTerm}"
-                              </Button>
-                            </div>
-                          ) : 'No hay artículos para mostrar.'}
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </>
-              ) : (
-                <div className="pt-2 space-y-4">
-                  <div className="p-3 border rounded-md bg-muted">
-                    <p className="font-semibold text-sm">Artículo: {selectedItem.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedItem.isService ? "Servicio" : `Stock Disponible: ${selectedItem.quantity}`}
-                    </p>
-                  </div>
-                  <div className="flex justify-between items-end pt-2">
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedItem(null)}>
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Cambiar Insumo
-                    </Button>
-                    <div className="text-right">
-                      <Label htmlFor="inventory-quantity" className="text-xs">
-                        Cantidad a Añadir ({selectedItem.unitType === 'ml' ? 'ml' : selectedItem.unitType === 'liters' ? 'L' : 'uds.'})
-                      </Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
-                        <Input id="inventory-quantity" type="number" step="any" min="0.001" value={quantity} onChange={(e) => setQuantity(parseFloat(e.target.value.replace(',', '.')) || 0)} className="w-20 text-center h-8" />
-                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <TabsContent value="buscar" className="p-6 pt-0">
+                <InventorySearchDialog 
+                  open={open && activeTab === 'buscar'}
+                  onOpenChange={handleOpenChange}
+                  inventoryItems={inventoryItems}
+                  onItemSelected={handleItemSelectedFromSearch}
+                  onNewItemRequest={onNewItemRequest}
+                />
             </TabsContent>
             
             <TabsContent value="manual" className="p-6 pt-4 space-y-4 min-h-[350px]">
@@ -214,18 +126,12 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
                         <Input id="manual-selling-price" type="number" value={manualSellingPrice} onChange={(e) => setManualSellingPrice(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0.00"/>
                     </div>
                 </div>
+                 <DialogFooter className="pt-4">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleConfirmManualAdd}><Pencil className="mr-2 h-4 w-4" />Añadir Manualmente</Button>
+                </DialogFooter>
             </TabsContent>
         </Tabs>
-        
-        <DialogFooter className="p-6 pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          {activeTab === 'buscar' && selectedItem && (
-            <Button onClick={handleConfirmAdd}><Plus className="mr-2 h-4 w-4" />Añadir del Inventario</Button>
-          )}
-          {activeTab === 'manual' && (
-            <Button onClick={handleConfirmManualAdd}><Pencil className="mr-2 h-4 w-4" />Añadir Manualmente</Button>
-          )}
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

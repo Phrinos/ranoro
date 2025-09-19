@@ -26,6 +26,8 @@ import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-sche
 import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList
 } from "@/components/ui/command";
+import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
+
 
 const purchaseItemSchema = z.object({
   inventoryItemId: z.string(),
@@ -333,16 +335,16 @@ export function RegisterPurchaseDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <SearchItemDialog
+      
+      <InventorySearchDialog 
         open={isItemSearchOpen}
         onOpenChange={setIsItemSearchOpen}
         inventoryItems={inventoryItems}
         onItemSelected={handleAddItem}
         onNewItemRequest={handleNewItemRequest}
       />
-
-      <InventoryItemDialog
+      
+       <InventoryItemDialog
         open={isNewItemDialogOpen}
         onOpenChange={setIsNewItemDialogOpen}
         onSave={handleNewItemSaved}
@@ -352,83 +354,4 @@ export function RegisterPurchaseDialog({
       />
     </>
   );
-}
-
-// --- SearchItemDialog Sub-component ---
-interface SearchItemDialogProps {
-  open: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  inventoryItems: InventoryItem[];
-  onItemSelected: (item: InventoryItem) => void;
-  onNewItemRequest: (searchTerm: string) => void;
-}
-
-function SearchItemDialog({ open, onOpenChange, inventoryItems, onItemSelected, onNewItemRequest }: SearchItemDialogProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredItems = useMemo(() => {
-    const physicalItems = inventoryItems.filter(item => !item.isService);
-
-    if (!searchTerm.trim()) {
-      return physicalItems.sort((a, b) => b.quantity - a.quantity);
-    }
-
-    const lower = searchTerm.toLowerCase();
-    return physicalItems.filter(item =>
-      item.name.toLowerCase().includes(lower) ||
-      (item.sku && item.sku.toLowerCase().includes(lower))
-    );
-  }, [searchTerm, inventoryItems]);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 bg-muted">
-        <DialogHeader className="p-6 pb-4 border-b bg-white">
-          <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
-          <DialogDescription>Seleccione un artículo para añadir a la compra o cree uno nuevo.</DialogDescription>
-        </DialogHeader>
-
-        <div className="px-6">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre o SKU..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 bg-white"
-            />
-          </div>
-        </div>
-
-        <div className="px-6 pb-6">
-          <div className="h-72 border rounded-md bg-white overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <div className="p-2 space-y-1">
-              {filteredItems.map(item => (
-                <Button
-                  key={item.id}
-                  variant="ghost"
-                  className="flex flex-col items-start w-full p-2 h-auto text-left hover:bg-muted"
-                  onClick={() => onItemSelected(item)}
-                >
-                  <p className="font-semibold">{item.category} - {item.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                      SKU: {item.sku || 'N/A'} | Stock: {item.quantity} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
-                  </p>
-                </Button>
-              ))}
-
-              {searchTerm && filteredItems.length === 0 && (
-                <div className="p-4 text-center">
-                  <Button variant="link" onClick={() => onNewItemRequest(searchTerm)}>
-                    <PackagePlus className="mr-2 h-4 w-4" />
-                    Crear Nuevo Artículo "{searchTerm}"
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
 }
