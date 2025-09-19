@@ -27,21 +27,22 @@ interface PriceListTableProps {
 
 const formatYears = (years: number[]): string => {
   if (!years || years.length === 0) return 'N/A';
-  if (years.length === 1) return String(years[0]);
   
   const sortedYears = [...years].sort((a, b) => a - b);
-  const minYear = sortedYears[0];
-  const maxYear = sortedYears[sortedYears.length - 1];
+  if (sortedYears.length === 1) return String(sortedYears[0]);
   
-  // Si los años son consecutivos, mostrar como rango
-  const isConsecutive = sortedYears.every((year, index) => index === 0 || year === sortedYears[index - 1] + 1);
-  
-  if (isConsecutive && sortedYears.length > 2) {
-    return `${minYear} - ${maxYear}`;
-  }
-  
-  // Si no, mostrar como lista
-  return years.join(', ');
+  const ranges = sortedYears.reduce((acc, year) => {
+    if (acc.length === 0 || year !== acc[acc.length - 1].end + 1) {
+      acc.push({ start: year, end: year });
+    } else {
+      acc[acc.length - 1].end = year;
+    }
+    return acc;
+  }, [] as { start: number; end: number }[]);
+
+  return ranges.map(range => 
+    range.start === range.end ? String(range.start) : `${range.start} - ${range.end}`
+  ).join(', ');
 };
 
 export const PriceListTable = React.memo(({ records, onEdit, onDelete }: PriceListTableProps) => {

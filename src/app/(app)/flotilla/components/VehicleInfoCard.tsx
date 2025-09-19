@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/VehicleInfoCard.tsx
 "use client";
 
@@ -61,7 +62,7 @@ export function VehicleInfoCard({ vehicle, onEdit }: VehicleInfoCardProps) {
         </div>
         <div className="flex-grow">
           <h4 className="font-semibold text-sm mb-2">Notas</h4>
-          <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[60px]">
+          <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[60px] whitespace-pre-wrap break-words">
             {vehicle.notes || 'No hay notas adicionales.'}
           </div>
         </div>

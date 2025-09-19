@@ -8,7 +8,7 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, PlusCircle, ArrowUpDown } from 'lucide-react';
 import { VehicleDialog } from './vehicle-dialog';
-import { VehicleFormValues } from './vehicle-form';
+import type { VehicleFormValues } from './vehicle-form';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
@@ -126,7 +126,7 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
         <div className="flex items-center space-x-2">
           <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline">
