@@ -95,7 +95,7 @@ export default function AppLayout({
   }
 
   return (
-    <ThemeProvider>
+    <ThemeProvider defaultTheme="light" enableSystem={false}>
       <SidebarProvider defaultOpen={true}>
         <AppSidebar 
           currentUser={currentUser}
