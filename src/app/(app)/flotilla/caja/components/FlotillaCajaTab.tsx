@@ -161,10 +161,10 @@ export function FlotillaCajaTab({
             ))}
           </SelectContent>
         </Select>
-        <Button onClick={onAddWithdrawal} variant="outline" className="bg-white border-red-500 text-black font-bold hover:bg-red-50">
+        <Button onClick={onAddWithdrawal} variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50">
           <TrendingDownIcon className="mr-2 h-4 w-4 text-red-500" /> Retiro
         </Button>
-        <Button onClick={onAddExpense} variant="outline" className="bg-white border-red-500 text-black font-bold hover:bg-red-50">
+        <Button onClick={onAddExpense} variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50">
           <Wrench className="mr-2 h-4 w-4 text-red-500" /> Gasto
         </Button>
       </div>
