@@ -1,4 +1,6 @@
 
+// src/app/(app)/proveedores/components/supplier-form.tsx
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -63,7 +65,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Nombre del Proveedor</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Repuestos Acme S.A." {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
+                <Input placeholder="Ej: Repuestos Acme S.A." {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-white" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -76,7 +78,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Descripción (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Ej: Especialistas en partes de suspensión, entrega a domicilio..." {...field} value={field.value ?? ''} />
+                <Textarea placeholder="Ej: Especialistas en partes de suspensión, entrega a domicilio..." {...field} value={field.value ?? ''} className="bg-white" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -90,7 +92,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
               <FormItem>
                 <FormLabel>Persona de Contacto (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
+                  <Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-white" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -103,7 +105,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
               <FormItem>
                 <FormLabel>Teléfono (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: 555-123456" {...field} value={field.value ?? ''} />
+                  <Input placeholder="Ej: 555-123456" {...field} value={field.value ?? ''} className="bg-white" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -117,7 +119,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Email (Opcional)</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="Ej: contacto@proveedor.com" {...field} value={field.value ?? ''} />
+                <Input type="email" placeholder="Ej: contacto@proveedor.com" {...field} value={field.value ?? ''} className="bg-white" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -130,7 +132,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Dirección (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Ej: Calle Falsa 123, Ciudad, Provincia" {...field} value={field.value ?? ''} />
+                <Textarea placeholder="Ej: Calle Falsa 123, Ciudad, Provincia" {...field} value={field.value ?? ''} className="bg-white" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -149,6 +151,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
                     {...field}
                     value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                    className="bg-white"
                   />
                 </FormControl>
                 <FormMessage />
@@ -163,7 +166,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
                 <FormLabel>Régimen Fiscal (Opcional)</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white">
                       <SelectValue placeholder="Seleccione un régimen fiscal" />
                     </SelectTrigger>
                   </FormControl>
