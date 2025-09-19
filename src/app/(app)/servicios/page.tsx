@@ -230,7 +230,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
   }
   
   const pageActions = (
-    <Button asChild>
+    <Button asChild className="w-full sm:w-auto">
       <Link href="/servicios/nuevo">
         <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Servicio
       </Link>
