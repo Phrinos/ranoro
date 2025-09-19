@@ -54,18 +54,17 @@ export function ProveedoresContent({
                 <h2 className="text-2xl font-semibold tracking-tight">Lista de Proveedores</h2>
                 <p className="text-muted-foreground">Administra la información de tus proveedores y sus saldos.</p>
             </div>
-            <Button onClick={onAdd} className="w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Proveedor
-            </Button>
         </div>
         
         <TableToolbar 
             searchTerm={tableManager.searchTerm}
             onSearchTermChange={tableManager.onSearchTermChange}
-            sortOption={tableManager.sortOption}
-            onSortOptionChange={tableManager.onSortOptionChange}
-            sortOptions={sortOptions}
             searchPlaceholder="Buscar por nombre o contacto..."
+            actions={
+              <Button onClick={onAdd} className="w-full sm:w-auto">
+                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Proveedor
+              </Button>
+            }
         />
         <Card>
             <CardContent className="p-0">
