@@ -4,7 +4,7 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker, type DropdownProps } from "react-day-picker";
-import "react-day-picker/style.css"; // Asegura los estilos base de v9
+import "react-day-picker/style.css";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -28,7 +28,15 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn(
+        "p-3",
+        // 🔴 Forzamos rojo para el acento y el rango
+        "[--rdp-accent-color:theme(colors.red.600)]",
+        "[--rdp-accent-background:theme(colors.red.600)]",
+        "[--rdp-range_middle-background:theme(colors.red.100)]",
+        "[--rdp-range_middle-color:theme(colors.red.900)]",
+        className
+      )}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
@@ -48,20 +56,30 @@ function Calendar({
           "text-muted-foreground rounded-md w-8 font-normal text-[0.75rem]",
         row: "flex w-full mt-2",
         cell:
-          "h-8 w-8 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+          // fondo del rango suave en rojo
+          "h-8 w-8 text-center text-sm p-0 relative " +
+          "[&:has([aria-selected].day-range-end)]:rounded-r-md " +
+          "[&:has([aria-selected].day-outside)]:bg-red-100 " +
+          "[&:has([aria-selected])]:bg-red-100 " +
+          "first:[&:has([aria-selected])]:rounded-l-md " +
+          "last:[&:has([aria-selected])]:rounded-r-md " +
+          "focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "h-8 w-8 p-0 font-normal aria-selected:opacity-100"
         ),
         day_range_end: "day-range-end",
+        // día seleccionado en rojo sólido
         day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
+          "bg-red-600 text-white hover:bg-red-600 hover:text-white focus:bg-red-600 focus:text-white",
+        // “hoy” con borde rojo sutil (no relleno)
+        day_today: "border border-red-600 text-inherit",
         day_outside:
-          "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+          "day-outside text-muted-foreground opacity-50 aria-selected:bg-red-100 aria-selected:text-muted-foreground aria-selected:opacity-30",
         day_disabled: "text-muted-foreground opacity-50",
+        // tramo medio del rango en rojo claro
         day_range_middle:
-          "aria-selected:bg-accent aria-selected:text-accent-foreground",
+          "aria-selected:bg-red-100 aria-selected:text-red-900",
         day_hidden: "invisible",
         ...classNames,
       }}
@@ -73,12 +91,9 @@ function Calendar({
           <ChevronRight className={cn("h-4 w-4", className)} {...iconProps} />
         ),
         Dropdown: ({ value, onChange, children }: DropdownProps) => {
-          // children son <option> de un <select> nativo
           const options = React.Children.toArray(
             children
-          ) as React.ReactElement<
-            React.HTMLProps<HTMLOptionElement>
-          >[];
+          ) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[];
 
           const currentValue = value?.toString() ?? "";
           const selected = options.find(
@@ -86,7 +101,6 @@ function Calendar({
           );
 
           const emitChange = (next: string) => {
-            // Evita re-disparar si no cambia (corte de bucles)
             if (next === currentValue) return;
             const evt = {
               target: { value: next },
