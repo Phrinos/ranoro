@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
-import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, ManualDebtEntry, DailyRentalCharge, PaymentMethod } from '@/types';
+import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, ManualDebtEntry, PaymentMethod } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, cn, capitalizeWords } from '@/lib/utils';
@@ -198,9 +198,10 @@ export function FlotillaCajaTab({
               <TableHeader className="bg-black">
                 <TableRow>
                   <TableHead className="text-white font-bold">Fecha</TableHead>
-                  <TableHead className="text-white font-bold">Tipo</TableHead>
-                  <TableHead className="text-white font-bold hidden sm:table-cell">Descripción</TableHead>
-                  <TableHead className="text-center text-white font-bold">Método</TableHead>
+                  <TableHead className="text-white font-bold md:hidden">Detalles</TableHead>
+                  <TableHead className="text-white font-bold hidden md:table-cell">Tipo</TableHead>
+                  <TableHead className="text-white font-bold hidden md:table-cell">Descripción</TableHead>
+                  <TableHead className="text-center text-white font-bold hidden md:table-cell">Método</TableHead>
                   <TableHead className="text-right text-white font-bold">Monto</TableHead>
                   <TableHead className="text-right text-white font-bold">Acciones</TableHead>
                 </TableRow>
@@ -211,10 +212,20 @@ export function FlotillaCajaTab({
                     const details = getTransactionDetails(t);
                     return (
                       <TableRow key={`${t.transactionType}-${t.id}`}>
-                        <TableCell>{format(parseISO(t.date), "dd MMM, HH:mm", { locale: es })}</TableCell>
-                        <TableCell><Badge variant={details.variant as any}>{details.label}</Badge></TableCell>
-                        <TableCell className="hidden sm:table-cell">{details.description}</TableCell>
-                         <TableCell className="text-center">
+                        <TableCell className="w-24">{format(parseISO(t.date), "dd MMM, HH:mm", { locale: es })}</TableCell>
+                        
+                        {/* Vista Móvil */}
+                        <TableCell className="md:hidden">
+                            <div className="flex flex-col">
+                                <Badge variant={details.variant as any} className="w-min">{details.label}</Badge>
+                                <span className="text-xs text-muted-foreground mt-1">{details.description}</span>
+                            </div>
+                        </TableCell>
+
+                        {/* Vista Desktop */}
+                        <TableCell className="hidden md:table-cell"><Badge variant={details.variant as any}>{details.label}</Badge></TableCell>
+                        <TableCell className="hidden md:table-cell">{details.description}</TableCell>
+                         <TableCell className="text-center hidden md:table-cell">
                           {details.methodName !== 'N/A' && (
                               <TooltipProvider>
                                   <Tooltip>
