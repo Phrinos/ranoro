@@ -1,4 +1,6 @@
 
+// src/app/(app)/servicios/components/ServiceItemCard.tsx
+
 "use client";
 
 import React from 'react';
@@ -19,7 +21,7 @@ import type { InventoryItemFormValues } from "../../inventario/components/invent
 import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
 import { inventoryService } from "@/lib/services";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { usePermissions } from '@/hooks/usePermissions'; // Importamos el hook de permisos
+import { usePermissions } from '@/hooks/usePermissions';
 
 // Sub-component for a single Service Item card
 interface ServiceItemCardProps {
@@ -66,15 +68,15 @@ export function ServiceItemCard({
     const allVehicles = watch('allVehiclesForDialog') as Vehicle[] | undefined || [];
     const currentVehicle = allVehicles.find(v => v.id === currentVehicleId);
 
-    const handleAddSupply = (supply: ServiceSupply, quantity: number) => {
+    const handleAddSupply = (item: InventoryItem, quantity: number) => {
         append({
-            supplyId: supply.supplyId || `manual_${Date.now()}`,
-            supplyName: supply.supplyName || 'Insumo Manual',
+            supplyId: item.id || `manual_${Date.now()}`,
+            supplyName: item.name || 'Insumo Manual',
             quantity: quantity || 1,
-            unitPrice: supply.unitPrice || 0,
-            sellingPrice: supply.sellingPrice,
-            isService: supply.isService,
-            unitType: supply.unitType,
+            unitPrice: item.unitPrice || 0,
+            sellingPrice: item.sellingPrice,
+            isService: item.isService,
+            unitType: item.unitType,
         });
         setIsInventorySearchDialogOpen(false);
     };
@@ -85,7 +87,7 @@ export function ServiceItemCard({
         if (!currentSupply) return;
         const newQuantity = (Number(currentSupply.quantity) || 0) + delta;
         if (newQuantity <= 0) return;
-        const inventoryItem = inventoryItems.find(item => item.id === currentSupply.supplyId);
+        const inventoryItem = inventoryItems.find(inv => inv.id === currentSupply.supplyId);
         if (inventoryItem && !inventoryItem.isService && newQuantity > inventoryItem.quantity) {
             toast({ title: 'Stock Insuficiente', description: `Solo hay ${inventoryItem.quantity} de ${inventoryItem.name} en inventario.`, variant: 'destructive' });
             return;
@@ -205,14 +207,14 @@ export function ServiceItemCard({
                             </div>
                         )
                     })}
-                     {!isReadOnly && (
-                        <div className="flex justify-end pt-2">
-                            <Button type="button" variant="outline" size="sm" className="bg-white hover:bg-gray-100" onClick={() => setIsInventorySearchDialogOpen(true) }>
-                                <PlusCircle className="mr-2 h-4 w-4"/> Añadir Insumo
-                            </Button>
-                        </div>
-                    )}
                 </div>
+                 {!isReadOnly && (
+                    <div className="flex justify-end pt-2">
+                        <Button type="button" variant="outline" size="sm" className="bg-white hover:bg-gray-100" onClick={() => setIsInventorySearchDialogOpen(true) }>
+                            <PlusCircle className="mr-2 h-4 w-4"/> Añadir Insumo
+                        </Button>
+                    </div>
+                )}
             </div>
              <InventorySearchDialog
                 open={isInventorySearchDialogOpen}

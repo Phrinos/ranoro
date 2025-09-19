@@ -88,6 +88,7 @@ export function ServiceItemsList({
                 type="button"
                 variant="outline"
                 size="sm"
+                className="bg-white"
                 onClick={() =>
                   append({
                     id: `item_${nanoid(6)}`,
