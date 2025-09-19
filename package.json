@@ -44,6 +44,7 @@
     "jspdf": "^3.0.3",
     "lucide-react": "^0.441.0",
     "next": "^15.5.3",
+    "next-themes": "^0.4.6",
     "postcss": "8.4.47",
     "react": "^19.0.0-rc-f994737d-20240516",
     "react-day-picker": "^9.10.0",

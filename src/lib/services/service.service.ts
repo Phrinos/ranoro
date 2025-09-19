@@ -100,11 +100,9 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
     const users: User[] = await adminService.onUsersUpdatePromise();
     const usersMap = new Map(users.map(u => [u.id, u]));
 
-    // --- INICIO: Lógica Unificada de Comisiones ---
     let totalTechnicianCommission = 0;
     let serviceAdvisorCommission = 0;
 
-    // 1. Calcular comisiones de Técnicos por item
     const serviceItemsWithCommission = service.serviceItems?.map(item => {
         let commissionForItem = 0;
         if (item.technicianId) {
@@ -116,23 +114,26 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
         }
         return { ...item, technicianCommission: commissionForItem };
     }) || [];
+    
+    // RE-CÁLCULO DEL TOTAL BASADO EN PAGOS
+    const finalTotalFromPayments = paymentDetails.payments.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
 
-    // 2. Calcular comisión del Asesor sobre el total del servicio
     if (service.serviceAdvisorId) {
         const advisor = usersMap.get(service.serviceAdvisorId);
         if (advisor && typeof advisor.commissionRate === 'number' && advisor.commissionRate > 0) {
-            serviceAdvisorCommission = (service.total || 0) * (advisor.commissionRate / 100);
+            // Usamos el total final de los pagos para el cálculo
+            serviceAdvisorCommission = finalTotalFromPayments * (advisor.commissionRate / 100);
         }
     }
-    // --- FIN: Lógica Unificada de Comisiones ---
 
     const updatedServiceData = {
         ...service,
+        total: finalTotalFromPayments, // Aseguramos que el total refleje la suma de los pagos
         serviceItems: serviceItemsWithCommission,
-        totalCommission: totalTechnicianCommission, // Mantenemos este campo para comisiones de técnicos
-        serviceAdvisorCommission: serviceAdvisorCommission, // Nuevo campo para la comisión del asesor
+        totalCommission: totalTechnicianCommission,
+        serviceAdvisorCommission: serviceAdvisorCommission,
         status: 'Entregado',
-        deliveryDateTime: new Date().toISOString(),
+        deliveryDateTime: new Date(), // Usamos un Timestamp de Firestore para máxima consistencia
         payments: paymentDetails.payments,
         ...(paymentDetails.nextServiceInfo && { nextServiceInfo: paymentDetails.nextServiceInfo }),
     };

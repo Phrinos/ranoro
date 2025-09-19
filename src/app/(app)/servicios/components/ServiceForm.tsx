@@ -31,7 +31,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 interface ServiceFormProps {
   initialData: ServiceRecord | null;
   vehicles: Vehicle[];
-  users: User[]; // Recibimos la lista completa de usuarios
+  users: User[]; // CORREGIDO: El prop ahora se llama 'users'
   inventoryItems: InventoryItem[];
   serviceTypes: ServiceTypeRecord[];
   categories: InventoryCategory[];
@@ -140,11 +140,18 @@ const getErrorMessages = (errors: FieldErrors<ServiceFormValues>): string => {
     return `Por favor, revise los siguientes campos: ${uniqueMessages.join(', ')}.`;
 };
 
+const normalizeText = (text: string = '') => {
+    return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, ""); // Remove accents
+};
+
 
 export function ServiceForm({
   initialData,
   vehicles,
-  users, // Recibimos la lista completa de usuarios
+  users, 
   inventoryItems,
   serviceTypes,
   categories,
@@ -162,26 +169,29 @@ export function ServiceForm({
   const [signatureType, setSignatureType] = React.useState<'reception' | 'delivery' | 'advisor' | null>(null);
   const [isEnhancingText, setIsEnhancingText] = React.useState<string | null>(null);
 
-  // --- INICIO: Nueva Lógica de Filtrado por Funciones ---
   const { advisors, technicians } = React.useMemo(() => {
     const advisorsList: User[] = [];
     const techniciansList: User[] = [];
-    
-    // Safety check to ensure `users` is an iterable array
-    const validUsers = Array.isArray(users) ? users : [];
-    
-    // Iteramos sobre la lista completa de usuarios
-    for (const user of validUsers) {
-      if (user.functions?.includes('asesor')) {
-        advisorsList.push(user);
-      }
-      if (user.functions?.includes('tecnico')) {
-        techniciansList.push(user);
-      }
+    const safeUsers = Array.isArray(users) ? users : [];
+
+    for (const user of safeUsers) {
+        if (user.isArchived) continue;
+
+        const userFunctions = user.functions || [];
+        const normalizedRole = normalizeText(user.role);
+
+        if (userFunctions.includes('asesor') || normalizedRole.includes('asesor')) {
+            advisorsList.push(user);
+        }
+        if (userFunctions.includes('tecnico') || normalizedRole.includes('tecnico')) {
+            techniciansList.push(user);
+        }
     }
-    return { advisors: advisorsList, technicians: techniciansList };
+    return { 
+        advisors: [...new Set(advisorsList)], 
+        technicians: [...new Set(techniciansList)] 
+    };
   }, [users]);
-  // --- FIN: Nueva Lógica de Filtrado por Funciones ---
 
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -286,8 +296,8 @@ export function ServiceForm({
         />
         <ServiceDetailsCard
             isReadOnly={false}
-            advisors={advisors} // Pasamos la lista de asesores
-            technicians={technicians} // Pasamos la lista de técnicos
+            advisors={advisors}
+            technicians={technicians}
             serviceTypes={serviceTypes}
             onOpenSignature={handleOpenSignatureDialog}
             isNew={!initialData?.id}
@@ -315,7 +325,7 @@ export function ServiceForm({
                             serviceTypes={serviceTypes}
                             categories={categories}
                             suppliers={suppliers}
-                            technicians={technicians} // Pasamos la lista de técnicos
+                            technicians={technicians}
                             onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
                             mode={mode}
                             isEnhancingText={isEnhancingText}

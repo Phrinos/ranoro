@@ -99,6 +99,7 @@ export default function ServicioPage() {
                 setInitialData(serviceData);
                 setRecordForPreview(serviceData);
             } else {
+                // MEJORA: Auto-asignar el asesor de servicio al crear un nuevo servicio
                 const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
                 const currentUser = authUserString ? JSON.parse(authUserString) : null;
 
@@ -109,6 +110,7 @@ export default function ServicioPage() {
                     serviceDate: new Date(),
                     vehicleId: '', 
                     serviceItems: [],
+                    // Asignar automáticamente al usuario actual como asesor
                     ...(currentUser && {
                         serviceAdvisorId: currentUser.id,
                         serviceAdvisorName: currentUser.name,
@@ -351,7 +353,7 @@ export default function ServicioPage() {
         <ServiceForm
             initialData={initialData}
             vehicles={vehicles}
-            technicians={users}
+            users={users} // CORREGIDO: Se pasa la prop con el nombre 'users'
             inventoryItems={inventoryItems}
             serviceTypes={serviceTypes}
             categories={categories}

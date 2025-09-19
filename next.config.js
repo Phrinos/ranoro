@@ -4,12 +4,18 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
   
-  // 2. Indicador de dev
+  // 2. Transpilar paquetes problemáticos
+  transpilePackages: [
+    '@radix-ui/react-menu',
+    '@radix-ui/react-dropdown-menu',
+  ],
+
+  // 3. Indicador de dev
   devIndicators: {
     position: 'bottom-right',
   },
 
-  // 3. Imágenes remotas
+  // 4. Imágenes remotas
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'placehold.co', pathname: '/**' },
@@ -17,7 +23,7 @@ const nextConfig = {
     ],
   },
   
-  // 4. CORS global y redirecciones
+  // 5. CORS global y redirecciones
   async headers() {
     return [
       {
@@ -34,7 +40,6 @@ const nextConfig = {
   
   async redirects() {
     return [
-      // Evita el error de CORS al intentar cargar el manifest.json en el entorno de desarrollo
       {
         source: '/manifest.json',
         destination: '/404',
@@ -43,14 +48,13 @@ const nextConfig = {
     ]
   },
 
-  // 5. Webpack config
+  // 6. Webpack config
   webpack: (config, { isServer }) => {
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),
       /require.extensions is not supported by webpack. Use a loader instead./,
     ];
     
-    // Add this to improve HMR stability
     if (!isServer) {
         config.watchOptions = {
             poll: 1000,
