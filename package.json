@@ -1,3 +1,4 @@
+
 {
   "name": "studio",
   "version": "0.1.0",
@@ -9,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@genkit-ai/googleai": "^1.0.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -36,6 +38,7 @@
     "firebase": "^10.13.2",
     "firebase-admin": "^12.6.0",
     "firebase-functions": "^5.1.1",
+    "genkit": "^1.0.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.441.0",
