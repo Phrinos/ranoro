@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -16,7 +17,7 @@ import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 const earliest = new Date(2018, 0, 1);
@@ -115,6 +116,10 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
             "max-h-[90vh] overflow-hidden"
           )}
         >
+          <DialogHeader className="sr-only">
+            <DialogTitle>Seleccionar Rango de Fechas</DialogTitle>
+            <DialogDescription>Elige un rango predefinido o selecciona las fechas manualmente.</DialogDescription>
+          </DialogHeader>
           <div className="flex h-full">
             {/* Presets */}
             {isMobile ? (
