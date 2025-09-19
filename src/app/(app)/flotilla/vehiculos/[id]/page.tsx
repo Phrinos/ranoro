@@ -110,6 +110,11 @@ export default function FlotillaVehiculoProfilePage() {
     setViewingFineCheck(null);
   };
 
+  const handleAssignmentChange = useCallback(() => {
+    // This function is now stable and won't cause re-renders.
+    // If you need to refresh data after assignment, you can add logic here.
+  }, []);
+
 
   if (isLoading || !vehicle) {
     return (
@@ -134,7 +139,7 @@ export default function FlotillaVehiculoProfilePage() {
   return (
     <>
       <PageHeader
-        title={`Perfil de ${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`}
+        title={`${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`}
         description="Gestiona la asignación, información y mantenimiento del vehículo."
         actions={
           <Button variant="outline" onClick={() => router.push('/flotilla?tab=vehiculos')}>
@@ -151,7 +156,7 @@ export default function FlotillaVehiculoProfilePage() {
 
         {/* Right Column */}
         <div className="space-y-6">
-          <AssignDriverCard vehicle={vehicle} allDrivers={allDrivers} onAssignmentChange={() => {}} />
+          <AssignDriverCard vehicle={vehicle} allDrivers={allDrivers} onAssignmentChange={handleAssignmentChange} />
           <RentalSystemCard vehicle={vehicle} onEdit={() => setIsRentalSystemDialogOpen(true)} />
           <PaperworkCard 
             vehicle={vehicle} 
