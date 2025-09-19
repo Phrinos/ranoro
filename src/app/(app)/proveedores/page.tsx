@@ -44,7 +44,7 @@ export default function ProveedoresPageComponent() {
     setIsLoading(true);
     const unsubs = [
       inventoryService.onSuppliersUpdate(setSuppliers),
-      inventoryService.onPayableAccountsUpdate(setPayableAccounts),
+      purchaseService.onPayableAccountsUpdate(setPayableAccounts),
       inventoryService.onItemsUpdate(setInventoryItems),
       inventoryService.onCategoriesUpdate((data) => {
         setCategories(data);

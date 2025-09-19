@@ -15,7 +15,7 @@ import {
   WriteBatch,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck } from "@/types";
+import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, VehiclePriceList } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { nanoid } from 'nanoid';
 

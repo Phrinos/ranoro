@@ -6,7 +6,10 @@ import {
   writeBatch,
   Timestamp,
   getDoc,
-  updateDoc
+  updateDoc,
+  onSnapshot,
+  query,
+  orderBy,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
@@ -15,6 +18,16 @@ import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
 import { cleanObjectForFirestore } from '../forms';
 import { formatCurrency } from '../utils';
+
+// --- Accounts Payable ---
+const onPayableAccountsUpdate = (callback: (accounts: PayableAccount[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "payableAccounts"), orderBy("dueDate", "asc"));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PayableAccount)));
+    });
+};
+
 
 const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
@@ -135,6 +148,7 @@ const registerPayableAccountPayment = async (accountId: string, amount: number, 
 
 
 export const purchaseService = {
+  onPayableAccountsUpdate,
   registerPurchase,
   registerPayableAccountPayment,
 };
