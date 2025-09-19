@@ -83,8 +83,6 @@ export function InventorySearchDialog({
       .slice(0, 100);
   }, [safeInventory, searchTerm, frequentItems]);
 
-  const getPrice = (it: any) => it.sellingPrice ?? it.price ?? it.unitPrice ?? 0;
-
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item, 1);
     setSearchTerm("");
@@ -154,7 +152,6 @@ export function InventorySearchDialog({
 
                 {filteredItems.map((item) => {
                   const searchValue = [
-                    item.id,
                     item.name,
                     item.sku,
                     (item as any).brand,
@@ -186,3 +183,4 @@ export function InventorySearchDialog({
     </Dialog>
   );
 }
+
