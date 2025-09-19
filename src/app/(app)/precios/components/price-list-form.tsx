@@ -18,7 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { capitalizeWords, formatCurrency } from "@/lib/utils";
 import React, { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { AddSupplyDialog } from "../../servicios/components/add-supply-dialog";
+import { InventorySearchDialog } from "@/components/shared/InventorySearchDialog";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
@@ -222,17 +222,16 @@ function ServiceSuppliesArray({ serviceIndex, control, inventoryItems, onNewInve
                 <PlusCircle className="mr-2 h-4 w-4" /> Añadir Insumo
             </Button>
             
-            <AddSupplyDialog
+            <InventorySearchDialog
                 open={isAddSupplyDialogOpen}
                 onOpenChange={setIsAddSupplyDialogOpen}
-                inventoryItems={inventoryItems}
-                onAddSupply={handleAddSupply}
+                onItemSelected={handleAddSupply}
                 onNewItemRequest={handleNewItemRequest}
             />
             
              <InventoryItemDialog
                 open={isNewItemDialogOpen}
-                onOpenChange={setIsNewItemDialogOpen}
+                onOpen-change={setIsNewItemDialogOpen}
                 onSave={handleNewItemSaved}
                 item={{ name: newItemSearchTerm }}
                 categories={categories}

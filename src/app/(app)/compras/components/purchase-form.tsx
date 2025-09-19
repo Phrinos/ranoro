@@ -22,7 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { InventoryItem, ProductSearchDialog } from "./product-search-dialog";
+import { InventoryItem, InventorySearchDialog } from "@/components/shared/InventorySearchDialog";
 
 // Esquema de validación para el formulario de compra
 const purchaseFormSchema = z.object({
@@ -125,10 +125,10 @@ export function PurchaseForm({ onSuccess }: PurchaseFormProps) {
 
   return (
     <>
-      <ProductSearchDialog
-        isOpen={isSearchDialogOpen}
+      <InventorySearchDialog
+        open={isSearchDialogOpen}
         onOpenChange={setIsSearchDialogOpen}
-        onProductSelect={handleProductSelect}
+        onItemSelected={handleProductSelect}
       />
       <Form {...form}>
         <form className="space-y-6">

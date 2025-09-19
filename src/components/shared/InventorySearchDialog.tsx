@@ -25,8 +25,8 @@ interface InventorySearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   inventoryItems: InventoryItem[];
-  onItemSelected: (item: InventoryItem) => void;
-  onNewItemRequest: (searchTerm: string) => void;
+  onItemSelected: (item: InventoryItem, quantity: number) => void;
+  onNewItemRequest?: (searchTerm: string) => void;
 }
 
 const normalize = (s?: string) =>
@@ -46,6 +46,7 @@ export function InventorySearchDialog({
     [inventoryItems]
   );
 
+  // ranking para “más frecuentes”
   const score = (it: any) =>
     (it.timesSold || it.salesCount || 0) * 3 +
     (it.timesUsed || it.serviceUsageCount || 0) * 3 +
@@ -65,13 +66,7 @@ export function InventorySearchDialog({
     return safeInventory
       .filter((item) => {
         const haystack = normalize(
-          [
-            item.name,
-            item.sku,
-            (item as any).brand,
-            (item as any).category,
-            (item as any).keywords,
-          ]
+          [item.name, item.sku, (item as any).brand, (item as any).category, (item as any).keywords]
             .filter(Boolean)
             .join(" ")
         );
@@ -81,8 +76,10 @@ export function InventorySearchDialog({
       .slice(0, 100);
   }, [safeInventory, searchTerm, frequentItems]);
 
+  const getPrice = (it: any) => it.sellingPrice ?? it.price ?? it.unitPrice ?? 0;
+
   const handleSelect = (item: InventoryItem) => {
-    onItemSelected(item);
+    onItemSelected(item, 1);
     setSearchTerm("");
     onOpenChange(false);
   };
@@ -91,18 +88,23 @@ export function InventorySearchDialog({
     if (!next) setSearchTerm("");
     onOpenChange(next);
   };
+  
+  const handleNewItem = () => {
+    onNewItemRequest?.(searchTerm);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2">
-          <DialogTitle>Buscar en Inventario</DialogTitle>
+          <DialogTitle>Añadir Artículo/Servicio</DialogTitle>
           <DialogDescription>
-            Busca y selecciona un producto o servicio.
+            Busque un artículo en su inventario para añadirlo.
           </DialogDescription>
         </DialogHeader>
 
         <div className="px-6 pb-6">
+          {/* Desactivamos el filtro interno y protegemos los items */}
           <Command
             shouldFilter={false}
             className={cn(
@@ -121,14 +123,11 @@ export function InventorySearchDialog({
               <CommandEmpty>
                 <div className="text-center p-4">
                   <p>No se encontraron artículos.</p>
-                  {searchTerm && (
-                    <Button
-                      variant="link"
-                      onClick={() => onNewItemRequest(searchTerm)}
-                      className="mt-2"
-                    >
+                  {onNewItemRequest && (
+                    <Button variant="link" onClick={handleNewItem} className="mt-2">
                       <PackagePlus className="mr-2 h-4 w-4" />
-                      Registrar Nuevo Artículo "{searchTerm}"
+                      Registrar Nuevo Artículo
+                      {searchTerm ? ` "${searchTerm}"` : ""}
                     </Button>
                   )}
                 </div>
@@ -142,6 +141,7 @@ export function InventorySearchDialog({
                 )}
 
                 {filteredItems.map((item) => {
+                  // Hacemos que el "value" incluya TODOS los campos buscables
                   const searchValue = [
                     item.name,
                     item.sku,
@@ -157,11 +157,19 @@ export function InventorySearchDialog({
                       key={item.id}
                       value={searchValue}
                       onSelect={() => handleSelect(item)}
+                      // Blindaje: aunque cmdk lo marque data-disabled, se puede clickear
                       className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
                     >
-                      <p className="font-semibold">{item.category} - {item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        SKU: {item.sku || 'N/A'} | Stock: {item.isService ? "N/A" : item.quantity ?? 0} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
+                      <p className="font-semibold">
+                        <span className="text-primary">{item.category || "Sin categoría"}</span>
+                        {" — "}
+                        {item.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground space-x-2">
+                        <span>SKU: <span className="font-semibold">{item.sku || "N/A"}</span></span>
+                        <span>Stock: <span className="font-semibold">{item.isService ? "N/A" : item.quantity ?? 0}</span></span>
+                        <span>Venta: <span className="font-semibold">{formatCurrency(getPrice(item))}</span></span>
+                        <span>Costo: <span className="font-semibold">{formatCurrency(item.unitPrice ?? 0)}</span></span>
                       </p>
                     </CommandItem>
                   );

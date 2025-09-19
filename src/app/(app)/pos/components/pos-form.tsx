@@ -4,8 +4,8 @@
 
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import type { InventoryItem, SaleReceipt, InventoryCategory, Supplier } from "@/types";
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { AddItemDialog } from "./add-item-dialog";
+import { useState, useCallback, useEffect } from "react";
+import { InventorySearchDialog } from "@/components/shared/InventorySearchDialog";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { SaleItemsList } from './sale-items-list';
@@ -41,7 +41,7 @@ export function PosForm({
   const watchedPayments = useWatch({ control, name: 'payments' });
   const watchedItems = useWatch({ control, name: 'items' });
 
-  const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
+  const [isInventorySearchDialogOpen, setIsInventorySearchDialogOpen] = useState(false);
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
   const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
   
@@ -52,7 +52,7 @@ export function PosForm({
     // sólo cuando cambia el ID de la venta
   }, [initialData?.id, reset]);
 
-  const handleOpenAddItemDialog = () => setIsAddItemDialogOpen(true);
+  const handleOpenInventorySearchDialog = () => setIsInventorySearchDialogOpen(true);
   
   const handleAddItem = useCallback((item: InventoryItem, quantity: number) => {
     const currentItems = getValues('items') || [];
@@ -65,7 +65,7 @@ export function PosForm({
         isService: item.isService || false,
         unitType: item.unitType,
     }], { shouldValidate: false });
-    setIsAddItemDialogOpen(false);
+    setIsInventorySearchDialogOpen(false);
   }, [setValue, getValues]);
   
   const handleRequestNewItem = useCallback((searchTerm: string) => {
@@ -74,7 +74,7 @@ export function PosForm({
           category: categories.length > 0 ? categories[0].name : "",
           supplier: suppliers.length > 0 ? suppliers[0].name : "",
       });
-      setIsAddItemDialogOpen(false);
+      setIsInventorySearchDialogOpen(false);
       setIsNewInventoryItemDialogOpen(true);
   }, [categories, suppliers]);
   
@@ -143,7 +143,7 @@ export function PosForm({
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           {/* Columna Izquierda: Lista de Artículos */}
           <div className="lg:col-span-3">
-            <SaleItemsList onAddItem={handleOpenAddItemDialog} inventoryItems={inventoryItems} />
+            <SaleItemsList onAddItem={handleOpenInventorySearchDialog} inventoryItems={inventoryItems} />
           </div>
 
           {/* Columna Derecha: Pago y Resumen */}
@@ -153,10 +153,9 @@ export function PosForm({
         </div>
       </form>
 
-      <AddItemDialog
-        open={isAddItemDialogOpen}
-        onOpenChange={setIsAddItemDialogOpen}
-        inventoryItems={inventoryItems}
+      <InventorySearchDialog
+        open={isInventorySearchDialogOpen}
+        onOpenChange={setIsInventorySearchDialogOpen}
         onItemSelected={handleAddItem}
         onNewItemRequest={handleRequestNewItem}
       />

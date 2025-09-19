@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from 'react';
@@ -12,7 +11,7 @@ import { Plus, PlusCircle, Trash2, Wrench, Tags, Minus } from 'lucide-react';
 import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord, User } from '@/types';
 import { useState, useCallback, useMemo } from "react";
 import { useToast } from '@/hooks/use-toast';
-import { AddSupplyDialog } from './add-supply-dialog';
+import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
 import { capitalizeWords, formatCurrency, cn } from '@/lib/utils';
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
@@ -57,7 +56,7 @@ export function ServiceItemCard({
     const permissions = usePermissions(); // Usamos el hook
     const canViewCosts = permissions.has('inventory:view_costs'); // Verificamos el permiso
 
-    const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
+    const [isInventorySearchDialogOpen, setIsInventorySearchDialogOpen] = useState(false);
     const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
     const [newItemSearchTerm, setNewItemSearchTerm] = useState('');
     const [isAddToPriceListDialogOpen, setIsAddToPriceListDialogOpen] = useState(false);
@@ -77,7 +76,7 @@ export function ServiceItemCard({
             isService: supply.isService,
             unitType: supply.unitType,
         });
-        setIsAddSupplyDialogOpen(false);
+        setIsInventorySearchDialogOpen(false);
     };
 
     const handleSupplyQuantityChange = (supplyIndex: number, delta: number) => {
@@ -109,7 +108,7 @@ export function ServiceItemCard({
 
     const handleNewItemRequest = (searchTerm: string) => {
         setNewItemSearchTerm(searchTerm);
-        setIsAddSupplyDialogOpen(false);
+        setIsInventorySearchDialogOpen(false);
         setIsNewItemDialogOpen(true);
     };
 
@@ -208,14 +207,14 @@ export function ServiceItemCard({
                     })}
                      {!isReadOnly && (
                         <div className="flex justify-end pt-2">
-                            <Button type="button" variant="outline" size="sm" className="bg-white hover:bg-gray-100" onClick={() => setIsAddSupplyDialogOpen(true) }>
+                            <Button type="button" variant="outline" size="sm" className="bg-white hover:bg-gray-100" onClick={() => setIsInventorySearchDialogOpen(true) }>
                                 <PlusCircle className="mr-2 h-4 w-4"/> Añadir Insumo
                             </Button>
                         </div>
                     )}
                 </div>
             </div>
-             <AddSupplyDialog open={isAddSupplyDialogOpen} onOpenChange={setIsAddSupplyDialogOpen} inventoryItems={inventoryItems} onAddSupply={handleAddSupply} onNewItemRequest={handleNewItemRequest} />
+             <InventorySearchDialog open={isInventorySearchDialogOpen} onOpenChange={setIsInventorySearchDialogOpen} onItemSelected={handleAddSupply} onNewItemRequest={handleNewItemRequest} />
             <InventoryItemDialog open={isNewItemDialogOpen} onOpenChange={setIsNewItemDialogOpen} onSave={handleNewItemSaved} item={{ name: newItemSearchTerm }} categories={categories} suppliers={suppliers} />
              <AddToPriceListDialog open={isAddToPriceListDialogOpen} onOpenChange={setIsAddToPriceListDialogOpen} serviceToSave={getValues(`serviceItems.${serviceIndex}`)} currentVehicle={currentVehicle} onSave={handleSaveToPriceList} />
         </Card>
