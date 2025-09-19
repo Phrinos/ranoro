@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 
 "use client";
@@ -63,7 +62,7 @@ export function ServiceAppointmentCard({
   const parsedDate = displayDate ? parseDate(displayDate) : null;
 
   const calculatedTotals = useMemo(() => {
-    const total = Number(service.totalCost ?? (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0));
+    const total = Number(service.totalCost ?? (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.sellingPrice) || 0), 0));
     const serviceProfit = calcEffectiveProfit(service);
     return { totalCost: total, serviceProfit };
   }, [service]);

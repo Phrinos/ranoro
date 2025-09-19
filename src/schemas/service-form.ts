@@ -1,3 +1,4 @@
+
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -14,9 +15,11 @@ export const supplySchema = z.object({
 export const serviceItemSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'El nombre del servicio es requerido.'),
-  price: z.coerce.number({ invalid_type_error: 'El precio debe ser un número.' }).optional(),
+  sellingPrice: z.coerce.number({ invalid_type_error: 'El precio debe ser un número.' }).optional(),
   suppliesUsed: z.array(supplySchema),
   serviceType: z.string().optional(),
+  technicianId: z.string().optional(),
+  technicianCommission: z.coerce.number().optional(),
 });
 
 export const photoReportSchema = z.object({
@@ -125,7 +128,7 @@ export const serviceFormSchema = z.object({
       path: ['appointmentDateTime'],
     }
 ).superRefine((data, ctx) => {
-    const totalCost = data.serviceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
+    const totalCost = data.serviceItems?.reduce((sum, item) => sum + (item.sellingPrice || 0), 0) || 0;
     const totalPaid = data.payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
 
     if (data.status === 'Entregado') {

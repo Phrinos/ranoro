@@ -22,10 +22,10 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
   const watchedItems = useWatch({ control: form.control, name: 'serviceItems' });
   const cardCommission = useWatch({ control: form.control, name: 'cardCommission' }) || 0;
   
-  const { totalCost, subTotal, taxAmount, serviceProfit } = useMemo(() => {
+  const { subTotal, taxAmount, serviceProfit } = useMemo(() => {
     if (!watchedItems) return { totalCost: 0, subTotal: 0, taxAmount: 0, serviceProfit: 0 };
     const total = (watchedItems || []).reduce(
-      (s, i) => s + (Number(i.price) || 0),
+      (s, i) => s + (Number(i.sellingPrice) || 0),
       0
     );
     
@@ -37,13 +37,13 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
       );
     
     return {
-      totalCost: total,
       serviceProfit: total - costOfSupplies - cardCommission,
       subTotal: total / (1 + IVA_RATE),
       taxAmount: total - total / (1 + IVA_RATE),
     };
   }, [watchedItems, cardCommission]);
 
+  const totalCost = (watchedItems || []).reduce((s, i) => s + (Number(i.sellingPrice) || 0), 0);
   const totalPaid = (form.watch('payments') || []).reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) || 0;
 
   return (

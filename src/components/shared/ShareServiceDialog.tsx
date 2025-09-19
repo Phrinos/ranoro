@@ -33,7 +33,7 @@ const buildShareMessage = (svc: ServiceRecord, total: number, vehicle?: Vehicle,
   const url = buildShareUrl(svc.publicId);
 
   const itemsList = (svc.serviceItems || [])
-    .map(item => `- ${item.name}: ${formatCurrency(item.price || 0)}`)
+    .map(item => `- ${item.name}: ${formatCurrency(item.sellingPrice || 0)}`)
     .join('\n');
 
   const message = `Hola ${customerName}👋
@@ -79,7 +79,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
   const isMobile = useIsMobile();
   
   const serviceTotal = React.useMemo(() => 
-    (initialService?.serviceItems || []).reduce((sum, item) => sum + (item.price || 0), 0),
+    (initialService?.serviceItems || []).reduce((sum, item) => sum + (item.sellingPrice || 0), 0),
     [initialService?.serviceItems]
   );
 
@@ -174,7 +174,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
                             </p>
                           )}
                         </div>
-                        <span className="font-semibold text-foreground whitespace-nowrap">{formatCurrency(item.price || 0)}</span>
+                        <span className="font-semibold text-foreground whitespace-nowrap">{formatCurrency(item.sellingPrice || 0)}</span>
                       </div>
                     </div>
                   ))}
