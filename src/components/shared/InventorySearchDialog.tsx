@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -24,7 +25,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 interface InventorySearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  inventoryItems: InventoryItem[];
+  inventoryItems?: InventoryItem[];
   onItemSelected: (item: InventoryItem, quantity: number) => void;
   onNewItemRequest?: (searchTerm: string) => void;
 }
@@ -51,7 +52,7 @@ export function InventorySearchDialog({
     (it.timesSold || it.salesCount || 0) * 3 +
     (it.timesUsed || it.serviceUsageCount || 0) * 3 +
     (it.lastSoldAt ? 2 : 0) +
-    (it.quantity > 0 ? 1 : 0);
+    ((it.quantity ?? 0) > 0 ? 1 : 0);
 
   const frequentItems = useMemo(
     () => [...safeInventory].sort((a, b) => score(b) - score(a)).slice(0, 30),
@@ -70,7 +71,7 @@ export function InventorySearchDialog({
             item.name,
             item.sku,
             (item as any).brand,
-            (item as any).category,
+            item.category,
             (item as any).keywords,
           ]
             .filter(Boolean)
@@ -81,6 +82,8 @@ export function InventorySearchDialog({
       .sort((a, b) => score(b) - score(a))
       .slice(0, 100);
   }, [safeInventory, searchTerm, frequentItems]);
+
+  const getPrice = (it: any) => it.sellingPrice ?? it.price ?? it.unitPrice ?? 0;
 
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item, 1);
@@ -94,7 +97,7 @@ export function InventorySearchDialog({
   };
   
   const handleNewItem = () => {
-    if(onNewItemRequest) {
+    if (onNewItemRequest) {
       onNewItemRequest(searchTerm);
     }
   };
@@ -128,8 +131,12 @@ export function InventorySearchDialog({
               <CommandEmpty>
                 <div className="text-center p-4">
                   <p>No se encontraron artículos.</p>
-                  {onNewItemRequest && (
-                    <Button variant="link" onClick={handleNewItem} className="mt-2 text-destructive">
+                  {!!onNewItemRequest && (
+                    <Button
+                      variant="link"
+                      onClick={handleNewItem}
+                      className="mt-2"
+                    >
                       <PackagePlus className="mr-2 h-4 w-4" />
                       Registrar Nuevo Artículo
                       {searchTerm ? ` “${searchTerm}”` : ""}
@@ -147,11 +154,11 @@ export function InventorySearchDialog({
 
                 {filteredItems.map((item) => {
                   const searchValue = [
-                    item.id, 
+                    item.id,
                     item.name,
                     item.sku,
                     (item as any).brand,
-                    (item as any).category,
+                    item.category,
                     (item as any).keywords,
                   ]
                     .filter(Boolean)
@@ -164,16 +171,9 @@ export function InventorySearchDialog({
                       onSelect={() => handleSelect(item)}
                       className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
                     >
-                      <p className="font-semibold">
-                        <span className="text-primary">{item.category || "Sin categoría"}</span>
-                        {" - "}
-                        {item.name}
-                      </p>
+                      <p className="font-semibold">{item.category} - {item.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        SKU: <span className="font-semibold">{item.sku || "N/A"}</span> | 
-                        Stock: <span className="font-semibold">{item.isService ? "N/A" : item.quantity ?? 0}</span> | 
-                        Venta: <span className="font-semibold">{formatCurrency(item.sellingPrice)}</span> | 
-                        Costo: <span className="font-semibold">{formatCurrency(item.unitPrice)}</span>
+                        SKU: {item.sku || 'N/A'} | Stock: {item.isService ? "N/A" : item.quantity ?? 0} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
                       </p>
                     </CommandItem>
                   );
