@@ -83,7 +83,7 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
         onSearchTermChange={tableManager.onSearchTermChange}
         searchPlaceholder="Buscar por placa, marca, modelo..."
         actions={
-          <Button onClick={() => handleOpenDialog()}>
+          <Button onClick={() => handleOpenDialog()} className="w-full sm:w-auto">
             <PlusCircle className="mr-2 h-4 w-4" />
             Agregar Vehículo
           </Button>
