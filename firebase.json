@@ -8,37 +8,34 @@
   "storage": {
     "rules": "storage.rules"
   },
-  "functions": {
-    "source": "functions",
-    "predeploy": [
-      "npm --prefix \"$RESOURCE_DIR\" run lint",
-      "npm --prefix \"$RESOURCE_DIR\" run build"
-    ],
-    "runtime": "nodejs18"
-  },
-  "emulators": {
-    "auth": {
-      "port": 9100
-    },
-    "firestore": {
-      "port": 8181
-    },
-    "functions": {
-      "port": 5101
-    },
-    "storage": {
-      "port": 9299
-    },
-    "ui": {
-      "enabled": true
+  "functions": [
+    {
+      "codebase": "backend",
+      "source": "functions",
+      "runtime": "nodejs20",
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
     }
+  ],
+  "emulators": {
+    "auth": { "port": 9100 },
+    "firestore": { "port": 8181 },
+    "functions": { "port": 5101 },
+    "storage": { "port": 9299 },
+    "ui": { "enabled": true }
   },
   "hosting": {
     "public": "public",
     "rewrites": [
       {
         "source": "**",
-        "function": "nextServer"
+        "function": {
+          "functionId": "nextServer",
+          "region": "us-central1",
+          "codebase": "backend"
+        }
       }
     ]
   }

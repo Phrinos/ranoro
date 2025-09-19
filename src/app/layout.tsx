@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,12 +29,10 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
        <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* The script is removed as ThemeProvider is no longer global */}
       </head>
       <body className={inter.className}>
-        <ThemeProvider>
           {children}
-        </ThemeProvider>
         </body>
     </html>
   );

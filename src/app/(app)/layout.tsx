@@ -14,6 +14,7 @@ import type { User } from "@/types";
 import { useRouter } from 'next/navigation';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 
 export default function AppLayout({
@@ -79,19 +80,21 @@ export default function AppLayout({
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <AppSidebar 
-        currentUser={currentUser}
-        onLogout={handleLogout}
-      />
-      <div className="fixed top-4 left-4 z-50 md:hidden print:hidden">
-        <SidebarTrigger className="h-10 w-10 shadow-lg bg-black text-white" />
-      </div>
-      <SidebarInset className={cn("flex flex-col", "app-main-content")}>
-        <main className="flex-1 overflow-y-auto p-4 pt-20 md:pt-6 lg:p-8 bg-background">
-          {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <ThemeProvider>
+      <SidebarProvider defaultOpen={true}>
+        <AppSidebar 
+          currentUser={currentUser}
+          onLogout={handleLogout}
+        />
+        <div className="fixed top-4 left-4 z-50 md:hidden print:hidden">
+          <SidebarTrigger className="h-10 w-10 shadow-lg bg-black text-white" />
+        </div>
+        <SidebarInset className={cn("flex flex-col", "app-main-content")}>
+          <main className="flex-1 overflow-y-auto p-4 pt-20 md:pt-6 lg:p-8 bg-background">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </ThemeProvider>
   );
 }

@@ -3,7 +3,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { firestore } from 'firebase-admin';
 import * as admin from 'firebase-admin';
 import { startOfDay, endOfDay, format } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import * as logger from 'firebase-functions/logger';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 
@@ -13,12 +13,12 @@ const db = admin.firestore();
 
 // --- Daily Rental Charges Generation ---
 export const generateDailyRentalCharges = onSchedule({
-  schedule: '0 3 * * *',
+  schedule: '0 3 * * *', // Runs daily at 3:00 AM
   timeZone: 'America/Mexico_City',
 }, async (_context) => {
     logger.info('Starting daily rental charge generation...');
     const timeZone = 'America/Mexico_City';
-    const now = utcToZonedTime(new Date(), timeZone);
+    const now = toZonedTime(new Date(), timeZone);
     const todayStart = startOfDay(now);
     const todayEnd = endOfDay(now);
 
@@ -28,7 +28,7 @@ export const generateDailyRentalCharges = onSchedule({
     const activeDriversSnap = await activeDriversQuery.get();
     
     if (activeDriversSnap.empty) {
-        logger.info('No active drivers found.');
+        logger.info('No active drivers with assigned vehicles found.');
         return;
     }
 
@@ -39,7 +39,7 @@ export const generateDailyRentalCharges = onSchedule({
         const vehicleRef = db.collection('vehicles').doc(driver.assignedVehicleId);
         const vehicleDoc = await vehicleRef.get();
         if (!vehicleDoc.exists || !vehicleDoc.data()?.dailyRentalCost) {
-            logger.warn(`Vehicle ${driver.assignedVehicleId} not found or has no daily rental cost.`);
+            logger.warn(`Vehicle ${driver.assignedVehicleId} for driver ${driver.name} not found or has no daily rental cost.`);
             return;
         }
         
@@ -47,10 +47,11 @@ export const generateDailyRentalCharges = onSchedule({
         const dailyRentalCost = vehicle?.dailyRentalCost;
 
         const chargesRef = db.collection('dailyRentalCharges');
+        // Correct Query: Use Firestore Timestamps for date range comparison
         const existingChargeQuery = chargesRef
             .where('driverId', '==', driverDoc.id)
-            .where('date', '>=', todayStart)
-            .where('date', '<=', todayEnd);
+            .where('date', '>=', firestore.Timestamp.fromDate(todayStart))
+            .where('date', '<=', firestore.Timestamp.fromDate(todayEnd));
             
         const existingChargeSnap = await existingChargeQuery.get();
         
@@ -62,17 +63,17 @@ export const generateDailyRentalCharges = onSchedule({
         const newCharge = {
             driverId: driverDoc.id,
             vehicleId: vehicleDoc.id,
-            date: now.toISOString(),
+            date: firestore.Timestamp.fromDate(now), // Correct Data Type: Save as Timestamp
             amount: dailyRentalCost,
             vehicleLicensePlate: vehicle?.licensePlate || '',
         };
         
         await chargesRef.add(newCharge);
-        logger.info(`Created charge for driver ${driver.name} for today.`);
+        logger.info(`Successfully created charge for driver ${driver.name} for today.`);
     });
 
     await Promise.all(promises);
-    logger.info('Daily rental charge generation finished.');
+    logger.info('Daily rental charge generation finished successfully.');
 });
 
 
@@ -82,7 +83,7 @@ export const generateServiceFolio = onDocumentCreated('serviceRecords/{serviceId
     const serviceRef = db.collection('serviceRecords').doc(serviceId);
     
     const timeZone = 'America/Mexico_City';
-    const now = utcToZonedTime(new Date(), timeZone);
+    const now = toZonedTime(new Date(), timeZone);
     const datePrefix = format(now, 'yyMMdd');
     
     const counterRef = db.collection('counters').doc(`folio_${datePrefix}`);

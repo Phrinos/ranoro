@@ -2,13 +2,19 @@
 
 "use client";
 
-import { Suspense, lazy, useState, useEffect, useMemo } from 'react';
+import { Suspense, lazy, useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, BookOpen, Settings, UserCircle, Building, Shapes } from 'lucide-react';
+import { Loader2, BookOpen, Settings, UserCircle, Building, Shapes, Wrench } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { User, AppRole, ServiceTypeRecord } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
 import { adminService, inventoryService } from '@/lib/services';
+import { collection, getDocs, query, where, writeBatch, doc } from "firebase/firestore";
+import { db } from "@/lib/firebaseClient";
+import { parseDate } from "@/lib/forms";
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const PerfilPageContent = lazy(() => import('./components/perfil-content').then(module => ({ default: module.PerfilPageContent })));
 const ConfigTallerPageContent = lazy(() => import('./components/config-taller-content').then(module => ({ default: module.ConfigTallerPageContent })));
@@ -24,6 +30,8 @@ function OpcionesPage() {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBackfilling, setIsBackfilling] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setIsLoading(true);
@@ -45,11 +53,57 @@ function OpcionesPage() {
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
+  
+  const handleBackfill = async () => {
+    setIsBackfilling(true);
+    toast({ title: "Iniciando proceso...", description: "Buscando servicios para corregir. Esto puede tardar unos momentos." });
+
+    const q = query(
+      collection(db, "serviceRecords"),
+      where("status", "==", "Entregado")
+    );
+    
+    try {
+      const snap = await getDocs(q);
+      const batch = writeBatch(db);
+      let updates = 0;
+
+      snap.forEach((d) => {
+        const s = d.data();
+        if (!s.deliveryDateTime) {
+          const candidate =
+            parseDate(s.completedAt) ||
+            parseDate(s.closedAt) ||
+            (Array.isArray(s.payments) && s.payments.length ? parseDate(s.payments[0]?.date) : null) ||
+            parseDate(s.serviceDate) ||
+            new Date();
+
+          batch.update(doc(db, "serviceRecords", d.id), {
+            deliveryDateTime: candidate.toISOString(),
+          });
+          updates++;
+        }
+      });
+
+      if (updates > 0) {
+        await batch.commit();
+        toast({ title: "¡Éxito!", description: `Se corrigieron ${updates} documentos. Los datos históricos ahora son consistentes.` });
+      } else {
+        toast({ title: "Todo en orden", description: "No se encontraron servicios que necesiten ser corregidos." });
+      }
+    } catch (error) {
+      console.error("Error durante el backfill:", error);
+      toast({ title: "Error en el proceso", description: "Ocurrió un error al corregir los datos. Revisa la consola para más detalles.", variant: "destructive" });
+    } finally {
+      setIsBackfilling(false);
+    }
+  };
+
 
   const userPermissions = useMemo(() => {
     if (!currentUser) return new Set<string>();
     
-    if (currentUser.id === defaultSuperAdmin.id) {
+    if (currentUser.id === defaultSuperAdmin.id || currentUser.role === 'Superadministrador') {
       const superAdminRole = placeholderAppRoles.find(r => r.name === 'Superadministrador');
       return new Set(superAdminRole?.permissions || []);
     }
@@ -108,6 +162,27 @@ function OpcionesPage() {
             ))}
         </Suspense>
       </Tabs>
+      
+      {currentUser?.role === 'Superadministrador' && (
+        <Card className="mt-8 max-w-2xl mx-auto shadow-lg border-destructive">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Wrench className="h-5 w-5 text-destructive" /> Acciones de Mantenimiento</CardTitle>
+            <CardDescription>Estas acciones son para administradores y ayudan a mantener la consistencia de los datos.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border rounded-md bg-card">
+              <div>
+                <h3 className="font-semibold">Corregir Fechas de Entrega</h3>
+                <p className="text-sm text-muted-foreground mt-1">Asigna una fecha de entrega a servicios pasados que están marcados como "Entregado" pero no tienen una fecha, para que aparezcan correctamente en los historiales.</p>
+              </div>
+              <Button onClick={handleBackfill} disabled={isBackfilling} className="mt-4 sm:mt-0 sm:ml-4 w-full sm:w-auto">
+                {isBackfilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
+                {isBackfilling ? 'Corrigiendo...' : 'Ejecutar Corrección'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 }

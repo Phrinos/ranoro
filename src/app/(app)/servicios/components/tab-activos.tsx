@@ -7,12 +7,42 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
-import { isToday, isValid, compareDesc, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
-import { parseDate } from '@/lib/forms';
+import { startOfDay, endOfDay, isWithinInterval, isValid, compareDesc } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
+import { parseDate } from "@/lib/forms";
 import { formatCurrency } from '@/lib/utils';
 import { serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
-import { toZonedTime } from 'date-fns-tz';
+
+const TZ = "America/Mexico_City";
+
+const getDeliveredAt = (s: ServiceRecord): Date | null => {
+  return (
+    parseDate((s as any).deliveryDateTime) ||
+    parseDate((s as any).completedAt) ||
+    parseDate((s as any).closedAt) ||
+    (Array.isArray(s.payments) && s.payments.length
+      ? parseDate(s.payments[0]?.date)
+      : null) ||
+    parseDate((s as any).serviceDate)
+  );
+};
+
+const sumPaymentsToday = (
+  s: ServiceRecord,
+  dayStart: Date,
+  dayEnd: Date
+): number => {
+  if (!Array.isArray(s.payments)) return 0;
+  return s.payments.reduce((acc, p) => {
+    const pd = parseDate((p as any).date);
+    if (!pd || !isValid(pd)) return acc;
+    const pdZ = toZonedTime(pd, TZ);
+    return isWithinInterval(pdZ, { start: dayStart, end: dayEnd })
+      ? acc + (Number(p.amount) || 0)
+      : acc;
+  }, 0);
+};
 
 interface ActivosTabContentProps {
   allServices: ServiceRecord[];
@@ -43,19 +73,8 @@ const getDateForService = (service: ServiceRecord): Date | null => {
         case 'Entregado':
             return parseDate(service.deliveryDateTime);
         default:
-            return parseDate(service.serviceDate); // Fallback
+            return parseDate(service.serviceDate); 
     }
-};
-
-const getDeliveredDate = (s: ServiceRecord): Date | null => {
-  return (
-    parseDate(s.deliveryDateTime) ||
-    parseDate((s as any).completedAt) ||
-    parseDate(s.serviceDate) ||
-    parseDate((s as any).updatedAt) ||
-    parseDate((s as any).createdAt) ||
-    null
-  );
 };
 
 export default function ActivosTabContent({
@@ -71,30 +90,41 @@ export default function ActivosTabContent({
   const router = useRouter();
   const { toast } = useToast();
 
-  const activeServices = useMemo(() => {
-    const timeZone = 'America/Mexico_City';
-    const nowInLA = toZonedTime(new Date(), timeZone);
-    const start = startOfDay(nowInLA);
-    const end = endOfDay(nowInLA);
+  const nowZ = toZonedTime(new Date(), TZ);
+  const todayStart = startOfDay(nowZ);
+  const todayEnd = endOfDay(nowZ);
 
+  const deliveredToday = allServices.filter((s) => {
+    if (s.status !== "Entregado") return false;
+    const d = getDeliveredAt(s);
+    if (!d || !isValid(d)) return false;
+    const dz = toZonedTime(d, TZ);
+    return isWithinInterval(dz, { start: todayStart, end: todayEnd });
+  });
+
+  const totalEarningsToday = deliveredToday.reduce((sum, s) => {
+    const tc = Number(s.totalCost);
+    const value =
+      Number.isFinite(tc) && tc > 0 ? tc : sumPaymentsToday(s, todayStart, todayEnd);
+    return sum + value;
+  }, 0);
+
+  const activeServices = useMemo(() => {
     return allServices.filter(s => {
       switch (s.status) {
         case 'Agendado':
           const appointmentDate = parseDate(s.appointmentDateTime);
-          return appointmentDate && isValid(appointmentDate) && isWithinInterval(toZonedTime(appointmentDate, timeZone), { start, end });
-        
+          return appointmentDate && isValid(appointmentDate) && isWithinInterval(toZonedTime(appointmentDate, TZ), { start: todayStart, end: todayEnd });
         case 'En Taller':
           return true;
-
         case 'Entregado':
-          const deliveryDate = getDeliveredDate(s);
-          return deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, timeZone), { start, end });
-
+          const deliveryDate = getDeliveredAt(s);
+          return deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd });
         default:
           return false;
       }
     });
-  }, [allServices]);
+  }, [allServices, todayStart, todayEnd]);
 
   const sortedServices = useMemo(() => {
     return [...activeServices].sort((a, b) => {
@@ -112,13 +142,7 @@ export default function ActivosTabContent({
       return 0;
     });
   }, [activeServices]);
-
-  const totalEarningsToday = useMemo(() => {
-    return activeServices
-      .filter((s) => s.status === 'Entregado')
-      .reduce((sum, s) => sum + (Number(s.totalCost) || 0), 0);
-  }, [activeServices]);
-
+  
   const handleEditService = (serviceId: string) => {
     router.push(`/servicios/${serviceId}`);
   };

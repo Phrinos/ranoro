@@ -21,25 +21,35 @@ import { DashboardCharts } from './components/DashboardCharts';
 import { toZonedTime } from 'date-fns-tz';
 import { GlobalTransactionDialog, GlobalTransactionFormValues } from '../flotilla/components/GlobalTransactionDialog';
 
+const TZ = "America/Mexico_City";
 
-const getDeliveredDate = (s: ServiceRecord): Date | null => (
-  parseDate(s.deliveryDateTime) ||
-  parseDate((s as any).completedAt) ||
-  parseDate(s.serviceDate) ||
-  parseDate((s as any).updatedAt) ||
-  parseDate((s as any).createdAt) ||
-  null
-);
+const getDeliveredAt = (s: ServiceRecord): Date | null => {
+  return (
+    parseDate((s as any).deliveryDateTime) ||
+    parseDate((s as any).completedAt) ||
+    parseDate((s as any).closedAt) ||
+    (Array.isArray(s.payments) && s.payments.length
+      ? parseDate(s.payments[0]?.date)
+      : null) ||
+    parseDate((s as any).serviceDate)
+  );
+};
 
-const getScheduledDate = (s: ServiceRecord): Date | null => (
-  parseDate((s as any).appointmentDateTime) || // cita real
-  parseDate(s.serviceDate) ||                  // fallback viejo
-  null
-);
-
-const getSaleDate = (sale: SaleReceipt): Date | null => (
-  parseDate(sale.saleDate) || parseDate((sale as any).createdAt) || null
-);
+const sumPaymentsBetween = (
+  s: ServiceRecord,
+  dayStart: Date,
+  dayEnd: Date
+): number => {
+  if (!Array.isArray(s.payments)) return 0;
+  return s.payments.reduce((acc, p) => {
+    const pd = parseDate((p as any).date);
+    if (!pd || !isValid(pd)) return acc;
+    const pdZ = toZonedTime(pd, TZ);
+    return isWithinInterval(pdZ, { start: dayStart, end: dayEnd })
+      ? acc + (Number(p.amount) || 0)
+      : acc;
+  }, 0);
+};
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
@@ -80,41 +90,58 @@ export default function DashboardPage() {
   }, []);
 
   const kpiData = useMemo(() => {
-    const timeZone = 'America/Mexico_City';
-    const nowInLA = toZonedTime(new Date(), timeZone);
-    const start = startOfDay(nowInLA);
-    const end = endOfDay(nowInLA);
+    const nowZ = toZonedTime(new Date(), TZ);
+    const dayStart = startOfDay(nowZ);
+    const dayEnd = endOfDay(nowZ);
 
-    const repairingServices = allServices.filter(s => s.status === 'En Taller');
-
-    const scheduledTodayServices = allServices.filter(s => {
-      if (s.status !== 'Agendado') return false;
-      const d = getScheduledDate(s);
-      return d && isValid(d) && isWithinInterval(toZonedTime(d, timeZone), { start, end });
+    const salesToday = allSales.filter((s) => {
+      const d = parseDate(s.saleDate);
+      if (!d || !isValid(d)) return false;
+      const dz = toZonedTime(d, TZ);
+      return s.status !== "Cancelado" && isWithinInterval(dz, { start: dayStart, end: dayEnd });
     });
 
-    const deliveredToday = allServices.filter(s => {
-      if (s.status !== 'Entregado') return false;
-      const d = getDeliveredDate(s);
-      return d && isValid(d) && isWithinInterval(toZonedTime(d, timeZone), { start, end });
-    });
-
-    const salesToday = allSales.filter(sale => {
-      const d = getSaleDate(sale);
-      return d && isValid(d) && isWithinInterval(toZonedTime(d, timeZone), { start, end }) && sale.status !== 'Cancelado';
+    const servicesCompletedToday = allServices.filter((s) => {
+      if (s.status !== "Entregado") return false;
+      const d = getDeliveredAt(s);
+      if (!d || !isValid(d)) return false;
+      const dz = toZonedTime(d, TZ);
+      return isWithinInterval(dz, { start: dayStart, end: dayEnd });
     });
 
     const revenueFromSales = salesToday.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-    const revenueFromServices = deliveredToday.reduce((sum, s) => sum + (Number(s.totalCost) || 0), 0);
 
-    const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
-    const profitFromServices = deliveredToday.reduce((sum, s) => sum + (Number(s.serviceProfit) || 0), 0);
+    const revenueFromServices = servicesCompletedToday.reduce((sum, s) => {
+      const tc = Number(s.totalCost);
+      const value =
+        Number.isFinite(tc) && tc > 0 ? tc : sumPaymentsBetween(s, dayStart, dayEnd);
+      return sum + value;
+    }, 0);
+
+    const profitFromSales = salesToday.reduce(
+      (sum, s) => sum + calculateSaleProfit(s, allInventory),
+      0
+    );
+
+    const profitFromServices = servicesCompletedToday.reduce(
+      (sum, s) => sum + (Number(s.serviceProfit) || 0),
+      0
+    );
+
+    const repairingServices = allServices.filter((s) => s.status === "En Taller");
+    const scheduledTodayServices = allServices.filter((s) => {
+      if (s.status !== "Agendado") return false;
+      const d = parseDate(s.serviceDate);
+      if (!d || !isValid(d)) return false;
+      const dz = toZonedTime(d, TZ);
+      return isWithinInterval(dz, { start: dayStart, end: dayEnd });
+    });
 
     return {
       dailyRevenue: revenueFromSales + revenueFromServices,
-      dailyProfit:  profitFromSales + profitFromServices,
-      activeServices: repairingServices.length + scheduledTodayServices.length + deliveredToday.length,
-      lowStockAlerts: allInventory.filter(it => !it.isService && (it.quantity || 0) <= (it.lowStockThreshold || 0)).length,
+      dailyProfit: profitFromSales + profitFromServices,
+      activeServices: repairingServices.length + scheduledTodayServices.length + servicesCompletedToday.length,
+      lowStockAlerts: allInventory.filter((i) => !i.isService && (i.quantity || 0) <= (i.lowStockThreshold || 0)).length,
     };
   }, [allServices, allSales, allInventory]);
 
