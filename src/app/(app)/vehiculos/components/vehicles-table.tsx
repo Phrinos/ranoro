@@ -56,7 +56,7 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
     setIsDialogOpen(false);
   };
 
-  const SortableHeader = ({ sortKey, label }: { sortKey: keyof Vehicle, label: string }) => {
+  const SortableHeader = ({ sortKey, label, className }: { sortKey: keyof Vehicle, label: string, className?: string }) => {
     const isSorted = tableManager.sortOption.startsWith(sortKey);
     const direction = tableManager.sortOption.endsWith('_asc') ? 'asc' : 'desc';
 
@@ -66,7 +66,7 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
     };
 
     return (
-      <TableHead className="text-white font-bold cursor-pointer hover:bg-gray-700" onClick={handleSort}>
+      <TableHead className={cn("text-white font-bold cursor-pointer hover:bg-gray-700", className)} onClick={handleSort}>
         <div className="flex items-center">
             {label}
             <ArrowUpDown className={`ml-2 h-4 w-4 ${isSorted ? 'text-white' : 'text-gray-400'}`} />
@@ -92,11 +92,11 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
         <Table>
           <TableHeader className="bg-black">
             <TableRow>
-              <SortableHeader sortKey="make" label="Marca" />
+              <SortableHeader sortKey="make" label="Marca" className="hidden sm:table-cell" />
               <SortableHeader sortKey="model" label="Modelo" />
               <SortableHeader sortKey="year" label="Año" />
               <SortableHeader sortKey="licensePlate" label="Placa" />
-              <SortableHeader sortKey="ownerName" label="Propietario" />
+              <SortableHeader sortKey="ownerName" label="Propietario" className="hidden sm:table-cell" />
               <SortableHeader sortKey="lastServiceDate" label="Último Servicio" />
             </TableRow>
           </TableHeader>
@@ -105,11 +105,11 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
               const lastServiceDate = vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
               return (
                 <TableRow key={vehicle.id} onClick={() => handleOpenDialog(vehicle)} className="cursor-pointer">
-                  <TableCell>{vehicle.make}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{vehicle.make}</TableCell>
                   <TableCell>{vehicle.model}</TableCell>
                   <TableCell>{vehicle.year}</TableCell>
                   <TableCell>{vehicle.licensePlate}</TableCell>
-                  <TableCell>{vehicle.ownerName}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{vehicle.ownerName}</TableCell>
                   <TableCell>
                     {lastServiceDate && isValid(lastServiceDate)
                       ? format(lastServiceDate, "dd MMM, yyyy", { locale: es })
