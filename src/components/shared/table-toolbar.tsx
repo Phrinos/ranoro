@@ -22,8 +22,8 @@ interface FilterBlock {
 }
 
 interface TableToolbarProps {
-  searchTerm: string;
-  onSearchTermChange: (v: string) => void;
+  searchTerm?: string;
+  onSearchTermChange?: (v: string) => void;
 
   sortOption?: string;
   onSortOptionChange?: (v: string) => void;
@@ -78,12 +78,7 @@ export function TableToolbar({
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <Input
-        placeholder={searchPlaceholder}
-        value={searchTerm}
-        onChange={(e) => onSearchTermChange(e.target.value)}
-        className="h-10 w-full sm:w-auto sm:flex-grow lg:w-full bg-white"
-      />
+      {/* El campo de búsqueda ha sido eliminado de aquí */}
 
       <div className="flex w-full sm:w-auto flex-wrap items-center gap-2">
         {/* Filtros */}
