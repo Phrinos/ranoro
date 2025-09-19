@@ -210,7 +210,7 @@ export function ServiceItemCard({
                 </div>
                  {!isReadOnly && (
                     <div className="flex justify-end pt-2">
-                        <Button type="button" variant="outline" size="sm" className="bg-white hover:bg-gray-100" onClick={() => setIsInventorySearchDialogOpen(true) }>
+                        <Button type="button" variant="outline" size="sm" className="bg-white" onClick={() => setIsInventorySearchDialogOpen(true) }>
                             <PlusCircle className="mr-2 h-4 w-4"/> Añadir Insumo
                         </Button>
                     </div>
@@ -219,7 +219,6 @@ export function ServiceItemCard({
              <InventorySearchDialog
                 open={isInventorySearchDialogOpen}
                 onOpenChange={setIsInventorySearchDialogOpen}
-                inventoryItems={inventoryItems}
                 onItemSelected={handleAddSupply}
                 onNewItemRequest={handleNewItemRequest}
             />
