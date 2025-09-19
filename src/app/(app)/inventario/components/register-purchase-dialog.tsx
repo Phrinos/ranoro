@@ -207,7 +207,7 @@ export function RegisterPurchaseDialog({
                       control={control}
                       name="invoiceId"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Folio de Factura (Opcional)</FormLabel>
                           <FormControl>
                             <Input placeholder="F-12345" {...field} value={field.value ?? ''} className="bg-white" />
