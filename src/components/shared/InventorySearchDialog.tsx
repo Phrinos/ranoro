@@ -45,22 +45,19 @@ export function InventorySearchDialog({
     () => (Array.isArray(inventoryItems) ? inventoryItems.filter(Boolean) : []),
     [inventoryItems]
   );
-
-  const score = useCallback((it: any) =>
+  
+  const score = (it: any) =>
     (it.timesSold || it.salesCount || 0) * 3 +
     (it.timesUsed || it.serviceUsageCount || 0) * 3 +
     (it.lastSoldAt ? 2 : 0) +
-    ((it.quantity ?? 0) > 0 ? 1 : 0)
-  , []);
-
-  const frequentItems = useMemo(
-    () => [...safeInventory].sort((a, b) => score(b) - score(a)).slice(0, 30),
-    [safeInventory, score]
-  );
+    ((it.quantity ?? 0) > 0 ? 1 : 0);
 
   const filteredItems = useMemo(() => {
     const q = normalize(searchTerm.trim());
-    if (!q) return frequentItems;
+    
+    if (!q) {
+        return [...safeInventory].sort((a, b) => score(b) - score(a)).slice(0, 30);
+    }
 
     const tokens = q.split(/\s+/).filter(Boolean);
     return safeInventory
@@ -80,7 +77,8 @@ export function InventorySearchDialog({
       })
       .sort((a, b) => score(b) - score(a))
       .slice(0, 100);
-  }, [safeInventory, searchTerm, frequentItems, score]);
+  }, [safeInventory, searchTerm, score]);
+
 
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item, 1);
@@ -142,40 +140,42 @@ export function InventorySearchDialog({
                 </div>
               </CommandEmpty>
 
-              <CommandGroup>
-                {!searchTerm.trim() && (
-                  <li className="px-2 py-1.5 text-xs text-muted-foreground font-medium">
-                    Sugeridos (más frecuentes)
-                  </li>
-                )}
-
-                {filteredItems.map((item) => {
-                  const searchValue = [
-                    item.id,
-                    item.name,
-                    item.sku,
-                    (item as any).brand,
-                    item.category,
-                    (item as any).keywords,
-                  ]
-                    .filter(Boolean)
-                    .join(" ");
-
-                  return (
-                    <CommandItem
-                      key={item.id}
-                      value={searchValue}
-                      onSelect={() => handleSelect(item)}
-                      className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
-                    >
-                      <p className="font-semibold">{item.category} - {item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        SKU: {item.sku || 'N/A'} | Stock: {item.isService ? "N/A" : item.quantity ?? 0} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
-                      </p>
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
+             {filteredItems.length > 0 && (
+                  <CommandGroup>
+                    {!searchTerm.trim() && (
+                      <li className="px-2 py-1.5 text-xs text-muted-foreground font-medium">
+                        Sugeridos (más frecuentes)
+                      </li>
+                    )}
+    
+                    {filteredItems.map((item) => {
+                      const searchValue = [
+                        item.id,
+                        item.name,
+                        item.sku,
+                        (item as any).brand,
+                        item.category,
+                        (item as any).keywords,
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+    
+                      return (
+                        <CommandItem
+                          key={item.id}
+                          value={searchValue}
+                          onSelect={() => handleSelect(item)}
+                          className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
+                        >
+                          <p className="font-semibold">{item.category} - {item.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            SKU: {item.sku || 'N/A'} | Stock: {item.isService ? "N/A" : item.quantity ?? 0} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
+                          </p>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+             )}
             </CommandList>
           </Command>
         </div>
