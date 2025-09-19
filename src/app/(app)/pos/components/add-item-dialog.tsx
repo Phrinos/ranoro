@@ -82,10 +82,6 @@ export function AddItemDialog({
       .slice(0, 100);
   }, [safeInventory, searchTerm, frequentItems]);
 
-  const getSalePrice = (it: any) => it.sellingPrice ?? 0;
-  const getCostPrice = (it: any) => it.unitPrice ?? 0;
-
-
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item);
     setSearchTerm("");
@@ -166,11 +162,9 @@ export function AddItemDialog({
                       // Blindaje: aunque cmdk lo marque data-disabled, se puede clickear
                       className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
                     >
-                      <p className="font-semibold">
-                        {item.category} - {item.name}
-                      </p>
+                      <p className="font-semibold">{item.category} - {item.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        SKU: {item.sku ?? 'N/A'} | Stock: {item.isService ? "N/A" : item.quantity ?? 0} | Venta: {formatCurrency(getSalePrice(item))} | Costo: {formatCurrency(getCostPrice(item))}
+                        SKU: {item.sku || 'N/A'} | Stock: {item.isService ? "N/A" : item.quantity ?? 0} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
                       </p>
                     </CommandItem>
                   );

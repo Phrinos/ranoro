@@ -407,15 +407,13 @@ function SearchItemDialog({ open, onOpenChange, inventoryItems, onItemSelected, 
                 <Button
                   key={item.id}
                   variant="ghost"
-                  className="w-full justify-start text-left h-auto py-1.5 px-2"
+                  className="flex flex-col items-start w-full p-2 h-auto text-left hover:bg-muted"
                   onClick={() => onItemSelected(item)}
                 >
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Stock: {item.quantity} | Costo: {formatCurrency(item.unitPrice)}
-                    </p>
-                  </div>
+                  <p className="font-semibold">{item.category} - {item.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                      SKU: {item.sku || 'N/A'} | Stock: {item.quantity} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
+                  </p>
                 </Button>
               ))}
 

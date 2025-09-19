@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -140,15 +139,16 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
                     <div className="p-2 space-y-1">
                       {filteredItems.length > 0 ? (
                         filteredItems.map((item) => (
-                          <Button key={item.id} variant="ghost" className="w-full justify-start text-left h-auto py-1.5 px-2" onClick={() => handleSelectItem(item)}>
-                            <div>
-                                <p className="font-medium">
-                                    {item.category} - {item.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    SKU: {item.sku || 'N/A'} | Stock: {item.isService ? 'N/A' : item.quantity} | Precio: {formatCurrency(item.unitPrice)}
-                                </p>
-                            </div>
+                          <Button 
+                            key={item.id} 
+                            variant="ghost" 
+                            className="flex flex-col items-start w-full p-2 h-auto text-left hover:bg-muted"
+                            onClick={() => handleSelectItem(item)}
+                          >
+                             <p className="font-semibold">{item.category} - {item.name}</p>
+                             <p className="text-xs text-muted-foreground">
+                                SKU: {item.sku || 'N/A'} | Stock: {item.isService ? 'N/A' : item.quantity} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
+                             </p>
                           </Button>
                         ))
                       ) : (

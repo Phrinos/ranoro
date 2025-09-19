@@ -13,14 +13,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { collection, onSnapshot, query, where, DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatCurrency } from "@/lib/utils";
 
 export interface InventoryItem {
   id: string;
   name: string;
   sku: string;
   unitPrice: number;
+  sellingPrice: number;
+  quantity: number;
+  category: string;
+  isService: boolean;
   [key: string]: any;
 }
 
@@ -78,30 +83,35 @@ export function ProductSearchDialog({ isOpen, onOpenChange, onProductSelect }: P
             Busca por nombre o SKU y añade productos a tu compra.
           </DialogDescription>
         </DialogHeader>
-        <Input
-          placeholder="Buscar por nombre o SKU..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="mb-4"
-        />
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre o SKU..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
+        </div>
         <ScrollArea className="h-72">
           {isLoading ? (
             <div className="space-y-2 pr-4">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
             </div>
           ) : (
-            <div className="pr-4">
+            <div className="pr-4 space-y-2">
               {filteredInventory.length > 0 ? (
                 filteredInventory.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-2 hover:bg-muted rounded-md">
-                    <div>
-                      <p className="font-semibold">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">SKU: {item.sku || 'N/A'}</p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => handleSelect(item)}>
-                      <PlusCircle className="mr-2 h-4 w-4" /> Añadir
-                    </Button>
-                  </div>
+                  <Button 
+                    key={item.id} 
+                    variant="ghost" 
+                    className="flex flex-col items-start w-full p-2 h-auto text-left hover:bg-muted"
+                    onClick={() => handleSelect(item)}
+                  >
+                     <p className="font-semibold">{item.category} - {item.name}</p>
+                     <p className="text-xs text-muted-foreground">
+                        SKU: {item.sku || 'N/A'} | Stock: {item.quantity} | Venta: {formatCurrency(item.sellingPrice)} | Costo: {formatCurrency(item.unitPrice)}
+                     </p>
+                  </Button>
                 ))
               ) : (
                 <p className="text-center text-muted-foreground py-8">No se encontraron productos.</p>
