@@ -325,7 +325,7 @@ export function ServiceForm({
                             serviceTypes={serviceTypes}
                             categories={categories}
                             suppliers={suppliers}
-                            technicians={technicians}
+                            technicians={technicians || []}
                             onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
                             mode={mode}
                             isEnhancingText={isEnhancingText}
