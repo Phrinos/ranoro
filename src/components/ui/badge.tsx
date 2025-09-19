@@ -59,7 +59,7 @@ function Badge({ className, variant, children, ...props }: BadgeProps) {
   }
 
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props}>
+    <div className={cn(badgeVariants({ variant }), "group-data-[sidebar]:border-sidebar-border group-data-[sidebar]:text-sidebar-foreground", className)} {...props}>
       {children}
     </div>
   )
