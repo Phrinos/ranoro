@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { parseDate } from '@/lib/forms';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { Input } from '@/components/ui/input';
 
 
 const sortOptions = [
@@ -167,18 +168,26 @@ export function VentasPosContent({
           </Card>
         </div>
         
-        <Button asChild className="w-full">
-            <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
-        </Button>
-        
-        <TableToolbar
-            {...tableManager}
-            searchPlaceholder="Buscar por ID, cliente, artículo..."
-            sortOptions={sortOptions}
-            filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
-            dateRange={tableManager.dateRange}
-            onDateRangeChange={tableManager.onDateRangeChange}
-        />
+        <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+                <Input
+                    placeholder="Buscar por ID, cliente, artículo..."
+                    value={tableManager.searchTerm}
+                    onChange={(event) => tableManager.onSearchTermChange(event.target.value)}
+                    className="h-10 w-full lg:w-[250px] bg-white"
+                />
+                <Button asChild className="w-full sm:w-auto flex-grow sm:flex-grow-0">
+                    <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
+                </Button>
+            </div>
+            <TableToolbar
+                {...tableManager}
+                sortOptions={sortOptions}
+                filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
+                dateRange={tableManager.dateRange}
+                onDateRangeChange={tableManager.onDateRangeChange}
+            />
+        </div>
         
         {paginatedData.length > 0 ? (
           <div className="space-y-4">

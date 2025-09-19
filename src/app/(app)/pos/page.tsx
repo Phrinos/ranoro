@@ -179,12 +179,6 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
 
-  const pageActions = (
-    <Button asChild>
-      <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
-    </Button>
-  );
-
   const tabs = [
     { value: 'ventas', label: 'Historial de Ventas', content: (
         <VentasPosContent 
@@ -214,7 +208,6 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         tabs={tabs}
-        actions={pageActions}
       />
 
        {saleForReprint && (
@@ -222,7 +215,6 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
           open={isReprintDialogOpen}
           onOpenChange={setIsReprintDialogOpen}
           title={`Ticket Venta #${saleForReprint.id.slice(-6)}`}
-          sale={saleForReprint}
           footerContent={
              <div className="flex w-full justify-end gap-2">
                 <TooltipProvider>
@@ -232,6 +224,7 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
                 </TooltipProvider>
             </div>
           }
+          sale={saleForReprint}
         >
           <TicketContent ref={ticketContentRef} sale={saleForReprint} previewWorkshopInfo={workshopInfo || undefined} />
         </UnifiedPreviewDialog>
