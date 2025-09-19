@@ -92,24 +92,21 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
 
   return (
     <div className="space-y-6">
-        <div className="flex justify-end">
-            <Button onClick={() => handleOpenForm()}>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="relative w-full sm:max-w-xs">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Buscar por nombre, email o rol..."
+                    className="w-full rounded-lg bg-card pl-8"
+                    value={tableManager.searchTerm}
+                    onChange={(e) => tableManager.onSearchTermChange(e.target.value)}
+                />
+            </div>
+            <Button onClick={() => handleOpenForm()} className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Integrante
             </Button>
         </div>
-        
-        <TableToolbar
-          {...tableManager}
-          searchPlaceholder="Buscar por nombre, email o rol..."
-          sortOptions={[
-              { value: 'name_asc', label: 'Nombre (A-Z)' },
-              { value: 'name_desc', label: 'Nombre (Z-A)' },
-              { value: 'role_asc', label: 'Rol (A-Z)' },
-              { value: 'role_desc', label: 'Rol (Z-A)' },
-              { value: 'hireDate_desc', label: 'Contratación (Más Reciente)' },
-              { value: 'hireDate_asc', label: 'Contratación (Más Antiguo)' },
-          ]}
-        />
         
         <Card>
             <CardContent className="pt-6">
