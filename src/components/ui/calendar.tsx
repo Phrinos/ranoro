@@ -7,13 +7,7 @@ import "react-day-picker/style.css";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 import { ScrollArea } from "./scroll-area";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
@@ -27,15 +21,17 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn(
-        "p-3",
-        // 🔴 Forzamos rojo para el acento y el rango
-        "[--rdp-accent-color:theme(colors.red.600)]",
-        "[--rdp-accent-background:theme(colors.red.600)]",
-        "[--rdp-range_middle-background:theme(colors.red.100)]",
-        "[--rdp-range_middle-color:theme(colors.red.900)]",
-        className
-      )}
+      // 🔴 Forzamos variables de RDP en el nodo raíz (gana a cualquier CSS que venga después)
+      style={
+        {
+          // red-600 / red-100 / red-900
+          ["--rdp-accent-color" as any]: "#dc2626",
+          ["--rdp-accent-background" as any]: "#dc2626",
+          ["--rdp-range_middle-background" as any]: "#fee2e2",
+          ["--rdp-range_middle-color" as any]: "#7f1d1d",
+        } as React.CSSProperties
+      }
+      className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
@@ -45,68 +41,54 @@ function Calendar({
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-6 w-6 bg-transparent p-0 opacity-50 hover:opacity-100"
+          "h-6 w-6 bg-transparent p-0 opacity-70 hover:opacity-100"
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
-        head_cell:
-          "text-muted-foreground rounded-md w-7 font-normal text-[0.7rem]", // Reduced from w-8
-        row: "flex w-full mt-1", // Reduced from mt-2
+        head_cell: "text-muted-foreground rounded-md w-8 font-normal text-[0.75rem]",
+        row: "flex w-full mt-2",
         cell:
-          // fondo del rango suave en rojo
-          "h-7 w-7 text-center text-sm p-0 relative " + // Reduced from h-8 w-8
-          "[&:has([aria-selected].day-range-end)]:rounded-r-md " +
-          "[&:has([aria-selected].day-outside)]:bg-red-100 " +
-          "[&:has([aria-selected])]:bg-red-100 " +
-          "first:[&:has([aria-selected])]:rounded-l-md " +
-          "last:[&:has([aria-selected])]:rounded-r-md " +
+          "h-8 w-8 text-center text-sm p-0 relative " +
+          // fondo suave para tramos seleccionados (usa vars ya en rojo)
+          "[&:has([aria-selected])]:bg-[var(--rdp-range_middle-background)] " +
+          "[&:has([aria-selected].day-outside)]:bg-[var(--rdp-range_middle-background)] " +
+          "first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md " +
           "focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-7 w-7 p-0 font-normal aria-selected:opacity-100" // Reduced from h-8 w-8
+          "h-8 w-8 p-0 font-normal aria-selected:opacity-100"
         ),
         day_range_end: "day-range-end",
-        // día seleccionado en rojo sólido
+        // botón/día seleccionado usa var(--rdp-accent-background) = rojo
         day_selected:
-          "bg-red-600 text-white hover:bg-red-600 hover:text-white focus:bg-red-600 focus:text-white",
-        // “hoy” con borde rojo sutil (no relleno)
+          "text-white hover:text-white focus:text-white",
+        // “hoy” borde rojo
         day_today: "border border-red-600 text-inherit",
         day_outside:
-          "day-outside text-muted-foreground opacity-50 aria-selected:bg-red-100 aria-selected:text-muted-foreground aria-selected:opacity-30",
+          "day-outside text-muted-foreground opacity-50 aria-selected:text-muted-foreground aria-selected:opacity-30",
         day_disabled: "text-muted-foreground opacity-50",
-        // tramo medio del rango en rojo claro
         day_range_middle:
-          "aria-selected:bg-red-100 aria-selected:text-red-900",
+          "aria-selected:bg-[var(--rdp-range_middle-background)] aria-selected:text-[var(--rdp-range_middle-color)]",
         day_hidden: "invisible",
         ...classNames,
       }}
       components={{
         IconLeft: ({ className, ...iconProps }) => (
-          <ChevronLeft className={cn("h-4 w-4", className)} {...iconProps} />
+          <ChevronLeft className={cn("h-4 w-4 text-red-600", className)} {...iconProps} />
         ),
         IconRight: ({ className, ...iconProps }) => (
-          <ChevronRight className={cn("h-4 w-4", className)} {...iconProps} />
+          <ChevronRight className={cn("h-4 w-4 text-red-600", className)} {...iconProps} />
         ),
         Dropdown: ({ value, onChange, children }: DropdownProps) => {
-          const options = React.Children.toArray(
-            children
-          ) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[];
-
+          const options = React.Children.toArray(children) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[];
           const currentValue = value?.toString() ?? "";
-          const selected = options.find(
-            (opt) => opt.props.value?.toString() === currentValue
-          );
-
+          const selected = options.find((opt) => opt.props.value?.toString() === currentValue);
           const emitChange = (next: string) => {
             if (next === currentValue) return;
-            const evt = {
-              target: { value: next },
-            } as unknown as React.ChangeEvent<HTMLSelectElement>;
-            onChange?.(evt);
+            onChange?.({ target: { value: next } } as unknown as React.ChangeEvent<HTMLSelectElement>);
           };
-
           return (
             <Select value={currentValue} onValueChange={emitChange}>
               <SelectTrigger className="pr-1.5 focus:ring-0 h-7 text-xs w-[60px]">
