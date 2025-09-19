@@ -84,6 +84,7 @@ export function InventorySearchDialog({
   }, [safeInventory, searchTerm, frequentItems]);
 
   const getPrice = (it: any) => it.sellingPrice ?? it.price ?? it.unitPrice ?? 0;
+  const getCost = (it: any) => it.unitPrice ?? 0;
 
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item, 1);
@@ -113,7 +114,6 @@ export function InventorySearchDialog({
         </DialogHeader>
 
         <div className="px-6 pb-6">
-          {/* Desactivamos el filtro interno y protegemos los items */}
           <Command
             shouldFilter={false}
             className={cn(
@@ -150,8 +150,8 @@ export function InventorySearchDialog({
                 )}
 
                 {filteredItems.map((item) => {
-                  // Hacemos que el "value" incluya TODOS los campos buscables
                   const searchValue = [
+                    item.id, // CORRECCIÓN: Añadir ID para unicidad
                     item.name,
                     item.sku,
                     (item as any).brand,
@@ -166,7 +166,6 @@ export function InventorySearchDialog({
                       key={item.id}
                       value={searchValue}
                       onSelect={() => handleSelect(item)}
-                      // Blindaje: aunque cmdk lo marque data-disabled, se puede clickear
                       className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
                     >
                       <p className="font-semibold">
@@ -178,7 +177,7 @@ export function InventorySearchDialog({
                         <span>SKU: <span className="font-semibold">{item.sku || "N/A"}</span></span>
                         <span>Stock: <span className="font-semibold">{item.isService ? "N/A" : item.quantity ?? 0}</span></span>
                         <span>Venta: <span className="font-semibold">{formatCurrency(getPrice(item))}</span></span>
-                        <span>Costo: <span className="font-semibold">{formatCurrency(item.unitPrice ?? 0)}</span></span>
+                        <span>Costo: <span className="font-semibold">{formatCurrency(getCost(item))}</span></span>
                       </p>
                     </CommandItem>
                   );
