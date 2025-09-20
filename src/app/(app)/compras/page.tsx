@@ -18,13 +18,14 @@ const ProveedoresContent = React.lazy(() => import('./components/proveedores-con
 const CuentasPorPagarContent = React.lazy(() => import('./components/cuentas-por-pagar-content'));
 
 // Dialogs
-const RegisterPurchaseDialog = React.lazy(() => import('../inventario/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
+const RegisterPurchaseDialog = React.lazy(() => import('./components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const PayableAccountDialog = React.lazy(() => import('./components/payable-account-dialog').then(module => ({ default: module.PayableAccountDialog })));
 const SupplierDialog = React.lazy(() => import('./components/supplier-dialog').then(module => ({ default: module.SupplierDialog })));
 
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
+import type { PurchaseFormValues } from '@/app/(app)/compras/components/register-purchase-dialog';
+import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 
 export default function ComprasUnificadasPage() {
   const { toast } = useToast();
