@@ -22,10 +22,14 @@ interface ServiceFormFooterProps {
 export const ServiceFormFooter = ({ formId, onCancel, onComplete, mode, initialData, isSubmitting }: ServiceFormFooterProps) => {
     const { getValues, reset } = useFormContext<ServiceFormValues>();
     const isEditMode = !!initialData?.id;
-    const { status } = useWatch();
+    const { status, payments, serviceItems } = useWatch();
 
     const isQuoteMode = status === 'Cotizacion';
     const isScheduledMode = status === 'Agendado';
+
+    const totalCost = serviceItems?.reduce((acc, item) => acc + (Number(item.sellingPrice) || 0), 0) || 0;
+    const totalPaid = payments?.reduce((acc, p) => acc + (Number(p.amount) || 0), 0) || 0;
+    const isPaymentComplete = totalPaid >= totalCost && totalCost > 0;
 
     let cancelTexts = {
         button: 'Cancelar Servicio',
@@ -68,8 +72,15 @@ export const ServiceFormFooter = ({ formId, onCancel, onComplete, mode, initialD
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
                {isEditMode && onComplete && status !== 'Entregado' && status !== 'Cancelado' && (
-                 <Button type="button" onClick={() => onComplete(getValues())} disabled={isSubmitting} variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700 w-full sm:w-auto">
-                    <DollarSign className="mr-2 h-4 w-4"/> Completar y Cobrar
+                 <Button 
+                   type="button" 
+                   onClick={() => onComplete(getValues())} 
+                   disabled={isSubmitting || !isPaymentComplete} 
+                   variant="outline" 
+                   className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700 w-full sm:w-auto"
+                   title={!isPaymentComplete ? 'Debe registrar el pago completo para poder entregar.' : 'Entregar y finalizar el servicio'}
+                 >
+                    <DollarSign className="mr-2 h-4 w-4"/> Entregar y Cobrar
                  </Button>
                )}
               <Button type="submit" form={formId} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
