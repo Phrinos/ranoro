@@ -53,7 +53,7 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowCl
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
         <TableHeader className="bg-black">
-          <TableRow className="hover:bg-black">
+          <TableRow>
             <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
             <SortableTableHeader sortKey="contactPerson" label="Contacto" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
             <SortableTableHeader sortKey="phone" label="Teléfono" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
@@ -85,3 +85,4 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowCl
 });
 
 SuppliersTable.displayName = 'SuppliersTable';
+
