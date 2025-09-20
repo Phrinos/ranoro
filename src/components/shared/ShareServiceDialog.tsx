@@ -112,12 +112,12 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
   const handleNativeShare = React.useCallback(async () => {
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Servicio Ranoro", text: message, url: shareUrl || undefined });
+        await navigator.share({ text: message });
       } else {
         await copy(message, "Mensaje copiado – pega en tu app");
       }
     } catch { /* cancel/share error */ }
-  }, [message, shareUrl, copy]);
+  }, [message, copy]);
 
   if (!initialService) return null;
 
