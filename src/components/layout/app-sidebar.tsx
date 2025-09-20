@@ -1,4 +1,3 @@
-
 // src/components/layout/app-sidebar.tsx
 "use client";
 
@@ -52,7 +51,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Operaciones
   { label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones', permissions: ['pos:view_sales'] },
   { label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', permissions: ['inventory:view_public_info'] },
-  { label: 'Proveedores', path: '/proveedores', icon: Building, groupTag: 'Operaciones', permissions: ['inventory:manage'] },
   { label: 'Compras', path: '/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:manage'] },
   
   // Finanzas (Nueva Categoría)

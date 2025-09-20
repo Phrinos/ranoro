@@ -1,36 +1,148 @@
+
 "use client";
 
-import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { NewPurchaseDialog } from "./components/new-purchase-dialog";
-import { useState } from "react";
-import { PurchasesTable } from "./components/purchases-table";
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import { PlusCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+import type { User, Supplier, PayableAccount, InventoryItem, InventoryCategory } from '@/types';
+import { inventoryService, purchaseService } from '@/lib/services';
+import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+import { Button } from '@/components/ui/button';
 
-export default function ComprasPage() {
-  const [dialogOpen, setDialogOpen] = useState(false);
+// Lazy loading components for each tab
+const ComprasContent = React.lazy(() => import('./components/compras-content'));
+const ProveedoresContent = React.lazy(() => import('./components/proveedores-content'));
+const CuentasPorPagarContent = React.lazy(() => import('./components/cuentas-por-pagar-content'));
+
+// Dialogs
+const NewPurchaseDialog = React.lazy(() => import('./components/new-purchase-dialog').then(module => ({ default: module.NewPurchaseDialog })));
+const PayableAccountDialog = React.lazy(() => import('./components/payable-account-dialog').then(module => ({ default: module.PayableAccountDialog })));
+const SupplierDialog = React.lazy(() => import('./components/supplier-dialog').then(module => ({ default: module.SupplierDialog })));
+
+import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+
+export default function ComprasUnificadasPage() {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('compras');
   
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [payableAccounts, setPayableAccounts] = useState<PayableAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<PayableAccount | null>(null);
+  
+  const [isNewPurchaseDialogOpen, setIsNewPurchaseDialogOpen] = useState(false);
+
+  const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const unsubs = [
+      inventoryService.onSuppliersUpdate(setSuppliers),
+      purchaseService.onPayableAccountsUpdate((data) => {
+          setPayableAccounts(data);
+          setIsLoading(false);
+      }),
+    ];
+    return () => unsubs.forEach(unsub => unsub());
+  }, []);
+  
+  const handleOpenPaymentDialog = useCallback((account: PayableAccount) => {
+    setSelectedAccount(account);
+    setIsPaymentDialogOpen(true);
+  }, []);
+
+  const handleRegisterPayment = useCallback(async (accountId: string, amount: number, paymentMethod: any, note?: string) => {
+    try {
+      const userString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      const user: User | null = userString ? JSON.parse(userString) : null;
+      await purchaseService.registerPayableAccountPayment(accountId, amount, paymentMethod, note, user);
+      toast({ title: "Pago Registrado" });
+      setIsPaymentDialogOpen(false);
+    } catch(e) {
+      toast({ title: "Error", variant: "destructive" });
+    }
+  }, [toast]);
+
+  const handleOpenSupplierDialog = useCallback((supplier: Supplier | null = null) => {
+    setEditingSupplier(supplier);
+    setIsSupplierDialogOpen(true);
+  }, []);
+  
+  const handleSaveSupplier = useCallback(async (formData: SupplierFormValues) => {
+    try {
+      await inventoryService.saveSupplier(formData, editingSupplier?.id);
+      toast({ title: `Proveedor ${editingSupplier ? 'Actualizado' : 'Agregado'}` });
+      setIsSupplierDialogOpen(false);
+    } catch (error) {
+      toast({ title: "Error al guardar", variant: "destructive" });
+    }
+  }, [editingSupplier, toast]);
+
+  const handleDeleteSupplier = useCallback(async (supplierId: string) => {
+    try {
+      await inventoryService.deleteSupplier(supplierId);
+      toast({ title: "Proveedor Eliminado" });
+    } catch (error) {
+      toast({ title: "Error al eliminar", variant: "destructive" });
+    }
+  }, [toast]);
+  
+  const handleSupplierRowClick = useCallback((supplier: Supplier) => {
+    router.push(`/proveedores/${supplier.id}`);
+  }, [router]);
+
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  const tabs = [
+    { value: 'compras', label: 'Compras', content: <ComprasContent /> },
+    { value: 'proveedores', label: 'Proveedores', content: <ProveedoresContent suppliers={suppliers} onEdit={handleOpenSupplierDialog} onDelete={handleDeleteSupplier} onRowClick={handleSupplierRowClick} onAdd={() => handleOpenSupplierDialog()}/> },
+    { value: 'cuentas_por_pagar', label: 'Cuentas por Pagar', content: <CuentasPorPagarContent accounts={payableAccounts} onRegisterPayment={handleOpenPaymentDialog} /> },
+  ];
+  
+  const pageActions = (
+    <Button onClick={() => setIsNewPurchaseDialogOpen(true)} className="w-full sm:w-auto">
+      <PlusCircle className="mr-2 h-4 w-4" /> Registrar Nueva Compra
+    </Button>
+  );
+
   return (
-    <div>
-      <PageHeader
-        title="Compras a Proveedores"
-        description="Registra y administra las compras de insumos y refacciones para tu taller."
-        actions={
-          <Button onClick={() => setDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Registrar Nueva Compra
-          </Button>
-        }
+    <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <TabbedPageLayout
+        title="Compras y Proveedores"
+        description="Gestiona tus compras, proveedores y cuentas por pagar desde un solo lugar."
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        tabs={tabs}
+        actions={pageActions}
       />
-
-      {/* El diálogo para crear una nueva compra */}
-      <NewPurchaseDialog isOpen={dialogOpen} onOpenChange={setDialogOpen} />
-
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold mb-4">Historial de Compras</h2>
-        {/* Tabla de compras integrada */}
-        <PurchasesTable />
-      </section>
-    </div>
+      {selectedAccount && (
+        <PayableAccountDialog
+            open={isPaymentDialogOpen}
+            onOpenChange={setIsPaymentDialogOpen}
+            account={selectedAccount}
+            onSave={handleRegisterPayment}
+        />
+      )}
+       <NewPurchaseDialog
+          isOpen={isNewPurchaseDialogOpen}
+          onOpenChange={setIsNewPurchaseDialogOpen}
+        />
+      <SupplierDialog
+        open={isSupplierDialogOpen}
+        onOpenChange={setIsSupplierDialogOpen}
+        supplier={editingSupplier}
+        onSave={handleSaveSupplier}
+      />
+    </Suspense>
   );
 }
