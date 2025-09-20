@@ -64,15 +64,15 @@ export function TableToolbar({
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col sm:flex-row w-full sm:w-auto flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row w-full flex-grow items-center gap-2">
             {onSearchTermChange && (
-                 <div className="relative w-full sm:w-auto">
+                 <div className="relative w-full sm:w-auto flex-grow">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder={searchPlaceholder}
                         value={searchTerm ?? ''}
                         onChange={(e) => onSearchTermChange(e.target.value)}
-                        className="h-10 w-full sm:w-[300px] lg:w-[400px] pl-8 bg-white"
+                        className="h-10 w-full pl-8 bg-white"
                     />
                 </div>
             )}
