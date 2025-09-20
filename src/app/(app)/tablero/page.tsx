@@ -225,12 +225,12 @@ export default function TableroPage() {
           </Button>
         }
       />
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex flex-col md:flex-row gap-4 md:overflow-x-auto pb-4">
         {kanbanColumns.map((column, colIndex) => {
             const columnStyle = columnStyles[column.id];
             return (
-              <div key={column.id} className="w-72 flex-shrink-0">
-                <Card className={cn("h-full min-h-[40rem]", columnStyle.bg)}>
+              <div key={column.id} className="w-full md:w-72 md:flex-shrink-0">
+                <Card className={cn("h-full", columnStyle.bg)}>
                   <CardHeader>
                     <CardTitle className={cn("text-base font-semibold flex justify-between items-center", columnStyle.title)}>
                       <span>{column.title}</span>
