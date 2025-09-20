@@ -1,4 +1,3 @@
-
 // src/components/shared/table-toolbar.tsx
 "use client";
 
@@ -73,7 +72,7 @@ export function TableToolbar({
                         placeholder={searchPlaceholder}
                         value={searchTerm ?? ''}
                         onChange={(e) => onSearchTermChange(e.target.value)}
-                        className="h-10 w-full sm:w-[250px] pl-8 bg-white"
+                        className="h-10 w-full sm:w-[300px] lg:w-[400px] pl-8 bg-white"
                     />
                 </div>
             )}
