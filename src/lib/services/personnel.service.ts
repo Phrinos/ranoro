@@ -107,7 +107,8 @@ const saveDriver = async (data: Partial<Driver>, id?: string): Promise<void> => 
     if (id) {
         await updateDoc(doc(db, 'drivers', id), cleanedData);
     } else {
-        await addDoc(collection(db, 'drivers'), cleanedData);
+        const dataToSave = { ...cleanedData, isArchived: false };
+        await addDoc(collection(db, 'drivers'), dataToSave);
     }
 };
 

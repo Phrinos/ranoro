@@ -84,6 +84,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "drivers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isArchived",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "assignedVehicleId",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [],

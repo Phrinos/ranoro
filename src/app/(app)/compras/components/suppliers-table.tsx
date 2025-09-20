@@ -64,8 +64,10 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowCl
           {suppliers.map((supplier) => (
             <TableRow key={supplier.id} onClick={() => onRowClick(supplier)} className="cursor-pointer hover:bg-muted/50">
               <TableCell className="font-medium">
+                <div>
                   <p>{supplier.name}</p>
                   {supplier.description && <p className="text-xs text-muted-foreground">{supplier.description}</p>}
+                </div>
               </TableCell>
               <TableCell>{supplier.contactPerson || 'N/A'}</TableCell>
               <TableCell>{supplier.phone || 'N/A'}</TableCell>
@@ -85,4 +87,3 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowCl
 });
 
 SuppliersTable.displayName = 'SuppliersTable';
-

@@ -11,14 +11,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Edit, DollarSign, Calendar as CalendarIcon, FileText, BadgePercent, Trash2 } from 'lucide-react';
-import { SupplierDialog } from '../components/supplier-dialog';
+import { SupplierDialog } from '@/app/(app)/compras/components/supplier-dialog';
 import { formatCurrency } from '@/lib/utils';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { inventoryService, purchaseService } from '@/lib/services';
 import type { Supplier, PayableAccount, User } from '@/types';
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
-import { PayableAccountDialog } from '../components/payable-account-dialog';
+import { PayableAccountDialog } from '@/app/(app)/compras/components/payable-account-dialog';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 

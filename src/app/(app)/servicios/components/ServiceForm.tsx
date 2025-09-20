@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -52,7 +51,6 @@ interface ServiceFormProps {
 
 const getErrorMessages = (errors: FieldErrors<ServiceFormValues>): string => {
     const messages: string[] = [];
-    console.error("Validation Errors:", errors); // Log detailed errors to the console
 
     const parseErrors = (errorObj: any, prefix = '') => {
         for (const key in errorObj) {

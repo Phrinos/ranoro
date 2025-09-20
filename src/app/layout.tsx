@@ -6,7 +6,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Ranoro V1.3",
+  metadataBase: new URL("https://ranoro.mx"),
+  title: "Ranoro V1.4",
   description: "Software para la gestión de talleres mecánicos.",
 };
 
