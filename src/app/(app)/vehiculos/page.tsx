@@ -2,7 +2,7 @@
 // src/app/(app)/vehiculos/page.tsx
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, BarChart3, Tags, Loader2 } from "lucide-react";
@@ -24,6 +24,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
 
+const priceListSortOptions = [
+    { value: 'make_asc', label: 'Marca (A-Z)' },
+    { value: 'make_desc', label: 'Marca (Z-A)' },
+    { value: 'model_asc', label: 'Modelo (A-Z)' },
+    { value: 'model_desc', label: 'Modelo (Z-A)' },
+];
+
 function VehiculosPage() {
     const searchParams = useSearchParams();
     const defaultTab = searchParams.get('tab') || 'vehiculos';
@@ -43,7 +50,13 @@ function VehiculosPage() {
     const [categories, setCategories] = useState<InventoryCategory[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
-  
+    const priceListTableManager = useTableManager<VehiclePriceList>({
+        initialData: priceLists,
+        searchKeys: ["make", "model", "years"],
+        initialSortOption: 'make_asc',
+        dateFilterKey: '',
+    });
+
     useEffect(() => {
         setIsLoading(true);
         const unsubscribeVehicles = inventoryService.onVehiclesUpdate(setAllVehicles);
@@ -52,7 +65,7 @@ function VehiculosPage() {
         const unsubscribeCategories = inventoryService.onCategoriesUpdate(setCategories);
         const unsubscribeSuppliers = inventoryService.onSuppliersUpdate((data) => {
             setSuppliers(data);
-            setIsLoading(false); // Consider loading finished after all data is fetched
+            setIsLoading(false);
         });
 
         return () => {
@@ -194,12 +207,27 @@ function VehiculosPage() {
                                 <h2 className="text-2xl font-semibold tracking-tight">Lista de Precios de Vehículos</h2>
                                 <p className="text-muted-foreground">Precios estandarizados por modelo para agilizar cotizaciones.</p>
                             </div>
-                            <Button onClick={() => handleOpenPriceListDialog()} className="w-full sm:w-auto"><PlusCircle className="mr-2 h-4 w-4" />Nueva Lista de Precios</Button>
                         </div>
                          <Card>
-                            <CardContent className="pt-6">
+                            <CardHeader>
+                                <TableToolbar
+                                    searchTerm={priceListTableManager.searchTerm}
+                                    onSearchTermChange={priceListTableManager.onSearchTermChange}
+                                    sortOption={priceListTableManager.sortOption}
+                                    onSortOptionChange={priceListTableManager.onSortOptionChange}
+                                    sortOptions={priceListSortOptions}
+                                    searchPlaceholder="Buscar por marca, modelo o año..."
+                                    actions={
+                                        <Button onClick={() => handleOpenPriceListDialog()} className="w-full sm:w-auto">
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Nueva Lista
+                                        </Button>
+                                    }
+                                />
+                            </CardHeader>
+                            <CardContent>
                                 <PriceListTable
-                                    records={priceLists}
+                                    records={priceListTableManager.fullFilteredData}
                                     onEdit={handleOpenPriceListDialog}
                                     onDelete={handleDeletePriceListRecord}
                                 />

@@ -5,7 +5,7 @@
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Tags } from "lucide-react";
+import { Edit, Trash2, Tags, ArrowUpDown } from "lucide-react";
 import type { VehiclePriceList } from "@/types";
 import {
   AlertDialog,
@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
 interface PriceListTableProps {
   records: VehiclePriceList[];
@@ -46,6 +47,7 @@ const formatYears = (years: number[]): string => {
 };
 
 export const PriceListTable = React.memo(({ records, onEdit, onDelete }: PriceListTableProps) => {
+
   if (!records.length) {
     return (
         <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
