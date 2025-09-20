@@ -1,4 +1,3 @@
-
 // src/components/shared/ShareServiceDialog.tsx
 "use client";
 
@@ -94,12 +93,12 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
                 <Separator className="my-4" />
                 <DialogFooter className="mt-auto flex-col sm:flex-col sm:space-x-0 gap-2">
                     <Button onClick={() => handleCopyToClipboard(decodeURIComponent(getWhatsappMessage()), 'text')} className="w-full">
-                        <MessageSquare className="mr-2 h-4 w-4" /> Copiar Mensaje para WhatsApp
+                        <Copy className="mr-2 h-4 w-4" /> Copiar Mensaje
                     </Button>
                     {vehicle?.chatMetaLink && (
                          <Button variant="outline" asChild className="w-full">
                             <a href={vehicle.chatMetaLink} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="mr-2 h-4 w-4" /> Abrir Chat
+                                <MessageSquare className="mr-2 h-4 w-4" /> Abrir Chat
                             </a>
                         </Button>
                     )}
@@ -108,7 +107,7 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
                     </Button>
                 </DialogFooter>
             </div>
-            <div className="hidden md:block bg-muted/50 p-6 overflow-y-auto max-h-[80vh]">
+            <div className="hidden md:block bg-white p-6 overflow-y-auto max-h-[80vh]">
                 <h3 className="text-lg font-semibold text-center mb-4">Vista Previa del Documento</h3>
                 <div className="aspect-[8.5/11] w-full bg-white rounded-lg shadow-lg mx-auto">
                     <ServiceSheetContent ref={serviceSheetRef} service={service} vehicle={vehicle} />
