@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -12,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal, Send } from "lucide-react";
+import { Terminal, Send, Construction } from "lucide-react";
 import type { ServiceRecord, Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,72 +24,18 @@ interface NotificationDialogProps {
   vehicle: Vehicle | null;
 }
 
-// Plantillas de mensajes
-const getMessageTemplates = (service: ServiceRecord, vehicle: Vehicle | null) => {
-  const customerName = service.customerName || "Cliente";
-  const vehicleDesc = vehicle ? `${vehicle.brand} ${vehicle.model}` : "su vehículo";
-  const total = (service.total || 0).toFixed(2);
-  const workshopName = "Ranoro"; // TODO: Obtener de la configuración del taller
-
-  return [
-    {
-      title: "Servicio Listo para Entrega",
-      message: `¡Hola ${customerName}! Le informamos que ${vehicleDesc} está listo para ser recogido en ${workshopName}.\n\nEl monto a pagar es de $${total}.\n\n¡Gracias por su preferencia!`,
-    },
-    {
-      title: "Cotización Lista",
-      message: `¡Hola ${customerName}! Su cotización para ${vehicleDesc} está lista para su revisión. Puede verla y aprobarla en el siguiente enlace:\n\n[ENLACE_AQUI]\n\nAtentamente, ${workshopName}.`,
-    },
-    {
-      title: "Recordatorio de Cita",
-      message: `¡Hola ${customerName}! Le recordamos su cita en ${workshopName} para ${vehicleDesc} el día [FECHA] a las [HORA].\n\n¡Le esperamos!`,
-    },
-  ];
-};
-
 export function NotificationDialog({ isOpen, onOpenChange, service, vehicle }: NotificationDialogProps) {
-  const [customMessage, setCustomMessage] = React.useState("");
   const { toast } = useToast();
-
-  const templates = service ? getMessageTemplates(service, vehicle) : [];
-  
-  // Efecto para resetear el mensaje personalizado cuando cambia el servicio
-  React.useEffect(() => {
-    if (isOpen) {
-      // Por defecto, seleccionamos la primera plantilla
-      setCustomMessage(templates[0]?.message || "");
-    }
-  }, [isOpen, service, templates]);
-
-  const handleSend = () => {
-    if (!service || !service.customerPhone) {
-      toast({ title: "Error", description: "El cliente no tiene un número de teléfono guardado.", variant: "destructive" });
-      return;
-    }
-
-    // Limpiar el número de teléfono
-    const phoneNumber = service.customerPhone.replace(/\D/g, '');
-    if (phoneNumber.length < 10) {
-        toast({ title: "Error", description: "El número de teléfono no es válido.", variant: "destructive" });
-        return;
-    }
-
-    const encodedMessage = encodeURIComponent(customMessage);
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-    onOpenChange(false);
-  };
 
   if (!service) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Notificar al Cliente por WhatsApp</DialogTitle>
           <DialogDescription>
-            Selecciona una plantilla o escribe un mensaje. Se abrirá WhatsApp para que confirmes el envío.
+            Envía al cliente un mensaje a través de WhatsApp.
           </DialogDescription>
         </DialogHeader>
 
@@ -100,27 +47,17 @@ export function NotificationDialog({ isOpen, onOpenChange, service, vehicle }: N
           </AlertDescription>
         </Alert>
 
-        <div className="my-4">
-          <p className="mb-2 text-sm font-medium">Plantillas Rápidas</p>
-          <div className="flex flex-wrap gap-2">
-            {templates.map((template) => (
-              <Button key={template.title} variant="outline" size="sm" onClick={() => setCustomMessage(template.message)}>
-                {template.title}
-              </Button>
-            ))}
-          </div>
+        <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg bg-muted/50">
+          <Construction className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold text-foreground">Función en Desarrollo</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            La integración con la API de WhatsApp para el envío automático de mensajes estará disponible próximamente.
+          </p>
         </div>
 
-        <Textarea
-          value={customMessage}
-          onChange={(e) => setCustomMessage(e.target.value)}
-          rows={8}
-          placeholder="Escribe tu mensaje aquí..."
-        />
-
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSend} disabled={!service.customerPhone}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
+          <Button disabled>
             <Send className="mr-2 h-4 w-4" /> Preparar Envío
           </Button>
         </DialogFooter>
