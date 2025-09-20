@@ -71,13 +71,13 @@ export const PriceListTable = React.memo(({ records, onEdit, onDelete, sortOptio
   return (
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
-        <TableHeader className="group">
-          <TableRow className="bg-black text-white border-black hover:bg-black">
-            <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={sortOption} className="hover:bg-white hover:text-black" textClassName="text-white group-hover:text-black" />
-            <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={sortOption} className="hover:bg-white hover:text-black" textClassName="text-white group-hover:text-black" />
-            <TableHead className="font-bold">Años</TableHead>
-            <TableHead className="text-right font-bold hidden sm:table-cell"># Servicios</TableHead>
-            <TableHead className="text-right font-bold">Acciones</TableHead>
+        <TableHeader>
+          <TableRow className="bg-black border-black hover:bg-black">
+            <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={sortOption} />
+            <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={sortOption} />
+            <TableHead className="text-white font-bold">Años</TableHead>
+            <TableHead className="text-right text-white font-bold hidden sm:table-cell"># Servicios</TableHead>
+            <TableHead className="text-right text-white font-bold">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

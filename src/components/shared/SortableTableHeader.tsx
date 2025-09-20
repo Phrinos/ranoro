@@ -1,3 +1,4 @@
+// src/components/shared/SortableTableHeader.tsx
 "use client";
 
 import React from 'react';
@@ -27,15 +28,15 @@ export const SortableTableHeader: React.FC<SortableTableHeaderProps> = ({
 
   return (
     <TableHead
-      className={cn("cursor-pointer", className)}
+      className={cn("cursor-pointer group", className)}
       onClick={() => onSort(sortKey)}
     >
-      <div className="flex items-center gap-2">
-        <span className={cn(textClassName)}>{label}</span>
+      <div className="flex items-center gap-2 transition-transform duration-200 ease-in-out group-hover:scale-105">
+        <span className={cn("text-white/80 group-hover:text-white", textClassName)}>{label}</span>
         <ArrowUpDown 
           className={cn(
-            "h-4 w-4 transition-transform",
-            isSorted ? 'opacity-100' : 'opacity-30 group-hover:opacity-70',
+            "h-4 w-4 transition-all",
+            isSorted ? 'opacity-100 text-white' : 'opacity-50 text-white/80 group-hover:opacity-100',
             direction === 'asc' ? 'transform rotate-180' : ''
           )} 
         />
