@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ServiceSheetContent } from '../ServiceSheetContent';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
+import Link from 'next/link';
 
 interface ShareServiceDialogProps {
   open: boolean;
@@ -82,32 +83,37 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
                                 type="text"
                                 readOnly
                                 value={publicUrl}
-                                className="w-full px-3 py-2 text-sm border rounded-md bg-muted text-muted-foreground"
+                                className="w-full px-3 py-2 text-sm border rounded-md bg-white text-muted-foreground"
                             />
-                            <Button variant="outline" size="icon" onClick={() => handleCopyToClipboard(publicUrl, 'link')}>
+                            <Button variant="outline" size="icon" onClick={() => handleCopyToClipboard(publicUrl, 'link')} className="bg-white">
                                 <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="icon" asChild className="bg-white">
+                                <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4" />
+                                </a>
                             </Button>
                         </div>
                     </div>
                 </div>
                 <Separator className="my-4" />
                 <DialogFooter className="mt-auto flex-col sm:flex-col sm:space-x-0 gap-2">
-                    <Button onClick={() => handleCopyToClipboard(decodeURIComponent(getWhatsappMessage()), 'text')} className="w-full">
-                        <Copy className="mr-2 h-4 w-4" /> Copiar Mensaje
+                    <Button variant="outline" onClick={() => handleCopyToClipboard(decodeURIComponent(getWhatsappMessage()), 'text')} className="w-full bg-white border-blue-500 text-black hover:bg-blue-50">
+                        <Copy className="mr-2 h-4 w-4 text-blue-600" /> Copiar Mensaje
                     </Button>
                     {vehicle?.chatMetaLink && (
-                         <Button variant="outline" asChild className="w-full">
+                         <Button variant="outline" asChild className="w-full bg-white border-green-500 text-black hover:bg-green-50">
                             <a href={vehicle.chatMetaLink} target="_blank" rel="noopener noreferrer">
-                                <MessageSquare className="mr-2 h-4 w-4" /> Abrir Chat
+                                <MessageSquare className="mr-2 h-4 w-4 text-green-600" /> Abrir Chat
                             </a>
                         </Button>
                     )}
-                    <Button onClick={handleShare} className="w-full bg-green-600 hover:bg-green-700">
-                        <Share2 className="mr-2 h-4 w-4" /> Compartir
+                    <Button onClick={handleShare} variant="outline" className="w-full bg-white border-red-500 text-black hover:bg-red-50">
+                        <Share2 className="mr-2 h-4 w-4 text-red-600" /> Compartir
                     </Button>
                 </DialogFooter>
             </div>
-            <div className="hidden md:block bg-white p-6 overflow-y-auto max-h-[80vh]">
+            <div className="hidden md:block bg-muted/50 p-6 overflow-y-auto max-h-[80vh]">
                 <h3 className="text-lg font-semibold text-center mb-4">Vista Previa del Documento</h3>
                 <div className="aspect-[8.5/11] w-full bg-white rounded-lg shadow-lg mx-auto">
                     <ServiceSheetContent ref={serviceSheetRef} service={service} vehicle={vehicle} />
