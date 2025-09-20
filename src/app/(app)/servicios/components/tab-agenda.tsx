@@ -32,7 +32,7 @@ export default function AgendaTabContent({
   return (
     <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
       <div className="flex justify-end mb-4">
-        <TabsList className="grid w-full grid-cols-2 max-w-[250px]">
+        <TabsList className="grid w-full grid-cols-2 sm:max-w-[250px]">
           <TabsTrigger value="lista"><List className="mr-2 h-4 w-4" />Lista</TabsTrigger>
           <TabsTrigger value="calendario"><CalendarIcon className="mr-2 h-4 w-4" />Calendario</TabsTrigger>
         </TabsList>
