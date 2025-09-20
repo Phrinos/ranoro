@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from "react";
@@ -24,6 +23,8 @@ interface PriceListTableProps {
   records: VehiclePriceList[];
   onEdit: (record: VehiclePriceList) => void;
   onDelete: (recordId: string) => void;
+  sortOption: string;
+  onSortOptionChange: (value: string) => void;
 }
 
 const formatYears = (years: number[]): string => {
@@ -46,7 +47,19 @@ const formatYears = (years: number[]): string => {
   ).join(', ');
 };
 
-export const PriceListTable = React.memo(({ records, onEdit, onDelete }: PriceListTableProps) => {
+export const PriceListTable = React.memo(({ records, onEdit, onDelete, sortOption, onSortOptionChange }: PriceListTableProps) => {
+
+  const handleSort = (key: 'make' | 'model') => {
+    const isAsc = sortOption === `${key}_asc`;
+    onSortOptionChange(isAsc ? `${key}_desc` : `${key}_asc`);
+  };
+
+  const renderSortArrow = (key: 'make' | 'model') => {
+    if (sortOption.startsWith(key)) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
+  };
 
   if (!records.length) {
     return (
@@ -63,8 +76,12 @@ export const PriceListTable = React.memo(({ records, onEdit, onDelete }: PriceLi
       <Table>
         <TableHeader className="bg-black">
           <TableRow>
-            <TableHead className="font-bold text-white">Marca</TableHead>
-            <TableHead className="font-bold text-white">Modelo</TableHead>
+            <TableHead className="font-bold text-white cursor-pointer" onClick={() => handleSort('make')}>
+                <div className="flex items-center">Marca {renderSortArrow('make')}</div>
+            </TableHead>
+            <TableHead className="font-bold text-white cursor-pointer" onClick={() => handleSort('model')}>
+                <div className="flex items-center">Modelo {renderSortArrow('model')}</div>
+            </TableHead>
             <TableHead className="font-bold text-white">Años</TableHead>
             <TableHead className="text-right font-bold text-white hidden sm:table-cell"># Servicios</TableHead>
             <TableHead className="text-right font-bold text-white">Acciones</TableHead>
