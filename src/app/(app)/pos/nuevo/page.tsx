@@ -1,4 +1,5 @@
 // src/app/(app)/pos/nuevo/page.tsx
+"use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
