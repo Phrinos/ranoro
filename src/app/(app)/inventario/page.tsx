@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/page.tsx
 "use client";
 
@@ -25,8 +26,10 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
 
 // Lazy load dialogs that are not immediately visible
+const RegisterPurchaseDialog = lazy(() => import('../inventario/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = lazy(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
 const InventoryReportContent = lazy(() => import('./components/inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
 
@@ -42,7 +45,7 @@ const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { s
             <Button variant="outline" className="w-full flex-1 bg-white border-red-500 text-black hover:bg-red-50" onClick={onNewItemClick}>
                 <PlusCircle className="mr-2 h-5 w-5 text-red-500" /> Registrar Ítem
             </Button>
-            <Button variant="outline" className="w-full flex-1" onClick={onNewPurchaseClick} >
+            <Button className="w-full flex-1" variant="outline" onClick={onNewPurchaseClick} >
                 <PlusCircle className="mr-2 h-5 w-5" /> Registrar Compra
             </Button>
         </div>
@@ -258,6 +261,7 @@ export default function InventarioPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
@@ -305,17 +309,14 @@ export default function InventarioPage() {
   }, []);
 
 
-  const handleOpenItemDialog = useCallback(() => {
-    setEditingItem(null);
+  const handleOpenItemDialog = useCallback((name?: string) => {
+    const initialData = name ? { name: capitalizeWords(name) } : null;
+    setEditingItem(initialData);
     setIsItemDialogOpen(true);
   }, []);
   
   const handleNewItemFromSearch = useCallback((name: string) => {
-    handleOpenItemDialog();
-    // A small timeout to ensure the dialog is mounted before setting the value
-    setTimeout(() => {
-      setEditingItem({ name: capitalizeWords(name) });
-    }, 50);
+    handleOpenItemDialog(name);
   }, [handleOpenItemDialog]);
   
   const handleItemUpdated = async (data: InventoryItemFormValues) => {
@@ -325,10 +326,23 @@ export default function InventarioPage() {
     setIsItemDialogOpen(false);
   };
   
+
+  const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
+    await purchaseService.registerPurchase(data);
+    toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
+    setIsRegisterPurchaseOpen(false);
+  }, [toast]);
+  
   const handleSaveItem = useCallback(async (itemData: InventoryItemFormValues) => {
     await inventoryService.addItem(itemData);
     toast({ title: "Producto Creado", description: `"${itemData.name}" ha sido agregado al inventario.` });
     setIsItemDialogOpen(false);
+  }, [toast]);
+  
+  const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
+      const newItem = await inventoryService.addItem(formData);
+      toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
+      return newItem;
   }, [toast]);
   
   const handleSaveCategory = useCallback(async (name: string, id?: string) => {
@@ -371,8 +385,8 @@ export default function InventarioPage() {
         
         <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={handleOpenItemDialog}
-          onNewPurchaseClick={() => router.push('/compras')}
+          onNewItemClick={() => handleOpenItemDialog()}
+          onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
@@ -418,6 +432,18 @@ export default function InventarioPage() {
         </Tabs>
         
         <Suspense fallback={null}>
+            {isRegisterPurchaseOpen && (
+              <RegisterPurchaseDialog
+                open={isRegisterPurchaseOpen}
+                onOpenChange={setIsRegisterPurchaseOpen}
+                suppliers={suppliers}
+                inventoryItems={inventoryItems}
+                onSave={handleSavePurchase}
+                onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
+                categories={categories}
+              />
+            )}
+
             <InventoryItemDialog
               open={isItemDialogOpen}
               onOpenChange={setIsItemDialogOpen}
@@ -430,13 +456,7 @@ export default function InventarioPage() {
 
         <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
           <DialogContent className="max-w-4xl p-0 no-print">
-            <DialogHeader className="p-6 pb-2">
-                <DialogTitle>Reporte de Inventario</DialogTitle>
-                <DialogDescription>
-                    Vista previa del reporte de inventario actual.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="printable-content bg-white max-h-[70vh] overflow-y-auto">
+            <div className="printable-content bg-white">
                 <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
                     <InventoryReportContent items={itemsToPrint} />
                 </Suspense>

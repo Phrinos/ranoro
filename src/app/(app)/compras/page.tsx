@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
@@ -17,12 +18,13 @@ const ProveedoresContent = React.lazy(() => import('./components/proveedores-con
 const CuentasPorPagarContent = React.lazy(() => import('./components/cuentas-por-pagar-content'));
 
 // Dialogs
-const NewPurchaseDialog = React.lazy(() => import('./components/new-purchase-dialog').then(module => ({ default: module.NewPurchaseDialog })));
+const RegisterPurchaseDialog = React.lazy(() => import('../inventario/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const PayableAccountDialog = React.lazy(() => import('./components/payable-account-dialog').then(module => ({ default: module.PayableAccountDialog })));
 const SupplierDialog = React.lazy(() => import('./components/supplier-dialog').then(module => ({ default: module.SupplierDialog })));
 
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
 
 export default function ComprasUnificadasPage() {
   const { toast } = useToast();
@@ -31,6 +33,8 @@ export default function ComprasUnificadasPage() {
   
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [payableAccounts, setPayableAccounts] = useState<PayableAccount[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -45,8 +49,11 @@ export default function ComprasUnificadasPage() {
     setIsLoading(true);
     const unsubs = [
       inventoryService.onSuppliersUpdate(setSuppliers),
-      purchaseService.onPayableAccountsUpdate((data) => {
-          setPayableAccounts(data);
+      purchaseService.onPayableAccountsUpdate(setPayableAccounts),
+      inventoryService.onItemsUpdate(setInventoryItems),
+      inventoryService.onCategoriesUpdate(setCategories),
+      inventoryService.onSuppliersUpdate((data) => {
+          setSuppliers(data);
           setIsLoading(false);
       }),
     ];
@@ -98,6 +105,17 @@ export default function ComprasUnificadasPage() {
     router.push(`/proveedores/${supplier.id}`);
   }, [router]);
 
+  const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
+    await purchaseService.registerPurchase(data);
+    toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
+    setIsNewPurchaseDialogOpen(false);
+  }, [toast]);
+
+  const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
+      const newItem = await inventoryService.addItem(formData);
+      toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
+      return newItem;
+  }, [toast]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -133,10 +151,17 @@ export default function ComprasUnificadasPage() {
             onSave={handleRegisterPayment}
         />
       )}
-       <NewPurchaseDialog
-          isOpen={isNewPurchaseDialogOpen}
-          onOpenChange={setIsNewPurchaseDialogOpen}
+      {isNewPurchaseDialogOpen && (
+        <RegisterPurchaseDialog
+            open={isNewPurchaseDialogOpen}
+            onOpenChange={setIsNewPurchaseDialogOpen}
+            suppliers={suppliers}
+            inventoryItems={inventoryItems}
+            onSave={handleSavePurchase}
+            onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
+            categories={categories}
         />
+      )}
       <SupplierDialog
         open={isSupplierDialogOpen}
         onOpenChange={setIsSupplierDialogOpen}
