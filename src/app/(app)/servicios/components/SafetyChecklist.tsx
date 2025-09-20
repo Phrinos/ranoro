@@ -1,7 +1,8 @@
+
 // src/app/(app)/servicios/components/SafetyChecklist.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormContext } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
@@ -144,9 +145,13 @@ const SafetyChecklistReport = ({ inspection, signatureDataUrl, technicianName }:
   )
 }
 
-export const SafetyChecklist = () => {
+interface SafetyChecklistProps {
+  isWizardOpen: boolean;
+  setIsWizardOpen: (isOpen: boolean) => void;
+}
+
+export const SafetyChecklist = ({ isWizardOpen, setIsWizardOpen }: SafetyChecklistProps) => {
   const { watch, setValue } = useFormContext();
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const inspectionData = watch('safetyInspection');
   const serviceId = watch('id');
   const signatureDataUrl = watch('serviceAdvisorSignatureDataUrl');
@@ -158,6 +163,14 @@ export const SafetyChecklist = () => {
     const currentPhotos = watch(`${fieldName}.photos`) || [];
     setValue(`${fieldName}.photos`, [...currentPhotos, url]);
   };
+  
+  useEffect(() => {
+    // This effect ensures that if the prop changes (e.g., from the mobile bar),
+    // the wizard will open.
+    if (isWizardOpen) {
+      // The setIsWizardOpen from the parent is already managing the state.
+    }
+  }, [isWizardOpen]);
 
   return (
     <>

@@ -1,3 +1,4 @@
+
 // src/app/(app)/layout.tsx
 "use client";
 
@@ -105,8 +106,10 @@ export default function AppLayout({
           <SidebarTrigger className="h-10 w-10 shadow-lg bg-black text-white" />
         </div>
         <SidebarInset className={cn("flex flex-col", "app-main-content")}>
-          <main className="flex-1 overflow-y-auto p-4 pt-20 md:pt-6 lg:p-8 bg-background">
-            {children}
+          <main className="flex-1 bg-background">
+            <div className="p-4 pt-20 md:pt-6 lg:p-8">
+              {children}
+            </div>
           </main>
         </SidebarInset>
       </SidebarProvider>

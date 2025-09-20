@@ -3,11 +3,9 @@
 "use client";
 
 import React from 'react';
-import { FormProvider, useForm, useFormContext, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Ban, Trash2, DollarSign } from 'lucide-react';
-import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
@@ -26,12 +24,15 @@ import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 import { SignatureDialog } from './signature-dialog';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { ServiceFormFooter } from './ServiceFormFooter';
+import type { ServiceFormValues } from '@/schemas/service-form';
 
 
 interface ServiceFormProps {
   initialData: ServiceRecord | null;
   vehicles: Vehicle[];
-  users: User[]; // CORREGIDO: El prop ahora se llama 'users'
+  users: User[]; 
   inventoryItems: InventoryItem[];
   serviceTypes: ServiceTypeRecord[];
   categories: InventoryCategory[];
@@ -43,102 +44,34 @@ interface ServiceFormProps {
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
   onCancel?: () => void;
   mode: 'service' | 'quote';
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  isChecklistWizardOpen: boolean;
+  setIsChecklistWizardOpen: (isOpen: boolean) => void;
 }
 
-// ... (El componente ServiceFormFooter se mantiene igual)
-const ServiceFormFooter = ({ onCancel, onComplete, mode, initialData, isSubmitting }: {
-    onCancel?: () => void;
-    onComplete?: (values: ServiceFormValues) => void;
-    mode: 'service' | 'quote';
-    initialData: ServiceRecord | null;
-    isSubmitting: boolean;
-}) => {
-    const { getValues, reset } = useFormContext<ServiceFormValues>();
-    const isEditMode = !!initialData?.id;
-    const { status } = useWatch();
+const getErrorMessages = (errors: FieldErrors<ServiceFormValues>): string => {
+    const messages: string[] = [];
+    console.error("Validation Errors:", errors); // Log detailed errors to the console
 
-    const isQuoteMode = status === 'Cotizacion';
-    const isScheduledMode = status === 'Agendado';
-
-    let cancelTexts = {
-        button: 'Cancelar Servicio',
-        title: '¿Cancelar servicio?',
-        description: 'El servicio se marcará como cancelado y los insumos se devolverán al inventario.',
-        confirm: 'Sí, Cancelar Servicio'
+    const parseErrors = (errorObj: any, prefix = '') => {
+        for (const key in errorObj) {
+            const fullKey = prefix ? `${prefix}.${key}` : key;
+            const error = errorObj[key];
+            if (error && error.message) {
+                messages.push(`${fullKey}: ${error.message}`);
+            } else if (typeof error === 'object' && error !== null) {
+                parseErrors(error, fullKey);
+            }
+        }
     };
 
-    if (isQuoteMode) {
-        cancelTexts = {
-            button: 'Eliminar Cotización',
-            title: '¿Eliminar cotización?',
-            description: 'Esta acción es permanente y no se puede deshacer.',
-            confirm: 'Sí, Eliminar'
-        };
-    } else if (isScheduledMode) {
-        cancelTexts = {
-            button: 'Cancelar Cita',
-            title: '¿Cancelar cita?',
-            description: 'La cita se cancelará y el registro volverá a ser una cotización.',
-            confirm: 'Sí, Cancelar Cita'
-        };
-    }
-
-
-    return (
-        <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              {onCancel && (
-                <ConfirmDialog
-                  triggerButton={<Button variant="destructive" type="button" className="w-full sm:w-auto"><Ban className="mr-2 h-4 w-4" />{cancelTexts.button}</Button>}
-                  title={cancelTexts.title}
-                  description={cancelTexts.description}
-                  onConfirm={onCancel}
-                  confirmText={cancelTexts.confirm}
-                />
-              )}
-              <Button type="button" variant="outline" onClick={() => reset(initialData || {})} className="w-full sm:w-auto">Descartar</Button>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-               {isEditMode && onComplete && status !== 'Entregado' && status !== 'Cancelado' && (
-                 <Button type="button" onClick={() => onComplete(getValues())} disabled={isSubmitting} variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700 w-full sm:w-auto">
-                    <DollarSign className="mr-2 h-4 w-4"/> Completar y Cobrar
-                 </Button>
-               )}
-              <Button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
-                {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Save className="mr-2 h-4 w-4"/>}
-                Guardar
-              </Button>
-            </div>
-          </div>
-        </footer>
-    );
+    parseErrors(errors);
+    
+    if (messages.length === 0) return "Error de validación desconocido. Revisa la consola para más detalles.";
+    return `Hay errores en el formulario. ${messages.join('; ')}.`;
 };
 
-
-const fieldLabels: { [key: string]: string } = {
-    vehicleId: 'Vehículo',
-    serviceDate: 'Fecha del Servicio',
-    technicianId: 'Técnico Asignado',
-    serviceItems: 'Artículos de Servicio',
-    'nextServiceInfo.nextServiceDate': 'Fecha de Próximo Servicio',
-    'nextServiceInfo.nextServiceMileage': 'Kilometraje de Próximo Servicio',
-    nextServiceInfo: 'Próximo Servicio',
-};
-
-const getErrorMessages = (errors: FieldErrors<ServiceFormValues>): string => {
-    const messages = Object.keys(errors).map(key => {
-        if (key === 'nextServiceInfo' && typeof errors.nextServiceInfo === 'object') {
-            const subErrors = Object.keys(errors.nextServiceInfo);
-            if (subErrors.length > 0) return fieldLabels['nextServiceInfo'];
-        }
-        return fieldLabels[key] || key;
-    }).filter(Boolean);
-
-    const uniqueMessages = [...new Set(messages)];
-    if (uniqueMessages.length === 0) return "Por favor, revise los campos marcados en rojo.";
-    return `Por favor, revise los siguientes campos: ${uniqueMessages.join(', ')}.`;
-};
 
 const normalizeText = (text: string = '') => {
     return text
@@ -163,6 +96,10 @@ export function ServiceForm({
   onVehicleCreated,
   onCancel,
   mode,
+  activeTab,
+  onTabChange,
+  isChecklistWizardOpen,
+  setIsChecklistWizardOpen,
 }: ServiceFormProps) {
   const { toast } = useToast();
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
@@ -192,25 +129,8 @@ export function ServiceForm({
         technicians: [...new Set(techniciansList)] 
     };
   }, [users]);
-
-  const methods = useForm<ServiceFormValues>({
-    resolver: zodResolver(serviceFormSchema),
-    defaultValues: {
-      ...initialData,
-      vehicleId: initialData?.vehicleId || '',
-      serviceItems: initialData?.serviceItems || [],
-      notes: initialData?.notes ?? '',
-      serviceDate: initialData?.serviceDate ? new Date(initialData.serviceDate) : new Date(),
-      appointmentDateTime: initialData?.appointmentDateTime ? new Date(initialData.appointmentDateTime) : undefined,
-      receptionDateTime: initialData?.receptionDateTime ? new Date(initialData.receptionDateTime) : undefined,
-      deliveryDateTime: initialData?.deliveryDateTime ? new Date(initialData.deliveryDateTime) : undefined,
-      nextServiceInfo: initialData?.nextServiceInfo ? {
-          ...initialData.nextServiceInfo,
-          nextServiceDate: initialData.nextServiceInfo.nextServiceDate ? new Date(initialData.nextServiceInfo.nextServiceDate) : null,
-      } : { nextServiceDate: null, nextServiceMileage: null },
-    },
-  });
-
+  
+  const methods = useFormContext<ServiceFormValues>();
   const { handleSubmit, getValues, setValue, formState: { isSubmitting }, reset, watch } = methods;
   
   const selectedVehicleId = watch('vehicleId');
@@ -284,9 +204,9 @@ export function ServiceForm({
   };
 
   return (
-    <FormProvider {...methods}>
+    <>
       <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
-       <div className="space-y-6 p-1 pb-24">
+       <div className="space-y-6 p-1 pb-24 md:pb-6">
          <VehicleSelectionCard
             vehicles={vehicles}
             onVehicleCreated={onVehicleCreated}
@@ -305,13 +225,13 @@ export function ServiceForm({
         {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
             <NextServiceInfoCard currentMileage={currentMileage} />
         )}
-        <Tabs defaultValue="service-items">
+        <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
             <div className="sticky top-0 z-10 border-b bg-background/95 p-1 backdrop-blur-sm">
-                 <TabsList className="grid w-full grid-cols-2 h-auto">
-                    <TabsTrigger value="service-items">Trabajos y Refacciones</TabsTrigger>
-                    <TabsTrigger value="reception-delivery">Recepción/Entrega</TabsTrigger>
-                    <TabsTrigger value="photo-report">Reporte de Fotos</TabsTrigger>
-                    <TabsTrigger value="safety-checklist">Revisión de Seguridad</TabsTrigger>
+                 <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 md:gap-0 h-auto md:h-10 bg-transparent p-0">
+                    <TabsTrigger value="service-items" className="h-full">Trabajos</TabsTrigger>
+                    <TabsTrigger value="reception-delivery" className="h-full">Recepción</TabsTrigger>
+                    <TabsTrigger value="photo-report" className="h-full">Fotos</TabsTrigger>
+                    <TabsTrigger value="safety-checklist" className="h-full">Checklist</TabsTrigger>
                 </TabsList>
             </div>
             <div className="mt-4">
@@ -323,8 +243,8 @@ export function ServiceForm({
                             categories={categories}
                             suppliers={suppliers}
                             technicians={technicians || []}
-                            onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
                             mode={mode}
+                            onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
                             isEnhancingText={isEnhancingText}
                             handleEnhanceText={handleEnhanceText as any}
                         />
@@ -341,11 +261,17 @@ export function ServiceForm({
                     <ReceptionAndDelivery part="delivery" isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText as any} onOpenSignature={handleOpenSignatureDialog}/>
                 </TabsContent>
                 <TabsContent value="photo-report"><PhotoReportTab /></TabsContent>
-                <TabsContent value="safety-checklist"><SafetyChecklist /></TabsContent>
+                <TabsContent value="safety-checklist">
+                    <SafetyChecklist 
+                        isWizardOpen={isChecklistWizardOpen}
+                        setIsWizardOpen={setIsChecklistWizardOpen}
+                    />
+                </TabsContent>
             </div>
         </Tabs>
        </div>
         <ServiceFormFooter
+            formId="service-form"
             onCancel={onCancel}
             onComplete={handleCompleteClick}
             mode={mode}
@@ -358,6 +284,6 @@ export function ServiceForm({
           onOpenChange={setIsSignatureDialogOpen}
           onSave={handleSaveSignature}
        />
-    </FormProvider>
+    </>
   );
 }

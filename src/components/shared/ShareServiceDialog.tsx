@@ -107,7 +107,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
     }
   };
   
-  const handleCopyWhatsApp = React.useCallback(() => copy(message, "Mensaje copiado"), [message, copy]);
+  const handleCopyMessage = React.useCallback(() => copy(message, "Mensaje copiado"), [message, copy]);
 
   const handleNativeShare = React.useCallback(async () => {
     try {
@@ -207,7 +207,7 @@ export function ShareServiceDialog({ open, onOpenChange, service: initialService
                         <TooltipContent><p>Ver Documento Público</p></TooltipContent>
                       </Tooltip>
                     )}
-                    <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleCopyWhatsApp} className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Icon icon="logos:whatsapp-icon" className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar para WhatsApp</p></TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleCopyMessage} className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"><Copy className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar Mensaje</p></TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={handleNativeShare} className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
                     {!isMobile && (
                       <Tooltip><TooltipTrigger asChild><Button size="icon" onClick={() => window.print()} className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200"><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>

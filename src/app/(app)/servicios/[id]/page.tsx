@@ -6,11 +6,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { serviceService, inventoryService, adminService } from '@/lib/services';
-import { Loader2, Share2, Save, Ban, Trash2, Printer, Copy, FileWarning, MessageSquare } from 'lucide-react';
+import { Loader2, Share2, Printer, Copy, MessageSquare, FileWarning } from 'lucide-react';
 import { ServiceForm } from '../components/ServiceForm';
-import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, QuoteRecord } from '@/types'; 
+import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types'; 
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
-import type { ServiceFormValues } from '@/schemas/service-form';
+import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form';
 import { PageHeader } from '@/components/page-header';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
@@ -19,12 +19,16 @@ import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog
 import { TicketContent } from '@/components/ticket-content';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import html2canvas from 'html2canvas';
-import { formatCurrency } from '@/lib/utils';
 import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import type { PaymentDetailsFormValues } from '@/schemas/payment-details-form-schema';
 import { writeBatch, doc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { NotificationDialog } from '../components/notification-dialog';
+import { ServiceMobileBar } from '../components/ServiceMobileBar';
+import { ActiveServicesSheet } from '../components/ActiveServicesSheet';
+import { PhotoReportModal } from '../components/PhotoReportModal';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -52,12 +56,33 @@ export default function ServicioPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const redirectUrl = useRef<string | null>(null);
-
   const ticketContentRef = React.useRef<HTMLDivElement>(null);
+
+  // --- Mobile-specific state ---
+  const [activeTab, setActiveTab] = useState('service-items');
+  const [isServicesSheetOpen, setIsServicesSheetOpen] = useState(false);
+  const [isChecklistWizardOpen, setIsChecklistWizardOpen] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
 
 
   const isEditMode = serviceId !== 'nuevo';
   const isQuoteModeParam = searchParams.get('mode') === 'quote';
+
+  const methods = useForm<ServiceFormValues>({
+    resolver: zodResolver(serviceFormSchema),
+  });
+
+  useEffect(() => {
+    if (initialData) {
+        methods.reset({
+            ...initialData,
+            serviceDate: initialData.serviceDate ? new Date(initialData.serviceDate) : new Date(),
+            appointmentDateTime: initialData.appointmentDateTime ? new Date(initialData.appointmentDateTime) : undefined,
+            receptionDateTime: initialData.receptionDateTime ? new Date(initialData.receptionDateTime) : undefined,
+            deliveryDateTime: initialData.deliveryDateTime ? new Date(initialData.deliveryDateTime) : undefined,
+        });
+    }
+  }, [initialData, methods]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,20 +114,13 @@ export default function ServicioPage() {
                 const serviceData = await serviceService.getDocById('serviceRecords', serviceId);
                 if (!serviceData) {
                   setNotFound(true);
-                  toast({ 
-                      title: 'Error al Cargar',
-                      description: `El documento con ID "${serviceId.slice(0,12)}..." no fue encontrado.`, 
-                      variant: 'destructive' 
-                  });
                   return;
                 }
                 setInitialData(serviceData);
                 setRecordForPreview(serviceData);
             } else {
-                // MEJORA: Auto-asignar el asesor de servicio al crear un nuevo servicio
                 const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
                 const currentUser = authUserString ? JSON.parse(authUserString) : null;
-
                 const newId = doc(collection(db, 'serviceRecords')).id;
                 setInitialData({
                     id: newId,
@@ -110,7 +128,6 @@ export default function ServicioPage() {
                     serviceDate: new Date(),
                     vehicleId: '', 
                     serviceItems: [],
-                    // Asignar automáticamente al usuario actual como asesor
                     ...(currentUser && {
                         serviceAdvisorId: currentUser.id,
                         serviceAdvisorName: currentUser.name,
@@ -121,14 +138,12 @@ export default function ServicioPage() {
 
         } catch (error) {
             console.error("Error fetching data:", error);
-            toast({ title: 'Error', description: 'No se pudieron cargar los datos.', variant: 'destructive' });
         } finally {
             setIsLoading(false);
         }
     };
-
     fetchData();
-  }, [serviceId, isEditMode, isQuoteModeParam, router, toast]);
+  }, [serviceId, isEditMode, isQuoteModeParam]);
   
   const handleShowShareDialog = useCallback((service: ServiceRecord, redirect?: string) => {
     setRecordForPreview(service);
@@ -153,36 +168,17 @@ export default function ServicioPage() {
     setIsSubmitting(true);
     try {
       const savedRecord = await serviceService.saveService(values as ServiceRecord);
-      toast({ title: 'Registro Creado', description: `El folio #${savedRecord.folio} se ha guardado.` });
-      
-      const targetTab = savedRecord.status === 'Cotizacion' ? 'cotizaciones' : 'activos';
-      redirectUrl.current = `/servicios?tab=${targetTab}`;
+      toast({ title: 'Registro Guardado' });
+      redirectUrl.current = `/servicios/${savedRecord.id}`;
       return savedRecord;
-        
     } catch(e) {
       console.error(e);
-      toast({ title: 'Error al Registrar', variant: 'destructive'});
+      toast({ title: 'Error al Guardar', variant: 'destructive'});
     } finally {
         setIsSubmitting(false);
     }
   };
-
-  const handleUpdateService = async (values: ServiceFormValues): Promise<ServiceRecord | void> => {
-    if (!initialData) return;
-    setIsSubmitting(true);
-    try {
-      const updatedRecord = await serviceService.saveService({ ...values, id: serviceId });
-      toast({ title: 'Servicio Actualizado', description: `El folio #${updatedRecord.folio} ha sido actualizado.` });
-      redirectUrl.current = `/servicios?tab=activos`;
-      return updatedRecord;
-    } catch(e) {
-      console.error(e);
-      toast({ title: 'Error al Actualizar', variant: 'destructive'});
-    } finally {
-        setIsSubmitting(false);
-    }
-  };
-
+  
   const handleCompleteService = (values: ServiceFormValues) => {
     setInitialData(values as ServiceRecord);
     setIsPaymentDialogOpen(true);
@@ -197,10 +193,7 @@ export default function ServicioPage() {
       await serviceService.completeService(initialData, paymentDetails, batch);
       await batch.commit();
       
-      toast({
-        title: "Servicio Completado",
-        description: `El servicio #${initialData.folio} ha sido completado y cobrado.`,
-      });
+      toast({ title: "Servicio Completado" });
       setIsPaymentDialogOpen(false);
       
       const updatedServiceData = await serviceService.getDocById('serviceRecords', recordId);
@@ -209,14 +202,9 @@ export default function ServicioPage() {
       } else {
         router.push('/servicios?tab=historial');
       }
-
     } catch (e: any) {
-      console.error("Error al completar el servicio:", e);
-      toast({
-        title: "Error al Completar",
-        description: e.message,
-        variant: "destructive",
-      });
+      console.error(e);
+      toast({ title: "Error al Completar", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -232,59 +220,13 @@ export default function ServicioPage() {
   const handleCancelService = async () => {
       if (!initialData?.id) return;
       await serviceService.cancelService(initialData.id, "Cancelado desde el panel");
-      toast({ title: "Servicio Cancelado" });
       router.push('/servicios?tab=historial');
   };
   
   const handleDeleteQuote = async () => {
       if (!initialData?.id) return;
       await serviceService.deleteService(initialData.id);
-      toast({ title: "Cotización Eliminada", variant: "destructive" });
       router.push('/servicios?tab=cotizaciones');
-  };
-  
-  const handleCopyTicketAsImage = useCallback(async (isForSharing: boolean = false) => {
-    if (!ticketContentRef.current || !recordForPreview) return null;
-    try {
-        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null, useCORS: true });
-        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-        if (!blob) throw new Error("No se pudo crear el blob de la imagen.");
-
-        if (isForSharing) {
-            return new File([blob], `ticket_servicio_${recordForPreview.id}.png`, { type: 'image/png' });
-        } else {
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-            toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
-            return null;
-        }
-    } catch (e) {
-        console.error("Error al manejar la imagen:", e);
-        toast({ title: "Error", description: "No se pudo procesar la imagen del ticket.", variant: "destructive" });
-        return null;
-    }
-  }, [recordForPreview, toast]);
-  
-  const handleShareTicket = async () => {
-    const imageFile = await handleCopyTicketAsImage(true);
-    if (imageFile && navigator.share) {
-        try {
-            await navigator.share({
-                files: [imageFile],
-                title: 'Ticket de Servicio',
-                text: `Ticket de tu servicio.`,
-            });
-        } catch (error) {
-            if (!String(error).includes('AbortError')) {
-               toast({ title: 'No se pudo compartir', description: 'El error se ha registrado.', variant: 'default' });
-            }
-        }
-    } else {
-        toast({ title: 'No disponible', description: 'La función de compartir no está disponible en este navegador.', variant: 'default' });
-    }
-  };
-  
-  const handlePrintTicket = () => {
-    requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
 
   if (isLoading || (isEditMode && !initialData && !notFound)) {
@@ -316,93 +258,83 @@ export default function ServicioPage() {
   const pageDescription = isEditMode 
     ? `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`
     : "Completa los datos para crear un nuevo registro.";
-    
-  const ticketDialogFooter = (
-    <div className="flex w-full justify-end gap-2">
-      <TooltipProvider>
-        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyTicketAsImage(false)}><Copy className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
-        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareTicket}><Share2 className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
-        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrintTicket}><Printer className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
-      </TooltipProvider>
-    </div>
-  );
+
+  const activeServices = serviceHistory.filter(s => s.status === 'En Taller');
     
   return (
-    <>
-      <PageHeader 
-          title={pageTitle}
-          description={pageDescription}
-          actions={
-            <div className="flex items-center gap-2">
-              {isEditMode && initialData && (
-                 <>
-                    <Button variant="outline" onClick={() => setIsNotificationDialogOpen(true)} size="sm" title="Notificar al Cliente">
-                      <MessageSquare className="h-4 w-4"/>
-                    </Button>
-                    <Button variant="outline" onClick={() => handleShowTicketDialog(initialData)} size="sm" title="Imprimir Ticket">
-                      <Printer className="h-4 w-4"/>
-                    </Button>
-                    <Button onClick={() => handleShowShareDialog(initialData)} size="sm" title="Compartir Documento" className="bg-green-600 hover:bg-green-700 text-white">
-                      <Share2 className="h-4 w-4"/>
-                    </Button>
-                 </>
-              )}
-            </div>
-          }
-        />
+    <FormProvider {...methods}>
+      <div className="md:hidden">
+        <h1 className="text-lg font-semibold">{pageTitle}</h1>
+        <p className="text-sm text-muted-foreground">{pageDescription}</p>
+      </div>
+      <div className="hidden md:block">
+        <PageHeader 
+            title={pageTitle}
+            description={pageDescription}
+            actions={
+              <div className="flex items-center gap-2">
+                {isEditMode && initialData && (
+                   <>
+                      <Button variant="outline" onClick={() => setIsNotificationDialogOpen(true)} size="sm" title="Notificar al Cliente"><MessageSquare className="h-4 w-4"/></Button>
+                      <Button variant="outline" onClick={() => handleShowTicketDialog(initialData)} size="sm" title="Imprimir Ticket"><Printer className="h-4 w-4"/></Button>
+                      <Button onClick={() => handleShowShareDialog(initialData)} size="sm" title="Compartir Documento" className="bg-green-600 hover:bg-green-700 text-white"><Share2 className="h-4 w-4"/></Button>
+                   </>
+                )}
+              </div>
+            }
+          />
+        </div>
         <ServiceForm
             initialData={initialData}
             vehicles={vehicles}
-            users={users} // CORREGIDO: Se pasa la prop con el nombre 'users'
+            users={users}
             inventoryItems={inventoryItems}
             serviceTypes={serviceTypes}
             categories={categories}
             suppliers={suppliers}
             serviceHistory={serviceHistory}
-            onSave={isEditMode ? handleUpdateService : handleSaveService}
-            onSaveSuccess={handleShowShareDialog}
+            onSave={isEditMode ? handleSaveService : handleSaveService}
+            onSaveSuccess={handleShareDialogClose}
             onComplete={handleCompleteService}
             onVehicleCreated={handleVehicleCreated}
             onCancel={isQuote ? handleDeleteQuote : handleCancelService}
             mode={isQuote ? 'quote' : 'service'}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            isChecklistWizardOpen={isChecklistWizardOpen}
+            setIsChecklistWizardOpen={setIsChecklistWizardOpen}
         />
-
-       <NotificationDialog
-        isOpen={isNotificationDialogOpen}
-        onOpenChange={setIsNotificationDialogOpen}
-        service={initialData}
-        vehicle={vehicles.find(v => v.id === initialData?.vehicleId) || null}
+      
+      <ServiceMobileBar
+        onOpenServicesSheet={() => setIsServicesSheetOpen(true)}
+        onTakePhoto={() => setIsPhotoModalOpen(true)}
+        onStartChecklist={() => {
+          setActiveTab('safety-checklist');
+          setIsChecklistWizardOpen(true);
+        }}
+        onSave={() => document.getElementById('service-form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
+        isSubmitting={isSubmitting}
       />
 
+       <ActiveServicesSheet
+        open={isServicesSheetOpen}
+        onOpenChange={setIsServicesSheetOpen}
+        services={activeServices}
+        vehicles={vehicles}
+      />
+      
+      <PhotoReportModal open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen} />
+
+       <NotificationDialog isOpen={isNotificationDialogOpen} onOpenChange={setIsNotificationDialogOpen} service={initialData} vehicle={vehicles.find(v => v.id === initialData?.vehicleId) || null} />
        {recordForPreview && (
           <>
-            <ShareServiceDialog 
-              open={isShareDialogOpen} 
-              onOpenChange={handleShareDialogClose} 
-              service={recordForPreview}
-              vehicle={vehicles.find(v => v.id === recordForPreview.vehicleId)}
-            />
-            <UnifiedPreviewDialog
-              open={isTicketDialogOpen}
-              onOpenChange={setIsTicketDialogOpen}
-              title="Ticket de Servicio"
-              service={recordForPreview}
-              footerContent={ticketDialogFooter}
-            >
+            <ShareServiceDialog open={isShareDialogOpen} onOpenChange={handleShareDialogClose} service={recordForPreview} vehicle={vehicles.find(v => v.id === recordForPreview.vehicleId)} />
+            <UnifiedPreviewDialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen} title="Ticket de Servicio" service={recordForPreview} footerContent={<></>}>
               <TicketContent ref={ticketContentRef} service={recordForPreview} />
             </UnifiedPreviewDialog>
           </>
        )}
-       {initialData && (
-        <PaymentDetailsDialog
-          open={isPaymentDialogOpen}
-          onOpenChange={setIsPaymentDialogOpen}
-          record={initialData}
-          onConfirm={handleConfirmPayment}
-          recordType="service"
-          isCompletionFlow={true}
-        />
-      )}
-    </>
+       {initialData && ( <PaymentDetailsDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} record={initialData} onConfirm={handleConfirmPayment} recordType="service" isCompletionFlow={true} /> )}
+    </FormProvider>
   );
 }
