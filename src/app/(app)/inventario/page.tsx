@@ -27,6 +27,7 @@ import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { PurchaseFormValues } from '@/app/(app)/compras/components/register-purchase-dialog';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 // Lazy load dialogs that are not immediately visible
 const RegisterPurchaseDialog = lazy(() => import('../compras/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
@@ -99,6 +100,11 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
     }
     return items;
   }, [tableManager.fullFilteredData, tableManager.sortOption]);
+  
+  const handleSort = (key: string) => {
+    const isAsc = tableManager.sortOption === `${key}_asc`;
+    tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
+  };
 
 
   return (
@@ -116,12 +122,12 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
             <Table>
               <TableHeader className="bg-black text-white">
                 <TableRow>
-                    <TableHead className="text-white">Nombre</TableHead>
-                    <TableHead className="text-white hidden md:table-cell">Categoría</TableHead>
-                    <TableHead className="text-white hidden lg:table-cell">Proveedor</TableHead>
-                    <TableHead className="text-white">Tipo</TableHead>
-                    <TableHead className="text-right text-white">Stock</TableHead>
-                    <TableHead className="text-right text-white">Precio de Venta</TableHead>
+                    <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                    <SortableTableHeader sortKey="category" label="Categoría" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell text-white" />
+                    <SortableTableHeader sortKey="supplier" label="Proveedor" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden lg:table-cell text-white" />
+                    <SortableTableHeader sortKey="isService" label="Tipo" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                    <SortableTableHeader sortKey="quantity" label="Stock" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right text-white" />
+                    <SortableTableHeader sortKey="sellingPrice" label="Precio de Venta" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right text-white" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -172,6 +178,7 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
   const [editingCategory, setEditingCategory] = useState<InventoryCategory | null>(null);
   const [currentCategoryName, setCurrentCategoryName] = useState('');
   const { toast } = useToast();
+  const [sortOption, setSortOption] = useState('name_asc');
 
   const itemsPerCategory = useMemo(() => {
     return categories.reduce((acc, category) => {
@@ -179,6 +186,16 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
         return acc;
     }, {} as Record<string, number>);
   }, [categories, inventoryItems]);
+  
+  const sortedCategories = useMemo(() => {
+    return [...categories].sort((a, b) => {
+        const [key, direction] = sortOption.split('_');
+        const valA = key === 'items' ? itemsPerCategory[a.name] || 0 : a.name;
+        const valB = key === 'items' ? itemsPerCategory[b.name] || 0 : b.name;
+        const comparison = typeof valA === 'number' && typeof valB === 'number' ? valA - valB : String(valA).localeCompare(String(valB));
+        return direction === 'asc' ? comparison : -comparison;
+    });
+  }, [categories, itemsPerCategory, sortOption]);
 
   const handleOpenDialog = (category: InventoryCategory | null = null) => {
     setEditingCategory(category);
@@ -196,6 +213,11 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
     setIsCategoryDialogOpen(false);
   };
   
+  const handleSort = (key: string) => {
+    const isAsc = sortOption === `${key}_asc`;
+    setSortOption(`${key}_${isAsc ? 'desc' : 'asc'}`);
+  };
+  
   return (
     <div className="space-y-4">
         <div className="flex justify-end">
@@ -205,9 +227,15 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
             <CardContent className="pt-6">
                 <div className="rounded-md border">
                     <Table>
-                        <TableHeader><TableRow><TableHead>Nombre de Categoría</TableHead><TableHead className="text-right"># de Productos</TableHead><TableHead className="text-right w-[100px]">Acciones</TableHead></TableRow></TableHeader>
+                        <TableHeader>
+                            <TableRow>
+                                <SortableTableHeader sortKey="name" label="Nombre de Categoría" onSort={handleSort} currentSort={sortOption} />
+                                <SortableTableHeader sortKey="items" label="# de Productos" onSort={handleSort} currentSort={sortOption} className="text-right" />
+                                <TableHead className="text-right w-[100px]">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
                         <TableBody>
-                            {categories.map(cat => (
+                            {sortedCategories.map(cat => (
                                 <TableRow key={cat.id}>
                                     <TableCell className="font-medium">{cat.name}</TableCell>
                                     <TableCell className="text-right">{itemsPerCategory[cat.name] || 0}</TableCell>

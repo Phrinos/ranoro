@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from '@/hooks/use-toast';
 import type { User, AppRole } from "@/types";
 import { PlusCircle, Search, Users, Eye, EyeOff } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { adminService } from '@/lib/services/admin.service';
 import { UserDialog } from './user-dialog';
 import type { UserFormValues } from './user-form';
@@ -19,6 +19,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { useTableManager } from '@/hooks/useTableManager';
 import { Badge } from '@/components/ui/badge';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: User | null, initialUsers: User[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
@@ -95,6 +96,11 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     }
   };
 
+  const handleSort = (key: string) => {
+    const isAsc = tableManager.sortOption === `${key}_asc`;
+    tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
+  };
+
   return (
     <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -125,12 +131,12 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                   <div className="overflow-x-auto rounded-md border">
                   <Table>
                     <TableHeader className="bg-black">
-                      <TableRow>
-                          <TableHead className="text-white">Nombre</TableHead>
-                          <TableHead className="text-white">Rol</TableHead>
-                          <TableHead className="text-white">Fecha Contratación</TableHead>
-                          <TableHead className="text-white">Sueldo Base</TableHead>
-                          <TableHead className="text-white">% Comisión</TableHead>
+                      <TableRow data-table="nohover">
+                          <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                          <SortableTableHeader sortKey="role" label="Rol" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                          <SortableTableHeader sortKey="hireDate" label="Fecha Contratación" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                          <SortableTableHeader sortKey="monthlySalary" label="Sueldo Base" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                          <SortableTableHeader sortKey="commissionRate" label="% Comisión" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>

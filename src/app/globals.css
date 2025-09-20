@@ -49,12 +49,6 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 0 0% 18%;
     --sidebar-ring: 3 70% 45%;
-
-    /* Vars para react-day-picker */
-    --rdp-accent-color: hsl(var(--primary));
-    --rdp-accent-background: hsl(var(--primary));
-    --rdp-range_middle-background: hsl(var(--accent));
-    --rdp-range_middle-color: hsl(var(--foreground));
   }
   .dark {
     --background: 240 10% 3.9%;
@@ -97,12 +91,6 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 0 0% 18%;
     --sidebar-ring: 3 70% 50%;
-
-    /* Vars para react-day-picker */
-    --rdp-accent-color: hsl(var(--primary));
-    --rdp-accent-background: hsl(var(--primary));
-    --rdp-range_middle-background: hsl(var(--accent));
-    --rdp-range_middle-color: hsl(var(--foreground));
   }
 }
 
@@ -124,11 +112,6 @@
   .dark .rdp-day_selected:hover {
     background-color: hsl(var(--primary-foreground)) !important;
     color: hsl(var(--primary)) !important;
-  }
-
-  .rdp-day_range_middle[aria-selected="true"] {
-    background-color: var(--rdp-range_middle-background) !important;
-    color: var(--rdp-range_middle-color) !important;
   }
 }
 
@@ -246,6 +229,9 @@ input::-webkit-inner-spin-button {
 
 input[type=number] {
   -moz-appearance: textfield;
+.aria-selected\:bg-\[var\(--rdp-range_middle-background\)\][aria-selected="true"] {
+  background-color: var(--rdp-range-middle-background);
+}
 }
 
 /* For calendar event dots */
@@ -275,4 +261,8 @@ input[type=number] {
   height: 5px;
   border-radius: 50%;
   background-color: hsl(var(--primary-foreground));
+}
+
+[data-table="nohover"] thead tr:hover { 
+  background-color: transparent !important; 
 }

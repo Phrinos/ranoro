@@ -1,3 +1,4 @@
+
 // src/app/(app)/proveedores/components/cuentas-por-pagar-content.tsx
 "use client";
 
@@ -5,7 +6,7 @@ import React, { useMemo } from 'react';
 import type { PayableAccount } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
 import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
@@ -13,6 +14,7 @@ import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { FileText } from 'lucide-react';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 const sortOptions = [
     { value: 'dueDate_asc', label: 'Vencimiento (Próximos)' },
@@ -51,6 +53,11 @@ export function CuentasPorPagarContent({ accounts, onRegisterPayment }: CuentasP
           default: return 'secondary';
       }
   };
+  
+  const handleSort = (key: string) => {
+    const isAsc = tableManager.sortOption === `${key}_asc`;
+    tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
+  };
 
   return (
     <div className="space-y-4">
@@ -71,15 +78,15 @@ export function CuentasPorPagarContent({ accounts, onRegisterPayment }: CuentasP
             <Table>
               <TableHeader className="bg-black">
                 <TableRow>
-                  <TableHead className="text-white">Proveedor</TableHead>
-                  <TableHead className="text-white">Folio Factura</TableHead>
-                  <TableHead className="text-white">Fecha Factura</TableHead>
-                  <TableHead className="text-white">Vencimiento</TableHead>
-                  <TableHead className="text-right text-white">Total</TableHead>
-                  <TableHead className="text-right text-white">Pagado</TableHead>
-                  <TableHead className="text-right text-white">Saldo</TableHead>
-                  <TableHead className="text-center text-white">Estado</TableHead>
-                  <TableHead className="text-right text-white">Acciones</TableHead>
+                  <SortableTableHeader sortKey="supplierName" label="Proveedor" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                  <SortableTableHeader sortKey="invoiceId" label="Folio Factura" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                  <SortableTableHeader sortKey="invoiceDate" label="Fecha Factura" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                  <SortableTableHeader sortKey="dueDate" label="Vencimiento" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                  <SortableTableHeader sortKey="totalAmount" label="Total" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right text-white" />
+                  <SortableTableHeader sortKey="paidAmount" label="Pagado" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right text-white" />
+                  <SortableTableHeader sortKey="balance" label="Saldo" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right text-white" />
+                  <SortableTableHeader sortKey="status" label="Estado" onSort={handleSort} currentSort={tableManager.sortOption} className="text-center text-white" />
+                  <div className="text-right text-white">Acciones</div>
                 </TableRow>
               </TableHeader>
               <TableBody>

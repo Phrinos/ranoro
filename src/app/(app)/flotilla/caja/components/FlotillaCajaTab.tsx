@@ -1,10 +1,11 @@
+
 // src/app/(app)/flotilla/caja/components/FlotillaCajaTab.tsx
 "use client";
 
 import React, { useMemo, useState } from 'react';
 import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, ManualDebtEntry, PaymentMethod } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, cn, capitalizeWords } from '@/lib/utils';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Printer, Wallet, CreditCard, Landmark, TrendingDown as TrendingDownIcon, Wrench } from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 type CashBoxTransaction =
     | (RentalPayment & { transactionType: 'income' })
@@ -61,22 +63,13 @@ export function FlotillaCajaTab({
 }: FlotillaCajaTabProps) {
   const monthOptions = useMemo(() => generateMonthOptions(), []);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
+  const [sortOption, setSortOption] = useState('date_desc');
 
   const { transactions, summary } = useMemo(() => {
-    // Normaliza: todos con propiedad "date" para poder filtrar/ordenar/mostrar
-    const paymentsWithDate = payments
-      .filter(p => p.paymentDate)
-      .map(p => ({ ...p, date: p.paymentDate })) as Array<RentalPayment & { date: string }>;
+    const paymentsWithDate = payments.filter(p => p.paymentDate).map(p => ({ ...p, date: p.paymentDate })) as Array<RentalPayment & { date: string }>;
+    const withdrawalsWithDate = withdrawals.filter(w => w.date).map(w => ({ ...w, date: w.date })) as Array<OwnerWithdrawal & { date: string }>;
+    const expensesWithDate = expenses.filter(e => e.date).map(e => ({ ...e, date: e.date })) as Array<VehicleExpense & { date: string }>;
   
-    const withdrawalsWithDate = withdrawals
-      .filter(w => w.date)
-      .map(w => ({ ...w, date: w.date })) as Array<OwnerWithdrawal & { date: string }>;
-  
-    const expensesWithDate = expenses
-      .filter(e => e.date)
-      .map(e => ({ ...e, date: e.date })) as Array<VehicleExpense & { date: string }>;
-  
-    // Filtro por mes (o todos)
     const filterByMonth = <T extends { date: string }>(items: T[]): T[] => {
       if (selectedMonth === 'all') return items;
       const [year, month] = selectedMonth.split('-').map(Number);
@@ -92,42 +85,31 @@ export function FlotillaCajaTab({
     const monthlyWithdrawals = filterByMonth(withdrawalsWithDate);
     const monthlyExpenses = filterByMonth(expensesWithDate);
   
-    // Arma transacciones con su tipo
     const allTransactions: CashBoxTransaction[] = [
       ...monthlyPayments.map(p => ({ ...p, transactionType: 'income' as const })),
       ...monthlyWithdrawals.map(w => ({ ...w, transactionType: 'withdrawal' as const })),
       ...monthlyExpenses.map(e => ({ ...e, transactionType: 'expense' as const })),
     ];
   
-    // Orden descendente por fecha
-    allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const [key, direction] = sortOption.split('_');
+    allTransactions.sort((a, b) => {
+        const valA = a[key as keyof CashBoxTransaction] || '';
+        const valB = b[key as keyof CashBoxTransaction] || '';
+        const comparison = String(valA).localeCompare(String(valB), 'es', { numeric: true });
+        return direction === 'asc' ? comparison : -comparison;
+    });
   
-    // Totales
-    const totalCash = monthlyPayments
-      .filter(p => p.paymentMethod === 'Efectivo')
-      .reduce((sum, p) => sum + p.amount, 0);
-  
-    const totalTransfers = monthlyPayments
-      .filter(p => p.paymentMethod === 'Transferencia')
-      .reduce((sum, p) => sum + p.amount, 0);
-  
+    const totalCash = monthlyPayments.filter(p => p.paymentMethod === 'Efectivo').reduce((sum, p) => sum + p.amount, 0);
+    const totalTransfers = monthlyPayments.filter(p => p.paymentMethod === 'Transferencia').reduce((sum, p) => sum + p.amount, 0);
     const totalWithdrawals = monthlyWithdrawals.reduce((sum, w) => sum + w.amount, 0);
     const totalExpenses = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
-  
     const cashBalance = totalCash - totalWithdrawals - totalExpenses;
   
     return {
       transactions: allTransactions,
-      summary: {
-        totalBalance: cashBalance,
-        totalWithdrawals,
-        totalExpenses,
-        totalCash,
-        totalTransfers,
-        totalIncome: totalCash + totalTransfers
-      },
+      summary: { totalBalance: cashBalance, totalWithdrawals, totalExpenses, totalCash, totalTransfers, totalIncome: totalCash + totalTransfers },
     };
-  }, [payments, withdrawals, expenses, selectedMonth]);
+  }, [payments, withdrawals, expenses, selectedMonth, sortOption]);
 
   const currentCashBalance = useMemo(() => {
       const totalCashIncome = payments.filter(p => p.paymentMethod === 'Efectivo' && p.paymentDate).reduce((sum, p) => sum + p.amount, 0);
@@ -147,41 +129,27 @@ export function FlotillaCajaTab({
         return { variant: 'secondary', label: 'Gasto', description: `${t.description} (${t.vehicleLicensePlate})`, methodIcon: null, methodName: 'N/A' };
     }
   };
+  
+  const handleSort = (key: string) => {
+    const isAsc = sortOption === `${key}_asc`;
+    setSortOption(`${key}_${isAsc ? 'desc' : 'asc'}`);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-end gap-2 flex-wrap">
         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-full sm:w-auto bg-card">
-            <SelectValue placeholder="Seleccionar mes..." />
-          </SelectTrigger>
-          <SelectContent>
-            {monthOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-            ))}
-          </SelectContent>
+          <SelectTrigger className="w-full sm:w-auto bg-card"><SelectValue placeholder="Seleccionar mes..." /></SelectTrigger>
+          <SelectContent>{monthOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent>
         </Select>
-        <Button onClick={onAddWithdrawal} variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50">
-          <TrendingDownIcon className="mr-2 h-4 w-4 text-red-500" /> Retiro
-        </Button>
-        <Button onClick={onAddExpense} variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50">
-          <Wrench className="mr-2 h-4 w-4 text-red-500" /> Gasto
-        </Button>
+        <Button onClick={onAddWithdrawal} variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50"><TrendingDownIcon className="mr-2 h-4 w-4 text-red-500" /> Retiro</Button>
+        <Button onClick={onAddExpense} variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50"><Wrench className="mr-2 h-4 w-4 text-red-500" /> Gasto</Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="shadow-lg">
-              <CardHeader><CardTitle>Total de Ingresos (Mensual)</CardTitle><CardDescription>Suma de todos los ingresos del mes seleccionado.</CardDescription></CardHeader>
-              <CardContent><div className="text-4xl font-bold text-center text-black">{formatCurrency(summary.totalIncome)}</div></CardContent>
-          </Card>
-          <Card className="shadow-lg">
-              <CardHeader><CardTitle>Balance de Caja (Mensual)</CardTitle><CardDescription>Balance de efectivo del mes seleccionado.</CardDescription></CardHeader>
-              <CardContent><div className={cn("text-4xl font-bold text-center", summary.totalBalance >= 0 ? 'text-green-600' : 'text-destructive')}>{formatCurrency(summary.totalBalance)}</div></CardContent>
-          </Card>
-          <Card className="shadow-lg">
-              <CardHeader><CardTitle>Balance de Caja (Actual)</CardTitle><CardDescription>Dinero total disponible en caja.</CardDescription></CardHeader>
-              <CardContent><div className={cn("text-4xl font-bold text-center", currentCashBalance >= 0 ? 'text-blue-600' : 'text-destructive')}>{formatCurrency(currentCashBalance)}</div></CardContent>
-          </Card>
+          <Card className="shadow-lg"><CardHeader><CardTitle>Total de Ingresos (Mensual)</CardTitle><CardDescription>Suma de todos los ingresos del mes seleccionado.</CardDescription></CardHeader><CardContent><div className="text-4xl font-bold text-center text-black">{formatCurrency(summary.totalIncome)}</div></CardContent></Card>
+          <Card className="shadow-lg"><CardHeader><CardTitle>Balance de Caja (Mensual)</CardTitle><CardDescription>Balance de efectivo del mes seleccionado.</CardDescription></CardHeader><CardContent><div className={cn("text-4xl font-bold text-center", summary.totalBalance >= 0 ? 'text-green-600' : 'text-destructive')}>{formatCurrency(summary.totalBalance)}</div></CardContent></Card>
+          <Card className="shadow-lg"><CardHeader><CardTitle>Balance de Caja (Actual)</CardTitle><CardDescription>Dinero total disponible en caja.</CardDescription></CardHeader><CardContent><div className={cn("text-4xl font-bold text-center", currentCashBalance >= 0 ? 'text-blue-600' : 'text-destructive')}>{formatCurrency(currentCashBalance)}</div></CardContent></Card>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -197,13 +165,12 @@ export function FlotillaCajaTab({
             <Table>
               <TableHeader className="bg-black">
                 <TableRow>
-                  <TableHead className="text-white font-bold">Fecha</TableHead>
-                  <TableHead className="text-white font-bold md:hidden">Detalles</TableHead>
-                  <TableHead className="text-white font-bold hidden md:table-cell">Tipo</TableHead>
-                  <TableHead className="text-white font-bold hidden md:table-cell">Descripción</TableHead>
-                  <TableHead className="text-center text-white font-bold hidden md:table-cell">Método</TableHead>
-                  <TableHead className="text-right text-white font-bold">Monto</TableHead>
-                  <TableHead className="text-right text-white font-bold">Acciones</TableHead>
+                  <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+                  <SortableTableHeader sortKey="transactionType" label="Tipo" onSort={handleSort} currentSort={sortOption} className="hidden md:table-cell" textClassName="text-white" />
+                  <SortableTableHeader sortKey="description" label="Descripción" onSort={handleSort} currentSort={sortOption} className="hidden md:table-cell" textClassName="text-white" />
+                  <SortableTableHeader sortKey="paymentMethod" label="Método" onSort={handleSort} currentSort={sortOption} className="text-center hidden md:table-cell" textClassName="text-white" />
+                  <SortableTableHeader sortKey="amount" label="Monto" onSort={handleSort} currentSort={sortOption} className="text-right" textClassName="text-white" />
+                  <div className="text-right text-white font-bold">Acciones</div>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -213,36 +180,12 @@ export function FlotillaCajaTab({
                     return (
                       <TableRow key={`${t.transactionType}-${t.id}`}>
                         <TableCell className="w-24">{format(parseISO(t.date), "dd MMM, HH:mm", { locale: es })}</TableCell>
-                        
-                        {/* Vista Móvil */}
-                        <TableCell className="md:hidden">
-                            <div className="flex flex-col">
-                                <Badge variant={details.variant as any} className="w-min">{details.label}</Badge>
-                                <span className="text-xs text-muted-foreground mt-1">{details.description}</span>
-                            </div>
-                        </TableCell>
-
-                        {/* Vista Desktop */}
+                        <TableCell className="md:hidden"><div className="flex flex-col"><Badge variant={details.variant as any} className="w-min">{details.label}</Badge><span className="text-xs text-muted-foreground mt-1">{details.description}</span></div></TableCell>
                         <TableCell className="hidden md:table-cell"><Badge variant={details.variant as any}>{details.label}</Badge></TableCell>
                         <TableCell className="hidden md:table-cell">{details.description}</TableCell>
-                         <TableCell className="text-center hidden md:table-cell">
-                          {details.methodName !== 'N/A' && (
-                              <TooltipProvider>
-                                  <Tooltip>
-                                      <TooltipTrigger><div className="flex items-center justify-center">{details.methodIcon}</div></TooltipTrigger>
-                                      <TooltipContent><p>{details.methodName}</p></TooltipContent>
-                                  </Tooltip>
-                              </TooltipProvider>
-                          )}
-                         </TableCell>
+                        <TableCell className="text-center hidden md:table-cell">{details.methodName !== 'N/A' && (<TooltipProvider><Tooltip><TooltipTrigger><div className="flex items-center justify-center">{details.methodIcon}</div></TooltipTrigger><TooltipContent><p>{details.methodName}</p></TooltipContent></Tooltip></TooltipProvider>)}</TableCell>
                         <TableCell className={cn("text-right font-semibold", details.variant === 'success' ? 'text-green-600' : details.variant === 'info' ? 'text-blue-600' : 'text-destructive')}>{details.variant !== 'destructive' && details.variant !== 'secondary' ? '+' : '-'} {formatCurrency(t.amount)}</TableCell>
-                        <TableCell className="text-right">
-                          {t.transactionType === 'income' && (
-                              <Button variant="ghost" size="icon" onClick={() => handleShowTicket(t as RentalPayment)}>
-                                  <Printer className="h-4 w-4"/>
-                              </Button>
-                          )}
-                        </TableCell>
+                        <TableCell className="text-right">{t.transactionType === 'income' && (<Button variant="ghost" size="icon" onClick={() => handleShowTicket(t as RentalPayment)}><Printer className="h-4 w-4"/></Button>)}</TableCell>
                       </TableRow>
                     );
                   })

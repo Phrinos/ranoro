@@ -11,18 +11,18 @@ import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Button } from '@/components/ui/button';
 
 // Lazy loading components for each tab
-const ComprasContent = React.lazy(() => import('./components/compras-content'));
-const ProveedoresContent = React.lazy(() => import('./components/proveedores-content'));
-const CuentasPorPagarContent = React.lazy(() => import('./components/cuentas-por-pagar-content'));
+const ComprasContent = React.lazy(() => import('./compras-content'));
+const ProveedoresContent = React.lazy(() => import('./proveedores-content'));
+const CuentasPorPagarContent = React.lazy(() => import('./cuentas-por-pagar-content'));
 
 // Dialogs
-const RegisterPurchaseDialog = React.lazy(() => import('../inventario/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
-const PayableAccountDialog = React.lazy(() => import('./components/payable-account-dialog').then(module => ({ default: module.PayableAccountDialog })));
-const SupplierDialog = React.lazy(() => import('./components/supplier-dialog').then(module => ({ default: module.SupplierDialog })));
+const RegisterPurchaseDialog = React.lazy(() => import('./register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
+const PayableAccountDialog = React.lazy(() => import('./payable-account-dialog').then(module => ({ default: module.PayableAccountDialog })));
+const SupplierDialog = React.lazy(() => import('./supplier-dialog').then(module => ({ default: module.SupplierDialog })));
 
 import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
+import type { PurchaseFormValues } from '@/app/(app)/compras/components/register-purchase-dialog';
 
 export default function ComprasUnificadasPage() {
   const { toast } = useToast();

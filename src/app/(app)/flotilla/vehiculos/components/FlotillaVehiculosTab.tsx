@@ -1,15 +1,17 @@
+
 // src/app/(app)/flotilla/vehiculos/components/FlotillaVehiculosTab.tsx
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, ChevronRight } from 'lucide-react';
 import type { Vehicle } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 interface FlotillaVehiculosTabProps {
   vehicles: Vehicle[];
@@ -18,14 +20,26 @@ interface FlotillaVehiculosTabProps {
 export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const [sortOption, setSortOption] = useState('licensePlate_asc');
 
   const sortedVehicles = useMemo(() => {
     return [...vehicles].sort((a, b) => {
-      const plateComparison = a.licensePlate.localeCompare(b.licensePlate);
-      if (plateComparison !== 0) return plateComparison;
-      return `${a.make} ${a.model}`.localeCompare(`${b.make} ${b.model}`);
+      const [key, direction] = sortOption.split('_');
+      
+      if (key === 'make') {
+          const valA = `${a.make} ${a.model}`;
+          const valB = `${b.make} ${b.model}`;
+          const comparison = valA.localeCompare(valB, 'es', { numeric: true });
+          return direction === 'asc' ? comparison : -comparison;
+      }
+
+      const valA = a[key as keyof Vehicle] || '';
+      const valB = b[key as keyof Vehicle] || '';
+
+      const comparison = String(valA).localeCompare(String(valB), 'es', { numeric: true });
+      return direction === 'asc' ? comparison : -comparison;
     });
-  }, [vehicles]);
+  }, [vehicles, sortOption]);
 
   const handleAddVehicle = () => {
     toast({ title: "Función en desarrollo", description: "Pronto podrás añadir vehículos a tu flotilla desde aquí." });
@@ -33,6 +47,11 @@ export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
 
   const handleRowClick = (vehicleId: string) => {
     router.push(`/flotilla/vehiculos/${vehicleId}`);
+  };
+
+  const handleSort = (key: string) => {
+    const isAsc = sortOption === `${key}_asc`;
+    setSortOption(`${key}_${isAsc ? 'desc' : 'asc'}`);
   };
 
   return (
@@ -49,12 +68,12 @@ export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
               <Table>
                 <TableHeader className="bg-black">
                   <TableRow>
-                    <TableHead className="text-white font-bold">Placa</TableHead>
-                    <TableHead className="text-white font-bold hidden sm:table-cell">Marca y Modelo</TableHead>
-                    <TableHead className="text-white font-bold hidden lg:table-cell">Año</TableHead>
-                    <TableHead className="text-white font-bold">Estado</TableHead>
-                    <TableHead className="text-white font-bold hidden md:table-cell">Conductor</TableHead>
-                    <TableHead className="w-10 text-white font-bold"></TableHead>
+                    <SortableTableHeader sortKey="licensePlate" label="Placa" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+                    <SortableTableHeader sortKey="make" label="Marca y Modelo" onSort={handleSort} currentSort={sortOption} className="hidden sm:table-cell" textClassName="text-white" />
+                    <SortableTableHeader sortKey="year" label="Año" onSort={handleSort} currentSort={sortOption} className="hidden lg:table-cell" textClassName="text-white" />
+                    <SortableTableHeader sortKey="assignedDriverId" label="Estado" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+                    <SortableTableHeader sortKey="assignedDriverName" label="Conductor" onSort={handleSort} currentSort={sortOption} className="hidden md:table-cell" textClassName="text-white" />
+                    <div className="w-10"></div>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

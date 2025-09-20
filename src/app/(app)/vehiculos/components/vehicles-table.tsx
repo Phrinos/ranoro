@@ -3,38 +3,23 @@
 import React, { useState, useMemo } from 'react';
 import type { Vehicle } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, PlusCircle, ArrowUpDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import { VehicleDialog } from './vehicle-dialog';
 import type { VehicleFormValues } from './vehicle-form';
-import { format, isValid, parseISO } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
-import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
   onSave: (data: VehicleFormValues, id?: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
-
-const sortOptions = [
-  { value: 'make_asc', label: 'Marca (A-Z)' },
-  { value: 'make_desc', label: 'Marca (Z-A)' },
-  { value: 'model_asc', label: 'Modelo (A-Z)' },
-  { value: 'model_desc', label: 'Modelo (Z-A)' },
-  { value: 'year_desc', label: 'Año (Más Reciente)' },
-  { value: 'year_asc', label: 'Año (Más Antiguo)' },
-  { value: 'licensePlate_asc', label: 'Placa (A-Z)' },
-  { value: 'licensePlate_desc', label: 'Placa (Z-A)' },
-  { value: 'ownerName_asc', label: 'Propietario (A-Z)' },
-  { value: 'ownerName_desc', label: 'Propietario (Z-A)' },
-  { value: 'lastServiceDate_desc', label: 'Último Servicio (Más Reciente)' },
-  { value: 'lastServiceDate_asc', label: 'Último Servicio (Más Antiguo)' },
-];
 
 export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps) {
   const router = useRouter();
@@ -58,24 +43,11 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
     await onSave(data, editingVehicle?.id);
     setIsDialogOpen(false);
   };
-
-  const SortableHeader = ({ sortKey, label, className }: { sortKey: keyof Vehicle, label: string, className?: string }) => {
-    const isSorted = tableManager.sortOption.startsWith(sortKey);
-    const direction = tableManager.sortOption.endsWith('_asc') ? 'asc' : 'desc';
-
-    const handleSort = () => {
-      const newDirection = isSorted && direction === 'asc' ? 'desc' : 'asc';
-      tableManager.onSortOptionChange(`${sortKey}_${newDirection}`);
-    };
-
-    return (
-      <TableHead className={cn("text-white font-bold cursor-pointer hover:bg-gray-700", className)} onClick={handleSort}>
-        <div className="flex items-center">
-            {label}
-            <ArrowUpDown className={`ml-2 h-4 w-4 ${isSorted ? 'text-white' : 'text-gray-400'}`} />
-        </div>
-      </TableHead>
-    );
+  
+  const handleSort = (key: string) => {
+      const isSorted = tableManager.sortOption.startsWith(key);
+      const direction = tableManager.sortOption.endsWith('_asc') ? 'desc' : 'asc';
+      tableManager.onSortOptionChange(`${key}_${isSorted ? direction : 'desc'}`);
   };
 
   return (
@@ -95,12 +67,12 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
         <Table>
           <TableHeader className="bg-black">
             <TableRow>
-              <SortableHeader sortKey="make" label="Marca" className="hidden sm:table-cell" />
-              <SortableHeader sortKey="model" label="Modelo" />
-              <SortableHeader sortKey="year" label="Año" />
-              <SortableHeader sortKey="licensePlate" label="Placa" />
-              <SortableHeader sortKey="ownerName" label="Propietario" className="hidden sm:table-cell" />
-              <SortableHeader sortKey="lastServiceDate" label="Último Servicio" />
+              <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden sm:table-cell text-white" />
+              <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={tableManager.sortOption} className="text-white" />
+              <SortableTableHeader sortKey="year" label="Año" onSort={handleSort} currentSort={tableManager.sortOption} className="text-white" />
+              <SortableTableHeader sortKey="licensePlate" label="Placa" onSort={handleSort} currentSort={tableManager.sortOption} className="text-white" />
+              <SortableTableHeader sortKey="ownerName" label="Propietario" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden sm:table-cell text-white" />
+              <SortableTableHeader sortKey="lastServiceDate" label="Último Servicio" onSort={handleSort} currentSort={tableManager.sortOption} className="text-white" />
             </TableRow>
           </TableHeader>
           <TableBody>

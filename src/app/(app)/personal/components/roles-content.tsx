@@ -14,10 +14,11 @@ import * as z from 'zod';
 import type { AppRole, User } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, Shield } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { adminService } from '@/lib/services';
 import { PERMISSION_GROUPS } from '@/lib/permissions';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 const roleFormSchema = z.object({
   name: z.string().min(2, "El nombre del rol debe tener al menos 2 caracteres."),
@@ -32,6 +33,7 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const formCardRef = useRef<HTMLDivElement>(null);
+    const [sortOption, setSortOption] = useState('name_asc');
     
     const form = useForm<RoleFormValues>({ 
       resolver: zodResolver(roleFormSchema), 
@@ -44,7 +46,17 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
         }
     }, [isFormOpen]);
     
-    const filteredRoles = useMemo(() => roles.filter(role => role.name.toLowerCase().includes(searchTerm.toLowerCase())), [roles, searchTerm]);
+    const filteredRoles = useMemo(() => {
+        const [key, direction] = sortOption.split('_');
+        return roles
+            .filter(role => role.name.toLowerCase().includes(searchTerm.toLowerCase()))
+            .sort((a, b) => {
+                const valA = a[key as keyof AppRole] || '';
+                const valB = b[key as keyof AppRole] || '';
+                const comparison = String(valA).localeCompare(String(valB), 'es', { numeric: true });
+                return direction === 'asc' ? comparison : -comparison;
+            });
+    }, [roles, searchTerm, sortOption]);
     
     const handleOpenForm = useCallback((roleToEdit?: AppRole) => {
         if (roleToEdit) {
@@ -82,6 +94,11 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
         }
     };
 
+    const handleSort = (key: string) => {
+        const isAsc = sortOption === `${key}_asc`;
+        setSortOption(`${key}_${isAsc ? 'desc' : 'asc'}`);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
@@ -110,9 +127,9 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
                             <Table>
                                 <TableHeader className="bg-black">
                                     <TableRow>
-                                        <TableHead className="text-white">Nombre del Rol</TableHead>
-                                        <TableHead className="text-white">Permisos</TableHead>
-                                        <TableHead className="text-right text-white">Acciones</TableHead>
+                                        <SortableTableHeader sortKey="name" label="Nombre del Rol" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+                                        <SortableTableHeader sortKey="permissions" label="Permisos" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+                                        <div className="text-right text-white">Acciones</div>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

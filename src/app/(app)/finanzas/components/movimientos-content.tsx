@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 "use client";
 
@@ -7,7 +8,7 @@ import type { DateRange } from "react-day-picker";
 import type { SaleReceipt, ServiceRecord, InventoryItem, Payment, CashDrawerTransaction } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
@@ -20,6 +21,7 @@ import { calculateSaleProfit } from '@/lib/placeholder-data';
 import { parseDate } from '@/lib/forms';
 import { calcEffectiveProfit } from "@/lib/money-helpers";
 import { cashService } from '@/lib/services/cash.service';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 
 // --- Tipos para la pestaña Movimientos ---
@@ -160,6 +162,10 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
     // No action for 'Entrada' or 'Salida'
   };
   
+  const handleSort = (key: string) => {
+    const isAsc = tableManager.sortOption === `${key}_asc`;
+    tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -193,12 +199,12 @@ function MovimientosTabContent({ allSales, allServices, allInventory, dateRange,
                 <div className="overflow-x-auto rounded-md border">
                     <Table>
                         <TableHeader><TableRow>
-                          <TableHead>Fecha</TableHead>
-                          <TableHead>Tipo</TableHead>
-                          <TableHead>Folio/Ref.</TableHead>
-                          <TableHead>Cliente/Usuario</TableHead>
-                          <TableHead>Descripción</TableHead>
-                          <TableHead className="text-right">Monto</TableHead>
+                          <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={tableManager.sortOption} />
+                          <SortableTableHeader sortKey="type" label="Tipo" onSort={handleSort} currentSort={tableManager.sortOption} />
+                          <SortableTableHeader sortKey="folio" label="Folio/Ref." onSort={handleSort} currentSort={tableManager.sortOption} />
+                          <SortableTableHeader sortKey="client" label="Cliente/Usuario" onSort={handleSort} currentSort={tableManager.sortOption} />
+                          <SortableTableHeader sortKey="description" label="Descripción" onSort={handleSort} currentSort={tableManager.sortOption} />
+                          <SortableTableHeader sortKey="total" label="Monto" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right" />
                         </TableRow></TableHeader>
                         <TableBody>
                             {paginatedData.length > 0 ? (

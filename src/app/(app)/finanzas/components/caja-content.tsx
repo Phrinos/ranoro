@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/caja-content.tsx
 "use client";
 
@@ -6,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import type { DateRange } from "react-day-picker";
 import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment, WorkshopInfo, Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
@@ -29,6 +30,7 @@ import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog
 import { TicketContent } from '@/components/ticket-content';
 import ReactDOMServer from 'react-dom/server';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 const cashTransactionSchema = z.object({
   description: z.string().min(3, "La descripción debe tener al menos 3 caracteres."),
@@ -55,6 +57,7 @@ export default function CajaContent() {
   const [cashTransactions, setCashTransactions] = useState<CashDrawerTransaction[]>([]);
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+  const [sortOption, setSortOption] = useState('date_desc');
 
   useEffect(() => {
     setIsLoading(true);
@@ -80,6 +83,8 @@ export default function CajaContent() {
   });
 
   const mergedCashMovements = useMemo(() => {
+    const [key, direction] = sortOption.split('_');
+    
     return cashTransactions
       .map(t => ({
           ...t,
@@ -87,8 +92,13 @@ export default function CajaContent() {
           fullDescription: t.fullDescription || t.description,
           description: t.description || t.concept,
       }))
-      .sort((a,b) => (parseDate(b.date)?.getTime() ?? 0) - (parseDate(a.date)?.getTime() ?? 0));
-  }, [cashTransactions]);
+      .sort((a,b) => {
+          const valA = a[key as keyof EnhancedCashDrawerTransaction] || '';
+          const valB = b[key as keyof EnhancedCashDrawerTransaction] || '';
+          const comparison = String(valA).localeCompare(String(valB), 'es', { numeric: true });
+          return direction === 'asc' ? comparison : -comparison;
+      });
+  }, [cashTransactions, sortOption]);
 
 
   const periodData = useMemo(() => {
@@ -171,6 +181,11 @@ export default function CajaContent() {
             break;
     }
   };
+  
+  const handleSort = (key: string) => {
+    const isAsc = sortOption === `${key}_asc`;
+    setSortOption(`${key}_${isAsc ? 'desc' : 'asc'}`);
+  };
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -223,13 +238,13 @@ export default function CajaContent() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Hora</TableHead>
-                                <TableHead>Tipo</TableHead>
-                                <TableHead>Origen</TableHead>
-                                <TableHead>ID Movimiento/Folio</TableHead>
-                                <TableHead>Descripción</TableHead>
-                                <TableHead>Usuario</TableHead>
-                                <TableHead className="text-right">Monto</TableHead>
+                                <SortableTableHeader sortKey="date" label="Hora" onSort={handleSort} currentSort={sortOption} />
+                                <SortableTableHeader sortKey="type" label="Tipo" onSort={handleSort} currentSort={sortOption} />
+                                <SortableTableHeader sortKey="relatedType" label="Origen" onSort={handleSort} currentSort={sortOption} />
+                                <SortableTableHeader sortKey="relatedId" label="ID Movimiento/Folio" onSort={handleSort} currentSort={sortOption} />
+                                <SortableTableHeader sortKey="description" label="Descripción" onSort={handleSort} currentSort={sortOption} />
+                                <SortableTableHeader sortKey="userName" label="Usuario" onSort={handleSort} currentSort={sortOption} />
+                                <SortableTableHeader sortKey="amount" label="Monto" onSort={handleSort} currentSort={sortOption} className="text-right" />
                             </TableRow>
                         </TableHeader>
                         <TableBody>

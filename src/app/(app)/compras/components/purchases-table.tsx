@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,7 +8,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 
 // Definimos la estructura de un documento de compra
 interface Purchase {
@@ -28,6 +29,7 @@ interface Purchase {
 export function PurchasesTable() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sortOption, setSortOption] = useState('date_desc');
 
   useEffect(() => {
     // Creamos una consulta a la colección 'purchases', ordenando por fecha descendente
@@ -52,6 +54,11 @@ export function PurchasesTable() {
     // Devolvemos la función de limpieza para cancelar el listener cuando el componente se desmonte
     return () => unsubscribe();
   }, []);
+  
+  const handleSort = (key: string) => {
+    const isAsc = sortOption === `${key}_asc`;
+    setSortOption(`${key}_${isAsc ? 'desc' : 'asc'}`);
+  };
 
   if (isLoading) {
     return (
@@ -59,10 +66,10 @@ export function PurchasesTable() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Proveedor</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Monto Total</TableHead>
+              <SortableTableHeader sortKey="supplierName" label="Proveedor" onSort={handleSort} currentSort={sortOption} />
+              <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={sortOption} />
+              <SortableTableHeader sortKey="status" label="Estado" onSort={handleSort} currentSort={sortOption} />
+              <SortableTableHeader sortKey="totalAmount" label="Monto Total" onSort={handleSort} currentSort={sortOption} className="text-right" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -86,10 +93,10 @@ export function PurchasesTable() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Proveedor</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead className="text-right">Monto Total</TableHead>
+            <SortableTableHeader sortKey="supplierName" label="Proveedor" onSort={handleSort} currentSort={sortOption} />
+            <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={sortOption} />
+            <SortableTableHeader sortKey="status" label="Estado" onSort={handleSort} currentSort={sortOption} />
+            <SortableTableHeader sortKey="totalAmount" label="Monto Total" onSort={handleSort} currentSort={sortOption} className="text-right" />
           </TableRow>
         </TableHeader>
         <TableBody>

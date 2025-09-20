@@ -1,18 +1,20 @@
+
 // src/app/(app)/flotilla/conductores/components/FlotillaConductoresTab.tsx
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, ChevronRight, Wrench } from 'lucide-react';
 import type { Driver } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { rentalService } from '@/lib/services';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 interface FlotillaConductoresTabProps {
   drivers: Driver[];
@@ -22,26 +24,35 @@ interface FlotillaConductoresTabProps {
 export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConductoresTabProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const [sortOption, setSortOption] = useState('name_asc');
 
   const sortedDrivers = useMemo(() => {
     return [...drivers].sort((a, b) => {
-      if (a.isArchived && !b.isArchived) return 1;
-      if (!a.isArchived && b.isArchived) return -1;
-      return a.name.localeCompare(b.name);
+        const [key, direction] = sortOption.split('_');
+        
+        if (key === 'isArchived') {
+            const valA = a.isArchived;
+            const valB = b.isArchived;
+            if (valA === valB) return a.name.localeCompare(b.name);
+            const comparison = valA > valB ? 1 : -1;
+            return direction === 'asc' ? comparison : -comparison;
+        }
+
+        const valA = a[key as keyof Driver] || '';
+        const valB = b[key as keyof Driver] || '';
+
+        const comparison = String(valA).localeCompare(String(valB), 'es', { numeric: true });
+        return direction === 'asc' ? comparison : -comparison;
     });
-  }, [drivers]);
+  }, [drivers, sortOption]);
 
   const handleRowClick = (driverId: string) => {
     router.push(`/flotilla/conductores/${driverId}`);
   };
-
-  const handleRegenerate = async () => {
-    try {
-      // const count = await rentalService.regenerateAllChargesForAllDrivers();
-      toast({ title: "Proceso Completado", description: `Se han generado X cargos de renta diaria.` });
-    } catch (error) {
-      toast({ title: "Error", description: "No se pudieron regenerar los cargos.", variant: "destructive" });
-    }
+  
+  const handleSort = (key: string) => {
+      const isAsc = sortOption === `${key}_asc`;
+      setSortOption(`${key}_${isAsc ? 'desc' : 'asc'}`);
   };
 
   return (
@@ -58,11 +69,11 @@ export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConduct
             <Table>
               <TableHeader className="bg-black">
                 <TableRow>
-                  <TableHead className="text-white font-bold">Estado</TableHead>
-                  <TableHead className="text-white font-bold">Nombre</TableHead>
-                  <TableHead className="text-white font-bold hidden sm:table-cell">Teléfono</TableHead>
-                  <TableHead className="text-white font-bold">Vehículo Asignado</TableHead>
-                  <TableHead className="w-10 text-white font-bold"></TableHead>
+                  <SortableTableHeader sortKey="isArchived" label="Estado" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+                  <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+                  <SortableTableHeader sortKey="phone" label="Teléfono" onSort={handleSort} currentSort={sortOption} className="hidden sm:table-cell" textClassName="text-white" />
+                  <SortableTableHeader sortKey="assignedVehicleLicensePlate" label="Vehículo Asignado" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+                  <div className="w-10"></div>
                 </TableRow>
               </TableHeader>
               <TableBody>
