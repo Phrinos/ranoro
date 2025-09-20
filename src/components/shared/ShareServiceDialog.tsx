@@ -1,8 +1,7 @@
-
 // src/components/shared/ShareServiceDialog.tsx
 "use client";
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ServiceRecord, Vehicle } from '@/types';
@@ -12,10 +11,12 @@ import { ServiceSheetContent } from '../ServiceSheetContent';
 import { Separator } from '../ui/separator';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TicketContent } from '../ticket-content';
 
 interface ShareServiceDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
   vehicle?: Vehicle | null;
 }
@@ -24,6 +25,9 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
   const { toast } = useToast();
   const publicUrl = `${window.location.origin}/s/${service.publicId || service.id}`;
   const serviceSheetRef = useRef<HTMLDivElement>(null);
+  const ticketRef = useRef<HTMLDivElement>(null);
+  const [previewType, setPreviewType] = useState<'sheet' | 'ticket'>('sheet');
+
 
   const handleCopyToClipboard = async (text: string, type: 'link' | 'text') => {
     try {
@@ -43,12 +47,13 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
   };
 
   const handleCopyImageToClipboard = useCallback(async () => {
-    if (!serviceSheetRef.current) {
+    // This function will now always target the ticketRef
+    if (!ticketRef.current) {
         toast({ title: "Error", description: "No se puede generar la imagen del ticket.", variant: "destructive" });
         return;
     }
     try {
-        const canvas = await html2canvas(serviceSheetRef.current, { scale: 2 });
+        const canvas = await html2canvas(ticketRef.current, { scale: 2.5, backgroundColor: 'white', useCORS: true });
         const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
         if (!blob) throw new Error("No se pudo crear la imagen.");
         
@@ -58,7 +63,7 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
         console.error("Error copying image:", err);
         toast({ title: "Error", description: "No se pudo copiar la imagen del ticket.", variant: "destructive" });
     }
-  }, [serviceSheetRef]);
+  }, [ticketRef, toast]);
   
   const handleShare = async () => {
     if (navigator.share) {
@@ -82,6 +87,7 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
     return encodeURIComponent(message);
   };
   
+  const isServiceDelivered = service.status === 'Entregado';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -104,7 +110,7 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
                                 value={publicUrl}
                                 className="w-full px-3 py-2 text-sm border rounded-md bg-white text-muted-foreground"
                             />
-                             <Button variant="outline" size="icon" onClick={() => handleCopyToClipboard(publicUrl, 'link')} className="bg-white">
+                            <Button variant="outline" size="icon" onClick={() => handleCopyToClipboard(publicUrl, 'link')} className="bg-white">
                                 <Copy className="h-4 w-4" />
                             </Button>
                             <Button variant="outline" size="icon" asChild className="bg-white">
@@ -117,7 +123,7 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
                 </div>
                 <Separator className="my-4" />
                 <DialogFooter className="mt-auto flex-col sm:flex-col sm:space-x-0 gap-2">
-                    <Button variant="outline" onClick={handleCopyImageToClipboard} className="w-full h-12 bg-white border-purple-500 text-black hover:bg-purple-50">
+                    <Button variant="outline" onClick={handleCopyImageToClipboard} className="w-full h-12 bg-white border-purple-500 text-black hover:bg-purple-50" disabled={!isServiceDelivered}>
                         <ImageIcon className="mr-2 h-4 w-4 text-purple-600" /> Copiar Ticket como Imagen
                     </Button>
                     <Button variant="outline" onClick={() => handleCopyToClipboard(decodeURIComponent(getWhatsappMessage()), 'text')} className="w-full h-12 bg-white border-blue-500 text-black hover:bg-blue-50">
@@ -135,11 +141,25 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
                     </Button>
                 </DialogFooter>
             </div>
-            <div className="hidden md:block bg-muted/30 p-6 overflow-y-auto max-h-[80vh]">
-                <h3 className="text-lg font-semibold text-center mb-4">Vista Previa del Documento</h3>
-                <div className="aspect-[8.5/11] w-full bg-white rounded-lg shadow-lg mx-auto">
-                    <ServiceSheetContent ref={serviceSheetRef} service={service} vehicle={vehicle} />
-                </div>
+            <div className="hidden md:block bg-white p-6 overflow-y-auto max-h-[80vh]">
+                <Tabs value={previewType} onValueChange={(value) => setPreviewType(value as 'sheet' | 'ticket')} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="sheet">Hoja de Servicio</TabsTrigger>
+                        <TabsTrigger value="ticket">Ticket</TabsTrigger>
+                    </TabsList>
+                    <div className="mt-4 bg-muted/30 p-4 rounded-md">
+                        <TabsContent value="sheet">
+                            <div ref={serviceSheetRef}>
+                                <ServiceSheetContent service={service} vehicle={vehicle} />
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="ticket">
+                             <div className="flex justify-center">
+                                <TicketContent ref={ticketRef} service={service} vehicle={vehicle} />
+                            </div>
+                        </TabsContent>
+                    </div>
+                </Tabs>
             </div>
         </div>
       </DialogContent>
