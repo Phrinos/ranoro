@@ -307,15 +307,12 @@ export function ServiceForm({
         )}
         <Tabs defaultValue="service-items">
             <div className="sticky top-0 z-10 border-b bg-background/95 p-1 backdrop-blur-sm">
-                <ScrollArea className="w-full whitespace-nowrap">
-                    <TabsList className="w-max">
-                        <TabsTrigger value="service-items">Trabajos y Refacciones</TabsTrigger>
-                        <TabsTrigger value="reception-delivery">Recepción/Entrega</TabsTrigger>
-                        <TabsTrigger value="photo-report">Reporte de Fotos</TabsTrigger>
-                        <TabsTrigger value="safety-checklist">Revisión de Seguridad</TabsTrigger>
-                    </TabsList>
-                    <ScrollBar orientation="horizontal" />
-                </ScrollArea>
+                 <TabsList className="grid w-full grid-cols-2 h-auto">
+                    <TabsTrigger value="service-items">Trabajos y Refacciones</TabsTrigger>
+                    <TabsTrigger value="reception-delivery">Recepción/Entrega</TabsTrigger>
+                    <TabsTrigger value="photo-report">Reporte de Fotos</TabsTrigger>
+                    <TabsTrigger value="safety-checklist">Revisión de Seguridad</TabsTrigger>
+                </TabsList>
             </div>
             <div className="mt-4">
                 <TabsContent value="service-items" className="space-y-6">
