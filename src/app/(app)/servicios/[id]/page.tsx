@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -275,7 +276,6 @@ export default function ServicioPage() {
                 {isEditMode && initialData && (
                    <>
                       <Button variant="outline" onClick={() => setIsNotificationDialogOpen(true)} size="sm" title="Notificar al Cliente"><MessageSquare className="h-4 w-4"/></Button>
-                      <Button variant="outline" onClick={() => handleShowTicketDialog(initialData)} size="sm" title="Imprimir Ticket"><Printer className="h-4 w-4"/></Button>
                       <Button onClick={() => handleShowShareDialog(initialData)} size="sm" title="Compartir Documento" className="bg-green-600 hover:bg-green-700 text-white"><Share2 className="h-4 w-4"/></Button>
                    </>
                 )}
