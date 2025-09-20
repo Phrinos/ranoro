@@ -1,12 +1,10 @@
 
 // src/app/(app)/inventario/page.tsx
 
-"use client";
-
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2, ArrowUpDown } from "lucide-react";
+import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2 } from "lucide-react";
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,10 +25,8 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { PurchaseFormValues } from './components/register-purchase-dialog';
 
 // Lazy load dialogs that are not immediately visible
-const RegisterPurchaseDialog = lazy(() => import('./components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = lazy(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
 const InventoryReportContent = lazy(() => import('./components/inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
 
@@ -60,16 +56,10 @@ const itemSortOptions = [
     { value: 'default_order', label: 'Orden Personalizado' },
     { value: 'name_asc', label: 'Nombre (A-Z)' },
     { value: 'name_desc', label: 'Nombre (Z-A)' },
-    { value: 'category_asc', label: 'Categoría (A-Z)' },
-    { value: 'isService_asc', label: 'Tipo (Producto/Servicio)' },
     { value: 'quantity_asc', label: 'Stock (Menor a Mayor)' },
     { value: 'quantity_desc', label: 'Stock (Mayor a Menor)' },
-    { value: 'unitPrice_asc', label: 'Costo (Menor a Mayor)' },
-    { value: 'unitPrice_desc', label: 'Costo (Mayor a Menor)' },
-    { value: 'sellingPrice_asc', label: 'Precio Venta (Menor a Mayor)' },
     { value: 'sellingPrice_desc', label: 'Precio Venta (Mayor a Menor)' },
 ];
-
 
 const getSortPriority = (item: InventoryItem) => {
     if (item.isService) return 3;
@@ -107,33 +97,14 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
     return items;
   }, [tableManager.fullFilteredData, tableManager.sortOption]);
 
-  const handleSort = (column: keyof InventoryItem | 'default_order' | 'supplier') => {
-    if (column === 'default_order') {
-      tableManager.onSortOptionChange('default_order');
-      return;
-    }
-    const currentSort = tableManager.sortOption;
-    const isAsc = currentSort === `${String(column)}_asc`;
-    tableManager.onSortOptionChange(isAsc ? `${String(column)}_desc` : `${String(column)}_asc`);
-  };
-
-  const renderSortArrow = (column: keyof InventoryItem | 'supplier') => {
-    const { sortOption } = tableManager;
-    if (sortOption.startsWith(String(column))) {
-      return sortOption.endsWith('_asc') ? '▲' : '▼';
-    }
-    return null;
-  };
-
 
   return (
     <div className="space-y-4">
       <TableToolbar
           {...tableManager}
-          onSearchTermChange={tableManager.onSearchTermChange}
-          onSortOptionChange={tableManager.onSortOptionChange}
+          sortOptions={itemSortOptions}
           searchPlaceholder="Buscar por nombre, SKU, marca..."
-          actions={<Button onClick={() => onPrint(customSortedItems)} variant="destructive" size="sm" className="font-bold"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>}
+          actions={<Button onClick={() => onPrint(customSortedItems)} variant="outline" size="sm"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>}
       />
 
       <Card>
@@ -141,76 +112,13 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
           <div className="rounded-md border">
             <Table>
               <TableHeader className="bg-black text-white">
-                <TableRow className="hover:!bg-transparent">
-                  <TableHead className="text-white">
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('name')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
-                    >
-                      Nombre {renderSortArrow('name')}
-                    </Button>
-                  </TableHead>
-              
-                  <TableHead className="text-white hidden md:table-cell">
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('category')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
-                    >
-                      Categoría {renderSortArrow('category')}
-                    </Button>
-                  </TableHead>
-              
-                  <TableHead className="text-white hidden lg:table-cell">
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('supplier')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
-                    >
-                      Proveedor {renderSortArrow('supplier')}
-                    </Button>
-                  </TableHead>
-              
-                  <TableHead className="text-white">
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('isService')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
-                    >
-                      Tipo {renderSortArrow('isService')}
-                    </Button>
-                  </TableHead>
-              
-                  <TableHead className="text-right text-white">
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('quantity')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
-                    >
-                      Stock {renderSortArrow('quantity')}
-                    </Button>
-                  </TableHead>
-              
-                  <TableHead className="text-right text-white">
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('unitPrice')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
-                    >
-                      Costo {renderSortArrow('unitPrice')}
-                    </Button>
-                  </TableHead>
-              
-                  <TableHead className="text-right text-white">
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('sellingPrice')}
-                      className="h-8 px-2 py-1 text-white cursor-pointer hover:bg-white hover:text-black"
-                    >
-                      Precio Venta {renderSortArrow('sellingPrice')}
-                    </Button>
-                  </TableHead>
+                <TableRow>
+                    <TableHead className="text-white">Nombre</TableHead>
+                    <TableHead className="text-white hidden md:table-cell">Categoría</TableHead>
+                    <TableHead className="text-white hidden lg:table-cell">Proveedor</TableHead>
+                    <TableHead className="text-white">Tipo</TableHead>
+                    <TableHead className="text-right text-white">Stock</TableHead>
+                    <TableHead className="text-right text-white">Precio de Venta</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -227,14 +135,13 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
                             <TableCell className="hidden lg:table-cell">{item.supplier}</TableCell>
                             <TableCell><Badge variant={item.isService ? "outline" : "secondary"}>{item.isService ? 'Servicio' : 'Producto'}</Badge></TableCell>
                             <TableCell className={cn("text-right font-semibold", isLowStock && "text-orange-600")}>{item.isService ? 'N/A' : item.quantity}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
                             <TableCell className="text-right font-bold text-primary">{formatCurrency(item.sellingPrice)}</TableCell>
                         </TableRow>
                     )
                   })
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center">
+                        <TableCell colSpan={6} className="h-24 text-center">
                           {tableManager.searchTerm ? (
                             <Button variant="link" onClick={() => onNewItemFromSearch(tableManager.searchTerm)}>
                               <PlusCircle className="mr-2 h-4 w-4" />
@@ -341,6 +248,7 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
 // Main Page Component
 export default function InventarioPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const tab = searchParams.get('tab');
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState(tab || 'productos');
@@ -350,7 +258,6 @@ export default function InventarioPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
@@ -398,13 +305,17 @@ export default function InventarioPage() {
   }, []);
 
 
-  const handleOpenItemDialog = useCallback((initialValues?: Partial<InventoryItem>) => {
-    setEditingItem(initialValues || null);
+  const handleOpenItemDialog = useCallback(() => {
+    setEditingItem(null);
     setIsItemDialogOpen(true);
   }, []);
   
   const handleNewItemFromSearch = useCallback((name: string) => {
-    handleOpenItemDialog({ name: capitalizeWords(name) });
+    handleOpenItemDialog();
+    // A small timeout to ensure the dialog is mounted before setting the value
+    setTimeout(() => {
+      setEditingItem({ name: capitalizeWords(name) });
+    }, 50);
   }, [handleOpenItemDialog]);
   
   const handleItemUpdated = async (data: InventoryItemFormValues) => {
@@ -414,25 +325,10 @@ export default function InventarioPage() {
     setIsItemDialogOpen(false);
   };
   
-
-  const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
-    await purchaseService.registerPurchase(data);
-    toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
-    setIsRegisterPurchaseOpen(false);
-  }, [toast]);
-  
   const handleSaveItem = useCallback(async (itemData: InventoryItemFormValues) => {
-    const idToSave = editingItem?.id;
-    await inventoryService.saveItem(itemData, idToSave);
-    toast({ title: `Ítem ${idToSave ? 'Actualizado' : 'Creado'}` });
+    await inventoryService.addItem(itemData);
+    toast({ title: "Producto Creado", description: `"${itemData.name}" ha sido agregado al inventario.` });
     setIsItemDialogOpen(false);
-    setEditingItem(null);
-  }, [toast, editingItem]);
-  
-  const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
-      const newItem = await inventoryService.addItem(formData);
-      toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
-      return newItem;
   }, [toast]);
   
   const handleSaveCategory = useCallback(async (name: string, id?: string) => {
@@ -476,7 +372,7 @@ export default function InventarioPage() {
         <DashboardCards 
           summaryData={inventorySummary}
           onNewItemClick={handleOpenItemDialog}
-          onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
+          onNewPurchaseClick={() => router.push('/compras?tab=compras')}
         />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
@@ -522,18 +418,6 @@ export default function InventarioPage() {
         </Tabs>
         
         <Suspense fallback={null}>
-            {isRegisterPurchaseOpen && (
-              <RegisterPurchaseDialog
-                open={isRegisterPurchaseOpen}
-                onOpenChange={setIsRegisterPurchaseOpen}
-                suppliers={suppliers}
-                inventoryItems={inventoryItems}
-                onSave={handleSavePurchase}
-                onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
-                categories={categories}
-              />
-            )}
-
             <InventoryItemDialog
               open={isItemDialogOpen}
               onOpenChange={setIsItemDialogOpen}
