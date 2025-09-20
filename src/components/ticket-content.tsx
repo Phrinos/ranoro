@@ -67,7 +67,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             };
         }
         if (service) {
-            const itemsTotal = (service.serviceItems || []).reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+            const itemsTotal = (service.serviceItems || []).reduce((sum, item) => sum + (Number(item.sellingPrice) || 0), 0);
             const subTotal = itemsTotal / (1 + IVA_RATE);
             const tax = itemsTotal - subTotal;
             return { subTotal, tax, totalAmount: itemsTotal };
@@ -110,7 +110,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
                   fill
                   style={{ objectFit: 'contain' }}
                   crossOrigin="anonymous"
-                  data-ai-hint="workshop logo"
+                  data-ai-hint="ranoro logo"
                   unoptimized
                 />
             </div>
@@ -158,7 +158,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             <div key={`service-${idx}`}>
               <div className="flex justify-between font-semibold">
                 <span>{item.name}</span>
-                <span>{formatCurrency(item.price)}</span>
+                <span>{formatCurrency(item.sellingPrice)}</span>
               </div>
               {item.suppliesUsed && item.suppliesUsed.length > 0 && item.suppliesUsed.map((supply, supplyIdx) => (
                 <div key={`supply-${supplyIdx}`} className="flex justify-between text-neutral-600 pl-2">
