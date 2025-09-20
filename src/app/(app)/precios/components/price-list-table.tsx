@@ -48,18 +48,39 @@ const formatYears = (years: number[]): string => {
   ).join(', ');
 };
 
+const SortableHeader = ({
+    sortKey,
+    label,
+    onSort,
+    currentSort,
+    className
+}: {
+    sortKey: string;
+    label: string;
+    onSort: (key: string) => void;
+    currentSort: string;
+    className?: string;
+}) => {
+    const isSorted = currentSort.startsWith(sortKey);
+    return (
+        <TableHead
+            className={cn("font-bold cursor-pointer hover:bg-muted/50", className)}
+            onClick={() => onSort(sortKey)}
+        >
+            <div className="flex items-center">
+                {label}
+                <ArrowUpDown className={cn("ml-2 h-4 w-4", isSorted ? "text-foreground" : "text-muted-foreground/50")} />
+            </div>
+        </TableHead>
+    );
+};
+
+
 export const PriceListTable = React.memo(({ records, onEdit, onDelete, sortOption, onSortOptionChange }: PriceListTableProps) => {
 
-  const handleSort = (key: 'make' | 'model') => {
+  const handleSort = (key: string) => {
     const isAsc = sortOption === `${key}_asc`;
     onSortOptionChange(isAsc ? `${key}_desc` : `${key}_asc`);
-  };
-
-  const renderSortArrow = (key: 'make' | 'model') => {
-    if (sortOption && sortOption.startsWith(key)) {
-      return <ArrowUpDown className="ml-2 h-4 w-4" />;
-    }
-    return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
   };
 
   if (!records.length) {
@@ -75,17 +96,13 @@ export const PriceListTable = React.memo(({ records, onEdit, onDelete, sortOptio
   return (
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
-        <TableHeader className="bg-black">
-          <TableRow>
-            <TableHead className="font-bold text-white cursor-pointer" onClick={() => handleSort('make')}>
-                <div className="flex items-center">Marca {renderSortArrow('make')}</div>
-            </TableHead>
-            <TableHead className="font-bold text-white cursor-pointer" onClick={() => handleSort('model')}>
-                <div className="flex items-center">Modelo {renderSortArrow('model')}</div>
-            </TableHead>
-            <TableHead className="font-bold text-white">Años</TableHead>
-            <TableHead className="text-right font-bold text-white hidden sm:table-cell"># Servicios</TableHead>
-            <TableHead className="text-right font-bold text-white">Acciones</TableHead>
+        <TableHeader>
+          <TableRow className="bg-white hover:bg-white">
+            <SortableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={sortOption} />
+            <SortableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={sortOption} />
+            <TableHead className="font-bold">Años</TableHead>
+            <TableHead className="text-right font-bold hidden sm:table-cell"># Servicios</TableHead>
+            <TableHead className="text-right font-bold">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
