@@ -17,7 +17,7 @@ interface VehicleSelectionCardProps {
   vehicles: Vehicle[];
   serviceHistory: ServiceRecord[];
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
-  onOpenNewVehicleDialog: () => void;
+  onOpenNewVehicleDialog: (plate?: string) => void;
   initialVehicleId?: string;
 }
 
@@ -30,7 +30,7 @@ export function VehicleSelectionCard({
 }: VehicleSelectionCardProps) {
   const { control, watch, setValue } = useFormContext();
   const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
-  const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
+  
   const router = useRouter();
 
   const selectedVehicleId = watch('vehicleId');
@@ -100,23 +100,11 @@ export function VehicleSelectionCard({
         onOpenChange={setIsSelectionDialogOpen}
         vehicles={vehicles}
         onSelectVehicle={handleVehicleSelect}
-        onNewVehicle={() => {
+        onNewVehicle={(plate) => {
             setIsSelectionDialogOpen(false);
-            setIsNewVehicleDialogOpen(true);
+            onOpenNewVehicleDialog(plate);
         }}
       />
-      
-      {onVehicleCreated && (
-          <VehicleDialog
-            open={isNewVehicleDialogOpen}
-            onOpenChange={setIsNewVehicleDialogOpen}
-            onSave={async (data) => {
-                const newVehicle = await onVehicleCreated(data);
-                handleVehicleSelect(newVehicle.id);
-                setIsNewVehicleDialogOpen(false);
-            }}
-          />
-      )}
     </>
   );
 }

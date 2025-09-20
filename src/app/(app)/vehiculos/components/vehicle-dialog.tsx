@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FormDialog } from '@/components/shared/form-dialog';
 import { VehicleForm, type VehicleFormValues } from "./vehicle-form";
 import type { Vehicle } from "@/types";

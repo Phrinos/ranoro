@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -47,11 +48,12 @@ interface ServiceFormProps {
   onTabChange: (tab: string) => void;
   isChecklistWizardOpen: boolean;
   setIsChecklistWizardOpen: (isOpen: boolean) => void;
+  onOpenNewVehicleDialog: (plate?: string) => void;
 }
 
 const getErrorMessages = (errors: FieldErrors<ServiceFormValues>): string => {
     const messages: string[] = [];
-
+    
     const parseErrors = (errorObj: any, prefix = '') => {
         for (const key in errorObj) {
             const fullKey = prefix ? `${prefix}.${key}` : key;
@@ -98,6 +100,7 @@ export function ServiceForm({
   onTabChange,
   isChecklistWizardOpen,
   setIsChecklistWizardOpen,
+  onOpenNewVehicleDialog,
 }: ServiceFormProps) {
   const { toast } = useToast();
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
@@ -209,7 +212,7 @@ export function ServiceForm({
             vehicles={vehicles}
             onVehicleCreated={onVehicleCreated}
             serviceHistory={serviceHistory || []}
-            onOpenNewVehicleDialog={() => {}}
+            onOpenNewVehicleDialog={onOpenNewVehicleDialog}
             initialVehicleId={initialData?.vehicleId}
         />
         <ServiceDetailsCard
@@ -248,10 +251,7 @@ export function ServiceForm({
                         />
                     </CardContent></Card>
                     <Card><CardContent className="pt-6">
-                         <ServiceSummary
-                            onOpenValidateDialog={() => {}}
-                            validatedFolios={{}}
-                        />
+                         <ServiceSummary />
                     </CardContent></Card>
                 </TabsContent>
                 <TabsContent value="reception-delivery" className="space-y-6">

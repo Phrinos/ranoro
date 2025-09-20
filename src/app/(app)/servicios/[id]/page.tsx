@@ -29,6 +29,7 @@ import { ActiveServicesSheet } from '../components/ActiveServicesSheet';
 import { PhotoReportModal } from '../components/PhotoReportModal';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -63,6 +64,10 @@ export default function ServicioPage() {
   const [isServicesSheetOpen, setIsServicesSheetOpen] = useState(false);
   const [isChecklistWizardOpen, setIsChecklistWizardOpen] = useState(false);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  
+  // --- Vehicle Dialog State ---
+  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
+  const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
 
 
   const isEditMode = serviceId !== 'nuevo';
@@ -210,10 +215,20 @@ export default function ServicioPage() {
     }
   };
   
+  const handleOpenNewVehicleDialog = (plate?: string) => {
+    setNewVehicleInitialData(plate ? { licensePlate: plate } : null);
+    setIsVehicleDialogOpen(true);
+  };
+
   const handleVehicleCreated = async (data: VehicleFormValues): Promise<Vehicle> => {
       const newVehicle = await inventoryService.addVehicle(data);
       setVehicles(prev => [...prev, newVehicle]);
-      toast({ title: "Vehículo Creado" });
+      // Update form with the new vehicle
+      methods.setValue('vehicleId', newVehicle.id, { shouldValidate: true });
+      methods.setValue('ownerName', newVehicle.ownerName || '');
+      methods.setValue('ownerPhone', newVehicle.ownerPhone || '');
+      methods.setValue('currentMileage', newVehicle.currentMileage || '');
+      toast({ title: "Vehículo Creado y Seleccionado" });
       return newVehicle;
   };
 
@@ -302,6 +317,7 @@ export default function ServicioPage() {
             onTabChange={setActiveTab}
             isChecklistWizardOpen={isChecklistWizardOpen}
             setIsChecklistWizardOpen={setIsChecklistWizardOpen}
+            onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
         />
       
       <ServiceMobileBar
@@ -334,6 +350,12 @@ export default function ServicioPage() {
           </>
        )}
        {initialData && ( <PaymentDetailsDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} record={initialData} onConfirm={handleConfirmPayment} recordType="service" isCompletionFlow={true} /> )}
+       <VehicleDialog
+        open={isVehicleDialogOpen}
+        onOpenChange={setIsVehicleDialogOpen}
+        onSave={handleVehicleCreated}
+        vehicle={newVehicleInitialData}
+      />
     </FormProvider>
   );
 }

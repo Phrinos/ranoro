@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/VehicleSelectionDialog.tsx
 "use client";
 
@@ -26,16 +27,16 @@ interface VehicleSelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vehicles: Vehicle[];
-  onVehicleSelect: (vehicleId: string) => void;
-  onOpenNewVehicleDialog: () => void;
+  onSelectVehicle: (vehicleId: string) => void;
+  onNewVehicle: (plate?: string) => void;
 }
 
 export function VehicleSelectionDialog({
   open,
   onOpenChange,
   vehicles,
-  onVehicleSelect,
-  onOpenNewVehicleDialog,
+  onSelectVehicle,
+  onNewVehicle,
 }: VehicleSelectionDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -55,7 +56,7 @@ export function VehicleSelectionDialog({
   }, [vehicles, searchTerm]);
 
   const handleSelect = (id: string) => {
-    onVehicleSelect(id);
+    onSelectVehicle(id);
     onOpenChange(false);
   };
 
@@ -104,7 +105,7 @@ export function VehicleSelectionDialog({
                   <p>No se encontraron vehículos.</p>
                   <Button
                     variant="link"
-                    onClick={onOpenNewVehicleDialog}
+                    onClick={() => onNewVehicle(searchTerm)}
                     className="mt-2"
                   >
                     <PlusCircle className="mr-2 h-4 w-4" />
