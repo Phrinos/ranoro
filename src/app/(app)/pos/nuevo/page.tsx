@@ -1,7 +1,5 @@
 // src/app/(app)/pos/nuevo/page.tsx
 
-"use client";
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,8 +25,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
-import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
 
 
 export default function NuevaVentaPage() {
@@ -49,11 +45,6 @@ export default function NuevaVentaPage() {
   const [validationIndex, setValidationIndex] = useState<number | null>(null);
   const [validationFolio, setValidationFolio] = useState('');
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
-
-  // States for dialogs managed by the page
-  const [isInventorySearchDialogOpen, setIsInventorySearchDialogOpen] = useState(false);
-  const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
-  const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
@@ -228,36 +219,6 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     }
     setIsValidationDialogOpen(false);
   };
-  
-  const handleAddItem = useCallback((item: InventoryItem, quantity: number) => {
-    const currentItems = getValues('items') || [];
-    setValue('items', [...currentItems, {
-        inventoryItemId: item.id,
-        itemName: item.name,
-        quantity: quantity,
-        unitPrice: item.sellingPrice,
-        totalPrice: item.sellingPrice * quantity,
-        isService: item.isService || false,
-        unitType: item.unitType,
-    }], { shouldValidate: false });
-    setIsInventorySearchDialogOpen(false);
-  }, [setValue, getValues]);
-  
-  const handleRequestNewItem = useCallback((searchTerm: string) => {
-      setNewItemInitialData({
-          name: searchTerm,
-          category: allCategories.length > 0 ? allCategories[0].name : "",
-          supplier: allSuppliers.length > 0 ? allSuppliers[0].name : "",
-      });
-      setIsInventorySearchDialogOpen(false);
-      setIsNewInventoryItemDialogOpen(true);
-  }, [allCategories, allSuppliers]);
-
-  const handleNewItemSaved = async (formData: InventoryItemFormValues) => {
-    const newItem = await handleNewInventoryItemCreated(formData);
-    handleAddItem(newItem, 1);
-    setIsNewInventoryItemDialogOpen(false);
-  };
 
 
   if (isLoading) {
@@ -280,31 +241,12 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           inventoryItems={currentInventoryItems} 
           categories={allCategories}
           suppliers={allSuppliers}
-          onOpenAddItemDialog={() => setIsInventorySearchDialogOpen(true)}
           onSaleComplete={handleSaleCompletion}
+          onInventoryItemCreated={handleNewInventoryItemCreated}
           onOpenValidateDialog={handleOpenValidateDialog}
           validatedFolios={validatedFolios}
         />
       </FormProvider>
-
-      <InventorySearchDialog
-        open={isInventorySearchDialogOpen}
-        onOpenChange={setIsInventorySearchDialogOpen}
-        inventoryItems={currentInventoryItems}
-        onItemSelected={handleAddItem}
-        onNewItemRequest={handleRequestNewItem}
-      />
-      
-      {isNewInventoryItemDialogOpen && (
-          <InventoryItemDialog
-            open={isNewInventoryItemDialogOpen}
-            onOpenChange={setIsNewInventoryItemDialogOpen}
-            item={newItemInitialData}
-            onSave={handleNewItemSaved}
-            categories={allCategories}
-            suppliers={allSuppliers}
-          />
-      )}
 
       {saleForTicket && (
           <UnifiedPreviewDialog

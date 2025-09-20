@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceItemsList.tsx
 "use client";
 
@@ -93,7 +92,7 @@ export function ServiceItemsList({
                   append({
                     id: `item_${nanoid(6)}`,
                     name: '',
-                    price: undefined, // Set to undefined
+                    sellingPrice: undefined, // Set to undefined
                     suppliesUsed: [],
                   })
                 }

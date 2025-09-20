@@ -44,7 +44,6 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
   }, [watchedItems, cardCommission]);
 
   const totalCost = (watchedItems || []).reduce((s, i) => s + (Number(i.sellingPrice) || 0), 0);
-  const totalPaid = (form.watch('payments') || []).reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0) || 0;
 
   return (
     <Card className="h-full flex flex-col">
@@ -52,7 +51,7 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
         <CardTitle>Resumen y Pago</CardTitle>
       </CardHeader>
       <CardContent className="pt-0 flex flex-col space-y-4 flex-grow">
-        <PaymentSection onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios} />
+        <PaymentSection onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios} totalAmount={totalCost} />
         
         <div className="w-full mt-auto space-y-2 text-sm border-t pt-4">
           <div className="flex justify-between items-center">

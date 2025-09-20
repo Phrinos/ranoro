@@ -19,6 +19,7 @@ interface POSFormProps {
   onInventoryItemCreated?: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
   initialData?: SaleReceipt | null;
   onOpenValidateDialog: (index: number) => void;
+  onOpenAddItemDialog: () => void;
   validatedFolios: Record<number, boolean>;
 }
 
@@ -32,6 +33,7 @@ export function PosForm({
   onInventoryItemCreated,
   initialData,
   onOpenValidateDialog,
+  onOpenAddItemDialog,
   validatedFolios,
 }: POSFormProps) {
   const methods = useFormContext();
@@ -41,10 +43,6 @@ export function PosForm({
   const watchedPayments = useWatch({ control, name: 'payments' });
   const watchedItems = useWatch({ control, name: 'items' });
 
-  const [isInventorySearchDialogOpen, setIsInventorySearchDialogOpen] = useState(false);
-  const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
-  const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
-  
   useEffect(() => {
     if (initialData?.id) {
       reset(initialData);
@@ -52,39 +50,6 @@ export function PosForm({
     // sólo cuando cambia el ID de la venta
   }, [initialData?.id, reset]);
 
-  const handleOpenInventorySearchDialog = () => setIsInventorySearchDialogOpen(true);
-  
-  const handleAddItem = useCallback((item: InventoryItem, quantity: number) => {
-    const currentItems = getValues('items') || [];
-    setValue('items', [...currentItems, {
-        inventoryItemId: item.id,
-        itemName: item.name,
-        quantity: quantity,
-        unitPrice: item.sellingPrice,
-        totalPrice: item.sellingPrice * quantity,
-        isService: item.isService || false,
-        unitType: item.unitType,
-    }], { shouldValidate: false });
-    setIsInventorySearchDialogOpen(false);
-  }, [setValue, getValues]);
-  
-  const handleRequestNewItem = useCallback((searchTerm: string) => {
-      setNewItemInitialData({
-          name: searchTerm,
-          category: categories.length > 0 ? categories[0].name : "",
-          supplier: suppliers.length > 0 ? suppliers[0].name : "",
-      });
-      setIsInventorySearchDialogOpen(false);
-      setIsNewInventoryItemDialogOpen(true);
-  }, [categories, suppliers]);
-  
-  const handleNewItemSaved = async (formData: InventoryItemFormValues) => {
-    if (!onInventoryItemCreated) return;
-    const newItem = await onInventoryItemCreated(formData);
-    handleAddItem(newItem, 1);
-    setIsNewInventoryItemDialogOpen(false);
-  };
-  
     useEffect(() => {
         // Lee los items actuales una sola vez
         const items = (getValues('items') || []) as any[];
@@ -143,7 +108,7 @@ export function PosForm({
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           {/* Columna Izquierda: Lista de Artículos */}
           <div className="lg:col-span-3">
-            <SaleItemsList onAddItem={handleOpenInventorySearchDialog} inventoryItems={inventoryItems} />
+            <SaleItemsList onAddItem={onOpenAddItemDialog} inventoryItems={inventoryItems} />
           </div>
 
           {/* Columna Derecha: Pago y Resumen */}
@@ -152,24 +117,6 @@ export function PosForm({
           </div>
         </div>
       </form>
-
-      <InventorySearchDialog
-        open={isInventorySearchDialogOpen}
-        onOpenChange={setIsInventorySearchDialogOpen}
-        onItemSelected={handleAddItem}
-        onNewItemRequest={handleRequestNewItem}
-      />
-      
-      {isNewInventoryItemDialogOpen && onInventoryItemCreated && (
-          <InventoryItemDialog
-            open={isNewInventoryItemDialogOpen}
-            onOpenChange={setIsNewInventoryItemDialogOpen}
-            item={newItemInitialData}
-            onSave={handleNewItemSaved}
-            categories={categories}
-            suppliers={suppliers}
-          />
-      )}
     </>
   );
 }

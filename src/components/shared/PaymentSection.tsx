@@ -1,7 +1,4 @@
-
 // src/components/shared/PaymentSection.tsx
-
-"use client";
 
 import React from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
@@ -25,11 +22,12 @@ const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
 };
 
 interface PaymentSectionProps {
-  onOpenValidateDialog: (index: number) => void;
-  validatedFolios: Record<number, boolean>;
+  onOpenValidateDialog?: (index: number) => void;
+  validatedFolios?: Record<number, boolean>;
+  totalAmount?: number;
 }
 
-export function PaymentSection({ onOpenValidateDialog, validatedFolios }: PaymentSectionProps) {
+export function PaymentSection({ onOpenValidateDialog, validatedFolios = {}, totalAmount = 0 }: PaymentSectionProps) {
   const { control, watch } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -37,7 +35,6 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
   });
   
   const watchedPayments = watch('payments');
-  const watchedItems = watch('items') || watch('serviceItems');
 
   const availablePaymentMethods = paymentMethods.filter(
     method => !watchedPayments?.some((p: Payment) => p.method === method)
@@ -45,8 +42,6 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
   
   const totalPaid = watchedPayments?.reduce((acc: number, p: Payment) => acc + (Number(p.amount) || 0), 0) || 0;
   
-  const totalItemsAmount = watchedItems?.reduce((sum: number, item: any) => sum + (item.totalPrice || item.price || 0), 0) || 0;
-
   return (
     <Card className="p-4">
         <FormLabel>Métodos de Pago</FormLabel>
@@ -113,7 +108,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
                                         </FormItem>
                                     )}
                                 />
-                                {(selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI') && (
+                                {(selectedMethod === 'Tarjeta' || selectedMethod === 'Tarjeta MSI') && onOpenValidateDialog && (
                                     <Button type="button" variant="destructive" size="sm" onClick={() => onOpenValidateDialog(index)}>
                                         Validar
                                     </Button>
@@ -137,7 +132,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios }: Paymen
             </div>
              <div className="flex justify-between font-semibold text-destructive">
                 <span>Faltante por Pagar:</span>
-                <span>{formatCurrency(Math.max(0, totalItemsAmount - totalPaid))}</span>
+                <span>{formatCurrency(Math.max(0, totalAmount - totalPaid))}</span>
             </div>
             <FormField
                 control={control}

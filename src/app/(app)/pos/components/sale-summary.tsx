@@ -66,7 +66,7 @@ export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSumma
         </div>
         </CardHeader>
         <CardContent className="pt-0 flex flex-col space-y-4 flex-grow">
-          <PaymentSection onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios} />
+          <PaymentSection onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios} totalAmount={total} />
           
           <div className="w-full mt-auto space-y-2 text-sm border-t pt-4">
               <div className="flex justify-between items-center">
