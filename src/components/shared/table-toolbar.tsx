@@ -1,3 +1,4 @@
+
 // src/components/shared/table-toolbar.tsx
 "use client";
 
@@ -6,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { DateRange } from "react-day-picker";
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
+import { Search } from "lucide-react";
 
 type Option = { value: string; label: string };
 
@@ -62,38 +64,52 @@ export function TableToolbar({
   );
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-start">
-      <div className="flex w-full sm:w-auto flex-wrap items-center gap-2">
-        {/* Filtros */}
-        {filterOptions?.map((block) => {
-          const current = (otherFilters?.[block.value] ?? "all") as string;
-          return (
-            <Select
-              key={`filter:${block.value}:${current}`}
-              defaultValue={current}
-              onValueChange={(val) => handleFilterChange(block.value, val)}
-            >
-              <SelectTrigger className="h-10 min-w-[10rem] w-full sm:w-auto bg-white">
-                <SelectValue placeholder={block.label} />
-              </SelectTrigger>
-              <SelectContent>
-                {block.options.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          );
-        })}
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto flex-wrap items-center gap-2">
+            {onSearchTermChange && (
+                 <div className="relative w-full sm:w-auto">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder={searchPlaceholder}
+                        value={searchTerm ?? ''}
+                        onChange={(e) => onSearchTermChange(e.target.value)}
+                        className="h-10 w-full sm:w-[250px] pl-8 bg-white"
+                    />
+                </div>
+            )}
+            {/* Filtros */}
+            {filterOptions?.map((block) => {
+            const current = (otherFilters?.[block.value] ?? "all") as string;
+            return (
+                <Select
+                key={`filter:${block.value}:${current}`}
+                defaultValue={current}
+                onValueChange={(val) => handleFilterChange(block.value, val)}
+                >
+                <SelectTrigger className="h-10 min-w-[10rem] w-full sm:w-auto bg-white">
+                    <SelectValue placeholder={block.label} />
+                </SelectTrigger>
+                <SelectContent>
+                    {block.options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                    </SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+            );
+            })}
 
-        {/* Rango de fechas */}
-        {onDateRangeChange && (
-          <DatePickerWithRange date={dateRange} onDateChange={onDateRangeChange} />
-        )}
+            {/* Rango de fechas */}
+            {onDateRangeChange && (
+            <DatePickerWithRange date={dateRange} onDateChange={onDateRangeChange} />
+            )}
+        </div>
         
-        {actions}
-      </div>
+        {/* Acciones */}
+        <div className="flex w-full sm:w-auto items-center justify-end gap-2">
+            {actions}
+        </div>
     </div>
   );
 }

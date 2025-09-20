@@ -1,21 +1,26 @@
+
 // src/schemas/vehicle-form-schema.ts
-import * as z from "zod";
+import * as z from 'zod';
 
 export const vehicleFormSchema = z.object({
-  make: z.string().min(2, "La marca es obligatoria."),
-  model: z.string().min(1, "El modelo es obligatorio."),
-  year: z.coerce.number().min(1900, "El año debe ser posterior a 1900.").max(new Date().getFullYear() + 1, `El año no puede ser mayor a ${new Date().getFullYear() + 1}.`),
-  vin: z.string().optional().or(z.literal('')),
-  licensePlate: z.string().min(1, "La placa no puede estar vacía. Ingrese 'SINPLACA' si es necesario.").toUpperCase(),
-  color: z.string().optional().or(z.literal('')),
-  ownerName: z.string().min(2, "El nombre del propietario es obligatorio."),
-  ownerPhone: z.string().min(7, "Ingrese un número de teléfono válido."),
-  ownerEmail: z.string().email("Ingrese un correo electrónico válido.").optional().or(z.literal('')),
+  make: z.string().min(2, { message: "La marca debe tener al menos 2 caracteres." }),
+  model: z.string().min(1, { message: "El modelo es obligatorio." }),
+  year: z.coerce.number().min(1900, "Año inválido.").max(new Date().getFullYear() + 2, "Año inválido."),
+  licensePlate: z.string().min(3, "La placa debe tener al menos 3 caracteres."),
+  vin: z.string().optional(),
+  color: z.string().optional(),
+  ownerName: z.string().min(2, { message: "El nombre del propietario debe tener al menos 2 caracteres." }),
+  ownerPhone: z.string().optional(),
+  chatMetaLink: z.string().url({ message: "Por favor, introduce una URL válida." }).optional().or(z.literal('')),
+  isFleetVehicle: z.boolean().default(false),
+  purchasePrice: z.coerce.number().optional(),
+  dailyRentalCost: z.coerce.number().optional(),
+  gpsCost: z.coerce.number().optional(),
+  insuranceCost: z.coerce.number().optional(),
+  adminCost: z.coerce.number().optional(),
+  currentMileage: z.coerce.number().optional(),
   notes: z.string().optional(),
-  dailyRentalCost: z.coerce.number().optional().nullable(),
-  gpsMonthlyCost: z.coerce.number().optional().nullable(),
-  adminMonthlyCost: z.coerce.number().optional().nullable(),
-  insuranceMonthlyCost: z.coerce.number().optional().nullable(),
+  assignedDriverId: z.string().nullable().optional(),
 });
 
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;

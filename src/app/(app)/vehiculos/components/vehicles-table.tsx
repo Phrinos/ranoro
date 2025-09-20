@@ -13,6 +13,7 @@ import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
@@ -36,6 +37,7 @@ const sortOptions = [
 ];
 
 export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps) {
+  const router = useRouter();
   const { paginatedData, ...tableManager } = useTableManager<Vehicle>({
     initialData: vehicles,
     searchKeys: ["make", "model", "year", "licensePlate", "ownerName"],
@@ -105,7 +107,7 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
             {paginatedData.length > 0 ? paginatedData.map((vehicle) => {
               const lastServiceDate = vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
               return (
-                <TableRow key={vehicle.id} onClick={() => handleOpenDialog(vehicle)} className="cursor-pointer">
+                <TableRow key={vehicle.id} onClick={() => router.push(`/vehiculos/${vehicle.id}`)} className="cursor-pointer">
                   <TableCell className="hidden sm:table-cell">{vehicle.make}</TableCell>
                   <TableCell>{vehicle.model}</TableCell>
                   <TableCell>{vehicle.year}</TableCell>

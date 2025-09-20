@@ -1,3 +1,5 @@
+
+// src/types/index.ts
 export type AppRole = {
   id: string;
   name: string;
@@ -92,6 +94,7 @@ export type Vehicle = {
   color?: string;
   ownerName?: string;
   ownerPhone?: string;
+  chatMetaLink?: string;
   isFleetVehicle?: boolean;
   purchasePrice?: number;
   dailyRentalCost?: number;

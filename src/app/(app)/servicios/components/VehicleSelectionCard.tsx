@@ -2,182 +2,121 @@
 // src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useFormContext } from 'react-hook-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import React, { useState, useMemo } from 'react';
+import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Info, Car, Repeat, ShieldCheck } from 'lucide-react';
-import { Vehicle } from '@/types';
-import { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
-import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
-import { ServiceFormValues } from '@/schemas/service-form';
-import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
+import { Car, User as UserIcon, MessageSquare, ExternalLink } from 'lucide-react';
 import { VehicleSelectionDialog } from './VehicleSelectionDialog';
-import { usePermissions } from '@/hooks/usePermissions'; // Importamos nuestro hook de permisos
+import type { Vehicle, ServiceRecord } from '@/types';
+import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+import { useRouter } from 'next/navigation';
 
 interface VehicleSelectionCardProps {
   vehicles: Vehicle[];
-  onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
   serviceHistory: ServiceRecord[];
+  onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
   onOpenNewVehicleDialog: () => void;
   initialVehicleId?: string;
 }
 
 export function VehicleSelectionCard({
   vehicles,
-  onVehicleCreated,
   serviceHistory,
+  onVehicleCreated,
   onOpenNewVehicleDialog,
   initialVehicleId,
 }: VehicleSelectionCardProps) {
-  const { control, watch, setValue, formState: { errors } } = useFormContext<ServiceFormValues>();
-  const [isVehicleCreateDialogOpen, setIsVehicleCreateDialogOpen] = useState(false);
-  const [isVehicleSelectionDialogOpen, setIsVehicleSelectionDialogOpen] = useState(false);
-  
-  // Usamos el hook para obtener los permisos del usuario actual
-  const permissions = usePermissions();
-  const canViewSensitiveData = permissions.has('customers:view_sensitive_data');
+  const { control, watch, setValue } = useFormContext();
+  const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
+  const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
+  const router = useRouter();
 
   const selectedVehicleId = watch('vehicleId');
-  const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
+  const selectedVehicle = useMemo(() => vehicles.find(v => v.id === selectedVehicleId), [vehicles, selectedVehicleId]);
 
-  useEffect(() => {
-    if (selectedVehicleId && selectedVehicle) {
-      setValue('vehicleIdentifier', `${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.licensePlate})`);
-      
-      // Lógica Condicional: solo establecemos el nombre real si tiene permisos
-      if (canViewSensitiveData) {
-        setValue('customerName', selectedVehicle.ownerName || 'N/A');
-        setValue('customerPhone', selectedVehicle.ownerPhone || '');
-      } else {
-        setValue('customerName', `[ Protegido ]`);
-        setValue('customerPhone', `[ Protegido ]`);
-      }
+  const handleVehicleSelect = (vehicleId: string) => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (vehicle) {
+      setValue('vehicleId', vehicle.id, { shouldValidate: true });
+      setValue('ownerName', vehicle.ownerName || '');
+      setValue('ownerPhone', vehicle.ownerPhone || '');
+      setValue('currentMileage', vehicle.currentMileage || '');
     }
-  }, [selectedVehicleId, selectedVehicle, setValue, canViewSensitiveData]);
-
-  const handleVehicleCreatedAndSelect = async (data: VehicleFormValues) => {
-    if (!onVehicleCreated) return;
-    const newVehicle = await onVehicleCreated(data);
-    setValue('vehicleId', newVehicle.id, { shouldValidate: true, shouldDirty: true });
-    setIsVehicleCreateDialogOpen(false);
+    setIsSelectionDialogOpen(false);
   };
   
-  const handleVehicleSelect = (vehicleId: string) => {
-    setValue('vehicleId', vehicleId, { shouldValidate: true, shouldDirty: true });
-    setIsVehicleSelectionDialogOpen(false);
-  }
-
-  const handleShowHistory = () => {
-    if (selectedVehicleId) {
-      window.open(`/vehiculos/${selectedVehicleId}`, '_blank');
-    }
-  }
+  const handleViewVehicle = () => {
+      if(selectedVehicleId) {
+          router.push(`/vehiculos/${selectedVehicleId}`);
+      }
+  };
 
   return (
     <>
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-lg">Información del Cliente y Vehículo</CardTitle>
-          </div>
+          <CardTitle>Información del Cliente y Vehículo</CardTitle>
+          <CardDescription>Selecciona un vehículo existente o registra uno nuevo para el servicio.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <FormField
-            control={control}
-            name="vehicleId"
-            render={() => (
-              <FormItem>
-                <button
-                  type="button"
-                  onClick={() => setIsVehicleSelectionDialogOpen(true)}
-                  className="w-full p-3 border rounded-lg bg-muted/50 text-left hover:bg-muted transition-colors"
-                >
-                  {selectedVehicle ? (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Car className="h-6 w-6 text-muted-foreground" />
-                        <div>
-                          <p className="font-semibold">{selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.licensePlate})</p>
-                          {/* Lógica Condicional en la UI */}
-                          <p className="text-sm text-muted-foreground">
-                            Propietario: {canViewSensitiveData ? selectedVehicle.ownerName : '[ Protegido ]'}
-                          </p>
+          {selectedVehicle ? (
+            <div className="p-4 border rounded-lg bg-muted/50">
+                <div className="flex items-start justify-between">
+                    <div>
+                        <p className="font-bold text-lg">{selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
+                        <p className="font-mono text-sm text-muted-foreground">{selectedVehicle.licensePlate}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setIsSelectionDialogOpen(true)}>Cambiar Vehículo</Button>
+                </div>
+                <div className="mt-3 text-sm space-y-2">
+                    <div className="flex items-center gap-2"><UserIcon className="h-4 w-4 text-muted-foreground" /> <span>Propietario: {selectedVehicle.ownerName}</span></div>
+                    {selectedVehicle.ownerPhone && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">Teléfono:</span>
+                            <span>{selectedVehicle.ownerPhone}</span>
+                            {selectedVehicle.chatMetaLink && (
+                                <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                                    <a href={selectedVehicle.chatMetaLink} target="_blank" rel="noopener noreferrer">
+                                        <MessageSquare className="h-4 w-4 text-green-600" />
+                                    </a>
+                                </Button>
+                            )}
                         </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground text-center py-2">
-                      <Car className="h-5 w-5" />
-                      <span>Seleccionar Vehículo</span>
-                    </div>
-                  )}
-                </button>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          {selectedVehicle && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField control={control} name="customerName" render={({ field }) => (<FormItem><FormLabel>Nombre del Cliente</FormLabel><FormControl><Input {...field} disabled={!canViewSensitiveData} /></FormControl></FormItem>)} />
-              <FormField control={control} name="customerPhone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input {...field} disabled={!canViewSensitiveData} /></FormControl></FormItem>)} />
+                    )}
+                </div>
             </div>
+          ) : (
+             <Button variant="outline" className="w-full" onClick={() => setIsSelectionDialogOpen(true)}>
+                <Car className="mr-2 h-4 w-4" /> Seleccionar Vehículo
+             </Button>
           )}
-          <FormField
-            control={control}
-            name="mileage"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className={cn(errors.mileage && "text-destructive")}>KM Actual</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="Ej. 75000"
-                    {...field}
-                    value={field.value ?? ''}
-                    onChange={e => field.onChange(parseInt(e.target.value, 10) || null)}
-                    className={cn("bg-white", errors.mileage && "border-destructive focus-visible:ring-destructive")}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="flex flex-wrap gap-2">
-            {selectedVehicle && (
-                <>
-                    <Button type="button" variant="secondary" onClick={() => setIsVehicleSelectionDialogOpen(true)}>
-                        <Repeat className="mr-2 h-4 w-4" />
-                        Cambiar Vehículo
-                    </Button>
-                    <Button type="button" variant="outline" onClick={handleShowHistory}>
-                        <Info className="mr-2 h-4 w-4" />
-                        Ver Vehículo
-                    </Button>
-                </>
-            )}
-          </div>
         </CardContent>
       </Card>
 
-      <VehicleDialog
-        open={isVehicleCreateDialogOpen}
-        onOpenChange={setIsVehicleCreateDialogOpen}
-        onSave={handleVehicleCreatedAndSelect}
-      />
-
       <VehicleSelectionDialog
-        open={isVehicleSelectionDialogOpen}
-        onOpenChange={setIsVehicleSelectionDialogOpen}
+        open={isSelectionDialogOpen}
+        onOpenChange={setIsSelectionDialogOpen}
         vehicles={vehicles}
-        onVehicleSelect={handleVehicleSelect}
-        onOpenNewVehicleDialog={() => {
-          setIsVehicleSelectionDialogOpen(false);
-          setIsVehicleCreateDialogOpen(true);
+        onSelectVehicle={handleVehicleSelect}
+        onNewVehicle={() => {
+            setIsSelectionDialogOpen(false);
+            setIsNewVehicleDialogOpen(true);
         }}
       />
+      
+      {onVehicleCreated && (
+          <VehicleDialog
+            open={isNewVehicleDialogOpen}
+            onOpenChange={setIsNewVehicleDialogOpen}
+            onSave={async (data) => {
+                const newVehicle = await onVehicleCreated(data);
+                handleVehicleSelect(newVehicle.id);
+                setIsNewVehicleDialogOpen(false);
+            }}
+          />
+      )}
     </>
   );
 }
