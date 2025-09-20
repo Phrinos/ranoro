@@ -6,7 +6,7 @@ import React, { useMemo } from 'react';
 import type { PayableAccount } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
 import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
@@ -86,7 +86,7 @@ export function CuentasPorPagarContent({ accounts, onRegisterPayment }: CuentasP
                   <SortableTableHeader sortKey="paidAmount" label="Pagado" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right text-white" />
                   <SortableTableHeader sortKey="balance" label="Saldo" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right text-white" />
                   <SortableTableHeader sortKey="status" label="Estado" onSort={handleSort} currentSort={tableManager.sortOption} className="text-center text-white" />
-                  <div className="text-right text-white">Acciones</div>
+                  <TableHead className="text-right text-white">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
