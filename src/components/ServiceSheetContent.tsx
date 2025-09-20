@@ -1,4 +1,3 @@
-
 // src/components/ServiceSheetContent.tsx
 
 "use client";
@@ -172,11 +171,11 @@ const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }:
     <div className="space-y-4">
         <Card>
             <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                <div className="flex items-center gap-4">
-                    <div className="relative w-40 h-20 flex-shrink-0">
+                <div className="flex flex-col items-center text-center">
+                    <div className="relative w-40 h-16 flex-shrink-0">
                         {advisorSignature && <Image src={normalizeDataUrl(advisorSignature)} alt="Firma del asesor" fill style={{objectFit:"contain"}} sizes="160px" />}
                     </div>
-                    <div>
+                    <div className="mt-2">
                         <p className="font-bold text-sm leading-tight">{capitalizeWords(advisorName || 'Asesor de Servicio')}</p>
                         <p className="text-xs text-muted-foreground">Asesor de Servicio</p>
                     </div>
