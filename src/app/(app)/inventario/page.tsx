@@ -26,10 +26,10 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
+import type { PurchaseFormValues } from '@/app/(app)/compras/components/register-purchase-dialog';
 
 // Lazy load dialogs that are not immediately visible
-const RegisterPurchaseDialog = lazy(() => import('../inventario/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
+const RegisterPurchaseDialog = lazy(() => import('../compras/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = lazy(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
 const InventoryReportContent = lazy(() => import('./components/inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
 
