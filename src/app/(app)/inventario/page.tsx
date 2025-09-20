@@ -1,5 +1,5 @@
-
 // src/app/(app)/inventario/page.tsx
+"use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -42,8 +42,8 @@ const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { s
             <Button variant="outline" className="w-full flex-1 bg-white border-red-500 text-black hover:bg-red-50" onClick={onNewItemClick}>
                 <PlusCircle className="mr-2 h-5 w-5 text-red-500" /> Registrar Ítem
             </Button>
-            <Button variant="outline" className="w-full flex-1 bg-white border-red-500 text-black font-bold hover:bg-red-50" onClick={onNewPurchaseClick} >
-                <PlusCircle className="mr-2 h-5 w-5 text-red-500" /> Registrar Compra
+            <Button variant="outline" className="w-full flex-1" onClick={onNewPurchaseClick} >
+                <PlusCircle className="mr-2 h-5 w-5" /> Registrar Compra
             </Button>
         </div>
     </div>
@@ -372,7 +372,7 @@ export default function InventarioPage() {
         <DashboardCards 
           summaryData={inventorySummary}
           onNewItemClick={handleOpenItemDialog}
-          onNewPurchaseClick={() => router.push('/compras?tab=compras')}
+          onNewPurchaseClick={() => router.push('/compras')}
         />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
