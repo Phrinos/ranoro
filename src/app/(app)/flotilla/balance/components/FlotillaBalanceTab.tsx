@@ -13,6 +13,7 @@ import { ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { rentalService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
+import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 
 interface FlotillaBalanceTabProps {
@@ -98,18 +99,6 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
   const handleRowClick = (driverId: string) => {
     router.push(`/flotilla/conductores/${driverId}?tab=history`);
   };
-  
-  const SortableHeader = ({ sortKey, label, className }: { sortKey: SortKey, label: string, className?: string }) => (
-    <TableHead
-      className={cn("text-white font-bold cursor-pointer hover:bg-gray-800", className)}
-      onClick={() => requestSort(sortKey)}
-    >
-      <div className="flex items-center justify-end">
-        {label}
-        <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === sortKey ? 'text-white' : 'text-gray-400'}`} />
-      </div>
-    </TableHead>
-  );
 
   return (
     <div className="space-y-4">
@@ -123,16 +112,11 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
                     <Table>
                         <TableHeader className="bg-black">
                             <TableRow>
-                                <TableHead className="text-white font-bold cursor-pointer hover:bg-gray-800" onClick={() => requestSort('name')}>
-                                    <div className="flex items-center">
-                                      Conductor
-                                      <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === 'name' ? 'text-white' : 'text-gray-400'}`} />
-                                    </div>
-                                </TableHead>
-                                <SortableHeader sortKey="totalCharges" label="Cargos" className="hidden sm:table-cell" />
-                                <SortableHeader sortKey="totalPayments" label="Abonos" className="hidden sm:table-cell" />
-                                <SortableHeader sortKey="balance" label="Balance" />
-                                <SortableHeader sortKey="lastPaymentDate" label="Último Pago" className="hidden md:table-cell" />
+                                <SortableTableHeader sortKey="name" label="Conductor" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} textClassName="text-white" />
+                                <SortableTableHeader sortKey="totalCharges" label="Cargos" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} className="hidden sm:table-cell justify-end" textClassName="text-white"/>
+                                <SortableTableHeader sortKey="totalPayments" label="Abonos" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} className="hidden sm:table-cell justify-end" textClassName="text-white"/>
+                                <SortableTableHeader sortKey="balance" label="Balance" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} className="justify-end" textClassName="text-white"/>
+                                <SortableTableHeader sortKey="lastPaymentDate" label="Último Pago" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} className="hidden md:table-cell justify-end" textClassName="text-white"/>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

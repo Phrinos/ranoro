@@ -17,6 +17,7 @@ import { Edit, Trash2, Building, ArrowUpDown } from "lucide-react";
 import type { Supplier } from "@/types";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { formatCurrency } from "@/lib/utils";
+import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 
 
 interface SuppliersTableProps {
@@ -37,13 +38,6 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowCl
     const isAsc = sortOption === `${key}_asc`;
     onSortOptionChange(isAsc ? `${key}_desc` : `${key}_asc`);
   };
-
-  const renderSortArrow = (key: SortKey) => {
-    if (sortOption.startsWith(key)) {
-      return sortOption.endsWith('_asc') ? '▲' : '▼';
-    }
-    return null;
-  };
     
   if (!suppliers.length) {
     return (
@@ -60,18 +54,10 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowCl
       <Table>
         <TableHeader className="bg-black">
           <TableRow className="hover:bg-black">
-            <TableHead className="font-bold text-white cursor-pointer" onClick={() => handleSort('name')}>
-              <div className="flex items-center">Nombre {renderSortArrow('name')}</div>
-            </TableHead>
-            <TableHead className="font-bold text-white cursor-pointer" onClick={() => handleSort('contactPerson')}>
-              <div className="flex items-center">Contacto {renderSortArrow('contactPerson')}</div>
-            </TableHead>
-            <TableHead className="font-bold text-white cursor-pointer" onClick={() => handleSort('phone')}>
-              <div className="flex items-center">Teléfono {renderSortArrow('phone')}</div>
-            </TableHead>
-            <TableHead className="text-right font-bold text-white cursor-pointer" onClick={() => handleSort('debtAmount')}>
-              <div className="flex items-center justify-end">Deuda {renderSortArrow('debtAmount')}</div>
-            </TableHead>
+            <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+            <SortableTableHeader sortKey="contactPerson" label="Contacto" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+            <SortableTableHeader sortKey="phone" label="Teléfono" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+            <SortableTableHeader sortKey="debtAmount" label="Deuda" onSort={handleSort} currentSort={sortOption} textClassName="text-white" className="justify-end" />
           </TableRow>
         </TableHeader>
         <TableBody>

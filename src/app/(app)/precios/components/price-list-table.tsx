@@ -5,7 +5,7 @@
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Tags, ArrowUpDown } from "lucide-react";
+import { Edit, Trash2, Tags } from "lucide-react";
 import type { VehiclePriceList } from "@/types";
 import {
   AlertDialog,
@@ -19,6 +19,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
+
 
 interface PriceListTableProps {
   records: VehiclePriceList[];
@@ -48,34 +50,6 @@ const formatYears = (years: number[]): string => {
   ).join(', ');
 };
 
-const SortableHeader = ({
-    sortKey,
-    label,
-    onSort,
-    currentSort,
-    className
-}: {
-    sortKey: string;
-    label: string;
-    onSort: (key: string) => void;
-    currentSort: string;
-    className?: string;
-}) => {
-    const isSorted = currentSort?.startsWith(sortKey);
-    return (
-        <TableHead
-            className={cn("font-bold cursor-pointer hover:bg-white hover:text-black", className)}
-            onClick={() => onSort(sortKey)}
-        >
-            <div className="flex items-center">
-                {label}
-                <ArrowUpDown className={cn("ml-2 h-4 w-4", isSorted ? "text-white group-hover:text-black" : "text-gray-400")} />
-            </div>
-        </TableHead>
-    );
-};
-
-
 export const PriceListTable = React.memo(({ records, onEdit, onDelete, sortOption, onSortOptionChange }: PriceListTableProps) => {
 
   const handleSort = (key: 'make' | 'model') => {
@@ -99,8 +73,8 @@ export const PriceListTable = React.memo(({ records, onEdit, onDelete, sortOptio
       <Table>
         <TableHeader className="group">
           <TableRow className="bg-black text-white border-black hover:bg-black">
-            <SortableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={sortOption} />
-            <SortableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={sortOption} />
+            <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={sortOption} className="hover:bg-white hover:text-black" textClassName="text-white group-hover:text-black" />
+            <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={sortOption} className="hover:bg-white hover:text-black" textClassName="text-white group-hover:text-black" />
             <TableHead className="font-bold">Años</TableHead>
             <TableHead className="text-right font-bold hidden sm:table-cell"># Servicios</TableHead>
             <TableHead className="text-right font-bold">Acciones</TableHead>
