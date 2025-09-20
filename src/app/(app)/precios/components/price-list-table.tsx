@@ -61,15 +61,15 @@ const SortableHeader = ({
     currentSort: string;
     className?: string;
 }) => {
-    const isSorted = currentSort.startsWith(sortKey);
+    const isSorted = currentSort?.startsWith(sortKey);
     return (
         <TableHead
-            className={cn("font-bold cursor-pointer hover:bg-muted/50", className)}
+            className={cn("font-bold cursor-pointer hover:bg-white hover:text-black", className)}
             onClick={() => onSort(sortKey)}
         >
             <div className="flex items-center">
                 {label}
-                <ArrowUpDown className={cn("ml-2 h-4 w-4", isSorted ? "text-foreground" : "text-muted-foreground/50")} />
+                <ArrowUpDown className={cn("ml-2 h-4 w-4", isSorted ? "text-white group-hover:text-black" : "text-gray-400")} />
             </div>
         </TableHead>
     );
@@ -78,7 +78,8 @@ const SortableHeader = ({
 
 export const PriceListTable = React.memo(({ records, onEdit, onDelete, sortOption, onSortOptionChange }: PriceListTableProps) => {
 
-  const handleSort = (key: string) => {
+  const handleSort = (key: 'make' | 'model') => {
+    if (!onSortOptionChange) return;
     const isAsc = sortOption === `${key}_asc`;
     onSortOptionChange(isAsc ? `${key}_desc` : `${key}_asc`);
   };
@@ -96,8 +97,8 @@ export const PriceListTable = React.memo(({ records, onEdit, onDelete, sortOptio
   return (
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
-        <TableHeader>
-          <TableRow className="bg-white hover:bg-white">
+        <TableHeader className="group">
+          <TableRow className="bg-black text-white border-black hover:bg-black">
             <SortableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={sortOption} />
             <SortableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={sortOption} />
             <TableHead className="font-bold">Años</TableHead>
