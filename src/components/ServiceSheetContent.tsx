@@ -1,3 +1,4 @@
+
 // src/components/ServiceSheetContent.tsx
 
 "use client";
@@ -68,7 +69,7 @@ const SheetHeader = React.memo(({ service, workshopInfo }: { service: ServiceRec
               <Image src={workshopInfo.logoUrl!} alt={`${workshopInfo.name} Logo`} fill style={{objectFit: 'contain'}} data-ai-hint="workshop logo" sizes="150px" />
           </div>
           <div className="text-left sm:text-right">
-            <p className="font-bold text-lg">Folio: {service.id}</p>
+            <p className="font-bold text-lg">Folio: {service.folio || service.id}</p>
             <p className="text-sm text-muted-foreground">{formattedCreationDate}</p>
           </div>
       </CardHeader>
@@ -235,16 +236,16 @@ interface ServiceSheetContentProps {
   onSignClick?: (type: 'reception' | 'delivery') => void;
   isSigning?: boolean;
   activeTab?: string;
+  vehicle?: Vehicle | null; // Optional vehicle prop
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick }, ref) => {
+  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick, vehicle }, ref) => {
     const { toast } = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
     const [currentActiveTab, setActiveTab] = useState('order');
     
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...service.workshopInfo };
-    const vehicle = service.vehicle as Vehicle | undefined;
     
     const status = (service.status || '').toLowerCase();
     
@@ -356,7 +357,7 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicke
                             </Button>
                          )}
                         <Button asChild variant="outline">
-                            <Link href={`/facturar?folio=${service.id}&total=${service.totalCost}`} target="_blank"><FileJson className="mr-2 h-4 w-4"/>Facturar</Link>
+                            <Link href={`/facturar?folio=${service.folio || service.id}&total=${service.totalCost}`} target="_blank"><FileJson className="mr-2 h-4 w-4"/>Facturar</Link>
                         </Button>
                     </CardFooter>
                 )}
