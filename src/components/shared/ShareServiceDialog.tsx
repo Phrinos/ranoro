@@ -1,16 +1,17 @@
+
 // src/components/shared/ShareServiceDialog.tsx
 "use client";
 
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ServiceRecord, Vehicle } from '@/types';
-import { Copy, Share2, MessageSquare, ExternalLink } from 'lucide-react';
+import { Copy, Share2, MessageSquare, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ServiceSheetContent } from '../ServiceSheetContent';
-import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import Link from 'next/link';
+import html2canvas from 'html2canvas';
 
 interface ShareServiceDialogProps {
   open: boolean;
@@ -40,6 +41,24 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
       });
     }
   };
+
+  const handleCopyImageToClipboard = useCallback(async () => {
+    if (!serviceSheetRef.current) {
+        toast({ title: "Error", description: "No se puede generar la imagen del ticket.", variant: "destructive" });
+        return;
+    }
+    try {
+        const canvas = await html2canvas(serviceSheetRef.current, { scale: 2 });
+        const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error("No se pudo crear la imagen.");
+        
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        toast({ title: "Ticket Copiado", description: "La imagen del ticket se ha copiado al portapapeles." });
+    } catch (err) {
+        console.error("Error copying image:", err);
+        toast({ title: "Error", description: "No se pudo copiar la imagen del ticket.", variant: "destructive" });
+    }
+  }, [serviceSheetRef]);
   
   const handleShare = async () => {
     if (navigator.share) {
@@ -85,7 +104,7 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
                                 value={publicUrl}
                                 className="w-full px-3 py-2 text-sm border rounded-md bg-white text-muted-foreground"
                             />
-                            <Button variant="outline" size="icon" onClick={() => handleCopyToClipboard(publicUrl, 'link')} className="bg-white">
+                             <Button variant="outline" size="icon" onClick={() => handleCopyToClipboard(publicUrl, 'link')} className="bg-white">
                                 <Copy className="h-4 w-4" />
                             </Button>
                             <Button variant="outline" size="icon" asChild className="bg-white">
@@ -98,22 +117,25 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
                 </div>
                 <Separator className="my-4" />
                 <DialogFooter className="mt-auto flex-col sm:flex-col sm:space-x-0 gap-2">
-                    <Button variant="outline" onClick={() => handleCopyToClipboard(decodeURIComponent(getWhatsappMessage()), 'text')} className="w-full bg-white border-blue-500 text-black hover:bg-blue-50">
+                    <Button variant="outline" onClick={handleCopyImageToClipboard} className="w-full h-12 bg-white border-purple-500 text-black hover:bg-purple-50">
+                        <ImageIcon className="mr-2 h-4 w-4 text-purple-600" /> Copiar Ticket como Imagen
+                    </Button>
+                    <Button variant="outline" onClick={() => handleCopyToClipboard(decodeURIComponent(getWhatsappMessage()), 'text')} className="w-full h-12 bg-white border-blue-500 text-black hover:bg-blue-50">
                         <Copy className="mr-2 h-4 w-4 text-blue-600" /> Copiar Mensaje
                     </Button>
                     {vehicle?.chatMetaLink && (
-                         <Button variant="outline" asChild className="w-full bg-white border-green-500 text-black hover:bg-green-50">
+                         <Button variant="outline" asChild className="w-full h-12 bg-white border-green-500 text-black hover:bg-green-50">
                             <a href={vehicle.chatMetaLink} target="_blank" rel="noopener noreferrer">
                                 <MessageSquare className="mr-2 h-4 w-4 text-green-600" /> Abrir Chat
                             </a>
                         </Button>
                     )}
-                    <Button onClick={handleShare} variant="outline" className="w-full bg-white border-red-500 text-black hover:bg-red-50">
+                    <Button onClick={handleShare} variant="outline" className="w-full h-12 bg-white border-red-500 text-black hover:bg-red-50">
                         <Share2 className="mr-2 h-4 w-4 text-red-600" /> Compartir
                     </Button>
                 </DialogFooter>
             </div>
-            <div className="hidden md:block bg-muted/50 p-6 overflow-y-auto max-h-[80vh]">
+            <div className="hidden md:block bg-muted/30 p-6 overflow-y-auto max-h-[80vh]">
                 <h3 className="text-lg font-semibold text-center mb-4">Vista Previa del Documento</h3>
                 <div className="aspect-[8.5/11] w-full bg-white rounded-lg shadow-lg mx-auto">
                     <ServiceSheetContent ref={serviceSheetRef} service={service} vehicle={vehicle} />
