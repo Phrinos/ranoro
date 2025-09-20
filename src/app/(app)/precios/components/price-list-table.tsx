@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from "react";
@@ -55,7 +56,7 @@ export const PriceListTable = React.memo(({ records, onEdit, onDelete, sortOptio
   };
 
   const renderSortArrow = (key: 'make' | 'model') => {
-    if (sortOption.startsWith(key)) {
+    if (sortOption && sortOption.startsWith(key)) {
       return <ArrowUpDown className="ml-2 h-4 w-4" />;
     }
     return <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />;
