@@ -230,6 +230,8 @@ function VehiculosPage() {
                                     records={priceListTableManager.fullFilteredData}
                                     onEdit={handleOpenPriceListDialog}
                                     onDelete={handleDeletePriceListRecord}
+                                    sortOption={priceListTableManager.sortOption}
+                                    onSortOptionChange={priceListTableManager.onSortOptionChange}
                                 />
                             </CardContent>
                         </Card>
