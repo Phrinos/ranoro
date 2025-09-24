@@ -23,7 +23,6 @@ export default function PublicServicePage() {
   const { toast } = useToast();
 
   const [service, setService] = useState<ServiceRecord | null | undefined>(undefined);
-  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   const [isSigning, setIsSigning] = useState(false);
@@ -49,16 +48,6 @@ export default function PublicServicePage() {
       
       const serviceData = { id: snap.id, ...(snap.data() as ServiceRecord) };
       setService(serviceData);
-
-      // Ahora, busca el vehículo asociado
-      if (serviceData.vehicleId) {
-        const vehicleRef = doc(db, "vehicles", serviceData.vehicleId);
-        const vehicleSnap = await getDoc(vehicleRef);
-        if (vehicleSnap.exists()) {
-          setVehicle({ id: vehicleSnap.id, ...vehicleSnap.data() } as Vehicle);
-        }
-      }
-
       setError(null);
     } catch (e: any) {
       console.error("getPublicServiceData", e?.code, e?.message);
@@ -168,8 +157,12 @@ export default function PublicServicePage() {
     setSignatureType(type);
     setIsSigning(true);
   };
+  
+  // The vehicle data is now part of the denormalized service object
+  const vehicle: Vehicle | null = service?.vehicle || null;
 
-  if (service === undefined || vehicle === undefined) {
+
+  if (service === undefined) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -236,10 +229,12 @@ export default function PublicServicePage() {
         <TicketContent
           ref={ticketContentRef}
           service={service}
-          vehicle={service.vehicle as any}
+          vehicle={vehicle as any}
           previewWorkshopInfo={service.workshopInfo}
         />
       </UnifiedPreviewDialog>
     </>
   );
 }
+
+    

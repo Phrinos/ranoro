@@ -18,8 +18,8 @@ interface ServiceData extends DocumentData {
     folio?: string;
     status?: string;
     publicId?: string;
-    vehicle?: any;
-    customer?: any;
+    vehicle?: any; // <-- vehicle object from service record
+    customer?: any; // <-- customer object from service record
     items?: any[];
     reception?: any;
 }
@@ -29,27 +29,65 @@ interface PublicData {
     status?: string;
     publicId?: string;
     vehicle?: any;
-    customer?: any;
-    items?: any[];
-    reception?: any;
+    customerName?: string;
+    customerPhone?: string;
+    vehicleIdentifier?: string;
+    // Add other fields that you want to be public
+    serviceItems?: any[]; 
+    receptionDateTime?: string;
+    deliveryDateTime?: string;
+    mileage?: number;
+    subStatus?: string;
+    appointmentStatus?: string;
+    customerSignatureReception?: string;
+    customerSignatureDelivery?: string;
+    notes?: string;
+    totalCost?: number;
+    payments?: any[];
+    nextServiceInfo?: any;
+    serviceAdvisorName?: string;
+    serviceAdvisorSignatureDataUrl?: string;
+    vehicleConditions?: string;
+    customerItems?: string;
+    fuelLevel?: string;
+    safetyInspection?: any;
 }
 
 
 /**
- * Los campos que se exponen públicamente.
- * Es importante NO incluir información sensible aquí.
+ * Extracts and denormalizes the necessary public-facing data from a service record.
+ * This ensures the public document has all data needed, avoiding extra reads from the client.
  */
 const getPublicData = (service: ServiceData): PublicData => {
     const publicData: PublicData = {
       folio: service.folio,
       status: service.status,
       publicId: service.publicId,
+      subStatus: service.subStatus,
+      appointmentStatus: service.appointmentStatus,
+      // Denormalize vehicle and customer info directly onto the public doc
+      customerName: service.customerName,
+      customerPhone: service.customerPhone,
+      vehicleIdentifier: service.vehicleIdentifier,
+      // Copy the nested vehicle object if it exists
+      vehicle: service.vehicle || null,
+      serviceItems: service.serviceItems || [],
+      receptionDateTime: service.receptionDateTime,
+      deliveryDateTime: service.deliveryDateTime,
+      mileage: service.mileage,
+      customerSignatureReception: service.customerSignatureReception,
+      customerSignatureDelivery: service.customerSignatureDelivery,
+      notes: service.notes,
+      totalCost: service.totalCost,
+      payments: service.payments,
+      nextServiceInfo: service.nextServiceInfo,
+      serviceAdvisorName: service.serviceAdvisorName,
+      serviceAdvisorSignatureDataUrl: service.serviceAdvisorSignatureDataUrl,
+      vehicleConditions: service.vehicleConditions,
+      customerItems: service.customerItems,
+      fuelLevel: service.fuelLevel,
+      safetyInspection: service.safetyInspection,
     };
-
-    if (service.vehicle !== undefined) publicData.vehicle = service.vehicle;
-    if (service.customer !== undefined) publicData.customer = service.customer;
-    if (service.items !== undefined) publicData.items = service.items;
-    if (service.reception !== undefined) publicData.reception = service.reception;
 
     return publicData;
 };
@@ -208,3 +246,5 @@ export const onStockExit = inventory.onStockExit;
 export const onPurchaseCreated = inventory.onPurchaseCreated;
 export const onPurchaseUpdated = inventory.onPurchaseUpdated;
 export const adjustStock = inventory.adjustStock;
+
+    
