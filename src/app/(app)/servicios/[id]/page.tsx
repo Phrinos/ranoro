@@ -27,10 +27,49 @@ import { NotificationDialog } from '../components/notification-dialog';
 import { ServiceMobileBar } from '../components/ServiceMobileBar';
 import { ActiveServicesSheet } from '../components/ActiveServicesSheet';
 import { PhotoReportModal } from '../components/PhotoReportModal';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, type FieldErrors, type SubmitHandler, type SubmitErrorHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 import { nanoid } from 'nanoid';
+
+// --- Error Handling Utilities ---
+function materializeErrors<T extends FieldErrors<any>>(e: T) {
+  try {
+    return JSON.parse(JSON.stringify(e));
+  } catch {
+    const out: any = {};
+    const visit = (obj: any, tgt: any) => {
+      Object.entries(obj || {}).forEach(([k, v]) => {
+        if (!v) return;
+        if (typeof v === "object" && !("message" in (v as any))) {
+          tgt[k] = Array.isArray(v) ? [] : {};
+          visit(v, tgt[k]);
+        } else {
+          tgt[k] = v;
+        }
+      });
+    };
+    visit(e, out);
+    return out;
+  }
+}
+
+function flattenRHFErrors(errs: FieldErrors<any>): string[] {
+  const out: string[] = [];
+  const walk = (node: any) => {
+    if (!node || typeof node !== "object") return;
+    for (const key of Object.keys(node)) {
+      const val = node[key];
+      if (!val) continue;
+      if (typeof val === "object" && "message" in val && val.message) {
+        out.push(String(val.message));
+      }
+      if (typeof val === "object") walk(val);
+    }
+  };
+  walk(errs);
+  return Array.from(new Set(out)).filter(Boolean);
+}
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -60,13 +99,11 @@ export default function ServicioPage() {
   const redirectUrl = useRef<string | null>(null);
   const ticketContentRef = React.useRef<HTMLDivElement>(null);
 
-  // --- Mobile-specific state ---
   const [activeTab, setActiveTab] = useState('service-items');
   const [isServicesSheetOpen, setIsServicesSheetOpen] = useState(false);
   const [isChecklistWizardOpen, setIsChecklistWizardOpen] = useState(false);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   
-  // --- Vehicle Dialog State ---
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
 
@@ -76,6 +113,8 @@ export default function ServicioPage() {
 
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
 
   useEffect(() => {
@@ -197,9 +236,7 @@ export default function ServicioPage() {
         if (!isEditMode) {
             handleShowShareDialog(savedRecord, '/servicios?tab=cotizaciones');
         } else {
-            if(savedRecord.publicId) {
-                await serviceService.createOrUpdatePublicService(savedRecord);
-            }
+            // Actualización de documento público se maneja por Cloud Function
         }
         
         return savedRecord;
@@ -211,6 +248,18 @@ export default function ServicioPage() {
     }
   };
   
+  const onValidationErrors: SubmitErrorHandler<ServiceFormValues> = (errors) => {
+    const plainErrors = materializeErrors(errors);
+    console.error("Validation Errors:", plainErrors);
+    
+    const errorMessages = flattenRHFErrors(errors);
+    toast({
+        title: "Formulario Incompleto",
+        description: errorMessages[0] || "Por favor, revise todos los campos marcados.",
+        variant: "destructive",
+    });
+  };
+
   const handleCompleteService = (values: ServiceFormValues) => {
     setInitialData(values as ServiceRecord);
     setIsPaymentDialogOpen(true);
@@ -347,7 +396,7 @@ export default function ServicioPage() {
             suppliers={suppliers}
             serviceHistory={serviceHistory}
             onSave={handleSaveService}
-            onSaveSuccess={handleShowShareDialog}
+            onValidationErrors={onValidationErrors}
             onComplete={handleCompleteService}
             onVehicleCreated={handleVehicleSave}
             onCancel={isQuote ? handleDeleteQuote : handleCancelService}
@@ -366,7 +415,7 @@ export default function ServicioPage() {
           setActiveTab('safety-checklist');
           setIsChecklistWizardOpen(true);
         }}
-        onSave={() => document.getElementById('service-form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
+        onSave={() => methods.handleSubmit(handleSaveService, onValidationErrors)()}
         isSubmitting={isSubmitting}
       />
 

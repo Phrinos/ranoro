@@ -1,8 +1,9 @@
+
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
 import React, { useEffect, useMemo } from 'react';
-import { useFormContext, useWatch, type FieldErrors, type SubmitHandler, type SubmitErrorHandler } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Ban, Trash2, DollarSign } from 'lucide-react';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types';
@@ -24,51 +25,6 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { ServiceFormFooter } from './ServiceFormFooter';
 import type { ServiceFormValues } from '@/schemas/service-form';
 
-
-// Evita el {} “vacío” del console con proxies/referencias
-function materializeErrors<T extends FieldErrors<any>>(e: T) {
-  try {
-    return JSON.parse(JSON.stringify(e));
-  } catch {
-    // fallback profundo
-    const out: any = {};
-    const visit = (obj: any, tgt: any) => {
-      Object.entries(obj || {}).forEach(([k, v]) => {
-        if (!v) return;
-        if (typeof v === "object" && !("message" in (v as any))) {
-          tgt[k] = Array.isArray(v) ? [] : {};
-          visit(v, tgt[k]);
-        } else {
-          tgt[k] = v;
-        }
-      });
-    };
-    visit(e, out);
-    return out;
-  }
-}
-
-// Recolecta todos los messages (incluye arrays anidados)
-function flattenRHFErrors(errs: FieldErrors<any>): string[] {
-  const out: string[] = [];
-  const walk = (node: any) => {
-    if (!node || typeof node !== "object") return;
-    for (const key of Object.keys(node)) {
-      const val = node[key];
-      if (!val) continue;
-      if (typeof val === "object" && "message" in val && val.message) {
-        out.push(String(val.message));
-      }
-      // RHF para arrays guarda índices numéricos como claves
-      if (typeof val === "object") walk(val);
-    }
-  };
-  walk(errs);
-  // único + limpio
-  return Array.from(new Set(out)).filter(Boolean);
-}
-
-
 interface ServiceFormProps {
   initialData: ServiceRecord | null;
   vehicles: Vehicle[];
@@ -79,7 +35,7 @@ interface ServiceFormProps {
   suppliers: Supplier[];
   serviceHistory: ServiceRecord[];
   onSave: (data: ServiceFormValues) => Promise<ServiceRecord | void>;
-  onSaveSuccess: (service: ServiceRecord) => void;
+  onValidationErrors: (errors: any) => void;
   onComplete?: (data: ServiceFormValues) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
   onCancel?: () => void;
@@ -101,7 +57,7 @@ export function ServiceForm({
   suppliers,
   serviceHistory,
   onSave,
-  onSaveSuccess,
+  onValidationErrors,
   onComplete,
   onVehicleCreated,
   onCancel,
@@ -128,9 +84,7 @@ export function ServiceForm({
   }, [users]);
 
   const methods = useFormContext<ServiceFormValues>();
-  const { handleSubmit, getValues, setValue, formState: { isSubmitting }, watch, trigger } = methods;
-
-  const watchedStatus = watch('status');
+  const { handleSubmit, getValues, setValue, formState: { isSubmitting }, watch } = methods;
 
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
@@ -140,25 +94,6 @@ export function ServiceForm({
     });
     return () => subscription.unsubscribe();
   }, [watch, setValue, getValues]);
-
-  const handleFormSubmit: SubmitHandler<ServiceFormValues> = async (values) => {
-    const savedService = await onSave(values);
-    if (savedService && onSaveSuccess) {
-      onSaveSuccess(savedService);
-    }
-  };
-
-  const onValidationErrors: SubmitErrorHandler<ServiceFormValues> = (errors) => {
-    const plainErrors = materializeErrors(errors);
-    console.error("Validation Errors:", plainErrors);
-    
-    const errorMessages = flattenRHFErrors(errors);
-    toast({
-        title: "Formulario Incompleto",
-        description: errorMessages[0] || "Por favor, revise todos los campos marcados.",
-        variant: "destructive",
-    });
-  };
   
   const handleCompleteClick = () => {
     if (onComplete) {
@@ -199,10 +134,9 @@ export function ServiceForm({
     }
   };
 
-
   return (
     <>
-      <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
+      <form id="service-form" onSubmit={handleSubmit(onSave, onValidationErrors)}>
        <div className="space-y-6 p-1 pb-24 md:pb-6">
          <VehicleSelectionCard
             vehicles={vehicles}
@@ -243,7 +177,7 @@ export function ServiceForm({
             <TabsContent value="reception-delivery">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ReceptionAndDelivery part="reception" isReadOnly={isSubmitting} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} onOpenSignature={handleOpenSignature} />
-                    {watchedStatus === 'Entregado' && <ReceptionAndDelivery part="delivery" isReadOnly={isSubmitting} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} onOpenSignature={handleOpenSignature} />}
+                    {watch('status') === 'Entregado' && <ReceptionAndDelivery part="delivery" isReadOnly={isSubmitting} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} onOpenSignature={handleOpenSignature} />}
                  </div>
             </TabsContent>
             <TabsContent value="safety-checklist">
