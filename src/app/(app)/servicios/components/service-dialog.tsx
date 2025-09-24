@@ -46,39 +46,35 @@ export function ServiceDialog({
 }: ServiceDialogProps) {
   const { isExpanded } = useSidebar();
   
+  // Forzar valores por defecto para un nuevo servicio
   const defaultValues: Partial<ServiceFormValues> = initialData ? {
     ...initialData,
-    status: initialData.status || 'Cotizacion', // Asegurar que el estado no sea nulo
+    status: initialData.status || 'Cotizacion',
   } : {
-    status: 'Cotizacion', // Estado por defecto para nuevos servicios
+    status: 'Cotizacion', // ¡Estado por defecto explícito!
     serviceDate: new Date().toISOString(),
-    items: [],
-    // ... otros valores por defecto para un servicio nuevo
+    serviceItems: [],
+    payments: [],
   };
 
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues,
     mode: 'onBlur', // Validar solo cuando el usuario deja el campo
+    reValidateMode: 'onChange',
   });
   
   const { reset } = methods;
 
   React.useEffect(() => {
+    // Resetear el formulario con los valores correctos cada vez que se abre
     if (open) {
       reset(defaultValues);
     }
-  }, [open, initialData, reset, defaultValues]);
-
-  const handleDialogClose = (isOpen: boolean) => {
-    if (!isOpen) {
-      // Podrías añadir una confirmación si hay cambios sin guardar
-      onOpenChange(false);
-    }
-  };
+  }, [open, initialData, reset]);
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className={cn(
             "max-w-4xl h-full flex flex-col transition-all duration-300", 
@@ -87,7 +83,7 @@ export function ServiceDialog({
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{initialData ? 'Editar' : 'Nuevo'} {mode === 'quote' ? 'Cotización' : 'Servicio'}</DialogTitle>
+          <DialogTitle>{initialData ? 'Editar' : 'Nueva'} {mode === 'quote' ? 'Cotización' : 'Servicio'}</DialogTitle>
         </DialogHeader>
         <FormProvider {...methods}>
           <ServiceForm

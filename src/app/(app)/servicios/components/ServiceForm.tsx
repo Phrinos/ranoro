@@ -2,219 +2,191 @@
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
-import React, { useEffect, useMemo } from 'react';
-import { useFormContext, useWatch } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Loader2, Save, Ban, Trash2, DollarSign } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { useFormContext } from 'react-hook-form';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
-import { useToast } from '@/hooks/use-toast';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { ServiceSummary } from './ServiceSummary';
+import { Card, CardContent } from '@/components/ui/card';
 import { ServiceItemsList } from './ServiceItemsList';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
-import { SafetyChecklist } from './SafetyChecklist';
-import PhotoReportTab from './PhotoReportTab';
 import { ServiceDetailsCard } from './ServiceDetailsCard';
 import { NextServiceInfoCard } from './NextServiceInfoCard';
-import { Card, CardContent } from '@/components/ui/card';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
-import { SignatureDialog } from './signature-dialog';
-import { enhanceText } from '@/ai/flows/text-enhancement-flow';
+import { SafetyChecklist } from './SafetyChecklist';
+import PhotoReportTab from './PhotoReportTab';
+import { ServiceSummary } from './ServiceSummary';
 import { ServiceFormFooter } from './ServiceFormFooter';
+import { SignatureDialog } from './signature-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { FieldErrors } from 'react-hook-form';
 import type { ServiceFormValues } from '@/schemas/service-form';
+import { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 
-interface ServiceFormProps {
-  initialData: ServiceRecord | null;
-  vehicles: Vehicle[];
-  users: User[]; 
-  inventoryItems: InventoryItem[];
-  serviceTypes: ServiceTypeRecord[];
-  categories: InventoryCategory[];
-  suppliers: Supplier[];
-  serviceHistory: ServiceRecord[];
-  onSave: (data: ServiceFormValues) => Promise<ServiceRecord | void>;
-  onValidationErrors: (errors: any) => void;
-  onComplete?: (data: ServiceFormValues) => void;
-  onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
-  onCancel?: () => void;
-  mode: 'service' | 'quote';
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-  isChecklistWizardOpen: boolean;
-  setIsChecklistWizardOpen: (isOpen: boolean) => void;
-  onOpenNewVehicleDialog: (plate?: string) => void;
-}
+// --- Funciones de Ayuda ---
+const getErrorMessages = (errors: FieldErrors<ServiceFormValues>): string => {
+    const messages: string[] = [];
+    const parseErrors = (errorObj: any, prefix = '') => {
+        for (const key in errorObj) {
+            const fullKey = prefix ? `${prefix}.${key}` : key;
+            const error = errorObj[key];
+            if (error && error.message) messages.push(`${fullKey}: ${error.message}`);
+            else if (typeof error === 'object' && error !== null) parseErrors(error, fullKey);
+        }
+    };
+    parseErrors(errors);
+    if (messages.length === 0) return "Error de validación desconocido.";
+    return `Hay errores en el formulario: ${messages.join('; ')}.`;
+};
 
+const normalizeText = (text: string | null | undefined): string => {
+    if (!text) return "";
+    return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
+// --- Componente Principal ---
 export function ServiceForm({
-  initialData,
-  vehicles,
-  users,
-  inventoryItems,
-  serviceTypes,
-  categories,
-  suppliers,
-  serviceHistory,
-  onSave,
-  onValidationErrors,
-  onComplete,
-  onVehicleCreated,
-  onCancel,
-  mode,
-  activeTab,
-  onTabChange,
-  isChecklistWizardOpen,
-  setIsChecklistWizardOpen,
-  onOpenNewVehicleDialog,
-}: ServiceFormProps) {
+  initialData, vehicles, users, inventoryItems, serviceTypes, categories, suppliers, serviceHistory,
+  onSave, onSaveSuccess, onComplete, onVehicleCreated, onCancel, mode, activeTab, onTabChange,
+  isChecklistWizardOpen, setIsChecklistWizardOpen, onOpenNewVehicleDialog,
+}: any) {
   const { toast } = useToast();
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
   const [signatureType, setSignatureType] = React.useState<'reception' | 'delivery' | 'advisor' | null>(null);
-  const [isEnhancingText, setIsEnhancingText] = React.useState<string | null>(null);
 
   const { advisors, technicians } = React.useMemo(() => {
-    const advisors: User[] = [];
-    const technicians: User[] = [];
-    (users || []).forEach(user => {
-      if (user.functions?.includes('asesor')) advisors.push(user);
-      if (user.functions?.includes('tecnico')) technicians.push(user);
-    });
-    return { advisors, technicians };
+    const advisorsList: User[] = [];
+    const techniciansList: User[] = [];
+    const safeUsers = Array.isArray(users) ? users : [];
+    for (const user of safeUsers) {
+      if (user.isArchived) continue;
+      const userFunctions = Array.isArray(user.functions) ? user.functions : [];
+      const normalizedRole = normalizeText(user.role);
+      if (userFunctions.includes('asesor') || normalizedRole.includes('asesor')) advisorsList.push(user);
+      if (userFunctions.includes('tecnico') || normalizedRole.includes('tecnico')) techniciansList.push(user);
+    }
+    return { advisors: [...new Set(advisorsList)], technicians: [...new Set(techniciansList)] };
   }, [users]);
 
   const methods = useFormContext<ServiceFormValues>();
-  const { handleSubmit, getValues, setValue, formState: { isSubmitting }, watch } = methods;
+  const { control, handleSubmit, getValues, setValue, formState: { isSubmitting, touchedFields }, watch, trigger } = methods;
+
+  const watchedStatus = watch('status');
+  const selectedVehicleId = watch('vehicleId');
+  const serviceItems = watch('serviceItems');
+  
+  const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
+  const currentMileage = selectedVehicle?.mileage;
+
+  const totalCost = React.useMemo(() => {
+    return (serviceItems || []).reduce((sum, item) => sum + (Number(item.sellingPrice) || 0), 0);
+  }, [serviceItems]);
 
   useEffect(() => {
-    const subscription = watch((value, { name, type }) => {
+    const subscription = watch((value, { name }) => {
       if (name === 'status' && value.status === 'En Taller' && !getValues('receptionDateTime')) {
-        setValue('receptionDateTime', new Date(), { shouldDirty: true, shouldValidate: true });
+        setValue('receptionDateTime', new Date().toISOString(), { shouldDirty: true, shouldValidate: true });
       }
     });
     return () => subscription.unsubscribe();
   }, [watch, setValue, getValues]);
-  
-  const handleCompleteClick = () => {
-    if (onComplete) {
-      onComplete(getValues());
-    }
+
+  const handleVehicleSelection = (vehicle: Vehicle | null) => {
+    setValue('vehicleId', vehicle?.id || '', { shouldDirty: true });
+    setValue('customerName', vehicle?.ownerName || '', { shouldDirty: true });
+    if (touchedFields.vehicleId) trigger('vehicleId');
+    if (touchedFields.customerName) trigger('customerName');
+  };
+
+  const handleFormSubmit = async (values: ServiceFormValues) => {
+    const savedService = await onSave(values);
+    if (savedService && onSaveSuccess) onSaveSuccess(savedService);
+  };
+
+  const onValidationErrors = (errors: FieldErrors<ServiceFormValues>) => {
+    const description = getErrorMessages(errors);
+    toast({ title: "Error de Validación", description, variant: "destructive" });
   };
   
-  const handleOpenSignature = (type: 'reception' | 'delivery' | 'advisor') => {
+  const handleCompleteClick = () => {
+    if (onComplete) onComplete(getValues());
+  };
+
+  const handleOpenSignatureDialog = (type: 'reception' | 'delivery' | 'advisor') => {
     setSignatureType(type);
     setIsSignatureDialogOpen(true);
   };
   
-  const handleSaveSignature = (signatureDataUrl: string) => {
-    let fieldName: 'customerSignatureReception' | 'customerSignatureDelivery' | 'serviceAdvisorSignatureDataUrl' | null = null;
+  const handleSaveSignature = (dataUrl: string) => {
+    let fieldName: keyof ServiceFormValues | undefined;
     if (signatureType === 'reception') fieldName = 'customerSignatureReception';
-    else if (signatureType === 'delivery') fieldName = 'customerSignatureDelivery';
-    else if (signatureType === 'advisor') fieldName = 'serviceAdvisorSignatureDataUrl';
-    
-    if (fieldName) {
-        setValue(fieldName, signatureDataUrl, { shouldDirty: true });
-        toast({ title: "Firma guardada exitosamente." });
-    }
+    if (signatureType === 'delivery') fieldName = 'customerSignatureDelivery';
+    if (signatureType === 'advisor') fieldName = 'serviceAdvisorSignatureDataUrl';
+    if (fieldName) setValue(fieldName, dataUrl, { shouldDirty: true, shouldValidate: true });
     setIsSignatureDialogOpen(false);
-  };
-  
-  const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
-    const currentValue = getValues(fieldName);
-    if (!currentValue) return;
-    setIsEnhancingText(fieldName);
-    try {
-      const enhanced = await enhanceText({ text: currentValue, context: 'Service Notes' });
-      setValue(fieldName, enhanced, { shouldDirty: true });
-    } catch (e) {
-      console.error(e);
-      toast({ title: 'Error de IA', description: 'No se pudo mejorar el texto.', variant: 'destructive' });
-    } finally {
-      setIsEnhancingText(null);
-    }
   };
 
   return (
     <>
-      <form id="service-form" onSubmit={handleSubmit(onSave, onValidationErrors)}>
-       <div className="space-y-6 p-1 pb-24 md:pb-6">
-         <VehicleSelectionCard
+      <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
+        <div className="space-y-6 p-1 pb-24 md:pb-6">
+          <VehicleSelectionCard
             vehicles={vehicles}
+            onVehicleSelect={handleVehicleSelection}
+            serviceHistory={serviceHistory}
             onOpenNewVehicleDialog={onOpenNewVehicleDialog}
             initialVehicleId={initialData?.vehicleId}
-            serviceHistory={serviceHistory}
-        />
-          
-        <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-            <TabsList className="hidden md:grid w-full grid-cols-5 mb-4">
-              <TabsTrigger value="service-items">Items del Servicio</TabsTrigger>
-              <TabsTrigger value="reception-delivery">Recepción y Entrega</TabsTrigger>
-              <TabsTrigger value="safety-checklist">Checklist Seguridad</TabsTrigger>
-              <TabsTrigger value="photo-report">Reporte Fotográfico</TabsTrigger>
-              <TabsTrigger value="details">Detalles y Estado</TabsTrigger>
+          />
+          <ServiceDetailsCard
+            isReadOnly={false}
+            advisors={advisors}
+            technicians={technicians}
+            serviceTypes={serviceTypes}
+            onOpenSignature={handleOpenSignatureDialog}
+            isNew={!initialData?.id}
+          />
+          {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
+            <NextServiceInfoCard currentMileage={currentMileage} />
+          )}
+          <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+              <TabsTrigger value="service-items">Trabajos y Resumen</TabsTrigger>
+              <TabsTrigger value="reception-delivery">Recepción</TabsTrigger>
+              <TabsTrigger value="photo-report">Fotos</TabsTrigger>
+              <TabsTrigger value="safety-checklist">Checklist</TabsTrigger>
             </TabsList>
-            <TabsContent value="service-items">
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-                    <div className="lg:col-span-3">
-                      <ServiceItemsList
-                        isReadOnly={isSubmitting}
-                        inventoryItems={inventoryItems}
-                        serviceTypes={serviceTypes}
-                        technicians={technicians}
-                        mode={mode}
-                        onNewInventoryItemCreated={onVehicleCreated as any}
-                        categories={categories}
-                        suppliers={suppliers}
-                        isEnhancingText={isEnhancingText}
-                        handleEnhanceText={handleEnhanceText}
-                      />
-                    </div>
-                    <div className="lg:col-span-2 space-y-6">
-                      <ServiceSummary onOpenValidateDialog={() => {}} validatedFolios={{}} />
-                    </div>
-                </div>
+            <TabsContent value="service-items" className="space-y-6 mt-4">
+              <Card><CardContent className="pt-6">
+                <ServiceItemsList
+                  inventoryItems={inventoryItems} serviceTypes={serviceTypes} categories={categories}
+                  suppliers={suppliers} technicians={technicians} mode={mode}
+                  onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
+                  handleEnhanceText={() => {}} isEnhancingText={null}
+                />
+              </CardContent></Card>
+              <Card><CardContent className="pt-6">
+                <ServiceSummary totalAmount={totalCost} onOpenValidateDialog={() => {}} validatedFolios={{}} />
+              </CardContent></Card>
             </TabsContent>
-            <TabsContent value="reception-delivery">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ReceptionAndDelivery part="reception" isReadOnly={isSubmitting} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} onOpenSignature={handleOpenSignature} />
-                    {watch('status') === 'Entregado' && <ReceptionAndDelivery part="delivery" isReadOnly={isSubmitting} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} onOpenSignature={handleOpenSignature} />}
-                 </div>
+            <TabsContent value="reception-delivery" className="space-y-6 mt-4">
+              <ReceptionAndDelivery part="reception" onOpenSignature={handleOpenSignatureDialog} handleEnhanceText={() => {}} isEnhancingText={null} />
+              <ReceptionAndDelivery part="delivery" onOpenSignature={handleOpenSignatureDialog} handleEnhanceText={() => {}} isEnhancingText={null} />
             </TabsContent>
-            <TabsContent value="safety-checklist">
-                <SafetyChecklist isWizardOpen={isChecklistWizardOpen} setIsWizardOpen={setIsChecklistWizardOpen}/>
+            <TabsContent value="photo-report" className="mt-4"><PhotoReportTab /></TabsContent>
+            <TabsContent value="safety-checklist" className="mt-4">
+              <SafetyChecklist isWizardOpen={isChecklistWizardOpen} setIsWizardOpen={setIsChecklistWizardOpen} />
             </TabsContent>
-             <TabsContent value="photo-report">
-                <PhotoReportTab />
-            </TabsContent>
-            <TabsContent value="details">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <ServiceDetailsCard
-                        isReadOnly={isSubmitting}
-                        advisors={advisors}
-                        technicians={technicians}
-                        serviceTypes={serviceTypes}
-                        onOpenSignature={handleOpenSignature}
-                        isNew={!initialData?.id}
-                      />
-                     <NextServiceInfoCard isReadOnly={isSubmitting} currentMileage={watch('mileage')}/>
-                 </div>
-            </TabsContent>
-        </Tabs>
-       </div>
+          </Tabs>
+        </div>
         <ServiceFormFooter
-            formId="service-form"
-            onCancel={onCancel}
-            onComplete={onComplete}
-            mode={mode}
-            initialData={initialData}
-            isSubmitting={isSubmitting}
+          formId="service-form" onCancel={onCancel} onComplete={handleCompleteClick}
+          mode={mode} initialData={initialData} isSubmitting={isSubmitting}
         />
       </form>
-       <SignatureDialog
-          open={isSignatureDialogOpen}
-          onOpenChange={setIsSignatureDialogOpen}
-          onSave={handleSaveSignature}
-       />
+      <SignatureDialog
+        open={isSignatureDialogOpen}
+        onOpenChange={setIsSignatureDialogOpen}
+        onSave={handleSaveSignature}
+      />
     </>
   );
 }

@@ -1,6 +1,7 @@
+
 // src/components/shared/PaymentSection.tsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { formatCurrency } from '@/lib/utils';
 import { DollarSign, PlusCircle, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
+// --- Constantes Restauradas ---
 const paymentMethods: Payment['method'][] = ['Efectivo', 'Tarjeta', 'Tarjeta MSI', 'Transferencia'];
 
 const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
@@ -21,6 +23,7 @@ const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
   "Transferencia": Landmark,
 };
 
+
 interface PaymentSectionProps {
   onOpenValidateDialog?: (index: number) => void;
   validatedFolios?: Record<number, boolean>;
@@ -28,7 +31,7 @@ interface PaymentSectionProps {
 }
 
 export function PaymentSection({ onOpenValidateDialog, validatedFolios = {}, totalAmount = 0 }: PaymentSectionProps) {
-  const { control, watch } = useFormContext();
+  const { control, watch, setValue } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "payments",
@@ -36,12 +39,30 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios = {}, tot
   
   const watchedPayments = watch('payments');
 
+  useEffect(() => {
+    if (totalAmount > 0 && watchedPayments?.length === 1) {
+      setValue(`payments.0.amount`, totalAmount, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  }, [totalAmount, watchedPayments?.length, setValue]);
+
   const availablePaymentMethods = paymentMethods.filter(
-    method => !watchedPayments?.some((p: Payment) => p.method === method)
+    (method) => !watchedPayments?.some((p: Payment) => p.method === method)
   );
   
   const totalPaid = watchedPayments?.reduce((acc: number, p: Payment) => acc + (Number(p.amount) || 0), 0) || 0;
   
+  const handleAddPayment = () => {
+      const remainingAmount = Math.max(0, totalAmount - totalPaid);
+      append({ 
+          method: availablePaymentMethods[0], 
+          amount: remainingAmount > 0.01 ? remainingAmount : undefined, 
+          folio: '' 
+      });
+  };
+
   return (
     <Card className="p-4">
         <FormLabel>Métodos de Pago</FormLabel>
@@ -58,12 +79,12 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios = {}, tot
                             <FormField
                                 control={control}
                                 name={`payments.${index}.amount`}
-                                render={({ field }) => (
+                                render={({ field: formField }) => (
                                     <FormItem className="flex-grow">
                                         <div className="relative">
                                             <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                             <FormControl>
-                                                <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8 bg-white"/>
+                                                <Input type="number" step="0.01" {...formField} value={formField.value ?? ''} className="pl-8 bg-white"/>
                                             </FormControl>
                                         </div>
                                     </FormItem>
@@ -72,9 +93,9 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios = {}, tot
                             <FormField
                                 control={control}
                                 name={`payments.${index}.method`}
-                                render={({ field }) => (
+                                render={({ field: formField }) => (
                                     <FormItem className="w-48">
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select onValueChange={formField.onChange} value={formField.value}>
                                             <FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl>
                                             <SelectContent>
                                                 {paymentMethods.map(method => {
@@ -96,11 +117,11 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios = {}, tot
                                 <FormField
                                     control={control}
                                     name={`payments.${index}.folio`}
-                                    render={({ field }) => (
+                                    render={({ field: formField }) => (
                                         <FormItem className="flex-grow">
                                             <FormControl>
                                                 <div className="relative">
-                                                    <Input placeholder={folioLabel} {...field} value={field.value ?? ''} className="bg-white"/>
+                                                    <Input placeholder={folioLabel} {...formField} value={formField.value ?? ''} className="bg-white"/>
                                                     {isFolioValidated && <CheckCircle className="absolute right-2 top-2.5 h-5 w-5 text-green-500" />}
                                                 </div>
                                             </FormControl>
@@ -121,7 +142,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios = {}, tot
             })}
             {availablePaymentMethods.length > 0 && fields.length < paymentMethods.length && (
                  <div className="flex justify-end">
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ method: availablePaymentMethods[0], amount: undefined, folio: '' })}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddPayment}>
                         <PlusCircle className="mr-2 h-4 w-4"/> Añadir método de pago
                     </Button>
                  </div>
@@ -137,7 +158,7 @@ export function PaymentSection({ onOpenValidateDialog, validatedFolios = {}, tot
             <FormField
                 control={control}
                 name="payments"
-                render={({ field }) => <FormMessage />}
+                render={({ field: formField }) => <FormMessage />}
             />
         </div>
     </Card>

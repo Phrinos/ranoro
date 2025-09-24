@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceSummary.tsx
 "use client";
 
@@ -11,22 +12,18 @@ import { Separator } from '@/components/ui/separator';
 interface ServiceSummaryProps {
   onOpenValidateDialog: (index: number) => void;
   validatedFolios: Record<number, boolean>;
+  totalAmount: number; // Recibe el total calculado como prop
 }
 
 const IVA_RATE = 0.16;
 
-export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: ServiceSummaryProps) {
-  const { control, watch } = useFormContext();
+export function ServiceSummary({ onOpenValidateDialog, validatedFolios, totalAmount }: ServiceSummaryProps) {
+  const { control } = useFormContext();
   
-  const watchedItems = watch("serviceItems");
-  const cardCommission = watch('cardCommission') || 0;
+  const watchedItems = useWatch({ control, name: "serviceItems" });
+  const cardCommission = useWatch({ control, name: 'cardCommission' }) || 0;
 
-  const { subTotal, taxAmount, totalCost, serviceProfit } = useMemo(() => {
-    const total = (watchedItems || []).reduce(
-      (s: number, i: any) => s + (Number(i.sellingPrice) || 0),
-      0
-    );
-    
+  const { subTotal, taxAmount, serviceProfit } = useMemo(() => {
     const costOfSupplies = (watchedItems || [])
       .flatMap((i: any) => i.suppliesUsed ?? [])
       .reduce(
@@ -34,17 +31,16 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
         0
       );
 
-    const profit = total - costOfSupplies - cardCommission;
-    const sub = total / (1 + IVA_RATE);
-    const tax = total - sub;
+    const profit = totalAmount - costOfSupplies - cardCommission;
+    const sub = totalAmount / (1 + IVA_RATE);
+    const tax = totalAmount - sub;
     
     return {
-      totalCost: total,
       serviceProfit: profit,
       subTotal: sub,
       taxAmount: tax,
     };
-  }, [watchedItems, cardCommission]);
+  }, [totalAmount, watchedItems, cardCommission]); // Ahora depende del totalAmount recibido
 
   return (
     <Card className="h-full flex flex-col">
@@ -52,7 +48,7 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
         <CardTitle>Resumen y Pago</CardTitle>
       </CardHeader>
       <CardContent className="pt-0 flex flex-col space-y-4 flex-grow">
-        <PaymentSection onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios} totalAmount={totalCost} />
+        <PaymentSection onOpenValidateDialog={onOpenValidateDialog} validatedFolios={validatedFolios} totalAmount={totalAmount} />
         
         <div className="w-full mt-auto space-y-2 text-sm border-t pt-4">
           <div className="flex justify-between items-center">
@@ -76,7 +72,7 @@ export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: Servic
           <Separator className="my-2"/>
           <div className="flex justify-between items-center text-lg font-bold pt-1">
             <span>Total:</span>
-            <span className="text-primary">{formatCurrency(totalCost)}</span>
+            <span className="text-primary">{formatCurrency(totalAmount)}</span>
           </div>
         </div>
       </CardContent>
