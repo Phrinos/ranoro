@@ -20,6 +20,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { usePermissions } from '@/hooks/usePermissions';
 import { ServiceSuppliesArray } from './ServiceSuppliesArray'; // Import the new component
 import { Separator } from '@/components/ui/separator';
+import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
+
 
 const IVA_RATE = 0.16;
 
