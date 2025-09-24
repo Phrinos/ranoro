@@ -5,7 +5,6 @@ import React, { useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
-import { useServiceTotals } from '@/hooks/use-service-form-hooks';
 import { PaymentSection } from '@/components/shared/PaymentSection';
 import { Separator } from '@/components/ui/separator';
 
@@ -17,33 +16,35 @@ interface ServiceSummaryProps {
 const IVA_RATE = 0.16;
 
 export function ServiceSummary({ onOpenValidateDialog, validatedFolios }: ServiceSummaryProps) {
-  const form = useFormContext();
+  const { control, watch } = useFormContext();
   
-  const watchedItems = useWatch({ control: form.control, name: 'serviceItems' });
-  const cardCommission = useWatch({ control: form.control, name: 'cardCommission' }) || 0;
-  
-  const { subTotal, taxAmount, serviceProfit } = useMemo(() => {
-    if (!watchedItems) return { totalCost: 0, subTotal: 0, taxAmount: 0, serviceProfit: 0 };
+  const watchedItems = watch("serviceItems");
+  const cardCommission = watch('cardCommission') || 0;
+
+  const { subTotal, taxAmount, totalCost, serviceProfit } = useMemo(() => {
     const total = (watchedItems || []).reduce(
-      (s, i) => s + (Number(i.sellingPrice) || 0),
+      (s: number, i: any) => s + (Number(i.sellingPrice) || 0),
       0
     );
     
     const costOfSupplies = (watchedItems || [])
-      .flatMap((i) => i.suppliesUsed ?? [])
+      .flatMap((i: any) => i.suppliesUsed ?? [])
       .reduce(
-        (s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0),
+        (s: number, su: any) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0),
         0
       );
+
+    const profit = total - costOfSupplies - cardCommission;
+    const sub = total / (1 + IVA_RATE);
+    const tax = total - sub;
     
     return {
-      serviceProfit: total - costOfSupplies - cardCommission,
-      subTotal: total / (1 + IVA_RATE),
-      taxAmount: total - total / (1 + IVA_RATE),
+      totalCost: total,
+      serviceProfit: profit,
+      subTotal: sub,
+      taxAmount: tax,
     };
   }, [watchedItems, cardCommission]);
-
-  const totalCost = (watchedItems || []).reduce((s, i) => s + (Number(i.sellingPrice) || 0), 0);
 
   return (
     <Card className="h-full flex flex-col">
