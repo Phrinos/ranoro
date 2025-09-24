@@ -1,4 +1,3 @@
-
 // src/app/(public)/s/actions.ts
 'use server';
 
@@ -25,7 +24,8 @@ const getMainDocIdFromPublicId = async (db: FirebaseFirestore.Firestore, publicI
     const publicDocRef = db.collection('publicServices').doc(publicId);
     const publicDocSnap = await publicDocRef.get();
 
-    if (!publicDocSnap.exists()) {
+    // CORRECTED: .exists is a property in Admin SDK, not a function.
+    if (!publicDocSnap.exists) { 
         console.warn(`Public document with ID ${publicId} not found.`);
         // Fallback: Query the main collection directly. This is less efficient but robust.
         const query = db.collection('serviceRecords').where('publicId', '==', publicId).limit(1);
