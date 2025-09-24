@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo } from 'react';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext, useWatch, type FieldErrors, type SubmitHandler, type SubmitErrorHandler } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Ban, Trash2, DollarSign } from 'lucide-react';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types';
@@ -18,12 +18,55 @@ import PhotoReportTab from './PhotoReportTab';
 import { ServiceDetailsCard } from './ServiceDetailsCard';
 import { NextServiceInfoCard } from './NextServiceInfoCard';
 import { Card, CardContent } from '@/components/ui/card';
-import { FieldErrors } from 'react-hook-form';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 import { SignatureDialog } from './signature-dialog';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { ServiceFormFooter } from './ServiceFormFooter';
 import type { ServiceFormValues } from '@/schemas/service-form';
+
+
+// Evita el {} “vacío” del console con proxies/referencias
+function materializeErrors<T extends FieldErrors<any>>(e: T) {
+  try {
+    return JSON.parse(JSON.stringify(e));
+  } catch {
+    // fallback profundo
+    const out: any = {};
+    const visit = (obj: any, tgt: any) => {
+      Object.entries(obj || {}).forEach(([k, v]) => {
+        if (!v) return;
+        if (typeof v === "object" && !("message" in (v as any))) {
+          tgt[k] = Array.isArray(v) ? [] : {};
+          visit(v, tgt[k]);
+        } else {
+          tgt[k] = v;
+        }
+      });
+    };
+    visit(e, out);
+    return out;
+  }
+}
+
+// Recolecta todos los messages (incluye arrays anidados)
+function flattenRHFErrors(errs: FieldErrors<any>): string[] {
+  const out: string[] = [];
+  const walk = (node: any) => {
+    if (!node || typeof node !== "object") return;
+    for (const key of Object.keys(node)) {
+      const val = node[key];
+      if (!val) continue;
+      if (typeof val === "object" && "message" in val && val.message) {
+        out.push(String(val.message));
+      }
+      // RHF para arrays guarda índices numéricos como claves
+      if (typeof val === "object") walk(val);
+    }
+  };
+  walk(errs);
+  // único + limpio
+  return Array.from(new Set(out)).filter(Boolean);
+}
 
 
 interface ServiceFormProps {
@@ -46,28 +89,6 @@ interface ServiceFormProps {
   isChecklistWizardOpen: boolean;
   setIsChecklistWizardOpen: (isOpen: boolean) => void;
   onOpenNewVehicleDialog: (plate?: string) => void;
-}
-
-const getErrorMessages = (errors: FieldErrors) => {
-    let messages: string[] = [];
-    for (const key in errors) {
-        const error = errors[key as keyof FieldErrors];
-        if (error) {
-            if (typeof error.message === 'string') {
-                messages.push(error.message);
-            } else if (Array.isArray(error)) {
-                 error.forEach((err: any) => {
-                    if (err.name?.message) messages.push(err.name.message);
-                    if (err.sellingPrice?.message) messages.push(err.sellingPrice.message);
-                 });
-            }
-        }
-    }
-    return messages;
-};
-
-const normalizeText = (text: string | undefined | null): string => {
-  return text?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() || '';
 }
 
 export function ServiceForm({
@@ -99,7 +120,7 @@ export function ServiceForm({
   const { advisors, technicians } = React.useMemo(() => {
     const advisors: User[] = [];
     const technicians: User[] = [];
-    users.forEach(user => {
+    (users || []).forEach(user => {
       if (user.functions?.includes('asesor')) advisors.push(user);
       if (user.functions?.includes('tecnico')) technicians.push(user);
     });
@@ -107,7 +128,7 @@ export function ServiceForm({
   }, [users]);
 
   const methods = useFormContext<ServiceFormValues>();
-  const { handleSubmit, getValues, setValue, formState: { isSubmitting, errors }, watch, trigger } = methods;
+  const { handleSubmit, getValues, setValue, formState: { isSubmitting }, watch, trigger } = methods;
 
   const watchedStatus = watch('status');
 
@@ -120,27 +141,29 @@ export function ServiceForm({
     return () => subscription.unsubscribe();
   }, [watch, setValue, getValues]);
 
-  const handleFormSubmit = async (values: ServiceFormValues) => {
+  const handleFormSubmit: SubmitHandler<ServiceFormValues> = async (values) => {
     const savedService = await onSave(values);
     if (savedService && onSaveSuccess) {
       onSaveSuccess(savedService);
     }
   };
 
+  const onValidationErrors: SubmitErrorHandler<ServiceFormValues> = (errors) => {
+    const plainErrors = materializeErrors(errors);
+    console.error("Validation Errors:", plainErrors);
+    
+    const errorMessages = flattenRHFErrors(errors);
+    toast({
+        title: "Formulario Incompleto",
+        description: errorMessages[0] || "Por favor, revise todos los campos marcados.",
+        variant: "destructive",
+    });
+  };
+  
   const handleCompleteClick = () => {
     if (onComplete) {
       onComplete(getValues());
     }
-  };
-  
-  const onValidationErrors = (errors: FieldErrors) => {
-    console.error("Validation Errors:", errors);
-    const errorMessages = getErrorMessages(errors);
-    toast({
-        title: "Formulario Incompleto",
-        description: errorMessages.length > 0 ? errorMessages[0] : "Por favor, revise todos los campos requeridos.",
-        variant: "destructive",
-    });
   };
   
   const handleOpenSignature = (type: 'reception' | 'delivery' | 'advisor') => {
@@ -185,6 +208,7 @@ export function ServiceForm({
             vehicles={vehicles}
             onOpenNewVehicleDialog={onOpenNewVehicleDialog}
             initialVehicleId={initialData?.vehicleId}
+            serviceHistory={serviceHistory}
         />
           
         <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
