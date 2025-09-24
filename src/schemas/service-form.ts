@@ -1,4 +1,3 @@
-
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -156,15 +155,17 @@ export const serviceFormSchema = z.object({
             });
         }
         
-        data.payments?.forEach((payment, index) => {
-            if ((payment.method === 'Tarjeta' || payment.method === 'Tarjeta MSI' || payment.method === 'Transferencia') && (!payment.folio || payment.folio.trim() === '')) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: 'El folio es obligatorio para este método de pago al entregar el servicio.',
-                    path: [`payments.${index}.folio`],
-                });
-            }
-        });
+        if (data.payments) { // <-- Check if payments array exists
+            data.payments.forEach((payment, index) => {
+                if ((payment.method === 'Tarjeta' || payment.method === 'Tarjeta MSI' || payment.method === 'Transferencia') && (!payment.folio || payment.folio.trim() === '')) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: 'El folio es obligatorio para este método de pago al entregar el servicio.',
+                        path: [`payments.${index}.folio`],
+                    });
+                }
+            });
+        }
     }
 });
 
