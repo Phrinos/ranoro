@@ -5,7 +5,7 @@ export const CARD_RATE = 0.041;  // 4.1%
 export const MSI_RATE  = 0.12;   // 12%
 
 export function calcTotalFromItems(items: ServiceRecord["serviceItems"]): number {
-  return (items ?? []).reduce((s, i) => s + (Number(i.price) || 0), 0);
+  return (items ?? []).reduce((s, i) => s + (Number(i.sellingPrice) || 0), 0);
 }
 
 export function calcSuppliesCostFromItems(items: ServiceRecord["serviceItems"]): number {
@@ -25,7 +25,8 @@ export function calcCardCommission(total: number, payments?: Payment[], fallback
 
 /** Ganancia efectiva: total - insumos - comisión */
 export function calcEffectiveProfit(s: ServiceRecord): number {
-  const total    = Number(s.totalCost ?? calcTotalFromItems(s.serviceItems));
+  // CORRECCIÓN: Calcular el total siempre desde los items para asegurar consistencia.
+  const total    = calcTotalFromItems(s.serviceItems);
   const supplies = Number(s.totalSuppliesWorkshopCost ?? calcSuppliesCostFromItems(s.serviceItems));
 
   // ¿hay señales de pago con tarjeta?
