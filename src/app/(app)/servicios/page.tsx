@@ -18,7 +18,6 @@ import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog
 import { TicketContent } from '@/components/ticket-content';
 import { formatCurrency } from '@/lib/utils';
 import html2canvas from 'html2canvas';
-import ReactDOMServer from 'react-dom/server';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 
@@ -102,32 +101,30 @@ function ServiciosPage() {
   }, [searchParams, router, pathname]);
   
   const handleShowShareDialog = useCallback(async (service: ServiceRecord) => {
-    if (service.publicId) {
-      await serviceService.createOrUpdatePublicService(service);
-      setRecordForSharing(service);
-      setIsShareDialogOpen(true);
-      return;
+    let serviceToShare = { ...service };
+
+    // Si el servicio no tiene un ID público, genéralo y guárdalo.
+    // La Cloud Function se encargará de la sincronización.
+    if (!serviceToShare.publicId) {
+      try {
+        toast({ title: "Generando enlace público..." });
+        const newPublicId = generatePublicId();
+        await serviceService.updateService(service.id, { publicId: newPublicId });
+        serviceToShare.publicId = newPublicId; // Actualiza el objeto local
+      } catch (error) {
+        console.error("Error generating public link:", error);
+        toast({
+          title: "Error al crear enlace",
+          description: "No se pudo generar el enlace público para compartir.",
+          variant: "destructive"
+        });
+        return; // Detener si falla la actualización
+      }
     }
   
-    try {
-      toast({ title: "Generando enlace público..." });
-      const newPublicId = generatePublicId();
-      
-      const updatedServiceWithId = { ...service, publicId: newPublicId };
-      await serviceService.updateService(service.id, { publicId: newPublicId });
-      await serviceService.createOrUpdatePublicService(updatedServiceWithId);
-      
-      setRecordForSharing(updatedServiceWithId);
-      setIsShareDialogOpen(true);
-      
-    } catch (error) {
-      console.error("Error generating public link:", error);
-      toast({
-        title: "Error al crear enlace",
-        description: "No se pudo generar el enlace público para compartir.",
-        variant: "destructive"
-      });
-    }
+    setRecordForSharing(serviceToShare);
+    setIsShareDialogOpen(true);
+
   }, [toast]);
 
   const handleShowTicketDialog = useCallback((service: ServiceRecord) => {

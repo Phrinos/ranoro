@@ -20,9 +20,7 @@ import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, User } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
-import { savePublicDocument } from '../public-document';
 import { adminService } from './admin.service';
-import { nanoid } from 'nanoid';
 
 // --- Service Records ---
 
@@ -83,17 +81,22 @@ const getDocById = async (collectionName: 'serviceRecords', id: string): Promise
 
 const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
-    const collectionName = 'serviceRecords';
     
-    const docRef = doc(db, collectionName, data.id);
-    await setDoc(docRef, cleanObjectForFirestore(data), { merge: true });
+    const isNew = !data.id;
+    const serviceId = isNew ? doc(collection(db, 'serviceRecords')).id : data.id;
+    const serviceData = { ...data, id: serviceId };
+    
+    const docRef = doc(db, 'serviceRecords', serviceId);
+    await setDoc(docRef, cleanObjectForFirestore(serviceData), { merge: true });
+
+    // La sincronización ahora es manejada por una Cloud Function (onServiceCreated/onServiceUpdated)
 
     const savedDoc = await getDoc(docRef);
     if (!savedDoc.exists()) {
         throw new Error("Failed to save or retrieve the document.");
     }
-    const finalData = { ...savedDoc.data(), id: data.id } as ServiceRecord;
-    return finalData;
+    
+    return { ...savedDoc.data(), id: serviceId } as ServiceRecord;
 };
 
 const completeService = async (service: ServiceRecord, paymentDetails: any, batch: any): Promise<void> => {
@@ -118,30 +121,30 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
         return { ...item, technicianCommission: commissionForItem };
     }) || [];
     
-    // RE-CÁLCULO DEL TOTAL BASADO EN PAGOS
     const finalTotalFromPayments = paymentDetails.payments.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
 
     if (service.serviceAdvisorId) {
         const advisor = usersMap.get(service.serviceAdvisorId);
         if (advisor && typeof advisor.commissionRate === 'number' && advisor.commissionRate > 0) {
-            // Usamos el total final de los pagos para el cálculo
             serviceAdvisorCommission = finalTotalFromPayments * (advisor.commissionRate / 100);
         }
     }
 
     const updatedServiceData = {
         ...service,
-        total: finalTotalFromPayments, // Aseguramos que el total refleje la suma de los pagos
+        total: finalTotalFromPayments,
         serviceItems: serviceItemsWithCommission,
         totalCommission: totalTechnicianCommission,
         serviceAdvisorCommission: serviceAdvisorCommission,
         status: 'Entregado',
-        deliveryDateTime: new Date(), // Usamos un Timestamp de Firestore para máxima consistencia
+        deliveryDateTime: new Date(),
         payments: paymentDetails.payments,
         ...(paymentDetails.nextServiceInfo && { nextServiceInfo: paymentDetails.nextServiceInfo }),
     };
 
     batch.update(serviceRef, cleanObjectForFirestore(updatedServiceData));
+
+    // La sincronización es manejada por Cloud Function
 
     if (service.serviceItems && service.serviceItems.length > 0) {
         const suppliesToSubtract = service.serviceItems.flatMap(item => 
@@ -164,26 +167,30 @@ const cancelService = async (id: string, reason: string): Promise<void> => {
     if (serviceDoc.exists()) {
         const service = serviceDoc.data() as ServiceRecord;
         
+        let updatedData: Partial<ServiceRecord> = {};
         if (service.status === 'Agendado') {
-            batch.update(serviceRef, { 
+            updatedData = { 
                 status: 'Cotizacion', 
                 subStatus: null,
                 appointmentDateTime: null,
                 cancellationReason: reason 
-            });
+            };
         } else {
-            batch.update(serviceRef, { 
+            updatedData = { 
                 status: 'Cancelado', 
                 cancellationReason: reason 
-            });
+            };
 
             if (service.items && service.items.length > 0) {
                 await inventoryService.updateInventoryStock(batch, service.items, 'add');
             }
         }
-    }
+        
+        batch.update(serviceRef, updatedData);
+        await batch.commit();
 
-    await batch.commit();
+        // La sincronización es manejada por Cloud Function
+    }
 };
 
 const deleteService = async (id: string): Promise<void> => {
@@ -195,27 +202,8 @@ const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<
     if (!db) throw new Error("Database not initialized.");
     const serviceRef = doc(db, 'serviceRecords', id);
     await updateDoc(serviceRef, data);
+    // La sincronización es manejada por Cloud Function
 };
-
-const createOrUpdatePublicService = async (service: ServiceRecord): Promise<ServiceRecord> => {
-    let serviceToUpdate = { ...service };
-
-    // 1. Generate Public ID if it doesn't exist
-    if (!serviceToUpdate.publicId) {
-        serviceToUpdate.publicId = nanoid(16);
-        await updateDoc(doc(db, 'serviceRecords', serviceToUpdate.id), { publicId: serviceToUpdate.publicId });
-    }
-
-    // 2. Get vehicle data
-    const vehicle = await inventoryService.getVehicleById(serviceToUpdate.vehicleId);
-
-    // 3. Save to the public collection
-    await savePublicDocument('service', serviceToUpdate, vehicle);
-
-    // 4. Return the updated service record
-    return serviceToUpdate;
-};
-
 
 export const serviceService = {
     onServicesUpdate,
@@ -228,5 +216,4 @@ export const serviceService = {
     cancelService,
     deleteService,
     updateService,
-    createOrUpdatePublicService,
 };

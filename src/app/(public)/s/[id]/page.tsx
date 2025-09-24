@@ -3,7 +3,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +35,17 @@ export default function PublicServicePage() {
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
 
+  const fetchServiceData = useCallback(async () => {
+      if (!publicId) return;
+      const { data, error: fetchError } = await getPublicServiceData(publicId);
+      if (fetchError) {
+          setError(fetchError);
+          setService(null);
+      } else {
+          setService(data);
+          setError(null);
+      }
+  }, [publicId]);
 
   useEffect(() => {
     if (!publicId) {
@@ -42,44 +53,19 @@ export default function PublicServicePage() {
       setService(null);
       return;
     }
-
-    const fetchServiceData = async () => {
-        const { service: fetchedService, error: fetchError } = await getPublicServiceData(publicId);
-        
-        if (fetchError) {
-            setError(fetchError);
-            setService(null);
-        } else {
-            setService(fetchedService);
-            setError(null);
-        }
-    };
-    
     fetchServiceData();
-    
-    // You could optionally set up a realtime listener here if needed,
-    // but a one-time fetch is often sufficient for a public page.
-
-  }, [publicId]);
+  }, [publicId, fetchServiceData]);
 
   const handleSaveSignature = async (signatureDataUrl: string) => {
       if (!service || !signatureType) return;
       setIsSigning(true);
-
-      const toastTitle = signatureType === 'reception' ? 'Firma de Recepción Guardada' : 'Firma de Conformidad Guardada';
-
       const result = await saveSignatureAction(publicId, signatureDataUrl, signatureType);
-
       if (result.success) {
-          toast({ title: toastTitle });
-          // Re-fetch data to show the new signature
-          const { service: updatedService } = await getPublicServiceData(publicId);
-          setService(updatedService);
+          toast({ title: signatureType === 'reception' ? 'Firma de Recepción Guardada' : 'Firma de Conformidad Guardada' });
+          await fetchServiceData(); // Re-fetch data
       } else {
-          console.error("Error saving signature:", result.error);
           toast({ title: 'Error al Guardar Firma', description: result.error, variant: 'destructive' });
       }
-
       setIsSigning(false);
       setSignatureType(null);
   };
@@ -87,35 +73,30 @@ export default function PublicServicePage() {
   const handleConfirmAppointment = async () => {
     if (!service) return;
     setIsConfirming(true);
-    try {
-      const result = await confirmAppointmentAction(publicId);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Error del servidor');
-      }
-      
-      const { service: updatedService } = await getPublicServiceData(publicId);
-      setService(updatedService);
-
-      toast({
-        title: "Cita Confirmada",
-        description: "¡Gracias! Hemos confirmado tu cita.",
-      });
-
-    } catch (e: any) {
-        toast({
-            title: "Error al Confirmar",
-            description: e.message || "No se pudo confirmar la cita. Por favor, contacta al taller.",
-            variant: "destructive",
-        });
-    } finally {
-        setIsConfirming(false);
+    const result = await confirmAppointmentAction(publicId);
+    if (result.success) {
+        toast({ title: "Cita Confirmada", description: "¡Gracias! Hemos confirmado tu cita." });
+        await fetchServiceData();
+    } else {
+        toast({ title: "Error al Confirmar", description: result.error || "No se pudo confirmar la cita.", variant: "destructive" });
     }
+    setIsConfirming(false);
   };
+  
+  const handleCancelAppointment = useCallback(async () => {
+    if (!service) return;
+    const result = await cancelAppointmentAction(publicId);
+    if (result.success) {
+        toast({ title: "Cita Cancelada", description: "Tu cita ha sido cancelada exitosamente." });
+        await fetchServiceData();
+    } else {
+        toast({ title: "Error", description: result.error || "No se pudo cancelar la cita.", variant: "destructive" });
+    }
+  }, [publicId, service, toast, fetchServiceData]);
   
   const handleSignClick = (type: 'reception' | 'delivery') => {
       setSignatureType(type);
-      setIsSigning(true); // Open the dialog by setting isSigning to true
+      setIsSigning(true);
   };
 
   if (service === undefined) {
@@ -137,11 +118,11 @@ export default function PublicServicePage() {
               service={service}
               onScheduleClick={() => setIsScheduling(true)}
               onConfirmClick={handleConfirmAppointment}
+              onCancelAppointment={handleCancelAppointment}
               isConfirming={isConfirming}
               onSignClick={handleSignClick}
               onShowTicketClick={() => setIsTicketDialogOpen(true)}
               isSigning={isSigning}
-              activeTab="order" // Default tab, can be dynamic
             />
         </div>
         
@@ -156,23 +137,13 @@ export default function PublicServicePage() {
             onOpenChange={setIsScheduling}
             onConfirm={async (selectedDateTime: Date) => {
               if (!service) return;
-              
               const result = await scheduleAppointmentAction(publicId, selectedDateTime.toISOString());
-              
               if (result.success) {
-                  const { service: updatedService } = await getPublicServiceData(publicId);
-                  setService(updatedService);
-                  toast({
-                      title: "Cita Agendada",
-                      description: "Tu cita ha sido registrada. Nuestro equipo la confirmará a la brevedad.",
-                  });
+                  toast({ title: "Cita Agendada", description: "Tu cita ha sido registrada." });
                   setIsScheduling(false);
+                  await fetchServiceData();
               } else {
-                  toast({
-                      title: "Error al Agendar",
-                      description: result.error || "No se pudo agendar la cita. Por favor, inténtelo más tarde.",
-                      variant: "destructive",
-                  });
+                  toast({ title: "Error al Agendar", description: result.error, variant: "destructive" });
               }
             }}
         />

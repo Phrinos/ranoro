@@ -33,22 +33,76 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adjustStock = exports.onPurchaseUpdated = exports.onPurchaseCreated = exports.onStockExit = exports.generateServiceFolio = exports.generateDailyRentalCharges = void 0;
+exports.adjustStock = exports.onPurchaseUpdated = exports.onPurchaseCreated = exports.onStockExit = exports.generateServiceFolio = exports.generateDailyRentalCharges = exports.onServiceUpdated = exports.onServiceCreated = void 0;
 // functions/src/index.ts
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const admin = __importStar(require("firebase-admin"));
-const firebase_admin_1 = require("firebase-admin");
+const firestore_1 = require("firebase-admin/firestore");
 const date_fns_1 = require("date-fns");
 const date_fns_tz_1 = require("date-fns-tz");
 const logger = __importStar(require("firebase-functions/logger"));
-const firestore_1 = require("firebase-functions/v2/firestore");
+const firestore_2 = require("firebase-functions/v2/firestore");
 const inventory = __importStar(require("./inventory"));
+const nanoid_1 = require("nanoid");
 admin.initializeApp();
 const db = admin.firestore();
 /**
- * Genera el cargo diario de renta para cada chofer con vehículo asignado.
- * Corre diario a las 03:00 AM (America/Mexico_City).
+ * Los campos que se exponen públicamente.
+ * Es importante NO incluir información sensible aquí.
  */
+const getPublicData = (service) => {
+    const publicData = {
+        folio: service.folio,
+        status: service.status,
+        publicId: service.publicId,
+    };
+    if (service.vehicle !== undefined)
+        publicData.vehicle = service.vehicle;
+    if (service.customer !== undefined)
+        publicData.customer = service.customer;
+    if (service.items !== undefined)
+        publicData.items = service.items;
+    if (service.reception !== undefined)
+        publicData.reception = service.reception;
+    return publicData;
+};
+/**
+ * Sincroniza un documento de servicio a la colección pública.
+ */
+const syncPublicService = async (serviceId, serviceData) => {
+    let data = { ...serviceData };
+    let needsUpdate = false;
+    if (!data.publicId) {
+        data.publicId = (0, nanoid_1.nanoid)(16);
+        needsUpdate = true;
+    }
+    if (needsUpdate) {
+        await db.collection('serviceRecords').doc(serviceId).update({ publicId: data.publicId });
+    }
+    const publicDocRef = db.collection('publicServices').doc(data.publicId);
+    const publicDataToSync = getPublicData(data);
+    await publicDocRef.set(publicDataToSync, { merge: true });
+    logger.info(`Synced service ${serviceId} to public document ${data.publicId}`);
+};
+// --- TRIGGERS ---
+exports.onServiceCreated = (0, firestore_2.onDocumentCreated)("serviceRecords/{serviceId}", (event) => {
+    if (!event.data) {
+        logger.error("No data associated with the onServiceCreated event!");
+        return;
+    }
+    const serviceId = event.params.serviceId;
+    const serviceData = event.data.data();
+    return syncPublicService(serviceId, serviceData);
+});
+exports.onServiceUpdated = (0, firestore_2.onDocumentUpdated)("serviceRecords/{serviceId}", (event) => {
+    if (!event.data || !event.data.after) {
+        logger.error("No data associated with the onServiceUpdated event!");
+        return;
+    }
+    const serviceId = event.params.serviceId;
+    const serviceData = event.data.after.data();
+    return syncPublicService(serviceId, serviceData);
+});
 exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
     schedule: "0 3 * * *",
     timeZone: "America/Mexico_City",
@@ -81,11 +135,10 @@ exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
         const vehicle = vehicleDoc.data();
         const dailyRentalCost = vehicle?.dailyRentalCost;
         const chargesRef = db.collection("dailyRentalCharges");
-        // Evitar duplicados en el día: consulta por Timestamp en rango del día
         const existingChargeQuery = chargesRef
             .where("driverId", "==", driverDoc.id)
-            .where("date", ">=", firebase_admin_1.firestore.Timestamp.fromDate(todayStart))
-            .where("date", "<=", firebase_admin_1.firestore.Timestamp.fromDate(todayEnd));
+            .where("date", ">=", firestore_1.Timestamp.fromDate(todayStart))
+            .where("date", "<=", firestore_1.Timestamp.fromDate(todayEnd));
         const existingChargeSnap = await existingChargeQuery.get();
         if (!existingChargeSnap.empty) {
             logger.info(`Charge already exists for driver ${driver.name} for today.`);
@@ -94,7 +147,7 @@ exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
         const newCharge = {
             driverId: driverDoc.id,
             vehicleId: vehicleDoc.id,
-            date: firebase_admin_1.firestore.Timestamp.fromDate(now), // Guardar como Timestamp
+            date: firestore_1.Timestamp.fromDate(now),
             amount: dailyRentalCost,
             vehicleLicensePlate: vehicle?.licensePlate || "",
         };
@@ -104,10 +157,7 @@ exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
     await Promise.all(tasks);
     logger.info("Daily rental charge generation finished successfully.");
 });
-/**
- * Genera folio para cada servicio recién creado con prefijo YYMMDD-####
- */
-exports.generateServiceFolio = (0, firestore_1.onDocumentCreated)({ document: "serviceRecords/{serviceId}", region: "us-central1" }, async (event) => {
+exports.generateServiceFolio = (0, firestore_2.onDocumentCreated)({ document: "serviceRecords/{serviceId}", region: "us-central1" }, async (event) => {
     const serviceId = event.params.serviceId;
     const serviceRef = db.collection("serviceRecords").doc(serviceId);
     const timeZone = "America/Mexico_City";

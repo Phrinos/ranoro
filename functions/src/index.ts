@@ -1,20 +1,105 @@
+
 // functions/src/index.ts
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
-import { firestore as AdminFS } from "firebase-admin";
+import { DocumentData, Timestamp } from "firebase-admin/firestore";
 import { startOfDay, endOfDay, format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import * as logger from "firebase-functions/logger";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import * as inventory from "./inventory";
+import { nanoid } from "nanoid";
 
 admin.initializeApp();
 const db = admin.firestore();
 
+// --- Interfaces ---
+interface ServiceData extends DocumentData {
+    folio?: string;
+    status?: string;
+    publicId?: string;
+    vehicle?: any;
+    customer?: any;
+    items?: any[];
+    reception?: any;
+}
+
+interface PublicData {
+    folio?: string;
+    status?: string;
+    publicId?: string;
+    vehicle?: any;
+    customer?: any;
+    items?: any[];
+    reception?: any;
+}
+
+
 /**
- * Genera el cargo diario de renta para cada chofer con vehículo asignado.
- * Corre diario a las 03:00 AM (America/Mexico_City).
+ * Los campos que se exponen públicamente.
+ * Es importante NO incluir información sensible aquí.
  */
+const getPublicData = (service: ServiceData): PublicData => {
+    const publicData: PublicData = {
+      folio: service.folio,
+      status: service.status,
+      publicId: service.publicId,
+    };
+
+    if (service.vehicle !== undefined) publicData.vehicle = service.vehicle;
+    if (service.customer !== undefined) publicData.customer = service.customer;
+    if (service.items !== undefined) publicData.items = service.items;
+    if (service.reception !== undefined) publicData.reception = service.reception;
+
+    return publicData;
+};
+
+
+/**
+ * Sincroniza un documento de servicio a la colección pública.
+ */
+const syncPublicService = async (serviceId: string, serviceData: ServiceData): Promise<void> => {
+    let data = { ...serviceData };
+    let needsUpdate = false;
+
+    if (!data.publicId) {
+        data.publicId = nanoid(16);
+        needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+        await db.collection('serviceRecords').doc(serviceId).update({ publicId: data.publicId });
+    }
+
+    const publicDocRef = db.collection('publicServices').doc(data.publicId);
+    const publicDataToSync = getPublicData(data);
+    await publicDocRef.set(publicDataToSync, { merge: true });
+    logger.info(`Synced service ${serviceId} to public document ${data.publicId}`);
+};
+
+
+// --- TRIGGERS ---
+
+export const onServiceCreated = onDocumentCreated("serviceRecords/{serviceId}", (event) => {
+    if (!event.data) {
+        logger.error("No data associated with the onServiceCreated event!");
+        return;
+    }
+    const serviceId = event.params.serviceId;
+    const serviceData = event.data.data() as ServiceData;
+    return syncPublicService(serviceId, serviceData);
+});
+
+export const onServiceUpdated = onDocumentUpdated("serviceRecords/{serviceId}", (event) => {
+    if (!event.data || !event.data.after) {
+        logger.error("No data associated with the onServiceUpdated event!");
+        return;
+    }
+    const serviceId = event.params.serviceId;
+    const serviceData = event.data.after.data() as ServiceData;
+    return syncPublicService(serviceId, serviceData);
+});
+
 export const generateDailyRentalCharges = onSchedule(
   {
     schedule: "0 3 * * *",
@@ -59,11 +144,10 @@ export const generateDailyRentalCharges = onSchedule(
 
       const chargesRef = db.collection("dailyRentalCharges");
 
-      // Evitar duplicados en el día: consulta por Timestamp en rango del día
       const existingChargeQuery = chargesRef
         .where("driverId", "==", driverDoc.id)
-        .where("date", ">=", AdminFS.Timestamp.fromDate(todayStart))
-        .where("date", "<=", AdminFS.Timestamp.fromDate(todayEnd));
+        .where("date", ">=", Timestamp.fromDate(todayStart))
+        .where("date", "<=", Timestamp.fromDate(todayEnd));
 
       const existingChargeSnap = await existingChargeQuery.get();
       if (!existingChargeSnap.empty) {
@@ -74,7 +158,7 @@ export const generateDailyRentalCharges = onSchedule(
       const newCharge = {
         driverId: driverDoc.id,
         vehicleId: vehicleDoc.id,
-        date: AdminFS.Timestamp.fromDate(now), // Guardar como Timestamp
+        date: Timestamp.fromDate(now),
         amount: dailyRentalCost,
         vehicleLicensePlate: vehicle?.licensePlate || "",
       };
@@ -88,9 +172,6 @@ export const generateDailyRentalCharges = onSchedule(
   }
 );
 
-/**
- * Genera folio para cada servicio recién creado con prefijo YYMMDD-####
- */
 export const generateServiceFolio = onDocumentCreated(
   { document: "serviceRecords/{serviceId}", region: "us-central1" },
   async (event) => {
@@ -120,6 +201,7 @@ export const generateServiceFolio = onDocumentCreated(
     }
   }
 );
+
 
 // ===== INVENTORY FUNCTIONS =====
 export const onStockExit = inventory.onStockExit;

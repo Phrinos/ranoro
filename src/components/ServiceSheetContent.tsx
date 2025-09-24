@@ -230,6 +230,7 @@ interface ServiceSheetContentProps {
   service: ServiceRecord;
   onScheduleClick?: () => void;
   onConfirmClick?: () => void;
+  onCancelAppointment: () => void;
   onShowTicketClick?: () => void;
   isConfirming?: boolean;
   onSignClick?: (type: 'reception' | 'delivery') => void;
@@ -239,7 +240,7 @@ interface ServiceSheetContentProps {
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick, vehicle }, ref) => {
+  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick, vehicle, onCancelAppointment }, ref) => {
     const { toast } = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
     const [currentActiveTab, setActiveTab] = useState('order');
@@ -314,10 +315,10 @@ ServiceSheetContent.displayName = "ServiceSheetContent";
 
 // --- Tab Content Components ---
 
-function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicketClick }: { service: ServiceRecord, vehicle?: Vehicle, onSignClick?: (type: 'reception' | 'delivery') => void, isSigning?: boolean, onShowTicketClick?: () => void }) {
-    const items = useMemo(() => (service?.serviceItems ?? []).map(it => ({ ...it, price: Number(it?.price) || 0 })), [service?.serviceItems]);
+function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicketClick }: { service: ServiceRecord, vehicle?: Vehicle | null, onSignClick?: (type: 'reception' | 'delivery') => void, isSigning?: boolean, onShowTicketClick?: () => void }) {
+    const items = useMemo(() => (service?.serviceItems ?? []).map(it => ({ ...it, price: Number(it?.sellingPrice) || 0 })), [service?.serviceItems]);
     const { subTotal, taxAmount, totalCost } = useMemo(() => {
-        const total = items.reduce((acc, it) => acc + it.price, 0);
+        const total = items.reduce((acc, it) => acc + (it.price || 0), 0);
         const sub = total / (1 + 0.16);
         const tax = total - sub;
         return { subTotal: sub, taxAmount: tax, totalCost: total };
@@ -336,7 +337,7 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicke
                                 <div className="flex justify-between items-start">
                                     <div className="flex-1"><p className="font-semibold">{item.name}</p>
                                     {item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}</div>
-                                    <p className="font-bold text-lg">{formatCurrency(item.price)}</p>
+                                    <p className="font-bold text-lg">{formatCurrency(item.sellingPrice)}</p>
                                 </div>
                             </div>
                         )) : <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>}

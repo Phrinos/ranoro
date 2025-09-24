@@ -17,15 +17,16 @@
     "date-fns": "^3.6.0",
     "date-fns-tz": "^3.2.0",
     "firebase-admin": "^12.6.0",
-    "firebase-functions": "^6.0.0"
+    "firebase-functions": "^6.0.0",
+    "nanoid": "^5.1.6"
   },
   "devDependencies": {
     "@types/node": "^20.14.12",
-    "typescript": "^5.6.3",
+    "@typescript-eslint/eslint-plugin": "^8.8.1",
+    "@typescript-eslint/parser": "^8.8.1",
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^9.1.0",
-    "@typescript-eslint/parser": "^8.8.1",
-    "@typescript-eslint/eslint-plugin": "^8.8.1",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "typescript": "^5.6.3"
   }
 }
