@@ -1,3 +1,4 @@
+
 // src/app/(public)/s/[id]/page.tsx
 "use client";
 
@@ -8,8 +9,8 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebasePublic"; // SDK público (cliente)
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ServiceRecord } from "@/types";
-import { ServiceSheetContent } from "@/components/ServiceSheetContent";
+import type { ServiceRecord, Vehicle } from "@/types";
+import { ServiceSheetContent } from "@/components/shared/ServiceSheetContent";
 import { SignatureDialog } from "@/app/(app)/servicios/components/signature-dialog";
 import { AppointmentScheduler } from "@/components/shared/AppointmentScheduler";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
@@ -22,6 +23,7 @@ export default function PublicServicePage() {
   const { toast } = useToast();
 
   const [service, setService] = useState<ServiceRecord | null | undefined>(undefined);
+  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   const [isSigning, setIsSigning] = useState(false);
@@ -44,7 +46,19 @@ export default function PublicServicePage() {
         setError("El servicio no fue encontrado o el enlace es incorrecto.");
         return;
       }
-      setService({ id: snap.id, ...(snap.data() as ServiceRecord) });
+      
+      const serviceData = { id: snap.id, ...(snap.data() as ServiceRecord) };
+      setService(serviceData);
+
+      // Ahora, busca el vehículo asociado
+      if (serviceData.vehicleId) {
+        const vehicleRef = doc(db, "vehicles", serviceData.vehicleId);
+        const vehicleSnap = await getDoc(vehicleRef);
+        if (vehicleSnap.exists()) {
+          setVehicle({ id: vehicleSnap.id, ...vehicleSnap.data() } as Vehicle);
+        }
+      }
+
       setError(null);
     } catch (e: any) {
       console.error("getPublicServiceData", e?.code, e?.message);
@@ -129,16 +143,15 @@ export default function PublicServicePage() {
     }
   }, [publicId, service, toast, fetchServiceData]);
 
-  // --- Agendar cita (usa appointmentDateTime + status) ---
+  // --- Agendar cita (usa appointmentDateTime + appointmentStatus) ---
   const handleScheduleAppointment = async (selectedDateTime: Date) => {
     if (!service) return;
     try {
       const ref = doc(db, "publicServices", publicId);
       await updateDoc(ref, {
         appointmentDateTime: selectedDateTime.toISOString(),
-        status: "Agendado", // Asegura que el status cambie
-        appointmentStatus: "Sin Confirmar"
-      });
+        appointmentStatus: "scheduled",
+      }); // permitido por reglas
       toast({ title: "Cita Agendada", description: "Tu cita ha sido registrada." });
       setIsScheduling(false);
       await fetchServiceData();
@@ -151,13 +164,12 @@ export default function PublicServicePage() {
     }
   };
 
-
   const handleSignClick = (type: "reception" | "delivery") => {
     setSignatureType(type);
     setIsSigning(true);
   };
 
-  if (service === undefined) {
+  if (service === undefined || vehicle === undefined) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -186,6 +198,7 @@ export default function PublicServicePage() {
       <div className="container mx-auto py-4 sm:py-8">
         <ServiceSheetContent
           service={service}
+          vehicle={vehicle}
           onScheduleClick={() => setIsScheduling(true)}
           onConfirmClick={handleConfirmAppointment}
           onCancelAppointment={handleCancelAppointment}
