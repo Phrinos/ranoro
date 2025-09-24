@@ -45,10 +45,7 @@ function ServiciosPage() {
 
   const activeTab = searchParams.get('tab') || 'activos';
 
-  const [activeServices, setActiveServices] = useState<ServiceRecord[]>([]);
-  const [scheduledServices, setScheduledServices] = useState<ServiceRecord[]>([]);
-  const [quoteServices, setQuoteServices] = useState<ServiceRecord[]>([]);
-  const [historicalServices, setHistoricalServices] = useState<ServiceRecord[]>([]);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [personnel, setPersonnel] = useState<User[]>([]);
@@ -79,16 +76,12 @@ function ServiciosPage() {
     setIsLoading(true);
 
     const unsubs = [
-        serviceService.onServicesByStatusUpdate(['En Taller', 'Agendado', 'Entregado', 'Completado'], (services) => {
-            setActiveServices(services);
-            setIsLoading(false); 
-        }),
-        serviceService.onServicesByStatusUpdate(['Agendado'], setScheduledServices),
-        serviceService.onServicesByStatusUpdate(['Cotizacion'], setQuoteServices),
-        serviceService.onServicesByStatusUpdate(['Entregado', 'Cancelado'], setHistoricalServices),
-
+        serviceService.onServicesUpdate(setAllServices),
         inventoryService.onVehiclesUpdate(setVehicles),
-        adminService.onUsersUpdate(setPersonnel),
+        adminService.onUsersUpdate((users) => {
+          setPersonnel(users);
+          setIsLoading(false);
+        }),
     ];
 
     return () => unsubs.forEach(unsub => unsub());
@@ -235,10 +228,10 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
   );
 
   const tabs = [
-    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={activeServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog}/> },
-    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={scheduledServices} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowShareDialog} /> },
-    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={quoteServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService}/> },
-    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={historicalServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog} /> }
+    { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={allServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog}/> },
+    { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={allServices.filter(s => s.status === 'Agendado')} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowShareDialog} /> },
+    { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={allServices.filter(s => s.status === 'Cotizacion')} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService}/> },
+    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={allServices.filter(s => s.status === 'Entregado' || s.status === 'Cancelado')} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog} /> }
   ];
 
   return (

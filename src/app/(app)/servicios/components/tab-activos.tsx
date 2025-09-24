@@ -114,23 +114,25 @@ export default function ActivosTabContent({
 
 
   const totalEarningsToday = useMemo(() => {
-      return allServices.reduce((total, s) => {
-          let contributes = false;
-          if (s.status === 'En Taller' && s.subStatus === 'Completado') {
-              contributes = true;
-          } else if (s.status === 'Entregado') {
-              const deliveryDate = getDeliveredAt(s);
-              if (deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd })) {
-                  contributes = true;
-              }
-          }
+    return allServices.reduce((total, s) => {
+        let contributes = false;
+        
+        // Contributes if delivered today
+        const deliveryDate = getDeliveredAt(s);
+        if (s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd })) {
+            contributes = true;
+        } 
+        // Also contributes if it's ready for delivery
+        else if (s.status === 'En Taller' && s.subStatus === 'Completado') {
+            contributes = true;
+        }
 
-          if (contributes) {
-              return total + (s.totalCost || 0);
-          }
+        if (contributes) {
+            return total + (s.totalCost || 0);
+        }
 
-          return total;
-      }, 0);
+        return total;
+    }, 0);
   }, [allServices, todayStart, todayEnd]);
 
 
