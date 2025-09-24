@@ -1,27 +1,27 @@
-
 // src/app/(app)/servicios/components/ServiceItemCard.tsx
 
 "use client";
 
-import React from 'react';
-import { useFormContext, useFieldArray } from 'react-hook-form';
+import React, { useMemo } from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Plus, PlusCircle, Trash2, Wrench, Tags, Minus } from 'lucide-react';
-import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord, User } from '@/types';
-import { useState, useCallback, useMemo } from "react";
+import { Card, CardFooter } from '@/components/ui/card';
+import { PlusCircle, Trash2, Wrench, Tags } from 'lucide-react';
+import type { InventoryItem, ServiceTypeRecord, User, Vehicle, VehiclePriceList, PricedService } from '@/types';
+import { useState, useCallback } from "react";
 import { useToast } from '@/hooks/use-toast';
-import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
 import { capitalizeWords, formatCurrency, cn } from '@/lib/utils';
 import type { ServiceFormValues } from "@/schemas/service-form";
-import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
-import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
 import { inventoryService } from "@/lib/services";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { usePermissions } from '@/hooks/usePermissions';
+import { ServiceSuppliesArray } from './ServiceSuppliesArray'; // Import the new component
+import { Separator } from '@/components/ui/separator';
+
+const IVA_RATE = 0.16;
 
 // Sub-component for a single Service Item card
 interface ServiceItemCardProps {
@@ -30,11 +30,11 @@ interface ServiceItemCardProps {
   isReadOnly?: boolean;
   inventoryItems: InventoryItem[];
   serviceTypes: ServiceTypeRecord[];
-  technicians: User[]; // Añadimos technicians a las props
+  technicians: User[]; 
   mode: 'service' | 'quote';
   onNewInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
-  categories: InventoryCategory[];
-  suppliers: Supplier[];
+  categories: any[];
+  suppliers: any[];
 }
 
 export function ServiceItemCard({ 
@@ -43,97 +43,44 @@ export function ServiceItemCard({
     isReadOnly, 
     inventoryItems, 
     serviceTypes,
-    technicians, // Recibimos los técnicos
+    technicians,
     mode,
     onNewInventoryItemCreated,
     categories,
     suppliers
 }: ServiceItemCardProps) {
-    const { control, getValues, setValue, formState: { errors }, watch } = useFormContext<ServiceFormValues>();
-    const { fields, append, remove, update } = useFieldArray({
-        control,
-        name: `serviceItems.${serviceIndex}.suppliesUsed`
-    });
-    const { toast } = useToast();
-    const permissions = usePermissions(); // Usamos el hook
-    const canViewCosts = permissions.has('inventory:view_costs'); // Verificamos el permiso
+    const { control, formState: { errors }, watch } = useFormContext<ServiceFormValues>();
+    
+    const serviceItemData = watch(`serviceItems.${serviceIndex}`);
+    const permissions = usePermissions();
+    const canViewCosts = permissions.has('inventory:view_costs');
 
-    const [isInventorySearchDialogOpen, setIsInventorySearchDialogOpen] = useState(false);
-    const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
-    const [newItemSearchTerm, setNewItemSearchTerm] = useState('');
-    const [isAddToPriceListDialogOpen, setIsAddToPriceListDialogOpen] = useState(false);
+    const { totalCostOfSupplies, totalSellingPrice, subTotal, tax, profit } = useMemo(() => {
+        const supplies = serviceItemData?.suppliesUsed || [];
+        const cost = supplies.reduce((sum, supply) => sum + (supply.unitPrice || 0) * supply.quantity, 0);
+        const price = serviceItemData?.sellingPrice || 0;
+        const sub = price / (1 + IVA_RATE);
+        const taxAmount = price - sub;
+        const profitAmount = price - cost;
+
+        return {
+            totalCostOfSupplies: cost,
+            totalSellingPrice: price,
+            subTotal: sub,
+            tax: taxAmount,
+            profit: profitAmount
+        };
+    }, [serviceItemData]);
+
 
     const serviceItemErrors = errors.serviceItems?.[serviceIndex];
     const currentVehicleId = watch('vehicleId');
     const allVehicles = watch('allVehiclesForDialog') as Vehicle[] | undefined || [];
     const currentVehicle = allVehicles.find(v => v.id === currentVehicleId);
-
-    const handleAddSupply = (item: InventoryItem, quantity: number) => {
-        append({
-            supplyId: item.id || `manual_${Date.now()}`,
-            supplyName: item.name || 'Insumo Manual',
-            quantity: quantity || 1,
-            unitPrice: item.unitPrice || 0,
-            sellingPrice: item.sellingPrice,
-            isService: item.isService,
-            unitType: item.unitType,
-        });
-        setIsInventorySearchDialogOpen(false);
-    };
-
-    const handleSupplyQuantityChange = (supplyIndex: number, delta: number) => {
-        const supplyPath = `serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}`;
-        const currentSupply = getValues(supplyPath);
-        if (!currentSupply) return;
-        const newQuantity = (Number(currentSupply.quantity) || 0) + delta;
-        if (newQuantity <= 0) return;
-        const inventoryItem = inventoryItems.find(inv => inv.id === currentSupply.supplyId);
-        if (inventoryItem && !inventoryItem.isService && newQuantity > inventoryItem.quantity) {
-            toast({ title: 'Stock Insuficiente', description: `Solo hay ${inventoryItem.quantity} de ${inventoryItem.name} en inventario.`, variant: 'destructive' });
-            return;
-        }
-        update(supplyIndex, { ...currentSupply, quantity: newQuantity });
-    };
     
-    const handleManualQuantitySet = (index: number, value: string) => {
-        const itemInSale = getValues(`serviceItems.${serviceIndex}.suppliesUsed.${index}`);
-        if (!itemInSale) return;
-        const newQuantity = Number(value);
-        if (isNaN(newQuantity) || newQuantity < 0) return;
-        const itemDetails = inventoryItems.find(inv => inv.id === itemInSale.supplyId);
-        if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
-            toast({ title: 'Stock Insuficiente', description: `Solo hay ${itemDetails.quantity} de ${itemDetails.name}.`, variant: 'destructive' });
-            return;
-        }
-        setValue(`serviceItems.${serviceIndex}.suppliesUsed.${index}.quantity`, newQuantity, { shouldDirty: true });
-    };
-
-    const handleNewItemRequest = (searchTerm: string) => {
-        setNewItemSearchTerm(searchTerm);
-        setIsInventorySearchDialogOpen(false);
-        setIsNewItemDialogOpen(true);
-    };
-
-    const handleNewItemSaved = async (formData: InventoryItemFormValues) => {
-        try {
-            const newItem = await onNewInventoryItemCreated(formData);
-            append({
-                supplyId: newItem.id,
-                supplyName: newItem.name,
-                quantity: 1, // Default quantity for new items
-                unitPrice: newItem.unitPrice,
-                sellingPrice: newItem.sellingPrice,
-                isService: newItem.isService,
-                unitType: newItem.unitType,
-            });
-            setIsNewItemDialogOpen(false);
-            toast({ title: 'Insumo Creado y Añadido' });
-        } catch (e) {
-            console.error(e);
-            toast({ title: 'Error', description: 'No se pudo crear el nuevo insumo.', variant: 'destructive' });
-        }
-    };
-
+    const [isAddToPriceListDialogOpen, setIsAddToPriceListDialogOpen] = useState(false);
+    const { toast } = useToast();
+    
     const handleSaveToPriceList = async (list: VehiclePriceList, service: Omit<PricedService, 'id'>) => {
       try {
         const serviceWithId = { ...service, id: `SVC_${Date.now()}` };
@@ -154,9 +101,11 @@ export function ServiceItemCard({
                     Trabajo a Realizar #{serviceIndex + 1}
                 </h4>
                 <div className="flex items-center">
-                    <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => setIsAddToPriceListDialogOpen(true)} title="Guardar en Precotizaciones">
-                        <Tags className="h-4 w-4"/>
-                    </Button>
+                    {mode === 'quote' && (
+                       <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => setIsAddToPriceListDialogOpen(true)} title="Guardar en Precotizaciones">
+                           <Tags className="h-4 w-4"/>
+                       </Button>
+                    )}
                     {!isReadOnly && (
                         <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeServiceItem(serviceIndex)} title="Eliminar Trabajo">
                             <Trash2 className="h-4 w-4"/>
@@ -174,63 +123,27 @@ export function ServiceItemCard({
 
             <div className="mt-4">
                 <h5 className="text-sm font-medium mb-2">Insumos para este Servicio</h5>
-                <div className="space-y-2">
-                    {fields.map((supplyField, supplyIndex) => {
-                        const inventoryItem = inventoryItems.find(i => i.id === supplyField.supplyId);
-                        const currentName = inventoryItem?.name || supplyField.supplyName;
-                        return (
-                            <div key={supplyField.id || supplyIndex} className="grid grid-cols-1 sm:grid-cols-12 gap-x-2 gap-y-2 items-center p-2 border rounded-md bg-white">
-                                <div className="sm:col-span-5">
-                                   <p className="text-sm font-medium truncate">{currentName}</p>
-                                </div>
-                                <div className="col-span-6 sm:col-span-3">
-                                  <div className="flex items-center gap-1">
-                                      {!isReadOnly && (<Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSupplyQuantityChange(supplyIndex, -1)} disabled={isReadOnly}><Minus className="h-3 w-3"/></Button>)}
-                                      <FormField control={control} name={`serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}.quantity`} render={({ field }) => ( <Input type="number" step="any" min="0.001" {...field} value={field.value ?? ''} onChange={(e) => handleManualQuantitySet(supplyIndex, e.target.value)} className="w-16 text-center h-7 text-sm bg-white" disabled={isReadOnly}/> )} />
-                                      {!isReadOnly && (<Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSupplyQuantityChange(supplyIndex, 1)} disabled={isReadOnly}><Plus className="h-3 w-3" /></Button>)}
-                                      <span className="text-xs w-8 text-center">{supplyField.unitType === 'ml' ? 'ml' : supplyField.unitType === 'liters' ? 'L' : 'uds.'}</span>
-                                  </div>
-                                </div>
-                                {/* --- INICIO: Renderizado Condicional de Costos --- */}
-                                {canViewCosts && (
-                                  <div className="col-span-6 sm:col-span-3 text-right">
-                                      <p className="text-xs text-muted-foreground">Costo Unit.</p>
-                                      <p className="text-sm font-semibold">{formatCurrency(supplyField.unitPrice || 0)}</p>
-                                  </div>
-                                )}
-                                {/* --- FIN: Renderizado Condicional de Costos --- */}
-                                {!isReadOnly && (
-                                <div className="sm:col-span-1 text-right">
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => remove(supplyIndex)}><Trash2 className="h-4 w-4"/></Button>
-                                </div>
-                                )}
-                            </div>
-                        )
-                    })}
-                </div>
-                 {!isReadOnly && (
-                    <div className="flex justify-end pt-2">
-                        <Button type="button" variant="outline" size="sm" className="bg-white" onClick={() => setIsInventorySearchDialogOpen(true) }>
-                            <PlusCircle className="mr-2 h-4 w-4"/> Añadir Insumo
-                        </Button>
-                    </div>
-                )}
+                <ServiceSuppliesArray 
+                  serviceIndex={serviceIndex} 
+                  control={control} 
+                  inventoryItems={inventoryItems}
+                  onNewInventoryItemCreated={onNewInventoryItemCreated}
+                  categories={categories}
+                  suppliers={suppliers}
+                  isReadOnly={isReadOnly}
+                />
             </div>
-             <InventorySearchDialog
-                open={isInventorySearchDialogOpen}
-                onOpenChange={setIsInventorySearchDialogOpen}
-                onItemSelected={handleAddSupply}
-                onNewItemRequest={handleNewItemRequest}
-            />
-            <InventoryItemDialog
-                open={isNewItemDialogOpen}
-                onOpenChange={setIsNewItemDialogOpen}
-                onSave={handleNewItemSaved}
-                item={{ name: newItemSearchTerm }}
-                categories={categories}
-                suppliers={suppliers}
-            />
-             <AddToPriceListDialog open={isAddToPriceListDialogOpen} onOpenChange={setIsAddToPriceListDialogOpen} serviceToSave={getValues(`serviceItems.${serviceIndex}`)} currentVehicle={currentVehicle} onSave={handleSaveToPriceList} />
+
+            <Separator className="my-4" />
+
+            <div className="text-sm space-y-1">
+                <div className="flex justify-between items-center"><span className="text-muted-foreground">Subtotal Servicio:</span><span className="font-medium">{formatCurrency(subTotal)}</span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground">IVA Servicio (16%):</span><span className="font-medium">{formatCurrency(tax)}</span></div>
+                {canViewCosts && <div className="flex justify-between items-center"><span className="text-muted-foreground">Costo Insumos:</span><span className="font-medium text-red-600">-{formatCurrency(totalCostOfSupplies)}</span></div>}
+                <div className="flex justify-between items-center text-base pt-1 border-t"><span className="font-semibold text-green-700">Ganancia del Trabajo:</span><span className="font-bold text-lg text-green-600">{formatCurrency(profit)}</span></div>
+            </div>
+            
+             <AddToPriceListDialog open={isAddToPriceListDialogOpen} onOpenChange={setIsAddToPriceListDialogOpen} serviceToSave={serviceItemData} currentVehicle={currentVehicle} onSave={handleSaveToPriceList} />
         </Card>
     );
 }
