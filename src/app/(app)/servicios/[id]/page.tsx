@@ -30,6 +30,7 @@ import { PhotoReportModal } from '../components/PhotoReportModal';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+import { nanoid } from 'nanoid';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -132,7 +133,12 @@ export default function ServicioPage() {
                     status: 'Cotizacion',
                     serviceDate: new Date(),
                     vehicleId: '', 
-                    serviceItems: [],
+                    serviceItems: [{
+                      id: `item_${nanoid(6)}`,
+                      name: '',
+                      sellingPrice: undefined,
+                      suppliesUsed: [],
+                    }],
                     ...(currentUser && {
                         serviceAdvisorId: currentUser.id,
                         serviceAdvisorName: currentUser.name,
