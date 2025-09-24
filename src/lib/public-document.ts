@@ -21,7 +21,7 @@ export const savePublicDocument = async (
   }
 
   const collectionName = type === 'ownerReport' ? 'ownerReports' : 'publicServices';
-  const publicId = data.publicId || data.id;
+  const publicId = data.publicId;
   if (!publicId) {
     console.error("No publicId found in data.", data);
     return { success: false, error: "Missing document ID." };
@@ -30,13 +30,16 @@ export const savePublicDocument = async (
   try {
     const docRef = doc(db, collectionName, publicId);
     
-    // Create a new object for the public document to avoid circular references
-    // and ensure all necessary data is present.
-    const publicData: any = { ...data };
-    
-    if (type === 'service' || type === 'quote') {
-       publicData.vehicle = vehicle || data.vehicle || null;
-    }
+    // Create a lean object for the public document to avoid storing sensitive or excessive data.
+    // It primarily serves to link the publicId to the main document ID.
+    const publicData = {
+      mainId: data.id,
+      publicId: data.publicId,
+      status: data.status,
+      // Add other non-sensitive fields you want to be quickly accessible if needed
+      appointmentDateTime: data.appointmentDateTime || null,
+      subStatus: data.subStatus || null,
+    };
     
     // Clean the final object for Firestore
     const cleanedData = cleanObjectForFirestore(publicData);

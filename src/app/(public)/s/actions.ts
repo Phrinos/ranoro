@@ -6,30 +6,39 @@ import { revalidatePath } from 'next/cache';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import type { ServiceRecord } from '@/types';
 import { cleanObjectForFirestore } from '@/lib/forms';
+import { doc, getDoc } from 'firebase/firestore';
 
 /**
- * Finds the main service record ID based on its public ID.
+ * Finds the main service record document ID based on its public ID.
  * This is the definitive method for resolving a public ID to its source document.
  * @param db - The Firestore admin instance.
  * @param publicId - The public ID of the service from the URL.
- * @returns The main document ID from the 'serviceRecords' collection.
- * @throws An error if the document cannot be found.
+ * @returns The ID of the main document from the 'serviceRecords' collection, or null if not found.
  */
-const getMainDocIdFromPublicId = async (db: FirebaseFirestore.Firestore, publicId: string): Promise<string> => {
-    if (!publicId) throw new Error("ID público no proporcionado.");
-
-    // Query the main service records collection to find the document containing the matching publicId.
-    // This is the correct and most robust way to find the document.
-    const query = db.collection('serviceRecords').where('publicId', '==', publicId).limit(1);
-    const querySnap = await query.get();
-
-    if (querySnap.empty) {
-        // If no document is found, the link is invalid or the data is out of sync.
-        throw new Error('Documento de servicio no encontrado.');
+const getMainDocIdFromPublicId = async (db: FirebaseFirestore.Firestore, publicId: string): Promise<string | null> => {
+    if (!publicId) {
+      console.error("getMainDocIdFromPublicId called with no publicId.");
+      return null;
     }
+    
+    // First, get the public document to find the main document ID.
+    const publicDocRef = db.collection('publicServices').doc(publicId);
+    const publicDocSnap = await publicDocRef.get();
 
-    // Return the ID of the found document.
-    return querySnap.docs[0].id;
+    if (!publicDocSnap.exists()) {
+        console.warn(`Public document with ID ${publicId} not found.`);
+        // Fallback: Query the main collection directly. This is less efficient but robust.
+        const query = db.collection('serviceRecords').where('publicId', '==', publicId).limit(1);
+        const querySnap = await query.get();
+        if (!querySnap.empty) {
+            console.log(`Fallback successful for publicId ${publicId}. Found main doc ${querySnap.docs[0].id}`);
+            return querySnap.docs[0].id;
+        }
+        return null;
+    }
+    
+    const publicData = publicDocSnap.data();
+    return publicData?.mainId || null;
 };
 
 
@@ -45,9 +54,10 @@ export async function saveSignatureAction(
     
     const db = getAdminDb();
     const mainDocId = await getMainDocIdFromPublicId(db, publicId);
+    if (!mainDocId) throw new Error("Documento de servicio principal no encontrado.");
 
     const mainRef = db.collection('serviceRecords').doc(mainDocId);
-    const publicRef = db.collection('publicServices').doc(publicId); // The public doc ID is the publicId
+    const publicRef = db.collection('publicServices').doc(publicId);
 
     const fieldToUpdate = signatureType === 'reception' 
       ? 'customerSignatureReception' 
@@ -61,10 +71,7 @@ export async function saveSignatureAction(
     
     batch.update(mainRef, updatePayload);
     
-    const publicSnap = await publicRef.get();
-    if (publicSnap.exists) {
-      batch.update(publicRef, updatePayload);
-    }
+    // The public document doesn't store signatures, so no update needed there.
     
     await batch.commit();
 
@@ -86,6 +93,7 @@ export async function scheduleAppointmentAction(
 
     const db = getAdminDb();
     const mainDocId = await getMainDocIdFromPublicId(db, publicId);
+    if (!mainDocId) throw new Error("Documento de servicio principal no encontrado.");
 
     const mainRef  = db.collection('serviceRecords').doc(mainDocId);
     const publicRef = db.collection('publicServices').doc(publicId);
@@ -110,7 +118,7 @@ export async function scheduleAppointmentAction(
     batch.update(mainRef, payload);
 
     const publicSnap = await publicRef.get();
-    if (publicSnap.exists) batch.update(publicRef, payload);
+    if (publicSnap.exists) batch.update(publicRef, { status: updated.status, appointmentDateTime: updated.appointmentDateTime });
 
     await batch.commit();
     revalidatePath(`/s/${publicId}`);
@@ -129,6 +137,7 @@ export async function cancelAppointmentAction(
 
     const db = getAdminDb();
     const mainDocId = await getMainDocIdFromPublicId(db, publicId);
+    if (!mainDocId) throw new Error("Documento de servicio principal no encontrado.");
 
     const mainRef  = db.collection('serviceRecords').doc(mainDocId);
     const publicRef = db.collection('publicServices').doc(publicId);
@@ -142,7 +151,7 @@ export async function cancelAppointmentAction(
     batch.update(mainRef, update);
 
     const publicSnap = await publicRef.get();
-    if (publicSnap.exists) batch.update(publicRef, update);
+    if (publicSnap.exists) batch.update(publicRef, { status: update.status });
     
     await batch.commit();
 
@@ -162,6 +171,8 @@ export async function confirmAppointmentAction(
 
     const db = getAdminDb();
     const mainDocId = await getMainDocIdFromPublicId(db, publicId);
+    if (!mainDocId) throw new Error("Documento de servicio principal no encontrado.");
+    
     const mainRef = db.collection('serviceRecords').doc(mainDocId);
     const mainSnap = await mainRef.get();
     if (!mainSnap.exists) {
@@ -189,5 +200,33 @@ export async function confirmAppointmentAction(
   } catch (error: any) {
     console.error('Error confirming appointment:', error);
     return { success: false, error: error?.message ?? 'Ocurrió un error desconocido.' };
+  }
+}
+
+// --- Nueva acción para obtener los datos del servicio de forma segura ---
+export async function getPublicServiceData(
+  publicId: string
+): Promise<{ service: ServiceRecord | null; error?: string }> {
+  try {
+    if (!publicId) throw new Error("ID público no proporcionado.");
+    
+    const db = getAdminDb();
+    const mainDocId = await getMainDocIdFromPublicId(db, publicId);
+
+    if (!mainDocId) {
+      return { service: null, error: `El documento con ID "${publicId}" no fue encontrado.` };
+    }
+    
+    const mainDocSnap = await getDoc(doc(db, "serviceRecords", mainDocId));
+
+    if (!mainDocSnap.exists()) {
+       return { service: null, error: `El documento con ID "${publicId}" no fue encontrado.` };
+    }
+    
+    return { service: mainDocSnap.data() as ServiceRecord };
+
+  } catch (error: any) {
+    console.error("Error in getPublicServiceData:", error);
+    return { service: null, error: error?.message || "Ocurrió un error al cargar el documento." };
   }
 }

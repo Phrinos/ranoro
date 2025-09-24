@@ -5,21 +5,18 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebasePublic.js';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
+import type { ServiceRecord } from '@/types';
 import { ServiceSheetContent } from '@/components/ServiceSheetContent';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { AppointmentScheduler } from '@/components/shared/AppointmentScheduler';
-import { scheduleAppointmentAction, confirmAppointmentAction, cancelAppointmentAction, saveSignatureAction } from '@/app/(public)/s/actions';
+import { scheduleAppointmentAction, confirmAppointmentAction, cancelAppointmentAction, saveSignatureAction, getPublicServiceData } from '@/app/(public)/s/actions';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
-
 
 export default function PublicServicePage() {
   const params = useParams();
@@ -40,28 +37,29 @@ export default function PublicServicePage() {
 
 
   useEffect(() => {
-    if (!publicId || !db) {
-      setError("Enlace inválido o la base de datos no está disponible.");
+    if (!publicId) {
+      setError("Enlace inválido.");
       setService(null);
       return;
     }
-    const docRef = doc(db, 'publicServices', publicId);
-    
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
-            setService(docSnap.data() as ServiceRecord);
-            setError(null);
-        } else {
-            setError(`El documento con ID "${publicId}" no fue encontrado.`);
-            setService(null);
-        }
-    }, (err) => {
-        console.error("Error fetching public service:", err);
-        setError("Ocurrió un error al cargar el documento.");
-        setService(null);
-    });
 
-    return () => unsubscribe();
+    const fetchServiceData = async () => {
+        const { service: fetchedService, error: fetchError } = await getPublicServiceData(publicId);
+        
+        if (fetchError) {
+            setError(fetchError);
+            setService(null);
+        } else {
+            setService(fetchedService);
+            setError(null);
+        }
+    };
+    
+    fetchServiceData();
+    
+    // You could optionally set up a realtime listener here if needed,
+    // but a one-time fetch is often sufficient for a public page.
+
   }, [publicId]);
 
   const handleSaveSignature = async (signatureDataUrl: string) => {
@@ -74,6 +72,9 @@ export default function PublicServicePage() {
 
       if (result.success) {
           toast({ title: toastTitle });
+          // Re-fetch data to show the new signature
+          const { service: updatedService } = await getPublicServiceData(publicId);
+          setService(updatedService);
       } else {
           console.error("Error saving signature:", result.error);
           toast({ title: 'Error al Guardar Firma', description: result.error, variant: 'destructive' });
@@ -92,6 +93,9 @@ export default function PublicServicePage() {
       if (!result.success) {
         throw new Error(result.error || 'Error del servidor');
       }
+      
+      const { service: updatedService } = await getPublicServiceData(publicId);
+      setService(updatedService);
 
       toast({
         title: "Cita Confirmada",
@@ -156,6 +160,8 @@ export default function PublicServicePage() {
               const result = await scheduleAppointmentAction(publicId, selectedDateTime.toISOString());
               
               if (result.success) {
+                  const { service: updatedService } = await getPublicServiceData(publicId);
+                  setService(updatedService);
                   toast({
                       title: "Cita Agendada",
                       description: "Tu cita ha sido registrada. Nuestro equipo la confirmará a la brevedad.",
@@ -181,7 +187,7 @@ export default function PublicServicePage() {
           <TicketContent 
             ref={ticketContentRef}
             service={service}
-            vehicle={service.vehicle as Vehicle}
+            vehicle={service.vehicle as any}
             previewWorkshopInfo={service.workshopInfo}
           />
         </UnifiedPreviewDialog>
