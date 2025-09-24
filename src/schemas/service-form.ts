@@ -89,7 +89,7 @@ export const serviceFormSchema = z.object({
     technicianName: z.string().nullable().optional(),
     serviceItems: z.array(serviceItemSchema).min(1, 'Debe agregar al menos un ítem de servicio.'),
     status: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Proveedor Externo', 'Entregado', 'Cancelado']),
-    subStatus: z.enum(['Sin Confirmar', 'Confirmada', 'Cancelada', 'Ingresado', 'En Espera de Refacciones', 'Reparando', 'Completado']).optional(),
+    subStatus: z.enum(['Sin Confirmar', 'Confirmada', 'Cancelada', 'Ingresado', 'En Espera de Refacciones', 'Reparando', 'Completado']).nullable().optional(),
     serviceType: z.string().optional(),
     vehicleConditions: z.string().optional().nullable(),
     fuelLevel: z.string().optional().nullable(),

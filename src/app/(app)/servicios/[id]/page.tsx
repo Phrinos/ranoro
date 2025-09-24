@@ -156,11 +156,24 @@ export default function ServicioPage() {
     fetchData();
   }, [serviceId, isEditMode, isQuoteModeParam]);
   
-  const handleShowShareDialog = useCallback((service: ServiceRecord, redirect?: string) => {
-    setRecordForPreview(service);
+  const handleShowShareDialog = useCallback(async (service: ServiceRecord, redirect?: string) => {
+    let serviceToShare = { ...service };
+    if (!serviceToShare.publicId) {
+      try {
+        toast({ title: "Generando enlace público..." });
+        const newPublicId = nanoid(16);
+        await serviceService.updateService(service.id, { publicId: newPublicId });
+        serviceToShare.publicId = newPublicId;
+      } catch (error) {
+        console.error("Error generating public link:", error);
+        toast({ title: "Error al crear enlace", variant: "destructive" });
+        return;
+      }
+    }
+    setRecordForPreview(serviceToShare);
     setIsShareDialogOpen(true);
     if(redirect) redirectUrl.current = redirect;
-  }, []);
+  }, [toast]);
   
   const handleShareDialogClose = (isOpen: boolean) => {
     setIsShareDialogOpen(isOpen);
@@ -182,11 +195,8 @@ export default function ServicioPage() {
         toast({ title: 'Registro Guardado' });
 
         if (!isEditMode) {
-            // It's a new quote/service, create the public link now.
-            const publicService = await serviceService.createOrUpdatePublicService(savedRecord);
-            handleShowShareDialog(publicService, '/servicios?tab=cotizaciones');
+            handleShowShareDialog(savedRecord, '/servicios?tab=cotizaciones');
         } else {
-             // For edits, we just need to ensure the public document is up-to-date
             if(savedRecord.publicId) {
                 await serviceService.createOrUpdatePublicService(savedRecord);
             }
