@@ -52,8 +52,8 @@ export async function scheduleAppointmentAction(
     const ref = doc(db!, "publicServices", publicId);
     await updateDoc(ref, {
       status: "Agendado",
-      scheduledDate,
-      customerConfirmed: false,
+      appointmentDateTime: scheduledDate,
+      appointmentStatus: "Sin Confirmar",
     });
     return { success: true };
   } catch (e: any) {
@@ -71,7 +71,7 @@ export async function confirmAppointmentAction(
     if (dbError) return { success: false, error: dbError };
 
     const ref = doc(db!, "publicServices", publicId);
-    await updateDoc(ref, { customerConfirmed: true });
+    await updateDoc(ref, { appointmentStatus: "Confirmada" });
     return { success: true };
   } catch (e: any) {
     console.error("confirmAppointmentAction error:", e);
@@ -88,7 +88,7 @@ export async function cancelAppointmentAction(
     if (dbError) return { success: false, error: dbError };
 
     const ref = doc(db!, "publicServices", publicId);
-    await updateDoc(ref, { status: "Cancelado" });
+    await updateDoc(ref, { status: "Cancelado", appointmentStatus: "Cancelada" });
     return { success: true };
   } catch (e: any) {
     console.error("cancelAppointmentAction error:", e);
@@ -109,8 +109,8 @@ export async function saveSignatureAction(
     const ref = doc(db!, "publicServices", publicId);
     const field =
       type === "reception"
-        ? { receptionSignature: signature }
-        : { deliverySignature: signature };
+        ? { customerSignatureReception: signature }
+        : { customerSignatureDelivery: signature };
 
     await updateDoc(ref, field);
     return { success: true };
