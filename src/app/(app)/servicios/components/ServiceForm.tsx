@@ -39,7 +39,7 @@ interface ServiceFormProps {
   suppliers: Supplier[];
   serviceHistory: ServiceRecord[];
   onSave: (data: ServiceFormValues) => Promise<ServiceRecord | void>;
-  onSaveSuccess?: (service: ServiceRecord) => void;
+  onSaveSuccess: (service: ServiceRecord) => void;
   onComplete?: (data: ServiceFormValues) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
   onCancel?: () => void;

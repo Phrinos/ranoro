@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -21,6 +22,7 @@ import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
 import { savePublicDocument } from '../public-document';
 import { adminService } from './admin.service';
+import { nanoid } from 'nanoid';
 
 // --- Service Records ---
 
@@ -90,7 +92,8 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
     if (!savedDoc.exists()) {
         throw new Error("Failed to save or retrieve the document.");
     }
-    return { ...savedDoc.data(), id: data.id } as ServiceRecord;
+    const finalData = { ...savedDoc.data(), id: data.id } as ServiceRecord;
+    return finalData;
 };
 
 const completeService = async (service: ServiceRecord, paymentDetails: any, batch: any): Promise<void> => {
@@ -194,11 +197,25 @@ const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<
     await updateDoc(serviceRef, data);
 };
 
-const createOrUpdatePublicService = async (service: ServiceRecord): Promise<void> => {
-    if (!service.publicId) throw new Error("Public ID is required to create a public service document.");
-    const vehicle = await inventoryService.getVehicleById(service.vehicleId);
-    await savePublicDocument('service', service, vehicle);
+const createOrUpdatePublicService = async (service: ServiceRecord): Promise<ServiceRecord> => {
+    let serviceToUpdate = { ...service };
+
+    // 1. Generate Public ID if it doesn't exist
+    if (!serviceToUpdate.publicId) {
+        serviceToUpdate.publicId = nanoid(16);
+        await updateDoc(doc(db, 'serviceRecords', serviceToUpdate.id), { publicId: serviceToUpdate.publicId });
+    }
+
+    // 2. Get vehicle data
+    const vehicle = await inventoryService.getVehicleById(serviceToUpdate.vehicleId);
+
+    // 3. Save to the public collection
+    await savePublicDocument('service', serviceToUpdate, vehicle);
+
+    // 4. Return the updated service record
+    return serviceToUpdate;
 };
+
 
 export const serviceService = {
     onServicesUpdate,
