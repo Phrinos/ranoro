@@ -94,37 +94,54 @@ export default function ActivosTabContent({
   const todayStart = startOfDay(nowZ);
   const todayEnd = endOfDay(nowZ);
 
-  const deliveredToday = allServices.filter((s) => {
-    if (s.status !== "Entregado") return false;
-    const d = getDeliveredAt(s);
-    if (!d || !isValid(d)) return false;
-    const dz = toZonedTime(d, TZ);
-    return isWithinInterval(dz, { start: todayStart, end: todayEnd });
-  });
+  const { totalEarningsToday, activeServices } = useMemo(() => {
+    const active: ServiceRecord[] = [];
+    let totalEarnings = 0;
 
-  const totalEarningsToday = deliveredToday.reduce((sum, s) => {
-    const tc = Number(s.totalCost);
-    const value =
-      Number.isFinite(tc) && tc > 0 ? tc : sumPaymentsToday(s, todayStart, todayEnd);
-    return sum + value;
-  }, 0);
+    allServices.forEach(s => {
+      let isActive = false;
+      let contributesToEarnings = false;
 
-  const activeServices = useMemo(() => {
-    return allServices.filter(s => {
-      switch (s.status) {
-        case 'Agendado':
-          const appointmentDate = parseDate(s.appointmentDateTime);
-          return appointmentDate && isValid(appointmentDate) && isWithinInterval(toZonedTime(appointmentDate, TZ), { start: todayStart, end: todayEnd });
-        case 'En Taller':
-          return true;
-        case 'Entregado':
-          const deliveryDate = getDeliveredAt(s);
-          return deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd });
-        default:
-          return false;
+      // Check if it's an active service for today's Kanban board
+      if (s.status === 'En Taller') {
+        isActive = true;
+      } else if (s.status === 'Agendado') {
+        const appointmentDate = parseDate(s.appointmentDateTime);
+        if (appointmentDate && isValid(appointmentDate) && isWithinInterval(toZonedTime(appointmentDate, TZ), { start: todayStart, end: todayEnd })) {
+          isActive = true;
+        }
+      } else if (s.status === 'Entregado') {
+        const deliveryDate = getDeliveredAt(s);
+        if (deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd })) {
+          isActive = true;
+        }
+      }
+
+      if (isActive) {
+        active.push(s);
+      }
+
+      // Check if it contributes to today's earnings
+      if (s.status === 'Entregado') {
+        const deliveryDate = getDeliveredAt(s);
+        if (deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd })) {
+          contributesToEarnings = true;
+        }
+      } else if (s.status === 'En Taller' && s.subStatus === 'Completado') {
+         contributesToEarnings = true;
+      }
+
+      if (contributesToEarnings) {
+        const tc = Number(s.totalCost);
+        const value = Number.isFinite(tc) && tc > 0 ? tc : sumPaymentsToday(s, todayStart, todayEnd);
+        totalEarnings += value;
       }
     });
+
+    return { totalEarningsToday: totalEarnings, activeServices: active };
+
   }, [allServices, todayStart, todayEnd]);
+
 
   const sortedServices = useMemo(() => {
     return [...activeServices].sort((a, b) => {
@@ -180,9 +197,9 @@ export default function ActivosTabContent({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Servicios Activos</CardTitle>
+        <CardTitle>Servicios Activos del Día</CardTitle>
         <CardDescription>
-          Total facturado hoy:{' '}
+          Total del día (listos para entrega y entregados):{' '}
           <span className="font-bold text-primary">{formatCurrency(totalEarningsToday)}</span>
         </CardDescription>
       </CardHeader>
@@ -190,7 +207,7 @@ export default function ActivosTabContent({
         {sortedServices.length > 0 ? (
           sortedServices.map(renderServiceCard)
         ) : (
-          <p className="text-center text-muted-foreground py-10">No hay servicios activos.</p>
+          <p className="text-center text-muted-foreground py-10">No hay servicios activos para hoy.</p>
         )}
       </CardContent>
     </Card>
