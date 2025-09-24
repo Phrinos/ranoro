@@ -9,7 +9,7 @@ import { serviceService, inventoryService, adminService } from '@/lib/services';
 import { Loader2, Share2, Printer, Copy, MessageSquare, FileWarning } from 'lucide-react';
 import { ServiceForm } from '../components/ServiceForm';
 import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types'; 
-import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
+import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form';
 import { PageHeader } from '@/components/page-header';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -29,7 +29,7 @@ import { ActiveServicesSheet } from '../components/ActiveServicesSheet';
 import { PhotoReportModal } from '../components/PhotoReportModal';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 
 export default function ServicioPage() {
   const { toast } = useToast(); 
@@ -67,7 +67,7 @@ export default function ServicioPage() {
   
   // --- Vehicle Dialog State ---
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
-  const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
 
 
   const isEditMode = serviceId !== 'nuevo';
@@ -215,20 +215,32 @@ export default function ServicioPage() {
     }
   };
   
-  const handleOpenNewVehicleDialog = (plate?: string) => {
-    setNewVehicleInitialData(plate ? { licensePlate: plate } : null);
+  const handleOpenVehicleDialog = (vehicle: Partial<Vehicle> | null) => {
+    setEditingVehicle(vehicle);
     setIsVehicleDialogOpen(true);
   };
 
-  const handleVehicleCreated = async (data: VehicleFormValues): Promise<Vehicle> => {
-      const newVehicle = await inventoryService.addVehicle(data);
-      setVehicles(prev => [...prev, newVehicle]);
-      // Update form with the new vehicle
-      methods.setValue('vehicleId', newVehicle.id, { shouldValidate: true });
-      methods.setValue('ownerName', newVehicle.ownerName || '');
-      methods.setValue('ownerPhone', newVehicle.ownerPhone || '');
-      methods.setValue('currentMileage', newVehicle.currentMileage || '');
-      toast({ title: "Vehículo Creado y Seleccionado" });
+  const handleVehicleSave = async (data: VehicleFormValues): Promise<Vehicle> => {
+      const newVehicle = await inventoryService.saveVehicle(data, editingVehicle?.id);
+      setVehicles(prev => {
+          const index = prev.findIndex(v => v.id === newVehicle.id);
+          if (index > -1) {
+              const updated = [...prev];
+              updated[index] = newVehicle;
+              return updated;
+          }
+          return [...prev, newVehicle];
+      });
+      
+      if (!editingVehicle?.id) { // If it's a new vehicle
+          methods.setValue('vehicleId', newVehicle.id, { shouldValidate: true });
+          methods.setValue('ownerName', newVehicle.ownerName || '');
+          methods.setValue('ownerPhone', newVehicle.ownerPhone || '');
+          methods.setValue('currentMileage', newVehicle.currentMileage || '');
+          toast({ title: "Vehículo Creado y Seleccionado" });
+      } else {
+          toast({ title: "Vehículo Actualizado" });
+      }
       return newVehicle;
   };
 
@@ -310,14 +322,14 @@ export default function ServicioPage() {
             onSave={isEditMode ? handleSaveService : handleSaveService}
             onSaveSuccess={handleShareDialogClose}
             onComplete={handleCompleteService}
-            onVehicleCreated={handleVehicleCreated}
+            onVehicleCreated={handleVehicleSave}
             onCancel={isQuote ? handleDeleteQuote : handleCancelService}
             mode={isQuote ? 'quote' : 'service'}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             isChecklistWizardOpen={isChecklistWizardOpen}
             setIsChecklistWizardOpen={setIsChecklistWizardOpen}
-            onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
+            onOpenNewVehicleDialog={handleOpenVehicleDialog}
         />
       
       <ServiceMobileBar
@@ -353,8 +365,8 @@ export default function ServicioPage() {
        <VehicleDialog
         open={isVehicleDialogOpen}
         onOpenChange={setIsVehicleDialogOpen}
-        onSave={handleVehicleCreated}
-        vehicle={newVehicleInitialData}
+        onSave={handleVehicleSave}
+        vehicle={editingVehicle}
       />
     </FormProvider>
   );
