@@ -94,52 +94,43 @@ export default function ActivosTabContent({
   const todayStart = startOfDay(nowZ);
   const todayEnd = endOfDay(nowZ);
 
-  const { totalEarningsToday, activeServices } = useMemo(() => {
-    const active: ServiceRecord[] = [];
-    let totalEarnings = 0;
+  const activeServices = useMemo(() => {
+    return allServices.filter(s => {
+      if (s.status === 'En Taller') return true;
 
-    allServices.forEach(s => {
-      let isActive = false;
-      let contributesToEarnings = false;
-
-      // Check if it's an active service for today's Kanban board
-      if (s.status === 'En Taller') {
-        isActive = true;
-      } else if (s.status === 'Agendado') {
-        const appointmentDate = parseDate(s.appointmentDateTime);
-        if (appointmentDate && isValid(appointmentDate) && isWithinInterval(toZonedTime(appointmentDate, TZ), { start: todayStart, end: todayEnd })) {
-          isActive = true;
-        }
-      } else if (s.status === 'Entregado') {
-        const deliveryDate = getDeliveredAt(s);
-        if (deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd })) {
-          isActive = true;
-        }
+      const appointmentDate = parseDate(s.appointmentDateTime);
+      if (s.status === 'Agendado' && appointmentDate && isValid(appointmentDate) && isWithinInterval(toZonedTime(appointmentDate, TZ), { start: todayStart, end: todayEnd })) {
+        return true;
+      }
+      
+      const deliveryDate = getDeliveredAt(s);
+      if (s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd })) {
+        return true;
       }
 
-      if (isActive) {
-        active.push(s);
-      }
-
-      // Check if it contributes to today's earnings
-      if (s.status === 'Entregado') {
-        const deliveryDate = getDeliveredAt(s);
-        if (deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd })) {
-          contributesToEarnings = true;
-        }
-      } else if (s.status === 'En Taller' && s.subStatus === 'Completado') {
-         contributesToEarnings = true;
-      }
-
-      if (contributesToEarnings) {
-        const tc = Number(s.totalCost);
-        const value = Number.isFinite(tc) && tc > 0 ? tc : sumPaymentsToday(s, todayStart, todayEnd);
-        totalEarnings += value;
-      }
+      return false;
     });
+  }, [allServices, todayStart, todayEnd]);
 
-    return { totalEarningsToday: totalEarnings, activeServices: active };
 
+  const totalEarningsToday = useMemo(() => {
+      return allServices.reduce((total, s) => {
+          let contributes = false;
+          if (s.status === 'En Taller' && s.subStatus === 'Completado') {
+              contributes = true;
+          } else if (s.status === 'Entregado') {
+              const deliveryDate = getDeliveredAt(s);
+              if (deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd })) {
+                  contributes = true;
+              }
+          }
+
+          if (contributes) {
+              return total + (s.totalCost || 0);
+          }
+
+          return total;
+      }, 0);
   }, [allServices, todayStart, todayEnd]);
 
 
@@ -178,7 +169,7 @@ export default function ActivosTabContent({
   
   const renderServiceCard = useCallback(
     (service: ServiceRecord) => (
-      <ServiceAppointmentCard
+      <ServiceAppointmentCard 
         key={service.id}
         service={service}
         vehicle={vehicles.find((v) => v.id === service.vehicleId)}
