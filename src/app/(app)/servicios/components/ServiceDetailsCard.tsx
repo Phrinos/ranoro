@@ -1,20 +1,11 @@
+
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useFormContext } from "react-hook-form";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-} from "@/components/ui/form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,8 +25,8 @@ const statusOptions: { value: ServiceFormValues["status"]; label: string }[] = [
 interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
   advisors: User[];
-  technicians: User[]; // (no se usa aquí, pero lo mantenemos por compatibilidad)
-  serviceTypes: ServiceTypeRecord[]; // (no se usa aquí, pero lo mantenemos por compatibilidad)
+  technicians: User[];          // no se usa aquí, lo dejamos por compatibilidad
+  serviceTypes: ServiceTypeRecord[]; // no se usa aquí, lo dejamos por compatibilidad
   onOpenSignature: (type: "reception" | "delivery" | "advisor") => void;
   isNew: boolean;
 }
@@ -43,8 +34,8 @@ interface ServiceDetailsCardProps {
 export function ServiceDetailsCard({
   isReadOnly,
   advisors,
-  technicians, // eslint-disable-line @typescript-eslint/no-unused-vars
-  serviceTypes, // eslint-disable-line @typescript-eslint/no-unused-vars
+  technicians,       // eslint-disable-line @typescript-eslint/no-unused-vars
+  serviceTypes,      // eslint-disable-line @typescript-eslint/no-unused-vars
   onOpenSignature,
   isNew,
 }: ServiceDetailsCardProps) {
@@ -52,18 +43,18 @@ export function ServiceDetailsCard({
     control,
     watch,
     setValue,
+    register,
     formState: { errors },
   } = useFormContext<ServiceFormValues>();
 
   const watchedStatus = watch("status");
   const isFinalStatus = watchedStatus === "Cancelado" || watchedStatus === "Entregado";
 
-  // Campos observados del asesor en el form
   const watchedAdvisorId = watch("serviceAdvisorId");
   const watchedAdvisorName = watch("serviceAdvisorName");
   const advisorSigned = !!watch("serviceAdvisorSignatureDataUrl");
 
-  // Lee usuario autenticado desde localStorage (solo client)
+  // Usuario autenticado (para autollenar)
   const authUser = useMemo(() => {
     try {
       const raw = typeof window !== "undefined" ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
@@ -73,38 +64,42 @@ export function ServiceDetailsCard({
     }
   }, []);
 
-  // Hidrata asesor en el form si falta (preferencia: currentUser -> advisors list)
+  // Asegura que los 3 campos del asesor queden poblados Y REGISTRADOS
   useEffect(() => {
-    // Si ya tenemos nombre y id, no tocar
-    if (watchedAdvisorId && watchedAdvisorName) return;
-
-    // 1) Usa current user si existe
-    if (authUser?.id && authUser?.name) {
-      if (!watchedAdvisorId) {
-        setValue("serviceAdvisorId", authUser.id, { shouldDirty: true });
-      }
-      if (!watchedAdvisorName) {
-        setValue("serviceAdvisorName", authUser.name, { shouldDirty: true });
-      }
-      if (authUser.signatureDataUrl && !watch("serviceAdvisorSignatureDataUrl")) {
-        setValue("serviceAdvisorSignatureDataUrl", authUser.signatureDataUrl, { shouldDirty: true });
-      }
-      return;
-    }
-
-    // 2) Si hay id en el form pero no nombre, buscarlo en la lista de advisors
-    if (watchedAdvisorId && !watchedAdvisorName) {
-      const found = advisors.find((a) => a.id === watchedAdvisorId);
-      if (found?.name) {
-        setValue("serviceAdvisorName", found.name, { shouldDirty: true });
-        if (found.signatureDataUrl && !watch("serviceAdvisorSignatureDataUrl")) {
+    // 1) Si ya tenemos id y nombre, solo intenta hidratar firma si falta
+    if (watchedAdvisorId && watchedAdvisorName) {
+      if (!advisorSigned) {
+        const found = advisors.find((a) => a.id === watchedAdvisorId);
+        if (found?.signatureDataUrl) {
           setValue("serviceAdvisorSignatureDataUrl", found.signatureDataUrl, { shouldDirty: true });
         }
       }
       return;
     }
 
-    // 3) Si no hay nada, como fallback usa el primer asesor disponible
+    // 2) Usa current user si existe
+    if (authUser?.id && authUser?.name) {
+      if (!watchedAdvisorId) setValue("serviceAdvisorId", authUser.id, { shouldDirty: true });
+      if (!watchedAdvisorName) setValue("serviceAdvisorName", authUser.name, { shouldDirty: true });
+      if (authUser.signatureDataUrl && !advisorSigned) {
+        setValue("serviceAdvisorSignatureDataUrl", authUser.signatureDataUrl, { shouldDirty: true });
+      }
+      return;
+    }
+
+    // 3) Si hay id pero no nombre, toma de la lista de asesores
+    if (watchedAdvisorId && !watchedAdvisorName) {
+      const found = advisors.find((a) => a.id === watchedAdvisorId);
+      if (found?.name) {
+        setValue("serviceAdvisorName", found.name, { shouldDirty: true });
+        if (found.signatureDataUrl && !advisorSigned) {
+          setValue("serviceAdvisorSignatureDataUrl", found.signatureDataUrl, { shouldDirty: true });
+        }
+      }
+      return;
+    }
+
+    // 4) Último recurso: primer asesor de la lista
     if (!watchedAdvisorId && advisors.length > 0) {
       const first = advisors[0];
       setValue("serviceAdvisorId", first.id, { shouldDirty: true });
@@ -113,14 +108,7 @@ export function ServiceDetailsCard({
         setValue("serviceAdvisorSignatureDataUrl", first.signatureDataUrl, { shouldDirty: true });
       }
     }
-  }, [
-    advisors,
-    authUser,
-    setValue,
-    watch,
-    watchedAdvisorId,
-    watchedAdvisorName,
-  ]);
+  }, [advisors, authUser, advisorSigned, setValue, watchedAdvisorId, watchedAdvisorName]);
 
   const handleStatusChange = (newStatus: ServiceFormValues["status"]) => {
     if (newStatus === "En Taller" && !watch("receptionDateTime")) {
@@ -130,9 +118,6 @@ export function ServiceDetailsCard({
     }
     setValue("status", newStatus, { shouldValidate: true, shouldDirty: true });
   };
-
-  // Nombre mostrado (solo lectura)
-  const advisorDisplayName = watchedAdvisorName || "—";
 
   return (
     <Card>
@@ -150,23 +135,14 @@ export function ServiceDetailsCard({
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className={cn(errors.status && "text-destructive")}>
-                  Estado
-                </FormLabel>
+                <FormLabel className={cn(errors.status && "text-destructive")}>Estado</FormLabel>
                 <Select
-                  onValueChange={(value) =>
-                    handleStatusChange(value as ServiceFormValues["status"])
-                  }
+                  onValueChange={(v) => handleStatusChange(v as ServiceFormValues["status"])}
                   value={field.value || "Cotizacion"}
                   disabled={isFinalStatus}
                 >
                   <FormControl>
-                    <SelectTrigger
-                      className={cn(
-                        "font-bold",
-                        errors.status && "border-destructive focus-visible:ring-destructive"
-                      )}
-                    >
+                    <SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}>
                       <SelectValue />
                     </SelectTrigger>
                   </FormControl>
@@ -182,7 +158,7 @@ export function ServiceDetailsCard({
             )}
           />
 
-          {/* Asesor (solo lectura) */}
+          {/* Asesor (solo lectura pero REGISTRADO) */}
           <FormField
             control={control}
             name="serviceAdvisorName"
@@ -192,18 +168,18 @@ export function ServiceDetailsCard({
                 <div className="flex items-center gap-2">
                   <FormControl className="flex-1">
                     <Input
-                      value={advisorDisplayName}
+                      {...field}
+                      value={field.value ?? ""}   // mantiene el binding con RHF
                       readOnly
                       disabled
                       className="bg-muted/40 font-medium"
                     />
                   </FormControl>
-                  {/* Botón opcional para capturar/actualizar firma del asesor */}
                   <Button
                     type="button"
                     variant={advisorSigned ? "secondary" : "outline"}
                     size="icon"
-                    title={advisorSigned ? "Firma registrada" : "Capturar firma del asesor"}
+                    title={advisorSigned ? "Firma registrada" : "Capturar/actualizar firma del asesor"}
                     onClick={() => onOpenSignature("advisor")}
                   >
                     <Signature className={cn("h-4 w-4", advisorSigned && "text-green-600")} />
@@ -214,8 +190,9 @@ export function ServiceDetailsCard({
           />
         </div>
 
-        {/* Campos ocultos para mantener el estado del form */}
-        <input type="hidden" value={watchedAdvisorId || ""} readOnly />
+        {/* 🔒 Campos ocultos para que se ENVÍEN con el submit */}
+        <input type="hidden" {...register("serviceAdvisorId")} value={watchedAdvisorId || ""} readOnly />
+        <input type="hidden" {...register("serviceAdvisorSignatureDataUrl")} value={watch("serviceAdvisorSignatureDataUrl") || ""} readOnly />
       </CardContent>
     </Card>
   );
