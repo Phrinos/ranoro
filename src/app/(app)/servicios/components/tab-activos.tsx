@@ -1,10 +1,9 @@
-
 // src/app/(app)/servicios/components/tab-activos.tsx
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
 import { startOfDay, endOfDay, isWithinInterval, isValid, compareDesc } from "date-fns";
