@@ -1,33 +1,46 @@
 // src/app/(app)/servicios/components/ServiceItemsList.tsx
 "use client";
 
-import React, { useState, useCallback } from 'react';
-import { useFormContext, useFieldArray } from 'react-hook-form';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, ShoppingCart, BrainCircuit, Loader2 } from 'lucide-react';
-import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList, Vehicle, ServiceTypeRecord, User } from '@/types';
-import { ServiceItemCard } from './ServiceItemCard';
-import type { ServiceFormValues } from '@/schemas/service-form';
-import { nanoid } from 'nanoid';
-import { inventoryService } from "@/lib/services";
-import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
-import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
-import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useEffect } from "react";
+import { useFormContext, useFieldArray } from "react-hook-form";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, ShoppingCart, BrainCircuit, Loader2 } from "lucide-react";
+import type {
+  InventoryItem,
+  InventoryCategory,
+  Supplier,
+  ServiceTypeRecord,
+  User,
+} from "@/types";
+import { ServiceItemCard } from "./ServiceItemCard";
+import type { ServiceFormValues } from "@/schemas/service-form";
+import { nanoid } from "nanoid";
+import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ServiceItemsListProps {
   isReadOnly?: boolean;
   inventoryItems: InventoryItem[];
   serviceTypes: ServiceTypeRecord[];
   technicians: User[];
-  mode: 'service' | 'quote';
-  onNewInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
+  mode: "service" | "quote";
+  onNewInventoryItemCreated: (formData: any) => Promise<InventoryItem>;
   categories: InventoryCategory[];
   suppliers: Supplier[];
   isEnhancingText?: string | null;
   handleEnhanceText?: (fieldName: any) => void;
 }
+
+// Limpia strings como "1,234.50" o "$100" -> number
+const toNumberLoose = (v: unknown): number => {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (typeof v === "string") {
+    const n = Number(v.replace(/[^\d.-]/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+};
 
 export function ServiceItemsList({
   isReadOnly,
@@ -39,22 +52,75 @@ export function ServiceItemsList({
   categories,
   suppliers,
   isEnhancingText,
-  handleEnhanceText
+  handleEnhanceText,
 }: ServiceItemsListProps) {
-  const { control, getValues, setValue, watch } = useFormContext<ServiceFormValues>();
+  const { control, setValue, watch } = useFormContext<ServiceFormValues>();
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "serviceItems",
   });
 
+  // Observa todos los items para:
+  // 1) Convertir sellingPrice / unitCost / quantity a number si vienen como string
+  // 2) Mantener "total" y "Total" del servicio sincronizados
+  const items = watch("serviceItems") || [];
+
+  useEffect(() => {
+    let mutated = false;
+    let runningTotal = 0;
+
+    (items as any[]).forEach((item, i) => {
+      // sellingPrice
+      if (typeof item?.sellingPrice === "string") {
+        const n = toNumberLoose(item.sellingPrice);
+        setValue(`serviceItems.${i}.sellingPrice`, n, { shouldDirty: true, shouldValidate: false });
+        mutated = true;
+      }
+      const price =
+        typeof item?.sellingPrice === "number"
+          ? item.sellingPrice
+          : typeof item?.sellingPrice === "string"
+          ? toNumberLoose(item.sellingPrice)
+          : 0;
+
+      runningTotal += price;
+
+      // suppliesUsed: unitCost y quantity
+      const supplies = Array.isArray(item?.suppliesUsed) ? item.suppliesUsed : [];
+      supplies.forEach((s: any, j: number) => {
+        if (typeof s?.unitCost === "string") {
+          setValue(
+            `serviceItems.${i}.suppliesUsed.${j}.unitCost`,
+            toNumberLoose(s.unitCost),
+            { shouldDirty: true, shouldValidate: false }
+          );
+          mutated = true;
+        }
+        if (typeof s?.quantity === "string") {
+          setValue(
+            `serviceItems.${i}.suppliesUsed.${j}.quantity`,
+            toNumberLoose(s.quantity),
+            { shouldDirty: true, shouldValidate: false }
+          );
+          mutated = true;
+        }
+      });
+    });
+
+    // Sincroniza totales a nivel del documento (usados en resúmenes / enlace público)
+    setValue("total", runningTotal, { shouldDirty: mutated, shouldValidate: false });
+    // Algunos lugares consumen "Total" (T mayúscula); mantenlo también:
+    setValue("Total" as any, runningTotal as any, { shouldDirty: mutated, shouldValidate: false });
+  }, [items, setValue]);
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle>Trabajos y Refacciones</CardTitle>
-        <CardDescription>
-          Añade trabajos e insumos
-        </CardDescription>
+        <CardDescription>Añade trabajos e insumos</CardDescription>
       </CardHeader>
+
       <CardContent className="flex flex-col flex-grow space-y-4 pt-0">
         <div className="flex-grow space-y-4">
           {fields.length > 0 ? (
@@ -80,6 +146,7 @@ export function ServiceItemsList({
             </div>
           )}
         </div>
+
         <div className="mt-4 flex flex-col gap-4 border-t pt-4">
           {!isReadOnly && (
             <div className="flex justify-end">
@@ -91,10 +158,10 @@ export function ServiceItemsList({
                 onClick={() =>
                   append({
                     id: `item_${nanoid(6)}`,
-                    name: '',
-                    sellingPrice: undefined, // Set to undefined
+                    name: "",
+                    sellingPrice: undefined, // se convertirá a number en cuanto el usuario escriba
                     suppliesUsed: [],
-                  })
+                  } as any)
                 }
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -102,31 +169,42 @@ export function ServiceItemsList({
               </Button>
             </div>
           )}
-           <FormField
-              control={control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex justify-between items-center w-full">
-                      <span>Notas Adicionales del Servicio (Opcional)</span>
-                      {!isReadOnly && handleEnhanceText && (
-                          <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEnhanceText("notes")}
-                              disabled={isEnhancingText === "notes" || !watch("notes")}
-                          >
-                              {isEnhancingText === "notes" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                          </Button>
+
+          <FormField
+            control={control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex justify-between items-center w-full">
+                  <span>Notas Adicionales del Servicio (Opcional)</span>
+                  {!isReadOnly && handleEnhanceText && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleEnhanceText("notes")}
+                      disabled={isEnhancingText === "notes" || !watch("notes")}
+                    >
+                      {isEnhancingText === "notes" ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <BrainCircuit className="h-4 w-4" />
                       )}
-                  </FormLabel>
-                  <FormControl>
-                      <Textarea placeholder="Observaciones generales sobre el servicio..." {...field} className="min-h-[100px] bg-white" disabled={isReadOnly} value={field.value ?? ''} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                    </Button>
+                  )}
+                </FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Observaciones generales sobre el servicio..."
+                    {...field}
+                    className="min-h-[100px] bg-white"
+                    disabled={isReadOnly}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
         </div>
       </CardContent>
     </Card>

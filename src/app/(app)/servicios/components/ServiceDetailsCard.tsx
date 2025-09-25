@@ -2,7 +2,7 @@
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 "use client";
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useFormContext, Controller } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -17,6 +17,8 @@ import { format, setHours, setMinutes, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+
 
 const statusOptions: { value: ServiceFormValues['status'], label: string }[] = [
     { value: 'Cotizacion', label: 'Cotización' },
@@ -44,8 +46,24 @@ export function ServiceDetailsCard({
   const { control, watch, formState: { errors }, setValue } = useFormContext<ServiceFormValues>();
   
   const watchedStatus = watch('status');
-  
   const isFinalStatus = watchedStatus === 'Cancelado' || watchedStatus === 'Entregado';
+
+  useEffect(() => {
+    if (isNew) {
+      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      if (authUserString) {
+        try {
+          const currentUser = JSON.parse(authUserString);
+          if (currentUser?.id) {
+            setValue('serviceAdvisorId', currentUser.id, { shouldDirty: true });
+          }
+        } catch (e) {
+          console.error("Failed to set default advisor:", e);
+        }
+      }
+    }
+  }, [isNew, setValue]);
+
   
   const handleStatusChange = (newStatus: ServiceFormValues['status']) => {
     if (newStatus === 'En Taller' && !watch('receptionDateTime')) {
@@ -86,10 +104,24 @@ export function ServiceDetailsCard({
               </FormItem>
             )}
           />
-
-          {/* ... (resto de los campos del formulario se mantienen igual) */}
+           <FormField
+              control={control}
+              name="serviceAdvisorId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className={cn(errors.serviceAdvisorId && "text-destructive")}>Asesor de Servicio</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={isReadOnly || !isNew} // No se puede cambiar después de crearlo
+                  >
+                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un asesor..." /></SelectTrigger></FormControl>
+                    <SelectContent>{advisors.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
         </div>
-        {/* ... (resto del JSX de la tarjeta se mantiene igual) */}
       </CardContent>
     </Card>
   );

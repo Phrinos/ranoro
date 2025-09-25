@@ -1,15 +1,20 @@
-
 // src/app/(public)/s/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, ShieldAlert, Printer } from "lucide-react";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebasePublic"; // SDK público (cliente)
+import {
+  doc,
+  getDoc,
+  onSnapshot,
+  updateDoc,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore";
+import { db } from "@/lib/firebasePublic";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ServiceRecord, Vehicle } from "@/types";
 import { ServiceSheetContent } from "@/components/shared/ServiceSheetContent";
 import { SignatureDialog } from "@/app/(app)/servicios/components/signature-dialog";
 import { AppointmentScheduler } from "@/components/shared/AppointmentScheduler";
@@ -17,12 +22,53 @@ import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog
 import { TicketContent } from "@/components/ticket-content";
 import { Button } from "@/components/ui/button";
 
+// Define un tipo para el doc público (subconjunto del ServiceRecord)
+type PublicServiceDoc = {
+  id?: string;
+  serviceId?: string;
+  publicId?: string;
+  folio?: string;
+  status?: "Cotizacion" | "En Taller" | "Agendado" | "Entregado" | "Cancelado" | string;
+  subStatus?: string | null;
+  customerName?: string;
+  vehicleIdentifier?: string;
+  receptionDateTime?: string | Date | Timestamp | null;
+  deliveryDateTime?: string | Date | Timestamp | null;
+  appointmentDateTime?: string | Date | Timestamp | null;
+  appointmentStatus?: "scheduled" | "Confirmed" | "Canceled" | string | null;
+  serviceAdvisorName?: string | null;
+  serviceItems?: any[];
+  customerComplaints?: any;
+  recommendations?: any;
+  total?: number;
+  payments?: any;
+  vehicle?: any | null;
+  workshopInfo?: any | null;
+  customerSignatureReception?: string | null;
+  customerSignatureDelivery?: string | null;
+  isPublic?: boolean;
+  createdAt?: any;
+  updatedAt?: any;
+};
+
+// Helpers para fechas
+const toDate = (v: string | Date | Timestamp | null | undefined): Date | null => {
+  if (!v) return null;
+  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+  if (typeof v === "string") {
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (v instanceof Timestamp) return v.toDate();
+  return null;
+};
+
 export default function PublicServicePage() {
   const params = useParams();
-  const publicId = params.id as string;
+  const publicId = decodeURIComponent(params.id as string || "");
   const { toast } = useToast();
 
-  const [service, setService] = useState<ServiceRecord | null | undefined>(undefined);
+  const [service, setService] = useState<PublicServiceDoc | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   const [isSigning, setIsSigning] = useState(false);
@@ -34,8 +80,8 @@ export default function PublicServicePage() {
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
 
-  // --- Leer doc público ---
-  const fetchServiceData = useCallback(async () => {
+  // Carga/escucha del doc público
+  const fetchOnce = useCallback(async () => {
     try {
       if (!publicId) return;
       const ref = doc(db, "publicServices", publicId);
@@ -45,9 +91,7 @@ export default function PublicServicePage() {
         setError("El servicio no fue encontrado o el enlace es incorrecto.");
         return;
       }
-      
-      const serviceData = { id: snap.id, ...(snap.data() as ServiceRecord) };
-      setService(serviceData);
+      setService({ id: snap.id, ...(snap.data() as PublicServiceDoc) });
       setError(null);
     } catch (e: any) {
       console.error("getPublicServiceData", e?.code, e?.message);
@@ -66,10 +110,28 @@ export default function PublicServicePage() {
       setService(null);
       return;
     }
-    fetchServiceData();
-  }, [publicId, fetchServiceData]);
+    // Suscripción en vivo (puedes comentar esto y dejar fetchOnce si prefieres)
+    const ref = doc(db, "publicServices", publicId);
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        if (!snap.exists()) {
+          setService(null);
+          setError("El servicio no fue encontrado o el enlace es incorrecto.");
+          return;
+        }
+        setService({ id: snap.id, ...(snap.data() as PublicServiceDoc) });
+        setError(null);
+      },
+      (err) => {
+        console.error("onSnapshot error", err);
+        setError("No se pudo escuchar actualizaciones del servicio.");
+      }
+    );
+    return () => unsub();
+  }, [publicId]);
 
-  // --- Guardar firma (coincide con tus reglas) ---
+  // Guardar firma (respeta reglas públicas)
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!service || !signatureType) return;
     setIsSigning(true);
@@ -79,11 +141,12 @@ export default function PublicServicePage() {
         signatureType === "reception"
           ? { customerSignatureReception: signatureDataUrl }
           : { customerSignatureDelivery: signatureDataUrl };
-      await updateDoc(ref, field);
+      await updateDoc(ref, { ...field, updatedAt: serverTimestamp() });
       toast({
         title: signatureType === "reception" ? "Firma de Recepción Guardada" : "Firma de Conformidad Guardada",
       });
-      await fetchServiceData();
+      // con onSnapshot ya se refresca solo; si usas fetchOnce, descomenta:
+      // await fetchOnce();
     } catch (e: any) {
       toast({
         title: "Error al Guardar Firma",
@@ -96,15 +159,14 @@ export default function PublicServicePage() {
     }
   };
 
-  // --- Confirmar/CANCELAR cita (usa appointmentStatus) ---
+  // Confirmar/CANCELAR cita
   const handleConfirmAppointment = async () => {
     if (!service) return;
     setIsConfirming(true);
     try {
       const ref = doc(db, "publicServices", publicId);
-      await updateDoc(ref, { appointmentStatus: "Confirmed" }); // 'Confirmed' o el valor que uses en tus reglas
+      await updateDoc(ref, { appointmentStatus: "Confirmed", updatedAt: serverTimestamp() });
       toast({ title: "Cita Confirmada", description: "¡Gracias! Hemos confirmado tu cita." });
-      await fetchServiceData();
     } catch (e: any) {
       toast({
         title: "Error al Confirmar",
@@ -120,9 +182,8 @@ export default function PublicServicePage() {
     if (!service) return;
     try {
       const ref = doc(db, "publicServices", publicId);
-      await updateDoc(ref, { appointmentStatus: "Canceled" }); // 'Canceled' o el valor que uses
+      await updateDoc(ref, { appointmentStatus: "Canceled", updatedAt: serverTimestamp() });
       toast({ title: "Cita Cancelada", description: "Tu cita ha sido cancelada exitosamente." });
-      await fetchServiceData();
     } catch (e: any) {
       toast({
         title: "Error",
@@ -130,9 +191,9 @@ export default function PublicServicePage() {
         variant: "destructive",
       });
     }
-  }, [publicId, service, toast, fetchServiceData]);
+  }, [publicId, service, toast]);
 
-  // --- Agendar cita (usa appointmentDateTime + appointmentStatus) ---
+  // Agendar cita
   const handleScheduleAppointment = async (selectedDateTime: Date) => {
     if (!service) return;
     try {
@@ -140,10 +201,10 @@ export default function PublicServicePage() {
       await updateDoc(ref, {
         appointmentDateTime: selectedDateTime.toISOString(),
         appointmentStatus: "scheduled",
-      }); // permitido por reglas
+        updatedAt: serverTimestamp(),
+      });
       toast({ title: "Cita Agendada", description: "Tu cita ha sido registrada." });
       setIsScheduling(false);
-      await fetchServiceData();
     } catch (e: any) {
       toast({
         title: "Error al Agendar",
@@ -157,10 +218,8 @@ export default function PublicServicePage() {
     setSignatureType(type);
     setIsSigning(true);
   };
-  
-  // The vehicle data is now part of the denormalized service object
-  const vehicle: Vehicle | null = service?.vehicle || null;
 
+  const vehicle = service?.vehicle || null;
 
   if (service === undefined) {
     return (
@@ -190,7 +249,7 @@ export default function PublicServicePage() {
     <>
       <div className="container mx-auto py-4 sm:py-8">
         <ServiceSheetContent
-          service={service}
+          service={service as any}
           vehicle={vehicle}
           onScheduleClick={() => setIsScheduling(true)}
           onConfirmClick={handleConfirmAppointment}
@@ -224,11 +283,11 @@ export default function PublicServicePage() {
             Imprimir
           </Button>
         }
-        service={service}
+        service={service as any}
       >
         <TicketContent
           ref={ticketContentRef}
-          service={service}
+          service={service as any}
           vehicle={vehicle as any}
           previewWorkshopInfo={service.workshopInfo}
         />
@@ -236,5 +295,3 @@ export default function PublicServicePage() {
     </>
   );
 }
-
-    
