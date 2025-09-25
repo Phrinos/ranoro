@@ -15,34 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 
 const TZ = "America/Mexico_City";
 
-const getDeliveredAt = (s: ServiceRecord): Date | null => {
-  return (
-    parseDate((s as any).deliveryDateTime) ||
-    parseDate((s as any).completedAt) ||
-    parseDate((s as any).closedAt) ||
-    (Array.isArray(s.payments) && s.payments.length
-      ? parseDate(s.payments[0]?.date)
-      : null) ||
-    parseDate((s as any).serviceDate)
-  );
-};
-
-const sumPaymentsToday = (
-  s: ServiceRecord,
-  dayStart: Date,
-  dayEnd: Date
-): number => {
-  if (!Array.isArray(s.payments)) return 0;
-  return s.payments.reduce((acc, p) => {
-    const pd = parseDate((p as any).date);
-    if (!pd || !isValid(pd)) return acc;
-    const pdZ = toZonedTime(pd, TZ);
-    return isWithinInterval(pdZ, { start: dayStart, end: dayEnd })
-      ? acc + (Number(p.amount) || 0)
-      : acc;
-  }, 0);
-};
-
 interface ActivosTabContentProps {
   allServices: ServiceRecord[];
   vehicles: Vehicle[];
@@ -102,36 +74,13 @@ export default function ActivosTabContent({
         return true;
       }
       
-      const deliveryDate = getDeliveredAt(s);
+      const deliveryDate = parseDate(s.deliveryDateTime);
       if (s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd })) {
         return true;
       }
 
       return false;
     });
-  }, [allServices, todayStart, todayEnd]);
-
-
-  const totalEarningsToday = useMemo(() => {
-    return allServices.reduce((total, s) => {
-        let contributes = false;
-        
-        // Contributes if delivered today
-        const deliveryDate = getDeliveredAt(s);
-        if (s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(toZonedTime(deliveryDate, TZ), { start: todayStart, end: todayEnd })) {
-            contributes = true;
-        } 
-        // Also contributes if it's ready for delivery
-        else if (s.status === 'En Taller' && s.subStatus === 'Completado') {
-            contributes = true;
-        }
-
-        if (contributes) {
-            return total + (s.totalCost || 0);
-        }
-
-        return total;
-    }, 0);
   }, [allServices, todayStart, todayEnd]);
 
 
@@ -191,8 +140,7 @@ export default function ActivosTabContent({
       <CardHeader>
         <CardTitle>Servicios Activos del Día</CardTitle>
         <CardDescription>
-          Total del día (listos para entrega y entregados):{' '}
-          <span className="font-bold text-primary">{formatCurrency(totalEarningsToday)}</span>
+          Servicios agendados para hoy, en taller y entregados hoy.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
