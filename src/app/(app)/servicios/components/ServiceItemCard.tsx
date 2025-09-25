@@ -199,30 +199,32 @@ export function ServiceItemCard({
           />
         </div>
 
-        {/* Técnico */}
-        <FormField
-          control={control}
-          name={`serviceItems.${serviceIndex}.technicianId`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Asignar Técnico</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || ""} disabled={isReadOnly}>
-                <FormControl>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Seleccione un técnico" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {technicians.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )}
-        />
+        {/* Técnico - CONDITIONAL */}
+        {mode !== 'quote' && (
+          <FormField
+            control={control}
+            name={`serviceItems.${serviceIndex}.technicianId`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Asignar Técnico</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ""} disabled={isReadOnly}>
+                  <FormControl>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Seleccione un técnico" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {technicians.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+        )}
       </div>
 
       {/* Insumos */}
