@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 "use client";
 
@@ -47,23 +46,6 @@ export function ServiceDetailsCard({
   
   const watchedStatus = watch('status');
   const isFinalStatus = watchedStatus === 'Cancelado' || watchedStatus === 'Entregado';
-
-  useEffect(() => {
-    if (isNew) {
-      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-      if (authUserString) {
-        try {
-          const currentUser = JSON.parse(authUserString);
-          if (currentUser?.id) {
-            setValue('serviceAdvisorId', currentUser.id, { shouldDirty: true });
-          }
-        } catch (e) {
-          console.error("Failed to set default advisor:", e);
-        }
-      }
-    }
-  }, [isNew, setValue]);
-
   
   const handleStatusChange = (newStatus: ServiceFormValues['status']) => {
     if (newStatus === 'En Taller' && !watch('receptionDateTime')) {
