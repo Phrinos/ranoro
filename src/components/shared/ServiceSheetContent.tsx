@@ -168,7 +168,7 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
 });
 StatusCard.displayName = 'StatusCard';
 
-const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }: { workshopInfo: Partial<WorkshopInfo>, advisorName?: string, advisorSignature?: string }) => (
+const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }: { workshopInfo: Partial<WorkshopInfo>, advisorName?: string | null, advisorSignature?: string | null }) => (
     <div className="space-y-4">
         <Card>
             <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
@@ -231,6 +231,7 @@ interface ServiceSheetContentProps {
   service: ServiceRecord;
   onScheduleClick?: () => void;
   onConfirmClick?: () => void;
+  onCancelAppointment: () => void;
   onShowTicketClick?: () => void;
   isConfirming?: boolean;
   onSignClick?: (type: 'reception' | 'delivery') => void;

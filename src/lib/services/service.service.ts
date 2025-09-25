@@ -89,7 +89,7 @@ async function denormalizeService(base: any): Promise<any> {
 
   // Total
   serviceData.total = pickTotal(serviceData);
-
+  serviceData.totalCost = pickTotal(serviceData);
 
   return serviceData;
 }
