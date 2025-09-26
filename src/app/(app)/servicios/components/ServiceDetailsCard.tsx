@@ -2,8 +2,8 @@
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 "use client";
 
-import React, { useEffect, useMemo } from "react";
-import { useFormContext } from "react-hook-form";
+import React, { useEffect } from "react";
+import { useFormContext, Controller } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,7 +13,6 @@ import { Signature } from "lucide-react";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import type { User, ServiceTypeRecord } from "@/types";
 import { cn } from "@/lib/utils";
-import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 
 const statusOptions: { value: ServiceFormValues["status"]; label: string }[] = [
   { value: "Cotizacion", label: "Cotización" },
@@ -25,8 +24,8 @@ const statusOptions: { value: ServiceFormValues["status"]; label: string }[] = [
 interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
   advisors: User[];
-  technicians: User[];          // no se usa aquí, lo dejamos por compatibilidad
-  serviceTypes: ServiceTypeRecord[]; // no se usa aquí, lo dejamos por compatibilidad
+  technicians: User[];          
+  serviceTypes: ServiceTypeRecord[]; 
   onOpenSignature: (type: "reception" | "delivery" | "advisor") => void;
   isNew: boolean;
 }
@@ -34,8 +33,6 @@ interface ServiceDetailsCardProps {
 export function ServiceDetailsCard({
   isReadOnly,
   advisors,
-  technicians,       // eslint-disable-line @typescript-eslint/no-unused-vars
-  serviceTypes,      // eslint-disable-line @typescript-eslint/no-unused-vars
   onOpenSignature,
   isNew,
 }: ServiceDetailsCardProps) {
@@ -43,72 +40,25 @@ export function ServiceDetailsCard({
     control,
     watch,
     setValue,
-    register,
     formState: { errors },
   } = useFormContext<ServiceFormValues>();
 
   const watchedStatus = watch("status");
   const isFinalStatus = watchedStatus === "Cancelado" || watchedStatus === "Entregado";
-
   const watchedAdvisorId = watch("serviceAdvisorId");
-  const watchedAdvisorName = watch("serviceAdvisorName");
   const advisorSigned = !!watch("serviceAdvisorSignatureDataUrl");
 
-  // Usuario autenticado (para autollenar)
-  const authUser = useMemo(() => {
-    try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-      return raw ? (JSON.parse(raw) as Partial<User>) : null;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  // Asegura que los 3 campos del asesor queden poblados Y REGISTRADOS
+  // Efecto para auto-seleccionar el primer asesor si es un servicio nuevo y no hay ninguno seleccionado.
   useEffect(() => {
-    // 1) Si ya tenemos id y nombre, solo intenta hidratar firma si falta
-    if (watchedAdvisorId && watchedAdvisorName) {
-      if (!advisorSigned) {
-        const found = advisors.find((a) => a.id === watchedAdvisorId);
-        if (found?.signatureDataUrl) {
-          setValue("serviceAdvisorSignatureDataUrl", found.signatureDataUrl, { shouldDirty: true });
-        }
-      }
-      return;
-    }
-
-    // 2) Usa current user si existe
-    if (authUser?.id && authUser?.name) {
-      if (!watchedAdvisorId) setValue("serviceAdvisorId", authUser.id, { shouldDirty: true });
-      if (!watchedAdvisorName) setValue("serviceAdvisorName", authUser.name, { shouldDirty: true });
-      if (authUser.signatureDataUrl && !advisorSigned) {
-        setValue("serviceAdvisorSignatureDataUrl", authUser.signatureDataUrl, { shouldDirty: true });
-      }
-      return;
-    }
-
-    // 3) Si hay id pero no nombre, toma de la lista de asesores
-    if (watchedAdvisorId && !watchedAdvisorName) {
-      const found = advisors.find((a) => a.id === watchedAdvisorId);
-      if (found?.name) {
-        setValue("serviceAdvisorName", found.name, { shouldDirty: true });
-        if (found.signatureDataUrl && !advisorSigned) {
-          setValue("serviceAdvisorSignatureDataUrl", found.signatureDataUrl, { shouldDirty: true });
-        }
-      }
-      return;
-    }
-
-    // 4) Último recurso: primer asesor de la lista
-    if (!watchedAdvisorId && advisors.length > 0) {
-      const first = advisors[0];
-      setValue("serviceAdvisorId", first.id, { shouldDirty: true });
-      setValue("serviceAdvisorName", first.name, { shouldDirty: true });
-      if (first.signatureDataUrl) {
-        setValue("serviceAdvisorSignatureDataUrl", first.signatureDataUrl, { shouldDirty: true });
+    if (isNew && !watchedAdvisorId && advisors.length > 0) {
+      const defaultAdvisor = advisors[0];
+      setValue("serviceAdvisorId", defaultAdvisor.id, { shouldDirty: true });
+      setValue("serviceAdvisorName", defaultAdvisor.name, { shouldDirty: true });
+      if (defaultAdvisor.signatureDataUrl) {
+        setValue("serviceAdvisorSignatureDataUrl", defaultAdvisor.signatureDataUrl, { shouldDirty: true });
       }
     }
-  }, [advisors, authUser, advisorSigned, setValue, watchedAdvisorId, watchedAdvisorName]);
+  }, [isNew, watchedAdvisorId, advisors, setValue]);
 
   const handleStatusChange = (newStatus: ServiceFormValues["status"]) => {
     if (newStatus === "En Taller" && !watch("receptionDateTime")) {
@@ -117,6 +67,15 @@ export function ServiceDetailsCard({
       setValue("appointmentDateTime", null as any, { shouldDirty: true });
     }
     setValue("status", newStatus, { shouldValidate: true, shouldDirty: true });
+  };
+  
+  const handleAdvisorChange = (advisorId: string) => {
+    const selectedAdvisor = advisors.find(a => a.id === advisorId);
+    if (selectedAdvisor) {
+        setValue("serviceAdvisorId", selectedAdvisor.id, { shouldDirty: true });
+        setValue("serviceAdvisorName", selectedAdvisor.name, { shouldDirty: true });
+        setValue("serviceAdvisorSignatureDataUrl", selectedAdvisor.signatureDataUrl || null, { shouldDirty: true });
+    }
   };
 
   return (
@@ -158,41 +117,46 @@ export function ServiceDetailsCard({
             )}
           />
 
-          {/* Asesor (solo lectura pero REGISTRADO) */}
+          {/* Selector de Asesor */}
           <FormField
             control={control}
-            name="serviceAdvisorName"
+            name="serviceAdvisorId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Asesor de Servicio</FormLabel>
                 <div className="flex items-center gap-2">
-                  <FormControl className="flex-1">
-                    <Input
-                      {...field}
-                      value={field.value ?? ""}   // mantiene el binding con RHF
-                      readOnly
-                      disabled
-                      className="bg-muted/40 font-medium"
-                    />
-                  </FormControl>
-                  <Button
-                    type="button"
-                    variant={advisorSigned ? "secondary" : "outline"}
-                    size="icon"
-                    title={advisorSigned ? "Firma registrada" : "Capturar/actualizar firma del asesor"}
-                    onClick={() => onOpenSignature("advisor")}
-                  >
-                    <Signature className={cn("h-4 w-4", advisorSigned && "text-green-600")} />
-                  </Button>
+                    <Select
+                        onValueChange={handleAdvisorChange}
+                        value={field.value}
+                        disabled={isReadOnly || advisors.length === 0}
+                    >
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Seleccione un asesor" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {advisors.map((advisor) => (
+                            <SelectItem key={advisor.id} value={advisor.id}>
+                            {advisor.name}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <Button
+                        type="button"
+                        variant={advisorSigned ? "secondary" : "outline"}
+                        size="icon"
+                        title={advisorSigned ? "Firma registrada" : "Capturar/actualizar firma del asesor"}
+                        onClick={() => onOpenSignature("advisor")}
+                    >
+                        <Signature className={cn("h-4 w-4", advisorSigned && "text-green-600")} />
+                    </Button>
                 </div>
               </FormItem>
             )}
           />
         </div>
-
-        {/* 🔒 Campos ocultos para que se ENVÍEN con el submit */}
-        <input type="hidden" {...register("serviceAdvisorId")} value={watchedAdvisorId || ""} readOnly />
-        <input type="hidden" {...register("serviceAdvisorSignatureDataUrl")} value={watch("serviceAdvisorSignatureDataUrl") || ""} readOnly />
       </CardContent>
     </Card>
   );
