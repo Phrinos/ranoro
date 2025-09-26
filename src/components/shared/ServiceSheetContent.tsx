@@ -78,7 +78,7 @@ const SheetHeader = React.memo(({ service, workshopInfo }: { service: ServiceRec
 });
 SheetHeader.displayName = 'SheetHeader';
 
-const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle }) => {
+const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
   const customerName = capitalizeWords(service.customerName || vehicle?.ownerName || '');
   const customerPhone = vehicle?.ownerPhone || 'Teléfono no disponible';
   const vehicleMake = vehicle?.make || '';
@@ -241,7 +241,7 @@ interface ServiceSheetContentProps {
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick, vehicle }, ref) => {
+  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick, vehicle, onCancelAppointment }, ref) => {
     const { toast } = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
     const [currentActiveTab, setActiveTab] = useState('order');
@@ -316,7 +316,7 @@ ServiceSheetContent.displayName = "ServiceSheetContent";
 
 // --- Tab Content Components ---
 
-function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicketClick }: { service: ServiceRecord, vehicle?: Vehicle, onSignClick?: (type: 'reception' | 'delivery') => void, isSigning?: boolean, onShowTicketClick?: () => void }) {
+function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicketClick }: { service: ServiceRecord, vehicle?: Vehicle | null, onSignClick?: (type: 'reception' | 'delivery') => void, isSigning?: boolean, onShowTicketClick?: () => void }) {
     const items = useMemo(() => (service?.serviceItems ?? []).map(it => ({ ...it, price: Number(it?.sellingPrice) || 0 })), [service?.serviceItems]);
     const { subTotal, taxAmount, totalCost } = useMemo(() => {
         const total = items.reduce((acc, it) => acc + (it.price || 0), 0);
@@ -514,3 +514,6 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
         </Card>
     );
 }
+
+
+    
