@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, ChevronRight } from 'lucide-react';
 import type { Vehicle } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
@@ -73,7 +73,7 @@ export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
                     <SortableTableHeader sortKey="year" label="Año" onSort={handleSort} currentSort={sortOption} className="hidden lg:table-cell" textClassName="text-white" />
                     <SortableTableHeader sortKey="assignedDriverId" label="Estado" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
                     <SortableTableHeader sortKey="assignedDriverName" label="Conductor" onSort={handleSort} currentSort={sortOption} className="hidden md:table-cell" textClassName="text-white" />
-                    <div className="w-10"></div>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
