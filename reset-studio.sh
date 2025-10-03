@@ -13,9 +13,7 @@ gcloud auth application-default login
 echo "🧹 Borrando cachés de Next.js y Genkit..."
 rm -rf .next .genkit/.cache
 
-echo "📦 Reinstalando dependencias..."
-rm -rf node_modules package-lock.json
-npm install
+echo "📦 Dependencias omitidas para un reinicio rápido."
 
-echo "🚀 Iniciando servidor en puerto 6000..."
-PORT=6000 npm run dev
+echo "🚀 Reinicia el servidor para aplicar los cambios."
+echo "Comando sugerido: PORT=6000 npm run dev"
