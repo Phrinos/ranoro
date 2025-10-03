@@ -28,11 +28,32 @@ export function Calendar({
       showOutsideDays={showOutsideDays}
       locale={locale}
       className={cn("p-3", className)}
-      /* ✅ Inline styles: garantizan 7 columnas siempre */
+      /* ✅ Inline styles para blindar la maquetación a 7 columnas */
       styles={{
-        head_row: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)" },
-        row: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)" },
-        table: { width: "100%" },
+        head_row: {
+          display: "grid",
+          gridTemplateColumns: "repeat(7, minmax(0,1fr))",
+          alignItems: "center",
+        },
+        row: {
+          display: "grid",
+          gridTemplateColumns: "repeat(7, minmax(0,1fr))",
+          alignItems: "center",
+        },
+        head_cell: {
+          width: "100%",
+          justifyContent: "center",
+          alignItems: "center",
+          display: "flex",
+          whiteSpace: "nowrap",
+        },
+        cell: {
+          width: "100%",
+          justifyContent: "center",
+          alignItems: "center",
+          display: "flex",
+        },
+        table: { width: "100%", borderCollapse: "collapse" },
       }}
       classNames={{
         months: "flex flex-col sm:flex-row gap-4",
@@ -47,11 +68,10 @@ export function Calendar({
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
-        table: "border-collapse",
+        table: "w-full",
         head_cell:
-          "h-9 w-9 mx-auto text-center text-muted-foreground rounded-md font-normal text-[0.8rem]",
-        cell:
-          "h-9 w-9 mx-auto p-0 text-center text-sm align-middle relative",
+          "text-muted-foreground rounded-md font-normal text-[0.8rem]",
+        cell: "p-0 text-sm align-middle relative",
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "h-9 w-9 p-0 font-normal aria-selected:opacity-100"

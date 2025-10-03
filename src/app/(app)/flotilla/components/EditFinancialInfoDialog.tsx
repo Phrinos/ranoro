@@ -86,7 +86,6 @@ export function EditFinancialInfoDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
-            {/* Fecha de contrato */}
             <FormField
               control={form.control}
               name="contractDate"
@@ -129,7 +128,6 @@ export function EditFinancialInfoDialog({
               )}
             />
 
-            {/* Depósito requerido */}
             <FormField
               control={form.control}
               name="requiredDepositAmount"
@@ -150,7 +148,6 @@ export function EditFinancialInfoDialog({
               )}
             />
 
-            {/* Depósito entregado */}
             <FormField
               control={form.control}
               name="depositAmount"

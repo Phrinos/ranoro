@@ -95,7 +95,6 @@ export function AddManualChargeDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
-            {/* Fecha */}
             <FormField
               control={form.control}
               name="date"
@@ -121,7 +120,7 @@ export function AddManualChargeDialog({
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
                       <Calendar
                         mode="single"
                         selected={field.value}
@@ -138,7 +137,6 @@ export function AddManualChargeDialog({
               )}
             />
 
-            {/* Monto */}
             <FormField
               control={form.control}
               name="amount"
@@ -159,7 +157,6 @@ export function AddManualChargeDialog({
               )}
             />
 
-            {/* Descripción */}
             <FormField
               control={form.control}
               name="note"
