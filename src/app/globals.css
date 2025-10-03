@@ -227,12 +227,11 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
-input[type=number] {
+/* Quita las flechas de los number inputs (Firefox) */
+input[type="number"] {
   -moz-appearance: textfield;
-.aria-selected\:bg-\[var\(--rdp-range_middle-background\)\][aria-selected="true"] {
-  background-color: var(--rdp-range-middle-background);
 }
-}
+
 
 /* For calendar event dots */
 .rdp-day_has-event {
@@ -265,4 +264,24 @@ input[type=number] {
 
 [data-table="nohover"] thead tr:hover { 
   background-color: transparent !important; 
+}
+
+/* ===== React Day Picker hard reset ===== */
+.rdp { --rdp-cell-size: 36px; }
+
+.rdp-head_row,
+.rdp-row {
+  display: table-row !important; /* evita flex/grid forzados por otros CSS */
+}
+
+.rdp-head_cell,
+.rdp-cell {
+  display: table-cell !important;
+  vertical-align: middle;
+  text-align: center;
+  padding: 0;
+}
+
+.rdp-head_cell abbr[title] {
+  text-decoration: none; /* quita subrayado de <abbr> */
 }

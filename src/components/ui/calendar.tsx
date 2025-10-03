@@ -1,3 +1,4 @@
+
 // src/components/ui/calendar.tsx
 "use client";
 
@@ -28,31 +29,12 @@ export function Calendar({
       showOutsideDays={showOutsideDays}
       locale={locale}
       className={cn("p-3", className)}
-      /* ✅ Inline styles para blindar la maquetación a 7 columnas */
+      /* ✅ Inline styles: garantizan 7 columnas siempre */
       styles={{
-        head_row: {
-          display: "grid",
-          gridTemplateColumns: "repeat(7, minmax(0,1fr))",
-          alignItems: "center",
-        },
-        row: {
-          display: "grid",
-          gridTemplateColumns: "repeat(7, minmax(0,1fr))",
-          alignItems: "center",
-        },
-        head_cell: {
-          width: "100%",
-          justifyContent: "center",
-          alignItems: "center",
-          display: "flex",
-          whiteSpace: "nowrap",
-        },
-        cell: {
-          width: "100%",
-          justifyContent: "center",
-          alignItems: "center",
-          display: "flex",
-        },
+        head_row: { display: "grid", gridTemplateColumns: "repeat(7, minmax(0,1fr))", alignItems: "center" },
+        row: { display: "grid", gridTemplateColumns: "repeat(7, minmax(0,1fr))", alignItems: "center" },
+        head_cell: { width: "100%", display: "flex", justifyContent: "center", alignItems: "center", whiteSpace: "nowrap" },
+        cell: { width: "100%", display: "flex", justifyContent: "center", alignItems: "center" },
         table: { width: "100%", borderCollapse: "collapse" },
       }}
       classNames={{
@@ -100,26 +82,17 @@ export function Calendar({
           const selected = options.find(
             (opt) => opt.props.value?.toString() === currentValue
           );
-          const emitChange = (next: string) => {
-            if (next === currentValue) return;
-            onChange?.({
-              target: { value: next },
-            } as unknown as React.ChangeEvent<HTMLSelectElement>);
-          };
+          const emit = (next: string) => next !== currentValue && onChange?.({ target: { value: next } } as unknown as React.ChangeEvent<HTMLSelectElement>);
           return (
-            <Select value={currentValue} onValueChange={emitChange}>
+            <Select value={currentValue} onValueChange={emit}>
               <SelectTrigger className="pr-1.5 focus:ring-0 h-7 text-xs w-[64px]">
                 <SelectValue>{selected?.props?.children}</SelectValue>
               </SelectTrigger>
               <SelectContent position="popper">
                 <ScrollArea className="h-48">
-                  {options.map((opt, idx) => {
-                    const optVal = opt.props.value?.toString() ?? "";
-                    return (
-                      <SelectItem key={`${optVal}-${idx}`} value={optVal}>
-                        {opt.props.children}
-                      </SelectItem>
-                    );
+                  {options.map((opt, i) => {
+                    const v = opt.props.value?.toString() ?? "";
+                    return <SelectItem key={`${v}-${i}`} value={v}>{opt.props.children}</SelectItem>;
                   })}
                 </ScrollArea>
               </SelectContent>
@@ -127,11 +100,10 @@ export function Calendar({
           );
         },
       }}
-      /* Tema rojo */
       style={
         {
-          "--rdp-accent-color": "rgb(220 38 38)", // red-600
-          "--rdp-accent-background-color": "rgb(254 226 226)", // red-100
+          "--rdp-accent-color": "rgb(220 38 38)",               // rojo (red-600)
+          "--rdp-accent-background-color": "rgb(254 226 226)",  // red-100
         } as React.CSSProperties
       }
       {...props}
