@@ -1,5 +1,4 @@
 
-// src/components/ui/calendar.tsx
 "use client";
 
 import * as React from "react";
@@ -10,9 +9,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "./select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 import { ScrollArea } from "./scroll-area";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
@@ -29,14 +26,7 @@ export function Calendar({
       showOutsideDays={showOutsideDays}
       locale={locale}
       className={cn("p-3", className)}
-      /* ✅ Inline styles: garantizan 7 columnas siempre */
-      styles={{
-        head_row: { display: "grid", gridTemplateColumns: "repeat(7, minmax(0,1fr))", alignItems: "center" },
-        row: { display: "grid", gridTemplateColumns: "repeat(7, minmax(0,1fr))", alignItems: "center" },
-        head_cell: { width: "100%", display: "flex", justifyContent: "center", alignItems: "center", whiteSpace: "nowrap" },
-        cell: { width: "100%", display: "flex", justifyContent: "center", alignItems: "center" },
-        table: { width: "100%", borderCollapse: "collapse" },
-      }}
+      /* No forcemos grid en <tr>; dejamos que el reset CSS mantenga table layout */
       classNames={{
         months: "flex flex-col sm:flex-row gap-4",
         month: "space-y-4",
@@ -51,8 +41,7 @@ export function Calendar({
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full",
-        head_cell:
-          "text-muted-foreground rounded-md font-normal text-[0.8rem]",
+        head_cell: "text-muted-foreground font-normal text-[0.8rem]",
         cell: "p-0 text-sm align-middle relative",
         day: cn(
           buttonVariants({ variant: "ghost" }),
@@ -66,7 +55,7 @@ export function Calendar({
         day_disabled: "text-muted-foreground opacity-50",
         ...classNames,
       }}
-      /* Abreviaturas correctas (lu, ma, mi, ju, vi, sá, do) */
+      /* Abreviaturas de días: “lu ma mi ju vi sá do” */
       formatters={{
         formatWeekdayName: (date, options) =>
           format(date, "EE", { ...(options || {}), locale }).toLowerCase(),
@@ -82,7 +71,11 @@ export function Calendar({
           const selected = options.find(
             (opt) => opt.props.value?.toString() === currentValue
           );
-          const emit = (next: string) => next !== currentValue && onChange?.({ target: { value: next } } as unknown as React.ChangeEvent<HTMLSelectElement>);
+          const emit = (next: string) =>
+            next !== currentValue &&
+            onChange?.({
+              target: { value: next },
+            } as unknown as React.ChangeEvent<HTMLSelectElement>);
           return (
             <Select value={currentValue} onValueChange={emit}>
               <SelectTrigger className="pr-1.5 focus:ring-0 h-7 text-xs w-[64px]">
@@ -92,7 +85,11 @@ export function Calendar({
                 <ScrollArea className="h-48">
                   {options.map((opt, i) => {
                     const v = opt.props.value?.toString() ?? "";
-                    return <SelectItem key={`${v}-${i}`} value={v}>{opt.props.children}</SelectItem>;
+                    return (
+                      <SelectItem key={`${v}-${i}`} value={v}>
+                        {opt.props.children}
+                      </SelectItem>
+                    );
                   })}
                 </ScrollArea>
               </SelectContent>
@@ -100,9 +97,10 @@ export function Calendar({
           );
         },
       }}
+      /* Tema rojo */
       style={
         {
-          "--rdp-accent-color": "rgb(220 38 38)",               // rojo (red-600)
+          "--rdp-accent-color": "rgb(220 38 38)",               // red-600
           "--rdp-accent-background-color": "rgb(254 226 226)",  // red-100
         } as React.CSSProperties
       }

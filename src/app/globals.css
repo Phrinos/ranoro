@@ -101,18 +101,6 @@
   body {
     @apply bg-background text-foreground;
   }
-  .rdp-day_selected,
-  .rdp-day_selected:focus-visible,
-  .rdp-day_selected:hover {
-    background-color: hsl(var(--primary)) !important;
-    color: hsl(var(--primary-foreground)) !important;
-  }
-  .dark .rdp-day_selected,
-  .dark .rdp-day_selected:focus-visible,
-  .dark .rdp-day_selected:hover {
-    background-color: hsl(var(--primary-foreground)) !important;
-    color: hsl(var(--primary)) !important;
-  }
 }
 
 @layer utilities {
@@ -232,56 +220,25 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-
-/* For calendar event dots */
-.rdp-day_has-event {
-  position: relative;
-}
-.rdp-day_has-event:not([aria-selected="true"]):not(.rdp-day_today):not(:hover) > button::after {
-  content: '';
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background-color: hsl(var(--primary));
-}
-.rdp-day_has-event[aria-selected="true"] > button::after,
-.rdp-day_has-event.rdp-day_today > button::after,
-.rdp-day_has-event:hover > button::after {
-  content: '';
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background-color: hsl(var(--primary-foreground));
+/* ===== React Day Picker: forzar layout de tabla y abreviaturas limpias ===== */
+.rdp {
+  --rdp-cell-size: 36px;
 }
 
-[data-table="nohover"] thead tr:hover { 
-  background-color: transparent !important; 
-}
+.rdp-table { border-collapse: collapse; width: 100%; }
+.rdp-head { display: table-header-group; }
+.rdp-head_row { display: table-row !important; }
+.rdp-head_cell { display: table-cell !important; text-align: center; vertical-align: middle; padding: 0; }
+.rdp-tbody { display: table-row-group; }
+.rdp-row { display: table-row !important; }
+.rdp-cell { display: table-cell !important; vertical-align: middle; }
 
-/* ===== React Day Picker hard reset ===== */
-.rdp { --rdp-cell-size: 36px; }
+.rdp-head_cell abbr[title] { text-decoration: none; }
 
-.rdp-head_row,
-.rdp-row {
-  display: table-row !important; /* evita flex/grid forzados por otros CSS */
-}
-
-.rdp-head_cell,
-.rdp-cell {
-  display: table-cell !important;
-  vertical-align: middle;
-  text-align: center;
-  padding: 0;
-}
-
-.rdp-head_cell abbr[title] {
-  text-decoration: none; /* quita subrayado de <abbr> */
+/* Tema rojo basado en tus variables */
+.rdp-day_selected,
+.rdp-day_selected:focus-visible,
+.rdp-day_selected:hover {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
 }
