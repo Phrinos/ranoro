@@ -186,7 +186,7 @@ export function RegisterPurchaseDialog({
                             <FormField control={control} name="dueDate" render={({ field }) => (
                                 <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel>
                                     <Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value ? formatDate(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button></FormControl></PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent>
+                                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/></PopoverContent>
                                     </Popover><FormMessage/>
                                 </FormItem>
                             )}/>
