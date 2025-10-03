@@ -1,11 +1,10 @@
-
 // src/app/(app)/flotilla/conductores/components/FlotillaConductoresTab.tsx
 "use client";
 
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ChevronRight, Wrench } from 'lucide-react';
+import { PlusCircle, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import type { Driver } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,26 +24,26 @@ export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConduct
   const { toast } = useToast();
   const router = useRouter();
   const [sortOption, setSortOption] = useState('name_asc');
+  const [showArchived, setShowArchived] = useState(false);
 
   const sortedDrivers = useMemo(() => {
-    return [...drivers].sort((a, b) => {
-        const [key, direction] = sortOption.split('_');
-        
-        if (key === 'isArchived') {
-            const valA = a.isArchived;
-            const valB = b.isArchived;
-            if (valA === valB) return a.name.localeCompare(b.name);
-            const comparison = valA > valB ? 1 : -1;
-            return direction === 'asc' ? comparison : -comparison;
+    return [...drivers]
+      .filter(driver => showArchived ? true : !driver.isArchived)
+      .sort((a, b) => {
+        // Primary sort: always put active drivers first
+        if (a.isArchived !== b.isArchived) {
+          return a.isArchived ? 1 : -1;
         }
 
+        // Secondary sort: based on user's choice
+        const [key, direction] = sortOption.split('_');
         const valA = a[key as keyof Driver] || '';
         const valB = b[key as keyof Driver] || '';
 
         const comparison = String(valA).localeCompare(String(valB), 'es', { numeric: true });
         return direction === 'asc' ? comparison : -comparison;
-    });
-  }, [drivers, sortOption]);
+      });
+  }, [drivers, sortOption, showArchived]);
 
   const handleRowClick = (driverId: string) => {
     router.push(`/flotilla/conductores/${driverId}`);
@@ -58,6 +57,10 @@ export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConduct
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-end gap-2">
+        <Button variant="outline" onClick={() => setShowArchived(!showArchived)} className="w-full sm:w-auto bg-card">
+          {showArchived ? <EyeOff className="mr-2 h-4 w-4"/> : <Eye className="mr-2 h-4 w-4"/>}
+          {showArchived ? 'Ocultar Inactivos' : 'Ver Inactivos'}
+        </Button>
         <Button onClick={onAddDriver} className="w-full sm:w-auto font-bold">
           <PlusCircle className="mr-2 h-4 w-4" />
           Añadir Conductor
@@ -67,11 +70,10 @@ export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConduct
         <CardContent className="pt-6">
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader className="bg-black">
-                <TableRow>
-                  <SortableTableHeader sortKey="isArchived" label="Estado" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+              <TableHeader className="bg-black text-white">
+                <TableRow data-table="nohover">
                   <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
-                  <SortableTableHeader sortKey="phone" label="Teléfono" onSort={handleSort} currentSort={sortOption} className="hidden sm:table-cell" textClassName="text-white" />
+                  <SortableTableHeader sortKey="phone" label="Teléfono" onSort={handleSort} currentSort={sortOption} className="hidden sm:table-cell text-white" />
                   <SortableTableHeader sortKey="assignedVehicleLicensePlate" label="Vehículo Asignado" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
                   <TableHead className="w-10"></TableHead>
                 </TableRow>
@@ -82,14 +84,14 @@ export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConduct
                     <TableRow 
                       key={driver.id} 
                       onClick={() => handleRowClick(driver.id)}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className={cn("cursor-pointer hover:bg-muted/50", driver.isArchived && "bg-gray-100/80 dark:bg-gray-800/20 text-muted-foreground")}
                     >
-                      <TableCell>
-                        <Badge variant={driver.isArchived ? 'secondary' : 'success'}>
-                          {driver.isArchived ? 'Inactivo' : 'Activo'}
-                        </Badge>
+                      <TableCell className="font-semibold">
+                        <div className="flex items-center gap-2">
+                          {driver.name}
+                          {driver.isArchived && <Badge variant="secondary">Archivado</Badge>}
+                        </div>
                       </TableCell>
-                      <TableCell className={cn("font-semibold", driver.isArchived && "text-muted-foreground")}>{driver.name}</TableCell>
                       <TableCell className="hidden sm:table-cell">{driver.phone}</TableCell>
                       <TableCell className="font-semibold">{driver.assignedVehicleLicensePlate || 'N/A'}</TableCell>
                       <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground" /></TableCell>
@@ -97,8 +99,8 @@ export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConduct
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      No hay conductores registrados.
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      No hay conductores para mostrar.
                     </TableCell>
                   </TableRow>
                 )}
