@@ -1,3 +1,4 @@
+
 // src/components/ui/calendar.tsx
 "use client";
 
@@ -36,8 +37,8 @@ function Calendar({
       style={
         {
           // @ts-expect-error CSS var
-          "--rdp-accent-color": "rgb(220 38 38)",           // red-600
-          "--rdp-accent-background-color": "rgb(254 226 226)", // red-100
+          "--rdp-accent-color": "hsl(var(--primary))",
+          "--rdp-accent-background-color": "hsl(var(--primary) / 0.1)",
         } as React.CSSProperties
       }
       /* ✅ Fuerza layout estable (vence CSS de react-day-picker) */
@@ -107,7 +108,7 @@ function Calendar({
         day_range_end: "day-range-end",
         /* ✅ Selección en rojo (sin aro azul) */
         day_selected:
-          "bg-red-600 text-white hover:bg-red-600 hover:text-white focus:bg-red-600 focus:text-white",
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
         day_today: "bg-accent text-accent-foreground",
         day_outside:
           "day-outside text-muted-foreground opacity-50 " +
