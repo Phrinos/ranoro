@@ -122,7 +122,6 @@ export function AddManualChargeDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      {/* ✅ El Calendar ya maneja visual (flechas, idioma, color) */}
                       <Calendar
                         mode="single"
                         selected={field.value}

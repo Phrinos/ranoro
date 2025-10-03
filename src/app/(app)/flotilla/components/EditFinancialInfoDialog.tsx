@@ -121,27 +121,6 @@ export function EditFinancialInfoDialog({
                           setIsCalendarOpen(false);
                         }}
                         initialFocus
-                        /* ✅ Arreglos de layout/idioma/estilo sin tocar el wrapper global */
-                        locale={es}
-                        formatters={{
-                          formatWeekdayName: (date) =>
-                            format(date, "EEEEEE", { locale: es }), // lu, ma, mi, ju, vi, sá, do
-                        }}
-                        classNames={{
-                          head_row: "grid grid-cols-7",
-                          row: "grid grid-cols-7 mt-2",
-                          nav_button_previous: "absolute left-1",
-                          nav_button_next: "absolute right-1",
-                          day_selected:
-                            "bg-red-600 text-white hover:bg-red-600 hover:text-white focus:bg-red-600 focus:text-white",
-                        }}
-                        style={
-                          {
-                            // Colores de acento a rojo (evita el aro azul)
-                            "--rdp-accent-color": "rgb(220 38 38)", // red-600
-                            "--rdp-accent-background-color": "rgb(254 226 226)", // red-100
-                          } as React.CSSProperties
-                        }
                       />
                     </PopoverContent>
                   </Popover>
