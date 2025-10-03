@@ -1,21 +1,35 @@
 // src/app/(app)/flotilla/components/EditFinancialInfoDialog.tsx
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import type { Driver } from '@/types';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import type { Driver } from "@/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2 } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, Loader2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 const financialInfoSchema = z.object({
   contractDate: z.date().optional(),
@@ -32,22 +46,27 @@ interface EditFinancialInfoDialogProps {
   onSave: (values: FinancialInfoFormValues) => Promise<void>;
 }
 
-export function EditFinancialInfoDialog({ open, onOpenChange, driver, onSave }: EditFinancialInfoDialogProps) {
+export function EditFinancialInfoDialog({
+  open,
+  onOpenChange,
+  driver,
+  onSave,
+}: EditFinancialInfoDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
   const form = useForm<FinancialInfoFormValues>({
     resolver: zodResolver(financialInfoSchema),
   });
 
   useEffect(() => {
-    if (driver) {
-      form.reset({
-        contractDate: driver.contractDate ? new Date(driver.contractDate) : undefined,
-        requiredDepositAmount: driver.requiredDepositAmount || 0,
-        depositAmount: driver.depositAmount || 0,
-      });
-    }
-  }, [driver, form, open]);
+    if (!open) return;
+    form.reset({
+      contractDate: driver?.contractDate ? new Date(driver.contractDate) : undefined,
+      requiredDepositAmount: driver?.requiredDepositAmount || 0,
+      depositAmount: driver?.depositAmount || 0,
+    });
+  }, [open, driver, form]);
 
   const handleFormSubmit = async (values: FinancialInfoFormValues) => {
     setIsSubmitting(true);
@@ -60,39 +79,123 @@ export function EditFinancialInfoDialog({ open, onOpenChange, driver, onSave }: 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Información Financiera</DialogTitle>
-          <DialogDescription>Actualiza los detalles del contrato y los depósitos.</DialogDescription>
+          <DialogDescription>
+            Actualiza los detalles del contrato y los depósitos.
+          </DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
-            <FormField control={form.control} name="contractDate" render={({ field }) => (
-              <FormItem className="flex flex-col"><FormLabel>Fecha de Contrato</FormLabel>
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}>
-                      {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button></FormControl></PopoverTrigger>
-                  <PopoverContent>
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={(date) => {
-                        field.onChange(date);
-                        setIsCalendarOpen(false);
-                      }}
-                      locale={es}
+            {/* Fecha de contrato */}
+            <FormField
+              control={form.control}
+              name="contractDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Fecha de Contrato</FormLabel>
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "pl-3 text-left font-normal bg-white",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP", { locale: es })
+                          ) : (
+                            <span>Seleccionar fecha</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(date) => {
+                          field.onChange(date);
+                          setIsCalendarOpen(false);
+                        }}
+                        initialFocus
+                        /* ✅ Arreglos de layout/idioma/estilo sin tocar el wrapper global */
+                        locale={es}
+                        formatters={{
+                          formatWeekdayName: (date) =>
+                            format(date, "EEEEEE", { locale: es }), // lu, ma, mi, ju, vi, sá, do
+                        }}
+                        classNames={{
+                          head_row: "grid grid-cols-7",
+                          row: "grid grid-cols-7 mt-2",
+                          nav_button_previous: "absolute left-1",
+                          nav_button_next: "absolute right-1",
+                          day_selected:
+                            "bg-red-600 text-white hover:bg-red-600 hover:text-white focus:bg-red-600 focus:text-white",
+                        }}
+                        style={
+                          {
+                            // Colores de acento a rojo (evita el aro azul)
+                            "--rdp-accent-color": "rgb(220 38 38)", // red-600
+                            "--rdp-accent-background-color": "rgb(254 226 226)", // red-100
+                          } as React.CSSProperties
+                        }
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Depósito requerido */}
+            <FormField
+              control={form.control}
+              name="requiredDepositAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Depósito Requerido ($)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      className="bg-white"
+                      value={field.value ?? ""}
                     />
-                  </PopoverContent>
-                </Popover>
-              <FormMessage /></FormItem>
-            )}/>
-            <FormField control={form.control} name="requiredDepositAmount" render={({ field }) => (
-              <FormItem><FormLabel>Depósito Requerido ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-            )}/>
-             <FormField control={form.control} name="depositAmount" render={({ field }) => (
-              <FormItem><FormLabel>Depósito Entregado ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-            )}/>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Depósito entregado */}
+            <FormField
+              control={form.control}
+              name="depositAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Depósito Entregado ($)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      className="bg-white"
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Guardar Cambios
