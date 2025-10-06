@@ -220,22 +220,20 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* ===== React Day Picker: forzar layout de tabla y abreviaturas limpias ===== */
-.rdp {
-  --rdp-cell-size: 36px;
+/* ===== React Day Picker: Force table layout and clean abbreviations ===== */
+.rdp-head_row, .rdp-row {
+  display: table-row !important;
 }
-
-.rdp-table { border-collapse: collapse; width: 100%; }
-.rdp-head { display: table-header-group; }
-.rdp-head_row { display: table-row !important; }
-.rdp-head_cell { display: table-cell !important; text-align: center; vertical-align: middle; padding: 0; }
-.rdp-tbody { display: table-row-group; }
-.rdp-row { display: table-row !important; }
-.rdp-cell { display: table-cell !important; vertical-align: middle; }
-
-.rdp-head_cell abbr[title] { text-decoration: none; }
-
-/* Tema rojo basado en tus variables */
+.rdp-head_cell, .rdp-cell {
+  display: table-cell !important;
+  text-align: center;
+  vertical-align: middle;
+  padding: 0;
+}
+.rdp-head_cell abbr[title] {
+  text-decoration: none;
+}
+/* Red theme based on your variables */
 .rdp-day_selected,
 .rdp-day_selected:focus-visible,
 .rdp-day_selected:hover {

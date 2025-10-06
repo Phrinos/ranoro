@@ -47,23 +47,6 @@ const nextConfig = {
       },
     ]
   },
-
-  // 6. Webpack config
-  webpack: (config, { isServer }) => {
-    config.ignoreWarnings = [
-      ...(config.ignoreWarnings || []),
-      /require.extensions is not supported by webpack. Use a loader instead./,
-    ];
-    
-    if (!isServer) {
-        config.watchOptions = {
-            poll: 1000,
-            aggregateTimeout: 300,
-        }
-    }
-    
-    return config;
-  }
 };
 
 module.exports = nextConfig;

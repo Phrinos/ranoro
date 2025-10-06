@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -7,6 +6,7 @@ import { DayPicker, type DropdownProps } from "react-day-picker";
 import "react-day-picker/style.css";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
@@ -26,7 +26,12 @@ export function Calendar({
       showOutsideDays={showOutsideDays}
       locale={locale}
       className={cn("p-3", className)}
-      /* No forcemos grid en <tr>; dejamos que el reset CSS mantenga table layout */
+      /* Fuerza 7 columnas y evita flex en cabeceras/filas */
+      styles={{
+        head_row: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)" },
+        row: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)" },
+        table: { width: "100%" },
+      }}
       classNames={{
         months: "flex flex-col sm:flex-row gap-4",
         month: "space-y-4",
@@ -41,8 +46,9 @@ export function Calendar({
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full",
-        head_cell: "text-muted-foreground font-normal text-[0.8rem]",
-        cell: "p-0 text-sm align-middle relative",
+        /* NO PONGAS head_row aquí */
+        head_cell: "text-muted-foreground font-normal text-[0.8rem] text-center",
+        cell: "p-0 text-sm text-center align-middle relative",
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
@@ -55,10 +61,12 @@ export function Calendar({
         day_disabled: "text-muted-foreground opacity-50",
         ...classNames,
       }}
-      /* Abreviaturas de días: “lu ma mi ju vi sá do” */
+      /* Abreviaturas correctas: “lu ma mi ju vi sá do” */
       formatters={{
         formatWeekdayName: (date, options) =>
-          format(date, "EE", { ...(options || {}), locale }).toLowerCase(),
+          format(date, "EE", { ...(options || {}), locale })
+            .replace(".", "") // algunos locales ponen punto
+            .toLowerCase(),
       }}
       components={{
         IconLeft: () => <ChevronLeft className="h-4 w-4" />,
