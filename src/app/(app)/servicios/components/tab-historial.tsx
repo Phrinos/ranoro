@@ -17,7 +17,7 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, FileText, Wrench, DollarSign, Wallet, CreditCard, Landmark } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, Wrench, DollarSign, Wallet, CreditCard, Landmark, Download } from 'lucide-react';
 import { serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -129,6 +129,66 @@ export default function HistorialTabContent({
     router.push(`/servicios/${serviceId}`);
   };
 
+  const handleExport = () => {
+    const dataToExport = fullFilteredData;
+    if (dataToExport.length === 0) {
+      toast({
+        title: "No hay datos para exportar",
+        description: "Intenta cambiar los filtros para incluir más resultados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const headers = [
+      "Folio", "Fecha de Entrega", "Estado", "Cliente", "Teléfono",
+      "Vehículo", "Placa", "Año", "Kilometraje", "Descripción",
+      "Costo Total", "Ganancia Efectiva", "Método de Pago", "IVA",
+      "Items de Servicio", "Refacciones"
+    ];
+
+    const csvRows = [headers.join(',')];
+
+    dataToExport.forEach(s => {
+      const vehicle = vehicles.find(v => v.id === s.vehicleId);
+      const row = [
+        s.id,
+        s.deliveryDateTime ? new Date(s.deliveryDateTime).toLocaleString() : 'N/A',
+        s.status,
+        `"${s.clientName}"`,
+        s.clientPhoneNumber,
+        vehicle ? `"${vehicle.brand} ${vehicle.model}"` : 'N/A',
+        s.vehicleIdentifier,
+        vehicle ? vehicle.year : 'N/A',
+        s.mileage,
+        `"${s.description?.replace(/"/g, '""') || ''}"`,
+        s.totalCost,
+        calcEffectiveProfit(s),
+        s.paymentMethod,
+        s.iva,
+        `"${s.serviceItems?.map(i => i.name).join(', ') || ''}"`,
+        `"${s.supplies?.map(sup => `${sup.name} (x${sup.quantity})`).join(', ') || ''}"`
+      ].join(',');
+      csvRows.push(row);
+    });
+
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `historial_servicios_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Exportación Exitosa",
+      description: `${dataToExport.length} registros han sido exportados a CSV.`,
+    });
+  };
+
   const renderServiceCard = useCallback((record: ServiceRecord) => (
     <ServiceAppointmentCard 
       key={record.id}
@@ -203,6 +263,10 @@ export default function HistorialTabContent({
                 className="h-10 w-full lg:w-[250px] bg-white"
             />
             <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
+             <Button onClick={handleExport} variant="outline" className="h-10 bg-white">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar a CSV
+            </Button>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-2">
             <Select
