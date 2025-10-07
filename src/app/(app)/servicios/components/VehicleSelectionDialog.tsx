@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/VehicleSelectionDialog.tsx
 "use client";
 
@@ -26,10 +25,16 @@ import type { Vehicle } from "@/types";
 interface VehicleSelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  vehicles: Vehicle[];
+  vehicles: Vehicle[]; // puede venir vacío; internamente hacemos fallback seguro
   onSelectVehicle: (vehicleId: string) => void;
   onNewVehicle: (plate?: string) => void;
 }
+
+const normalize = (s?: string) =>
+  (s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
 
 export function VehicleSelectionDialog({
   open,
@@ -40,35 +45,36 @@ export function VehicleSelectionDialog({
 }: VehicleSelectionDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Fallback seguro si vehicles llega undefined/null por alguna razón
+  const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+
   const filtered = useMemo(() => {
-    const q = (searchTerm || "").trim().toLowerCase();
-    if (!q) return vehicles;
-    return vehicles.filter((v) => {
+    const q = normalize(searchTerm.trim());
+    if (!q) return safeVehicles;
+    return safeVehicles.filter((v) => {
       if (!v) return false;
-      const plate = (v.licensePlate || "").toLowerCase();
-      const make = (v.make || "").toLowerCase();
-      const model = (v.model || "").toLowerCase();
-      const owner = (v.ownerName || "").toLowerCase();
+      const plate = normalize(v.licensePlate);
+      const make = normalize(v.make);
+      const model = normalize(v.model);
+      const owner = normalize(v.ownerName);
       return (
         plate.includes(q) || make.includes(q) || model.includes(q) || owner.includes(q)
       );
     });
-  }, [vehicles, searchTerm]);
+  }, [safeVehicles, searchTerm]);
 
   const handleSelect = (id: string) => {
     onSelectVehicle(id);
     onOpenChange(false);
   };
 
+  const handleClose = (isOpen: boolean) => {
+    onOpenChange(isOpen);
+    if (!isOpen) setSearchTerm("");
+  };
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(isOpen) => {
-        onOpenChange(isOpen);
-        if (!isOpen) setSearchTerm("");
-      }}
-    >
-      {/* overflow-hidden para que respete los bordes redondeados, y sin padding exterior raro */}
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-3">
           <DialogTitle>Seleccionar Vehículo</DialogTitle>
@@ -77,35 +83,33 @@ export function VehicleSelectionDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Contenedor visual del buscador + lista */}
         <div className="px-6 pb-6">
-          {/* Command con estilos “card”: fondo blanco, borde y radios consistentes */}
           <Command
             shouldFilter={false}
             className={cn(
               "rounded-lg border bg-white",
-              // afinamos paddings/alturas de cmdk internos
               "[&_[cmdk-input-wrapper]]:px-3 [&_[cmdk-input-wrapper]]:h-12",
               "[&_[cmdk-input]]:text-sm [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
             )}
           >
-            {/* Barra de búsqueda sticky para que quede fija al hacer scroll */}
+            {/* Barra de búsqueda sticky */}
             <div className="sticky top-0 z-10 border-b bg-white">
               <CommandInput
-                placeholder="Buscar por placa, marca, modelo, propietario..."
+                placeholder="Buscar por placa, marca, modelo, propietario…"
                 value={searchTerm}
                 onValueChange={setSearchTerm}
+                autoFocus
               />
             </div>
 
-            {/* La lista SÍ scrollea; el popover/modal no */}
+            {/* Lista scrolleable */}
             <CommandList className="max-h-[52vh] overflow-y-auto">
               <CommandEmpty>
                 <div className="text-center p-4">
                   <p>No se encontraron vehículos.</p>
                   <Button
                     variant="link"
-                    onClick={() => onNewVehicle(searchTerm)}
+                    onClick={() => onNewVehicle(searchTerm || undefined)}
                     className="mt-2"
                   >
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -124,7 +128,6 @@ export function VehicleSelectionDialog({
                       key={v.id}
                       value={searchValue}
                       onSelect={() => handleSelect(v.id)}
-                      // blindaje: aunque cmdk marque disabled por error, seguimos pudiendo clickear
                       className="flex items-center gap-3 data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
                     >
                       <Car className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -140,6 +143,13 @@ export function VehicleSelectionDialog({
               </CommandGroup>
             </CommandList>
           </Command>
+
+          {/* Acción rápida: crear nuevo desde el buscador con Enter si no hay resultados */}
+          {filtered.length === 0 && (
+            <div className="sr-only" aria-live="polite">
+              No hay resultados
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

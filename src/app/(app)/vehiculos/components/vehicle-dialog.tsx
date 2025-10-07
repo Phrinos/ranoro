@@ -1,5 +1,4 @@
-
-
+// src/app/(app)/vehiculos/components/vehicle-dialog.tsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -9,7 +8,7 @@ import type { Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
 interface VehicleDialogProps {
-  trigger?: React.ReactNode; 
+  trigger?: React.ReactNode;
   vehicle?: Partial<Vehicle> | null;
   onSave: (data: VehicleFormValues) => Promise<void>;
   open: boolean;
@@ -29,21 +28,16 @@ export function VehicleDialog({
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
-  
+
   const handleOpenChange = (isOpen: boolean) => {
-    if (isControlled) {
-      setControlledOpen(isOpen);
-    } else {
-      setUncontrolledOpen(isOpen);
-    }
+    if (isControlled) setControlledOpen(isOpen);
+    else setUncontrolledOpen(isOpen);
   };
 
   const handleSubmit = async (values: VehicleFormValues) => {
     setIsSubmitting(true);
     try {
-      if (onSave) {
-        await onSave(values);
-      }
+      await onSave(values);
       handleOpenChange(false);
     } catch (error) {
       console.error("Error saving vehicle:", error);
@@ -56,7 +50,7 @@ export function VehicleDialog({
       setIsSubmitting(false);
     }
   };
-  
+
   const dialogTitle = vehicle && 'id' in vehicle && vehicle.id ? "Editar Vehículo" : "Nuevo Vehículo";
   const dialogDescription = vehicle && 'id' in vehicle && vehicle.id
     ? "Actualiza los detalles del vehículo."
@@ -74,11 +68,7 @@ export function VehicleDialog({
       submitButtonText={vehicle && 'id' in vehicle && vehicle.id ? "Actualizar Vehículo" : "Crear Vehículo"}
       dialogContentClassName="sm:max-w-2xl"
     >
-      <VehicleForm
-        id="vehicle-form"
-        initialData={vehicle}
-        onSubmit={handleSubmit}
-      />
+      <VehicleForm id="vehicle-form" initialData={vehicle as Vehicle | null} onSubmit={handleSubmit} />
     </FormDialog>
   );
 }

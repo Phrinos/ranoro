@@ -75,6 +75,19 @@ function flattenRHFErrors(errs: FieldErrors<any>): string[] {
   return Array.from(new Set(out)).filter(Boolean);
 }
 
+// === NUEVO: helper para validar técnico seleccionado ===
+const hasTechnician = (val: Partial<ServiceRecord> | ServiceFormValues) => {
+  // Preferimos technicianId; si tu formulario usa otro campo (p.ej. technician?.id), lo contemplamos
+  const tid =
+    (val as any).technicianId ??
+    (val as any).technician_id ??
+    (val as any).technician?.id ??
+    null;
+
+  if (typeof tid === 'string') return tid.trim().length > 0;
+  return Boolean(tid);
+};
+
 export default function ServicioPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -236,8 +249,20 @@ export default function ServicioPage() {
     setIsTicketDialogOpen(true);
   }, []);
 
+  // === REGLA: no permitir ENTREGADO sin técnico (tercera barrera) ===
   const handleConfirmPayment = async (recordId: string, paymentDetails: PaymentDetailsFormValues) => {
     if (!initialData) return;
+    // Guardia adicional por si se intentó abrir el flujo sin técnico
+    if (!hasTechnician(initialData)) {
+      toast({
+        title: "Falta seleccionar técnico",
+        description: "Debes asignar un técnico al servicio antes de completarlo.",
+        variant: "destructive",
+      });
+      setIsPaymentDialogOpen(false);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (!db) return;
@@ -262,12 +287,8 @@ export default function ServicioPage() {
     }
   };
 
-  const handleOpenVehicleDialog = (_vehicle: Partial<Vehicle> | null) => {
-    // Implementa si usas un diálogo de vehículos desde aquí
-  };
-
+  const handleOpenVehicleDialog = (_vehicle: Partial<Vehicle> | null) => {};
   const handleVehicleSave = async (_data: VehicleFormValues): Promise<Vehicle> => {
-    // Implementa si necesitas crear/actualizar vehículo desde este formulario
     return {} as Vehicle;
   };
 
@@ -295,6 +316,18 @@ export default function ServicioPage() {
         rawStatus.toLowerCase() === 'agendado' ? 'Agendado' :
         rawStatus.toLowerCase() === 'cancelado' ? 'Cancelado' :
         (values.status as ServiceRecord['status'] ?? 'En Taller');
+
+      // === REGLA: primera barrera — no permitir guardar como ENTREGADO sin técnico
+      if (normalizedStatus === 'Entregado' && !hasTechnician(values)) {
+        // marca el campo en el formulario si existe
+        try { (methods as any)?.setError?.('technicianId', { type: 'manual', message: 'Selecciona un técnico.' }); } catch {}
+        toast({
+          title: "Falta seleccionar técnico",
+          description: "No puedes marcar el servicio como Entregado sin asignar un técnico.",
+          variant: "destructive",
+        });
+        return; // aborta guardado
+      }
 
       const nowIso = new Date().toISOString();
 
@@ -334,6 +367,17 @@ export default function ServicioPage() {
 
   // Completar servicio abre diálogo de pago
   const handleCompleteService = (values: ServiceFormValues) => {
+    // === REGLA: segunda barrera — antes de abrir pagos, exige técnico
+    if (!hasTechnician(values)) {
+      try { (methods as any)?.setError?.('technicianId', { type: 'manual', message: 'Selecciona un técnico.' }); } catch {}
+      toast({
+        title: "Falta seleccionar técnico",
+        description: "Asigna un técnico al servicio para poder completarlo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setInitialData(values as ServiceRecord);
     setIsPaymentDialogOpen(true);
   };

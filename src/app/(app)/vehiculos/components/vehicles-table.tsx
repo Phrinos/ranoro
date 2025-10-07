@@ -1,6 +1,7 @@
-
+// src/app/(app)/vehiculos/components/vehicles-table.tsx
 "use client";
-import React, { useState, useMemo } from 'react';
+
+import React, { useState } from 'react';
 import type { Vehicle } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,8 +22,9 @@ interface VehiclesTableProps {
   onDelete: (id: string) => Promise<void>;
 }
 
-export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps) {
+export function VehiclesTable({ vehicles, onSave }: VehiclesTableProps) {
   const router = useRouter();
+
   const { paginatedData, ...tableManager } = useTableManager<Vehicle>({
     initialData: vehicles,
     searchKeys: ["make", "model", "year", "licensePlate", "ownerName"],
@@ -30,7 +32,7 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
     itemsPerPage: 10,
     dateFilterKey: 'lastServiceDate',
   });
-  
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
 
@@ -43,11 +45,11 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
     await onSave(data, editingVehicle?.id);
     setIsDialogOpen(false);
   };
-  
+
   const handleSort = (key: string) => {
-      const isSorted = tableManager.sortOption.startsWith(key);
-      const direction = tableManager.sortOption.endsWith('_asc') ? 'desc' : 'asc';
-      tableManager.onSortOptionChange(`${key}_${isSorted ? direction : 'desc'}`);
+    const isSorted = tableManager.sortOption.startsWith(key);
+    const direction = tableManager.sortOption.endsWith('_asc') ? 'desc' : 'asc';
+    tableManager.onSortOptionChange(`${key}_${isSorted ? direction : 'desc'}`);
   };
 
   return (
@@ -63,6 +65,7 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
           </Button>
         }
       />
+
       <div className="rounded-md border">
         <Table>
           <TableHeader className="bg-black">
@@ -75,31 +78,41 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
               <SortableTableHeader sortKey="lastServiceDate" label="Último Servicio" onSort={handleSort} currentSort={tableManager.sortOption} className="text-white" />
             </TableRow>
           </TableHeader>
+
           <TableBody>
-            {paginatedData.length > 0 ? paginatedData.map((vehicle) => {
-              const lastServiceDate = vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
-              return (
-                <TableRow key={vehicle.id} onClick={() => router.push(`/vehiculos/${vehicle.id}`)} className="cursor-pointer">
-                  <TableCell className="hidden sm:table-cell">{vehicle.make}</TableCell>
-                  <TableCell>{vehicle.model}</TableCell>
-                  <TableCell>{vehicle.year}</TableCell>
-                  <TableCell>{vehicle.licensePlate}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{vehicle.ownerName}</TableCell>
-                  <TableCell>
-                    {lastServiceDate && isValid(lastServiceDate)
-                      ? format(lastServiceDate, "dd MMM, yyyy", { locale: es })
-                      : 'N/A'}
-                  </TableCell>
-                </TableRow>
-              )
-            }) : (
+            {paginatedData.length > 0 ? (
+              paginatedData.map((vehicle) => {
+                const lastServiceDate = vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
+                return (
+                  <TableRow
+                    key={vehicle.id}
+                    onClick={() => router.push(`/vehiculos/${vehicle.id}`)}
+                    className="cursor-pointer hover:bg-muted/50"
+                  >
+                    <TableCell className="hidden sm:table-cell">{vehicle.make}</TableCell>
+                    <TableCell>{vehicle.model}</TableCell>
+                    <TableCell>{vehicle.year}</TableCell>
+                    <TableCell>{vehicle.licensePlate}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{vehicle.ownerName}</TableCell>
+                    <TableCell>
+                      {lastServiceDate && isValid(lastServiceDate)
+                        ? format(lastServiceDate, "dd MMM, yyyy", { locale: es })
+                        : 'N/A'}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">No se encontraron vehículos.</TableCell>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  No se encontraron vehículos.
+                </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
         <div className="flex items-center space-x-2">
@@ -111,6 +124,7 @@ export function VehiclesTable({ vehicles, onSave, onDelete }: VehiclesTableProps
           </Button>
         </div>
       </div>
+
       <VehicleDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
