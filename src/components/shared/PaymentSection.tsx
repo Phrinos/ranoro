@@ -25,7 +25,7 @@ const paymentMethodIcons: Record<Payment["method"], React.ElementType> = {
 interface PaymentSectionProps {
   onOpenValidateDialog?: (index: number) => void;
   validatedFolios?: Record<number, boolean>;
-  /** Opcional: si no viene, calculamos el total en vivo desde serviceItems */
+  /** Opcional. Si no viene, calculamos el total en vivo desde serviceItems */
   totalAmount?: number;
 }
 

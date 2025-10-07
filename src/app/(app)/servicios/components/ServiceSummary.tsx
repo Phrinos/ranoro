@@ -38,11 +38,10 @@ export function ServiceSummary({
   const cardCommission = useWatch({ control, name: "cardCommission" }) || 0;
 
   // Total con IVA (sumando sellingPrice de cada trabajo) EN VIVO
-  const totalAmount = useMemo(() => {
-    const sum = (items ?? []).reduce((s, i) => s + toNumber(i?.sellingPrice), 0);
-    // Prioriza el cálculo reactivo; si no hay items, cae al prop (por compatibilidad)
-    return sum > 0 ? sum : toNumber(totalAmountProp);
-  }, [items, totalAmountProp]);
+  const totalAmount = useMemo(
+    () => (items ?? []).reduce((s, i) => s + toNumber(i?.sellingPrice), 0),
+    [items]
+  );
 
   const { subTotal, taxAmount, serviceProfit } = useMemo(() => {
     const costOfSupplies = (items ?? [])
