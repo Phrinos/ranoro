@@ -153,7 +153,6 @@ function QuickAddItemDialog({
             value={q}
             onValueChange={setQ}
           />
-          {/* Ojo: sin ScrollArea; dejamos que el CommandList maneje el scroll */}
           <CommandList className="max-h-[360px] overflow-auto">
             <CommandEmpty>Sin resultados</CommandEmpty>
             <CommandGroup heading="Coincidencias">
@@ -169,16 +168,17 @@ function QuickAddItemDialog({
                   <CommandItem
                     key={key}
                     value={label}
-                    // Radix dispara onSelect; en algunos navegadores el click es más confiable, por eso añadimos ambos.
-                    onSelect={() => {
+                    disabled={false}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       onSelectItem(it);
                       onOpenChange(false);
                     }}
-                    onClick={() => {
-                      onSelectItem(it);
-                      onOpenChange(false);
-                    }}
-                    className="flex items-center justify-between"
+                    className={cn(
+                      "flex items-center justify-between cursor-pointer",
+                      "[&[data-disabled]]:opacity-100 [&[data-disabled]]:pointer-events-auto"
+                    )}
                   >
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate font-medium">{label}</span>
