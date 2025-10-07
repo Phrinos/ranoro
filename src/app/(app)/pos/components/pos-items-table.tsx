@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/components/pos-items-table.tsx
 "use client";
 
@@ -23,7 +24,7 @@ export function PosItemsTable() {
 
   if (!fields.length) {
     return (
-      <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
+      <div className="rounded-lg border bg-white p-6 text-center text-sm text-muted-foreground">
         No hay artículos. Usa “Añadir Artículo/Servicio”.
       </div>
     );
