@@ -110,6 +110,7 @@ export function AddManualChargeDialog({
                             "pl-3 text-left font-normal bg-white",
                             !field.value && "text-muted-foreground"
                           )}
+                          type="button"
                         >
                           {field.value ? (
                             format(field.value, "PPP", { locale: es })
@@ -124,12 +125,25 @@ export function AddManualChargeDialog({
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={(date) => {
-                            field.onChange(date);
-                            setIsCalendarOpen(false);
+                        onSelect={(d) => {
+                          if (!d) return;
+                          // Normaliza a medio día para evitar desfase de zona horaria
+                          const normalized = new Date(d);
+                          normalized.setHours(12, 0, 0, 0);
+                          form.setValue("date", normalized, {
+                            shouldDirty: true,
+                            shouldTouch: true,
+                            shouldValidate: true,
+                          });
                         }}
                         initialFocus
+                        locale={es}
                       />
+                      <div className="p-2 border-t flex justify-center">
+                        <Button size="sm" type="button" onClick={() => setIsCalendarOpen(false)}>
+                          Aceptar
+                        </Button>
+                      </div>
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
