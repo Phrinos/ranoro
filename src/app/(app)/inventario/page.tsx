@@ -2,9 +2,8 @@
 // src/app/(app)/inventario/page.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
-import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import {
   PlusCircle,
@@ -126,11 +125,17 @@ const DashboardCards = ({
       </Card>
 
       <div className="lg:col-span-2 xl:col-span-2 flex flex-col sm:flex-row gap-2">
-        <Button className="w-full flex-1" onClick={onNewItemClick}>
-          <PlusCircle className="mr-2 h-5 w-5" /> Registrar Ítem
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onNewItemClick}
+          className="w-full flex-1 bg-white border-2 border-red-500 text-black font-bold hover:bg-red-50 focus-visible:ring-red-500"
+        >
+          <PlusCircle className="mr-2 h-5 w-5 text-red-500" />
+          Registrar Ítem
         </Button>
 
-        {/* Botón Registrar Compra (contorno azul, ícono azul, fondo blanco, texto negro y en negritas) */}
+        {/* Botón “Registrar Compra” con estilos solicitados */}
         <Button
           type="button"
           variant="outline"
@@ -147,12 +152,12 @@ const DashboardCards = ({
 
 // --- ProductosContent ---
 const itemSortOptions = [
-  { value: "default_order", label: "Orden Personalizado" },
-  { value: "name_asc", label: "Nombre (A-Z)" },
-  { value: "name_desc", label: "Nombre (Z-A)" },
-  { value: "quantity_asc", label: "Stock (Menor a Mayor)" },
-  { value: "quantity_desc", label: "Stock (Mayor a Menor)" },
-  { value: "sellingPrice_desc", label: "Precio Venta (Mayor a Menor)" },
+    { value: "default_order", label: "Orden Personalizado" },
+    { value: "name_asc", label: "Nombre (A-Z)" },
+    { value: "name_desc", label: "Nombre (Z-A)" },
+    { value: "quantity_asc", label: "Stock (Menor a Mayor)" },
+    { value: "quantity_desc", label: "Stock (Mayor a Menor)" },
+    { value: "sellingPrice_desc", label: "Precio Venta (Mayor a Menor)" },
 ];
 
 const getSortPriority = (item: InventoryItem) => {
@@ -430,7 +435,7 @@ const CategoriasContent = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar categoría…"
-              className="pl-8"
+              className="pl-8 bg-white"
             />
           </div>
         </div>
@@ -441,7 +446,7 @@ const CategoriasContent = ({
         </Button>
       </div>
 
-      {/* Lista móvil */}
+      {/* Lista móvil (sm:hidden) */}
       <div className="grid gap-2 sm:hidden">
         {sortedCategories.map((cat) => (
           <div
@@ -489,7 +494,7 @@ const CategoriasContent = ({
         )}
       </div>
 
-      {/* Tabla sm+ */}
+      {/* Tabla para sm+ */}
       <Card className="hidden sm:block">
         <CardContent className="pt-6">
           <div className="w-full overflow-x-auto rounded-md border">
@@ -670,8 +675,8 @@ export default function InventarioPage() {
   }, [inventoryItems]);
 
   const handlePrint = useCallback((items: InventoryItem[]) => {
-    setItemsToPrint(items);
-    setIsPrintDialogOpen(true);
+      setItemsToPrint(items);
+      setIsPrintDialogOpen(true);
   }, []);
 
   const handleOpenItemDialog = useCallback(() => {
@@ -853,7 +858,9 @@ export default function InventarioPage() {
       <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
         <DialogContent className="max-w-4xl p-0 no-print">
           <div className="printable-content bg-white">
-            <InventoryReportContent items={itemsToPrint} />
+            <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
+                <InventoryReportContent items={itemsToPrint} />
+            </Suspense>
           </div>
           <DialogFooter className="p-4 border-t bg-background sm:justify-end no-print">
             <Button onClick={() => window.print()}>
@@ -865,3 +872,4 @@ export default function InventarioPage() {
     </>
   );
 }
+```
