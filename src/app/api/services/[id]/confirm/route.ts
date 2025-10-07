@@ -25,10 +25,10 @@ const db = getFirestore();
  */
 export async function POST(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const publicId = context.params.id;
+    const publicId = params.id;
 
     // 1. Validate the incoming data
     if (!publicId) {
@@ -74,4 +74,5 @@ export async function POST(
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
+
 
