@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/vehiculos/[id]/page.tsx
 "use client";
 
@@ -5,11 +6,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { inventoryService, personnelService, serviceService } from '@/lib/services';
 import type { Vehicle, Driver, ServiceRecord, Paperwork, FineCheck } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { AssignDriverCard } from '../../components/AssignDriverCard';
 import { VehicleInfoCard } from '../../components/VehicleInfoCard';
@@ -21,7 +23,9 @@ import { FineCheckCard } from '../../components/FineCheckCard';
 import { EditVehicleInfoDialog, type VehicleInfoFormValues } from '../../components/EditVehicleInfoDialog';
 import { EditRentalSystemDialog, type RentalSystemFormValues } from '../../components/EditRentalSystemDialog';
 import { PaperworkDialog, type PaperworkFormValues } from '../../components/PaperworkDialog';
-import { FineCheckDialog, type FineCheckFormValues } from '../../components/FineCheckDialog';
+import { FineCheckDialog } from '../../components/FineCheckDialog'; // Assuming FineCheckDialog has FineCheckFormValues
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+
 
 export default function FlotillaVehiculoProfilePage() {
   const params = useParams();
@@ -77,14 +81,14 @@ export default function FlotillaVehiculoProfilePage() {
 
   const handleSaveVehicleInfo = async (data: VehicleInfoFormValues) => {
     if (!vehicle) return;
-    await inventoryService.saveVehicle(vehicle.id, data);
+    await inventoryService.saveVehicle(data, vehicle.id);
     toast({ title: "Información Actualizada" });
     setIsVehicleInfoDialogOpen(false);
   };
 
   const handleSaveRentalSystem = async (data: RentalSystemFormValues) => {
     if (!vehicle) return;
-    await inventoryService.saveVehicle(vehicle.id, data);
+    await inventoryService.saveVehicle(data, vehicle.id);
     toast({ title: "Sistema de Renta Actualizado" });
     setIsRentalSystemDialogOpen(false);
   };
@@ -104,12 +108,12 @@ export default function FlotillaVehiculoProfilePage() {
     toast({ title: "Trámite Eliminado", variant: "destructive" });
   };
   
-  const handleSaveFineCheck = async (data: FineCheckFormValues) => {
+  const handleSaveFineCheck = async (data: any) => {
     if (!vehicle) return;
     const fineCheckData = { 
         ...data, 
         checkDate: data.checkDate.toISOString(),
-        fines: data.fines?.map(f => ({...f, date: f.date.toISOString()})) || []
+        fines: data.fines?.map((f:any) => ({...f, date: f.date.toISOString()})) || []
     };
     await inventoryService.saveFineCheck(vehicle.id, fineCheckData, viewingFineCheck?.id);
     toast({ title: "Revisión Guardada" });
@@ -121,6 +125,20 @@ export default function FlotillaVehiculoProfilePage() {
     // This function is now stable and won't cause re-renders.
     // If you need to refresh data after assignment, you can add logic here.
   }, []);
+  
+  const handleRemoveFromFleet = async () => {
+    if (!vehicle) return;
+    try {
+        await inventoryService.saveVehicle({ isFleetVehicle: false }, vehicle.id);
+        toast({
+            title: 'Vehículo Removido de la Flotilla',
+            description: `${vehicle.make} ${vehicle.model} ya no forma parte de la flotilla.`,
+        });
+        router.push('/flotilla?tab=vehiculos');
+    } catch (error) {
+        toast({ title: 'Error', description: 'No se pudo remover el vehículo de la flotilla.', variant: 'destructive'});
+    }
+  };
 
 
   if (isLoading || !vehicle) {
@@ -149,9 +167,19 @@ export default function FlotillaVehiculoProfilePage() {
         title={`${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`}
         description="Gestiona la asignación, información y mantenimiento del vehículo."
         actions={
-          <Button variant="outline" onClick={() => router.push('/flotilla?tab=vehiculos')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Volver
-          </Button>
+          <div className="flex gap-2">
+            <ConfirmDialog
+              triggerButton={<Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Quitar de la Flotilla</Button>}
+              title="¿Quitar de la Flotilla?"
+              description="El vehículo ya no aparecerá en la sección de flotilla, pero no será eliminado de tu base de datos general."
+              onConfirm={handleRemoveFromFleet}
+              confirmText="Sí, Quitar"
+              variant="destructive"
+            />
+            <Button variant="outline" onClick={() => router.push('/flotilla?tab=vehiculos')}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Volver
+            </Button>
+          </div>
         }
       />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
