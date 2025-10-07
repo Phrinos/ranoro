@@ -12,6 +12,7 @@ import { parseDate } from "@/lib/forms";
 import { formatCurrency } from '@/lib/utils';
 import { serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
+import { DailyEarningsCard } from './DailyEarningsCard';
 
 const TZ = "America/Mexico_City";
 
@@ -136,20 +137,23 @@ export default function ActivosTabContent({
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Servicios Activos del Día</CardTitle>
-        <CardDescription>
-          Servicios agendados para hoy, en taller y entregados hoy.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {sortedServices.length > 0 ? (
-          sortedServices.map(renderServiceCard)
-        ) : (
-          <p className="text-center text-muted-foreground py-10">No hay servicios activos para hoy.</p>
-        )}
-      </CardContent>
-    </Card>
+    <>
+      <DailyEarningsCard services={allServices} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Servicios Activos del Día</CardTitle>
+          <CardDescription>
+            Servicios agendados para hoy, en taller y entregados hoy.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {sortedServices.length > 0 ? (
+            sortedServices.map(renderServiceCard)
+          ) : (
+            <p className="text-center text-muted-foreground py-10">No hay servicios activos para hoy.</p>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 }
