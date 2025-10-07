@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2, Search } from "lucide-react";
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,21 +35,73 @@ const InventoryItemDialog = lazy(() => import('./components/inventory-item-dialo
 const InventoryReportContent = lazy(() => import('./components/inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
 
 
-// --- DashboardCards Component Logic (Integrated) ---
-const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { summaryData: any, onNewItemClick: () => void, onNewPurchaseClick: () => void }) => {
+// --- DashboardCards Component Logic (Updated) ---
+const DashboardCards = ({
+  summaryData,
+  onNewItemClick,
+  onNewPurchaseClick,
+}: {
+  summaryData: any;
+  onNewItemClick: () => void;
+  onNewPurchaseClick: () => void;
+}) => {
   return (
     <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Costo Total del Inventario</CardTitle><DollarSign className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalInventoryCost)}</div><p className="text-xs text-muted-foreground">Valor de venta: {formatCurrency(summaryData.totalInventorySellingPrice)}</p></CardContent></Card>
-        <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
-        <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.productsCount + summaryData.servicesCount}</div><p className="text-xs text-muted-foreground">{summaryData.productsCount} Productos y {summaryData.servicesCount} Servicios.</p></CardContent></Card>
-        <div className="lg:col-span-2 xl:col-span-2 flex flex-col sm:flex-row gap-2">
-            <Button className="w-full flex-1" onClick={onNewItemClick}>
-                <PlusCircle className="mr-2 h-5 w-5" /> Registrar Ítem
-            </Button>
-            <Button className="w-full flex-1" variant="outline" onClick={onNewPurchaseClick} >
-                <PlusCircle className="mr-2 h-5 w-5" /> Registrar Compra
-            </Button>
-        </div>
+      <Card className="xl:col-span-1">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Costo Total del Inventario</CardTitle>
+          <DollarSign className="h-4 w-4 text-green-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(summaryData.totalInventoryCost)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor de venta: {formatCurrency(summaryData.totalInventorySellingPrice)}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="xl:col-span-1">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle>
+          <AlertTriangle className="h-4 w-4 text-orange-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{summaryData.lowStockItemsCount}</div>
+          <p className="text-xs text-muted-foreground">Requieren atención o reposición.</p>
+        </CardContent>
+      </Card>
+
+      <Card className="xl:col-span-1">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle>
+          <Package className="h-4 w-4 text-blue-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {summaryData.productsCount + summaryData.servicesCount}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {summaryData.productsCount} Productos y {summaryData.servicesCount} Servicios.
+          </p>
+        </CardContent>
+      </Card>
+
+      <div className="lg:col-span-2 xl:col-span-2 flex flex-col sm:flex-row gap-2">
+        <Button className="w-full flex-1" onClick={onNewItemClick}>
+          <PlusCircle className="mr-2 h-5 w-5" /> Registrar Ítem
+        </Button>
+
+        {/* Botón “Registrar Compra” con estilos solicitados */}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onNewPurchaseClick}
+          className="w-full flex-1 bg-white border-2 border-blue-600 text-black font-bold hover:bg-blue-50 focus-visible:ring-blue-600"
+        >
+          <PlusCircle className="mr-2 h-5 w-5 text-blue-600" />
+          Registrar Compra
+        </Button>
+      </div>
     </div>
   );
 };
@@ -172,37 +224,61 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
 };
 
 
-// --- CategoriasContent Component Logic (Integrated) ---
-const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDeleteCategory }: { categories: InventoryCategory[], inventoryItems: InventoryItem[], onSaveCategory: (name: string, id?: string) => void, onDeleteCategory: (id: string) => void }) => {
+// --- CategoriasContent Component Logic (Updated) ---
+const CategoriasContent = ({
+  categories,
+  inventoryItems,
+  onSaveCategory,
+  onDeleteCategory,
+}: {
+  categories: InventoryCategory[];
+  inventoryItems: InventoryItem[];
+  onSaveCategory: (name: string, id?: string) => void;
+  onDeleteCategory: (id: string) => void;
+}) => {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<InventoryCategory | null>(null);
-  const [currentCategoryName, setCurrentCategoryName] = useState('');
+  const [currentCategoryName, setCurrentCategoryName] = useState("");
+  const [sortOption, setSortOption] = useState("name_asc");
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
-  const [sortOption, setSortOption] = useState('name_asc');
+
+  const normalize = (s?: string) =>
+    (s ?? "").toLowerCase().normalize("NFD").replace(/\\p{Diacritic}/gu, "");
 
   const itemsPerCategory = useMemo(() => {
     return categories.reduce((acc, category) => {
-        acc[category.name] = inventoryItems.filter(item => item.category === category.name).length;
-        return acc;
+      acc[category.name] = inventoryItems.filter((item) => item.category === category.name).length;
+      return acc;
     }, {} as Record<string, number>);
   }, [categories, inventoryItems]);
-  
+
+  const filtered = useMemo(() => {
+    const n = normalize(searchTerm);
+    if (!n) return categories;
+    return categories.filter((c) => normalize(c.name).includes(n));
+  }, [categories, searchTerm]);
+
   const sortedCategories = useMemo(() => {
-    return [...categories].sort((a, b) => {
-        const [key, direction] = sortOption.split('_');
-        const valA = key === 'items' ? itemsPerCategory[a.name] || 0 : a.name;
-        const valB = key === 'items' ? itemsPerCategory[b.name] || 0 : b.name;
-        const comparison = typeof valA === 'number' && typeof valB === 'number' ? valA - valB : String(valA).localeCompare(String(valB));
-        return direction === 'asc' ? comparison : -comparison;
+    const arr = [...filtered];
+    return arr.sort((a, b) => {
+      const [key, direction] = sortOption.split("_");
+      const valA = key === "items" ? itemsPerCategory[a.name] || 0 : a.name;
+      const valB = key === "items" ? itemsPerCategory[b.name] || 0 : b.name;
+      const cmp =
+        typeof valA === "number" && typeof valB === "number"
+          ? valA - valB
+          : String(valA).localeCompare(String(valB));
+      return direction === "asc" ? cmp : -cmp;
     });
-  }, [categories, itemsPerCategory, sortOption]);
+  }, [filtered, itemsPerCategory, sortOption]);
 
   const handleOpenDialog = (category: InventoryCategory | null = null) => {
     setEditingCategory(category);
-    setCurrentCategoryName(category ? category.name : '');
+    setCurrentCategoryName(category ? category.name : "");
     setIsCategoryDialogOpen(true);
   };
-  
+
   const handleSave = () => {
     const trimmedName = currentCategoryName.trim();
     if (!trimmedName) {
@@ -212,69 +288,187 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
     onSaveCategory(trimmedName, editingCategory?.id);
     setIsCategoryDialogOpen(false);
   };
-  
+
   const handleSort = (key: string) => {
     const isAsc = sortOption === `${key}_asc`;
-    setSortOption(`${key}_${isAsc ? 'desc' : 'asc'}`);
+    setSortOption(`${key}_${isAsc ? "desc" : "asc"}`);
   };
-  
+
   return (
     <div className="space-y-4">
-        <div className="flex justify-end">
-            <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nueva Categoría</Button>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+        <div className="flex w-full sm:w-auto items-center gap-2">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar categoría…"
+              className="pl-8"
+            />
+          </div>
         </div>
-        <Card>
-            <CardContent className="pt-6">
-                <div className="rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <SortableTableHeader sortKey="name" label="Nombre de Categoría" onSort={handleSort} currentSort={sortOption} />
-                                <SortableTableHeader sortKey="items" label="# de Productos" onSort={handleSort} currentSort={sortOption} className="text-right" />
-                                <TableHead className="text-right w-[100px]">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {sortedCategories.map(cat => (
-                                <TableRow key={cat.id}>
-                                    <TableCell className="font-medium">{cat.name}</TableCell>
-                                    <TableCell className="text-right">{itemsPerCategory[cat.name] || 0}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(cat)} aria-label={`Editar ${cat.name}`}>
-                                            <Edit className="h-4 w-4"/>
-                                        </Button>
-                                        <ConfirmDialog
-                                            triggerButton={<Button variant="ghost" size="icon" aria-label={`Eliminar ${cat.name}`}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
-                                            title={`¿Eliminar categoría "${cat.name}"?`}
-                                            description="Esta acción no se puede deshacer. Los productos de esta categoría no serán eliminados pero quedarán sin categoría."
-                                            onConfirm={() => onDeleteCategory(cat.id)}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>{editingCategory ? 'Editar' : 'Nueva'} Categoría</DialogTitle>
-                    <DialogDescription>Gestiona las categorías para organizar tu inventario.</DialogDescription>
-                </DialogHeader>
-                <form id="category-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-                    <div className="py-4 space-y-2">
-                        <Label htmlFor="category-name">Nombre de la Categoría</Label>
-                        <Input id="category-name" value={currentCategoryName} onChange={e => setCurrentCategoryName(capitalizeWords(e.target.value))} autoFocus />
-                    </div>
-                </form>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancelar</Button>
-                    <Button type="submit" form="category-form">Guardar Categoría</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+
+        <Button onClick={() => handleOpenDialog()}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Nueva Categoría
+        </Button>
+      </div>
+
+      {/* Lista móvil (sm:hidden) */}
+      <div className="grid gap-2 sm:hidden">
+        {sortedCategories.map((cat) => (
+          <div
+            key={cat.id}
+            className="rounded-lg border bg-card p-3 flex items-center justify-between"
+          >
+            <div className="min-w-0">
+              <p className="font-medium truncate">{cat.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {itemsPerCategory[cat.name] || 0} producto(s)
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => handleOpenDialog(cat)}
+                aria-label={`Editar ${cat.name}`}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <ConfirmDialog
+                triggerButton={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    aria-label={`Eliminar ${cat.name}`}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                }
+                title={`¿Eliminar categoría "${cat.name}"?`}
+                description="Esta acción no se puede deshacer. Los productos no se eliminan, quedarán sin categoría."
+                onConfirm={() => onDeleteCategory(cat.id)}
+              />
+            </div>
+          </div>
+        ))}
+        {!sortedCategories.length && (
+          <div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">
+            No hay categorías que coincidan.
+          </div>
+        )}
+      </div>
+
+      {/* Tabla para sm+ */}
+      <Card className="hidden sm:block">
+        <CardContent className="pt-6">
+          <div className="w-full overflow-x-auto rounded-md border">
+            <Table className="min-w-[560px]">
+              <TableHeader>
+                <TableRow>
+                  <SortableTableHeader
+                    sortKey="name"
+                    label="Nombre de Categoría"
+                    onSort={handleSort}
+                    currentSort={sortOption}
+                  />
+                  <SortableTableHeader
+                    sortKey="items"
+                    label="# de Productos"
+                    onSort={handleSort}
+                    currentSort={sortOption}
+                    className="text-right"
+                  />
+                  <TableHead className="text-right w-[120px]">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedCategories.map((cat) => (
+                  <TableRow key={cat.id}>
+                    <TableCell className="font-medium">{cat.name}</TableCell>
+                    <TableCell className="text-right">{itemsPerCategory[cat.name] || 0}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOpenDialog(cat)}
+                          aria-label={`Editar ${cat.name}`}
+                          className="h-8 w-8"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <ConfirmDialog
+                          triggerButton={
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Eliminar ${cat.name}`}
+                              className="h-8 w-8"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          }
+                          title={`¿Eliminar categoría "${cat.name}"?`}
+                          description="Esta acción no se puede deshacer. Los productos no se eliminan, quedarán sin categoría."
+                          onConfirm={() => onDeleteCategory(cat.id)}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!sortedCategories.length && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                      No hay categorías que coincidan.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dialog crear/editar */}
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingCategory ? "Editar" : "Nueva"} Categoría</DialogTitle>
+            <DialogDescription>Gestiona las categorías para organizar tu inventario.</DialogDescription>
+          </DialogHeader>
+          <form
+            id="category-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSave();
+            }}
+          >
+            <div className="py-4 space-y-2">
+              <Label htmlFor="category-name">Nombre de la Categoría</Label>
+              <Input
+                id="category-name"
+                value={currentCategoryName}
+                onChange={(e) => setCurrentCategoryName(e.target.value)}
+                autoFocus
+              />
+            </div>
+          </form>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="category-form">
+              Guardar Categoría
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
