@@ -31,14 +31,16 @@ export function TabbedPageLayout({
 }: TabbedPageLayoutProps) {
   return (
     <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-                <p className="text-primary-foreground/80 mt-1">{description}</p>
-            </div>
+      {title && description && (
+        <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+              <div>
+                  <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+                  <p className="text-primary-foreground/80 mt-1">{description}</p>
+              </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {actions && <div className="mb-6 flex justify-end">{actions}</div>}
       
@@ -50,7 +52,7 @@ export function TabbedPageLayout({
                 key={tabInfo.value}
                 onClick={() => onTabChange(tabInfo.value)}
                 className={cn(
-                  'sm:flex-1 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
+                  'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
                   'break-words whitespace-normal leading-snug',
                   activeTab === tabInfo.value
                     ? 'bg-primary text-primary-foreground shadow'

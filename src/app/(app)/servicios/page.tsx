@@ -235,18 +235,9 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
 
   return (
     <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-        <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Gestión de Servicios</h1>
-                    <p className="text-primary-foreground/80 mt-1">Planifica, gestiona y consulta todo el ciclo de vida de los servicios.</p>
-                </div>
-            </div>
-        </div>
-
         <TabbedPageLayout
-            title=""
-            description=""
+            title="Gestión de Servicios"
+            description="Planifica, gestiona y consulta todo el ciclo de vida de los servicios."
             activeTab={activeTab}
             onTabChange={handleTabChange}
             tabs={tabs}
