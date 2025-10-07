@@ -13,10 +13,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
 
 interface FlotillaVehiculosTabProps {
   vehicles: Vehicle[];
+  onAddVehicle: () => void;
 }
 
 const sortOptions = [
@@ -28,13 +28,16 @@ const sortOptions = [
   { value: 'assignedDriverName_asc', label: 'Conductor (A-Z)' },
 ];
 
-export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
+export function FlotillaVehiculosTab({ vehicles, onAddVehicle }: FlotillaVehiculosTabProps) {
   const router = useRouter();
+  
+  const fleetVehicles = useMemo(() => vehicles.filter(v => v.isFleetVehicle), [vehicles]);
+
   const {
     paginatedData: paginatedVehicles,
     ...tableManager
   } = useTableManager<Vehicle>({
-    initialData: vehicles,
+    initialData: fleetVehicles,
     searchKeys: ['licensePlate', 'make', 'model', 'year', 'assignedDriverName'],
     initialSortOption: 'licensePlate_asc',
     itemsPerPage: 15,
@@ -48,11 +51,9 @@ export function FlotillaVehiculosTab({ vehicles }: FlotillaVehiculosTabProps) {
   return (
     <div className="space-y-4">
         <div className="flex flex-col sm:flex-row justify-end gap-2">
-            <Button asChild className="w-full sm:w-auto font-bold">
-                <Link href="/vehiculos/nuevo?isFleet=true">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Vehículo a Flotilla
-                </Link>
+            <Button onClick={onAddVehicle} className="w-full sm:w-auto font-bold">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Vehículo a Flotilla
             </Button>
         </div>
       <Card>

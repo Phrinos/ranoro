@@ -18,6 +18,9 @@ import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './component
 import { useToast } from '@/hooks/use-toast';
 import { useFlotillaData } from './layout';
 import { EditContactInfoDialog, type ContactInfoFormValues } from './components/EditContactInfoDialog';
+import { VehicleSelectionDialog } from '@/app/(app)/servicios/components/VehicleSelectionDialog';
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 
 
 function FlotillaPageComponent() {
@@ -32,6 +35,11 @@ function FlotillaPageComponent() {
     const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
     const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
     const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
+    
+    // States for vehicle management dialogs
+    const [isVehicleSelectionDialogOpen, setIsVehicleSelectionDialogOpen] = useState(false);
+    const [isVehicleFormDialogOpen, setIsVehicleFormDialogOpen] = useState(false);
+    const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
 
 
     const handleOpenTransactionDialog = (type: 'payment' | 'charge') => {
@@ -92,6 +100,33 @@ function FlotillaPageComponent() {
       toast({ title: "Error", description: "No se pudo registrar el gasto.", variant: "destructive" });
     }
   };
+  
+    const handleVehicleSelect = async (vehicleId: string) => {
+        try {
+            await inventoryService.saveVehicle({ isFleetVehicle: true }, vehicleId);
+            toast({ title: 'Vehículo Añadido a la Flotilla', description: 'El vehículo ahora forma parte de tu flotilla.' });
+            setIsVehicleSelectionDialogOpen(false);
+        } catch (error) {
+            toast({ title: "Error", description: "No se pudo actualizar el vehículo.", variant: "destructive"});
+        }
+    };
+
+    const handleNewVehicleRequest = (plate?: string) => {
+        setEditingVehicle(plate ? { licensePlate: plate, isFleetVehicle: true } : { isFleetVehicle: true });
+        setIsVehicleSelectionDialogOpen(false);
+        setIsVehicleFormDialogOpen(true);
+    };
+    
+    const handleSaveVehicle = async (data: VehicleFormValues) => {
+        try {
+          await inventoryService.saveVehicle({ ...data, isFleetVehicle: true }, editingVehicle?.id);
+          toast({ title: `Vehículo ${editingVehicle?.id ? 'Actualizado' : 'Creado'} y añadido a la flotilla` });
+          setIsVehicleFormDialogOpen(false);
+          setEditingVehicle(null);
+        } catch (error) {
+          toast({ title: "Error", description: "No se pudo guardar el vehículo.", variant: "destructive"});
+        }
+    };
 
     const pageActions = (
         <div className="flex flex-row gap-2">
@@ -107,7 +142,7 @@ function FlotillaPageComponent() {
     const tabs = [
         { value: 'balance', label: 'Balance', content: <FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} /> },
         { value: 'conductores', label: 'Conductores', content: <FlotillaConductoresTab drivers={drivers} onAddDriver={() => setIsDriverDialogOpen(true)} /> },
-        { value: 'vehiculos', label: 'Vehículos', content: <FlotillaVehiculosTab vehicles={vehicles.filter(v => v.isFleetVehicle)} /> },
+        { value: 'vehiculos', label: 'Vehículos', content: <FlotillaVehiculosTab vehicles={vehicles} onAddVehicle={() => setIsVehicleSelectionDialogOpen(true)} /> },
         { value: 'caja', label: 'Caja', content: <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allDailyCharges={dailyCharges} allManualDebts={manualDebts} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} handleShowTicket={handleShowTicket} /> },
     ];
     
@@ -139,6 +174,19 @@ function FlotillaPageComponent() {
                 onOpenChange={setIsDriverDialogOpen}
                 driver={{} as Driver}
                 onSave={handleSaveDriver}
+            />
+            <VehicleSelectionDialog
+                open={isVehicleSelectionDialogOpen}
+                onOpenChange={setIsVehicleSelectionDialogOpen}
+                vehicles={vehicles}
+                onSelectVehicle={handleVehicleSelect}
+                onNewVehicle={handleNewVehicleRequest}
+            />
+            <VehicleDialog
+                open={isVehicleFormDialogOpen}
+                onOpenChange={setIsVehicleFormDialogOpen}
+                vehicle={editingVehicle}
+                onSave={handleSaveVehicle}
             />
         </>
     )
