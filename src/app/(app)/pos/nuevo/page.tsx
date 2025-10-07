@@ -1,42 +1,223 @@
 // src/app/(app)/pos/nuevo/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { PosForm } from '../components/pos-form';
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User, Payment } from '@/types'; 
-import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import { inventoryService, saleService } from '@/lib/services';
-import { Loader2, Copy, Printer, MessageSquare, Save, X, Share2 } from 'lucide-react';
-import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
-import { db } from '@/lib/firebaseClient';
-import { writeBatch, doc, collection } from 'firebase/firestore';
-import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import { TicketContent } from '@/components/ticket-content';
-import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils';
-import { nanoid } from 'nanoid';
-import html2canvas from 'html2canvas';
-import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { PosForm } from "../components/pos-form";
+import type {
+  SaleReceipt,
+  InventoryItem,
+  InventoryCategory,
+  Supplier,
+  WorkshopInfo,
+  User,
+} from "@/types";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { inventoryService, saleService } from "@/lib/services";
+import { Loader2, Copy, Printer, Share2, Search } from "lucide-react";
+import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
+import { db } from "@/lib/firebaseClient";
+import { writeBatch, doc, collection } from "firebase/firestore";
+import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
+import { TicketContent } from "@/components/ticket-content";
+import { Button } from "@/components/ui/button";
+import { formatCurrency, cn } from "@/lib/utils";
+import { nanoid } from "nanoid";
+import html2canvas from "html2canvas";
+import { posFormSchema, type POSFormValues } from "@/schemas/pos-form-schema";
+import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipProvider,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+// NUEVO: Dialog buscador de artículos
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { PackagePlus } from "lucide-react";
+
+
+/** Utilidad: normaliza strings para búsqueda */
+const normalize = (s?: string) =>
+  (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+
+/** Mapea un InventoryItem a una fila válida del POS.
+ *  Ajusta aquí si tu schema usa otros nombres.
+ */
+function createPOSItemFromInventory(item: InventoryItem) {
+  // Intenta usar price de venta; si no, fallback a price/cost 0
+  const unitPrice =
+    (item as any).salePrice ??
+    (item as any).price ??
+    (item as any).unitPrice ??
+    0;
+
+  const name =
+    (item as any).name ??
+    (item as any).title ??
+    (item as any).description ??
+    (item as any).sku ??
+    "Artículo";
+
+  const id = (item as any).id ?? (item as any).sku ?? nanoid(6);
+
+  // Campos comunes y conservadores para la mayoría de schemas:
+  return {
+    id, // id del renglón; si tu schema pide otro (p. ej. inventoryItemId), duplícalo
+    inventoryItemId: (item as any).id ?? null,
+    name,
+    quantity: 1,
+    unitPrice,
+    discount: 0,
+    totalPrice: unitPrice * 1,
+  };
+}
+
+/** Dialog de "Añadir artículo": buscador + listado */
+function QuickAddItemDialog({
+  open,
+  onOpenChange,
+  inventoryItems,
+  onSelectItem,
+  isAdding,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  inventoryItems: InventoryItem[];
+  onSelectItem: (item: InventoryItem) => void;
+  isAdding?: boolean;
+}) {
+  const [q, setQ] = React.useState("");
+
+  const filtered = React.useMemo(() => {
+    const normalize = (s?: string) =>
+      (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+    const n = normalize(q);
+    if (!n) return inventoryItems.slice(0, 200);
+    return inventoryItems.filter((it) => {
+      const haystack = [
+        (it as any).name,
+        (it as any).sku,
+        (it as any).description,
+        (it as any).brand,
+        (it as any).categoryName,
+      ]
+        .map(normalize)
+        .join(" ");
+      return haystack.includes(n);
+    });
+  }, [q, inventoryItems]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Buscar y añadir artículo</DialogTitle>
+          <DialogDescription>
+            Escribe para filtrar por nombre, SKU o descripción, y selecciona para agregar al ticket.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Command className="w-full border rounded-md">
+          <CommandInput
+            placeholder="Buscar artículo…"
+            value={q}
+            onValueChange={setQ}
+          />
+          {/* Ojo: sin ScrollArea; dejamos que el CommandList maneje el scroll */}
+          <CommandList className="max-h-[360px] overflow-auto">
+            <CommandEmpty>Sin resultados</CommandEmpty>
+            <CommandGroup heading="Coincidencias">
+              {filtered.map((it) => {
+                const price =
+                  (it as any).salePrice ??
+                  (it as any).price ??
+                  (it as any).unitPrice ??
+                  0;
+                const key = (it as any).id ?? (it as any).sku ?? String(price) + Math.random();
+                const label = (it as any).name ?? (it as any).sku ?? "Artículo";
+                return (
+                  <CommandItem
+                    key={key}
+                    value={label}
+                    // Radix dispara onSelect; en algunos navegadores el click es más confiable, por eso añadimos ambos.
+                    onSelect={() => {
+                      onSelectItem(it);
+                      onOpenChange(false);
+                    }}
+                    onClick={() => {
+                      onSelectItem(it);
+                      onOpenChange(false);
+                    }}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate font-medium">{label}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {(it as any).sku ?? "Sin SKU"} · {(it as any).description ?? "—"}
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-sm tabular-nums">
+                      {formatCurrency(price)}
+                    </span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+
+        <div className="mt-3 flex justify-end">
+          <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>
+            Cerrar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 
 export default function NuevaVentaPage() {
-  const { toast } = useToast(); 
+  const { toast } = useToast();
   const router = useRouter();
-  
-  const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>([]);
+
+  const [currentInventoryItems, setCurrentInventoryItems] = useState<
+    InventoryItem[]
+  >([]);
   const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [saleForTicket, setSaleForTicket] = useState<SaleReceipt | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
@@ -44,18 +225,23 @@ export default function NuevaVentaPage() {
 
   const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
   const [validationIndex, setValidationIndex] = useState<number | null>(null);
-  const [validationFolio, setValidationFolio] = useState('');
-  const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
+  const [validationFolio, setValidationFolio] = useState("");
+  const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>(
+    {}
+  );
 
-  const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false); // Estado para el diálogo de búsqueda
+  // NUEVO: control del buscador de artículos
+  const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
+  const [isAddingItem, setIsAddingItem] = useState(false);
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
     defaultValues: {
       items: [],
-      customerName: 'Cliente Mostrador',
-      payments: [{ method: 'Efectivo', amount: undefined }],
+      customerName: "Cliente Mostrador",
+      payments: [{ method: "Efectivo", amount: undefined }],
     },
+    mode: "onChange",
   });
 
   const { watch, setValue, getValues } = methods;
@@ -69,48 +255,82 @@ export default function NuevaVentaPage() {
       inventoryService.onCategoriesUpdate(setAllCategories),
       inventoryService.onSuppliersUpdate(setAllSuppliers),
     ];
-    
-    const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
+
+    const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
     if (storedWorkshopInfo) {
-      try { setWorkshopInfo(JSON.parse(storedWorkshopInfo)); } catch (e) { console.error(e); }
+      try {
+        setWorkshopInfo(JSON.parse(storedWorkshopInfo));
+      } catch (e) {
+        console.error(e);
+      }
     }
 
-    return () => unsubs.forEach(unsub => unsub());
+    return () => unsubs.forEach((unsub) => unsub && unsub());
   }, []);
-  
+
   const handleCopySaleForWhatsapp = useCallback(() => {
     if (!saleForTicket) return;
-    const workshopName = workshopInfo?.name || 'nuestro taller';
-    const message = `Hola ${saleForTicket.customerName || 'Cliente'}, aquí tienes los detalles de tu compra en ${workshopName}.
+    const workshopName = workshopInfo?.name || "nuestro taller";
+    const message = `Hola ${
+      saleForTicket.customerName || "Cliente"
+    }, aquí tienes los detalles de tu compra en ${workshopName}.
 Folio de Venta: ${saleForTicket.id}
 Total: ${formatCurrency(saleForTicket.totalAmount)}
 ¡Gracias por tu preferencia!`;
 
-    navigator.clipboard.writeText(message).then(() => {
-      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado.' });
-    });
+    navigator.clipboard
+      .writeText(message)
+      .then(() => {
+        toast({
+          title: "Mensaje copiado",
+          description: "El texto para WhatsApp ha sido copiado.",
+        });
+      })
+      .catch(() => {
+        // fallback: nada crítico, solo informa
+        toast({
+          title: "No se pudo copiar",
+          description: "Copia el texto manualmente desde el ticket.",
+        });
+      });
   }, [saleForTicket, workshopInfo, toast]);
 
-
   const handleSaleCompletion = async (values: POSFormValues) => {
-    if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
-    
+    if (!db)
+      return toast({ title: "Error de base de datos", variant: "destructive" });
+
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+    const currentUser: User | null = authUserString
+      ? JSON.parse(authUserString)
+      : null;
 
     if (!currentUser) {
-        toast({ title: 'Error', description: 'No se pudo identificar al usuario. Por favor, inicie sesión de nuevo.', variant: 'destructive'});
-        return;
+      toast({
+        title: "Error",
+        description:
+          "No se pudo identificar al usuario. Por favor, inicie sesión de nuevo.",
+        variant: "destructive",
+      });
+      return;
     }
 
     const batch = writeBatch(db);
-    
+
     try {
       const saleId = `SALE-${nanoid(8).toUpperCase()}`;
-      await saleService.registerSale(saleId, values, currentInventoryItems, currentUser, batch);
+      await saleService.registerSale(
+        saleId,
+        values,
+        currentInventoryItems,
+        currentUser,
+        batch
+      );
       await batch.commit();
 
-      const totalAmount = values.items.reduce((sum, item) => sum + item.totalPrice, 0);
+      const totalAmount = (values.items ?? []).reduce(
+        (sum, item: any) => sum + (Number(item.totalPrice) || 0),
+        0
+      );
       const IVA_RATE = 0.16;
       const subTotal = totalAmount / (1 + IVA_RATE);
       const tax = totalAmount - subTotal;
@@ -121,173 +341,341 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         items: values.items,
         customerName: values.customerName,
         payments: values.payments,
-        subTotal, 
+        subTotal,
         tax,
         totalAmount,
-        status: 'Completado',
+        status: "Completado",
         registeredById: currentUser.id,
         registeredByName: currentUser.name,
-        cardCommission: values.cardCommission,
+        cardCommission: (values as any).cardCommission,
       };
-      
-      toast({ title: 'Venta Registrada', description: `La venta #${saleId} se ha completado.` });
-      
+
+      toast({
+        title: "Venta registrada",
+        description: `La venta #${saleId} se ha completado.`,
+      });
+
       setSaleForTicket(newSaleReceipt);
-      setIsTicketDialogOpen(true); // Open dialog to show ticket and actions
-      
-    } catch(e) {
+      setIsTicketDialogOpen(true);
+    } catch (e) {
       console.error(e);
-      toast({ title: 'Error al Registrar Venta', variant: 'destructive'});
+      toast({ title: "Error al registrar venta", variant: "destructive" });
     }
   };
-  
-  const handleNewInventoryItemCreated = async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
+
+  const handleNewInventoryItemCreated = async (
+    formData: InventoryItemFormValues
+  ): Promise<InventoryItem> => {
     const newItem = await inventoryService.addItem(formData);
     return newItem;
   };
-  
+
   const handleDialogClose = () => {
     setIsTicketDialogOpen(false);
     setSaleForTicket(null);
-    methods.reset(); // Reset the form for a new sale
-    router.push('/pos'); // Navigate to the main POS page
+    methods.reset();
+    router.push("/pos");
   };
-  
-  const handleCopyAsImage = useCallback(async (isForSharing: boolean = false) => {
-    if (!ticketContentRef.current || !saleForTicket) return null;
-    try {
-      const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error("Could not create blob from canvas.");
-      
-      if (isForSharing) {
-        return new File([blob], `ticket_${saleForTicket.id}.png`, { type: 'image/png' });
-      } else {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        toast({ title: "Copiado", description: "La imagen ha sido copiada." });
+
+  const downloadCanvasPng = async (canvas: HTMLCanvasElement, name: string) => {
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/png")
+    );
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${name}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopyAsImage = useCallback(
+    async (isForSharing: boolean = false) => {
+      if (!ticketContentRef.current || !saleForTicket) return null;
+      try {
+        const canvas = await html2canvas(ticketContentRef.current, {
+          scale: 2.5,
+          backgroundColor: null,
+        });
+
+        // Intento 1: compartir como archivo si se solicitó compartir
+        const blob = await new Promise<Blob | null>((resolve) =>
+          canvas.toBlob(resolve, "image/png")
+        );
+        if (!blob) throw new Error("No se pudo generar la imagen del ticket.");
+
+        if (isForSharing) {
+          return new File([blob], `ticket_${saleForTicket.id}.png`, {
+            type: "image/png",
+          });
+        }
+
+        // Intento 2: copiar al portapapeles como imagen
+        // Comprobación defensiva por políticas del navegador
+        const _ClipboardItem = (window as any).ClipboardItem ?? (globalThis as any).ClipboardItem;
+        if (_ClipboardItem && navigator.clipboard && (navigator.clipboard as any).write) {
+          await (navigator.clipboard as any).write([new _ClipboardItem({ "image/png": blob })]);
+          toast({
+            title: "Copiado",
+            description: "La imagen del ticket ha sido copiada.",
+          });
+        } else {
+          // Fallback: descargar PNG
+          await downloadCanvasPng(canvas, `ticket_${saleForTicket.id}`);
+          toast({
+            title: "Descargado",
+            description:
+              "El ticket se descargó como imagen (el portapapeles no está disponible).",
+          });
+        }
+
+        return null;
+      } catch (e) {
+        console.error("Error handling image:", e);
+        toast({
+          title: "Error",
+          description: "No se pudo procesar la imagen del ticket.",
+          variant: "destructive",
+        });
         return null;
       }
-    } catch (e) {
-      console.error('Error handling image:', e);
-      toast({ title: "Error", description: "No se pudo procesar la imagen del ticket.", variant: "destructive" });
-      return null;
-    }
-  }, [saleForTicket, toast]);
-  
+    },
+    [saleForTicket, toast]
+  );
+
   const handleShareTicket = async () => {
     const imageFile = await handleCopyAsImage(true);
-    if (imageFile && navigator.share) {
+    if (imageFile && (navigator as any).share) {
       try {
-        await navigator.share({
+        await (navigator as any).share({
           files: [imageFile],
-          title: 'Ticket de Venta',
-          text: `Ticket de tu compra en ${workshopInfo?.name || 'nuestro taller'}.`,
+          title: "Ticket de Venta",
+          text: `Ticket de tu compra en ${workshopInfo?.name || "nuestro taller"}.`,
         });
       } catch (error) {
-        if(!String(error).includes('AbortError')) {
-           toast({ title: 'No se pudo compartir', description: 'Copiando texto para WhatsApp como alternativa.', variant: 'default' });
-           handleCopySaleForWhatsapp();
+        if (!String(error).includes("AbortError")) {
+          toast({
+            title: "No se pudo compartir",
+            description:
+              "Copiando texto para WhatsApp como alternativa.",
+          });
+          handleCopySaleForWhatsapp();
         }
       }
     } else {
-        // Fallback for desktop browsers that don't support navigator.share with files
-        handleCopySaleForWhatsapp();
+      // Fallback para escritorios o navegadores sin Web Share con archivos
+      handleCopySaleForWhatsapp();
     }
   };
 
   const handlePrint = () => {
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
-  
+
   const handleOpenValidateDialog = (index: number) => {
     setValidationIndex(index);
-    setValidationFolio('');
+    setValidationFolio("");
     setIsValidationDialogOpen(true);
   };
-  
+
   const handleConfirmValidation = () => {
     if (validationIndex === null) return;
-    const originalFolio = watch(`payments.${validationIndex}.folio`);
-    
+    const originalFolio = watch(`payments.${validationIndex}.folio` as const);
+
     if (validationFolio === originalFolio) {
-      setValidatedFolios(prev => ({ ...prev, [validationIndex]: true }));
-      toast({ title: "Folio Validado", description: "El folio coincide correctamente." });
-    } else {
-      setValidatedFolios(prev => {
-          const newValidated = { ...prev };
-          delete newValidated[validationIndex];
-          return newValidated;
+      setValidatedFolios((prev) => ({ ...prev, [validationIndex]: true }));
+      toast({
+        title: "Folio validado",
+        description: "El folio coincide correctamente.",
       });
-      toast({ title: "Error de Validación", description: "Los folios no coinciden. Por favor, verifique.", variant: "destructive" });
+    } else {
+      setValidatedFolios((prev) => {
+        const newValidated = { ...prev };
+        delete newValidated[validationIndex];
+        return newValidated;
+      });
+      toast({
+        title: "Error de validación",
+        description: "Los folios no coinciden. Verifique por favor.",
+        variant: "destructive",
+      });
     }
     setIsValidationDialogOpen(false);
   };
 
+  // Abre el buscador de artículos (se invoca desde PosForm)
   const handleOpenAddItemDialog = () => setIsAddItemDialogOpen(true);
 
+  // Añadir artículo seleccionado al formulario (incrementa si ya existe)
+  const handleSelectInventoryItem = (inv: InventoryItem) => {
+    setIsAddingItem(true);
+    try {
+      const newRow = createPOSItemFromInventory(inv);
+      const current = (getValues("items") as any[]) ?? [];
+      const idx = current.findIndex(
+        (r) =>
+          // intenta matchear por inventoryItemId (preferible) o por id de item
+          (r?.inventoryItemId && r.inventoryItemId === (inv as any).id) ||
+          r?.id === (inv as any).id
+      );
+
+      if (idx >= 0) {
+        // incrementa cantidad y total
+        const updated = [...current];
+        const row = { ...updated[idx] };
+        const qty = Number(row.quantity ?? 1) + 1;
+        const unitPrice = Number(row.unitPrice ?? newRow.unitPrice ?? 0);
+        row.quantity = qty;
+        row.totalPrice = unitPrice * qty;
+        updated[idx] = row;
+        setValue("items", updated as any, { shouldDirty: true, shouldTouch: true });
+        toast({
+          title: "Cantidad actualizada",
+          description: `Se incrementó la cantidad de "${row.name}".`,
+        });
+      } else {
+        const updated = [...current, newRow];
+        setValue("items", updated as any, { shouldDirty: true, shouldTouch: true });
+        toast({
+          title: "Artículo añadido",
+          description: `"${newRow.name}" agregado al ticket.`,
+        });
+      }
+    } finally {
+      setIsAddingItem(false);
+      setIsAddItemDialogOpen(false);
+    }
+  };
 
   if (isLoading) {
-      return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
+    return (
+      <div className="text-center p-8 text-muted-foreground flex justify-center items-center">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        Cargando...
+      </div>
+    );
   }
 
   return (
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Registrar Nueva Venta</h1>
-                <p className="text-primary-foreground/80 mt-1">Añada artículos y finalice la transacción para generar el ticket.</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Registrar Nueva Venta
+            </h1>
+            <p className="text-primary-foreground/80 mt-1">
+              Añada artículos y finalice la transacción para generar el ticket.
+            </p>
+          </div>
         </div>
       </div>
-      
+
       <FormProvider {...methods}>
         <PosForm
-          inventoryItems={currentInventoryItems} 
+          inventoryItems={currentInventoryItems}
           categories={allCategories}
           suppliers={allSuppliers}
           onSaleComplete={handleSaleCompletion}
           onInventoryItemCreated={handleNewInventoryItemCreated}
           onOpenValidateDialog={handleOpenValidateDialog}
           validatedFolios={validatedFolios}
-          onOpenAddItemDialog={handleOpenAddItemDialog}
+          onOpenAddItemDialog={handleOpenAddItemDialog} // ← ahora sí abre el diálogo
         />
       </FormProvider>
 
+      {/* NUEVO: Diálogo de búsqueda/selección de artículo */}
+      <QuickAddItemDialog
+        open={isAddItemDialogOpen}
+        onOpenChange={setIsAddItemDialogOpen}
+        inventoryItems={currentInventoryItems}
+        onSelectItem={handleSelectInventoryItem}
+        isAdding={isAddingItem}
+      />
+
       {saleForTicket && (
-          <UnifiedPreviewDialog
-            open={isTicketDialogOpen}
-            onOpenChange={handleDialogClose}
-            title="Venta Completada"
+        <UnifiedPreviewDialog
+          open={isTicketDialogOpen}
+          onOpenChange={handleDialogClose}
+          title="Venta Completada"
+          sale={saleForTicket}
+          footerContent={
+            <div className="flex w-full justify-end gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"
+                      onClick={() => handleCopyAsImage(false)}
+                    >
+                      <Copy className="h-6 w-6" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Copiar imagen</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200"
+                      onClick={handleShareTicket}
+                    >
+                      <Share2 className="h-6 w-6" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Compartir</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200"
+                      onClick={handlePrint}
+                    >
+                      <Printer className="h-6 w-6" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Imprimir</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          }
+        >
+          <TicketContent
+            ref={ticketContentRef}
             sale={saleForTicket}
-            footerContent={
-                <div className="flex w-full justify-end gap-2">
-                    <TooltipProvider>
-                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyAsImage(false)}><Copy className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
-                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareTicket}><Share2 className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
-                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrint}><Printer className="h-6 w-6" /></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
-                    </TooltipProvider>
-                </div>
-            }
-          >
-            <TicketContent
-                ref={ticketContentRef}
-                sale={saleForTicket}
-                previewWorkshopInfo={workshopInfo || undefined}
-            />
-          </UnifiedPreviewDialog>
+            previewWorkshopInfo={workshopInfo || undefined}
+          />
+        </UnifiedPreviewDialog>
       )}
 
-      <AlertDialog open={isValidationDialogOpen} onOpenChange={setIsValidationDialogOpen}>
+      <AlertDialog
+        open={isValidationDialogOpen}
+        onOpenChange={setIsValidationDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Validar Folio</AlertDialogTitle>
+            <AlertDialogTitle>Validar folio</AlertDialogTitle>
             <AlertDialogDescription>
-              Para evitar errores, por favor ingrese nuevamente el folio del voucher o referencia.
+              Para evitar errores, por favor ingrese nuevamente el folio del
+              voucher o referencia.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
-            <Label htmlFor="folio-validation-input">Reingresar Folio</Label>
+            <Label htmlFor="folio-validation-input">Reingresar folio</Label>
             <Input
               id="folio-validation-input"
               value={validationFolio}
@@ -298,7 +686,9 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmValidation}>Confirmar</AlertDialogAction>
+            <AlertDialogAction onClick={handleConfirmValidation}>
+              Confirmar
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
