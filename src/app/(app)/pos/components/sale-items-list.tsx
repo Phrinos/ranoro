@@ -1,3 +1,4 @@
+// src/app/(app)/pos/components/sale-items-list.tsx
 
 "use client";
 

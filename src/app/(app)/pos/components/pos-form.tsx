@@ -8,8 +8,11 @@ import { useState, useCallback, useEffect } from "react";
 import { InventorySearchDialog } from "@/components/shared/InventorySearchDialog";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
-import { SaleItemsList } from './sale-items-list';
 import { SaleSummary } from './sale-summary';
+import { PosItemsTable } from "./pos-items-table";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
+
 
 interface POSFormProps {
   inventoryItems: InventoryItem[];
@@ -108,7 +111,18 @@ export function PosForm({
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
           {/* Columna Izquierda: Lista de Artículos */}
           <div className="lg:col-span-3">
-            <SaleItemsList onAddItem={onOpenAddItemDialog} inventoryItems={inventoryItems} />
+             <section className="space-y-3">
+                <h2 className="text-2xl font-bold">Artículos</h2>
+
+                <PosItemsTable />
+
+                <div className="flex justify-end">
+                  <Button type="button" variant="outline" onClick={onOpenAddItemDialog}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Añadir Artículo/Servicio
+                  </Button>
+                </div>
+              </section>
           </div>
 
           {/* Columna Derecha: Pago y Resumen */}
