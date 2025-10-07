@@ -1,5 +1,4 @@
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
-
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -119,7 +118,7 @@ export function ServiceAppointmentCard({
           <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-b md:border-b-0 md:border-r">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <UserIcon className="h-3 w-3" />
-              <span>{vehicle?.ownerName || 'Cliente no asignado'}</span>
+              <span>{vehicle?.ownerName || service.customerName || 'Cliente no asignado'}</span>
               <Phone className="h-3 w-3 ml-2"/>
               <span>{vehicle?.ownerPhone || 'N/A'}</span>
             </div>
@@ -159,9 +158,9 @@ export function ServiceAppointmentCard({
                 )}
             </div>
             <div className="text-xs text-muted-foreground mt-2 w-full text-center">
-              <p>Asesor: {advisor?.name || 'N/A'}</p>
+              <p>Asesor: {advisor?.name || service.serviceAdvisorName || 'N/A'}</p>
               {service.status !== 'Cotizacion' && service.status !== 'Agendado' && (
-                  <p>Técnico: {technician?.name || 'N/A'}</p>
+                  <p>Técnico: {technician?.name || service.technicianName || 'N/A'}</p>
               )}
             </div>
              <div className="flex justify-center items-center gap-1 flex-wrap mt-2">
