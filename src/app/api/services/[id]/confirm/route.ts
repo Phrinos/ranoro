@@ -4,75 +4,80 @@ import { NextResponse } from 'next/server';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
+export const runtime = 'nodejs';         // Admin SDK => Node runtime
+export const dynamic = 'force-dynamic';  // opcional: evita cacheos
+
 // --- Firebase Admin SDK Initialization ---
-try {
-  if (!getApps().length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
+if (!getApps().length) {
+  const sa = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (!sa) {
+    // Falla temprano si falta la credencial
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY no está configurada');
   }
-} catch (error) {
-  console.error('Firebase Admin initialization error:', error);
+  const serviceAccount = JSON.parse(sa);
+  initializeApp({ credential: cert(serviceAccount) });
 }
 
 const db = getFirestore();
 
-/**
- * Handles the POST request to confirm a service appointment.
- * This is a secure endpoint that runs on the server with admin privileges.
- * It expects the service ID to be part of the URL path.
- */
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+type RouteCtx = { params: { id: string } };
+
+export async function POST(req: Request, { params }: RouteCtx) {
   try {
-    const publicId = params.id;
-
-    // 1. Validate the incoming data
+    const publicId = params?.id?.trim();
     if (!publicId) {
-      return NextResponse.json({ success: false, error: 'Falta el ID del servicio.' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Falta el ID del servicio.' },
+        { status: 400 }
+      );
     }
 
+    // 1) Carga del servicio
     const serviceDocRef = db.collection('serviceRecords').doc(publicId);
-    const serviceDoc = await serviceDocRef.get();
+    const serviceSnap = await serviceDocRef.get();
 
-    if (!serviceDoc.exists) {
-        return NextResponse.json({ success: false, error: 'El servicio no fue encontrado.' }, { status: 404 });
+    if (!serviceSnap.exists) {
+      return NextResponse.json(
+        { success: false, error: 'El servicio no fue encontrado.' },
+        { status: 404 }
+      );
     }
 
-    const serviceData = serviceDoc.data()!;
+    const serviceData = serviceSnap.data()!;
 
-    // 2. Verify that the service is in a confirmable state
-    if (serviceData.status !== 'Agendado' || serviceData.appointmentStatus !== 'Sin Confirmar') {
-        return NextResponse.json({ success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' }, { status: 409 }); // 409 Conflict
+    // 2) Validación de estado
+    if (
+      serviceData.status !== 'Agendado' ||
+      serviceData.appointmentStatus !== 'Sin Confirmar'
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' },
+        { status: 409 }
+      );
     }
 
-    const updateData = {
-        appointmentStatus: 'Confirmada',
-    };
+    const updateData = { appointmentStatus: 'Confirmada' as const };
 
-    // 3. Use a batch write to update both documents atomically
+    // 3) Escritura atómica
     const batch = db.batch();
-
-    // Update the main, internal service record
     batch.update(serviceDocRef, updateData);
 
-    // Update the public-facing document
+    // Si el doc público no existe, update fallaría -> usamos set con merge
     const publicDocRef = db.collection('publicServices').doc(publicId);
-    batch.update(publicDocRef, updateData);
+    batch.set(publicDocRef, updateData, { merge: true });
 
-    // 4. Commit the atomic write
     await batch.commit();
 
-    return NextResponse.json({ success: true, message: 'Cita confirmada correctamente.' });
-
+    return NextResponse.json({
+      success: true,
+      message: 'Cita confirmada correctamente.',
+    });
   } catch (error) {
     console.error('Error al confirmar la cita:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido en el servidor.';
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+    const msg =
+      error instanceof Error
+        ? error.message
+        : 'Ocurrió un error desconocido en el servidor.';
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
-
-
