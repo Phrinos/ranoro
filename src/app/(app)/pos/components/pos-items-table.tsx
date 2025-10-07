@@ -65,7 +65,7 @@ export function PosItemsTable() {
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 bg-white"
                       onClick={() => updateQty(i, qty - 1)}
                     >
                       <Minus className="h-4 w-4" />
@@ -75,14 +75,14 @@ export function PosItemsTable() {
                       value={qty}
                       onChange={(e) => updateQty(i, Number(e.target.value))}
                       inputMode="numeric"
-                      className="h-8 w-20 text-center"
+                      className="h-8 w-20 text-center bg-white"
                     />
 
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 bg-white"
                       onClick={() => updateQty(i, qty + 1)}
                     >
                       <Plus className="h-4 w-4" />
