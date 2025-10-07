@@ -121,7 +121,6 @@ export function AddManualChargeDialog({
                         selected={selectedDate}
                         onSelect={(d) => {
                           if (!d) return;
-                          // Normaliza a mediodía para evitar brincos de día por huso horario
                           const normalized = new Date(d);
                           normalized.setHours(12, 0, 0, 0);
                           form.setValue("date", normalized, {
@@ -129,8 +128,6 @@ export function AddManualChargeDialog({
                             shouldTouch: true,
                             shouldValidate: true,
                           });
-                          // Si quieres cerrar al seleccionar, descomenta:
-                          // setIsCalendarOpen(false);
                         }}
                         initialFocus
                         locale={es}
