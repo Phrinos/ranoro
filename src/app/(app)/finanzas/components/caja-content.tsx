@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, cn } from "@/lib/utils";
-import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, compareAsc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DollarSign, ArrowDown, ArrowUp, Loader2, Wallet, CreditCard, Landmark, ArrowLeft, ArrowRight } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
@@ -199,9 +199,16 @@ export default function CajaContent() {
 
     const [key, direction] = sortOption.split('_');
     return rows.sort((a: any, b: any) => {
-      const va = a[key] ?? '';
-      const vb = b[key] ?? '';
-      const cmp = String(va).localeCompare(String(vb), 'es', { numeric: true });
+      let valA = a[key] ?? '';
+      let valB = b[key] ?? '';
+
+      if (key === 'date') {
+        const dateA = valA instanceof Date ? valA.getTime() : 0;
+        const dateB = valB instanceof Date ? valB.getTime() : 0;
+        return direction === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      
+      const cmp = String(valA).localeCompare(String(valB), 'es', { numeric: true });
       return direction === 'asc' ? cmp : -cmp;
     });
   }, [cashPayments, ledgerRows, range, sortOption]);
