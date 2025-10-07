@@ -19,8 +19,6 @@ import { TicketContent } from '@/components/ticket-content';
 import { formatCurrency } from '@/lib/utils';
 import html2canvas from 'html2canvas';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { DailyEarningsCard } from './components/DailyEarningsCard';
-
 
 const ActivosTabContent = lazy(() => import('./components/tab-activos'));
 const HistorialTabContent = lazy(() => import('./components/tab-historial'));
@@ -245,8 +243,6 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
                 </div>
             </div>
         </div>
-
-        <DailyEarningsCard services={allServices} />
 
         <TabbedPageLayout
             title=""

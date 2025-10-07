@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -10,19 +11,22 @@ import {
   subDays, subWeeks, subMonths,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar as CalendarIcon, X } from "lucide-react";
-import type { DateRange } from "react-day-picker";
+import { Calendar as CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar"; // <- tu wrapper de react-calendar
 import {
   Dialog, DialogContent, DialogTrigger,
   DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-const earliest = new Date(2018, 0, 1);
+/** MAYO 2024 como inicio del sistema */
+const earliest = new Date(2024, 4, 1);
+
+/** Rango de fechas simple (sin react-day-picker) */
+export type DateRange = { from?: Date; to?: Date };
 
 const useIsMobile = () => {
   const [m, setM] = React.useState(false);
@@ -40,7 +44,25 @@ interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> 
   onDateChange: (date: DateRange | undefined) => void;
 }
 
-export function DatePickerWithRange({ className, date, onDateChange }: DatePickerWithRangeProps) {
+/** Mapeos entre DateRange y value de react-calendar */
+type RcValue = Date | [Date, Date] | null;
+const toRcValue = (r?: DateRange): RcValue =>
+  r?.from && r.to ? [r.from, r.to] : r?.from ? r.from : null;
+
+const fromRcValue = (v: RcValue): DateRange | undefined => {
+  if (!v) return undefined;
+  if (Array.isArray(v)) {
+    const [from, to] = v;
+    return from ? { from, to: to ?? from } : undefined;
+  }
+  return { from: v, to: undefined };
+};
+
+export function DatePickerWithRange({
+  className,
+  date,
+  onDateChange,
+}: DatePickerWithRangeProps) {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = React.useState(false);
   const [tempDate, setTempDate] = React.useState<DateRange | undefined>(date);
@@ -58,7 +80,20 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
   const handleApply = () => { onDateChange(tempDate); setIsOpen(false); };
   const handleCancel = () => { setTempDate(date); setIsOpen(false); };
 
-  const setPreset = (key: string) => {
+  /** Presets en el orden solicitado */
+  const presetItems = [
+    { k: "today",      t: "Hoy" },
+    { k: "yesterday",  t: "Ayer" },
+    { k: "this_week",  t: "Esta Semana" },
+    { k: "last_week",  t: "La Semana Pasada" },
+    { k: "this_month", t: "Este Mes" },
+    { k: "last_month", t: "Mes Pasado" },
+    { k: "this_year",  t: "Este Año" },
+    { k: "last_year",  t: "Año Pasado" },
+    { k: "from_start", t: "Desde el Inicio" },
+  ] as const;
+
+  const setPreset = (key: typeof presetItems[number]["k"]) => {
     const now = new Date();
     let range: DateRange | undefined;
     switch (key) {
@@ -85,18 +120,6 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
         : `${format(date.from, "dd MMM yyyy", { locale: es })}`
       : "Seleccione un rango";
 
-  const presetItems = [
-    { k: "today",      t: "Hoy" },
-    { k: "yesterday",  t: "Ayer" },
-    { k: "this_week",  t: "Esta Semana" },
-    { k: "this_month", t: "Este Mes" },
-    { k: "last_month", t: "Mes Pasado" },
-    { k: "this_year",  t: "Este Año" },
-    { k: "last_week",  t: "Semana Anterior" },
-    { k: "last_year",  t: "Año Anterior" },
-    { k: "from_start", t: "Desde Inicio" },
-  ];
-
   return (
     <div className={cn("grid gap-2", className)}>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -104,22 +127,20 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
           <Button
             id="date"
             variant="outline"
-            className={cn("w-full sm:w-[340px] justify-start text-left font-normal bg-white", !date && "text-muted-foreground")}
+            className={cn(
+              "w-full sm:w-[340px] justify-start text-left font-normal bg-white",
+              !date && "text-muted-foreground"
+            )}
             aria-label="Elegir rango de fechas"
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             <span className="truncate">{label}</span>
-            {date?.from && (
-              <X
-                className="ml-auto h-4 w-4 opacity-60 hover:opacity-100"
-                onClick={(e) => { e.stopPropagation(); onDateChange(undefined); }}
-              />
-            )}
           </Button>
         </DialogTrigger>
 
-        {/* Modal sin scroll interno; ajusta a su contenido */}
+        {/* Modal sin la X */}
         <DialogContent
+          hideClose
           className={cn(
             "p-0 bg-background border-0 sm:rounded-2xl shadow-2xl",
             "sm:max-w-none max-w-none w-[min(100vw-1rem,640px)] h-auto"
@@ -131,9 +152,9 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
           </DialogHeader>
 
           <div className="flex">
-            {/* Presets (sin scroll interno) */}
+            {/* Presets en desktop */}
             {!isMobile && (
-              <aside className="w-48 shrink-0 border-r bg-muted/30">
+              <aside className="w-56 shrink-0 border-r bg-muted/30">
                 <ul className="py-2">
                   {presetItems.map(({ k, t }) => (
                     <li key={k}>
@@ -155,45 +176,47 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
               </aside>
             )}
 
-            {/* Calendario + fields (todo visible, sin overflow) */}
             <div className="flex-1 flex flex-col min-w-0">
+              {/* Presets móvil (chips) */}
+              {isMobile && (
+                <div className="px-3 py-2 border-b overflow-x-auto whitespace-nowrap space-x-2 bg-muted/40">
+                  {presetItems.map(({ k, t }) => (
+                    <button
+                      key={k}
+                      onClick={() => setPreset(k)}
+                      className={cn(
+                        "inline-flex h-8 px-3 items-center rounded-full text-sm",
+                        activePreset === k ? "bg-red-600 text-white" : "bg-white border"
+                      )}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="p-4">
                 <Calendar
-                  locale={es}
-                  mode="range"
-                  numberOfMonths={1}              // ✅ solo 1 mes
-                  month={month}
-                  onMonthChange={setMonth}
-                  selected={tempDate}
-                  onSelect={(r) => {
+                  /* rango controlado */
+                  selectRange
+                  value={toRcValue(tempDate)}
+                  onChange={(v) => {
+                    const r = fromRcValue(v as RcValue);
                     setTempDate(r);
                     setActivePreset(null);
                     if (r?.from) setMonth(r.from);
                   }}
-                  fromYear={2018}
-                  toYear={2032}
-                  className="rounded-lg border bg-white shadow-sm p-2"
-                  classNames={{
-                    months: "flex justify-center",
-                    month: "w-full",
-                    // ✅ Flechas a los lados del nombre del mes
-                    caption: "relative flex items-center justify-center py-2",
-                    caption_label: "text-sm font-semibold z-10",
-                    nav: "pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-2",
-                    nav_button: "pointer-events-auto h-7 w-7 rounded-md hover:bg-muted",
-                    head_cell: "w-8 text-[0.70rem] font-medium text-muted-foreground",
-                    table: "w-full border-collapse",
-                    row: "w-full mt-1",
-                    cell: "p-0",
-                    day: "h-8 w-8 text-sm rounded-md aria-selected:opacity-100",
-                    day_outside: "opacity-40 text-muted-foreground",
-                    day_today: "outline outline-1 outline-red-400",
-                    // rango limpio (sin patrón raro)
-                    day_selected: "bg-red-600 text-white hover:bg-red-600",
-                    day_range_start: "aria-selected:bg-red-600 aria-selected:text-white rounded-l-md",
-                    day_range_end: "aria-selected:bg-red-600 aria-selected:text-white rounded-r-md",
-                    day_range_middle: "aria-selected:bg-red-100 aria-selected:text-red-900",
+                  /* mes visible controlado */
+                  activeStartDate={new Date(month.getFullYear(), month.getMonth(), 1)}
+                  onActiveStartDateChange={({ activeStartDate }) => {
+                    if (activeStartDate) setMonth(activeStartDate);
                   }}
+                  /* ajustes */
+                  minDetail="month"
+                  maxDetail="month"
+                  minDate={earliest}
+                  // maxDate={new Date()} // habilítalo si quieres bloquear futuro
+                  className="bg-white"
                 />
 
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
