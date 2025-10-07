@@ -3,9 +3,9 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
-import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, ManualDebtEntry, PaymentMethod } from '@/types';
+import type { RentalPayment, OwnerWithdrawal, VehicleExpense, Driver, Vehicle, ManualDebtEntry, PaymentMethod, DailyRentalCharge } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, cn, capitalizeWords } from '@/lib/utils';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -170,7 +170,7 @@ export function FlotillaCajaTab({
                   <SortableTableHeader sortKey="description" label="Descripción" onSort={handleSort} currentSort={sortOption} className="hidden md:table-cell" textClassName="text-white" />
                   <SortableTableHeader sortKey="paymentMethod" label="Método" onSort={handleSort} currentSort={sortOption} className="text-center hidden md:table-cell" textClassName="text-white" />
                   <SortableTableHeader sortKey="amount" label="Monto" onSort={handleSort} currentSort={sortOption} className="text-right" textClassName="text-white" />
-                  <div className="text-right text-white font-bold">Acciones</div>
+                  <TableHead className="text-right text-white font-bold">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
