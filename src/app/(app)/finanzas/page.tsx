@@ -358,6 +358,9 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
       label: "Resumen Financiero",
       content: (
         <div className="space-y-6">
+           <div className="flex justify-center sm:justify-end">
+             <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
+           </div>
            <Card>
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2">
@@ -510,9 +513,6 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
         tabs={tabs}
         isMobile={isMobile}
       />
-      <div className="w-full flex justify-center sm:justify-end mt-4">
-        <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
-      </div>
     </>
   );
 }
