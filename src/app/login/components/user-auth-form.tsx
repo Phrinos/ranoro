@@ -1,23 +1,24 @@
-
+// src/app/login/components/user-auth-form.tsx
 "use client";
 
 import * as React from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebaseClient";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth, db } from "@/lib/firebaseClient";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, type User as FirebaseUser } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Icon } from '@iconify/react';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import type { User as RanoroUser } from '@/types';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Por favor, ingresa un correo válido." }),
@@ -35,13 +36,40 @@ export function UserAuthForm() {
     resolver: zodResolver(formSchema),
     defaultValues: { email: "", password: "" },
   });
+  
+  const handleUserSession = async (firebaseUser: FirebaseUser) => {
+    if (!db) throw new Error("Firestore is not initialized.");
+    
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const userDoc = await getDoc(userDocRef);
+    
+    let userData: RanoroUser;
+    if (userDoc.exists()) {
+      userData = { id: firebaseUser.uid, ...userDoc.data() } as RanoroUser;
+    } else {
+      userData = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Nuevo Usuario',
+        email: firebaseUser.email!,
+        role: 'Admin', // Default role
+      };
+      await setDoc(userDocRef, { 
+        name: userData.name, email: userData.email, role: userData.role, createdAt: serverTimestamp() 
+      });
+      toast({ title: 'Perfil Creado', description: 'Hemos creado tu perfil en Ranoro.' });
+    }
+    
+    localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
+    toast({ title: 'Inicio de Sesión Exitoso', description: `¡Bienvenido, ${userData.name}!` });
+    router.push('/dashboard');
+  };
 
   async function onSubmit(data: UserFormValues) {
     if (!auth) return;
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
-      router.push("/dashboard");
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      await handleUserSession(userCredential.user);
     } catch (error: any) {
       toast({
         title: "Error de Autenticación",
@@ -58,14 +86,16 @@ export function UserAuthForm() {
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      router.push("/dashboard");
+      const result = await signInWithPopup(auth, provider);
+      await handleUserSession(result.user);
     } catch (error: any) {
-      toast({
-        title: "Error con Google",
-        description: "No se pudo iniciar sesión con Google. Intenta de nuevo.",
-        variant: "destructive",
-      });
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({
+          title: "Error con Google",
+          description: "No se pudo iniciar sesión con Google. Intenta de nuevo.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }

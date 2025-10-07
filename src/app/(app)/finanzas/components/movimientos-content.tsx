@@ -21,34 +21,34 @@ import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { TableToolbar } from "@/components/shared/table-toolbar";
 import {
-  FileText,
   ShoppingCart,
   Wrench,
   Wallet,
   CreditCard,
-  Send,
+  Landmark,
   LineChart,
   DollarSign,
   ChevronLeft,
   ChevronRight,
-  Landmark,
   ArrowRight,
   ArrowLeft,
 } from "lucide-react";
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { parseDate } from "@/lib/forms";
 import { cashService } from "@/lib/services/cash.service";
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 
+// --- Tipos UI ---
+type MovementOrigin = "payment" | "ledger";
 interface Movement {
   id: string;
+  origin: MovementOrigin;
   date: Date | null;
   folio: string;
   type: "Venta" | "Servicio" | "Entrada" | "Salida";
   client: string;
-  payments: Payment[];
-  total: number;
-  profit: number;
+  method?: Payment["method"];  // solo para pagos
+  total: number;               // siempre en positivo para UI
+  isRefund?: boolean;          // pagos negativos
   description?: string;
 }
 
@@ -59,7 +59,7 @@ const sortOptions = [
   { value: "total_asc", label: "Monto (Menor a Menor)" },
 ];
 
-const paymentMethodIcons: Record<Payment["method"], React.ElementType> = {
+const methodIcon: Record<NonNullable<Payment["method"]>, React.ElementType> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
@@ -69,13 +69,24 @@ const paymentMethodIcons: Record<Payment["method"], React.ElementType> = {
 // === Helpers ===
 const getPaymentDate = (p: Payment) =>
   parseDate((p as any).date || (p as any).paidAt || (p as any).createdAt);
-const isCashPayment = (p: Payment) => p?.method === "Efectivo" && typeof p?.amount === "number";
-const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+const getAdvisorForService = (s: ServiceRecord): string => {
+  const anyS = s as any;
+  return (
+    anyS.deliveredByName ||
+    anyS.statusHistory?.find((h: any) => h?.status === "Entregado")?.userName ||
+    anyS.advisorName ||
+    anyS.assignedToName ||
+    anyS.technicianName ||
+    s.customerName ||
+    "N/A"
+  );
+};
 
 function MovimientosTabContent({
   allSales,
   allServices,
-  allInventory, // no se usa aquí, se deja por firma pública
+  allInventory, // sin uso aquí
   dateRange,
   onDateRangeChange,
 }: {
@@ -94,105 +105,79 @@ function MovimientosTabContent({
   }, []);
 
   const mergedMovements = useMemo((): Movement[] => {
-    // 1) Pagos en efectivo de SERVICIOS (por fecha del pago)
+    // 1) PAGOS de SERVICIOS (todos los métodos)
     const servicePaymentMovs: Movement[] = (allServices || [])
       .filter((s) => s.status !== "Cancelado" && s.status !== "Cotizacion")
       .flatMap((s) => {
         const pays = (s as any).payments as Payment[] | undefined;
         if (!Array.isArray(pays)) return [];
+        const advisor = getAdvisorForService(s);
         return pays
-          .filter(isCashPayment)
+          .filter((p) => typeof p?.amount === "number" && !Number.isNaN(p.amount))
           .map((p, idx) => {
             const d = getPaymentDate(p) || parseDate(s.deliveryDateTime) || parseDate(s.serviceDate);
             const amt = Number(p.amount) || 0;
             const isRefund = amt < 0;
             return {
-              id: `${s.id}-svc-cash-${idx}`,
+              id: `${s.id}-svc-pay-${idx}`,
+              origin: "payment",
               date: d || null,
               folio: s.id,
-              type: isRefund ? "Salida" : "Servicio",
-              client: s.customerName || "N/A",
-              payments: [p],
+              type: "Servicio",
+              client: advisor,
+              method: p.method,
               total: Math.abs(amt),
-              profit: 0,
-              description: isRefund ? "Reembolso efectivo (Servicio)" : "Pago en efectivo (Servicio)",
+              isRefund,
+              description: isRefund
+                ? `Reembolso (${p.method})`
+                : `Pago (${p.method})`,
             } as Movement;
           });
       });
 
-    // 2) Pagos en efectivo de VENTAS (por fecha del pago)
+    // 2) PAGOS de VENTAS (todos los métodos)
     const salePaymentMovs: Movement[] = (allSales || [])
       .filter((s) => s.status !== "Cancelado")
       .flatMap((s) => {
         const pays = (s as any).payments as Payment[] | undefined;
         if (!Array.isArray(pays)) return [];
+        const customer = s.customerName || "Cliente Mostrador";
         return pays
-          .filter(isCashPayment)
+          .filter((p) => typeof p?.amount === "number" && !Number.isNaN(p.amount))
           .map((p, idx) => {
             const d = getPaymentDate(p) || parseDate(s.saleDate);
             const amt = Number(p.amount) || 0;
             const isRefund = amt < 0;
             return {
-              id: `${s.id}-sale-cash-${idx}`,
+              id: `${s.id}-sale-pay-${idx}`,
+              origin: "payment",
               date: d || null,
               folio: s.id,
-              type: isRefund ? "Salida" : "Venta",
-              client: s.customerName || "Cliente Mostrador",
-              payments: [p],
+              type: "Venta",
+              client: customer,
+              method: p.method,
               total: Math.abs(amt),
-              profit: 0,
-              description: isRefund ? "Reembolso efectivo (Venta)" : "Pago en efectivo (Venta)",
+              isRefund,
+              description: isRefund
+                ? `Reembolso (${p.method})`
+                : `Pago (${p.method})`,
             } as Movement;
           });
       });
 
-    // 3) Dedupe map: clave por (tipoBase [Venta/Servicio], folio, monto)
-    //    Usamos la suma de pagos para excluir asientos de caja (ledger) que reflejen lo mismo.
-    const paymentKeyCounts = new Map<string, number>();
-    const baseKey = (tipoBase: "Venta" | "Servicio", folio: string, amount: number) =>
-      `${tipoBase}|${folio}|${round2(Math.abs(amount))}`;
-
-    // Cargamos conteos por clave (pagos positivos y reembolsos usan la misma clave con monto absoluto)
-    for (const m of [...servicePaymentMovs, ...salePaymentMovs]) {
-      // Para reembolsos, el relatedType del ledger igual será Venta/Servicio, por eso usamos el tipo base para la clave.
-      const tipoBase = m.type === "Servicio" || m.description?.includes("(Servicio)") ? "Servicio" : "Venta";
-      const k = baseKey(tipoBase as "Venta" | "Servicio", m.folio, m.total);
-      paymentKeyCounts.set(k, (paymentKeyCounts.get(k) || 0) + 1);
-    }
-
-    // 4) Movimientos de CAJA (ledger). Excluir duplicados si traen relatedType/relatedId y monto igual.
-    const ledgerMovsRaw: Movement[] = (cashTransactions || []).map((t) => ({
+    // 3) ASIENTOS de CAJA (ledger) – se muestran todos
+    const ledgerMovs: Movement[] = (cashTransactions || []).map((t) => ({
       id: t.id,
+      origin: "ledger",
       date: parseDate((t as any).date || (t as any).createdAt) || null,
       folio: t.id,
       type: t.type === "Entrada" ? "Entrada" : "Salida",
       client: (t as any).userName || (t as any).user || "Sistema",
-      payments: [],
-      total: Number(t.amount) || 0,
-      profit: 0,
+      total: Math.abs(Number(t.amount) || 0),
       description: (t as any).description || (t as any).concept || "",
     }));
 
-    const dedupedLedger: Movement[] = [];
-    for (const mov of ledgerMovsRaw) {
-      const t = cashTransactions.find((x) => x.id === mov.id);
-      const relatedType = (t as any)?.relatedType as string | undefined; // "Venta" | "Servicio" | "Manual" | undefined
-      const relatedId = (t as any)?.relatedId as string | undefined;
-
-      if (relatedType && (relatedType === "Venta" || relatedType === "Servicio") && relatedId) {
-        // candidate para dedupe
-        const k = baseKey(relatedType, relatedId, mov.total);
-        const remaining = paymentKeyCounts.get(k) || 0;
-        if (remaining > 0) {
-          // Hay un pago equivalente ya contado -> excluimos este asiento de la lista y bajamos contador
-          paymentKeyCounts.set(k, remaining - 1);
-          continue;
-        }
-      }
-      dedupedLedger.push(mov);
-    }
-
-    return [...salePaymentMovs, ...servicePaymentMovs, ...dedupedLedger];
+    return [...salePaymentMovs, ...servicePaymentMovs, ...ledgerMovs];
   }, [allSales, allServices, cashTransactions]);
 
   const { paginatedData, fullFilteredData, ...tableManager } = useTableManager<Movement>({
@@ -209,26 +194,32 @@ function MovimientosTabContent({
     }
   }, [dateRange, tableManager.onDateRangeChange]);
 
+  // ---- KPI: Ingresos = pagos positivos (todos métodos); Egresos = Salidas de caja (ledger) ----
   const summary = useMemo(() => {
-    const movements = fullFilteredData;
-    const totalMovements = movements.length;
-    const totalIncome = movements
-      .filter((m) => ["Venta", "Servicio", "Entrada"].includes(m.type))
+    const rows = fullFilteredData;
+    const ingresos = rows
+      .filter((m) => m.origin === "payment" && !m.isRefund)
       .reduce((sum, m) => sum + (m.total || 0), 0);
-    const totalOutcome = movements
-      .filter((m) => m.type === "Salida")
+
+    const egresosCaja = rows
+      .filter((m) => m.origin === "ledger" && m.type === "Salida")
       .reduce((sum, m) => sum + (m.total || 0), 0);
-    const netBalance = totalIncome - totalOutcome;
-    return { totalMovements, totalIncome, totalOutcome, netBalance };
+
+    const neto = ingresos - egresosCaja;
+    return {
+      totalMovements: rows.length,
+      totalIncome: ingresos,
+      totalOutcome: egresosCaja,
+      netBalance: neto,
+    };
   }, [fullFilteredData]);
 
-  const handleRowClick = (movement: Movement) => {
-    if (movement.type === "Servicio") {
-      window.open(`/servicios/${movement.folio}`, "_blank");
-    } else if (movement.type === "Venta") {
-      window.open(`/pos?saleId=${movement.folio}`, "_blank");
+  const handleRowClick = (m: Movement) => {
+    if (m.origin === "payment") {
+      if (m.type === "Servicio") window.open(`/servicios/${m.folio}`, "_blank");
+      if (m.type === "Venta") window.open(`/pos?saleId=${m.folio}`, "_blank");
     }
-    // No action for 'Entrada' or 'Salida' manuales
+    // ledger no navega
   };
 
   const handleSort = (key: string) => {
@@ -240,7 +231,7 @@ function MovimientosTabContent({
     <div className="space-y-6">
       <TableToolbar
         {...tableManager}
-        searchPlaceholder="Buscar por folio, cliente, descripción..."
+        searchPlaceholder="Buscar por folio, usuario/asesor, descripción..."
         sortOptions={sortOptions}
         dateRange={dateRange}
         onDateRangeChange={onDateRangeChange}
@@ -258,7 +249,7 @@ function MovimientosTabContent({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-600">Ingresos Totales</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-600">Ingresos (todos los métodos)</CardTitle>
             <ArrowRight className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -267,7 +258,7 @@ function MovimientosTabContent({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-600">Egresos Totales</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-600">Egresos de Caja</CardTitle>
             <ArrowLeft className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
@@ -330,54 +321,80 @@ function MovimientosTabContent({
                   />
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {paginatedData.length > 0 ? (
-                  paginatedData.map((m) => (
-                    <TableRow
-                      key={m.id}
-                      onClick={() => handleRowClick(m)}
-                      className={m.type === "Venta" || m.type === "Servicio" ? "cursor-pointer" : ""}
-                    >
-                      <TableCell>
-                        {m.date && isValid(m.date)
-                          ? format(m.date, "dd MMM yyyy, HH:mm", { locale: es })
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            m.type === "Venta"
-                              ? "secondary"
-                              : m.type === "Servicio"
-                              ? "outline"
-                              : m.type === "Entrada"
-                              ? "success"
-                              : "destructive"
-                          }
-                        >
-                          {m.type === "Venta" && <ShoppingCart className="h-3 w-3 mr-1" />}
-                          {m.type === "Servicio" && <Wrench className="h-3 w-3 mr-1" />}
-                          {m.type === "Entrada" && <ArrowRight className="h-3 w-3 mr-1" />}
-                          {m.type === "Salida" && <ArrowLeft className="h-3 w-3 mr-1" />}
-                          {m.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono">{m.folio.slice(-6)}</TableCell>
-                      <TableCell>{m.client}</TableCell>
-                      <TableCell>{m.description || "N/A"}</TableCell>
-                      <TableCell
-                        className={`text-right font-semibold ${
-                          ["Venta", "Servicio", "Entrada"].includes(m.type) ? "text-green-600" : "text-red-600"
-                        }`}
+                  paginatedData.map((m) => {
+                    const Icon =
+                      m.origin === "payment" && m.method ? methodIcon[m.method] || Landmark : undefined;
+                    const badgeVariant =
+                      m.type === "Venta"
+                        ? "secondary"
+                        : m.type === "Servicio"
+                        ? "outline"
+                        : m.type === "Entrada"
+                        ? "success"
+                        : "destructive";
+
+                    const amountClass =
+                      m.origin === "ledger"
+                        ? m.type === "Entrada"
+                          ? "text-green-600"
+                          : "text-red-600"
+                        : m.isRefund
+                        ? "text-red-600"
+                        : "text-green-600";
+
+                    return (
+                      <TableRow
+                        key={m.id}
+                        onClick={() => handleRowClick(m)}
+                        className={
+                          m.origin === "payment" && (m.type === "Venta" || m.type === "Servicio")
+                            ? "cursor-pointer"
+                            : ""
+                        }
                       >
-                        {formatCurrency(m.total)}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        <TableCell>
+                          {m.date && isValid(m.date)
+                            ? format(m.date, "dd MMM yyyy, HH:mm", { locale: es })
+                            : "N/A"}
+                        </TableCell>
+
+                        <TableCell>
+                          <Badge variant={badgeVariant}>
+                            {m.type === "Venta" && <ShoppingCart className="h-3 w-3 mr-1" />}
+                            {m.type === "Servicio" && <Wrench className="h-3 w-3 mr-1" />}
+                            {m.type === "Entrada" && <ArrowRight className="h-3 w-3 mr-1" />}
+                            {m.type === "Salida" && <ArrowLeft className="h-3 w-3 mr-1" />}
+                            {m.type}
+                          </Badge>
+                        </TableCell>
+
+                        <TableCell className="font-mono">{m.folio.slice(-6)}</TableCell>
+
+                        <TableCell>{m.client}</TableCell>
+
+                        <TableCell>
+                          {m.origin === "payment" ? (
+                            <span className="inline-flex items-center gap-1">
+                              {Icon && <Icon className="h-3 w-3 opacity-70" />} {m.description || "Pago"}
+                            </span>
+                          ) : (
+                            m.description || "Movimiento de caja"
+                          )}
+                        </TableCell>
+
+                        <TableCell className={`text-right font-semibold ${amountClass}`}>
+                          {formatCurrency(m.total)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      No se encontraron movimientos de efectivo.
+                      No se encontraron movimientos.
                     </TableCell>
                   </TableRow>
                 )}
@@ -415,5 +432,4 @@ function MovimientosTabContent({
 }
 
 MovimientosTabContent.displayName = "MovimientosTabContent";
-
 export default MovimientosTabContent;
