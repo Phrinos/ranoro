@@ -66,7 +66,7 @@ async function backfillRentalCharges() {
     }
 
     const vehicleDoc = await vehiclesRef.doc(vehicleId).get();
-    if (!vehicleDoc.exists() || !vehicleDoc.data()?.dailyRentalCost) {
+    if (!vehicleDoc.exists || !vehicleDoc.data()?.dailyRentalCost) {
       console.log(`- [AVISO] Conductor ${driver.name} omitido: vehículo ${vehicleId} no encontrado o sin costo de renta.`);
       continue;
     }
