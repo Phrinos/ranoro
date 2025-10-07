@@ -100,13 +100,13 @@ export default function HistorialTabContent({
   });
 
   const summaryData = useMemo(() => {
-    const servicesToSummarize = fullFilteredData;
-    const servicesCount = servicesToSummarize.length;
-    const totalRevenue = servicesToSummarize.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-    const totalProfit = servicesToSummarize.reduce((sum, s) => sum + calcEffectiveProfit(s), 0);
+    const deliveredServices = fullFilteredData.filter(s => s.status === 'Entregado');
+    const servicesCount = deliveredServices.length;
+    const totalRevenue = deliveredServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+    const totalProfit = deliveredServices.reduce((sum, s) => sum + calcEffectiveProfit(s), 0);
     const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();
 
-    servicesToSummarize.forEach(service => {
+    deliveredServices.forEach(service => {
         if (service.payments && service.payments.length > 0) {
             service.payments.forEach(p => {
                 const current = paymentsSummary.get(p.method) || { count: 0, total: 0 };
