@@ -501,21 +501,19 @@ function FinanzasPageComponent({ tab }: { tab?: string }) {
   }
 
   return (
-    <TabbedPageLayout
-      title="Finanzas"
-      description={
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2">
-            <p className="text-primary-foreground/80">Analiza el rendimiento y las operaciones de tu taller.</p>
-            <div className="w-full sm:w-auto">
-                <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
-            </div>
-        </div>
-      }
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-      tabs={tabs}
-      isMobile={isMobile}
-    />
+    <>
+      <TabbedPageLayout
+        title="Finanzas"
+        description="Analiza el rendimiento y las operaciones de tu taller."
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        tabs={tabs}
+        isMobile={isMobile}
+      />
+      <div className="w-full flex justify-center sm:justify-end mt-4">
+        <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
+      </div>
+    </>
   );
 }
 
