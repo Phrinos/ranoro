@@ -61,10 +61,12 @@ export function ServiceAppointmentCard({
   const parsedDate = displayDate ? parseDate(displayDate) : null;
 
   const calculatedTotals = useMemo(() => {
-    const total = Number(service.totalCost ?? (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.sellingPrice) || 0), 0));
+    // CORRECCIÓN: Calcular siempre desde los items para consistencia visual.
+    const total = (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.sellingPrice) || 0), 0);
     const serviceProfit = calcEffectiveProfit(service);
     return { totalCost: total, serviceProfit };
   }, [service]);
+
 
   const copyToClipboard = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text).then(() => {
