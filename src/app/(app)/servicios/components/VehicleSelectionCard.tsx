@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 "use client";
 
@@ -58,7 +59,7 @@ export function VehicleSelectionCard({
     const preset = safeVehicles.find((v) => v.id === initialVehicleId);
     if (preset) {
       setValue("vehicleId", preset.id, { shouldValidate: true });
-      setValue("ownerName", preset.ownerName || "");
+      setValue("customerName", preset.ownerName || "");
       setValue("ownerPhone", preset.ownerPhone || "");
       // Usamos el campo del formulario "mileage"
       setValue("mileage", preset.currentMileage ?? null);
@@ -69,7 +70,7 @@ export function VehicleSelectionCard({
     const vehicle = safeVehicles.find((v) => v.id === vehicleId);
     if (vehicle) {
       setValue("vehicleId", vehicle.id, { shouldValidate: true });
-      setValue("ownerName", vehicle.ownerName || "");
+      setValue("customerName", vehicle.ownerName || "");
       setValue("ownerPhone", vehicle.ownerPhone || "");
       // Mantener consistencia con el formulario: "mileage"
       setValue("mileage", vehicle.currentMileage ?? null);
@@ -175,6 +176,7 @@ export function VehicleSelectionCard({
                         }}
                         inputMode="numeric"
                         pattern="[0-9]*"
+                        className="bg-card"
                       />
                     </FormControl>
                     <FormMessage />
@@ -185,7 +187,7 @@ export function VehicleSelectionCard({
           ) : (
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full bg-card"
               onClick={() => setIsSelectionDialogOpen(true)}
             >
               <Car className="mr-2 h-4 w-4" /> Seleccionar Vehículo

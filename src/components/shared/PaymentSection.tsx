@@ -1,3 +1,4 @@
+
 // src/components/shared/PaymentSection.tsx
 "use client";
 
@@ -94,7 +95,7 @@ export function PaymentSection({
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 bg-card">
       <FormLabel>Métodos de Pago</FormLabel>
       <div className="space-y-4 mt-2">
         {fields.map((field, index) => {
@@ -122,7 +123,7 @@ export function PaymentSection({
                             step="0.01"
                             {...formField}
                             value={formField.value ?? ""}
-                            className="pl-8 bg-white"
+                            className="pl-8 bg-card"
                             onChange={(e) => {
                               const raw = e.target.value;
                               formField.onChange(raw === "" ? "" : toNumber(raw));
@@ -140,7 +141,7 @@ export function PaymentSection({
                     <FormItem className="w-48">
                       <Select onValueChange={formField.onChange} value={formField.value}>
                         <FormControl>
-                          <SelectTrigger className="bg-white">
+                          <SelectTrigger className="bg-card">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
@@ -183,7 +184,7 @@ export function PaymentSection({
                               placeholder={folioLabel}
                               {...formField}
                               value={formField.value ?? ""}
-                              className="bg-white"
+                              className="bg-card"
                             />
                             {isFolioValidated && (
                               <CheckCircle className="absolute right-2 top-2.5 h-5 w-5 text-green-500" />

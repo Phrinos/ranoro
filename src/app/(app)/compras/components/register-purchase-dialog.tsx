@@ -1,3 +1,4 @@
+
 // src/app/(app)/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -130,7 +131,7 @@ export function RegisterPurchaseDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl p-0">
-          <DialogHeader className="border-b p-6 pb-4">
+          <DialogHeader className="border-b p-6 pb-4 bg-white">
             <DialogTitle>Registrar Nueva Compra</DialogTitle>
             <DialogDescription>
               Seleccione un proveedor, añada los productos comprados y especifique los detalles del pago.
@@ -140,7 +141,7 @@ export function RegisterPurchaseDialog({
           <FormProvider {...form}>
             <Form {...form}>
               <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-4">
-                <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-4">
+                <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-4 bg-muted/50">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
                       control={control}
@@ -150,7 +151,7 @@ export function RegisterPurchaseDialog({
                           <FormLabel>Proveedor</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger className="bg-white">
                                 <SelectValue placeholder="Seleccione un proveedor" />
                               </SelectTrigger>
                             </FormControl>
@@ -175,7 +176,7 @@ export function RegisterPurchaseDialog({
                         <FormItem>
                           <FormLabel>Folio de Factura (Opcional)</FormLabel>
                           <FormControl>
-                            <Input placeholder="F-12345" {...field} value={field.value ?? ""} />
+                            <Input placeholder="F-12345" {...field} value={field.value ?? ""} className="bg-white" />
                           </FormControl>
                         </FormItem>
                       )}
@@ -184,7 +185,7 @@ export function RegisterPurchaseDialog({
 
                   <div>
                     <FormLabel>Artículos Comprados</FormLabel>
-                    <div className="mt-2 space-y-2 rounded-md border p-4">
+                    <div className="mt-2 space-y-2 rounded-md border bg-card p-4">
                       <ScrollArea className="max-h-48 pr-3">
                         <div className="space-y-3">
                           {fields.map((field, index) => (
@@ -204,7 +205,7 @@ export function RegisterPurchaseDialog({
                                     type="number"
                                     step="1"
                                     min="0.01"
-                                    className="h-8 w-20 text-right"
+                                    className="h-8 w-20 text-right bg-white"
                                     {...field}
                                   />
                                 )}
@@ -219,7 +220,7 @@ export function RegisterPurchaseDialog({
                                       type="number"
                                       step="0.01"
                                       min="0"
-                                      className="h-8 w-28 pl-8 text-right"
+                                      className="h-8 w-28 pl-8 text-right bg-white"
                                       {...field}
                                     />
                                   </div>
@@ -244,6 +245,7 @@ export function RegisterPurchaseDialog({
                           variant="outline"
                           size="sm"
                           onClick={() => setIsItemSearchOpen(true)}
+                          className="bg-white"
                         >
                           <PlusCircle className="mr-2 h-4 w-4" />
                           Añadir Artículo
@@ -253,7 +255,7 @@ export function RegisterPurchaseDialog({
                     {/* Error del array completo */}
                     {!!form.formState.errors.items && (
                       <p className="mt-2 text-sm text-destructive">
-                        {(form.formState.errors.items?.message as any)}
+                        {form.formState.errors.items?.message as any}
                       </p>
                     )}
                   </div>
@@ -267,7 +269,7 @@ export function RegisterPurchaseDialog({
                           <FormLabel>Método de Pago</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger className="bg-white">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
@@ -296,7 +298,7 @@ export function RegisterPurchaseDialog({
                                   <Button
                                     variant="outline"
                                     className={cn(
-                                      "pl-3 text-left font-normal",
+                                      "pl-3 text-left font-normal bg-white",
                                       !field.value && "text-muted-foreground"
                                     )}
                                   >
@@ -327,7 +329,7 @@ export function RegisterPurchaseDialog({
                   </div>
                 </div>
 
-                <DialogFooter className="flex w-full flex-col-reverse items-center border-t p-6 pt-4 sm:flex-row sm:justify-between">
+                <DialogFooter className="flex w-full flex-col-reverse items-center border-t bg-white p-6 pt-4 sm:flex-row sm:justify-between">
                   <div className="text-right text-lg font-bold">
                     Total: {formatCurrency(watch("invoiceTotal") || 0)}
                   </div>

@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceItemsList.tsx
 "use client";
 
@@ -154,7 +155,7 @@ export function ServiceItemsList({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="bg-white"
+                className="bg-card"
                 onClick={() =>
                   append({
                     id: `item_${nanoid(6)}`,
@@ -197,7 +198,7 @@ export function ServiceItemsList({
                   <Textarea
                     placeholder="Observaciones generales sobre el servicio..."
                     {...field}
-                    className="min-h-[100px] bg-white"
+                    className="min-h-[100px] bg-card"
                     disabled={isReadOnly}
                     value={field.value ?? ""}
                   />

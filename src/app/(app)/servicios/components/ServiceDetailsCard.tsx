@@ -101,7 +101,7 @@ export function ServiceDetailsCard({
                   disabled={isFinalStatus}
                 >
                   <FormControl>
-                    <SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}>
+                    <SelectTrigger className={cn("font-bold bg-card", errors.status && "border-destructive focus-visible:ring-destructive")}>
                       <SelectValue />
                     </SelectTrigger>
                   </FormControl>
@@ -131,7 +131,7 @@ export function ServiceDetailsCard({
                         disabled={isReadOnly || advisors.length === 0}
                     >
                         <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-card">
                             <SelectValue placeholder="Seleccione un asesor" />
                         </SelectTrigger>
                         </FormControl>

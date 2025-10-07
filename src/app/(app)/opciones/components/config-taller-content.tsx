@@ -92,7 +92,7 @@ export function ConfigTallerPageContent() {
         const configRef = doc(db, 'workshopConfig', FIRESTORE_DOC_ID);
         await setDoc(configRef, dataToSave, { merge: true });
       }
-      toast({ title: 'Información guardada', description: 'Se actualizaron los datos del taller.' });
+      toast({ title: 'Información guardada', description: 'Se actualizó los datos del taller.' });
     } catch {
       toast({ title: 'Error al guardar', variant: 'destructive' });
     }
@@ -157,35 +157,27 @@ export function ConfigTallerPageContent() {
 
   return (
     <>
-      <Card className="max-w-4xl mx-auto shadow-lg">
-        <FormProvider {...methods}>
-          <Form {...methods}>
-            <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8">
-              <CardHeader>
-                <CardTitle>Información del Taller</CardTitle>
-                <CardDescription>Estos datos se utilizarán en documentos y reportes. Se guardan en la nube.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <InfoGeneralCard
-                  watchedLogoUrl={watchedLogoUrl}
-                  fileInputRef={fileInputRef}
-                  isUploading={isUploading}
-                  onFileChange={onFileChange}
-                />
-                <ContactoAdicionalCard />
-                <FacturacionCard />
-                <div className="flex justify-end pt-4">
-                  <Button type="submit" disabled={methods.formState.isSubmitting || isUploading}>
-                    <Save className="mr-2 h-4 w-4" />
-                    {methods.formState.isSubmitting ? 'Guardando...' : 'Guardar Información'}
-                  </Button>
-                </div>
-              </CardContent>
-            </form>
-          </Form>
-        </FormProvider>
-      </Card>
-
+      <FormProvider {...methods}>
+        <Form {...methods}>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+            <InfoGeneralCard
+              watchedLogoUrl={watchedLogoUrl}
+              fileInputRef={fileInputRef}
+              isUploading={isUploading}
+              onFileChange={onFileChange}
+            />
+            <ContactoAdicionalCard />
+            <FacturacionCard />
+            <div className="flex justify-end pt-4">
+              <Button type="submit" disabled={methods.formState.isSubmitting || isUploading}>
+                <Save className="mr-2 h-4 w-4" />
+                {methods.formState.isSubmitting ? 'Guardando...' : 'Guardar Información'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </FormProvider>
+      
       <Dialog open={isCropping} onOpenChange={setIsCropping}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

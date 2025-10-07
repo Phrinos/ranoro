@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceItemCard.tsx
 "use client";
 
@@ -164,7 +165,7 @@ export function ServiceItemCard({
                     {...field}
                     disabled={isReadOnly}
                     onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
-                    className={cn("bg-white", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
+                    className={cn("bg-card", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
                   />
                 </FormControl>
               </FormItem>
@@ -191,7 +192,7 @@ export function ServiceItemCard({
                       field.onChange(raw === "" ? "" : toNumber(raw));
                     }}
                     onBlur={field.onBlur}
-                    className="bg-white"
+                    className="bg-card"
                   />
                 </FormControl>
               </FormItem>
@@ -209,7 +210,7 @@ export function ServiceItemCard({
                 <FormLabel>Asignar Técnico</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || ""} disabled={isReadOnly}>
                   <FormControl>
-                    <SelectTrigger className="bg-white">
+                    <SelectTrigger className="bg-card">
                       <SelectValue placeholder="Seleccione un técnico" />
                     </SelectTrigger>
                   </FormControl>
@@ -270,7 +271,7 @@ export function ServiceItemCard({
         onOpenChange={setIsAddToPriceListDialogOpen}
         serviceToSave={{
           name: undefined, // completa si lo usas
-          sellingPrice: sellingPrice ?? 0,
+          price: sellingPrice ?? 0,
         } as any}
         currentVehicle={currentVehicle as any}
         onSave={handleSaveToPriceList}

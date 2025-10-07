@@ -32,7 +32,7 @@ export const InformacionNegocioCard: React.FC<InformacionNegocioCardProps> = ({ 
               <FormLabel>Tamaño Fuente (Encabezado): {field.value ?? defaultHeaderFontSize}px</FormLabel>
               <FormControl>
                 <Slider
-                  value={[field.value ?? defaultHeaderFontSize ?? 10]}
+                  value={[field.value ?? defaultHeaderFontSize]}
                   onValueChange={(value) => field.onChange(value[0])}
                   min={8}
                   max={16}

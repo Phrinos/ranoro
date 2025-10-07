@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceSummary.tsx
 "use client";
 
@@ -33,7 +34,7 @@ export function ServiceSummary({
 }: ServiceSummaryProps) {
   const { control } = useFormContext();
 
-  // Observa ítems y comisión para reactividad total
+  // Observa items y comisión para reactividad total
   const items = useWatch({ control, name: "serviceItems" }) as any[] | undefined;
   const cardCommission = useWatch({ control, name: "cardCommission" }) || 0;
 

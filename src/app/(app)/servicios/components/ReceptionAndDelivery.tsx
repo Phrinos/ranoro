@@ -99,6 +99,7 @@ export const ReceptionAndDelivery = ({
                               type="datetime-local"
                               value={field.value ? format(field.value, "yyyy-MM-dd'T'HH:mm") : ''}
                               onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                              className="bg-card"
                           />
                       </FormControl>
                     )}
@@ -116,7 +117,7 @@ export const ReceptionAndDelivery = ({
               <FormItem>
                   <FormLabel>Nivel de Combustible</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccione nivel..." /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione nivel..." /></SelectTrigger></FormControl>
                     <SelectContent>{fuelLevels.map((level) => (<SelectItem key={level} value={level}>{level}</SelectItem>))}</SelectContent>
                   </Select>
               </FormItem>
@@ -133,7 +134,7 @@ export const ReceptionAndDelivery = ({
                       <span>Condiciones del Vehículo</span>
                        {!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}><BrainCircuit className="h-4 w-4" /></Button>)}
                     </FormLabel>
-                    <FormControl><Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} className="min-h-[100px]" disabled={isReadOnly} /></FormControl>
+                    <FormControl><Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} className="min-h-[100px] bg-card" disabled={isReadOnly} /></FormControl>
                   </FormItem>
                 )}
               />
@@ -146,7 +147,7 @@ export const ReceptionAndDelivery = ({
                       <span>Pertenencias del Cliente</span>
                        {!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}><BrainCircuit className="h-4 w-4" /></Button>)}
                     </FormLabel>
-                    <FormControl><Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} className="min-h-[100px]" disabled={isReadOnly} /></FormControl>
+                    <FormControl><Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} className="min-h-[100px] bg-card" disabled={isReadOnly} /></FormControl>
                   </FormItem>
                 )}
               />
@@ -158,7 +159,7 @@ export const ReceptionAndDelivery = ({
                 {customerSignatureReception ? (<Image src={normalizeDataUrl(customerSignatureReception)} alt="Firma de recepción" width={250} height={100} style={{ objectFit: 'contain' }} crossOrigin="anonymous" />
                 ) : (<div className="text-center text-muted-foreground"><Clock className="mx-auto h-6 w-6 mb-1"/><p>Firma Pendiente</p></div>)}
             </div>
-             {!isReadOnly && (<Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('reception')}><Signature className="mr-2 h-4 w-4" />{customerSignatureReception ? 'Cambiar Firma' : 'Capturar Firma'}</Button>)}
+             {!isReadOnly && (<Button type="button" variant="outline" className="w-full mt-2 bg-card" onClick={() => onOpenSignature('reception')}><Signature className="mr-2 h-4 w-4" />{customerSignatureReception ? 'Cambiar Firma' : 'Capturar Firma'}</Button>)}
           </div>
         </CardContent>
       </Card>
@@ -194,7 +195,7 @@ export const ReceptionAndDelivery = ({
                       name="deliveryDateTime"
                       render={({ field }) => (
                         <FormControl>
-                           <Input type="datetime-local" value={field.value ? format(field.value, "yyyy-MM-dd'T'HH:mm") : ''} onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)} />
+                           <Input type="datetime-local" value={field.value ? format(field.value, "yyyy-MM-dd'T'HH:mm") : ''} onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)} className="bg-card" />
                         </FormControl>
                       )}
                     />
@@ -209,7 +210,7 @@ export const ReceptionAndDelivery = ({
                 {customerSignatureDelivery ? (<Image src={normalizeDataUrl(customerSignatureDelivery)} alt="Firma de entrega" width={250} height={100} style={{ objectFit: 'contain' }} crossOrigin="anonymous"/>
                 ) : (<div className="text-center text-muted-foreground"><Clock className="mx-auto h-6 w-6 mb-1"/><p>Firma Pendiente</p></div>)}
               </div>
-               {!isReadOnly && (<Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('delivery')}><Signature className="mr-2 h-4 w-4" />{customerSignatureDelivery ? 'Cambiar Firma' : 'Capturar Firma'}</Button>)}
+               {!isReadOnly && (<Button type="button" variant="outline" className="w-full mt-2 bg-card" onClick={() => onOpenSignature('delivery')}><Signature className="mr-2 h-4 w-4" />{customerSignatureDelivery ? 'Cambiar Firma' : 'Capturar Firma'}</Button>)}
             </div>
         </CardContent>
       </Card>

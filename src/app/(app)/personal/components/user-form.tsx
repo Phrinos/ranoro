@@ -72,17 +72,17 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
     <Form {...form}>
       <form id={id} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 pb-4">
         <FormField control={form.control} name="name" render={({ field }) => (
-          <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-white text-black" /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={form.control} name="email" render={({ field }) => (
-          <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="usuario@ranoro.mx" {...field} value={field.value ?? ''} disabled={!!initialData} className="bg-white text-black" /></FormControl><FormDescription>El email se usa para iniciar sesión y no se puede cambiar.</FormDescription><FormMessage /></FormItem>
+          <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="usuario@ranoro.mx" {...field} value={field.value ?? ''} disabled={!!initialData} className="bg-card text-foreground" /></FormControl><FormDescription>El email se usa para iniciar sesión y no se puede cambiar.</FormDescription><FormMessage /></FormItem>
         )}/>
         <FormField control={form.control} name="phone" render={({ field }) => (
-          <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="4491234567" {...field} value={field.value ?? ''} className="bg-white text-black" /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="4491234567" {...field} value={field.value ?? ''} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
         )}/>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField control={form.control} name="role" render={({ field }) => (
-              <FormItem><FormLabel>Rol de Permisos</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white text-black"><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
+              <FormItem><FormLabel>Rol de Permisos</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-card text-foreground"><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
             )}/>
              <FormField
               control={form.control}
@@ -132,7 +132,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                     <Button
                       variant={"outline"}
                       className={cn(
-                        "w-full pl-3 text-left font-normal bg-white text-black",
+                        "w-full pl-3 text-left font-normal bg-card text-foreground",
                         !field.value && "text-muted-foreground"
                       )}
                     >
@@ -147,15 +147,16 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
-                    value={field.value}
-                    onChange={(date) => {
-                      if (date && !Array.isArray(date)) {
+                    mode="single"
+                    selected={field.value}
+                    onSelect={(date) => {
+                      if (date) {
                         field.onChange(date);
                       }
                       setIsCalendarOpen(false);
                     }}
-                    maxDate={new Date()}
-                    minDate={new Date("1980-01-01")}
+                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
@@ -165,10 +166,10 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         />
         <div className="grid grid-cols-2 gap-4">
             <FormField control={form.control} name="monthlySalary" render={({ field }) => (
-                <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} className="bg-white text-black" /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="commissionRate" render={({ field }) => (
-                <FormItem><FormLabel>% Comisión</FormLabel><FormControl><Input type="number" placeholder="Ej: 5 para 5%" {...field} value={field.value ?? ''} className="bg-white text-black" /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>% Comisión</FormLabel><FormControl><Input type="number" placeholder="Ej: 5 para 5%" {...field} value={field.value ?? ''} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
             )}/>
         </div>
       </form>

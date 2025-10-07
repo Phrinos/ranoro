@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceSuppliesArray.tsx
 "use client";
 
@@ -129,15 +130,15 @@ export function ServiceSuppliesArray({
 
           <div className="col-span-4 md:col-span-2">
             <div className="flex items-center justify-center gap-1">
-              {!isReadOnly && <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleQuantityChange(supplyIndex, -1)}><Minus className="h-3 w-3"/></Button>}
+              {!isReadOnly && <Button type="button" variant="outline" size="icon" className="h-7 w-7 bg-card" onClick={() => handleQuantityChange(supplyIndex, -1)}><Minus className="h-3 w-3"/></Button>}
               <Input
                 type="number" step="any" min="0.001"
                 value={(supplyField as any).quantity ?? ''}
                 onChange={(e) => handleManualQuantitySet(supplyIndex, e.target.value)}
-                className="w-14 text-center h-7 text-sm bg-white"
+                className="w-14 text-center h-7 text-sm bg-card"
                 disabled={isReadOnly}
               />
-              {!isReadOnly && <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleQuantityChange(supplyIndex, 1)}><Plus className="h-3 w-3"/></Button>}
+              {!isReadOnly && <Button type="button" variant="outline" size="icon" className="h-7 w-7 bg-card" onClick={() => handleQuantityChange(supplyIndex, 1)}><Plus className="h-3 w-3"/></Button>}
             </div>
           </div>
           
@@ -153,7 +154,7 @@ export function ServiceSuppliesArray({
       
       {!isReadOnly && (
         <div className="flex justify-end pt-2">
-          <Button type="button" variant="outline" size="sm" className="bg-white" onClick={() => setIsInventorySearchDialogOpen(true)}>
+          <Button type="button" variant="outline" size="sm" className="bg-card" onClick={() => setIsInventorySearchDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" /> Añadir Insumo
           </Button>
         </div>
