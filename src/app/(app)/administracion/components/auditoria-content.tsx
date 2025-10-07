@@ -4,24 +4,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { Search, Calendar as CalendarIcon } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { AuditLog } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { format, parseISO, compareDesc, isValid, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { format, parseISO, isWithinInterval, startOfDay, endOfDay, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { DateRange } from 'react-day-picker';
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 
 export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] }) {
   const [logs, setLogs] = useState<AuditLog[]>(initialLogs);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
 
   useEffect(() => {
     setLogs(initialLogs);
@@ -39,7 +36,7 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
     }
     if (dateRange?.from) {
       const from = startOfDay(dateRange.from);
-      const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+      const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
       filtered = filtered.filter(log => {
           const logDate = parseISO(log.date);
           return isValid(logDate) && isWithinInterval(logDate, { start: from, end: to });
@@ -48,11 +45,6 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
     // Data is already sorted by date from Firestore, but re-sorting is safe
     return filtered;
   }, [logs, searchTerm, dateRange]);
-
-  const handleApplyDateFilter = () => {
-    setDateRange(tempDateRange);
-    setIsCalendarOpen(false);
-  };
 
   return (
     <div className="space-y-6">
@@ -73,32 +65,7 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
               onChange={(e) => setSearchTerm(e.target.value)}
             />
         </div>
-         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={cn("w-full md:w-[280px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "dd LLL, y", {locale: es})} - ${format(dateRange.to, "dd LLL, y", {locale: es})}` : format(dateRange.from, "dd LLL, y", {locale: es})) : "Filtrar por fecha"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="end">
-            <Calendar
-              initialFocus
-              mode="range"
-              defaultMonth={tempDateRange?.from}
-              selected={tempDateRange}
-              onSelect={setTempDateRange}
-              numberOfMonths={2}
-              locale={es}
-              showOutsideDays={false}
-            />
-            <div className="p-2 border-t flex justify-end">
-              <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
       </div>
       <Card>
         <CardContent className="pt-6">
