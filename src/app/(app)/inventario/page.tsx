@@ -43,8 +43,8 @@ const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { s
         <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
         <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.productsCount + summaryData.servicesCount}</div><p className="text-xs text-muted-foreground">{summaryData.productsCount} Productos y {summaryData.servicesCount} Servicios.</p></CardContent></Card>
         <div className="lg:col-span-2 xl:col-span-2 flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="w-full flex-1 bg-white border-red-500 text-black hover:bg-red-50" onClick={onNewItemClick}>
-                <PlusCircle className="mr-2 h-5 w-5 text-red-500" /> Registrar Ítem
+            <Button className="w-full flex-1" onClick={onNewItemClick}>
+                <PlusCircle className="mr-2 h-5 w-5" /> Registrar Ítem
             </Button>
             <Button className="w-full flex-1" variant="outline" onClick={onNewPurchaseClick} >
                 <PlusCircle className="mr-2 h-5 w-5" /> Registrar Compra
@@ -113,7 +113,7 @@ const ProductosContent = ({ inventoryItems, onPrint, onNewItemFromSearch }: {
           {...tableManager}
           sortOptions={itemSortOptions}
           searchPlaceholder="Buscar por nombre, SKU, marca..."
-          actions={<Button onClick={() => onPrint(customSortedItems)} variant="outline" size="sm"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>}
+          actions={<Button onClick={() => onPrint(customSortedItems)} variant="outline" size="sm" className="bg-white"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>}
       />
 
       <Card>
@@ -240,9 +240,11 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
                                     <TableCell className="font-medium">{cat.name}</TableCell>
                                     <TableCell className="text-right">{itemsPerCategory[cat.name] || 0}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(cat)}><Edit className="h-4 w-4"/></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(cat)} aria-label={`Editar ${cat.name}`}>
+                                            <Edit className="h-4 w-4"/>
+                                        </Button>
                                         <ConfirmDialog
-                                            triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                                            triggerButton={<Button variant="ghost" size="icon" aria-label={`Eliminar ${cat.name}`}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
                                             title={`¿Eliminar categoría "${cat.name}"?`}
                                             description="Esta acción no se puede deshacer. Los productos de esta categoría no serán eliminados pero quedarán sin categoría."
                                             onConfirm={() => onDeleteCategory(cat.id)}
@@ -261,13 +263,15 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
                     <DialogTitle>{editingCategory ? 'Editar' : 'Nueva'} Categoría</DialogTitle>
                     <DialogDescription>Gestiona las categorías para organizar tu inventario.</DialogDescription>
                 </DialogHeader>
-                <div className="py-4 space-y-2">
-                    <Label htmlFor="category-name">Nombre de la Categoría</Label>
-                    <Input id="category-name" value={currentCategoryName} onChange={e => setCurrentCategoryName(capitalizeWords(e.target.value))} />
-                </div>
+                <form id="category-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+                    <div className="py-4 space-y-2">
+                        <Label htmlFor="category-name">Nombre de la Categoría</Label>
+                        <Input id="category-name" value={currentCategoryName} onChange={e => setCurrentCategoryName(capitalizeWords(e.target.value))} autoFocus />
+                    </div>
+                </form>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleSave}>Guardar Categoría</Button>
+                    <Button type="submit" form="category-form">Guardar Categoría</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -342,8 +346,9 @@ export default function InventarioPage() {
   }, []);
   
   const handleNewItemFromSearch = useCallback((name: string) => {
-    handleOpenItemDialog();
-  }, [handleOpenItemDialog]);
+    setEditingItem({ name });
+    setIsItemDialogOpen(true);
+  }, []);
   
   const handleItemUpdated = async (data: InventoryItemFormValues) => {
     if (!editingItem || !('id' in editingItem)) return;
