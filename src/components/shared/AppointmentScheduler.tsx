@@ -1,4 +1,4 @@
-// src/components/shared/AppointmentScheduler.tsx
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -13,9 +13,8 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { isWeekend, isPast, setHours, setMinutes, format, isSameDay, addDays } from 'date-fns';
+import { isWeekend, setHours, setMinutes, format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 interface AppointmentSchedulerProps {
@@ -41,8 +40,8 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
   
   const today = new Date();
 
-  const handleDateSelect = (date?: Date) => {
-    if (date) {
+  const handleDateSelect = (date: any) => {
+    if (date && !Array.isArray(date)) {
       setSelectedDate(date);
       setSelectedTime(null); // Reset time when date changes
     }
@@ -75,6 +74,13 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
     }
   };
 
+  const tileDisabled = ({ date, view }: { date: Date, view: string }) => {
+    if (view === 'month') {
+      return date < today || (isWeekend(date) && date.getDay() === 0);
+    }
+    return false;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0">
@@ -87,12 +93,9 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
         <div className="px-6 space-y-4">
             <div className="flex justify-center">
                 <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={handleDateSelect}
-                    disabled={(date) => date < today || (isWeekend(date) && date.getDay() === 0)}
-                    locale={es}
-                    initialFocus
+                    value={selectedDate}
+                    onChange={handleDateSelect}
+                    tileDisabled={tileDisabled}
                 />
             </div>
 

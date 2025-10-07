@@ -1,4 +1,5 @@
-// src/app/(app)/personal/components/user-form.tsx
+
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -146,21 +147,16 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1980-01-01")
-                    }
-                    initialFocus
-                    locale={es}
-                    captionLayout="dropdown-buttons"
-                    fromYear={1980}
-                    toYear={new Date().getFullYear()}
+                    value={field.value}
+                    onChange={(date) => {
+                      if (date && !Array.isArray(date)) {
+                        field.onChange(date);
+                      }
+                      setIsCalendarOpen(false);
+                    }}
+                    maxDate={new Date()}
+                    minDate={new Date("1980-01-01")}
                   />
-                  <div className="p-2 border-t flex justify-center">
-                    <Button size="sm" onClick={() => setIsCalendarOpen(false)}>Aceptar</Button>
-                  </div>
                 </PopoverContent>
               </Popover>
               <FormMessage />

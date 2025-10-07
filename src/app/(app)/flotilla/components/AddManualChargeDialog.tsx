@@ -1,4 +1,4 @@
-// src/app/(app)/flotilla/components/AddManualChargeDialog.tsx
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -26,12 +26,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { ManualDebtEntry } from "@/types";
+
 import ReactCalendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 const chargeSchema = z.object({
   date: z.date({ required_error: "La fecha es obligatoria." }),
@@ -48,6 +49,12 @@ interface AddManualChargeDialogProps {
   debtToEdit?: ManualDebtEntry | null;
 }
 
+const toMidday = (d: Date) => {
+  const n = new Date(d);
+  n.setHours(12, 0, 0, 0);
+  return n;
+};
+
 export function AddManualChargeDialog({
   open,
   onOpenChange,
@@ -59,25 +66,19 @@ export function AddManualChargeDialog({
 
   const form = useForm<ManualChargeFormValues>({
     resolver: zodResolver(chargeSchema),
-    defaultValues: { date: new Date(), amount: 0, note: "" },
+    defaultValues: { date: toMidday(new Date()), amount: undefined as any, note: "" },
   });
 
   const selectedDate = form.watch("date");
-  const toMidday = (d: Date) => {
-    const n = new Date(d);
-    n.setHours(12, 0, 0, 0);
-    return n;
-  };
-
 
   useEffect(() => {
     if (!open) return;
-    const base = debtToEdit?.date ? new Date(debtToEdit.date) : new Date();
-    form.reset({
-      date: toMidday(base),
-      amount: debtToEdit?.amount ?? undefined,
-      note: debtToEdit?.note ?? "",
-    });
+    if (debtToEdit) {
+      const base = toMidday(new Date(debtToEdit.date));
+      form.reset({ date: base, amount: debtToEdit.amount, note: debtToEdit.note ?? "" });
+    } else {
+      form.reset({ date: toMidday(new Date()), amount: undefined as any, note: "" });
+    }
   }, [open, debtToEdit, form]);
 
   const handleFormSubmit = async (values: ManualChargeFormValues) => {
@@ -100,46 +101,65 @@ export function AddManualChargeDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-2">
+            {/* Fecha */}
             <FormField
               control={form.control}
               name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
+              render={() => (
+                <FormItem className="flex flex-col gap-2">
                   <FormLabel>Fecha del Cargo</FormLabel>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
+                      {/* Trigger con apariencia de Input */}
                       <FormControl>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className={cn("pl-3 text-left font-normal bg-white", !selectedDate && "text-muted-foreground")}
+                        <div
+                          className="relative w-full cursor-pointer"
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") setIsCalendarOpen((o) => !o);
+                          }}
                         >
-                          {selectedDate ? format(selectedDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
+                          <Input
+                            readOnly
+                            className="bg-white pr-10"
+                            value={
+                              selectedDate
+                                ? format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es })
+                                : ""
+                            }
+                            placeholder="Seleccionar fecha"
+                          />
+                          <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+                        </div>
                       </FormControl>
                     </PopoverTrigger>
-            
-                    <PopoverContent className="w-auto p-2" align="start" sideOffset={8}>
+
+                    <PopoverContent
+                      className="p-0 w-auto"
+                      align="start"
+                      sideOffset={8}
+                    >
                         <ReactCalendar
-                            value={selectedDate ?? new Date()}
-                            onChange={(val) => {
-                            const d = Array.isArray(val) ? val[0] : val; // react-calendar puede regresar Date o [Date, Date]
+                          value={selectedDate ?? new Date()}
+                          onChange={(val) => {
+                            const d = Array.isArray(val) ? val[0] : val;
                             if (!d) return;
-                            form.setValue("date", toMidday(d), { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-                            }}
-                            locale="es-MX"
-                            calendarType="iso8601"
-                            selectRange={false}
-                            minDetail="month"
-                            maxDetail="month"
+                            form.setValue("date", toMidday(d), {
+                              shouldDirty: true,
+                              shouldTouch: true,
+                              shouldValidate: true,
+                            });
+                            setIsCalendarOpen(false);
+                          }}
+                          locale="es-MX"
+                          calendarType="iso8601"
+                          selectRange={false}
+                          minDetail="month"
+                          maxDetail="month"
+                          className="react-calendar styled"
                         />
-                        <div className="mt-2 pt-2 border-t flex justify-center">
-                            <Button size="sm" type="button" onClick={() => setIsCalendarOpen(false)}>
-                            Aceptar
-                            </Button>
-                        </div>
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
@@ -147,6 +167,7 @@ export function AddManualChargeDialog({
               )}
             />
 
+            {/* Monto */}
             <FormField
               control={form.control}
               name="amount"
@@ -157,9 +178,12 @@ export function AddManualChargeDialog({
                     <Input
                       type="number"
                       step="0.01"
+                      min="0.01"
+                      inputMode="decimal"
                       {...field}
                       className="bg-white"
                       value={field.value ?? ""}
+                      placeholder="0.00"
                     />
                   </FormControl>
                   <FormMessage />
@@ -167,6 +191,7 @@ export function AddManualChargeDialog({
               )}
             />
 
+            {/* Descripción */}
             <FormField
               control={form.control}
               name="note"
@@ -174,14 +199,18 @@ export function AddManualChargeDialog({
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" value={field.value ?? ""} />
+                    <Textarea
+                      {...field}
+                      className="bg-white"
+                      placeholder="Ej. Multa por estacionamiento, reparación de llanta, etc."
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <DialogFooter className="pt-4">
+            <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
@@ -193,6 +222,53 @@ export function AddManualChargeDialog({
           </form>
         </Form>
       </DialogContent>
+
+      {/* Estilos para react-calendar (ligero theme que combina con shadcn) */}
+      <style jsx global>{`
+        .react-calendar.styled {
+          background: hsl(var(--background));
+          border: 1px solid hsl(var(--border));
+          border-radius: 0.75rem;
+          padding: 0.5rem;
+          font-size: 0.9rem;
+        }
+        .react-calendar.styled .react-calendar__navigation {
+          margin-bottom: 0.25rem;
+        }
+        .react-calendar.styled .react-calendar__navigation button {
+          border-radius: 0.5rem;
+          padding: 0.35rem 0.5rem;
+          color: hsl(var(--foreground));
+        }
+        .react-calendar.styled .react-calendar__navigation button:hover {
+          background: hsl(var(--muted));
+        }
+        .react-calendar.styled .react-calendar__tile {
+          border-radius: 0.5rem;
+          padding: 0.4rem 0;
+        }
+        .react-calendar.styled .react-calendar__month-view__weekdays__weekday {
+          padding: 0.4rem 0;
+          color: hsl(var(--muted-foreground));
+          abbr[title] {
+            text-decoration: none;
+          }
+        }
+        .react-calendar.styled .react-calendar__tile:enabled:hover {
+          background: hsl(var(--muted));
+        }
+        .react-calendar.styled .react-calendar__tile--now {
+          background: hsl(var(--muted) / 0.5);
+        }
+        .react-calendar.styled .react-calendar__tile--active,
+        .react-calendar.styled .react-calendar__tile--hasActive {
+          background: hsl(var(--primary));
+          color: hsl(var(--primary-foreground));
+        }
+        .react-calendar.styled .react-calendar__tile--active:hover {
+          filter: brightness(0.95);
+        }
+      `}</style>
     </Dialog>
   );
 }
