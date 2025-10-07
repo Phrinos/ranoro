@@ -79,7 +79,7 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
                               <FormLabel className="text-xs">Artículo</FormLabel>
                               <div className="flex items-center gap-2 mt-1">
                                 {isCommissionItem && <Tags className="h-4 w-4 text-muted-foreground" />}
-                                <Input readOnly value={field.itemName} className="bg-white border-none text-sm font-medium w-full"/>
+                                <Input readOnly value={field.itemName} className="bg-transparent border-none p-0 h-auto text-sm font-medium w-full"/>
                               </div>
                           </div>
                           <div className="flex items-end gap-4">
