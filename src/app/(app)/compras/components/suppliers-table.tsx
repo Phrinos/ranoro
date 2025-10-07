@@ -24,7 +24,7 @@ interface SuppliersTableProps {
   suppliers: Supplier[];
   onEdit: (supplier: Supplier) => void;
   onDelete: (supplierId: string) => void;
-  onRowClick: (supplier: Supplier) => void;
+  onRowClick: (supplierId: string) => void;
   sortOption: string;
   onSortOptionChange: (value: string) => void;
 }
@@ -62,7 +62,7 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete, onRowCl
         </TableHeader>
         <TableBody>
           {suppliers.map((supplier) => (
-            <TableRow key={supplier.id} onClick={() => onRowClick(supplier)} className="cursor-pointer hover:bg-muted/50">
+            <TableRow key={supplier.id} onClick={() => onRowClick(supplier.id)} className="cursor-pointer hover:bg-muted/50">
               <TableCell className="font-medium">
                 <div>
                   <p>{supplier.name}</p>

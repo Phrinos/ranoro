@@ -13,8 +13,13 @@ import { Button } from '@/components/ui/button';
 
 // Lazy loading components for each tab
 const ComprasContent = React.lazy(() => import('./components/compras-content'));
-const ProveedoresContent = React.lazy(() => import('./components/proveedores-content').then(module => ({ default: module.ProveedoresContent })));
 const CuentasPorPagarContent = React.lazy(() => import('./components/cuentas-por-pagar-content').then(module => ({ default: module.CuentasPorPagarContent })));
+
+// Supplier components are now integrated here
+import { SuppliersTable } from './components/suppliers-table';
+import { TableToolbar } from '@/components/shared/table-toolbar';
+import { useTableManager } from '@/hooks/useTableManager';
+
 
 // Dialogs
 const RegisterPurchaseDialog = React.lazy(() => import('./components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
@@ -25,6 +30,87 @@ import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import type { PurchaseFormValues } from '@/app/(app)/compras/components/register-purchase-dialog';
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
+
+const sortOptionsProveedores = [
+    { value: 'name_asc', label: 'Nombre (A-Z)' },
+    { value: 'name_desc', label: 'Nombre (Z-A)' },
+    { value: 'contactPerson_asc', label: 'Contacto (A-Z)' },
+    { value: 'contactPerson_desc', label: 'Contacto (Z-A)' },
+    { value: 'debtAmount_desc', label: 'Deuda (Mayor a Menor)' },
+    { value: 'debtAmount_asc', label: 'Deuda (Menor a Mayor)' },
+];
+
+
+function ProveedoresTabContent({ suppliers }: { suppliers: Supplier[] }) {
+  const router = useRouter();
+  const { filteredData, ...tableManager } = useTableManager<Supplier>({
+    initialData: suppliers,
+    searchKeys: ['name', 'contactPerson', 'phone'],
+    dateFilterKey: '',
+    initialSortOption: 'name_asc',
+  });
+
+  const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const { toast } = useToast();
+
+  const handleOpenSupplierDialog = useCallback((supplier: Supplier | null = null) => {
+    setEditingSupplier(supplier);
+    setIsSupplierDialogOpen(true);
+  }, []);
+
+  const handleSaveSupplier = useCallback(async (formData: SupplierFormValues) => {
+    try {
+      await inventoryService.saveSupplier(formData, editingSupplier?.id);
+      toast({ title: `Proveedor ${editingSupplier ? 'Actualizado' : 'Agregado'}` });
+      setIsSupplierDialogOpen(false);
+    } catch (error) {
+      toast({ title: "Error al guardar", variant: "destructive" });
+    }
+  }, [editingSupplier, toast]);
+
+  const handleDeleteSupplier = useCallback(async (supplierId: string) => {
+    try {
+      await inventoryService.deleteSupplier(supplierId);
+      toast({ title: "Proveedor Eliminado" });
+    } catch (error) {
+      toast({ title: "Error al eliminar", variant: "destructive" });
+    }
+  }, [toast]);
+  
+  const handleRowClick = (supplierId: string) => {
+    router.push(`/proveedores/${supplierId}`);
+  };
+
+  return (
+    <div className="space-y-4">
+      <TableToolbar
+        {...tableManager}
+        searchPlaceholder="Buscar por nombre o contacto..."
+        sortOptions={sortOptionsProveedores}
+        actions={
+          <Button onClick={() => handleOpenSupplierDialog()} className="w-full sm:w-auto">
+            <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Proveedor
+          </Button>
+        }
+      />
+      <SuppliersTable
+        suppliers={filteredData}
+        onEdit={handleOpenSupplierDialog}
+        onDelete={handleDeleteSupplier}
+        onRowClick={handleRowClick}
+        sortOption={tableManager.sortOption}
+        onSortOptionChange={tableManager.onSortOptionChange}
+      />
+      <SupplierDialog
+        open={isSupplierDialogOpen}
+        onOpenChange={setIsSupplierDialogOpen}
+        supplier={editingSupplier}
+        onSave={handleSaveSupplier}
+      />
+    </div>
+  );
+}
 
 
 export default function ComprasUnificadasPage() {
@@ -43,9 +129,6 @@ export default function ComprasUnificadasPage() {
   
   const [isNewPurchaseDialogOpen, setIsNewPurchaseDialogOpen] = useState(false);
 
-  const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-
   useEffect(() => {
     setIsLoading(true);
     const unsubs = [
@@ -53,11 +136,12 @@ export default function ComprasUnificadasPage() {
       purchaseService.onPayableAccountsUpdate(setPayableAccounts),
       inventoryService.onItemsUpdate(setInventoryItems),
       inventoryService.onCategoriesUpdate(setCategories),
-      inventoryService.onSuppliersUpdate((data) => {
-          setSuppliers(data);
-          setIsLoading(false);
-      }),
     ];
+    // Set loading to false on the last subscription
+    unsubs.push(inventoryService.onSuppliersUpdate((data) => {
+        setSuppliers(data);
+        setIsLoading(false);
+    }));
     return () => unsubs.forEach(unsub => unsub());
   }, []);
   
@@ -78,34 +162,6 @@ export default function ComprasUnificadasPage() {
     }
   }, [toast]);
 
-  const handleOpenSupplierDialog = useCallback((supplier: Supplier | null = null) => {
-    setEditingSupplier(supplier);
-    setIsSupplierDialogOpen(true);
-  }, []);
-  
-  const handleSaveSupplier = useCallback(async (formData: SupplierFormValues) => {
-    try {
-      await inventoryService.saveSupplier(formData, editingSupplier?.id);
-      toast({ title: `Proveedor ${editingSupplier ? 'Actualizado' : 'Agregado'}` });
-      setIsSupplierDialogOpen(false);
-    } catch (error) {
-      toast({ title: "Error al guardar", variant: "destructive" });
-    }
-  }, [editingSupplier, toast]);
-
-  const handleDeleteSupplier = useCallback(async (supplierId: string) => {
-    try {
-      await inventoryService.deleteSupplier(supplierId);
-      toast({ title: "Proveedor Eliminado" });
-    } catch (error) {
-      toast({ title: "Error al eliminar", variant: "destructive" });
-    }
-  }, [toast]);
-  
-  const handleSupplierRowClick = useCallback((supplier: Supplier) => {
-    router.push(`/proveedores/${supplier.id}`);
-  }, [router]);
-
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
     await purchaseService.registerPurchase(data);
     toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
@@ -124,7 +180,7 @@ export default function ComprasUnificadasPage() {
 
   const tabs = [
     { value: 'compras', label: 'Compras', content: <ComprasContent /> },
-    { value: 'proveedores', label: 'Proveedores', content: <ProveedoresContent suppliers={suppliers} onEdit={handleOpenSupplierDialog} onDelete={handleDeleteSupplier} onRowClick={handleSupplierRowClick} onAdd={() => handleOpenSupplierDialog()}/> },
+    { value: 'proveedores', label: 'Proveedores', content: <ProveedoresTabContent suppliers={suppliers} /> },
     { value: 'cuentas_por_pagar', label: 'Cuentas por Pagar', content: <CuentasPorPagarContent accounts={payableAccounts} onRegisterPayment={handleOpenPaymentDialog} /> },
   ];
   
@@ -163,12 +219,6 @@ export default function ComprasUnificadasPage() {
             categories={categories}
         />
       )}
-      <SupplierDialog
-        open={isSupplierDialogOpen}
-        onOpenChange={setIsSupplierDialogOpen}
-        supplier={editingSupplier}
-        onSave={handleSaveSupplier}
-      />
     </Suspense>
   );
 }
