@@ -1,3 +1,4 @@
+// src/app/(app)/pos/components/pos-items-table.tsx
 "use client";
 
 import * as React from "react";
@@ -31,7 +32,7 @@ export function PosItemsTable() {
   return (
     <div className="w-full overflow-x-auto rounded-lg border">
       <table className="w-full text-sm">
-        <thead className="bg-muted/40">
+        <thead className="bg-black text-white">
           <tr className="[&>th]:px-3 [&>th]:py-2 text-left">
             <th className="min-w-[220px]">Artículo</th>
             <th className="w-[220px]">Cantidad</th>
@@ -42,7 +43,7 @@ export function PosItemsTable() {
         </thead>
         <tbody>
           {fields.map((f, i) => {
-            const name  = (items[i] as any)?.itemName ?? "Artículo";
+            const name  = items[i]?.itemName ?? "Artículo";
             const sku   = (items[i] as any)?.sku;
             const unit  = Number(items[i]?.unitPrice || 0);
             const qty   = Number(items[i]?.quantity || 1);

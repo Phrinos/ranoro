@@ -117,7 +117,7 @@ export function PosForm({
                 <PosItemsTable />
 
                 <div className="flex justify-end">
-                  <Button type="button" variant="outline" onClick={onOpenAddItemDialog}>
+                  <Button type="button" variant="outline" onClick={onOpenAddItemDialog} className="bg-white hover:bg-gray-100">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Añadir Artículo/Servicio
                   </Button>
