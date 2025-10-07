@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useCallback } from "react";
@@ -27,11 +28,11 @@ import {
   Landmark,
   Download,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { calcEffectiveProfit } from "@/lib/money-helpers";
+import { exportToCsv } from "@/lib/services/export.service";
 
 interface HistorialTabContentProps {
   services: ServiceRecord[];
@@ -82,7 +83,6 @@ export default function HistorialTabContent({
   onShowTicket,
 }: HistorialTabContentProps) {
   const router = useRouter();
-  const { toast } = useToast();
 
   const historicalServices = useMemo(
     () => services.filter((s) => s.status === "Entregado" || s.status === "Cancelado"),
@@ -165,85 +165,35 @@ export default function HistorialTabContent({
   const handleEditService = (serviceId: string) => {
     router.push(`/servicios/${serviceId}`);
   };
-
+  
   const handleExport = () => {
-    const dataToExport = fullFilteredData;
-    if (dataToExport.length === 0) {
-      toast({
-        title: "No hay datos para exportar",
-        description: "Intenta cambiar los filtros para incluir más resultados.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const headers = [
-      "Folio",
-      "Fecha de Entrega",
-      "Estado",
-      "Cliente",
-      "Teléfono",
-      "Vehículo",
-      "Placa",
-      "Año",
-      "Kilometraje",
-      "Descripción",
-      "Costo Total",
-      "Ganancia Efectiva",
-      "Método de Pago",
-      "IVA",
-      "Items de Servicio",
-      "Refacciones",
+      { key: 'id', label: 'Folio' },
+      { key: 'deliveryDateTime', label: 'Fecha de Entrega' },
+      { key: 'status', label: 'Estado' },
+      { key: 'customerName', label: 'Cliente' },
+      { key: 'customerPhone', label: 'Teléfono' },
+      { key: 'vehicle.make', label: 'Marca' },
+      { key: 'vehicle.model', label: 'Modelo' },
+      { key: 'vehicleIdentifier', label: 'Placa' },
+      { key: 'mileage', label: 'Kilometraje' },
+      { key: 'description', label: 'Descripción' },
+      { key: 'totalCost', label: 'Costo Total' },
+      { key: 'serviceItems', label: 'Items de Servicio' },
+      { key: 'payments', label: 'Pagos' },
     ];
-
-    const csvRows = [headers.join(",")];
-
-    dataToExport.forEach((s) => {
-      const vehicle = vehicles.find((v) => v.id === s.vehicleId);
-      const row = [
-        s.id,
-        s.deliveryDateTime ? new Date(s.deliveryDateTime).toLocaleString() : "N/A",
-        s.status,
-        `"${s.clientName}"`,
-        s.clientPhoneNumber,
-        vehicle ? `"${vehicle.brand} ${vehicle.model}"` : "N/A",
-        s.vehicleIdentifier,
-        vehicle ? vehicle.year : "N/A",
-        s.mileage,
-        `"${s.description?.replace(/"/g, '""') || ""}"`,
-        // Exporta lo que el cliente pagó (sumando pagos si existen)
-        (Array.isArray(s.payments) && s.payments.length
-          ? s.payments.reduce((acc, p) => acc + (p.amount || 0), 0)
-          : (s as any).totalCost ?? 0),
-        calcEffectiveProfit(s),
-        // Si hubo múltiples pagos, los concatenamos
-        (Array.isArray(s.payments) && s.payments.length
-          ? s.payments.map((p) => p.method).join(" / ")
-          : (s.paymentMethod as string) || ""),
-        s.iva,
-        `"${s.serviceItems?.map((i) => i.name).join(", ") || ""}"`,
-        `"${s.supplies?.map((sup) => `${sup.name} (x${sup.quantity})`).join(", ") || ""}"`,
-      ].join(",");
-      csvRows.push(row);
-    });
-
-    const csvString = csvRows.join("\n");
-    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `historial_servicios_${new Date().toISOString().split("T")[0]}.csv`
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast({
-      title: "Exportación Exitosa",
-      description: `${dataToExport.length} registros han sido exportados a CSV.`,
+    
+    // Enrich data with nested vehicle object before exporting
+    const dataToExport = fullFilteredData.map(s => ({
+      ...s,
+      vehicle: vehicles.find(v => v.id === s.vehicleId) || null,
+      serviceProfit: calcEffectiveProfit(s)
+    }));
+    
+    exportToCsv({
+      data: dataToExport,
+      headers: headers,
+      fileName: 'historial_de_servicios'
     });
   };
 
