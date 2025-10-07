@@ -31,6 +31,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { ManualDebtEntry } from "@/types";
+import ReactCalendar from "react-calendar";
 
 const chargeSchema = z.object({
   date: z.date({ required_error: "La fecha es obligatoria." }),
@@ -62,13 +63,18 @@ export function AddManualChargeDialog({
   });
 
   const selectedDate = form.watch("date");
+  const toMidday = (d: Date) => {
+    const n = new Date(d);
+    n.setHours(12, 0, 0, 0);
+    return n;
+  };
+
 
   useEffect(() => {
     if (!open) return;
     const base = debtToEdit?.date ? new Date(debtToEdit.date) : new Date();
-    base.setHours(12, 0, 0, 0);
     form.reset({
-      date: base,
+      date: toMidday(base),
       amount: debtToEdit?.amount ?? undefined,
       note: debtToEdit?.note ?? "",
     });
@@ -115,28 +121,25 @@ export function AddManualChargeDialog({
                       </FormControl>
                     </PopoverTrigger>
             
-                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={(d) => {
-                          if (!d) return;
-                          const normalized = new Date(d);
-                          normalized.setHours(12, 0, 0, 0);
-                          form.setValue("date", normalized, {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                            shouldValidate: true,
-                          });
-                        }}
-                        initialFocus
-                        locale={es}
-                      />
-                      <div className="p-2 border-t flex justify-center">
-                        <Button type="button" size="sm" onClick={() => setIsCalendarOpen(false)}>
-                          Aceptar
-                        </Button>
-                      </div>
+                    <PopoverContent className="w-auto p-2" align="start" sideOffset={8}>
+                        <ReactCalendar
+                            value={selectedDate ?? new Date()}
+                            onChange={(val) => {
+                            const d = Array.isArray(val) ? val[0] : val; // react-calendar puede regresar Date o [Date, Date]
+                            if (!d) return;
+                            form.setValue("date", toMidday(d), { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                            }}
+                            locale="es-MX"
+                            calendarType="iso8601"
+                            selectRange={false}
+                            minDetail="month"
+                            maxDetail="month"
+                        />
+                        <div className="mt-2 pt-2 border-t flex justify-center">
+                            <Button size="sm" type="button" onClick={() => setIsCalendarOpen(false)}>
+                            Aceptar
+                            </Button>
+                        </div>
                     </PopoverContent>
                   </Popover>
                   <FormMessage />

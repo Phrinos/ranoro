@@ -18,6 +18,8 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RentalPayment } from '@/types';
+import ReactCalendar from "react-calendar";
+
 
 const paymentSchema = z.object({
   paymentDate: z.date({ required_error: "La fecha es obligatoria." }),
@@ -49,13 +51,18 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, paymentToEdi
   });
 
   const selectedPaymentDate = form.watch("paymentDate");
+  const toMidday = (d: Date) => {
+    const n = new Date(d);
+    n.setHours(12, 0, 0, 0);
+    return n;
+  };
+
 
   useEffect(() => {
     if (!open) return;
     const base = paymentToEdit?.paymentDate ? new Date(paymentToEdit.paymentDate) : new Date();
-    base.setHours(12, 0, 0, 0);
     form.reset({
-      paymentDate: base,
+      paymentDate: toMidday(base),
       amount: paymentToEdit?.amount ?? undefined,
       note: paymentToEdit?.note ?? "Abono de Renta",
       paymentMethod: paymentToEdit?.paymentMethod ?? "Efectivo",
@@ -85,7 +92,7 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, paymentToEdi
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Fecha del Pago</FormLabel>
-                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -98,25 +105,25 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, paymentToEdi
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
-                      <Calendar
-                        mode="single"
-                        selected={selectedPaymentDate}
-                        onSelect={(d) => {
+
+                    <PopoverContent className="w-auto p-2" align="start" sideOffset={8}>
+                      <ReactCalendar
+                        value={selectedPaymentDate ?? new Date()}
+                        onChange={(val) => {
+                          const d = Array.isArray(val) ? val[0] : val;
                           if (!d) return;
-                          const normalized = new Date(d);
-                          normalized.setHours(12, 0, 0, 0);
-                          form.setValue("paymentDate", normalized, {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                            shouldValidate: true,
-                          });
+                          form.setValue("paymentDate", toMidday(d), { shouldDirty: true, shouldTouch: true, shouldValidate: true });
                         }}
-                        initialFocus
-                        locale={es}
+                        locale="es-MX"
+                        calendarType="iso8601"
+                        selectRange={false}
+                        minDetail="month"
+                        maxDetail="month"
                       />
-                      <div className="p-2 border-t flex justify-center">
-                          <Button type="button" size="sm" onClick={() => setIsCalendarOpen(false)}>Aceptar</Button>
+                      <div className="mt-2 pt-2 border-t flex justify-center">
+                        <Button size="sm" type="button" onClick={() => setIsCalendarOpen(false)}>
+                          Aceptar
+                        </Button>
                       </div>
                     </PopoverContent>
                   </Popover>
