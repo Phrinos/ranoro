@@ -61,17 +61,17 @@ export function AddManualChargeDialog({
     defaultValues: { date: new Date(), amount: 0, note: "" },
   });
 
+  const selectedDate = form.watch("date");
+
   useEffect(() => {
     if (!open) return;
-    if (debtToEdit) {
-      form.reset({
-        date: new Date(debtToEdit.date),
-        amount: debtToEdit.amount,
-        note: debtToEdit.note,
-      });
-    } else {
-      form.reset({ date: new Date(), amount: undefined as any, note: "" });
-    }
+    const base = debtToEdit?.date ? new Date(debtToEdit.date) : new Date();
+    base.setHours(12, 0, 0, 0);
+    form.reset({
+      date: base,
+      amount: debtToEdit?.amount ?? undefined,
+      note: debtToEdit?.note ?? "",
+    });
   }, [open, debtToEdit, form]);
 
   const handleFormSubmit = async (values: ManualChargeFormValues) => {
@@ -105,29 +105,23 @@ export function AddManualChargeDialog({
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
-                          variant="outline"
-                          className={cn(
-                            "pl-3 text-left font-normal bg-white",
-                            !field.value && "text-muted-foreground"
-                          )}
                           type="button"
+                          variant="outline"
+                          className={cn("pl-3 text-left font-normal bg-white", !selectedDate && "text-muted-foreground")}
                         >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: es })
-                          ) : (
-                            <span>Seleccionar fecha</span>
-                          )}
+                          {selectedDate ? format(selectedDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
+            
                     <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
                       <Calendar
                         mode="single"
-                        selected={field.value}
+                        selected={selectedDate}
                         onSelect={(d) => {
                           if (!d) return;
-                          // Normaliza a medio día para evitar desfase de zona horaria
+                          // Normaliza a mediodía para evitar brincos de día por huso horario
                           const normalized = new Date(d);
                           normalized.setHours(12, 0, 0, 0);
                           form.setValue("date", normalized, {
@@ -135,12 +129,14 @@ export function AddManualChargeDialog({
                             shouldTouch: true,
                             shouldValidate: true,
                           });
+                          // Si quieres cerrar al seleccionar, descomenta:
+                          // setIsCalendarOpen(false);
                         }}
                         initialFocus
                         locale={es}
                       />
                       <div className="p-2 border-t flex justify-center">
-                        <Button size="sm" type="button" onClick={() => setIsCalendarOpen(false)}>
+                        <Button type="button" size="sm" onClick={() => setIsCalendarOpen(false)}>
                           Aceptar
                         </Button>
                       </div>

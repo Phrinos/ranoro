@@ -48,24 +48,18 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, paymentToEdi
     },
   });
 
+  const selectedPaymentDate = form.watch("paymentDate");
+
   useEffect(() => {
-    if (open) {
-      if (paymentToEdit) {
-        form.reset({
-          paymentDate: new Date(paymentToEdit.paymentDate),
-          amount: paymentToEdit.amount,
-          note: paymentToEdit.note || 'Abono de Renta',
-          paymentMethod: paymentToEdit.paymentMethod || 'Efectivo',
-        });
-      } else {
-        form.reset({
-          paymentDate: new Date(),
-          amount: undefined,
-          note: 'Abono de Renta',
-          paymentMethod: 'Efectivo',
-        });
-      }
-    }
+    if (!open) return;
+    const base = paymentToEdit?.paymentDate ? new Date(paymentToEdit.paymentDate) : new Date();
+    base.setHours(12, 0, 0, 0);
+    form.reset({
+      paymentDate: base,
+      amount: paymentToEdit?.amount ?? undefined,
+      note: paymentToEdit?.note ?? "Abono de Renta",
+      paymentMethod: paymentToEdit?.paymentMethod ?? "Efectivo",
+    });
   }, [open, paymentToEdit, form]);
 
   const handleFormSubmit = async (values: PaymentFormValues) => {
@@ -85,28 +79,51 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, paymentToEdi
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-6">
-            <FormField control={form.control} name="paymentDate" render={({ field }) => (
-              <FormItem className="flex flex-col"><FormLabel>Fecha del Pago</FormLabel>
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}>
-                      {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button></FormControl></PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      initialFocus
-                      locale={es}
-                    />
-                    <div className="p-2 border-t flex justify-center">
-                        <Button size="sm" onClick={() => setIsCalendarOpen(false)}>Aceptar</Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              <FormMessage /></FormItem>
-            )}/>
+            <FormField
+              control={form.control}
+              name="paymentDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Fecha del Pago</FormLabel>
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={cn("pl-3 text-left font-normal bg-white", !selectedPaymentDate && "text-muted-foreground")}
+                        >
+                          {selectedPaymentDate ? format(selectedPaymentDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
+                      <Calendar
+                        mode="single"
+                        selected={selectedPaymentDate}
+                        onSelect={(d) => {
+                          if (!d) return;
+                          const normalized = new Date(d);
+                          normalized.setHours(12, 0, 0, 0);
+                          form.setValue("paymentDate", normalized, {
+                            shouldDirty: true,
+                            shouldTouch: true,
+                            shouldValidate: true,
+                          });
+                        }}
+                        initialFocus
+                        locale={es}
+                      />
+                      <div className="p-2 border-t flex justify-center">
+                          <Button type="button" size="sm" onClick={() => setIsCalendarOpen(false)}>Aceptar</Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField control={form.control} name="paymentMethod" render={({ field }) => (
               <FormItem><FormLabel>Método de Pago</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
@@ -116,10 +133,10 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, paymentToEdi
               <FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="amount" render={({ field }) => (
-              <FormItem><FormLabel>Monto del Pago ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Monto del Pago ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" value={field.value || ''} /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="note" render={({ field }) => (
-              <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} className="bg-white" value={field.value || ''} /></FormControl><FormMessage /></FormItem>
             )}/>
             <DialogFooter className="pt-4 px-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
