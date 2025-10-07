@@ -47,6 +47,8 @@ export default function NuevaVentaPage() {
   const [validationFolio, setValidationFolio] = useState('');
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
 
+  const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false); // Estado para el diálogo de búsqueda
+
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
     defaultValues: {
@@ -202,7 +204,7 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     setValidationFolio('');
     setIsValidationDialogOpen(true);
   };
-
+  
   const handleConfirmValidation = () => {
     if (validationIndex === null) return;
     const originalFolio = watch(`payments.${validationIndex}.folio`);
@@ -220,6 +222,8 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     }
     setIsValidationDialogOpen(false);
   };
+
+  const handleOpenAddItemDialog = () => setIsAddItemDialogOpen(true);
 
 
   if (isLoading) {
@@ -246,6 +250,7 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           onInventoryItemCreated={handleNewInventoryItemCreated}
           onOpenValidateDialog={handleOpenValidateDialog}
           validatedFolios={validatedFolios}
+          onOpenAddItemDialog={handleOpenAddItemDialog}
         />
       </FormProvider>
 
