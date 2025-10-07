@@ -2,8 +2,9 @@
 // src/app/(app)/inventario/page.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   PlusCircle,
@@ -126,13 +127,13 @@ const DashboardCards = ({
 
       <div className="lg:col-span-2 xl:col-span-2 flex flex-col sm:flex-row gap-2">
         <Button
-          type="button"
-          variant="outline"
-          onClick={onNewItemClick}
-          className="w-full flex-1 bg-white border-2 border-red-500 text-black font-bold hover:bg-red-50 focus-visible:ring-red-500"
+            type="button"
+            variant="outline"
+            onClick={onNewItemClick}
+            className="w-full flex-1 bg-white border-2 border-red-500 text-black font-bold hover:bg-red-50 focus-visible:ring-red-500"
         >
-          <PlusCircle className="mr-2 h-5 w-5 text-red-500" />
-          Registrar Ítem
+            <PlusCircle className="mr-2 h-5 w-5 text-red-500" />
+            Registrar Ítem
         </Button>
 
         {/* Botón “Registrar Compra” con estilos solicitados */}
@@ -372,7 +373,7 @@ const CategoriasContent = ({
     (s ?? "")
       .toLowerCase()
       .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, ""); // ✅ regex corregido
+      .replace(/\p{Diacritic}/gu, "");
 
   const itemsPerCategory = useMemo(() => {
     return categories.reduce((acc, category) => {
@@ -446,7 +447,7 @@ const CategoriasContent = ({
         </Button>
       </div>
 
-      {/* Lista móvil (sm:hidden) */}
+      {/* Lista móvil */}
       <div className="grid gap-2 sm:hidden">
         {sortedCategories.map((cat) => (
           <div
@@ -494,7 +495,7 @@ const CategoriasContent = ({
         )}
       </div>
 
-      {/* Tabla para sm+ */}
+      {/* Tabla sm+ */}
       <Card className="hidden sm:block">
         <CardContent className="pt-6">
           <div className="w-full overflow-x-auto rounded-md border">
@@ -611,7 +612,6 @@ const CategoriasContent = ({
 export default function InventarioPage() {
   const { toast } = useToast();
 
-  // ✅ sin useSearchParams (evitamos combinaciones raras con Suspense/Turbopack)
   const [activeTab, setActiveTab] = useState<"productos" | "categorias">(() => {
     if (typeof window !== "undefined") {
       const u = new URL(window.location.href);
@@ -633,6 +633,7 @@ export default function InventarioPage() {
 
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
+  
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -679,11 +680,12 @@ export default function InventarioPage() {
       setIsPrintDialogOpen(true);
   }, []);
 
+
   const handleOpenItemDialog = useCallback(() => {
     setEditingItem(null);
     setIsItemDialogOpen(true);
   }, []);
-
+  
   const handleNewItemFromSearch = useCallback((name: string) => {
     setEditingItem({ name });
     setIsItemDialogOpen(true);
@@ -695,6 +697,7 @@ export default function InventarioPage() {
     toast({ title: "Producto Actualizado" });
     setIsItemDialogOpen(false);
   };
+  
 
   const handleSavePurchase = useCallback(
     async (data: PurchaseFormValues) => {
@@ -707,7 +710,7 @@ export default function InventarioPage() {
     },
     [toast]
   );
-
+  
   const handleSaveItem = useCallback(
     async (itemData: InventoryItemFormValues) => {
       await inventoryService.addItem(itemData);
@@ -719,7 +722,7 @@ export default function InventarioPage() {
     },
     [toast]
   );
-
+  
   const handleInventoryItemCreatedFromPurchase = useCallback(
     async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
       const newItem = await inventoryService.addItem(formData);
@@ -731,7 +734,7 @@ export default function InventarioPage() {
     },
     [toast]
   );
-
+  
   const handleSaveCategory = useCallback(
     async (name: string, id?: string) => {
       try {
@@ -755,16 +758,17 @@ export default function InventarioPage() {
         await inventoryService.deleteCategory(id);
         toast({ title: "Categoría Eliminada" });
       } catch (error) {
-        console.error("Error deleting category:", error);
-        toast({
-          title: "Error al eliminar",
-          description: "No se pudo eliminar la categoría.",
-          variant: "destructive",
-        });
+       console.error("Error deleting category:", error);
+       toast({
+         title: "Error al eliminar",
+         description: "No se pudo eliminar la categoría.",
+         variant: "destructive",
+       });
       }
     },
     [toast]
   );
+
 
   if (isLoading) {
     return (
@@ -793,7 +797,7 @@ export default function InventarioPage() {
         onNewItemClick={handleOpenItemDialog}
         onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
       />
-
+      
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full mt-6">
         <div className="w-full">
           <div className="flex flex-wrap w-full gap-2 sm:gap-4">
@@ -814,26 +818,29 @@ export default function InventarioPage() {
             ))}
           </div>
         </div>
-
+        
         <TabsContent value="productos" className="mt-6">
-          <ProductosContent
-            inventoryItems={inventoryItems}
-            onPrint={handlePrint}
-            onNewItemFromSearch={handleNewItemFromSearch}
-          />
+          <Suspense fallback={<Loader2 className="animate-spin" />}>
+              <ProductosContent 
+                  inventoryItems={inventoryItems}
+                  onPrint={handlePrint}
+                  onNewItemFromSearch={handleNewItemFromSearch}
+              />
+          </Suspense>
         </TabsContent>
-
+        
         <TabsContent value="categorias" className="mt-6">
-          <CategoriasContent
-            categories={categories}
-            inventoryItems={inventoryItems}
-            onSaveCategory={handleSaveCategory}
-            onDeleteCategory={handleDeleteCategory}
-          />
+          <Suspense fallback={<Loader2 className="animate-spin" />}>
+              <CategoriasContent 
+                  categories={categories} 
+                  inventoryItems={inventoryItems} 
+                  onSaveCategory={handleSaveCategory}
+                  onDeleteCategory={handleDeleteCategory}
+              />
+          </Suspense>
         </TabsContent>
       </Tabs>
-
-      {/* Dialogs (client-only con next/dynamic) */}
+      
       {isRegisterPurchaseOpen && (
         <RegisterPurchaseDialog
           open={isRegisterPurchaseOpen}
@@ -872,4 +879,4 @@ export default function InventarioPage() {
     </>
   );
 }
-```
+
