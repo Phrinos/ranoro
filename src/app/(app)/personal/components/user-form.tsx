@@ -1,5 +1,4 @@
-
-
+// src/app/(app)/personal/components/user-form.tsx
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -149,10 +148,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                   <Calendar
                     mode="single"
                     selected={field.value}
-                    onSelect={(date) => {
-                      field.onChange(date);
-                      setIsCalendarOpen(false);
-                    }}
+                    onSelect={field.onChange}
                     disabled={(date) =>
                       date > new Date() || date < new Date("1980-01-01")
                     }
@@ -162,6 +158,9 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                     fromYear={1980}
                     toYear={new Date().getFullYear()}
                   />
+                  <div className="p-2 border-t flex justify-center">
+                    <Button size="sm" onClick={() => setIsCalendarOpen(false)}>Aceptar</Button>
+                  </div>
                 </PopoverContent>
               </Popover>
               <FormMessage />

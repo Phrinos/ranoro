@@ -63,13 +63,13 @@ export function NextServiceInfoCard({ isReadOnly, currentMileage = 0 }: NextServ
                     <Calendar
                       mode="single"
                       selected={field.value as Date | undefined}
-                      onSelect={(date) => {
-                        field.onChange(date);
-                        setIsDatePickerOpen(false);
-                      }}
+                      onSelect={field.onChange}
                       disabled={(date) => date < new Date() || isReadOnly}
                       initialFocus
                     />
+                     <div className="p-2 border-t flex justify-center">
+                        <Button size="sm" onClick={() => setIsDatePickerOpen(false)}>Aceptar</Button>
+                    </div>
                   </PopoverContent>
                 </Popover>
                 <div className="flex gap-2 mt-2">

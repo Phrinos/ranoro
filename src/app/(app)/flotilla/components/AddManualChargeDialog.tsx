@@ -124,12 +124,12 @@ export function AddManualChargeDialog({
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={(date) => {
-                          field.onChange(date);
-                          setIsCalendarOpen(false);
-                        }}
+                        onSelect={field.onChange}
                         initialFocus
                       />
+                       <div className="p-2 border-t flex justify-center">
+                          <Button size="sm" onClick={() => setIsCalendarOpen(false)}>Aceptar</Button>
+                      </div>
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
