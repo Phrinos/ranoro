@@ -146,67 +146,81 @@ export const generateDailyRentalCharges = onSchedule(
   },
   async (_context) => {
     logger.info("Starting daily rental charge generation...");
+    try {
+      const timeZone = "America/Mexico_City";
+      const now = toZonedTime(new Date(), timeZone);
+      const todayStart = startOfDay(now);
+      const todayEnd = endOfDay(now);
 
-    const timeZone = "America/Mexico_City";
-    const now = toZonedTime(new Date(), timeZone);
-    const todayStart = startOfDay(now);
-    const todayEnd = endOfDay(now);
+      const driversRef = db.collection("drivers");
+      const activeDriversQuery = driversRef
+        .where("isArchived", "==", false)
+        .where("assignedVehicleId", "!=", null);
 
-    const driversRef = db.collection("drivers");
-    const activeDriversQuery = driversRef
-      .where("isArchived", "==", false)
-      .where("assignedVehicleId", "!=", null);
+      const activeDriversSnap = await activeDriversQuery.get();
+      if (activeDriversSnap.empty) {
+        logger.info("No active drivers with assigned vehicles found.");
+        return;
+      }
 
-    const activeDriversSnap = await activeDriversQuery.get();
-    if (activeDriversSnap.empty) {
-      logger.info("No active drivers with assigned vehicles found.");
-      return;
+      const tasks = activeDriversSnap.docs.map(async (driverDoc) => {
+        const driver = driverDoc.data();
+        logger.log(`Processing driver: ${driver.name} (ID: ${driverDoc.id})`);
+
+        if (!driver.assignedVehicleId) {
+          logger.warn(`Driver ${driver.name} has a null 'assignedVehicleId'. Skipping.`);
+          return;
+        }
+
+        const vehicleRef = db.collection("vehicles").doc(driver.assignedVehicleId);
+        const vehicleDoc = await vehicleRef.get();
+
+        if (!vehicleDoc.exists) {
+          logger.warn(
+            `Vehicle ${driver.assignedVehicleId} for driver ${driver.name} not found.`
+          );
+          return;
+        }
+
+        const vehicle = vehicleDoc.data();
+        if (!vehicle || typeof vehicle.dailyRentalCost !== 'number' || vehicle.dailyRentalCost <= 0) {
+          logger.warn(
+            `Vehicle ${driver.assignedVehicleId} for driver ${driver.name} has an invalid daily rental cost.`
+          );
+          return;
+        }
+        
+        const dailyRentalCost = vehicle.dailyRentalCost;
+
+        const chargesRef = db.collection("dailyRentalCharges");
+        const existingChargeQuery = chargesRef
+          .where("driverId", "==", driverDoc.id)
+          .where("date", ">=", Timestamp.fromDate(todayStart))
+          .where("date", "<=", Timestamp.fromDate(todayEnd));
+
+        const existingChargeSnap = await existingChargeQuery.get();
+        if (!existingChargeSnap.empty) {
+          logger.info(`Charge already exists for driver ${driver.name} for today.`);
+          return;
+        }
+
+        const newCharge = {
+          driverId: driverDoc.id,
+          vehicleId: vehicleDoc.id,
+          date: Timestamp.fromDate(now),
+          amount: dailyRentalCost,
+          vehicleLicensePlate: vehicle.licensePlate || "",
+        };
+
+        await chargesRef.add(newCharge);
+        logger.info(`Successfully created charge for driver ${driver.name} for today.`);
+      });
+
+      await Promise.all(tasks);
+      logger.info("Daily rental charge generation finished successfully.");
+    } catch (error) {
+      logger.error("Error generating daily rental charges:", error);
     }
-
-    const tasks = activeDriversSnap.docs.map(async (driverDoc) => {
-      const driver = driverDoc.data() as any;
-      if (!driver.assignedVehicleId) return;
-
-      const vehicleRef = db.collection("vehicles").doc(driver.assignedVehicleId);
-      const vehicleDoc = await vehicleRef.get();
-
-      if (!vehicleDoc.exists || !(vehicleDoc.data() as any)?.dailyRentalCost) {
-        logger.warn(
-          `Vehicle ${driver.assignedVehicleId} for driver ${driver.name} not found or has no daily rental cost.`
-        );
-        return;
-      }
-
-      const vehicle = vehicleDoc.data() as any;
-      const dailyRentalCost = vehicle?.dailyRentalCost;
-
-      const chargesRef = db.collection("dailyRentalCharges");
-
-      const existingChargeQuery = chargesRef
-        .where("driverId", "==", driverDoc.id)
-        .where("date", ">=", Timestamp.fromDate(todayStart))
-        .where("date", "<=", Timestamp.fromDate(todayEnd));
-
-      const existingChargeSnap = await existingChargeQuery.get();
-      if (!existingChargeSnap.empty) {
-        logger.info(`Charge already exists for driver ${driver.name} for today.`);
-        return;
-      }
-
-      const newCharge = {
-        driverId: driverDoc.id,
-        vehicleId: vehicleDoc.id,
-        date: Timestamp.fromDate(now),
-        amount: dailyRentalCost,
-        vehicleLicensePlate: vehicle?.licensePlate || "",
-      };
-
-      await chargesRef.add(newCharge);
-      logger.info(`Successfully created charge for driver ${driver.name} for today.`);
-    });
-
-    await Promise.all(tasks);
-    logger.info("Daily rental charge generation finished successfully.");
   }
 );
 
