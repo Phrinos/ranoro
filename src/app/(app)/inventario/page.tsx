@@ -279,7 +279,6 @@ const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDelet
 // Main Page Component
 export default function InventarioPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const tab = searchParams.get('tab');
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState(tab || 'productos');
@@ -337,14 +336,13 @@ export default function InventarioPage() {
   }, []);
 
 
-  const handleOpenItemDialog = useCallback((name?: string) => {
-    const initialData = name ? { name: capitalizeWords(name) } : null;
-    setEditingItem(initialData);
+  const handleOpenItemDialog = useCallback(() => {
+    setEditingItem(null);
     setIsItemDialogOpen(true);
   }, []);
   
   const handleNewItemFromSearch = useCallback((name: string) => {
-    handleOpenItemDialog(name);
+    handleOpenItemDialog();
   }, [handleOpenItemDialog]);
   
   const handleItemUpdated = async (data: InventoryItemFormValues) => {
@@ -413,7 +411,7 @@ export default function InventarioPage() {
         
         <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={() => handleOpenItemDialog()}
+          onNewItemClick={handleOpenItemDialog}
           onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
         
