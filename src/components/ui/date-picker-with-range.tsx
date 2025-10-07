@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -120,9 +121,8 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
 
         <DialogContent
           className={cn(
-            "p-0 bg-background border-0 sm:max-w-none max-w-none overflow-hidden sm:rounded-2xl shadow-2xl",
-            // tamaño compacto
-            "w-[min(100vw-1rem,760px)] h-[68dvh]"
+            "p-0 bg-background border-0 overflow-hidden sm:rounded-2xl shadow-2xl",
+            "w-[min(100vw-1rem,760px)]"
           )}
         >
           <DialogHeader className="sr-only">
@@ -179,7 +179,7 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
                   locale={es}
                   showOutsideDays
                   fixedWeeks
-                  numberOfMonths={isMobile ? 1 : 2}
+                  numberOfMonths={1}
                   mode="range"
                   month={month}
                   onMonthChange={setMonth}
@@ -192,23 +192,6 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
                   fromYear={2018}
                   toYear={2032}
                   className="rounded-lg border bg-white shadow-sm p-2"
-                  classNames={{
-                    months: "flex gap-4",
-                    month: "space-y-1",
-                    caption_label: "text-sm font-semibold",
-                    nav: "flex items-center",
-                    nav_button: "h-7 w-7 rounded-md hover:bg-muted",
-                    head_cell: "w-8 text-[0.70rem] font-medium text-muted-foreground",
-                    table: "w-full border-collapse",
-                    row: "w-full mt-1",
-                    cell: "p-0",
-                    day: "h-8 w-8 text-sm rounded-md aria-selected:opacity-100",
-                    day_today: "font-semibold",
-                    day_selected: "bg-red-600 text-white hover:bg-red-600",
-                    day_range_start: "bg-red-600 text-white rounded-l-md",
-                    day_range_end: "bg-red-600 text-white rounded-r-md",
-                    day_range_middle: "bg-red-100 text-red-900 hover:bg-red-100",
-                  }}
                 />
 
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
