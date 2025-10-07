@@ -5,9 +5,6 @@
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import type { InventoryItem, SaleReceipt, InventoryCategory, Supplier } from "@/types";
 import { useState, useCallback, useEffect } from "react";
-import { InventorySearchDialog } from "@/components/shared/InventorySearchDialog";
-import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
-import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { SaleSummary } from './sale-summary';
 import { PosItemsTable } from "./pos-items-table";
 import { Button } from "@/components/ui/button";
@@ -41,69 +38,13 @@ export function PosForm({
 }: POSFormProps) {
   const methods = useFormContext();
   const { control, getValues, setValue, reset } = methods;
-  const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   
-  const watchedPayments = useWatch({ control, name: 'payments' });
-  const watchedItems = useWatch({ control, name: 'items' });
-
   useEffect(() => {
     if (initialData?.id) {
       reset(initialData);
     }
     // sólo cuando cambia el ID de la venta
   }, [initialData?.id, reset]);
-
-    useEffect(() => {
-        // Lee los items actuales una sola vez
-        const items = (getValues('items') || []) as any[];
-
-        // Calcula total EXCLUYENDO la comisión
-        const baseItems = items.filter(i => i.inventoryItemId !== COMMISSION_ITEM_ID);
-        const baseTotal = baseItems.reduce(
-            (sum, i) => sum + (Number(i.totalPrice ?? i.unitPrice * i.quantity) || 0),
-            0
-        );
-
-        const hasCard = (watchedPayments ?? []).some((p: any) => p.method === 'Tarjeta');
-        const hasMSI  = (watchedPayments ?? []).some((p: any) => p.method === 'Tarjeta MSI');
-
-        let commission = 0;
-        if (hasCard) commission += baseTotal * 0.041;
-        if (hasMSI)  commission += baseTotal * 0.12;
-
-        // Redondea para evitar “flapping” por flotantes
-        commission = Math.round(commission * 100) / 100;
-
-        const idx = items.findIndex(i => i.inventoryItemId === COMMISSION_ITEM_ID);
-
-        if (commission <= 0) {
-            // Si ya no aplica comisión, elimina la línea una sola vez
-            if (idx > -1) remove(idx);
-            return;
-        }
-
-        if (idx > -1) {
-            // Ya existe: sólo actualiza si CAMBIÓ (evita loop)
-            const current = Number(items[idx]?.unitPrice || 0);
-            if (Math.abs(current - commission) < 0.01) return; // sin cambios ⇒ no setValue
-            setValue(`items.${idx}.unitPrice`, commission, { shouldDirty: true, shouldValidate: false });
-            // Si tu total de cliente NO debe incluir comisión, asegura totalPrice 0
-            const currentTotal = Number(items[idx]?.totalPrice || 0);
-            if (currentTotal !== 0) setValue(`items.${idx}.totalPrice`, 0, { shouldDirty: true, shouldValidate: false });
-        } else {
-            // No existe: agrégala una vez
-            append({
-            inventoryItemId: COMMISSION_ITEM_ID,
-            itemName: 'Comisión de Tarjeta',
-            quantity: 1,
-            unitPrice: commission, // costo interno
-            totalPrice: 0,         // no suma al total del cliente
-            isService: true,
-            });
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [watchedPayments, watchedItems, append, remove, setValue, getValues]);
-
 
   return (
     <>

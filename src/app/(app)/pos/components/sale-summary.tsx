@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,21 +22,40 @@ interface SaleSummaryProps {
 }
 
 export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSummaryProps) {
-  const { control, watch, formState } = useFormContext();
+  const { control, watch, formState, setValue } = useFormContext();
   
   const watchedItems = watch("items");
+  const watchedPayments = watch("payments");
+
+  useEffect(() => {
+    const items = (watchedItems || []) as any[];
+    const baseItems = items.filter(i => i.inventoryItemId !== COMMISSION_ITEM_ID);
+    const baseTotal = baseItems.reduce((sum, i) => sum + (Number(i.totalPrice ?? i.unitPrice * i.quantity) || 0), 0);
+    
+    const hasCard = (watchedPayments ?? []).some((p: any) => p.method === 'Tarjeta');
+    const hasMSI = (watchedPayments ?? []).some((p: any) => p.method === 'Tarjeta MSI');
+
+    let commission = 0;
+    if (hasCard) commission += baseTotal * 0.041;
+    if (hasMSI) commission += baseTotal * 0.12;
+
+    const roundedCommission = Math.round(commission * 100) / 100;
+    
+    setValue('cardCommission', roundedCommission, { shouldDirty: true });
+    
+  }, [watchedPayments, watchedItems, setValue]);
+
 
   const { subTotal, tax, total, commission } = useMemo(() => {
     const regularItems = (watchedItems || []).filter((item: any) => item.inventoryItemId !== COMMISSION_ITEM_ID);
-    const commissionItem = (watchedItems || []).find((item: any) => item.inventoryItemId === COMMISSION_ITEM_ID);
     
-    const newTotalAmount = regularItems.reduce((sum: number, item: any) => sum + item.totalPrice || 0, 0) || 0;
+    const newTotalAmount = regularItems.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0) || 0;
     const newSubTotal = newTotalAmount / (1 + IVA_RATE);
     const newTax = newTotalAmount - newSubTotal;
-    const commissionCost = commissionItem ? commissionItem.unitPrice : 0;
+    const commissionCost = watch('cardCommission') || 0;
     
     return { subTotal: newSubTotal, tax: newTax, total: newTotalAmount, commission: commissionCost };
-  }, [watchedItems]);
+  }, [watchedItems, watch]);
 
   const hasItems = watchedItems && watchedItems.some((item: any) => item.inventoryItemId !== COMMISSION_ITEM_ID);
 
