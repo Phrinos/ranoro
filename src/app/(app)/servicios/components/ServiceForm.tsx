@@ -3,7 +3,7 @@
 
 import React, { useEffect } from 'react';
 import { useFormContext, type FieldErrors } from 'react-hook-form';
-import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types';
+import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, NextServiceInfo } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ServiceItemsList } from './ServiceItemsList';
@@ -108,6 +108,7 @@ export function ServiceForm({
   const watchedStatus = watch('status');
   const selectedVehicleId = watch('vehicleId');
   const serviceItems = watch('serviceItems');
+  const nextServiceInfo = watch('nextServiceInfo');
 
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
   const currentMileage = selectedVehicle?.mileage;
@@ -197,6 +198,10 @@ export function ServiceForm({
     setIsSignatureDialogOpen(false);
   };
 
+  const handleUpdateNextService = (info: NextServiceInfo) => {
+    setValue('nextServiceInfo', info, { shouldDirty: true });
+  };
+
   return (
     <>
       <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
@@ -219,7 +224,11 @@ export function ServiceForm({
           />
 
           {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
-            <NextServiceInfoCard currentMileage={currentMileage} />
+            <NextServiceInfoCard
+              nextServiceInfo={nextServiceInfo || {}} // Pass empty object if undefined
+              onUpdate={handleUpdateNextService}
+              isSubmitting={isSubmitting}
+            />
           )}
 
           <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">

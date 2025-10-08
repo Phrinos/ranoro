@@ -1,7 +1,8 @@
+// src/app/(app)/servicios/components/NextServiceInfoCard.tsx
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,12 +19,19 @@ interface NextServiceInfoCardProps {
   nextServiceInfo: NextServiceInfo;
   onUpdate: (info: NextServiceInfo) => void;
   isSubmitting: boolean;
+  currentMileage?: number | null;
 }
 
-export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting }: NextServiceInfoCardProps) {
+export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, currentMileage }: NextServiceInfoCardProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(nextServiceInfo.date ? parseDate(nextServiceInfo.date) : undefined);
-  const [mileage, setMileage] = useState<number | ''>(nextServiceInfo.mileage || '');
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [mileage, setMileage] = useState<number | ''>('');
+
+  useEffect(() => {
+    // Sincroniza el estado local cuando las props cambian
+    setDate(nextServiceInfo?.date ? parseDate(nextServiceInfo.date) : undefined);
+    setMileage(nextServiceInfo?.mileage || '');
+  }, [nextServiceInfo]);
   
   const handleUpdate = () => {
     onUpdate({
@@ -35,6 +43,11 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting }:
   const handleSetReminder = (months: number) => {
     const newDate = addMonths(new Date(), months);
     setDate(newDate);
+  };
+  
+  const handleSetMileageReminder = (km: number) => {
+    const current = Number(currentMileage || 0);
+    setMileage(current + km);
   };
 
   return (
@@ -60,26 +73,36 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting }:
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
-                  value={date}
-                  onChange={(d) => {
-                    if (d && !Array.isArray(d)) setDate(d);
+                  mode="single"
+                  selected={date}
+                  onSelect={(d) => {
+                    setDate(d);
                     setIsCalendarOpen(false);
                   }}
-                  minDate={new Date()}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
                 />
               </PopoverContent>
             </Popover>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => handleSetReminder(3)}>+3m</Button>
               <Button size="sm" variant="outline" onClick={() => handleSetReminder(6)}>+6m</Button>
+              <Button size="sm" variant="outline" onClick={() => handleSetReminder(12)}>+12m</Button>
             </div>
           </div>
-          <Input
-            type="number"
-            placeholder="Kilometraje"
-            value={mileage}
-            onChange={(e) => setMileage(Number(e.target.value))}
-          />
+          <div className="space-y-2">
+            <Input
+              type="number"
+              placeholder="Kilometraje"
+              value={mileage}
+              onChange={(e) => setMileage(Number(e.target.value))}
+            />
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => handleSetMileageReminder(5000)}>+5k</Button>
+              <Button size="sm" variant="outline" onClick={() => handleSetMileageReminder(7500)}>+7.5k</Button>
+              <Button size="sm" variant="outline" onClick={() => handleSetMileageReminder(10000)}>+10k</Button>
+            </div>
+          </div>
         </div>
         <Button onClick={handleUpdate} disabled={isSubmitting} className="w-full">
           {isSubmitting ? 'Guardando...' : 'Guardar Próximo Servicio'}
