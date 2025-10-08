@@ -306,7 +306,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </Tabs>
         </div>
 
-        <SheetFooter workshopInfo={effectiveWorkshopInfo} advisorName={service.serviceAdvisorName} advisorSignature={service.serviceAdvisorSignatureDataUrl}/>
+        <SheetFooter 
+          workshopInfo={effectiveWorkshopInfo} 
+          advisorName={service.serviceAdvisorName} 
+          advisorSignature={service.serviceAdvisorSignatureDataUrl}
+        />
       </div>
     );
   }
@@ -514,6 +518,3 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
         </Card>
     );
 }
-
-
-    
