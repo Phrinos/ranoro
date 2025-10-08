@@ -108,13 +108,14 @@ export function VehicleSelectionCard({
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="outline" size="sm" onClick={handleEditVehicle}>
+                    <Button variant="outline" size="sm" onClick={handleEditVehicle} className="bg-white">
                       <Edit className="mr-2 h-4 w-4" /> Editar
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setIsSelectionDialogOpen(true)}
+                      className="bg-white"
                     >
                       Cambiar
                     </Button>
