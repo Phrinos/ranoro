@@ -3,7 +3,16 @@
 
 import React, { useEffect } from 'react';
 import { useFormContext, type FieldErrors } from 'react-hook-form';
-import type { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, NextServiceInfo } from '@/types';
+import type {
+  ServiceRecord,
+  Vehicle,
+  User,
+  InventoryItem,
+  ServiceTypeRecord,
+  InventoryCategory,
+  Supplier,
+  NextServiceInfo
+} from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { ServiceItemsList } from './ServiceItemsList';
@@ -20,13 +29,13 @@ import { useToast } from '@/hooks/use-toast';
 import type { ServiceFormValues } from '@/schemas/service-form';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 
-// --- Utils ---
+// -------------------- Utils --------------------
 const getErrorMessages = (errors: FieldErrors<ServiceFormValues>): string => {
   const messages: string[] = [];
   const parseErrors = (errorObj: any, prefix = '') => {
     for (const key in errorObj) {
       const fullKey = prefix ? `${prefix}.${key}` : key;
-      const error = errorObj[key];
+      const error = (errorObj as any)[key];
       if (error && error.message) messages.push(`${fullKey}: ${error.message}`);
       else if (typeof error === 'object' && error !== null) parseErrors(error, fullKey);
     }
@@ -41,6 +50,14 @@ const normalizeText = (text: string | null | undefined): string => {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 };
 
+// Números robustos ($, comas, etc.)
+const toNumber = (v: any) =>
+  typeof v === 'number'
+    ? (Number.isFinite(v) ? v : 0)
+    : typeof v === 'string'
+      ? (Number(v.replace(/[^\d.-]/g, '')) || 0)
+      : 0;
+
 // --- Normalización de STATUS ---
 type CanonStatus = 'Cotizacion' | 'En Taller' | 'Agendado' | 'Entregado' | 'Cancelado';
 function canonicalStatus(input?: string | null): CanonStatus | null {
@@ -54,7 +71,7 @@ function canonicalStatus(input?: string | null): CanonStatus | null {
   return null;
 }
 
-// --- Componente Principal ---
+// -------------------- Componente Principal --------------------
 export function ServiceForm({
   initialData, vehicles, users, inventoryItems, serviceTypes, categories, suppliers, serviceHistory,
   onSave, onSaveSuccess, onComplete, onVehicleCreated, onCancel, mode, activeTab, onTabChange,
@@ -70,7 +87,7 @@ export function ServiceForm({
   serviceHistory: ServiceRecord[];
   onSave: (values: ServiceFormValues) => Promise<ServiceRecord | void>;
   onSaveSuccess?: (saved: ServiceRecord) => void;
-  onComplete?: (values: ServiceFormValues) => void;
+  onComplete?: (values: ServiceFormValues) => void; // abre PaymentDetailsDialog en el contenedor
   onVehicleCreated?: (data: VehicleFormValues) => Promise<Vehicle>;
   onCancel: () => void;
   mode: 'quote' | 'service';
@@ -90,7 +107,7 @@ export function ServiceForm({
     const techniciansList: User[] = [];
     const safeUsers = Array.isArray(users) ? users : [];
     for (const user of safeUsers) {
-      // @ts-ignore
+      // @ts-ignore (algunos modelos pueden traer flags)
       if (user?.isArchived) continue;
       // @ts-ignore
       const userFunctions = Array.isArray(user?.functions) ? user.functions : [];
@@ -102,8 +119,16 @@ export function ServiceForm({
     return { advisors: [...new Set(advisorsList)], technicians: [...new Set(techniciansList)] };
   }, [users]);
 
+  // RHF context del formulario padre
   const methods = useFormContext<ServiceFormValues>();
-  const { handleSubmit, getValues, setValue, formState: { isSubmitting, touchedFields }, watch, trigger } = methods;
+  const {
+    handleSubmit,
+    getValues,
+    setValue,
+    formState: { isSubmitting, touchedFields },
+    watch,
+    trigger,
+  } = methods;
 
   const watchedStatus = watch('status');
   const selectedVehicleId = watch('vehicleId');
@@ -113,27 +138,30 @@ export function ServiceForm({
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
   const currentMileage = selectedVehicle?.mileage;
 
+  // --- Total del servicio (precio x cantidad - descuento) ---
   const totalCost = React.useMemo(() => {
-    return (serviceItems || []).reduce((sum, item) => sum + (Number(item.sellingPrice) || 0), 0);
+    return (serviceItems || []).reduce((sum, item: any) => {
+      const qty = toNumber(item?.quantity ?? 1);
+      const price = toNumber(item?.sellingPrice);
+      const discount = toNumber(item?.discount);
+      const line = Math.max(price * (qty || 1) - discount, 0);
+      return sum + line;
+    }, 0);
   }, [serviceItems]);
-  
+
   useEffect(() => {
-    // Sincroniza el total a nivel de documento para guardarlo/compartirlo
+    // Sincroniza el total a nivel documento
     setValue("total", totalCost, { shouldDirty: true, shouldValidate: false });
-    // Si en otros lados leen "Total" (mayúscula), mantenlo también:
+    // Compatibilidad si en otra parte leen "Total"
     // @ts-ignore
     setValue("Total", totalCost as any, { shouldDirty: true, shouldValidate: false });
   }, [totalCost, setValue]);
 
-
-  // 1) Asegura valor por defecto y normaliza status al montar/cambiar modo/initialData
+  // 1) Normaliza status al montar/cambiar modo/registro
   useEffect(() => {
     const current = getValues('status') as string | undefined;
     let next: CanonStatus | null = canonicalStatus(current);
-
-    if (!next) {
-      next = mode === 'quote' ? 'Cotizacion' : 'En Taller';
-    }
+    if (!next) next = mode === 'quote' ? 'Cotizacion' : 'En Taller';
 
     if (current !== next) {
       setValue('status', next as any, { shouldDirty: !current, shouldValidate: true });
@@ -141,11 +169,10 @@ export function ServiceForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, initialData?.id]);
 
-  // 2) Normaliza automáticamente cualquier cambio del usuario y sella fechas
+  // 2) Reacciona a cambios de status y sella fechas como Date (Firestore Timestamp limpio)
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === 'status') {
-        const nowIso = new Date().toISOString();
         const canon = canonicalStatus(value.status) || (mode === 'quote' ? 'Cotizacion' : 'En Taller');
 
         if (value.status !== canon) {
@@ -153,16 +180,17 @@ export function ServiceForm({
         }
 
         if (canon === 'En Taller' && !getValues('receptionDateTime')) {
-          setValue('receptionDateTime', nowIso, { shouldDirty: true, shouldValidate: true });
+          setValue('receptionDateTime', new Date() as any, { shouldDirty: true, shouldValidate: true });
         }
         if (canon === 'Entregado' && !getValues('deliveryDateTime')) {
-          setValue('deliveryDateTime', nowIso, { shouldDirty: true, shouldValidate: true });
+          setValue('deliveryDateTime', new Date() as any, { shouldDirty: true, shouldValidate: true });
         }
       }
     });
     return () => subscription.unsubscribe();
   }, [watch, setValue, getValues, mode]);
 
+  // --- Handlers ---
   const handleVehicleSelection = (vehicle: Vehicle | null) => {
     setValue('vehicleId', vehicle?.id || '', { shouldDirty: true });
     setValue('customerName', vehicle?.ownerName || '', { shouldDirty: true });
@@ -202,6 +230,7 @@ export function ServiceForm({
     setValue('nextServiceInfo', info, { shouldDirty: true });
   };
 
+  // -------------------- Render --------------------
   return (
     <>
       <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
@@ -225,7 +254,7 @@ export function ServiceForm({
 
           {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
             <NextServiceInfoCard
-              nextServiceInfo={nextServiceInfo || {}} // Pass empty object if undefined
+              nextServiceInfo={nextServiceInfo || {}}
               onUpdate={handleUpdateNextService}
               isSubmitting={isSubmitting}
             />
@@ -251,7 +280,7 @@ export function ServiceForm({
                     mode={mode}
                     onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
                     handleEnhanceText={() => {}}
-                    isEnhancingText={null}
+                    isEnhancingText={false}
                   />
                 </CardContent>
               </Card>
@@ -272,13 +301,13 @@ export function ServiceForm({
                 part="reception"
                 onOpenSignature={handleOpenSignatureDialog}
                 handleEnhanceText={() => {}}
-                isEnhancingText={null}
+                isEnhancingText={false}
               />
               <ReceptionAndDelivery
                 part="delivery"
                 onOpenSignature={handleOpenSignatureDialog}
                 handleEnhanceText={() => {}}
-                isEnhancingText={null}
+                isEnhancingText={false}
               />
             </TabsContent>
 

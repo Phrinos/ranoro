@@ -4,19 +4,15 @@ import {
   onSnapshot,
   doc,
   getDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
   writeBatch,
   query,
   where,
   getDocs,
   orderBy,
   serverTimestamp,
-  setDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, User } from '@/types';
+import type { ServiceRecord, User } from '@/types';
 import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
@@ -24,20 +20,31 @@ import { adminService } from './admin.service';
 // ---------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------
-const toNumber = (v: any) =>
+const toNumber = (v: any): number =>
   typeof v === 'number'
-    ? Number.isFinite(v) ? v : 0
+    ? (Number.isFinite(v) ? v : 0)
     : typeof v === 'string'
       ? (Number(v.replace(/[^\d.-]/g, '')) || 0)
       : 0;
 
 const pickTotal = (o: any): number => {
   if (!o) return 0;
-  if (typeof o.total === 'number') return toNumber(o.total);
-  if (typeof o.Total === 'number') return toNumber(o.Total);
-  if (typeof o.totalCost === 'number') return toNumber(o.totalCost);
+  const candidates = [o.total, o.Total, o.totalCost, o.subtotal, o.grandTotal];
+  for (const c of candidates) {
+    const n = toNumber(c);
+    if (n > 0) return n;
+  }
   return 0;
 };
+
+const normalizePayments = (arr: any[] = []) =>
+  arr
+    .filter((p) => p && p.amount !== undefined)
+    .map((p) => ({
+      ...p,
+      amount: toNumber(p.amount),
+      date: p.date ? new Date(p.date) : new Date(),
+    }));
 
 const buildVehicleIdentifier = (v: any | null | undefined) => {
   if (!v) return undefined;
@@ -49,8 +56,9 @@ const buildVehicleIdentifier = (v: any | null | undefined) => {
 };
 
 /**
- * Mezcla datos de vehículo/cliente/asesor dentro del objeto de servicio.
- * ESTA VERSIÓN SOBREESCRIBE para asegurar consistencia.
+ * Mezcla datos de vehículo/cliente/asesor/total dentro del objeto de servicio.
+ * - Si trae vehicle completo lo usa; si no, intenta resolver por vehicleId.
+ * - Sobrescribe nombre de asesor desde adminService.
  */
 async function denormalizeService(base: any): Promise<any> {
   const serviceData = { ...base };
@@ -59,8 +67,12 @@ async function denormalizeService(base: any): Promise<any> {
   let vehicle = serviceData.vehicle || null;
   if (!vehicle && serviceData.vehicleId) {
     try {
-      const vehicles = await inventoryService.onVehiclesUpdatePromise();
-      vehicle = vehicles.find((v: any) => v.id === serviceData.vehicleId) || null;
+      if ((inventoryService as any).getVehicleById) {
+        vehicle = await (inventoryService as any).getVehicleById(serviceData.vehicleId);
+      } else {
+        const vehicles = await inventoryService.onVehiclesUpdatePromise();
+        vehicle = vehicles.find((v: any) => v.id === serviceData.vehicleId) || null;
+      }
     } catch {
       /* noop */
     }
@@ -69,27 +81,33 @@ async function denormalizeService(base: any): Promise<any> {
     serviceData.vehicle = vehicle;
     serviceData.vehicleId = vehicle.id;
     serviceData.vehicleIdentifier = buildVehicleIdentifier(vehicle);
-    serviceData.customerName = vehicle.ownerName || vehicle.owner || '';
-    serviceData.customerPhone = vehicle.ownerPhone || vehicle.phone || null;
+    serviceData.customerName = vehicle.ownerName || vehicle.owner || serviceData.customerName || '';
+    serviceData.customerPhone = vehicle.ownerPhone || vehicle.phone || serviceData.customerPhone || null;
   }
 
-  // Asesor (SOBREESCRIBE para asegurar el nombre correcto)
+  // Asesor
   if (serviceData.serviceAdvisorId) {
     try {
       const users = await adminService.onUsersUpdatePromise();
       const advisor = users.find((u: any) => u.id === serviceData.serviceAdvisorId);
       if (advisor) {
-        serviceData.serviceAdvisorName = advisor.name; // Siempre usa el nombre de la DB
-        serviceData.serviceAdvisorSignatureDataUrl = advisor.signatureDataUrl || null;
+        serviceData.serviceAdvisorName = advisor.name || serviceData.serviceAdvisorName || null;
+        serviceData.serviceAdvisorSignatureDataUrl = advisor.signatureDataUrl || serviceData.serviceAdvisorSignatureDataUrl || null;
       }
     } catch {
       /* noop */
     }
   }
 
-  // Total
+  // Económicos
   serviceData.total = pickTotal(serviceData);
   serviceData.totalCost = pickTotal(serviceData);
+  if (Array.isArray(serviceData.payments)) {
+    serviceData.payments = normalizePayments(serviceData.payments);
+  }
+
+  // Items siempre array
+  if (!Array.isArray(serviceData.serviceItems)) serviceData.serviceItems = [];
 
   return serviceData;
 }
@@ -97,8 +115,8 @@ async function denormalizeService(base: any): Promise<any> {
 function buildPublicData(svc: any) {
   return {
     // Estado / folio
-    folio: svc.folio,
-    status: svc.status,
+    folio: svc.folio || null,
+    status: svc.status || null,
     subStatus: svc.subStatus ?? null,
 
     // Cliente / asesor
@@ -121,7 +139,7 @@ function buildPublicData(svc: any) {
     // Económicos
     serviceItems: Array.isArray(svc.serviceItems) ? svc.serviceItems : [],
     total: toNumber(svc.total),
-    payments: Array.isArray(svc.payments) ? svc.payments : [],
+    payments: Array.isArray(svc.payments) ? normalizePayments(svc.payments) : [],
 
     // Otros
     customerComplaints: svc.customerComplaints || null,
@@ -153,11 +171,9 @@ const onServicesByStatusUpdate = (
   callback: (services: ServiceRecord[]) => void
 ): (() => void) => {
   if (!db || statuses.length === 0) return () => {};
-
   if (statuses.length > 10) {
     console.warn("Firestore 'in' query has a limit of 10 items.");
   }
-
   const qy = query(collection(db, 'serviceRecords'), where('status', 'in', statuses));
   return onSnapshot(qy, (snapshot) => {
     callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceRecord)));
@@ -198,8 +214,8 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
   const isNew = !data.id;
   const serviceId = isNew ? doc(collection(db, 'serviceRecords')).id : (data.id as string);
 
-  // Public ID (si no existe, créalo)
-  let publicId = data.publicId;
+  // Public ID (si no existe, créalo; conserva el esquema previo)
+  let publicId = (data as any).publicId;
   if (!publicId) {
     publicId = doc(collection(db, 'publicServices')).id.substring(0, 15);
   }
@@ -211,10 +227,10 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
     publicId,
     updatedAt: serverTimestamp(),
     createdAt: (data as any).createdAt || serverTimestamp(),
-    serviceDate: data.serviceDate || new Date(),
+    serviceDate: (data as any).serviceDate || new Date(),
   };
 
-  // Denormaliza (vehículo/cliente/asesor/total)
+  // Denormaliza (vehículo/cliente/asesor/total/pagos)
   serviceData = await denormalizeService(serviceData);
 
   const serviceRef = doc(db, 'serviceRecords', serviceId);
@@ -236,8 +252,18 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
   return { ...saved.data(), id: serviceId } as ServiceRecord;
 };
 
+/**
+ * Completa un servicio: calcula comisiones (con quantity), marca Entregado, guarda pagos,
+ * sincroniza documento público y descuenta insumos usados.
+ * Debe ejecutarse dentro de un batch proporcionado por el caller.
+ */
 const completeService = async (service: ServiceRecord, paymentDetails: any, batch: any): Promise<void> => {
   if (!db) throw new Error('Database not initialized.');
+  if (!service?.id) throw new Error('Invalid service.');
+
+  // Evita doble completado
+  if ((service as any).status === 'Entregado') return;
+
   const serviceRef = doc(db, 'serviceRecords', service.id);
 
   // Comisiones
@@ -248,27 +274,28 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
   let serviceAdvisorCommission = 0;
 
   const serviceItemsWithCommission =
-    service.serviceItems?.map((item) => {
+    (service.serviceItems || []).map((item: any) => {
       let commissionForItem = 0;
+      const qty = toNumber(item?.quantity ?? 1);
+      const lineTotal = toNumber(item?.sellingPrice) * (qty || 1);
+
       if (item.technicianId) {
         const technician = usersMap.get(item.technicianId);
-        if (technician && typeof technician.commissionRate === 'number' && technician.commissionRate > 0) {
-          commissionForItem = (item.sellingPrice || 0) * (technician.commissionRate / 100);
+        if (technician && typeof (technician as any).commissionRate === 'number' && (technician as any).commissionRate > 0) {
+          commissionForItem = lineTotal * ((technician as any).commissionRate / 100);
           totalTechnicianCommission += commissionForItem;
         }
       }
       return { ...item, technicianCommission: commissionForItem };
-    }) || [];
+    });
 
-  const finalTotalFromPayments = (paymentDetails.payments || []).reduce(
-    (sum: number, p: any) => sum + (toNumber(p.amount) || 0),
-    0
-  );
+  const normalizedPayments = normalizePayments(paymentDetails?.payments || []);
+  const finalTotalFromPayments = normalizedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
   if (service.serviceAdvisorId) {
     const advisor = usersMap.get(service.serviceAdvisorId);
-    if (advisor && typeof advisor.commissionRate === 'number' && advisor.commissionRate > 0) {
-      serviceAdvisorCommission = finalTotalFromPayments * (advisor.commissionRate / 100);
+    if (advisor && typeof (advisor as any).commissionRate === 'number' && (advisor as any).commissionRate > 0) {
+      serviceAdvisorCommission = finalTotalFromPayments * ((advisor as any).commissionRate / 100);
     }
   }
 
@@ -280,12 +307,12 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
     serviceAdvisorCommission,
     status: 'Entregado',
     deliveryDateTime: new Date(),
-    payments: paymentDetails.payments,
-    ...(paymentDetails.nextServiceInfo && { nextServiceInfo: paymentDetails.nextServiceInfo }),
+    payments: normalizedPayments,
+    ...(paymentDetails?.nextServiceInfo && { nextServiceInfo: paymentDetails.nextServiceInfo }),
     updatedAt: serverTimestamp(),
   };
 
-  // Denormaliza por si hay que escribir público con datos completos
+  // Denormaliza para escribir público con datos completos
   const denorm = await denormalizeService(updatedServiceData);
 
   batch.update(serviceRef, cleanObjectForFirestore(denorm));
@@ -297,11 +324,11 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
     batch.set(publicDocRef, cleanObjectForFirestore(publicPatch), { merge: true });
   }
 
-  // Inventario (insumos consumidos)
+  // Inventario (insumos consumidos por suppliesUsed)
   if (service.serviceItems && service.serviceItems.length > 0) {
     const suppliesToSubtract = service.serviceItems
-      .flatMap((item) => item.suppliesUsed?.map((supply) => ({ id: supply.supplyId, quantity: supply.quantity })) || [])
-      .filter((supply) => supply.id && supply.quantity > 0);
+      .flatMap((item: any) => item?.suppliesUsed?.map((supply: any) => ({ id: supply?.supplyId, quantity: toNumber(supply?.quantity) })) || [])
+      .filter((s: any) => s.id && s.quantity > 0);
 
     if (suppliesToSubtract.length > 0) {
       await inventoryService.updateInventoryStock(batch, suppliesToSubtract, 'subtract');
@@ -323,36 +350,38 @@ const cancelService = async (id: string, reason: string): Promise<void> => {
     if (service.status === 'Agendado') {
       updatedData = {
         status: 'Cotizacion',
-        subStatus: null as any,
-        appointmentDateTime: null as any,
-        cancellationReason: reason,
+        // @ts-expect-error: explicit nulls for Firestore
+        subStatus: null,
+        // @ts-expect-error
+        appointmentDateTime: null,
+        cancellationReason: reason as any,
         updatedAt: serverTimestamp(),
       };
     } else {
       updatedData = {
         status: 'Cancelado',
-        cancellationReason: reason,
+        cancellationReason: reason as any,
         updatedAt: serverTimestamp(),
       };
 
-      // Si se manejan insumos en 'items' (compatibilidad con versiones previas)
+      // Compatibilidad con versiones previas (devolver items al inventario si existían en "items")
       const itemsAny: any = (service as any).items;
       if (itemsAny && Array.isArray(itemsAny) && itemsAny.length > 0) {
         await inventoryService.updateInventoryStock(batch, itemsAny, 'add');
       }
     }
 
-    batch.update(serviceRef, updatedData);
+    batch.update(serviceRef, cleanObjectForFirestore(updatedData));
 
     // Doc público
-    if (service.publicId) {
-      const publicDocRef = doc(db, 'publicServices', service.publicId);
+    if ((service as any).publicId) {
+      const publicDocRef = doc(db, 'publicServices', (service as any).publicId);
       batch.set(
         publicDocRef,
         cleanObjectForFirestore({
-          status: updatedData.status,
+          status: (updatedData as any).status,
           subStatus: (updatedData as any).subStatus ?? null,
-          appointmentDateTime: (updatedData as any).appointmentDateTime ?? service.appointmentDateTime ?? null,
+          appointmentDateTime: (updatedData as any).appointmentDateTime ?? (service as any).appointmentDateTime ?? null,
           updatedAt: serverTimestamp(),
         }),
         { merge: true }
@@ -377,8 +406,8 @@ const deleteService = async (id: string): Promise<void> => {
     batch.delete(serviceRef);
 
     // Eliminar público
-    if (service.publicId) {
-      const publicDocRef = doc(db, 'publicServices', service.publicId);
+    if ((service as any).publicId) {
+      const publicDocRef = doc(db, 'publicServices', (service as any).publicId);
       batch.delete(publicDocRef);
     }
 
@@ -406,13 +435,32 @@ const updateService = async (id: string, data: Partial<ServiceRecord>): Promise<
   const batch = writeBatch(db);
   batch.set(serviceRef, cleanObjectForFirestore(merged), { merge: true });
 
-  if (merged.publicId) {
-    const publicRef = doc(db, 'publicServices', merged.publicId);
+  if ((merged as any).publicId) {
+    const publicRef = doc(db, 'publicServices', (merged as any).publicId);
     const publicData = buildPublicData(merged);
     batch.set(publicRef, cleanObjectForFirestore(publicData), { merge: true });
   }
 
   await batch.commit();
+};
+
+/**
+ * Wrapper atómico para el flujo de “Entregar y Cobrar”.
+ * Crea el batch, llama completeService y devuelve el documento actualizado.
+ */
+const chargeAndDeliverService = async (serviceId: string, paymentDetails: any): Promise<ServiceRecord> => {
+  if (!db) throw new Error('Database not initialized.');
+  const serviceRef = doc(db, 'serviceRecords', serviceId);
+  const snap = await getDoc(serviceRef);
+  if (!snap.exists()) throw new Error('Service not found.');
+
+  const service = { id: serviceId, ...snap.data() } as ServiceRecord;
+  const batch = writeBatch(db);
+  await completeService(service, paymentDetails, batch);
+  await batch.commit();
+
+  const updated = await getDoc(serviceRef);
+  return { id: serviceId, ...(updated.data() as any) } as ServiceRecord;
 };
 
 // ---------------------------------------------------------
@@ -429,4 +477,5 @@ export const serviceService = {
   cancelService,
   deleteService,
   updateService,
+  chargeAndDeliverService,
 };

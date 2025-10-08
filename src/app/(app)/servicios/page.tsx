@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/page.tsx
 "use client";
 import React, { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
