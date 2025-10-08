@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceItemCard.tsx
 "use client";
 
@@ -150,82 +149,87 @@ export function ServiceItemCard({
 
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Nombre del servicio */}
-          <FormField
-            control={control}
-            name={`serviceItems.${serviceIndex}.name`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>
-                  Nombre del Servicio
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Afinación Mayor"
-                    {...field}
-                    disabled={isReadOnly}
-                    onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
-                    className={cn("bg-card", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* Precio cliente (controlado y numérico) */}
-          <Controller
-            control={control}
-            name={`serviceItems.${serviceIndex}.sellingPrice`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Precio Cliente (IVA Inc.)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    step="0.01"
-                    placeholder="0.00"
-                    disabled={isReadOnly}
-                    value={field.value ?? ""}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      field.onChange(raw === "" ? "" : toNumber(raw));
-                    }}
-                    onBlur={field.onBlur}
-                    className="bg-card"
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+            <FormField control={control} name={`serviceItems.${serviceIndex}.serviceType`} render={({ field }) => (
+                <FormItem><FormLabel>Tipo de Servicio</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                        <FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione un tipo..." /></SelectTrigger></FormControl>
+                        <SelectContent>{serviceTypes.map((t) => (<SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>))}</SelectContent>
+                    </Select>
+                </FormItem>
+            )}/>
+            <FormField
+                control={control}
+                name={`serviceItems.${serviceIndex}.name`}
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>
+                    Nombre del Servicio
+                    </FormLabel>
+                    <FormControl>
+                    <Input
+                        placeholder="Afinación Mayor"
+                        {...field}
+                        disabled={isReadOnly}
+                        onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
+                        className={cn("bg-card", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
+                    />
+                    </FormControl>
+                </FormItem>
+                )}
+            />
         </div>
-
-        {/* Técnico - CONDITIONAL */}
-        {mode !== 'quote' && (
-          <FormField
-            control={control}
-            name={`serviceItems.${serviceIndex}.technicianId`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Asignar Técnico</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ""} disabled={isReadOnly}>
-                  <FormControl>
-                    <SelectTrigger className="bg-card">
-                      <SelectValue placeholder="Seleccione un técnico" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {technicians.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Controller
+                control={control}
+                name={`serviceItems.${serviceIndex}.sellingPrice`}
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Precio Cliente (IVA Inc.)</FormLabel>
+                    <FormControl>
+                    <Input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        placeholder="0.00"
+                        disabled={isReadOnly}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                        const raw = e.target.value;
+                        field.onChange(raw === "" ? "" : toNumber(raw));
+                        }}
+                        onBlur={field.onBlur}
+                        className="bg-card"
+                    />
+                    </FormControl>
+                </FormItem>
+                )}
+            />
+             {mode !== 'quote' && (
+              <FormField
+                control={control}
+                name={`serviceItems.${serviceIndex}.technicianId`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Asignar Técnico</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={isReadOnly}>
+                      <FormControl>
+                        <SelectTrigger className="bg-card">
+                          <SelectValue placeholder="Seleccione un técnico" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {technicians.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
             )}
-          />
-        )}
+        </div>
       </div>
 
       {/* Insumos */}
