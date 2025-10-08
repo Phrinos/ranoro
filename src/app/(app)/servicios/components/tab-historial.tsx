@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/tab-historial.tsx
 "use client";
 
@@ -227,6 +228,7 @@ export default function HistorialTabContent({
         insumosSubtotalVenta,
         insumosVentaTotal,
 
+        // Otros
         iva: (s as any).iva ?? "",
         notas: (s as any).notes ?? "",
       };

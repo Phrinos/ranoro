@@ -230,7 +230,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
     { value: 'activos', label: 'Activos', content: <ActivosTabContent allServices={allServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} onCompleteService={handleOpenCompletionDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog}/> },
     { value: 'agenda', label: 'Agenda', content: <AgendaTabContent services={allServices.filter(s => s.status === 'Agendado')} vehicles={vehicles} personnel={personnel} onShowPreview={handleShowShareDialog} /> },
     { value: 'cotizaciones', label: 'Cotizaciones', content: <CotizacionesTabContent services={allServices.filter(s => s.status === 'Cotizacion')} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService}/> },
-    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={allServices.filter(s => s.status === 'Entregado' || s.status === 'Cancelado')} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog} /> }
+    { value: 'historial', label: 'Historial', content: <HistorialTabContent services={allServices} vehicles={vehicles} personnel={personnel} onShowShareDialog={handleShowShareDialog} currentUser={currentUser} onDelete={handleDeleteService} onShowTicket={handleShowTicketDialog} /> }
   ];
 
   return (
