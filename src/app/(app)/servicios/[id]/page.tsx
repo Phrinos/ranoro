@@ -75,9 +75,7 @@ function flattenRHFErrors(errs: FieldErrors<any>): string[] {
   return Array.from(new Set(out)).filter(Boolean);
 }
 
-// === NUEVO: helper para validar técnico seleccionado ===
 const hasTechnician = (val: Partial<ServiceRecord> | ServiceFormValues) => {
-  // Preferimos technicianId; si tu formulario usa otro campo (p.ej. technician?.id), lo contemplamos
   const tid =
     (val as any).technicianId ??
     (val as any).technician_id ??
@@ -131,7 +129,6 @@ export default function ServicioPage() {
     reValidateMode: "onChange",
   });
 
-  // Modo del formulario: en edición ignora ?mode=quote y respeta el status real.
   const formMode: 'quote' | 'service' =
     isEditMode
       ? (initialData?.status === 'Cotizacion' ? 'quote' : 'service')
@@ -189,7 +186,7 @@ export default function ServicioPage() {
           setInitialData(serviceData);
           setRecordForPreview(serviceData);
         } else {
-          // Si estamos creando un nuevo servicio y tenemos el usuario, establecemos los datos iniciales
+          // Wait for user to be available before setting initial data for a new service
           if (user) {
             const newId = doc(collection(db, 'serviceRecords')).id;
             const defaultStatus: ServiceRecord['status'] = isQuoteModeParam ? 'Cotizacion' : 'En Taller';
@@ -253,10 +250,8 @@ export default function ServicioPage() {
     setIsTicketDialogOpen(true);
   }, []);
 
-  // === REGLA: no permitir ENTREGADO sin técnico (tercera barrera) ===
   const handleConfirmPayment = async (recordId: string, paymentDetails: PaymentDetailsFormValues) => {
     if (!initialData) return;
-    // Guardia adicional por si se intentó abrir el flujo sin técnico
     if (!hasTechnician(initialData)) {
       toast({
         title: "Falta seleccionar técnico",
@@ -308,7 +303,6 @@ export default function ServicioPage() {
     router.push('/servicios?tab=cotizaciones');
   };
 
-  // GUARDA con sellos de fecha según estado
   const handleSaveService = async (values: ServiceFormValues): Promise<ServiceRecord | void> => {
     setIsSubmitting(true);
     try {
@@ -321,16 +315,14 @@ export default function ServicioPage() {
         rawStatus.toLowerCase() === 'cancelado' ? 'Cancelado' :
         (values.status as ServiceRecord['status'] ?? 'En Taller');
 
-      // === REGLA: primera barrera — no permitir guardar como ENTREGADO sin técnico
       if (normalizedStatus === 'Entregado' && !hasTechnician(values)) {
-        // marca el campo en el formulario si existe
         try { (methods as any)?.setError?.('technicianId', { type: 'manual', message: 'Selecciona un técnico.' }); } catch {}
         toast({
           title: "Falta seleccionar técnico",
           description: "No puedes marcar el servicio como Entregado sin asignar un técnico.",
           variant: "destructive",
         });
-        return; // aborta guardado
+        return; 
       }
 
       const nowIso = new Date().toISOString();
@@ -369,9 +361,7 @@ export default function ServicioPage() {
     }
   };
 
-  // Completar servicio abre diálogo de pago
   const handleCompleteService = (values: ServiceFormValues) => {
-    // === REGLA: segunda barrera — antes de abrir pagos, exige técnico
     if (!hasTechnician(values)) {
       try { (methods as any)?.setError?.('technicianId', { type: 'manual', message: 'Selecciona un técnico.' }); } catch {}
       toast({
@@ -386,7 +376,6 @@ export default function ServicioPage() {
     setIsPaymentDialogOpen(true);
   };
 
-  // UI y carga
   if (isLoading || (isEditMode && !initialData && !notFound)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">

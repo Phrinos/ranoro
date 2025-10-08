@@ -68,7 +68,7 @@ export function ServiceItemCard({
   const canViewCosts = permissions.has("inventory:view_costs");
   const { toast } = useToast();
 
-  // === Observa SOLO los campos necesarios para reactividad fina ===
+  const serviceStatus = useWatch({ control, name: 'status' });
   const sellingPrice = useWatch({ control, name: `serviceItems.${serviceIndex}.sellingPrice` });
   const suppliesUsed = useWatch({ control, name: `serviceItems.${serviceIndex}.suppliesUsed` }) as any[] | undefined;
 
@@ -82,16 +82,14 @@ export function ServiceItemCard({
     }, 0);
     const sub = price / (1 + IVA_RATE);
     const iva = price - sub;
-    // Mantengo tu definición original de ganancia (precio con IVA - costo insumos)
     const prf = price - suppliesCost;
     return { subTotal: sub, tax: iva, totalCostOfSupplies: suppliesCost, profit: prf };
   }, [sellingPrice, suppliesUsed]);
 
   const serviceItemErrors = (errors as any)?.serviceItems?.[serviceIndex];
 
-  // --- Guardar a lista de precios (como lo tenías) ---
   const [isAddToPriceListDialogOpen, setIsAddToPriceListDialogOpen] = useState(false);
-  const currentVehicle = null as unknown as Vehicle | null; // si lo usas, injéctalo como prop
+  const currentVehicle = null as unknown as Vehicle | null;
 
   const handleSaveToPriceList = async (list: VehiclePriceList, service: Omit<PricedService, "id">) => {
     try {
@@ -111,6 +109,10 @@ export function ServiceItemCard({
       });
     }
   };
+  
+  const sortedServiceTypes = useMemo(() => {
+    return [...serviceTypes].sort((a, b) => a.name.localeCompare(b.name));
+  }, [serviceTypes]);
 
   return (
     <Card className="p-4 bg-muted/30">
@@ -153,7 +155,7 @@ export function ServiceItemCard({
                 <FormItem><FormLabel>Tipo de Servicio</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
                         <FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione un tipo..." /></SelectTrigger></FormControl>
-                        <SelectContent>{serviceTypes.map((t) => (<SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>))}</SelectContent>
+                        <SelectContent>{sortedServiceTypes.map((t) => (<SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>))}</SelectContent>
                     </Select>
                 </FormItem>
             )}/>
@@ -204,7 +206,7 @@ export function ServiceItemCard({
                 </FormItem>
                 )}
             />
-             {mode !== 'quote' && (
+             {serviceStatus !== 'Cotizacion' && serviceStatus !== 'Agendado' && (
               <FormField
                 control={control}
                 name={`serviceItems.${serviceIndex}.technicianId`}
@@ -232,7 +234,6 @@ export function ServiceItemCard({
         </div>
       </div>
 
-      {/* Insumos */}
       <div className="mt-4">
         <h5 className="text-sm font-medium mb-2">Insumos para este Servicio</h5>
         <ServiceSuppliesArray
@@ -248,7 +249,6 @@ export function ServiceItemCard({
 
       <Separator className="my-4" />
 
-      {/* Resumen del trabajo (en vivo) */}
       <div className="text-sm space-y-1">
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">Subtotal Servicio:</span>
@@ -274,7 +274,7 @@ export function ServiceItemCard({
         open={isAddToPriceListDialogOpen}
         onOpenChange={setIsAddToPriceListDialogOpen}
         serviceToSave={{
-          name: undefined, // completa si lo usas
+          name: undefined, 
           price: sellingPrice ?? 0,
         } as any}
         currentVehicle={currentVehicle as any}
