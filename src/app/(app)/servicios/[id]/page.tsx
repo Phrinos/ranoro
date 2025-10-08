@@ -111,6 +111,8 @@ export default function ServicioPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const redirectUrl = useRef<string | null>(null);
   const ticketContentRef = React.useRef<HTMLDivElement>(null);
@@ -151,6 +153,11 @@ export default function ServicioPage() {
     const fetchData = async () => {
       setIsLoading(true);
       setNotFound(false);
+      
+      const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+      const user = authUserString ? JSON.parse(authUserString) : null;
+      setCurrentUser(user);
+
       try {
         const [
           vehiclesData, usersData, inventoryData,
@@ -182,30 +189,27 @@ export default function ServicioPage() {
           setInitialData(serviceData);
           setRecordForPreview(serviceData);
         } else {
-          const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-          const currentUser = authUserString ? JSON.parse(authUserString) : null;
-          const newId = doc(collection(db, 'serviceRecords')).id;
-
-          const defaultStatus: ServiceRecord['status'] = isQuoteModeParam ? 'Cotizacion' : 'En Taller';
-
-          setInitialData({
-            id: newId,
-            status: defaultStatus,
-            serviceDate: new Date(),
-            ...(defaultStatus === 'En Taller' && { receptionDateTime: new Date().toISOString() }),
-            vehicleId: '',
-            serviceItems: [{
-              id: `item_${Math.random().toString(36).slice(2, 8)}`,
-              name: '',
-              sellingPrice: undefined,
-              suppliesUsed: [],
-            }],
-            ...(currentUser && {
-              serviceAdvisorId: currentUser.id,
-              serviceAdvisorName: currentUser.name,
-              serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
-            }),
-          } as ServiceRecord);
+          // Si estamos creando un nuevo servicio y tenemos el usuario, establecemos los datos iniciales
+          if (user) {
+            const newId = doc(collection(db, 'serviceRecords')).id;
+            const defaultStatus: ServiceRecord['status'] = isQuoteModeParam ? 'Cotizacion' : 'En Taller';
+            setInitialData({
+              id: newId,
+              status: defaultStatus,
+              serviceDate: new Date(),
+              ...(defaultStatus === 'En Taller' && { receptionDateTime: new Date().toISOString() }),
+              vehicleId: '',
+              serviceItems: [{
+                id: `item_${Math.random().toString(36).slice(2, 8)}`,
+                name: '',
+                sellingPrice: undefined,
+                suppliesUsed: [],
+              }],
+              serviceAdvisorId: user.id,
+              serviceAdvisorName: user.name,
+              serviceAdvisorSignatureDataUrl: user.signatureDataUrl,
+            } as ServiceRecord);
+          }
         }
 
       } catch (error) {

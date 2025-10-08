@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 "use client";
 
@@ -45,20 +44,7 @@ export function ServiceDetailsCard({
 
   const watchedStatus = watch("status");
   const isFinalStatus = watchedStatus === "Cancelado" || watchedStatus === "Entregado";
-  const watchedAdvisorId = watch("serviceAdvisorId");
   const advisorSigned = !!watch("serviceAdvisorSignatureDataUrl");
-
-  // Efecto para auto-seleccionar el primer asesor si es un servicio nuevo y no hay ninguno seleccionado.
-  useEffect(() => {
-    if (isNew && !watchedAdvisorId && advisors.length > 0) {
-      const defaultAdvisor = advisors[0];
-      setValue("serviceAdvisorId", defaultAdvisor.id, { shouldDirty: true });
-      setValue("serviceAdvisorName", defaultAdvisor.name, { shouldDirty: true });
-      if (defaultAdvisor.signatureDataUrl) {
-        setValue("serviceAdvisorSignatureDataUrl", defaultAdvisor.signatureDataUrl, { shouldDirty: true });
-      }
-    }
-  }, [isNew, watchedAdvisorId, advisors, setValue]);
 
   const handleStatusChange = (newStatus: ServiceFormValues["status"]) => {
     if (newStatus === "En Taller" && !watch("receptionDateTime")) {
