@@ -1,27 +1,12 @@
+
 // src/lib/firebaseAdmin.ts
-import { initializeApp, getApps, cert, getApp, App } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { firebaseConfig } from './firebase.config.js'; // Importar la configuración
+import * as fs from 'fs';
+import * as path from 'path';
 
 let app: App | null = null;
 let db: Firestore | null = null;
-
-// Esta función ya no es necesaria, ya que no usaremos variables de entorno para las credenciales.
-/*
-function loadServiceAccount() {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (!raw) return null;
-  try {
-    const sa = JSON.parse(raw);
-    if (sa.private_key?.includes('\\n')) {
-      sa.private_key = sa.private_key.replace(/\\n/g, '\n');
-    }
-    return sa;
-  } catch {
-    return null;
-  }
-}
-*/
 
 export function getAdminDb(): Firestore {
   if (db) return db;
@@ -30,20 +15,18 @@ export function getAdminDb(): Firestore {
   if (existing) {
     app = existing;
   } else {
-    // Usar la configuración importada directamente
-    const serviceAccount = {
-      projectId: firebaseConfig.projectId,
-      clientEmail: `firebase-adminsdk-v1b5n@${firebaseConfig.projectId}.iam.gserviceaccount.com`, // Email de cuenta de servicio estándar
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n') || '', // Usar variable de entorno para la clave privada por seguridad
-    };
-    
-    if (!serviceAccount.privateKey) {
-        throw new Error('FIREBASE_PRIVATE_KEY environment variable is not set.');
+    // Construir la ruta al archivo de clave de servicio
+    const keyFilePath = path.join(process.cwd(), 'firebase-admin-key.json');
+
+    if (!fs.existsSync(keyFilePath)) {
+      throw new Error(`El archivo de clave de servicio no se encontró en la ruta: ${keyFilePath}. Asegúrate de que el archivo exista.`);
     }
 
+    // Cargar las credenciales desde el archivo JSON
+    const serviceAccount = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
+
     app = initializeApp({
-      credential: cert(serviceAccount),
-      projectId: firebaseConfig.projectId, // Añadir projectId aquí explícitamente
+      credential: cert(serviceAccount)
     }, 'admin-app');
   }
 

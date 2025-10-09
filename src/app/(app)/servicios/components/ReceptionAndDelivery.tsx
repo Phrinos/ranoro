@@ -116,7 +116,7 @@ export const ReceptionAndDelivery = ({
               render={({ field }) => (
               <FormItem>
                   <FormLabel>Nivel de Combustible</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                  <Select onValueChange={field.onChange} value={field.value || ''} disabled={isReadOnly}>
                     <FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione nivel..." /></SelectTrigger></FormControl>
                     <SelectContent>{fuelLevels.map((level) => (<SelectItem key={level} value={level}>{level}</SelectItem>))}</SelectContent>
                   </Select>

@@ -74,7 +74,7 @@ function canonicalStatus(input?: string | null): CanonStatus | null {
 // -------------------- Componente Principal --------------------
 export function ServiceForm({
   initialData, vehicles, users, inventoryItems, serviceTypes, categories, suppliers, serviceHistory,
-  onSave, onSaveSuccess, onComplete, onVehicleCreated, onCancel, mode, activeTab, onTabChange,
+  onSave, onComplete, onVehicleCreated, onCancel, mode, activeTab, onTabChange,
   isChecklistWizardOpen, setIsChecklistWizardOpen, onOpenNewVehicleDialog,
 }: {
   initialData: ServiceRecord | null;
@@ -86,8 +86,7 @@ export function ServiceForm({
   suppliers: Supplier[];
   serviceHistory: ServiceRecord[];
   onSave: (values: ServiceFormValues) => Promise<ServiceRecord | void>;
-  onSaveSuccess?: (saved: ServiceRecord) => void;
-  onComplete?: (values: ServiceFormValues) => void; // abre PaymentDetailsDialog en el contenedor
+  onComplete?: (values: ServiceFormValues) => void; 
   onVehicleCreated?: (data: VehicleFormValues) => Promise<Vehicle>;
   onCancel: () => void;
   mode: 'quote' | 'service';
@@ -107,7 +106,7 @@ export function ServiceForm({
     const techniciansList: User[] = [];
     const safeUsers = Array.isArray(users) ? users : [];
     for (const user of safeUsers) {
-      // @ts-ignore (algunos modelos pueden traer flags)
+      // @ts-ignore
       if (user?.isArchived) continue;
       // @ts-ignore
       const userFunctions = Array.isArray(user?.functions) ? user.functions : [];
@@ -119,7 +118,6 @@ export function ServiceForm({
     return { advisors: [...new Set(advisorsList)], technicians: [...new Set(techniciansList)] };
   }, [users]);
 
-  // RHF context del formulario padre
   const methods = useFormContext<ServiceFormValues>();
   const {
     handleSubmit,
@@ -136,9 +134,7 @@ export function ServiceForm({
   const nextServiceInfo = watch('nextServiceInfo');
 
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
-  const currentMileage = selectedVehicle?.mileage;
 
-  // --- Total del servicio (precio x cantidad - descuento) ---
   const totalCost = React.useMemo(() => {
     return (serviceItems || []).reduce((sum, item: any) => {
       const qty = toNumber(item?.quantity ?? 1);
@@ -150,14 +146,11 @@ export function ServiceForm({
   }, [serviceItems]);
 
   useEffect(() => {
-    // Sincroniza el total a nivel documento
     setValue("total", totalCost, { shouldDirty: true, shouldValidate: false });
-    // Compatibilidad si en otra parte leen "Total"
     // @ts-ignore
     setValue("Total", totalCost as any, { shouldDirty: true, shouldValidate: false });
   }, [totalCost, setValue]);
 
-  // 1) Normaliza status al montar/cambiar modo/registro
   useEffect(() => {
     const current = getValues('status') as string | undefined;
     let next: CanonStatus | null = canonicalStatus(current);
@@ -169,28 +162,24 @@ export function ServiceForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, initialData?.id]);
 
-  // 2) Reacciona a cambios de status y sella fechas como Date (Firestore Timestamp limpio)
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === 'status') {
         const canon = canonicalStatus(value.status) || (mode === 'quote' ? 'Cotizacion' : 'En Taller');
-
         if (value.status !== canon) {
           setValue('status', canon as any, { shouldDirty: true, shouldValidate: true });
         }
-
-        if (canon === 'En Taller' && !getValues('receptionDateTime')) {
+        if (canon === 'En Taller' && !value.receptionDateTime) {
           setValue('receptionDateTime', new Date() as any, { shouldDirty: true, shouldValidate: true });
         }
-        if (canon === 'Entregado' && !getValues('deliveryDateTime')) {
+        if (canon === 'Entregado' && !value.deliveryDateTime) {
           setValue('deliveryDateTime', new Date() as any, { shouldDirty: true, shouldValidate: true });
         }
       }
     });
     return () => subscription.unsubscribe();
-  }, [watch, setValue, getValues, mode]);
+  }, [watch, setValue, mode]);
 
-  // --- Handlers ---
   const handleVehicleSelection = (vehicle: Vehicle | null) => {
     setValue('vehicleId', vehicle?.id || '', { shouldDirty: true });
     setValue('customerName', vehicle?.ownerName || '', { shouldDirty: true });
@@ -198,18 +187,9 @@ export function ServiceForm({
     if (touchedFields.customerName) trigger('customerName');
   };
 
-  const handleFormSubmit = async (values: ServiceFormValues) => {
-    const savedService = await onSave(values);
-    if (savedService && onSaveSuccess) onSaveSuccess(savedService);
-  };
-
   const onValidationErrors = (errors: FieldErrors<ServiceFormValues>) => {
     const description = getErrorMessages(errors);
     toast({ title: "Error de Validación", description, variant: "destructive" });
-  };
-
-  const handleCompleteClick = () => {
-    if (onComplete) onComplete(getValues());
   };
 
   const handleOpenSignatureDialog = (type: 'reception' | 'delivery' | 'advisor') => {
@@ -230,10 +210,9 @@ export function ServiceForm({
     setValue('nextServiceInfo', info, { shouldDirty: true });
   };
 
-  // -------------------- Render --------------------
   return (
     <>
-      <form id="service-form" onSubmit={handleSubmit(handleFormSubmit, onValidationErrors)}>
+      <form id="service-form" onSubmit={handleSubmit(onSave, onValidationErrors)}>
         <div className="space-y-6 p-1 pb-24 md:pb-6">
           <VehicleSelectionCard
             vehicles={vehicles}
@@ -327,7 +306,14 @@ export function ServiceForm({
         <ServiceFormFooter
           formId="service-form"
           onCancel={onCancel}
-          onComplete={handleCompleteClick}
+          onComplete={
+            onComplete
+              ? () => {
+                  const values = getValues();
+                  onComplete(values);
+                }
+              : undefined
+          }
           mode={mode}
           initialData={initialData}
           isSubmitting={isSubmitting}

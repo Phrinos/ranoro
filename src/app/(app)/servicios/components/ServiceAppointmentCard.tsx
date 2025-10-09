@@ -161,9 +161,7 @@ export function ServiceAppointmentCard({
             </div>
             <div className="text-xs text-muted-foreground mt-2 w-full text-center">
               <p>Asesor: {advisor?.name || service.serviceAdvisorName || 'N/A'}</p>
-              {service.status !== 'Cotizacion' && service.status !== 'Agendado' && (
-                  <p>Técnico: {technician?.name || service.technicianName || 'N/A'}</p>
-              )}
+              <p>Técnico: {technician?.name || service.technicianName || 'N/A'}</p>
             </div>
              <div className="flex justify-center items-center gap-1 flex-wrap mt-2">
                 <Button variant="ghost" size="icon" onClick={onView} title="Compartir Documento">

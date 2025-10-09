@@ -119,6 +119,9 @@ export default function ServicioPage() {
   const [isServicesSheetOpen, setIsServicesSheetOpen] = useState(false);
   const [isChecklistWizardOpen, setIsChecklistWizardOpen] = useState(false);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  
+  const [dialogRecord, setDialogRecord] = useState<ServiceRecord | null>(initialData);
+
 
   const isEditMode = serviceId !== 'nuevo';
   const isQuoteModeParam = searchParams.get('mode') === 'quote';
@@ -186,7 +189,6 @@ export default function ServicioPage() {
           setInitialData(serviceData);
           setRecordForPreview(serviceData);
         } else {
-          // Wait for user to be available before setting initial data for a new service
           if (user) {
             const newId = doc(collection(db, 'serviceRecords')).id;
             const defaultStatus: ServiceRecord['status'] = isQuoteModeParam ? 'Cotizacion' : 'En Taller';
@@ -251,8 +253,8 @@ export default function ServicioPage() {
   }, []);
 
   const handleConfirmPayment = async (recordId: string, paymentDetails: PaymentDetailsFormValues) => {
-    if (!initialData) return;
-    if (!hasTechnician(initialData)) {
+    if (!dialogRecord) return;
+    if (!hasTechnician(dialogRecord)) {
       toast({
         title: "Falta seleccionar técnico",
         description: "Debes asignar un técnico al servicio antes de completarlo.",
@@ -266,7 +268,7 @@ export default function ServicioPage() {
     try {
       if (!db) return;
       const batch = writeBatch(db);
-      await serviceService.completeService(initialData, paymentDetails, batch);
+      await serviceService.completeService(dialogRecord, paymentDetails, batch);
       await batch.commit();
 
       toast({ title: "Servicio Completado" });
@@ -274,13 +276,17 @@ export default function ServicioPage() {
 
       const updatedServiceData = await serviceService.getDocById('serviceRecords', recordId);
       if (updatedServiceData) {
-        handleShowShareDialog(updatedServiceData, '/servicios?tab=historial');
+        handleShowShareDialog(updatedServiceData);
       } else {
-        router.push('/servicios?tab=historial');
+        toast({
+          title: "Documento no encontrado",
+          description: "El servicio se completó, pero no pudimos generar el ticket para compartir.",
+          variant: "destructive"
+        });
       }
     } catch (e: any) {
       console.error(e);
-      toast({ title: "Error al Completar", variant: "destructive" });
+      toast({ title: "Error al Completar", description: e.message, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -294,12 +300,14 @@ export default function ServicioPage() {
   const handleCancelService = async () => {
     if (!initialData?.id) return;
     await serviceService.cancelService(initialData.id, "Cancelado desde el panel");
+    toast({ title: "Servicio Cancelado", description: "El servicio ha sido cancelado correctamente." });
     router.push('/servicios?tab=historial');
   };
 
   const handleDeleteQuote = async () => {
     if (!initialData?.id) return;
     await serviceService.deleteService(initialData.id);
+    toast({ title: "Cotización Eliminada", description: "La cotización ha sido eliminada permanentemente." });
     router.push('/servicios?tab=cotizaciones');
   };
 
@@ -341,38 +349,36 @@ export default function ServicioPage() {
       };
 
       const savedRecord = await serviceService.saveService(payload);
-      toast({ title: 'Registro Guardado' });
-
-      if (!isEditMode) {
+      
+      if (isEditMode) {
+        setInitialData(savedRecord);
+        toast({ title: 'Cambios Guardados' });
+      } else {
+        toast({ title: 'Registro Creado' });
         const redirectTab =
           normalizedStatus === 'Cotizacion' ? 'cotizaciones' :
           normalizedStatus === 'En Taller' ? 'activos' :
           normalizedStatus === 'Entregado' ? 'historial' : 'activos';
-
         handleShowShareDialog(savedRecord, `/servicios?tab=${redirectTab}`);
       }
 
       return savedRecord;
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast({ title: 'Error al Guardar', variant: 'destructive' });
+      toast({ title: 'Error al Guardar', description: e.message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCompleteService = (values: ServiceFormValues) => {
-    if (!hasTechnician(values)) {
-      try { (methods as any)?.setError?.('technicianId', { type: 'manual', message: 'Selecciona un técnico.' }); } catch {}
-      toast({
-        title: "Falta seleccionar técnico",
-        description: "Asigna un técnico al servicio para poder completarlo.",
-        variant: "destructive",
-      });
-      return;
-    }
+    const merged: ServiceRecord = {
+      ...(initialData ?? ({} as any)),
+      ...values,
+      id: initialData?.id || values.id,
+    } as ServiceRecord;
 
-    setInitialData(values as ServiceRecord);
+    setDialogRecord(merged);
     setIsPaymentDialogOpen(true);
   };
 
@@ -523,11 +529,11 @@ export default function ServicioPage() {
         </>
       )}
 
-      {initialData && (
+      {dialogRecord && (
         <PaymentDetailsDialog
           open={isPaymentDialogOpen}
           onOpenChange={setIsPaymentDialogOpen}
-          record={initialData}
+          record={dialogRecord}
           onConfirm={handleConfirmPayment}
           recordType="service"
           isCompletionFlow={true}

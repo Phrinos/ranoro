@@ -32,6 +32,7 @@ interface ServiceDetailsCardProps {
 export function ServiceDetailsCard({
   isReadOnly,
   advisors,
+  technicians,
   onOpenSignature,
   isNew,
 }: ServiceDetailsCardProps) {
@@ -45,6 +46,7 @@ export function ServiceDetailsCard({
   const watchedStatus = watch("status");
   const isFinalStatus = watchedStatus === "Cancelado" || watchedStatus === "Entregado";
   const advisorSigned = !!watch("serviceAdvisorSignatureDataUrl");
+  const technicianSigned = !!watch("technicianSignatureDataUrl");
 
   const handleStatusChange = (newStatus: ServiceFormValues["status"]) => {
     if (newStatus === "En Taller" && !watch("receptionDateTime")) {
@@ -61,6 +63,15 @@ export function ServiceDetailsCard({
         setValue("serviceAdvisorId", selectedAdvisor.id, { shouldDirty: true });
         setValue("serviceAdvisorName", selectedAdvisor.name, { shouldDirty: true });
         setValue("serviceAdvisorSignatureDataUrl", selectedAdvisor.signatureDataUrl || null, { shouldDirty: true });
+    }
+  };
+
+  const handleTechnicianChange = (technicianId: string) => {
+    const selectedTechnician = technicians.find(t => t.id === technicianId);
+    if (selectedTechnician) {
+        setValue("technicianId", selectedTechnician.id, { shouldDirty: true });
+        setValue("technicianName", selectedTechnician.name, { shouldDirty: true });
+        setValue("technicianSignatureDataUrl", selectedTechnician.signatureDataUrl || null, { shouldDirty: true });
     }
   };
 
@@ -82,7 +93,7 @@ export function ServiceDetailsCard({
               <FormItem>
                 <FormLabel className={cn(errors.status && "text-destructive")}>Estado</FormLabel>
                 <Select
-                  onValueChange={(v) => handleStatusChange(v as ServiceFormValues["status"])}
+                  onValuecha ge={(v) => handleStatusChange(v as ServiceFormValues["status"])}
                   value={field.value || "Cotizacion"}
                   disabled={isFinalStatus}
                 >
@@ -137,6 +148,46 @@ export function ServiceDetailsCard({
                         onClick={() => onOpenSignature("advisor")}
                     >
                         <Signature className={cn("h-4 w-4", advisorSigned && "text-green-600")} />
+                    </Button>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          {/* Selector de Tecnico */}
+          <FormField
+            control={control}
+            name="technicianId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Técnico</FormLabel>
+                <div className="flex items-center gap-2">
+                    <Select
+                        onValueChange={handleTechnicianChange}
+                        value={field.value}
+                        disabled={isReadOnly || technicians.length === 0}
+                    >
+                        <FormControl>
+                        <SelectTrigger className="bg-card">
+                            <SelectValue placeholder="Seleccione un técnico" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {technicians.map((technician) => (
+                            <SelectItem key={technician.id} value={technician.id}>
+                            {technician.name}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <Button
+                        type="button"
+                        variant={technicianSigned ? "secondary" : "outline"}
+                        size="icon"
+                        title={technicianSigned ? "Firma registrada" : "Capturar/actualizar firma del técnico"}
+                        onClick={() => onOpenSignature("advisor")}
+                    >
+                        <Signature className={cn("h-4 w-4", technicianSigned && "text-green-600")} />
                     </Button>
                 </div>
               </FormItem>

@@ -12,13 +12,12 @@ import type { ServiceRecord } from '@/types';
 interface ServiceFormFooterProps {
   formId: string;
   onCancel?: () => void;
-  onComplete?: (values: ServiceFormValues) => void; // Abre PaymentDetailsDialog
+  onComplete?: () => void;
   mode: 'service' | 'quote';
   initialData: ServiceRecord | null;
   isSubmitting: boolean;
 }
 
-// Parser seguro para números que pueden venir como string con $, comas, etc.
 const toNumber = (v: any) =>
   typeof v === 'number'
     ? (Number.isFinite(v) ? v : 0)
@@ -34,36 +33,32 @@ export const ServiceFormFooter = ({
   initialData,
   isSubmitting
 }: ServiceFormFooterProps) => {
+  const { control, reset } = useFormContext<ServiceFormValues>();
 
-  const { control, getValues, reset } = useFormContext<ServiceFormValues>();
-
-  // Observa SOLO lo necesario (más estable que usar todo el form)
-  const [status, payments = [], serviceItems = []] = useWatch({
+  const [status, serviceItems = []] = useWatch({
     control,
-    name: ['status', 'payments', 'serviceItems'],
-  }) as [ServiceFormValues['status'], ServiceFormValues['payments'], ServiceFormValues['serviceItems']];
+    name: ['status', 'serviceItems'],
+  }) as [ServiceFormValues['status'], ServiceFormValues['serviceItems']];
 
   const isEditMode = !!initialData?.id;
   const isQuoteMode = status === 'Cotizacion';
   const isScheduledMode = status === 'Agendado';
 
-  // Total del servicio (precio x cantidad - descuento si existe)
   const totalCost = useMemo(() => {
     return (serviceItems || []).reduce((acc, item: any) => {
       const qty = toNumber(item?.quantity ?? 1);
       const price = toNumber(item?.sellingPrice);
-      const discount = toNumber(item?.discount); // si tu esquema no maneja descuento, queda en 0
+      const discount = toNumber(item?.discount);
       const line = Math.max(price * (qty || 1) - discount, 0);
       return acc + line;
     }, 0);
   }, [serviceItems]);
 
-  // Total pagado (normaliza strings)
-  const totalPaid = useMemo(() => {
-    return (payments || []).reduce((acc: number, p: any) => acc + toNumber(p?.amount), 0);
-  }, [payments]);
-
-  const isPaymentComplete = totalCost > 0 && totalPaid >= totalCost;
+  const canOpenPaymentModal =
+    isEditMode &&
+    status !== 'Entregado' &&
+    status !== 'Cancelado' &&
+    totalCost > 0;
 
   let cancelTexts = {
     button: 'Cancelar Servicio',
@@ -88,8 +83,6 @@ export const ServiceFormFooter = ({
     };
   }
 
-  // Opcional: si tu initialData no está 100% alineada al esquema del form,
-  // crea un "normalizeServiceFormValues(initialData)" y úsalo aquí.
   const handleDiscard = () => reset((initialData as unknown as ServiceFormValues) || {});
 
   return (
@@ -124,14 +117,16 @@ export const ServiceFormFooter = ({
           {isEditMode && onComplete && status !== 'Entregado' && status !== 'Cancelado' && (
             <Button
               type="button"
-              onClick={() => onComplete(getValues({ nest: true }))}
-              disabled={isSubmitting || !isPaymentComplete}
+              onClick={onComplete}
+              disabled={isSubmitting || !canOpenPaymentModal}
               variant="outline"
               className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700 w-full sm:w-auto"
               title={
-                !isPaymentComplete
-                  ? 'Debe registrar el pago completo para poder entregar.'
-                  : 'Entregar y finalizar el servicio'
+                !canOpenPaymentModal
+                  ? (totalCost <= 0
+                      ? 'Agrega al menos un trabajo o importe mayor a $0 para iniciar el cobro.'
+                      : 'No puedes completar un servicio ya entregado o cancelado.')
+                  : 'Abrir el modal para capturar el pago y completar el servicio'
               }
             >
               <DollarSign className="mr-2 h-4 w-4" /> Entregar y Cobrar
