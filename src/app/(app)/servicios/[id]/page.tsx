@@ -164,19 +164,6 @@ export default function ServicioPage() {
     }
   }, [initialData, users, methods]);
 
-  const advisorId = methods.watch("serviceAdvisorId");
-  useEffect(() => {
-    if (!users.length) return;
-    const currentName = methods.getValues("serviceAdvisorName");
-    if (advisorId && !currentName) {
-      const u = users.find(x => x.id === advisorId);
-      if (u) {
-        methods.setValue("serviceAdvisorName", u.name ?? "", { shouldDirty: false });
-        methods.setValue("serviceAdvisorSignatureDataUrl", u.signatureDataUrl ?? null, { shouldDirty: false });
-      }
-    }
-  }, [advisorId, users, methods]);
-
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);

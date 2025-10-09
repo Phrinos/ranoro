@@ -66,11 +66,13 @@ export function ServiceDetailsCard({
     userList: User[],
     idField: keyof ServiceFormValues,
     nameField: keyof ServiceFormValues,
+    signatureField: keyof ServiceFormValues
   ) => {
     const selectedUser = userList.find(u => u.id === id);
     if (selectedUser) {
       setValue(idField, selectedUser.id, { shouldDirty: true });
       setValue(nameField, selectedUser.name, { shouldDirty: true });
+      setValue(signatureField, selectedUser.signatureDataUrl || null, { shouldDirty: true });
     }
   };
 
@@ -138,43 +140,48 @@ export function ServiceDetailsCard({
           <FormField
             control={control}
             name="serviceAdvisorId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Asesor de Servicio</FormLabel>
-                <div className="flex items-center gap-2">
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      handleUserSelection(value, advisors, "serviceAdvisorId", "serviceAdvisorName");
-                    }}
-                    value={field.value}
-                    disabled={isReadOnly || advisors.length === 0}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="bg-card">
-                        <SelectValue placeholder="Seleccione un asesor" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {advisors.map((advisor) => (
-                        <SelectItem key={advisor.id} value={advisor.id}>
-                          {advisor.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant={advisorSigned ? "secondary" : "outline"}
-                    size="icon"
-                    title={advisorSigned ? "Firma registrada" : "Capturar/actualizar firma del asesor"}
-                    onClick={() => onOpenSignature("advisor")}
-                  >
-                    <Signature className={cn("h-4 w-4", advisorSigned && "text-green-600")} />
-                  </Button>
-                </div>
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const advisorName = advisors.find(a => a.id === field.value)?.name || watch('serviceAdvisorName');
+              return (
+                <FormItem>
+                  <FormLabel>Asesor de Servicio</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        handleUserSelection(value, advisors, "serviceAdvisorId", "serviceAdvisorName", "serviceAdvisorSignatureDataUrl");
+                      }}
+                      value={field.value}
+                      disabled={isReadOnly || advisors.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="bg-card">
+                          <SelectValue placeholder="Seleccione un asesor">
+                            {advisorName || "Seleccione un asesor"}
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {advisors.map((advisor) => (
+                          <SelectItem key={advisor.id} value={advisor.id}>
+                            {advisor.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant={advisorSigned ? "secondary" : "outline"}
+                      size="icon"
+                      title={advisorSigned ? "Firma registrada" : "Capturar/actualizar firma del asesor"}
+                      onClick={() => onOpenSignature("advisor")}
+                    >
+                      <Signature className={cn("h-4 w-4", advisorSigned && "text-green-600")} />
+                    </Button>
+                  </div>
+                </FormItem>
+              )
+            }}
           />
 
           {/* Selector de Tecnico */}
@@ -182,43 +189,48 @@ export function ServiceDetailsCard({
             <FormField
               control={control}
               name="technicianId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Técnico</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        handleUserSelection(value, technicians, "technicianId", "technicianName");
-                      }}
-                      value={field.value}
-                      disabled={isReadOnly || technicians.length === 0}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="bg-card">
-                          <SelectValue placeholder="Seleccione un técnico" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {technicians.map((technician) => (
-                          <SelectItem key={technician.id} value={technician.id}>
-                            {technician.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      variant={technicianSigned ? "secondary" : "outline"}
-                      size="icon"
-                      title={technicianSigned ? "Firma registrada" : "Capturar/actualizar firma del técnico"}
-                      onClick={() => onOpenSignature("advisor")}
-                    >
-                      <Signature className={cn("h-4 w-4", technicianSigned && "text-green-600")} />
-                    </Button>
-                  </div>
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const technicianName = technicians.find(t => t.id === field.value)?.name || watch('technicianName');
+                return (
+                  <FormItem>
+                    <FormLabel>Técnico</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          handleUserSelection(value, technicians, "technicianId", "technicianName", "technicianSignatureDataUrl");
+                        }}
+                        value={field.value}
+                        disabled={isReadOnly || technicians.length === 0}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-card">
+                            <SelectValue placeholder="Seleccione un técnico">
+                              {technicianName || "Seleccione un técnico"}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {technicians.map((technician) => (
+                            <SelectItem key={technician.id} value={technician.id}>
+                              {technician.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant={technicianSigned ? "secondary" : "outline"}
+                        size="icon"
+                        title={technicianSigned ? "Firma registrada" : "Capturar/actualizar firma del técnico"}
+                        onClick={() => onOpenSignature("advisor")} // This should likely open a dialog for the TECHNICIAN
+                      >
+                        <Signature className={cn("h-4 w-4", technicianSigned && "text-green-600")} />
+                      </Button>
+                    </div>
+                  </FormItem>
+                )
+              }}
             />
           )}
         </div>
