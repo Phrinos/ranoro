@@ -66,13 +66,13 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
     return null;
   }
 
-  // CORRECCIÓN: Limpia el origen de la URL para quitar el puerto del entorno de desarrollo.
+  // CORRECCIÓN: Construye la URL pública usando el puerto correcto (6000) en desarrollo.
   const getCleanPublicUrl = () => {
-    const origin = window.location.origin;
-    // La URL en el dev environment es https://<port>-<hostname>
-    // Se elimina el prefijo del puerto, por ejemplo, "46145-"
-    const cleanedOrigin = origin.replace(/https:\/\/\d+-/, 'https://');
-    return `${cleanedOrigin}/s/${service.publicId || service.id}`;
+    const hostname = window.location.hostname;
+    // Reemplaza cualquier número de puerto al inicio del hostname con '6000'
+    const publicHostname = hostname.replace(/^\d+-/, '6000-');
+    const protocol = window.location.protocol;
+    return `${protocol}//${publicHostname}/s/${service.publicId || service.id}`;
   };
 
   const publicUrl = getCleanPublicUrl();
