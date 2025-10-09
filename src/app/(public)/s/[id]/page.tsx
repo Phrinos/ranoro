@@ -21,6 +21,7 @@ import { AppointmentScheduler } from "@/components/shared/AppointmentScheduler";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 import { TicketContent } from "@/components/ticket-content";
 import { Button } from "@/components/ui/button";
+import { scheduleAppointmentAction, confirmAppointmentAction, cancelAppointmentAction, saveSignatureAction } from "../actions";
 
 // Define un tipo para el doc público (subconjunto del ServiceRecord)
 type PublicServiceDoc = {
@@ -55,11 +56,20 @@ type PublicServiceDoc = {
 const toDate = (v: string | Date | Timestamp | null | undefined): Date | null => {
   if (!v) return null;
   if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
-  if (typeof v === "string") {
-    const d = new Date(v);
-    return isNaN(d.getTime()) ? null : d;
+  if (typeof (v as any)?.toDate === 'function') {
+    const d = (v as any).toDate();
+    return isValid(d) ? d : null;
   }
-  if (v instanceof Timestamp) return v.toDate();
+  if (typeof v === 'number') {
+    const d = new Date(v > 1e12 ? v : v * 1000);
+    return isValid(d) ? d : null;
+  }
+  if (typeof v === 'string') {
+    const isoTry = parseISO(v);
+    if (isValid(isoTry)) return isoTry;
+    const generic = new Date(v);
+    if (isValid(generic)) return generic;
+  }
   return null;
 };
 
@@ -80,37 +90,12 @@ export default function PublicServicePage() {
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
 
-  // Carga/escucha del doc público
-  const fetchOnce = useCallback(async () => {
-    try {
-      if (!publicId) return;
-      const ref = doc(db, "publicServices", publicId);
-      const snap = await getDoc(ref);
-      if (!snap.exists()) {
-        setService(null);
-        setError("El servicio no fue encontrado o el enlace es incorrecto.");
-        return;
-      }
-      setService({ id: snap.id, ...(snap.data() as PublicServiceDoc) });
-      setError(null);
-    } catch (e: any) {
-      console.error("getPublicServiceData", e?.code, e?.message);
-      setService(null);
-      setError(
-        e?.code === "permission-denied"
-          ? "No hay permisos para leer este servicio. Revisa reglas/isPublic."
-          : "Ocurrió un error al cargar la información del servicio."
-      );
-    }
-  }, [publicId]);
-
   useEffect(() => {
     if (!publicId) {
       setError("Enlace inválido.");
       setService(null);
       return;
     }
-    // Suscripción en vivo (puedes comentar esto y dejar fetchOnce si prefieres)
     const ref = doc(db, "publicServices", publicId);
     const unsub = onSnapshot(
       ref,
@@ -131,22 +116,15 @@ export default function PublicServicePage() {
     return () => unsub();
   }, [publicId]);
 
-  // Guardar firma (respeta reglas públicas)
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!service || !signatureType) return;
     setIsSigning(true);
     try {
-      const ref = doc(db, "publicServices", publicId);
-      const field =
-        signatureType === "reception"
-          ? { customerSignatureReception: signatureDataUrl }
-          : { customerSignatureDelivery: signatureDataUrl };
-      await updateDoc(ref, { ...field, updatedAt: serverTimestamp() });
+      const result = await saveSignatureAction(publicId, signatureDataUrl, signatureType);
+      if (!result.success) throw new Error(result.error);
       toast({
         title: signatureType === "reception" ? "Firma de Recepción Guardada" : "Firma de Conformidad Guardada",
       });
-      // con onSnapshot ya se refresca solo; si usas fetchOnce, descomenta:
-      // await fetchOnce();
     } catch (e: any) {
       toast({
         title: "Error al Guardar Firma",
@@ -159,13 +137,12 @@ export default function PublicServicePage() {
     }
   };
 
-  // Confirmar/CANCELAR cita
   const handleConfirmAppointment = async () => {
     if (!service) return;
     setIsConfirming(true);
     try {
-      const ref = doc(db, "publicServices", publicId);
-      await updateDoc(ref, { appointmentStatus: "Confirmed", updatedAt: serverTimestamp() });
+      const result = await confirmAppointmentAction(publicId);
+      if (!result.success) throw new Error(result.error);
       toast({ title: "Cita Confirmada", description: "¡Gracias! Hemos confirmado tu cita." });
     } catch (e: any) {
       toast({
@@ -178,11 +155,11 @@ export default function PublicServicePage() {
     }
   };
 
-  const handleCancelAppointment = useCallback(async () => {
+  const handleCancelAppointment = async () => {
     if (!service) return;
     try {
-      const ref = doc(db, "publicServices", publicId);
-      await updateDoc(ref, { appointmentStatus: "Canceled", updatedAt: serverTimestamp() });
+      const result = await cancelAppointmentAction(publicId);
+      if (!result.success) throw new Error(result.error);
       toast({ title: "Cita Cancelada", description: "Tu cita ha sido cancelada exitosamente." });
     } catch (e: any) {
       toast({
@@ -191,18 +168,13 @@ export default function PublicServicePage() {
         variant: "destructive",
       });
     }
-  }, [publicId, service, toast]);
+  };
 
-  // Agendar cita
   const handleScheduleAppointment = async (selectedDateTime: Date) => {
     if (!service) return;
     try {
-      const ref = doc(db, "publicServices", publicId);
-      await updateDoc(ref, {
-        appointmentDateTime: selectedDateTime.toISOString(),
-        appointmentStatus: "scheduled",
-        updatedAt: serverTimestamp(),
-      });
+      const result = await scheduleAppointmentAction(publicId, selectedDateTime.toISOString());
+      if (!result.success) throw new Error(result.error);
       toast({ title: "Cita Agendada", description: "Tu cita ha sido registrada." });
       setIsScheduling(false);
     } catch (e: any) {

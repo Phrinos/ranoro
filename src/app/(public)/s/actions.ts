@@ -1,7 +1,7 @@
 
 "use server";
 
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebasePublic";
 import type { ServiceRecord } from "@/types";
 
@@ -54,6 +54,7 @@ export async function scheduleAppointmentAction(
       status: "Agendado",
       appointmentDateTime: scheduledDate,
       appointmentStatus: "Sin Confirmar",
+      updatedAt: serverTimestamp(),
     });
     return { success: true };
   } catch (e: any) {
@@ -71,7 +72,7 @@ export async function confirmAppointmentAction(
     if (dbError) return { success: false, error: dbError };
 
     const ref = doc(db!, "publicServices", publicId);
-    await updateDoc(ref, { appointmentStatus: "Confirmada" });
+    await updateDoc(ref, { appointmentStatus: "Confirmada", updatedAt: serverTimestamp() });
     return { success: true };
   } catch (e: any) {
     console.error("confirmAppointmentAction error:", e);
@@ -88,7 +89,7 @@ export async function cancelAppointmentAction(
     if (dbError) return { success: false, error: dbError };
 
     const ref = doc(db!, "publicServices", publicId);
-    await updateDoc(ref, { status: "Cancelado", appointmentStatus: "Cancelada" });
+    await updateDoc(ref, { status: "Cancelado", appointmentStatus: "Cancelada", updatedAt: serverTimestamp() });
     return { success: true };
   } catch (e: any) {
     console.error("cancelAppointmentAction error:", e);
@@ -112,7 +113,7 @@ export async function saveSignatureAction(
         ? { customerSignatureReception: signature }
         : { customerSignatureDelivery: signature };
 
-    await updateDoc(ref, field);
+    await updateDoc(ref, { ...field, updatedAt: serverTimestamp() });
     return { success: true };
   } catch (e: any) {
     console.error("saveSignatureAction error:", e);
