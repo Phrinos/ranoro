@@ -8,12 +8,13 @@ import type { ServiceRecord, Vehicle, User, Payment } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { serviceService } from '@/lib/services';
-import { isToday, isTomorrow, isAfter, isBefore, addDays, format, startOfDay, isSameDay, compareDesc } from 'date-fns';
+import { isToday, isTomorrow, isAfter, isBefore, addDays, format, startOfDay, isSameDay, compareDesc, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { capitalizeWords, formatCurrency, getStatusInfo, getPaymentMethodVariant, cn } from '@/lib/utils';
-import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle, Eye, Edit, Check, DollarSign, TrendingUp, Copy, Printer, Trash2, Phone, Share2, Wallet, CreditCard, Landmark, Repeat } from 'lucide-react';
+import { User as UserIcon, Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle, Eye, Edit, Check, DollarSign, TrendingUp, Copy, Printer, Trash2, Phone, Share2, Wallet, CreditCard, Landmark, Repeat } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { calcEffectiveProfit } from '@/lib/money-helpers';
 

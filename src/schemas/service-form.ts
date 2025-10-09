@@ -8,12 +8,12 @@ export const supplySchema = z.object({
   sellingPrice: z.coerce.number().optional(),
   supplyName: z.string().optional(),
   isService: z.boolean().optional(),
-  unitType: z.enum(["units", "ml", "liters"]).optional(),
+  unitType: z.enum(["units", "ml", "liters"]).nullable().optional(),
 });
 
 export const serviceItemSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(3, "El nombre del servicio es requerido."),
+  name: z.string().min(1, "El nombre del servicio es requerido."),
   sellingPrice: z.coerce.number({ invalid_type_error: "El precio debe ser un número." }).optional(),
   suppliesUsed: z.array(supplySchema).default([]),
   serviceType: z.string().optional(),

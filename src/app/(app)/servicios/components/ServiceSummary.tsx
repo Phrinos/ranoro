@@ -12,7 +12,6 @@ import { Separator } from "@/components/ui/separator";
 interface ServiceSummaryProps {
   onOpenValidateDialog: (index: number) => void;
   validatedFolios: Record<number, boolean>;
-  /** Opcional. Si lo pasas, se ignora cuando el cálculo interno detecta cambios. */
   totalAmount?: number;
 }
 
@@ -30,35 +29,36 @@ const toNumber = (v: unknown): number => {
 export function ServiceSummary({
   onOpenValidateDialog,
   validatedFolios,
-  totalAmount: totalAmountProp,
 }: ServiceSummaryProps) {
   const { control } = useFormContext();
-
-  // Observa items y comisión para reactividad total
   const items = useWatch({ control, name: "serviceItems" }) as any[] | undefined;
-  const cardCommission = useWatch({ control, name: "cardCommission" }) || 0;
 
-  // Total con IVA (sumando sellingPrice de cada trabajo) EN VIVO
   const totalAmount = useMemo(
     () => (items ?? []).reduce((s, i) => s + toNumber(i?.sellingPrice), 0),
     [items]
   );
 
-  const { subTotal, taxAmount, serviceProfit } = useMemo(() => {
-    const costOfSupplies = (items ?? [])
+  const { subTotal, taxAmount, costOfSupplies, workProfit } = useMemo(() => {
+    const sub = totalAmount / (1 + IVA_RATE);
+    const tax = totalAmount - sub;
+    
+    const suppliesCost = (items ?? [])
       .flatMap((i) => (Array.isArray(i?.suppliesUsed) ? i.suppliesUsed : []))
       .reduce(
         (s, su) =>
           s + toNumber(su?.unitCost ?? su?.unitPrice) * toNumber(su?.quantity),
         0
       );
-
-    const sub = totalAmount / (1 + IVA_RATE);
-    const tax = totalAmount - sub;
-    const profit = totalAmount - costOfSupplies - toNumber(cardCommission);
-
-    return { subTotal: sub, taxAmount: tax, serviceProfit: profit };
-  }, [totalAmount, items, cardCommission]);
+      
+    const profit = sub - suppliesCost;
+    
+    return { 
+        subTotal: sub, 
+        taxAmount: tax, 
+        costOfSupplies: suppliesCost, 
+        workProfit: profit 
+    };
+  }, [totalAmount, items]);
 
   return (
     <Card className="h-full flex flex-col">
@@ -70,41 +70,35 @@ export function ServiceSummary({
         <PaymentSection
           onOpenValidateDialog={onOpenValidateDialog}
           validatedFolios={validatedFolios}
-          totalAmount={totalAmount} // pasamos el total reactivo
+          totalAmount={totalAmount}
         />
 
         <div className="w-full mt-auto space-y-2 text-sm border-t pt-4">
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Subtotal:</span>
+            <span className="text-muted-foreground">Subtotal Servicio:</span>
             <span className="font-medium">{formatCurrency(subTotal)}</span>
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
+            <span className="text-muted-foreground">IVA Servicio ({(IVA_RATE * 100).toFixed(0)}%):</span>
             <span className="font-medium">{formatCurrency(taxAmount)}</span>
           </div>
 
-          {toNumber(cardCommission) > 0 && (
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Comisión Tarjeta:</span>
-              <span className="font-medium text-red-600">
-                -{formatCurrency(toNumber(cardCommission))}
-              </span>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Ganancia:</span>
-            <span className="font-medium text-green-600">
-              {formatCurrency(serviceProfit)}
-            </span>
+          <div className="flex justify-between items-center text-lg font-bold pt-1">
+            <span>Total del Servicio:</span>
+            <span className="text-primary">{formatCurrency(totalAmount)}</span>
           </div>
 
           <Separator className="my-2" />
 
-          <div className="flex justify-between items-center text-lg font-bold pt-1">
-            <span>Total:</span>
-            <span className="text-primary">{formatCurrency(totalAmount)}</span>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Ganancia del Trabajo:</span>
+            <span className="font-medium text-green-600">{formatCurrency(workProfit)}</span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Costo Insumos:</span>
+            <span className="font-medium text-red-600">-{formatCurrency(costOfSupplies)}</span>
           </div>
         </div>
       </CardContent>

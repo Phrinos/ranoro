@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -15,7 +14,7 @@ import type {
   InventoryItem,
   ServiceTypeRecord,
   InventoryCategory,
-  Supplier
+  Supplier,
 } from '@/types';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form';
@@ -211,7 +210,7 @@ export default function ServicioPage() {
           if (!serviceData) {
             setNotFound(true);
           } else {
-            setInitialData(normalizeForForm(serviceData, usersData) as ServiceRecord);
+            setInitialData(serviceData as ServiceRecord);
           }
         } else if (user) {
           const newId = doc(collection(db, 'serviceRecords')).id;
@@ -225,7 +224,7 @@ export default function ServicioPage() {
             serviceAdvisorName: user.name,
             serviceAdvisorSignatureDataUrl: user.signatureDataUrl ?? null,
           };
-          setInitialData(normalizeForForm(draft, usersData) as ServiceRecord);
+          setInitialData(draft as ServiceRecord);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -275,18 +274,29 @@ export default function ServicioPage() {
     try {
       toast({ title: isEditMode ? "Guardando cambios…" : "Creando cotización…" });
 
-      const payload = normalizeForForm(values, users) as ServiceRecord;
-      console.log("Payload a guardar:", payload);
+      const cleanedValues = { ...values };
+      cleanedValues.serviceItems = (cleanedValues.serviceItems || [])
+        .map(item => ({
+          ...item,
+          suppliesUsed: (item.suppliesUsed || []).filter(supply => supply.supplyId && supply.quantity > 0)
+        }))
+        .filter(item => item.name && item.name.trim() !== "");
+
+      const payload = normalizeForForm(cleanedValues, users) as ServiceRecord;
 
       const saved = await serviceService.saveService(payload);
-      const preview = saved ?? payload;
-
+      
       if (isEditMode) {
         toast({ title: "Cambios Guardados Exitosamente" });
-        setInitialData(preview);
+        const tab = 
+          saved.status === 'Cotizacion' ? 'cotizaciones' :
+          saved.status === 'Agendado' ? 'agenda' :
+          saved.status === 'En Taller' ? 'activos' :
+          'historial';
+        router.push(`/servicios?tab=${tab}`);
       } else {
         toast({ title: "Cotización Creada Exitosamente" });
-        handleShowShareDialog(preview, `/servicios?tab=cotizaciones`);
+        handleShowShareDialog(saved, `/servicios?tab=cotizaciones`);
       }
     } catch (e: any) {
       console.error(e);
