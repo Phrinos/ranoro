@@ -11,6 +11,7 @@ import {
   orderBy,
   serverTimestamp,
   runTransaction, // Importar runTransaction
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, User } from '@/types';
@@ -105,7 +106,6 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
   serviceData.total = pickTotal(serviceData);
 
   const serviceRef = doc(db, 'serviceRecords', serviceId);
-  // Corrected syntax for runTransaction
   await runTransaction(db, async (transaction) => {
     transaction.set(serviceRef, cleanObjectForFirestore(serviceData), { merge: true });
   });
@@ -115,11 +115,18 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
   return { ...saved.data(), id: serviceId } as ServiceRecord;
 };
 
+const deleteService = async (id: string): Promise<void> => {
+    if (!db) throw new Error('Database not initialized.');
+    const serviceRef = doc(db, 'serviceRecords', id);
+    await deleteDoc(serviceRef);
+};
+
 
 export const serviceService = {
   onServicesUpdate,
   onServicesUpdatePromise,
   getDocById,
   saveService,
+  deleteService,
   // ... other functions
 };
