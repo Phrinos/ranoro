@@ -160,8 +160,8 @@ export default function ServicioPage() {
       const savedRecord = await serviceService.saveService(values as ServiceRecord);
       toast({ title: isEditMode ? 'Cambios Guardados' : 'Registro Creado' });
 
-      if (isEditMode) {
-        const tab = saved.status === 'Cotizacion' ? 'cotizaciones' : saved.status === 'Agendado' ? 'agenda' : saved.status === 'En Taller' ? 'activos' : 'historial';
+      if (isEditMode && savedRecord) {
+        const tab = savedRecord.status === 'Cotizacion' ? 'cotizaciones' : savedRecord.status === 'Agendado' ? 'agenda' : savedRecord.status === 'En Taller' ? 'activos' : 'historial';
         router.push(`/servicios?tab=${tab}`);
       } else {
         // handleShowShareDialog(savedRecord, `/servicios?tab=cotizaciones`);
