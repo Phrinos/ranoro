@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { useFormContext, type FieldErrors } from 'react-hook-form';
+import { useFormContext, type FieldErrors, type SubmitErrorHandler } from 'react-hook-form';
 import type {
   ServiceRecord,
   Vehicle,
@@ -30,51 +30,59 @@ import type { ServiceFormValues } from '@/schemas/service-form';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 
 // -------------------- Utils --------------------
-const getErrorMessages = (errors: FieldErrors<ServiceFormValues>): string => {
-  const messages: string[] = [];
-  const parseErrors = (errorObj: any, prefix = '') => {
-    for (const key in errorObj) {
-      const fullKey = prefix ? `${prefix}.${key}` : key;
-      const error = (errorObj as any)[key];
-      if (error && error.message) messages.push(`${fullKey}: ${error.message}`);
-      else if (typeof error === 'object' && error !== null) parseErrors(error, fullKey);
+function materializeErrors<T extends FieldErrors<any>>(e: T) {
+  try {
+    return JSON.parse(JSON.stringify(e));
+  } catch {
+    const out: any = {};
+    const visit = (obj: any, tgt: any) => {
+      Object.entries(obj || {}).forEach(([k, v]) => {
+        if (!v) return;
+        if (typeof v === "object" && !("message" in (v as any))) {
+          tgt[k] = Array.isArray(v) ? [] : {};
+          visit(v, tgt[k]);
+        } else {
+          tgt[k] = v;
+        }
+      });
+    };
+    visit(e, out);
+    return out;
+  }
+}
+
+function flattenRHFErrors(errs: FieldErrors<any>): string[] {
+  const out: string[] = [];
+  const walk = (node: any) => {
+    if (!node || typeof node !== "object") return;
+    for (const key of Object.keys(node)) {
+      const val = node[key];
+      if (!val) continue;
+      if (typeof val === "object" && "message" in val && val.message) {
+        out.push(String(val.message));
+      }
+      if (typeof val === "object") walk(val);
     }
   };
-  parseErrors(errors);
-  if (messages.length === 0) return "Error de validación desconocido.";
-  return `Hay errores en el formulario: ${messages.join('; ')}.`;
-};
-
-const normalizeText = (text: string | null | undefined): string => {
-  if (!text) return "";
-  return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-};
-
-// Números robustos ($, comas, etc.)
-const toNumber = (v: any) =>
-  typeof v === 'number'
-    ? (Number.isFinite(v) ? v : 0)
-    : typeof v === 'string'
-      ? (Number(v.replace(/[^\d.-]/g, '')) || 0)
-      : 0;
-
-// --- Normalización de STATUS ---
-type CanonStatus = 'Cotizacion' | 'En Taller' | 'Agendado' | 'Entregado' | 'Cancelado';
-function canonicalStatus(input?: string | null): CanonStatus | null {
-  const s = normalizeText(input || "");
-  if (!s) return null;
-  if (s.includes('cotiz')) return 'Cotizacion';
-  if (s.includes('taller')) return 'En Taller';
-  if (s.includes('agenda')) return 'Agendado';
-  if (s.includes('entreg')) return 'Entregado';
-  if (s.includes('cancel')) return 'Cancelado';
-  return null;
+  walk(errs);
+  return Array.from(new Set(out)).filter(Boolean);
 }
+
+const hasTechnician = (val: Partial<ServiceRecord> | ServiceFormValues) => {
+  const tid =
+    (val as any).technicianId ??
+    (val as any).technician_id ??
+    (val as any).technician?.id ??
+    null;
+
+  if (typeof tid === 'string') return tid.trim().length > 0;
+  return Boolean(tid);
+};
 
 // -------------------- Componente Principal --------------------
 export function ServiceForm({
   initialData, vehicles, users, inventoryItems, serviceTypes, categories, suppliers, serviceHistory,
-  onSave, onComplete, onVehicleCreated, onCancel, mode, activeTab, onTabChange,
+  onSave, onComplete, onVehicleCreated, onCancel, onValidationErrors, mode, activeTab, onTabChange,
   isChecklistWizardOpen, setIsChecklistWizardOpen, onOpenNewVehicleDialog,
 }: {
   initialData: ServiceRecord | null;
@@ -87,6 +95,7 @@ export function ServiceForm({
   serviceHistory: ServiceRecord[];
   onSave: (values: ServiceFormValues) => Promise<ServiceRecord | void>;
   onComplete?: (values: ServiceFormValues) => void; 
+  onValidationErrors: (errors: FieldErrors<ServiceFormValues>) => void;
   onVehicleCreated?: (data: VehicleFormValues) => Promise<Vehicle>;
   onCancel: () => void;
   mode: 'quote' | 'service';
@@ -111,7 +120,7 @@ export function ServiceForm({
       // @ts-ignore
       const userFunctions = Array.isArray(user?.functions) ? user.functions : [];
       // @ts-ignore
-      const normalizedRole = normalizeText(user?.role);
+      const normalizedRole = user?.role?.toLowerCase() || '';
       if (userFunctions.includes('asesor') || normalizedRole.includes('asesor')) advisorsList.push(user);
       if (userFunctions.includes('tecnico') || normalizedRole.includes('tecnico')) techniciansList.push(user);
     }
@@ -134,62 +143,23 @@ export function ServiceForm({
   const nextServiceInfo = watch('nextServiceInfo');
 
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
+  const isReadOnly = initialData?.status === 'Entregado' || initialData?.status === 'Cancelado';
 
   const totalCost = React.useMemo(() => {
-    return (serviceItems || []).reduce((sum, item: any) => {
-      const qty = toNumber(item?.quantity ?? 1);
-      const price = toNumber(item?.sellingPrice);
-      const discount = toNumber(item?.discount);
-      const line = Math.max(price * (qty || 1) - discount, 0);
-      return sum + line;
-    }, 0);
+    return (serviceItems || []).reduce((sum, item: any) => sum + (Number(item?.sellingPrice) || 0), 0);
   }, [serviceItems]);
 
   useEffect(() => {
     setValue("total", totalCost, { shouldDirty: true, shouldValidate: false });
     // @ts-ignore
-    setValue("Total", totalCost as any, { shouldDirty: true, shouldValidate: false });
+    setValue("Total", totalCost, { shouldDirty: true, shouldValidate: false });
   }, [totalCost, setValue]);
-
-  useEffect(() => {
-    const current = getValues('status') as string | undefined;
-    let next: CanonStatus | null = canonicalStatus(current);
-    if (!next) next = mode === 'quote' ? 'Cotizacion' : 'En Taller';
-
-    if (current !== next) {
-      setValue('status', next as any, { shouldDirty: !current, shouldValidate: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, initialData?.id]);
-
-  useEffect(() => {
-    const subscription = watch((value, { name }) => {
-      if (name === 'status') {
-        const canon = canonicalStatus(value.status) || (mode === 'quote' ? 'Cotizacion' : 'En Taller');
-        if (value.status !== canon) {
-          setValue('status', canon as any, { shouldDirty: true, shouldValidate: true });
-        }
-        if (canon === 'En Taller' && !value.receptionDateTime) {
-          setValue('receptionDateTime', new Date() as any, { shouldDirty: true, shouldValidate: true });
-        }
-        if (canon === 'Entregado' && !value.deliveryDateTime) {
-          setValue('deliveryDateTime', new Date() as any, { shouldDirty: true, shouldValidate: true });
-        }
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, setValue, mode]);
 
   const handleVehicleSelection = (vehicle: Vehicle | null) => {
     setValue('vehicleId', vehicle?.id || '', { shouldDirty: true });
     setValue('customerName', vehicle?.ownerName || '', { shouldDirty: true });
     if (touchedFields.vehicleId) trigger('vehicleId');
     if (touchedFields.customerName) trigger('customerName');
-  };
-
-  const onValidationErrors = (errors: FieldErrors<ServiceFormValues>) => {
-    const description = getErrorMessages(errors);
-    toast({ title: "Error de Validación", description, variant: "destructive" });
   };
 
   const handleOpenSignatureDialog = (type: 'reception' | 'delivery' | 'advisor') => {
@@ -223,7 +193,7 @@ export function ServiceForm({
           />
 
           <ServiceDetailsCard
-            isReadOnly={false}
+            isReadOnly={isReadOnly}
             advisors={advisors}
             technicians={technicians}
             serviceTypes={serviceTypes}
@@ -236,6 +206,7 @@ export function ServiceForm({
               nextServiceInfo={nextServiceInfo || {}}
               onUpdate={handleUpdateNextService}
               isSubmitting={isSubmitting}
+              currentMileage={selectedVehicle?.currentMileage}
             />
           )}
 
@@ -260,6 +231,7 @@ export function ServiceForm({
                     onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
                     handleEnhanceText={() => {}}
                     isEnhancingText={false}
+                    isReadOnly={isReadOnly}
                   />
                 </CardContent>
               </Card>
@@ -281,12 +253,14 @@ export function ServiceForm({
                 onOpenSignature={handleOpenSignatureDialog}
                 handleEnhanceText={() => {}}
                 isEnhancingText={false}
+                isReadOnly={isReadOnly}
               />
               <ReceptionAndDelivery
                 part="delivery"
                 onOpenSignature={handleOpenSignatureDialog}
                 handleEnhanceText={() => {}}
                 isEnhancingText={false}
+                isReadOnly={isReadOnly}
               />
             </TabsContent>
 
