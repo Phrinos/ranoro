@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -154,7 +153,8 @@ export default function ServicioPage() {
     });
   };
 
-  const handleShowShareDialog = useCallback((service: ServiceRecord) => {
+  const handleShowShareDialog = useCallback((service: ServiceRecord, nextUrl: string) => {
+    redirectUrl.current = nextUrl;
     setRecordForPreview(service);
     setIsShareDialogOpen(true);
   }, []);
@@ -167,15 +167,18 @@ export default function ServicioPage() {
 
       if (savedRecord) {
         const { status } = savedRecord;
+        const tab = status === 'Cotizacion' ? 'cotizaciones'
+                  : status === 'Agendado' ? 'agenda'
+                  : status === 'En Taller' || status === 'Entregado' ? 'activos'
+                  : 'historial';
+        
+        const nextUrl = `/servicios?tab=${tab}`;
+
         if (status === 'Cotizacion' || status === 'Agendado' || status === 'Entregado') {
-          handleShowShareDialog(savedRecord);
+          handleShowShareDialog(savedRecord, nextUrl);
         } else {
-          const tab = status === 'En Taller' ? 'activos' : 'historial';
-          router.push(`/servicios?tab=${tab}`);
+          router.push(nextUrl);
         }
-      } else if (isEditMode) {
-        const tab = values.status === 'Cotizacion' ? 'cotizaciones' : values.status === 'Agendado' ? 'agenda' : values.status === 'En Taller' ? 'activos' : 'historial';
-        router.push(`/servicios?tab=${tab}`);
       }
     } catch (e: any) {
       console.error(e);
@@ -239,7 +242,12 @@ export default function ServicioPage() {
      {recordForPreview && (
       <ShareServiceDialog 
         open={isShareDialogOpen} 
-        onOpenChange={setIsShareDialogOpen} 
+        onOpenChange={(isOpen) => {
+            setIsShareDialogOpen(isOpen);
+            if (!isOpen && redirectUrl.current) {
+                router.push(redirectUrl.current);
+            }
+        }} 
         service={recordForPreview}
         vehicle={vehicles.find(v => v.id === recordForPreview.vehicleId)}
       />

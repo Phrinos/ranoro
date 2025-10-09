@@ -153,7 +153,7 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
                     <div className="mt-4 bg-muted/30 p-4 rounded-md">
                         <TabsContent value="sheet">
                             <div ref={serviceSheetRef}>
-                                <ServiceSheetContent service={service} vehicle={vehicle} />
+                                <ServiceSheetContent service={service} vehicle={vehicle} onCancelAppointment={() => {}} />
                             </div>
                         </TabsContent>
                         <TabsContent value="ticket">
