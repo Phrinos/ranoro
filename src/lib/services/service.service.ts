@@ -10,6 +10,7 @@ import {
   getDocs,
   orderBy,
   serverTimestamp,
+  runTransaction, // Importar runTransaction
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, User } from '@/types';
@@ -104,7 +105,8 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
   serviceData.total = pickTotal(serviceData);
 
   const serviceRef = doc(db, 'serviceRecords', serviceId);
-  await db.runTransaction(async (transaction) => {
+  // Corrected syntax for runTransaction
+  await runTransaction(db, async (transaction) => {
     transaction.set(serviceRef, cleanObjectForFirestore(serviceData), { merge: true });
   });
 
