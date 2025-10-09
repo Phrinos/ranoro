@@ -1,7 +1,7 @@
 // src/app/(app)/servicios/components/VehicleSelectionDialog.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,16 +25,17 @@ import type { Vehicle } from "@/types";
 interface VehicleSelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  vehicles: Vehicle[]; // puede venir vacío; internamente hacemos fallback seguro
+  vehicles: Vehicle[];
   onSelectVehicle: (vehicleId: string) => void;
   onNewVehicle: (plate?: string) => void;
 }
 
+// Normaliza (lowercase + quita acentos, compatible en todos los navegadores)
 const normalize = (s?: string) =>
   (s ?? "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
+    .replace(/[\u0300-\u036f]/g, "");
 
 export function VehicleSelectionDialog({
   open,
@@ -44,8 +45,8 @@ export function VehicleSelectionDialog({
   onNewVehicle,
 }: VehicleSelectionDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Fallback seguro si vehicles llega undefined/null por alguna razón
   const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
 
   const filtered = useMemo(() => {
@@ -75,7 +76,15 @@ export function VehicleSelectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
+      <DialogContent
+        className="sm:max-w-[640px] p-0 overflow-hidden"
+        // 👇 Forzamos foco al input cuando abre el diálogo
+        onOpenAutoFocus={(e) => {
+          e.preventDefault(); // evita que Radix mueva el foco a otro lado
+          // pequeño delay por si el portal todavía está montando
+          setTimeout(() => inputRef.current?.focus(), 0);
+        }}
+      >
         <DialogHeader className="p-6 pb-3">
           <DialogTitle>Seleccionar Vehículo</DialogTitle>
           <DialogDescription>
@@ -92,13 +101,24 @@ export function VehicleSelectionDialog({
               "[&_[cmdk-input]]:text-sm [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
             )}
           >
-            {/* Barra de búsqueda sticky */}
+            {/* Barra de búsqueda */}
             <div className="sticky top-0 z-10 border-b bg-white">
               <CommandInput
+                ref={inputRef as any}
                 placeholder="Buscar por placa, marca, modelo, propietario…"
                 value={searchTerm}
                 onValueChange={setSearchTerm}
-                autoFocus
+                // Enter: selecciona el primer resultado, o crea nuevo si no hay
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (filtered.length > 0) {
+                      handleSelect(filtered[0].id);
+                    } else {
+                      onNewVehicle(searchTerm || undefined);
+                    }
+                  }
+                }}
               />
             </div>
 
@@ -127,8 +147,9 @@ export function VehicleSelectionDialog({
                     <CommandItem
                       key={v.id}
                       value={searchValue}
-                      onSelect={() => handleSelect(v.id)}
-                      className="flex items-center gap-3 data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
+                      onSelect={() => handleSelect(v.id)} // teclado/enter de cmdk
+                      onClick={() => handleSelect(v.id)}   // ratón/click directo
+                      className="flex items-center gap-3 data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto cursor-pointer"
                     >
                       <Car className="h-5 w-5 text-muted-foreground shrink-0" />
                       <div className="min-w-0">
