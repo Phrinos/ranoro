@@ -188,7 +188,7 @@ export function ServiceAppointmentCard({
                 <Button variant="ghost" size="icon" title="Imprimir Ticket" onClick={onShowTicket}>
                     <Printer className="h-4 w-4" />
                 </Button>
-                {currentUser?.role === 'Superadministrador' && onDelete && (
+                {onDelete && (
                     <ConfirmDialog
                         triggerButton={<Button variant="ghost" size="icon" title="Eliminar Permanentemente"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
                         title="¿Eliminar Servicio Permanentemente?"
