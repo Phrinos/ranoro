@@ -258,6 +258,10 @@ export function ServiceItemCard({
           <span className="text-muted-foreground">IVA Servicio (16%):</span>
           <span className="font-medium">{formatCurrency(tax)}</span>
         </div>
+        <div className="flex justify-between items-center font-semibold text-base pt-1 border-t">
+          <span>Total Servicio:</span>
+          <span className="font-bold">{formatCurrency(sellingPrice)}</span>
+        </div>
         {canViewCosts && (
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Costo Insumos:</span>
