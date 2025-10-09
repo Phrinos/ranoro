@@ -288,6 +288,7 @@ export function ServiceForm({
                 }
               : undefined
           }
+          onSaveClick={handleSubmit(onSave, onValidationErrors)}
           mode={mode}
           initialData={initialData}
           isSubmitting={isSubmitting}

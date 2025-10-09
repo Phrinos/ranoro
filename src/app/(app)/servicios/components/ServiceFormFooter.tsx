@@ -13,6 +13,8 @@ interface ServiceFormFooterProps {
   formId: string;
   onCancel?: () => void;
   onComplete?: () => void;
+  /** 👇 nuevo: submit controlado por callback directo */
+  onSaveClick?: () => void;
   mode: 'service' | 'quote';
   initialData: ServiceRecord | null;
   isSubmitting: boolean;
@@ -29,11 +31,12 @@ export const ServiceFormFooter = ({
   formId,
   onCancel,
   onComplete,
+  onSaveClick,
   mode,
   initialData,
   isSubmitting
 }: ServiceFormFooterProps) => {
-  const { control, reset } = useFormContext<ServiceFormValues>();
+  const { control } = useFormContext<ServiceFormValues>();
 
   const [status, serviceItems = []] = useWatch({
     control,
@@ -83,8 +86,6 @@ export const ServiceFormFooter = ({
     };
   }
 
-  const handleDiscard = () => reset((initialData as unknown as ServiceFormValues) || {});
-
   return (
     <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm hidden md:block">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -103,14 +104,6 @@ export const ServiceFormFooter = ({
               confirmText={cancelTexts.confirm}
             />
           )}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleDiscard}
-            className="w-full sm:w-auto"
-          >
-            Descartar
-          </Button>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -133,9 +126,10 @@ export const ServiceFormFooter = ({
             </Button>
           )}
 
+          {/* 👇 Guardar invoca directamente el submit del RHF que le manda el padre */}
           <Button
-            type="submit"
-            form={formId}
+            type="button"
+            onClick={onSaveClick}
             disabled={isSubmitting}
             className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
           >
