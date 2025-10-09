@@ -154,17 +154,28 @@ export default function ServicioPage() {
     });
   };
 
+  const handleShowShareDialog = useCallback((service: ServiceRecord) => {
+    setRecordForPreview(service);
+    setIsShareDialogOpen(true);
+  }, []);
+
   const handleSaveService = async (values: ServiceFormValues) => {
     setIsSubmitting(true);
     try {
       const savedRecord = await serviceService.saveService(values as ServiceRecord);
       toast({ title: isEditMode ? 'Cambios Guardados' : 'Registro Creado' });
 
-      if (isEditMode && savedRecord) {
-        const tab = savedRecord.status === 'Cotizacion' ? 'cotizaciones' : savedRecord.status === 'Agendado' ? 'agenda' : savedRecord.status === 'En Taller' ? 'activos' : 'historial';
+      if (savedRecord) {
+        const { status } = savedRecord;
+        if (status === 'Cotizacion' || status === 'Agendado' || status === 'Entregado') {
+          handleShowShareDialog(savedRecord);
+        } else {
+          const tab = status === 'En Taller' ? 'activos' : 'historial';
+          router.push(`/servicios?tab=${tab}`);
+        }
+      } else if (isEditMode) {
+        const tab = values.status === 'Cotizacion' ? 'cotizaciones' : values.status === 'Agendado' ? 'agenda' : values.status === 'En Taller' ? 'activos' : 'historial';
         router.push(`/servicios?tab=${tab}`);
-      } else {
-        // handleShowShareDialog(savedRecord, `/servicios?tab=cotizaciones`);
       }
     } catch (e: any) {
       console.error(e);
@@ -201,6 +212,7 @@ export default function ServicioPage() {
   }
 
   return (
+    <>
     <FormProvider {...methods}>
       <PageHeader title={pageTitle} description={pageDescription} />
       <ServiceForm
@@ -224,5 +236,14 @@ export default function ServicioPage() {
         isNewRecord={!isEditMode}
       />
     </FormProvider>
+     {recordForPreview && (
+      <ShareServiceDialog 
+        open={isShareDialogOpen} 
+        onOpenChange={setIsShareDialogOpen} 
+        service={recordForPreview}
+        vehicle={vehicles.find(v => v.id === recordForPreview.vehicleId)}
+      />
+    )}
+    </>
   );
 }
