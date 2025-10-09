@@ -131,7 +131,7 @@ export function ServiceAppointmentCard({
           </div>
 
           {/* Col 3: Cost & Profit */}
-          <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-1 border-b md:border-b-0 md:border-r">
+          <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-40 flex-shrink-0 space-y-1 border-b md:border-b-0 md:border-r">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Costo Cliente</p>
               <p className="font-bold text-xl text-primary">{formatCurrency(calculatedTotals.totalCost)}</p>
