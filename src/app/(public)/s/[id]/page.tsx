@@ -23,6 +23,7 @@ import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog
 import { TicketContent } from "@/components/ticket-content";
 import { Button } from "@/components/ui/button";
 import { scheduleAppointmentAction, confirmAppointmentAction, cancelAppointmentAction, saveSignatureAction } from "../actions";
+import { isValid, parseISO } from 'date-fns';
 
 // Define un tipo para el doc público (subconjunto del ServiceRecord)
 type PublicServiceDoc = {
@@ -196,6 +197,9 @@ export default function PublicServicePage() {
   };
 
   const vehicle = service?.vehicle || null;
+  const displayPlate = vehicle?.licensePlate || service?.vehicleIdentifier || vehicle?.plates || null;
+  const patchedService = displayPlate ? { ...service, vehicleIdentifier: displayPlate } : service;
+
 
   if (service === undefined) {
     return (
@@ -225,7 +229,7 @@ export default function PublicServicePage() {
     <>
       <div className="container mx-auto py-4 sm:py-8">
         <ServiceSheetContent
-          service={service as any}
+          service={patchedService as any}
           vehicle={vehicle}
           onScheduleClick={() => setIsScheduling(true)}
           onConfirmClick={handleConfirmAppointment}
