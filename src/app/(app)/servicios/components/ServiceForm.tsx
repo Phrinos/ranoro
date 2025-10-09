@@ -28,6 +28,7 @@ import { SignatureDialog } from './signature-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { ServiceFormValues } from '@/schemas/service-form';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
+import { ServiceMobileBar } from './ServiceMobileBar';
 
 // -------------------- Utils --------------------
 function materializeErrors<T extends FieldErrors<any>>(e: T) {
@@ -224,8 +225,6 @@ export function ServiceForm({
                   <ServiceItemsList
                     inventoryItems={inventoryItems}
                     serviceTypes={serviceTypes}
-                    categories={categories}
-                    suppliers={suppliers}
                     technicians={technicians}
                     mode={mode}
                     onNewInventoryItemCreated={onVehicleCreated ? (async () => ({} as InventoryItem)) : async () => ({} as InventoryItem)}
@@ -278,7 +277,7 @@ export function ServiceForm({
         </div>
 
         <ServiceFormFooter
-          formId="service-form"
+          onSaveClick={handleSubmit(onSave, onValidationErrors)}
           onCancel={onCancel}
           onComplete={
             onComplete

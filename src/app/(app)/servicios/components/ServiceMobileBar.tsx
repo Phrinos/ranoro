@@ -36,8 +36,8 @@ export function ServiceMobileBar({
           <span className="text-xs mt-1">Checklist</span>
         </Button>
         <Button 
-            type="submit"
-            form="service-form"
+            type="button"
+            onClick={onSave}
             variant="default" 
             className="flex flex-col h-auto items-center bg-green-600 hover:bg-green-700" 
             disabled={isSubmitting}

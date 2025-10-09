@@ -10,9 +10,9 @@ import type { ServiceFormValues } from '@/schemas/service-form';
 import type { ServiceRecord } from '@/types';
 
 interface ServiceFormFooterProps {
-  formId: string;
   onCancel?: () => void;
   onComplete?: () => void;
+  onSaveClick: () => void;
   mode: 'service' | 'quote';
   initialData: ServiceRecord | null;
   isSubmitting: boolean;
@@ -26,9 +26,9 @@ const toNumber = (v: any) =>
       : 0;
 
 export const ServiceFormFooter = ({
-  formId,
   onCancel,
   onComplete,
+  onSaveClick,
   mode,
   initialData,
   isSubmitting
@@ -124,8 +124,8 @@ export const ServiceFormFooter = ({
           )}
           
           <Button
-            type="submit"
-            form={formId}
+            type="button"
+            onClick={onSaveClick}
             disabled={isSubmitting}
             className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
           >
