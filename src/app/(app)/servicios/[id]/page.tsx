@@ -14,7 +14,8 @@ import type {
   InventoryItem,
   ServiceTypeRecord,
   InventoryCategory,
-  Supplier
+  Supplier,
+  NextServiceInfo
 } from '@/types';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form';
@@ -29,6 +30,16 @@ import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
 import { ServiceMobileBar } from '../components/ServiceMobileBar';
 import { ActiveServicesSheet } from '../components/ActiveServicesSheet';
 import { PhotoReportModal } from '../components/PhotoReportModal';
+
+const generatePublicId = (length = 16) => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+};
+
 
 export default function ServicioPage() {
   const { toast } = useToast();
@@ -73,26 +84,31 @@ export default function ServicioPage() {
   });
 
   useEffect(() => {
-    if (!initialData) return;
+    if (!initialData || !users.length) return;
 
     const toDate = (x: any) =>
       x && typeof x === 'object' && 'seconds' in x ? new Date(x.seconds * 1000) :
       x ? new Date(x) : undefined;
-
+    
+    let advisor = users.find(u => u.id === initialData.serviceAdvisorId);
+    if (!advisor && initialData.serviceAdvisorName) {
+        advisor = users.find(u => u.name === initialData.serviceAdvisorName);
+    }
+    
     methods.reset({
       ...initialData,
       status: (["Cotizacion","Agendado","En Taller","Entregado","Cancelado","Proveedor Externo"] as const)
                 .includes(initialData.status as any) ? initialData.status as any : "Cotizacion",
-      serviceAdvisorId: initialData.serviceAdvisorId ? String(initialData.serviceAdvisorId) : "",
+      serviceAdvisorId: advisor?.id || initialData.serviceAdvisorId || "",
       technicianId: initialData.technicianId ? String(initialData.technicianId) : "",
-      serviceAdvisorName: initialData.serviceAdvisorName ?? "",
+      serviceAdvisorName: advisor?.name || initialData.serviceAdvisorName || "",
       technicianName: initialData.technicianName ?? "",
       serviceDate: toDate(initialData.serviceDate) ?? new Date(),
       appointmentDateTime: toDate(initialData.appointmentDateTime),
       receptionDateTime: toDate(initialData.receptionDateTime),
       deliveryDateTime: toDate(initialData.deliveryDateTime),
     });
-  }, [initialData, methods]);
+  }, [initialData, users, methods]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -153,11 +169,26 @@ export default function ServicioPage() {
     });
   };
 
-  const handleShowShareDialog = useCallback((service: ServiceRecord, nextUrl: string) => {
+  const handleShowShareDialog = useCallback(async (service: ServiceRecord, nextUrl: string) => {
     redirectUrl.current = nextUrl;
-    setRecordForPreview(service);
+    let serviceToShare = { ...service };
+
+    if (!serviceToShare.publicId) {
+      try {
+        toast({ title: "Generando enlace público..." });
+        const newPublicId = generatePublicId();
+        await serviceService.updateService(service.id, { publicId: newPublicId });
+        serviceToShare.publicId = newPublicId;
+      } catch (error) {
+        console.error("Error generating public link:", error);
+        toast({ title: "Error al crear enlace", description: "No se pudo generar el enlace.", variant: "destructive" });
+        return;
+      }
+    }
+  
+    setRecordForPreview(serviceToShare);
     setIsShareDialogOpen(true);
-  }, []);
+  }, [toast]);
 
   const handleSaveService = async (values: ServiceFormValues) => {
     setIsSubmitting(true);
@@ -167,10 +198,10 @@ export default function ServicioPage() {
 
       if (savedRecord) {
         const { status } = savedRecord;
-        const tab = status === 'Cotizacion' ? 'cotizaciones'
-                  : status === 'Agendado' ? 'agenda'
-                  : status === 'En Taller' || status === 'Entregado' ? 'activos'
-                  : 'historial';
+        let tab = 'historial';
+        if (status === 'Cotizacion') tab = 'cotizaciones';
+        else if (status === 'Agendado') tab = 'agenda';
+        else if (status === 'En Taller' || status === 'Entregado') tab = 'activos';
         
         const nextUrl = `/servicios?tab=${tab}`;
 

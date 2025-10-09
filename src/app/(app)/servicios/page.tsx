@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/page.tsx
 "use client";
 import React, { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
@@ -25,15 +24,6 @@ const HistorialTabContent = lazy(() => import('./components/tab-historial'));
 const AgendaTabContent = lazy(() => import('./components/tab-agenda'));
 const CotizacionesTabContent = lazy(() => import('./components/tab-cotizaciones'));
 const PaymentDetailsDialog = lazy(() => import('@/components/shared/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
-
-const generatePublicId = (length = 16) => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-};
 
 
 function ServiciosPage() {
@@ -92,32 +82,10 @@ function ServiciosPage() {
     router.push(`${pathname}?${params.toString()}`);
   }, [searchParams, router, pathname]);
   
-  const handleShowShareDialog = useCallback(async (service: ServiceRecord) => {
-    let serviceToShare = { ...service };
-
-    // Si el servicio no tiene un ID público, genéralo y guárdalo.
-    // La Cloud Function se encargará de la sincronización.
-    if (!serviceToShare.publicId) {
-      try {
-        toast({ title: "Generando enlace público..." });
-        const newPublicId = generatePublicId();
-        await serviceService.updateService(service.id, { publicId: newPublicId });
-        serviceToShare.publicId = newPublicId; // Actualiza el objeto local
-      } catch (error) {
-        console.error("Error generating public link:", error);
-        toast({
-          title: "Error al crear enlace",
-          description: "No se pudo generar el enlace público para compartir.",
-          variant: "destructive"
-        });
-        return; // Detener si falla la actualización
-      }
-    }
-  
-    setRecordForSharing(serviceToShare);
+  const handleShowShareDialog = useCallback((service: ServiceRecord) => {
+    setRecordForSharing(service);
     setIsShareDialogOpen(true);
-
-  }, [toast]);
+  }, []);
 
   const handleShowTicketDialog = useCallback((service: ServiceRecord) => {
     setServiceForTicket(service);
