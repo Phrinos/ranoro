@@ -17,19 +17,20 @@ const statusOptions: { value: ServiceFormValues["status"]; label: string }[] = [
   { value: "Agendado", label: "Agendado" },
   { value: "En Taller", label: "En Taller" },
   { value: "Entregado", label: "Entregado" },
+  { value: "Cancelado", label: "Cancelado" },
+  { value: "Proveedor Externo", label: "Proveedor Externo" },
 ];
 
 const subStatusOptions = [
   "En Diagnóstico", "Esperando Refacciones", "En Reparación", "Pruebas Finales", "Lavado", "Listo para Entrega"
 ];
 
-
 interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
   advisors: User[];
   technicians: User[];          
   serviceTypes: ServiceTypeRecord[]; 
-  onOpenSignature: (type: "reception" | "delivery" | "advisor") => void;
+  onOpenSignature: (type: "reception" | "delivery" | "advisor" | "technician") => void;
   isNew: boolean;
 }
 
@@ -50,6 +51,25 @@ export function ServiceDetailsCard({
   const isFinalStatus = watchedStatus === "Cancelado" || watchedStatus === "Entregado";
   const advisorSigned = !!watch("serviceAdvisorSignatureDataUrl");
   const technicianSigned = !!watch("technicianSignatureDataUrl");
+  
+  const advisorId = watch("serviceAdvisorId") ?? "";
+  const advisorName = watch("serviceAdvisorName") ?? "";
+  const technicianId = watch("technicianId") ?? "";
+  const technicianName = watch("technicianName") ?? "";
+
+  const safeAdvisors = React.useMemo(() => {
+    if (advisorId && !advisors.some(a => a.id === advisorId)) {
+      return [{ id: advisorId, name: advisorName || "(asesor)" } as User, ...advisors];
+    }
+    return advisors;
+  }, [advisors, advisorId, advisorName]);
+
+  const safeTechnicians = React.useMemo(() => {
+    if (technicianId && !technicians.some(t => t.id === technicianId)) {
+      return [{ id: technicianId, name: technicianName || "(técnico)" } as User, ...technicians];
+    }
+    return technicians;
+  }, [technicians, technicianId, technicianName]);
 
   const handleStatusChange = (newStatus: ServiceFormValues["status"]) => {
     if (newStatus === "En Taller" && !watch("receptionDateTime")) {
@@ -85,8 +105,8 @@ export function ServiceDetailsCard({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-          {/* Estado */}
+        {/* Línea 1: Estado y Sub-estado */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <FormField
             control={control}
             name="status"
@@ -94,13 +114,16 @@ export function ServiceDetailsCard({
               <FormItem>
                 <FormLabel className={cn(errors.status && "text-destructive")}>Estado</FormLabel>
                 <Select
+                  key={String(field.value ?? 'status-empty')}
                   onValueChange={(v) => handleStatusChange(v as ServiceFormValues["status"])}
-                  value={field.value}
+                  value={field.value as string | undefined}
                   disabled={isFinalStatus}
                 >
                   <FormControl>
                     <SelectTrigger className={cn("font-bold bg-card", errors.status && "border-destructive focus-visible:ring-destructive")}>
-                      <SelectValue />
+                      <SelectValue placeholder="Seleccione un estado">
+                        {statusOptions.find(s => s.value === field.value)?.label}
+                      </SelectValue>
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -115,7 +138,6 @@ export function ServiceDetailsCard({
             )}
           />
 
-          {/* Sub-estado (si está en taller) */}
           {watchedStatus === 'En Taller' && (
             <FormField
               control={control}
@@ -135,102 +157,98 @@ export function ServiceDetailsCard({
               )}
             />
           )}
-
-          {/* Selector de Asesor */}
+        </div>
+        
+        {/* Línea 2: Asesor y Técnico */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <FormField
             control={control}
             name="serviceAdvisorId"
-            render={({ field }) => {
-              const advisorName = advisors.find(a => a.id === field.value)?.name || watch('serviceAdvisorName');
-              return (
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Asesor de Servicio</FormLabel>
+                <div className="flex items-center gap-2">
+                  <Select
+                    key={advisorId || 'advisor-empty'}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleUserSelection(value, advisors, "serviceAdvisorId", "serviceAdvisorName", "serviceAdvisorSignatureDataUrl");
+                    }}
+                    value={String(field.value ?? "")}
+                    disabled={isReadOnly || safeAdvisors.length === 0}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="bg-card">
+                        <SelectValue placeholder="Seleccione un asesor">
+                          {advisorId
+                            ? (advisorName || safeAdvisors.find(a => a.id === advisorId)?.name)
+                            : undefined}
+                        </SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {safeAdvisors.map((advisor) => (
+                        <SelectItem key={advisor.id} value={advisor.id}>
+                          {advisor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant={advisorSigned ? "secondary" : "outline"}
+                    size="icon"
+                    title={advisorSigned ? "Firma registrada" : "Capturar/actualizar firma del asesor"}
+                    onClick={() => onOpenSignature("advisor")}
+                  >
+                    <Signature className={cn("h-4 w-4", advisorSigned && "text-green-600")} />
+                  </Button>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
+            <FormField
+              control={control}
+              name="technicianId"
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Asesor de Servicio</FormLabel>
+                  <FormLabel>Técnico</FormLabel>
                   <div className="flex items-center gap-2">
                     <Select
                       onValueChange={(value) => {
                         field.onChange(value);
-                        handleUserSelection(value, advisors, "serviceAdvisorId", "serviceAdvisorName", "serviceAdvisorSignatureDataUrl");
+                        handleUserSelection(value, technicians, "technicianId", "technicianName", "technicianSignatureDataUrl");
                       }}
-                      value={field.value}
-                      disabled={isReadOnly || advisors.length === 0}
+                      value={field.value ?? ""}
+                      disabled={isReadOnly || safeTechnicians.length === 0}
                     >
                       <FormControl>
                         <SelectTrigger className="bg-card">
-                          <SelectValue placeholder="Seleccione un asesor">
-                            {advisorName || "Seleccione un asesor"}
-                          </SelectValue>
+                          <SelectValue placeholder="Seleccione un técnico" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {advisors.map((advisor) => (
-                          <SelectItem key={advisor.id} value={advisor.id}>
-                            {advisor.name}
+                        {safeTechnicians.map((technician) => (
+                          <SelectItem key={technician.id} value={technician.id}>
+                            {technician.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <Button
                       type="button"
-                      variant={advisorSigned ? "secondary" : "outline"}
+                      variant={technicianSigned ? "secondary" : "outline"}
                       size="icon"
-                      title={advisorSigned ? "Firma registrada" : "Capturar/actualizar firma del asesor"}
-                      onClick={() => onOpenSignature("advisor")}
+                      title={technicianSigned ? "Firma registrada" : "Capturar/actualizar firma del técnico"}
+                      onClick={() => onOpenSignature("technician")}
                     >
-                      <Signature className={cn("h-4 w-4", advisorSigned && "text-green-600")} />
+                      <Signature className={cn("h-4 w-4", technicianSigned && "text-green-600")} />
                     </Button>
                   </div>
                 </FormItem>
-              )
-            }}
-          />
-
-          {/* Selector de Tecnico */}
-          {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
-            <FormField
-              control={control}
-              name="technicianId"
-              render={({ field }) => {
-                const technicianName = technicians.find(t => t.id === field.value)?.name || watch('technicianName');
-                return (
-                  <FormItem>
-                    <FormLabel>Técnico</FormLabel>
-                    <div className="flex items-center gap-2">
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          handleUserSelection(value, technicians, "technicianId", "technicianName", "technicianSignatureDataUrl");
-                        }}
-                        value={field.value}
-                        disabled={isReadOnly || technicians.length === 0}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="bg-card">
-                            <SelectValue placeholder="Seleccione un técnico">
-                              {technicianName || "Seleccione un técnico"}
-                            </SelectValue>
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {technicians.map((technician) => (
-                            <SelectItem key={technician.id} value={technician.id}>
-                              {technician.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant={technicianSigned ? "secondary" : "outline"}
-                        size="icon"
-                        title={technicianSigned ? "Firma registrada" : "Capturar/actualizar firma del técnico"}
-                        onClick={() => onOpenSignature("advisor")} // This should likely open a dialog for the TECHNICIAN
-                      >
-                        <Signature className={cn("h-4 w-4", technicianSigned && "text-green-600")} />
-                      </Button>
-                    </div>
-                  </FormItem>
-                )
-              }}
+              )}
             />
           )}
         </div>

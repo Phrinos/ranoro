@@ -26,6 +26,7 @@ export const serviceFormSchema = z.object({
   publicId: z.string().optional(),
 
   status: z.enum(["Cotizacion","Agendado","En Taller","Entregado","Cancelado", "Proveedor Externo"]).default("Cotizacion"),
+  subStatus: z.string().optional(),
   vehicleId: z.string().min(1, "Seleccione un vehículo"),
   serviceDate: z.date(),
 
@@ -35,7 +36,7 @@ export const serviceFormSchema = z.object({
 
   serviceItems: z.array(serviceItemSchema).default([]),
 
-  serviceAdvisorId: z.string().min(1, "Seleccione un asesor"),
+  serviceAdvisorId: z.string().optional().default(""),
   serviceAdvisorName: z.string().optional().default(""),
   serviceAdvisorSignatureDataUrl: z.string().nullable().optional(),
 

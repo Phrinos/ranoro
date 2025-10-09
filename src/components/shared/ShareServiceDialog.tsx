@@ -26,14 +26,8 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
   const serviceSheetRef = useRef<HTMLDivElement>(null);
   const ticketRef = useRef<HTMLDivElement>(null);
   const [previewType, setPreviewType] = useState<'sheet' | 'ticket'>('sheet');
-
-  if (!service) {
-    return null;
-  }
-
-  const publicUrl = `${window.location.origin}/s/${service.publicId || service.id}`;
-
-  const handleCopyToClipboard = async (text: string, type: 'link' | 'text') => {
+  
+  const handleCopyToClipboard = useCallback(async (text: string, type: 'link' | 'text') => {
     try {
       await navigator.clipboard.writeText(text);
       toast({
@@ -48,7 +42,7 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   const handleCopyImageToClipboard = useCallback(async () => {
     if (!ticketRef.current) {
@@ -67,6 +61,12 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
         toast({ title: "Error", description: "No se pudo copiar la imagen del ticket.", variant: "destructive" });
     }
   }, [ticketRef, toast]);
+
+  if (!service) {
+    return null;
+  }
+
+  const publicUrl = `${window.location.origin}/s/${service.publicId || service.id}`;
   
   const handleShare = async () => {
     if (navigator.share) {
