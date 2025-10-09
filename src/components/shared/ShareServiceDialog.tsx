@@ -66,7 +66,16 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
     return null;
   }
 
-  const publicUrl = `${window.location.origin}/s/${service.publicId || service.id}`;
+  // CORRECCIÓN: Limpia el origen de la URL para quitar el puerto del entorno de desarrollo.
+  const getCleanPublicUrl = () => {
+    const origin = window.location.origin;
+    // La URL en el dev environment es https://<port>-<hostname>
+    // Se elimina el prefijo del puerto, por ejemplo, "46145-"
+    const cleanedOrigin = origin.replace(/https:\/\/\d+-/, 'https://');
+    return `${cleanedOrigin}/s/${service.publicId || service.id}`;
+  };
+
+  const publicUrl = getCleanPublicUrl();
   
   const handleShare = async () => {
     if (navigator.share) {
