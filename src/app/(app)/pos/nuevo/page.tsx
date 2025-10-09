@@ -88,7 +88,7 @@ function createPOSItemFromInventory(item: InventoryItem) {
     (item as any).sku ??
     "Artículo";
 
-  const id = (item as any).id ?? (item as any).sku ?? nanoid(6);
+  const id = (item as any).id ?? (item as any).sku ?? String(price) + Math.random();
 
   // Campos comunes y conservadores para la mayoría de schemas:
   return {
@@ -120,7 +120,7 @@ function QuickAddItemDialog({
 
   const filtered = React.useMemo(() => {
     const normalize = (s?: string) =>
-      (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+      (s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const n = normalize(q);
     if (!n) return inventoryItems.slice(0, 200);
     return inventoryItems.filter((it) => {

@@ -1,4 +1,3 @@
-
 // src/components/ServiceSheetContent.tsx
 
 "use client";
@@ -130,7 +129,7 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
         if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Ingresado: ${formattedReceptionDate} | Entregado: ${formattedDeliveryDate}`, badge: { text: "Entregado", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
         
         return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null, cardClass: "bg-muted/50", titleClass: "text-foreground", descClass: "text-muted-foreground" };
-    }, [status, appointmentStatus, service.subStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate, service]);
+    }, [status, appointmentStatus, service.subStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate]);
 
     const shouldShowNextService = service.status === 'Entregado' && service.nextServiceInfo?.date && isValid(parseDate(service.nextServiceInfo.date)!);
 
@@ -329,7 +328,7 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicke
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
 
-    const showReceptionCard = service.status === 'En Taller' || service.status === 'Entregado' || service.status === 'Completado';
+    const showReceptionCard = service.status === 'En Taller' || service.status === 'Entregado' || (service as any).status === 'Completado';
 
     return (
         <div className="space-y-6">

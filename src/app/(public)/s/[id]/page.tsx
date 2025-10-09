@@ -1,4 +1,3 @@
-
 // src/app/(public)/s/[id]/page.tsx
 "use client";
 
@@ -198,7 +197,11 @@ export default function PublicServicePage() {
 
   const vehicle = service?.vehicle || null;
   const displayPlate = vehicle?.licensePlate || service?.vehicleIdentifier || vehicle?.plates || null;
-  const patchedService = displayPlate ? { ...service, vehicleIdentifier: displayPlate } : service;
+
+  // Parchea el objeto que se envía al componente
+  const patchedService = displayPlate
+    ? { ...service, vehicleIdentifier: displayPlate }
+    : service;
 
 
   if (service === undefined) {
