@@ -229,6 +229,15 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
     createdAt: (data as any).createdAt || serverTimestamp(),
     serviceDate: (data as any).serviceDate || new Date(),
   };
+  
+  // Si es un nuevo servicio, inicializa los campos del técnico como null
+  if (isNew) {
+    serviceData = {
+      ...serviceData,
+      technicianId: null,
+      technicianName: null,
+    };
+  }
 
   // Denormaliza (vehículo/cliente/asesor/total/pagos)
   serviceData = await denormalizeService(serviceData);

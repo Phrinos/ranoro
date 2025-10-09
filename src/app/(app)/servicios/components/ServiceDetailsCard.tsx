@@ -1,12 +1,11 @@
 // src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 "use client";
 
-import React, { useEffect } from "react";
-import { useFormContext, Controller } from "react-hook-form";
+import React from "react";
+import { useFormContext } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Signature } from "lucide-react";
 import type { ServiceFormValues } from "@/schemas/service-form";
@@ -19,6 +18,11 @@ const statusOptions: { value: ServiceFormValues["status"]; label: string }[] = [
   { value: "En Taller", label: "En Taller" },
   { value: "Entregado", label: "Entregado" },
 ];
+
+const subStatusOptions = [
+  "En Diagnóstico", "Esperando Refacciones", "En Reparación", "Pruebas Finales", "Lavado", "Listo para Entrega"
+];
+
 
 interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
@@ -34,7 +38,6 @@ export function ServiceDetailsCard({
   advisors,
   technicians,
   onOpenSignature,
-  isNew,
 }: ServiceDetailsCardProps) {
   const {
     control,
@@ -51,27 +54,23 @@ export function ServiceDetailsCard({
   const handleStatusChange = (newStatus: ServiceFormValues["status"]) => {
     if (newStatus === "En Taller" && !watch("receptionDateTime")) {
       setValue("receptionDateTime", new Date(), { shouldDirty: true });
-    } else if (newStatus !== "Agendado") {
-      setValue("appointmentDateTime", null as any, { shouldDirty: true });
+    }
+    if (newStatus === "Agendado" && !watch("appointmentDateTime")) {
+      setValue("appointmentDateTime", new Date(), { shouldDirty: true });
     }
     setValue("status", newStatus, { shouldValidate: true, shouldDirty: true });
   };
   
-  const handleAdvisorChange = (advisorId: string) => {
-    const selectedAdvisor = advisors.find(a => a.id === advisorId);
-    if (selectedAdvisor) {
-        setValue("serviceAdvisorId", selectedAdvisor.id, { shouldDirty: true });
-        setValue("serviceAdvisorName", selectedAdvisor.name, { shouldDirty: true });
-        setValue("serviceAdvisorSignatureDataUrl", selectedAdvisor.signatureDataUrl || null, { shouldDirty: true });
-    }
-  };
-
-  const handleTechnicianChange = (technicianId: string) => {
-    const selectedTechnician = technicians.find(t => t.id === technicianId);
-    if (selectedTechnician) {
-        setValue("technicianId", selectedTechnician.id, { shouldDirty: true });
-        setValue("technicianName", selectedTechnician.name, { shouldDirty: true });
-        setValue("technicianSignatureDataUrl", selectedTechnician.signatureDataUrl || null, { shouldDirty: true });
+  const handleUserSelection = (
+    id: string,
+    userList: User[],
+    idField: keyof ServiceFormValues,
+    nameField: keyof ServiceFormValues,
+  ) => {
+    const selectedUser = userList.find(u => u.id === id);
+    if (selectedUser) {
+      setValue(idField, selectedUser.id, { shouldDirty: true });
+      setValue(nameField, selectedUser.name, { shouldDirty: true });
     }
   };
 
@@ -84,7 +83,7 @@ export function ServiceDetailsCard({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
           {/* Estado */}
           <FormField
             control={control}
@@ -93,8 +92,8 @@ export function ServiceDetailsCard({
               <FormItem>
                 <FormLabel className={cn(errors.status && "text-destructive")}>Estado</FormLabel>
                 <Select
-                  onValuecha ge={(v) => handleStatusChange(v as ServiceFormValues["status"])}
-                  value={field.value || "Cotizacion"}
+                  onValueChange={(v) => handleStatusChange(v as ServiceFormValues["status"])}
+                  value={field.value}
                   disabled={isFinalStatus}
                 >
                   <FormControl>
@@ -114,6 +113,27 @@ export function ServiceDetailsCard({
             )}
           />
 
+          {/* Sub-estado (si está en taller) */}
+          {watchedStatus === 'En Taller' && (
+            <FormField
+              control={control}
+              name="subStatus"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sub-estado</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Seleccione un sub-estado" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {subStatusOptions.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+          )}
+
           {/* Selector de Asesor */}
           <FormField
             control={control}
@@ -122,77 +142,85 @@ export function ServiceDetailsCard({
               <FormItem>
                 <FormLabel>Asesor de Servicio</FormLabel>
                 <div className="flex items-center gap-2">
-                    <Select
-                        onValueChange={handleAdvisorChange}
-                        value={field.value}
-                        disabled={isReadOnly || advisors.length === 0}
-                    >
-                        <FormControl>
-                        <SelectTrigger className="bg-card">
-                            <SelectValue placeholder="Seleccione un asesor" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        {advisors.map((advisor) => (
-                            <SelectItem key={advisor.id} value={advisor.id}>
-                            {advisor.name}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    <Button
-                        type="button"
-                        variant={advisorSigned ? "secondary" : "outline"}
-                        size="icon"
-                        title={advisorSigned ? "Firma registrada" : "Capturar/actualizar firma del asesor"}
-                        onClick={() => onOpenSignature("advisor")}
-                    >
-                        <Signature className={cn("h-4 w-4", advisorSigned && "text-green-600")} />
-                    </Button>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleUserSelection(value, advisors, "serviceAdvisorId", "serviceAdvisorName");
+                    }}
+                    value={field.value}
+                    disabled={isReadOnly || advisors.length === 0}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="bg-card">
+                        <SelectValue placeholder="Seleccione un asesor" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {advisors.map((advisor) => (
+                        <SelectItem key={advisor.id} value={advisor.id}>
+                          {advisor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant={advisorSigned ? "secondary" : "outline"}
+                    size="icon"
+                    title={advisorSigned ? "Firma registrada" : "Capturar/actualizar firma del asesor"}
+                    onClick={() => onOpenSignature("advisor")}
+                  >
+                    <Signature className={cn("h-4 w-4", advisorSigned && "text-green-600")} />
+                  </Button>
                 </div>
               </FormItem>
             )}
           />
 
           {/* Selector de Tecnico */}
-          <FormField
-            control={control}
-            name="technicianId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Técnico</FormLabel>
-                <div className="flex items-center gap-2">
+          {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
+            <FormField
+              control={control}
+              name="technicianId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Técnico</FormLabel>
+                  <div className="flex items-center gap-2">
                     <Select
-                        onValueChange={handleTechnicianChange}
-                        value={field.value}
-                        disabled={isReadOnly || technicians.length === 0}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        handleUserSelection(value, technicians, "technicianId", "technicianName");
+                      }}
+                      value={field.value}
+                      disabled={isReadOnly || technicians.length === 0}
                     >
-                        <FormControl>
+                      <FormControl>
                         <SelectTrigger className="bg-card">
-                            <SelectValue placeholder="Seleccione un técnico" />
+                          <SelectValue placeholder="Seleccione un técnico" />
                         </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                      </FormControl>
+                      <SelectContent>
                         {technicians.map((technician) => (
-                            <SelectItem key={technician.id} value={technician.id}>
+                          <SelectItem key={technician.id} value={technician.id}>
                             {technician.name}
-                            </SelectItem>
+                          </SelectItem>
                         ))}
-                        </SelectContent>
+                      </SelectContent>
                     </Select>
                     <Button
-                        type="button"
-                        variant={technicianSigned ? "secondary" : "outline"}
-                        size="icon"
-                        title={technicianSigned ? "Firma registrada" : "Capturar/actualizar firma del técnico"}
-                        onClick={() => onOpenSignature("advisor")}
+                      type="button"
+                      variant={technicianSigned ? "secondary" : "outline"}
+                      size="icon"
+                      title={technicianSigned ? "Firma registrada" : "Capturar/actualizar firma del técnico"}
+                      onClick={() => onOpenSignature("advisor")}
                     >
-                        <Signature className={cn("h-4 w-4", technicianSigned && "text-green-600")} />
+                      <Signature className={cn("h-4 w-4", technicianSigned && "text-green-600")} />
                     </Button>
-                </div>
-              </FormItem>
-            )}
-          />
+                  </div>
+                </FormItem>
+              )}
+            />
+          )}
         </div>
       </CardContent>
     </Card>

@@ -17,17 +17,21 @@ import { TicketContent } from '../ticket-content';
 interface ShareServiceDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  service: ServiceRecord;
+  service: ServiceRecord | null;
   vehicle?: Vehicle | null;
 }
 
 export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: ShareServiceDialogProps) {
   const { toast } = useToast();
-  const publicUrl = `${window.location.origin}/s/${service.publicId || service.id}`;
   const serviceSheetRef = useRef<HTMLDivElement>(null);
   const ticketRef = useRef<HTMLDivElement>(null);
   const [previewType, setPreviewType] = useState<'sheet' | 'ticket'>('sheet');
 
+  if (!service) {
+    return null;
+  }
+
+  const publicUrl = `${window.location.origin}/s/${service.publicId || service.id}`;
 
   const handleCopyToClipboard = async (text: string, type: 'link' | 'text') => {
     try {
@@ -47,7 +51,6 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
   };
 
   const handleCopyImageToClipboard = useCallback(async () => {
-    // This function will now always target the ticketRef
     if (!ticketRef.current) {
         toast({ title: "Error", description: "No se puede generar la imagen del ticket.", variant: "destructive" });
         return;

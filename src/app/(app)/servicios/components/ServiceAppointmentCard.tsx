@@ -1,4 +1,5 @@
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
+
 "use client";
 
 import React, { useMemo, useCallback } from 'react';

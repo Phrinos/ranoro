@@ -235,15 +235,17 @@ export function ServiceForm({
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="pt-6">
-                  <ServiceSummary
-                    totalAmount={totalCost}
-                    onOpenValidateDialog={() => {}}
-                    validatedFolios={{}}
-                  />
-                </CardContent>
-              </Card>
+              {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <ServiceSummary
+                      totalAmount={totalCost}
+                      onOpenValidateDialog={() => {}}
+                      validatedFolios={{}}
+                    />
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="reception-delivery" className="space-y-6 mt-4">
