@@ -172,12 +172,14 @@ export default function PublicServicePage() {
 
   const handleScheduleAppointment = async (selectedDateTime: Date) => {
     if (!service) return;
+    console.log("[CLIENT] Scheduling appointment for:", { publicId, selectedDateTime: selectedDateTime.toISOString() });
     try {
       const result = await scheduleAppointmentAction(publicId, selectedDateTime.toISOString());
       if (!result.success) throw new Error(result.error);
       toast({ title: "Cita Agendada", description: "Tu cita ha sido registrada." });
       setIsScheduling(false);
     } catch (e: any) {
+      console.error("[CLIENT] Error in handleScheduleAppointment:", e);
       toast({
         title: "Error al Agendar",
         description: e?.message ?? "No se pudo agendar la cita.",

@@ -45,9 +45,13 @@ export async function scheduleAppointmentAction(
   publicId: string,
   scheduledDate: string
 ): Promise<ActionResult> {
+  console.log("[SERVER] scheduleAppointmentAction called with:", { publicId, scheduledDate });
   try {
     const dbError = ensureDB();
-    if (dbError) return { success: false, error: dbError };
+    if (dbError) {
+        console.error("[SERVER] DB Error:", dbError);
+        return { success: false, error: dbError };
+    }
 
     const ref = doc(db!, "publicServices", publicId);
     await updateDoc(ref, {
@@ -56,10 +60,11 @@ export async function scheduleAppointmentAction(
       appointmentStatus: "Sin Confirmar",
       updatedAt: serverTimestamp(),
     });
+    console.log("[SERVER] Firestore update successful for", publicId);
     return { success: true };
   } catch (e: any) {
-    console.error("scheduleAppointmentAction error:", e);
-    return { success: false, error: e?.message ?? "Error desconocido" };
+    console.error("[SERVER] scheduleAppointmentAction error:", e);
+    return { success: false, error: e?.message ?? "Error desconocido al agendar" };
   }
 }
 
