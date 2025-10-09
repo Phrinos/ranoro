@@ -312,44 +312,19 @@ export default function ServicioPage() {
     router.push('/servicios?tab=cotizaciones');
   };
 
-  const handleSaveService = async (values: ServiceFormValues): Promise<ServiceRecord | void> => {
+  const onValidationErrors: SubmitErrorHandler<ServiceFormValues> = (errors) => {
+    const msgs = flattenRHFErrors(errors);
+    toast({
+      title: "Formulario Incompleto",
+      description: msgs[0] || "Por favor, revise todos los campos marcados.",
+      variant: "destructive",
+    });
+  };
+
+  const handleSaveService = async (values: ServiceFormValues) => {
     setIsSubmitting(true);
     try {
-      const rawStatus = String(values.status || '').trim();
-      const normalizedStatus: ServiceRecord['status'] =
-        rawStatus.toLowerCase() === 'cotizacion' ? 'Cotizacion' :
-        rawStatus.toLowerCase() === 'en taller' ? 'En Taller' :
-        rawStatus.toLowerCase() === 'entregado' ? 'Entregado' :
-        rawStatus.toLowerCase() === 'agendado' ? 'Agendado' :
-        rawStatus.toLowerCase() === 'cancelado' ? 'Cancelado' :
-        (values.status as ServiceRecord['status'] ?? 'En Taller');
-
-      if (normalizedStatus === 'Entregado' && !hasTechnician(values)) {
-        try { (methods as any)?.setError?.('technicianId', { type: 'manual', message: 'Selecciona un técnico.' }); } catch {}
-        toast({
-          title: "Falta seleccionar técnico",
-          description: "No puedes marcar el servicio como Entregado sin asignar un técnico.",
-          variant: "destructive",
-        });
-        return; 
-      }
-
-      const nowIso = new Date().toISOString();
-
-      const payload: ServiceRecord = {
-        ...(values as unknown as ServiceRecord),
-        status: normalizedStatus,
-        receptionDateTime:
-          normalizedStatus === 'En Taller'
-            ? ((values as any).receptionDateTime ?? nowIso)
-            : (values as any).receptionDateTime,
-        deliveryDateTime:
-          normalizedStatus === 'Entregado'
-            ? ((values as any).deliveryDateTime ?? nowIso)
-            : (values as any).deliveryDateTime,
-      };
-
-      const savedRecord = await serviceService.saveService(payload);
+      const savedRecord = await serviceService.saveService(values as ServiceRecord);
       
       if (isEditMode) {
         setInitialData(savedRecord);
@@ -357,13 +332,12 @@ export default function ServicioPage() {
       } else {
         toast({ title: 'Registro Creado' });
         const redirectTab =
-          normalizedStatus === 'Cotizacion' ? 'cotizaciones' :
-          normalizedStatus === 'En Taller' ? 'activos' :
-          normalizedStatus === 'Entregado' ? 'historial' : 'activos';
+          savedRecord.status === 'Cotizacion' ? 'cotizaciones' :
+          savedRecord.status === 'En Taller' ? 'activos' :
+          savedRecord.status === 'Entregado' ? 'historial' : 'activos';
         handleShowShareDialog(savedRecord, `/servicios?tab=${redirectTab}`);
       }
 
-      return savedRecord;
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Error al Guardar', description: e.message, variant: 'destructive' });
@@ -462,16 +436,7 @@ export default function ServicioPage() {
         suppliers={suppliers}
         serviceHistory={serviceHistory}
         onSave={handleSaveService}
-        onValidationErrors={(errors) => {
-          const plain = materializeErrors(errors);
-          console.error("Validation Errors:", plain);
-          const msgs = flattenRHFErrors(errors);
-          toast({
-            title: "Formulario Incompleto",
-            description: msgs[0] || "Por favor, revise todos los campos marcados.",
-            variant: "destructive",
-          });
-        }}
+        onValidationErrors={onValidationErrors}
         onComplete={handleCompleteService}
         onVehicleCreated={handleVehicleSave}
         onCancel={isQuote ? handleDeleteQuote : handleCancelService}
@@ -490,14 +455,7 @@ export default function ServicioPage() {
           setActiveTab('safety-checklist');
           setIsChecklistWizardOpen(true);
         }}
-        onSave={() => methods.handleSubmit(handleSaveService, (errors) => {
-          const msgs = flattenRHFErrors(errors);
-          toast({
-            title: "Formulario Incompleto",
-            description: msgs[0] || "Por favor, revise todos los campos marcados.",
-            variant: "destructive",
-          });
-        })()}
+        onSave={() => methods.handleSubmit(handleSaveService, onValidationErrors)()}
         isSubmitting={isSubmitting}
       />
 
@@ -550,4 +508,3 @@ export default function ServicioPage() {
     </FormProvider>
   );
 }
-
