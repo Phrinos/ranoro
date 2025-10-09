@@ -2,7 +2,6 @@
 "use server";
 
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-// import { db } from "@/lib/firebasePublic"; // No usar la DB pública para escribir
 import { getAdminDb } from '@/lib/firebaseAdmin'; // Usar la DB de Admin para escribir
 import type { ServiceRecord } from "@/types";
 
@@ -16,7 +15,7 @@ export async function getPublicServiceData(
   publicId: string
 ): Promise<DataResult<ServiceRecord>> {
   try {
-    const serviceDocRef = doc(db!, "publicServices", publicId);
+    const serviceDocRef = doc(db, "publicServices", publicId);
     const snap = await getDoc(serviceDocRef);
 
     if (!snap.exists()) {
