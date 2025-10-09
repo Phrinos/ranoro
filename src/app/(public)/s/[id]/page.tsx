@@ -1,3 +1,4 @@
+
 // src/app/(public)/s/[id]/page.tsx
 "use client";
 
@@ -32,6 +33,7 @@ type PublicServiceDoc = {
   status?: "Cotizacion" | "En Taller" | "Agendado" | "Entregado" | "Cancelado" | string;
   subStatus?: string | null;
   customerName?: string;
+  customerPhone?: string; // Incluir para la vista
   vehicleIdentifier?: string;
   receptionDateTime?: string | Date | Timestamp | null;
   deliveryDateTime?: string | Date | Timestamp | null;

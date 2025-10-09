@@ -1,3 +1,4 @@
+
 // src/components/ServiceSheetContent.tsx
 
 "use client";
@@ -79,7 +80,7 @@ SheetHeader.displayName = 'SheetHeader';
 
 const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
   const customerName = capitalizeWords(service.customerName || vehicle?.ownerName || '');
-  const customerPhone = vehicle?.ownerPhone || 'Teléfono no disponible';
+  const customerPhone = vehicle?.ownerPhone || service.customerPhone || 'Teléfono no disponible';
   const vehicleMake = vehicle?.make || '';
   const vehicleModel = vehicle?.model || '';
   const vehicleYear = vehicle?.year || 'N/A';
