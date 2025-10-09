@@ -13,8 +13,6 @@ interface ServiceFormFooterProps {
   formId: string;
   onCancel?: () => void;
   onComplete?: () => void;
-  /** 👇 nuevo: submit controlado por callback directo */
-  onSaveClick?: () => void;
   mode: 'service' | 'quote';
   initialData: ServiceRecord | null;
   isSubmitting: boolean;
@@ -31,7 +29,6 @@ export const ServiceFormFooter = ({
   formId,
   onCancel,
   onComplete,
-  onSaveClick,
   mode,
   initialData,
   isSubmitting
@@ -125,11 +122,10 @@ export const ServiceFormFooter = ({
               <DollarSign className="mr-2 h-4 w-4" /> Entregar y Cobrar
             </Button>
           )}
-
-          {/* 👇 Guardar invoca directamente el submit del RHF que le manda el padre */}
+          
           <Button
-            type="button"
-            onClick={onSaveClick}
+            type="submit"
+            form={formId}
             disabled={isSubmitting}
             className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
           >

@@ -35,7 +35,13 @@ export function ServiceMobileBar({
           <ClipboardCheck className="h-5 w-5" />
           <span className="text-xs mt-1">Checklist</span>
         </Button>
-        <Button variant="default" className="flex flex-col h-auto items-center bg-green-600 hover:bg-green-700" onClick={onSave} disabled={isSubmitting}>
+        <Button 
+            type="submit"
+            form="service-form"
+            variant="default" 
+            className="flex flex-col h-auto items-center bg-green-600 hover:bg-green-700" 
+            disabled={isSubmitting}
+        >
           <Save className="h-5 w-5" />
           <span className="text-xs mt-1">Guardar</span>
         </Button>
