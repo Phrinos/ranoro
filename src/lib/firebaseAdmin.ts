@@ -1,35 +1,47 @@
-
 // src/lib/firebaseAdmin.ts
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import * as fs from 'fs';
-import * as path from 'path';
 
 let app: App | null = null;
 let db: Firestore | null = null;
 
+/**
+ * Initializes and returns the Firebase Admin SDK's Firestore instance,
+ * ensuring it's a singleton. It uses service account credentials
+ * from environment variables, making it suitable for serverless environments.
+ *
+ * @returns The initialized Firestore instance.
+ * @throws {Error} If the service account key is not found in environment variables.
+ */
 export function getAdminDb(): Firestore {
+  // Return the cached instance if it already exists.
   if (db) return db;
 
-  const existing = getApps().find(a => a.name === 'admin-app');
-  if (existing) {
-    app = existing;
+  // Find an existing app instance to prevent re-initialization errors.
+  const existingApp = getApps().find(a => a.name === 'admin-app');
+  if (existingApp) {
+    app = existingApp;
   } else {
-    // Construir la ruta al archivo de clave de servicio
-    const keyFilePath = path.join(process.cwd(), 'firebase-admin-key.json');
-
-    if (!fs.existsSync(keyFilePath)) {
-      throw new Error(`El archivo de clave de servicio no se encontró en la ruta: ${keyFilePath}. Asegúrate de que el archivo exista.`);
+    // Retrieve the service account key from environment variables.
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (!serviceAccountString) {
+      throw new Error(
+        'FIREBASE_SERVICE_ACCOUNT_KEY no está configurada en las variables de entorno.'
+      );
     }
-
-    // Cargar las credenciales desde el archivo JSON
-    const serviceAccount = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
-
-    app = initializeApp({
-      credential: cert(serviceAccount)
-    }, 'admin-app');
+    
+    try {
+      const serviceAccount = JSON.parse(serviceAccountString);
+      app = initializeApp({
+        credential: cert(serviceAccount)
+      }, 'admin-app');
+    } catch (e) {
+      console.error("Error al parsear o inicializar las credenciales de Firebase Admin:", e);
+      throw new Error("Las credenciales de Firebase Admin no son un JSON válido.");
+    }
   }
 
+  // Get the Firestore instance from the app and cache it.
   db = getFirestore(app!);
-  return db!;
+  return db;
 }
