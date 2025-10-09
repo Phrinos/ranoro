@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceSummary.tsx
 "use client";
 
@@ -92,13 +91,13 @@ export function ServiceSummary({
           <Separator className="my-2" />
 
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Ganancia del Trabajo:</span>
-            <span className="font-medium text-green-600">{formatCurrency(workProfit)}</span>
+            <span className="text-muted-foreground">Costo Insumos:</span>
+            <span className="font-medium text-red-600">-{formatCurrency(costOfSupplies)}</span>
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Costo Insumos:</span>
-            <span className="font-medium text-red-600">-{formatCurrency(costOfSupplies)}</span>
+            <span className="text-muted-foreground">Ganancia del Trabajo:</span>
+            <span className="font-medium text-green-600">{formatCurrency(workProfit)}</span>
           </div>
         </div>
       </CardContent>
