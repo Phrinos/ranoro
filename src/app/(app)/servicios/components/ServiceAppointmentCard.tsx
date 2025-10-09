@@ -1,6 +1,4 @@
-
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
-
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -64,11 +62,9 @@ export function ServiceAppointmentCard({
   const parsedDate = displayDate ? parseDate(displayDate) : null;
 
   const calculatedTotals = useMemo(() => {
-    // Prioritize the total from the database if it exists
     const dbTotal = Number(service.totalCost || (service as any).total || 0);
     const itemsTotal = (service.serviceItems ?? []).reduce((s, i) => s + (Number(i.sellingPrice) || 0), 0);
     const total = dbTotal > 0 ? dbTotal : itemsTotal;
-
     const serviceProfit = calcEffectiveProfit(service);
     return { totalCost: total, serviceProfit };
   }, [service]);
@@ -130,7 +126,7 @@ export function ServiceAppointmentCard({
               <Phone className="h-3 w-3 ml-2"/>
               <span>{vehicle?.ownerPhone || 'N/A'}</span>
             </div>
-            <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : service.vehicleIdentifier}</p>
+            <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : service.vehicleIdentifier}</p>
             <p className="text-muted-foreground text-xs truncate" title={getServiceDescriptionText(service)}>{getServiceDescriptionText(service)}</p>
           </div>
 
