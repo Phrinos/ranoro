@@ -58,6 +58,7 @@ export function ViewSaleDialog({
   const { toast } = useToast();
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
+  const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
@@ -76,7 +77,6 @@ export function ViewSaleDialog({
   const saleDate = parseISO(sale.saleDate);
   const formattedDate = format(saleDate, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
   
-  const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
   const handleOpenValidateDialog = (index: number) => {
     // This is a placeholder, actual validation logic should be implemented
     // perhaps in a separate dialog as it was before.

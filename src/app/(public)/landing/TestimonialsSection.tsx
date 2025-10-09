@@ -15,7 +15,7 @@ export function TestimonialsSection() {
                 <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
                     <AnimatedDiv><Card className="border-l-4 border-primary">
                         <CardContent className="p-6">
-                            <p className="text-lg italic">“Gracias a Ranoro, mi taller aumentó un 25 % su volumen de citas recurrentes, sin contratar más.”</p>
+                            <p className="text-lg italic">“Gracias a Ranoro, mi taller aumentó un 25% su volumen de citas recurrentes, sin contratar más.”</p>
                             <p className="mt-4 font-semibold">— Ranoro - Aguascalientes</p>
                         </CardContent>
                     </Card></AnimatedDiv>
@@ -27,13 +27,13 @@ export function TestimonialsSection() {
                     </Card></AnimatedDiv>
                      <AnimatedDiv><Card className="border-l-4 border-primary">
                         <CardContent className="p-6">
-                            <p className="text-lg italic">"Implementar el reporte fotográfico de seguridad nos ha dado una ventaja competitiva enorme. Los clientes se sienten más seguros."</p>
+                            <p className="text-lg italic">&quot;Implementar el reporte fotográfico de seguridad nos ha dado una ventaja competitiva enorme. Los clientes se sienten más seguros.&quot;</p>
                             <p className="mt-4 font-semibold">— ServiExpress - Bogotá, Colombia</p>
                         </CardContent>
                     </Card></AnimatedDiv>
                      <AnimatedDiv><Card className="border-l-4 border-primary">
                         <CardContent className="p-6">
-                            <p className="text-lg italic">"El análisis de inventario con IA nos ahorró miles en compras innecesarias. Ahora solo compramos lo que de verdad se necesita."</p>
+                            <p className="text-lg italic">&quot;El análisis de inventario con IA nos ahorró miles en compras innecesarias. Ahora solo compramos lo que de verdad se necesita.&quot;</p>
                             <p className="mt-4 font-semibold">— Garaje Central - Santiago, Chile</p>
                         </CardContent>
                     </Card></AnimatedDiv>

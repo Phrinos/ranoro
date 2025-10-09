@@ -199,8 +199,8 @@ export default function CajaContent() {
 
     const [key, direction] = sortOption.split('_');
     return rows.sort((a: any, b: any) => {
-      let valA = a[key] ?? '';
-      let valB = b[key] ?? '';
+      const valA = a[key] ?? '';
+      const valB = b[key] ?? '';
 
       if (key === 'date') {
         const dateA = valA instanceof Date ? valA.getTime() : 0;

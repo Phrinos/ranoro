@@ -131,7 +131,6 @@ export function ServiceForm({
             isReadOnly={isReadOnly}
             advisors={advisors}
             technicians={technicians}
-            serviceTypes={serviceTypes}
             onOpenSignature={handleOpenSignatureDialog}
             isNew={isNewRecord}
           />

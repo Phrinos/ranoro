@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
@@ -167,7 +166,7 @@ export default function AiPageComponent({ tab }: { tab?: string }) {
     { value: 'inventario', label: 'Análisis de Inventario', content: (
         isLoading 
             ? <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
-            // @ts-ignore
+// @ts-expect-error: The props for the lazy-loaded component are not correctly inferred.
             : <AnalisisIaContent inventoryItems={inventoryItems} serviceRecords={serviceRecords} />
     ) },
     { value: 'compras', label: 'Asistente de Compras', content: <AsistenteComprasContent /> },
@@ -183,6 +182,6 @@ export default function AiPageComponent({ tab }: { tab?: string }) {
         onTabChange={setActiveTab}
         tabs={tabs}
       />
-    </>
+    </> 
   );
 }

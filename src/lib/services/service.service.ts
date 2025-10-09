@@ -130,7 +130,7 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
     const isNew = !data.id;
     const serviceId = isNew ? doc(collection(db, 'serviceRecords')).id : (data.id as string);
   
-    let serviceData: any = {
+    const serviceData: any = {
       ...data,
       id: serviceId,
       updatedAt: serverTimestamp(),

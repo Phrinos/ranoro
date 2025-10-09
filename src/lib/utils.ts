@@ -1,5 +1,4 @@
 
-
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle } from 'lucide-react';
@@ -175,7 +174,7 @@ export const optimizeImage = (file: File | string, maxWidthOrHeight: number, qua
 
 export function capitalizeSentences(str: string): string {
     if (!str) return "";
-    return str.toLowerCase().replace(/(^\s*\w|[\.\!\?]\s*\w)/g, (c) => c.toUpperCase());
+    return str.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, (c) => c.toUpperCase());
 }
 
 export function getMonthName(monthNumber: number): string {

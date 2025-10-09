@@ -3,7 +3,7 @@
 
 import { useState, useEffect, type RefObject } from 'react';
 
-interface IntersectionObserverOptions extends IntersectionObserverInit {}
+type IntersectionObserverOptions = IntersectionObserverInit;
 
 export function useIntersectionObserver(
   ref: RefObject<Element>,

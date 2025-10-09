@@ -95,7 +95,7 @@ export function VentasPosContent({
       } else if (sale.paymentMethod) { // Fallback for older records
         const methods = sale.paymentMethod.split(/[+\/]/).map(m => m.trim()) as Payment['method'][];
         
-        let paymentBreakdown: { method: Payment['method']; amount: number }[] = [];
+        const paymentBreakdown: { method: Payment['method']; amount: number }[] = [];
         const totalAmount = sale.totalAmount || 0;
         
         if (methods.length > 1 && (sale.amountInCash !== undefined || sale.amountInCard !== undefined || sale.amountInTransfer !== undefined)) {

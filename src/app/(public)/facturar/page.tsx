@@ -59,7 +59,7 @@ function FacturarPageComponent() {
   useEffect(() => {
     const stored = localStorage.getItem('workshopTicketInfo');
     if (stored) {
-        try { setWorkshopInfo(JSON.parse(stored)); } catch {}
+        try { setWorkshopInfo(JSON.parse(stored)); } catch { /* noop */ }
     }
   }, []);
 

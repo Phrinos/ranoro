@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/caja/components/FlotillaCajaTab.tsx
 "use client";
 
@@ -120,13 +119,16 @@ export function FlotillaCajaTab({
 
   const getTransactionDetails = (t: CashBoxTransaction) => {
     switch (t.transactionType) {
-      case 'income':
+      case 'income': {
         const Icon = paymentMethodIcons[t.paymentMethod as PaymentMethod] || Wallet;
         return { variant: t.paymentMethod === 'Transferencia' ? 'info' : 'success', label: 'Ingreso', description: `Pago de ${t.driverName}`, methodIcon: <Icon className="h-4 w-4" />, methodName: t.paymentMethod };
-      case 'withdrawal':
+      }
+      case 'withdrawal': {
         return { variant: 'destructive', label: 'Retiro', description: `Retiro de ${t.ownerName}`, methodIcon: null, methodName: 'N/A' };
-      case 'expense':
+      }
+      case 'expense': {
         return { variant: 'secondary', label: 'Gasto', description: `${t.description} (${t.vehicleLicensePlate})`, methodIcon: null, methodName: 'N/A' };
+      }
     }
   };
   

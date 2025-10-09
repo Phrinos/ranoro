@@ -6,7 +6,7 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@genkit-ai/ai": "1.21.0",
@@ -86,5 +86,6 @@
   "overrides": {
     "undici": "^6.21.2",
     "dompurify": "^3.2.4"
-  }
+  },
+  "type": "module"
 }

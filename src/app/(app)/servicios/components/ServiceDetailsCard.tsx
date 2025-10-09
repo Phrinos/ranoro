@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Signature } from "lucide-react";
 import type { ServiceFormValues } from "@/schemas/service-form";
-import type { User, ServiceTypeRecord } from "@/types";
+import type { User } from "@/types";
 import { cn } from "@/lib/utils";
 
 const statusOptions: { value: ServiceFormValues["status"]; label: string }[] = [
@@ -29,7 +29,6 @@ interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
   advisors: User[];
   technicians: User[];          
-  serviceTypes: ServiceTypeRecord[]; 
   onOpenSignature: (type: "reception" | "delivery" | "advisor" | "technician") => void;
   isNew: boolean;
 }
