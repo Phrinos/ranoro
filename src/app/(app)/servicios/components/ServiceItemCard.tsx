@@ -251,15 +251,15 @@ export function ServiceItemCard({
 
       <div className="text-sm space-y-1">
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">Subtotal Servicio:</span>
+          <span className="text-muted-foreground">Subtotal Trabajo:</span>
           <span className="font-medium">{formatCurrency(subTotal)}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">IVA Servicio (16%):</span>
+          <span className="text-muted-foreground">IVA Trabajo(16%):</span>
           <span className="font-medium">{formatCurrency(tax)}</span>
         </div>
         <div className="flex justify-between items-center font-semibold text-base pt-1 border-t">
-          <span>Total Servicio:</span>
+          <span>Total Trabajo:</span>
           <span className="font-bold">{formatCurrency(sellingPrice)}</span>
         </div>
         {canViewCosts && (
