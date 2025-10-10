@@ -1,9 +1,9 @@
-
+// src/app/(app)/finanzas/page.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useSearchParams } from 'next/navigation';
-import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense } from '@/types';
+import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense, Personnel, AppRole, FinancialSummary } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Users, Shield, TrendingUp, BookOpen, DatabaseZap } from 'lucide-react';
 import { adminService, inventoryService, serviceService, saleService } from '@/lib/services';
@@ -26,6 +26,7 @@ function FinanzasPage() {
     const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
     const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
     const [allExpenses, setAllExpenses] = useState<MonthlyFixedExpense[]>([]);
+    const [allUsers, setAllUsers] = useState<Personnel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -33,10 +34,11 @@ function FinanzasPage() {
       const unsubs: (() => void)[] = [
         serviceService.onServicesUpdate(setAllServices),
         saleService.onSalesUpdate(setAllSales),
-        inventoryService.onFixedExpensesUpdate((expenses) => {
-          setAllExpenses(expenses);
+        inventoryService.onFixedExpensesUpdate(setAllExpenses),
+        adminService.onUsersUpdate((users) => {
+          setAllUsers(users);
           setIsLoading(false);
-        }),
+        })
       ];
       return () => unsubs.forEach(unsub => unsub());
     }, []);
@@ -45,7 +47,16 @@ function FinanzasPage() {
     
     const tabs = [
       { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosContent allServices={allServices} allSales={allSales} allExpenses={allExpenses} onDateRangeChange={()=>{}} /></Suspense> },
-      { value: "egresos", label: "Egresos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><EgresosContent initialExpenses={allExpenses} /></Suspense> },
+      { value: "egresos", label: "Egresos", content: (
+        <Suspense fallback={<Loader2 className="animate-spin" />}>
+          <EgresosContent 
+            financialSummary={{} as FinancialSummary} 
+            fixedExpenses={allExpenses} 
+            personnel={allUsers}
+            onExpensesUpdated={setAllExpenses}
+          />
+        </Suspense>
+      )},
       { value: "caja", label: "Caja", content: <Suspense fallback={<Loader2 className="animate-spin" />}><CajaContent allServices={allServices} allSales={allSales} /></Suspense> },
     ];
 

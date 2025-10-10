@@ -88,7 +88,7 @@ export function EgresosContent({
             <div className="space-y-3">
               <h3 className="font-semibold text-lg mb-2">Nómina Base (mensual configurada)</h3>
               <div className="space-y-2 text-sm">
-                {personnel
+                {(personnel || [])
                   .filter((p) => !p.isArchived && p.monthlySalary && p.monthlySalary > 0)
                   .map((p) => (
                     <div key={p.id} className="flex justify-between items-center">
@@ -96,7 +96,7 @@ export function EgresosContent({
                       <span className="font-medium">{formatCurrency(p.monthlySalary)}</span>
                     </div>
                   ))}
-                {personnel.filter((p) => !p.isArchived && p.monthlySalary && p.monthlySalary > 0).length === 0 && (
+                {(personnel || []).filter((p) => !p.isArchived && p.monthlySalary && p.monthlySalary > 0).length === 0 && (
                   <p className="text-sm text-muted-foreground">No hay nómina configurada.</p>
                 )}
               </div>
@@ -110,13 +110,13 @@ export function EgresosContent({
             <div className="space-y-3 md:border-l md:pl-8">
               <h3 className="font-semibold text-lg mb-2">Otros Gastos Fijos (mensuales configurados)</h3>
               <div className="space-y-2 text-sm">
-                {fixedExpenses.map((expense) => (
+                {(fixedExpenses || []).map((expense) => (
                   <div key={expense.id} className="flex justify-between items-center">
                     <span className="text-muted-foreground">{expense.name}:</span>
                     <span className="font-medium">{formatCurrency(expense.amount)}</span>
                   </div>
                 ))}
-                {fixedExpenses.length === 0 && (
+                {(fixedExpenses || []).length === 0 && (
                   <p className="text-sm text-muted-foreground">No hay otros gastos fijos.</p>
                 )}
               </div>
