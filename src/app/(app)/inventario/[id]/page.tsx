@@ -190,6 +190,7 @@ export default function InventoryItemDetailPage() {
   // ===== Handlers =====
   const handleSaveEditedItem = async (formData: InventoryItemFormValues) => {
     if (!item) return;
+    console.log('Saving edited item with data:', formData);
     try {
       await inventoryService.saveItem(formData, item.id);
       const updatedItem = await inventoryService.getDocById("inventory", item.id);
@@ -310,20 +311,20 @@ export default function InventoryItemDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="md:col-span-2">
                 <CardHeader className="flex flex-row items-start justify-between">
-                   <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium text-primary mb-1">
+                  <div className="flex flex-col gap-1">
+                     <p className="text-sm font-medium text-primary mb-1">
                         {item.isService ? "Servicio" : "Producto"}
                       </p>
-                      <p className="text-lg font-semibold flex items-center gap-2">
-                        <Tag className="h-5 w-5 text-muted-foreground" />
-                        {item.category}
-                      </p>
-                      <CardTitle className="text-2xl mt-2">
-                          {item.brand} {item.name}
-                      </CardTitle>
-                      <CardDescription className="pt-1">
-                        SKU: {item.sku || "N/A"} • Proveedor: {item.supplier || "N/A"}
-                      </CardDescription>
+                    <p className="text-lg font-semibold flex items-center gap-2">
+                      <Tag className="h-5 w-5 text-muted-foreground" />
+                      {item.category}
+                    </p>
+                    <CardTitle className="text-2xl mt-2">
+                      {item.brand} {item.name}
+                    </CardTitle>
+                    <CardDescription className="pt-1">
+                      SKU: {item.sku || "N/A"} • Proveedor: {item.supplier || "N/A"}
+                    </CardDescription>
                   </div>
 
                   <div className="flex items-center gap-1 sm:gap-2">
