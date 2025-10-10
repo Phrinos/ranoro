@@ -155,7 +155,7 @@ export function ServiceItemsList({
                 className="bg-card"
                 onClick={() =>
                   append({
-                    id: `item_${nanoid(6)}`,"
+                    id: `item_${nanoid(6)}`,
                     name: "",
                     sellingPrice: undefined, // se convertirá a number en cuanto el usuario escriba
                     suppliesUsed: [],

@@ -93,7 +93,7 @@ export function VentasPosContent({
           paymentsSummary.set(p.method, current);
         });
       } else if (sale.paymentMethod) { // Fallback for older records
-        const methods = sale.paymentMethod.split(/[+\/]/).map(m => m.trim()) as Payment['method'][];
+        const methods = sale.paymentMethod.split(/[+/]/).map(m => m.trim()) as Payment['method'][];
         
         const paymentBreakdown: { method: Payment['method']; amount: number }[] = [];
         const totalAmount = sale.totalAmount || 0;

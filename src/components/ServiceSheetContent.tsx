@@ -1,5 +1,4 @@
 // src/components/ServiceSheetContent.tsx
-
 "use client";
 
 import type { QuoteRecord, WorkshopInfo, Vehicle, ServiceRecord, SafetyInspection, SafetyCheckValue } from '@/types';
@@ -129,7 +128,8 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
         if (status === 'entregado') return { title: "ORDEN DE SERVICIO", description: `Ingresado: ${formattedReceptionDate} | Entregado: ${formattedDeliveryDate}`, badge: { text: "Entregado", variant: "success" }, cardClass: "bg-green-50 border-green-200", titleClass: "text-green-800", descClass: "text-green-700" };
         
         return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null, cardClass: "bg-muted/50", titleClass: "text-foreground", descClass: "text-muted-foreground" };
-    }, [status, appointmentStatus, service.subStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate, service]);
+    // ✅ deps sin 'service' entero, se mantienen solo las usadas
+    }, [status, appointmentStatus, service.subStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate]);
 
     const shouldShowNextService = service.status === 'Entregado' && service.nextServiceInfo?.date && isValid(parseDate(service.nextServiceInfo.date)!);
 
