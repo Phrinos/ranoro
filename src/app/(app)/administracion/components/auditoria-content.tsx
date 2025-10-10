@@ -10,11 +10,12 @@ import type { AuditLog } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { format, parseISO, isWithinInterval, startOfDay, endOfDay, isValid } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { DateRange } from 'react-day-picker';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { adminService } from '@/lib/services';
+import { parseDate } from '@/lib/forms';
 
 export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] }) {
   const [logs, setLogs] = useState<AuditLog[]>(initialLogs);
@@ -40,8 +41,8 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
       filtered = filtered.filter(log => {
-          const logDate = parseISO(log.date.toString());
-          return isValid(logDate) && isWithinInterval(logDate, { start: from, end: to });
+          const logDate = parseDate(log.date);
+          return logDate && isValid(logDate) && isWithinInterval(logDate, { start: from, end: to });
       });
     }
     // Data is already sorted by date from Firestore, but re-sorting is safe
@@ -83,14 +84,19 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
               </TableHeader>
               <TableBody>
                 {filteredLogs.length > 0 ? (
-                  filteredLogs.map(log => (
-                    <TableRow key={log.id}>
-                      <TableCell className="font-mono text-xs whitespace-nowrap">{log.date ? format(parseISO(log.date.toString()), "dd/MM/yy, HH:mm:ss", { locale: es }) : "Fecha no disponible"}</TableCell>
-                      <TableCell className="font-medium">{log.userName}</TableCell>
-                      <TableCell><Badge variant={log.actionType === 'Eliminar' || log.actionType === 'Cancelar' ? 'destructive' : 'secondary'}>{log.actionType}</Badge></TableCell>
-                      <TableCell>{log.description}</TableCell>
-                    </TableRow>
-                  ))
+                  filteredLogs.map(log => {
+                    const logDate = parseDate(log.date);
+                    return (
+                        <TableRow key={log.id}>
+                            <TableCell className="font-mono text-xs whitespace-nowrap">
+                                {logDate && isValid(logDate) ? format(logDate, "dd/MM/yy, HH:mm:ss", { locale: es }) : "Fecha no disponible"}
+                            </TableCell>
+                            <TableCell className="font-medium">{log.userName}</TableCell>
+                            <TableCell><Badge variant={log.actionType === 'Eliminar' || log.actionType === 'Cancelar' ? 'destructive' : 'secondary'}>{log.actionType}</Badge></TableCell>
+                            <TableCell>{log.description}</TableCell>
+                        </TableRow>
+                    );
+                })
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">
