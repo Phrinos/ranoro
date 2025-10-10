@@ -66,25 +66,11 @@ const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { s
         <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
         <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.productsCount + summaryData.servicesCount}</div><p className="text-xs text-muted-foreground">{summaryData.productsCount} Productos y {summaryData.servicesCount} Servicios.</p></CardContent></Card>
         <div className="lg:col-span-2 xl:col-span-2 flex flex-col sm:flex-row gap-2">
-            <Button
-                type="button"
-                variant="outline"
-                onClick={onNewItemClick}
-                className="w-full flex-1 bg-white border-2 border-red-500 text-black font-bold hover:bg-red-50 focus-visible:ring-red-500"
-            >
-                <PlusCircle className="mr-2 h-5 w-5 text-red-500" />
-                Registrar Ítem
+            <Button className="w-full flex-1" onClick={onNewItemClick}>
+                <PlusCircle className="mr-2 h-5 w-5" /> Registrar Ítem
             </Button>
-
-            {/* Botón “Registrar Compra” con estilos solicitados */}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onNewPurchaseClick}
-              className="w-full flex-1 bg-white border-2 border-blue-600 text-black font-bold hover:bg-blue-50 focus-visible:ring-blue-600"
-            >
-              <PlusCircle className="mr-2 h-5 w-5 text-blue-600" />
-              Registrar Compra
+            <Button className="w-full flex-1" variant="outline" onClick={onNewPurchaseClick}>
+                <PlusCircle className="mr-2 h-5 w-5" /> Registrar Compra
             </Button>
         </div>
     </div>
@@ -92,22 +78,16 @@ const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { s
 };
 
 
-// --- ProductosContent Component Logic (Integrated) ---
+// --- ProductosContent (responsive: móvil solo nombre/stock/precio venta) ---
 const itemSortOptions = [
-    { value: 'updatedAt_desc', label: 'Modificación (Más reciente)' },
-    { value: 'updatedAt_asc', label: 'Modificación (Más antiguo)' },
-    { value: 'name_asc', label: 'Nombre (A-Z)' },
-    { value: 'name_desc', label: 'Nombre (Z-A)' },
-    { value: 'quantity_asc', label: 'Stock (Menor a Mayor)' },
-    { value: 'quantity_desc', label: 'Stock (Mayor a Menor)' },
-    { value: 'sellingPrice_desc', label: 'Precio Venta (Mayor a Menor)' },
+  { value: "updatedAt_desc", label: "Modificación (Más reciente)" },
+  { value: "updatedAt_asc", label: "Modificación (Más antiguo)" },
+  { value: "name_asc", label: "Nombre (A-Z)" },
+  { value: "name_desc", label: "Nombre (Z-A)" },
+  { value: "quantity_asc", label: "Stock (Menor a Mayor)" },
+  { value: "quantity_desc", label: "Stock (Mayor a Menor)" },
+  { value: "sellingPrice_desc", label: "Precio Venta (Mayor a Menor)" },
 ];
-
-const getSortPriority = (item: InventoryItem) => {
-  if (item.isService) return 3;
-  if (item.quantity <= item.lowStockThreshold) return 1;
-  return 2;
-};
 
 const ProductosContent = ({
   inventoryItems,
@@ -129,9 +109,7 @@ const ProductosContent = ({
   });
 
   const customSortedItems = useMemo(() => {
-    const items = [...tableManager.fullFilteredData];
-    // No default sort needed if useTableManager handles it
-    return items;
+    return [...tableManager.fullFilteredData];
   }, [tableManager.fullFilteredData]);
 
   const handleSort = (key: string) => {
@@ -160,17 +138,20 @@ const ProductosContent = ({
 
       <Card>
         <CardContent className="pt-6">
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border overflow-x-auto md:overflow-visible">
+            <Table className="w-full text-sm md:text-base">
               <TableHeader className="bg-black text-white">
                 <TableRow>
+                  {/* Categoría (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="category"
                     label="Categoría"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    className="hidden md:table-cell"
                     textClassName="text-white"
                   />
+                  {/* Nombre (siempre visible) */}
                   <SortableTableHeader
                     sortKey="name"
                     label="Nombre"
@@ -178,13 +159,16 @@ const ProductosContent = ({
                     currentSort={tableManager.sortOption}
                     textClassName="text-white"
                   />
+                  {/* Tipo (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="isService"
                     label="Tipo"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    className="hidden md:table-cell"
                     textClassName="text-white"
                   />
+                  {/* Stock (siempre visible) */}
                   <SortableTableHeader
                     sortKey="quantity"
                     label="Stock"
@@ -193,21 +177,25 @@ const ProductosContent = ({
                     className="text-right"
                     textClassName="text-white"
                   />
+                  {/* Últ. Modificación (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="updatedAt"
                     label="Últ. Modificación"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    className="hidden md:table-cell"
                     textClassName="text-white"
                   />
+                  {/* Precio Compra (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="unitPrice"
                     label="Precio Compra"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
-                    className="text-right"
+                    className="hidden md:table-cell text-right"
                     textClassName="text-white"
                   />
+                  {/* Precio Venta (siempre visible) */}
                   <SortableTableHeader
                     sortKey="sellingPrice"
                     label="Precio Venta"
@@ -218,6 +206,7 @@ const ProductosContent = ({
                   />
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {customSortedItems.length > 0 ? (
                   customSortedItems.map((item) => {
@@ -227,44 +216,73 @@ const ProductosContent = ({
                     return (
                       <TableRow
                         key={item.id}
+                        role="button"
                         onClick={() => router.push(`/inventario/${item.id}`)}
                         className="cursor-pointer hover:bg-muted/50"
                       >
-                        <TableCell>{item.category}</TableCell>
-                        <TableCell className="font-medium">
-                          <p
-                            className={cn(
-                              isLowStock && "text-orange-600 font-bold"
+                        {/* Categoría (solo escritorio) */}
+                        <TableCell className="hidden md:table-cell">
+                          {item.category}
+                        </TableCell>
+
+                        {/* Nombre (siempre) */}
+                        <TableCell className="font-medium align-top">
+                          <div className="flex items-center gap-2">
+                            <p
+                              className={cn(
+                                isLowStock && "text-orange-600 font-bold"
+                              )}
+                            >
+                              {item.name}
+                            </p>
+                            {/* En móvil añadimos indicación de Servicio ya que ocultamos la columna "Tipo" */}
+                            {item.isService && (
+                              <span className="md:hidden inline-flex rounded border px-1.5 py-0.5 text-[10px] leading-none text-foreground">
+                                Servicio
+                              </span>
                             )}
-                          >
-                            {item.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
+                          </div>
+                          <p className="text-xs text-muted-foreground hidden sm:block">
                             {item.brand} ({item.sku || "N/A"})
                           </p>
                         </TableCell>
-                        <TableCell>
+
+                        {/* Tipo (solo escritorio) */}
+                        <TableCell className="hidden md:table-cell">
                           <Badge variant={item.isService ? "outline" : "secondary"}>
                             {item.isService ? "Servicio" : "Producto"}
                           </Badge>
                         </TableCell>
+
+                        {/* Stock (siempre) */}
                         <TableCell
                           className={cn(
-                            "text-right font-semibold",
+                            "text-right font-semibold whitespace-nowrap",
                             isLowStock && "text-orange-600"
                           )}
+                          title={item.isService ? "No aplica para servicios" : ""}
                         >
                           {item.isService ? "N/A" : item.quantity}
                         </TableCell>
-                        <TableCell>
-                          {updatedAt && isValid(updatedAt) ? format(updatedAt, 'dd/MM/yy, HH:mm', { locale: es }) : 'N/A'}
+
+                        {/* Últ. Modificación (solo escritorio) */}
+                        <TableCell className="hidden md:table-cell">
+                          {updatedAt && isValid(updatedAt)
+                            ? format(updatedAt, "dd/MM/yy, HH:mm", { locale: es })
+                            : "N/A"}
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                        <TableCell className="text-right font-bold text-primary">
+
+                        {/* Precio Compra (solo escritorio) */}
+                        <TableCell className="hidden md:table-cell text-right whitespace-nowrap">
+                          {formatCurrency(item.unitPrice)}
+                        </TableCell>
+
+                        {/* Precio Venta (siempre) */}
+                        <TableCell className="text-right font-bold text-primary whitespace-nowrap">
                           {formatCurrency(item.sellingPrice)}
                         </TableCell>
                       </TableRow>
-                    )
+                    );
                   })
                 ) : (
                   <TableRow>
@@ -272,7 +290,9 @@ const ProductosContent = ({
                       {tableManager.searchTerm ? (
                         <Button
                           variant="link"
-                          onClick={() => onNewItemFromSearch(tableManager.searchTerm)}
+                          onClick={() =>
+                            onNewItemFromSearch(tableManager.searchTerm)
+                          }
                         >
                           <PlusCircle className="mr-2 h-4 w-4" />
                           Registrar nuevo ítem: "{tableManager.searchTerm}"
@@ -291,6 +311,7 @@ const ProductosContent = ({
     </div>
   );
 };
+
 
 // --- CategoriasContent (responsive tabla + lista móvil) ---
 const CategoriasContent = ({
