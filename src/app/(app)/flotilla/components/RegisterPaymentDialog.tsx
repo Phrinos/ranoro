@@ -1,4 +1,3 @@
-// src/app/(app)/flotilla/components/RegisterPaymentDialog.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -6,20 +5,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +17,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { RentalPayment } from "@/types";
 
@@ -109,9 +97,7 @@ export function RegisterPaymentDialog({
         <DialogHeader className="p-6 pb-4">
           <DialogTitle>{paymentToEdit ? "Editar Pago" : "Registrar Pago"}</DialogTitle>
           <DialogDescription>
-            {paymentToEdit
-              ? "Actualiza los detalles del pago."
-              : "Registra un nuevo abono a la cuenta del conductor."}
+            {paymentToEdit ? "Actualiza los detalles del pago." : "Registra un nuevo abono a la cuenta del conductor."}
           </DialogDescription>
         </DialogHeader>
 
@@ -131,10 +117,10 @@ export function RegisterPaymentDialog({
                           className="relative w-full cursor-pointer"
                           role="button"
                           tabIndex={0}
-                          onClick={() => setIsCalendarOpen((o) => !o)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") setIsCalendarOpen((o) => !o);
                           }}
+                          onClick={() => setIsCalendarOpen(true)}
                         >
                           <Input
                             readOnly
@@ -150,7 +136,8 @@ export function RegisterPaymentDialog({
                         </div>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="p-0 w-auto" align="start" sideOffset={8}>
+
+                    <PopoverContent className="p-2 w-auto" align="start" sideOffset={8}>
                       <ReactCalendar
                         value={selectedPaymentDate ?? new Date()}
                         onChange={(val) => {
@@ -168,7 +155,6 @@ export function RegisterPaymentDialog({
                         selectRange={false}
                         minDetail="month"
                         maxDetail="month"
-                        className="react-calendar styled"
                       />
                     </PopoverContent>
                   </Popover>
@@ -214,7 +200,6 @@ export function RegisterPaymentDialog({
                       min="0.01"
                       inputMode="decimal"
                       {...field}
-                      value={field.value === undefined ? '' : field.value}
                       className="bg-white"
                       placeholder="0.00"
                     />
@@ -232,7 +217,7 @@ export function RegisterPaymentDialog({
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" placeholder="Abono de Renta" value={field.value ?? ''} />
+                    <Textarea {...field} className="bg-white" placeholder="Abono de Renta" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -251,53 +236,6 @@ export function RegisterPaymentDialog({
           </form>
         </Form>
       </DialogContent>
-
-      {/* estilos react-calendar */}
-      <style jsx global>{`
-        .react-calendar.styled {
-          background: hsl(var(--background));
-          border: 1px solid hsl(var(--border));
-          border-radius: 0.75rem;
-          padding: 0.5rem;
-          font-size: 0.9rem;
-        }
-        .react-calendar.styled .react-calendar__navigation {
-          margin-bottom: 0.25rem;
-        }
-        .react-calendar.styled .react-calendar__navigation button {
-          border-radius: 0.5rem;
-          padding: 0.35rem 0.5rem;
-          color: hsl(var(--foreground));
-        }
-        .react-calendar.styled .react-calendar__navigation button:hover {
-          background: hsl(var(--muted));
-        }
-        .react-calendar.styled .react-calendar__tile {
-          border-radius: 0.5rem;
-          padding: 0.4rem 0;
-        }
-        .react-calendar.styled .react-calendar__month-view__weekdays__weekday {
-          padding: 0.4rem 0;
-          color: hsl(var(--muted-foreground));
-          abbr[title] {
-            text-decoration: none;
-          }
-        }
-        .react-calendar.styled .react-calendar__tile:enabled:hover {
-          background: hsl(var(--muted));
-        }
-        .react-calendar.styled .react-calendar__tile--now {
-          background: hsl(var(--muted) / 0.5);
-        }
-        .react-calendar.styled .react-calendar__tile--active,
-        .react-calendar.styled .react-calendar__tile--hasActive {
-          background: hsl(var(--primary));
-          color: hsl(var(--primary-foreground));
-        }
-        .react-calendar.styled .react-calendar__tile--active:hover {
-          filter: brightness(0.95);
-        }
-      `}</style>
     </Dialog>
   );
 }

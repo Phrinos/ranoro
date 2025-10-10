@@ -1,4 +1,3 @@
-// src/app/(app)/flotilla/components/EditDailyChargeDialog.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
@@ -14,40 +13,24 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea"; // Añadido
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { format, isValid } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import type { DailyRentalCharge } from "@/types";
-import { parseDate } from '@/lib/forms';
 
-/** Schema */
+import ReactCalendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+
 const chargeSchema = z.object({
   date: z.date({ required_error: "La fecha es obligatoria." }),
   amount: z.coerce.number().min(0, "El monto no puede ser negativo."),
-  note: z.string().optional(), // Añadido
 });
-
 export type DailyChargeFormValues = z.infer<typeof chargeSchema>;
-
-interface EditDailyChargeDialogProps {
-  open: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  charge: DailyRentalCharge | null;
-  onSave: (values: DailyChargeFormValues) => Promise<void>;
-}
 
 // --- helpers ---
 const toMidday = (d: Date) => {
@@ -56,21 +39,20 @@ const toMidday = (d: Date) => {
   return n;
 };
 
-function normalizeToDate(input: unknown): Date | null {
-  if (!input) return null;
-  if (input instanceof Date) return input;
-  // Firestore Timestamp
-  // @ts-expect-error toDate puede existir en Timestamp
-  if (typeof input === "object" && typeof input?.toDate === "function") {
-    // @ts-expect-error
-    const d = input.toDate();
-    return d instanceof Date && !isNaN(d.getTime()) ? d : null;
-  }
-  if (typeof input === "string" || typeof input === "number") {
-    const d = new Date(input);
-    return isNaN(d.getTime()) ? null : d;
-  }
-  return null;
+// Acepta Date | string | Firestore Timestamp
+function toDate(value: any): Date | undefined {
+  if (!value) return undefined;
+  if (value instanceof Date) return value;
+  if (typeof value?.toDate === "function") return value.toDate();
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? undefined : d;
+}
+
+interface EditDailyChargeDialogProps {
+  open: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  charge: DailyRentalCharge | null;
+  onSave: (values: DailyChargeFormValues) => Promise<void>;
 }
 
 export function EditDailyChargeDialog({
@@ -82,51 +64,33 @@ export function EditDailyChargeDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const initialDate = useMemo(() => {
-    const d = normalizeToDate(charge?.date) ?? new Date();
-    return toMidday(d);
-  }, [charge?.date]);
-
   const form = useForm<DailyChargeFormValues>({
     resolver: zodResolver(chargeSchema),
     defaultValues: {
-      date: initialDate,
+      date: toMidday(new Date()),
       amount: charge?.amount ?? 0,
-      note: (charge as any)?.note || `Renta Diaria (${charge?.vehicleLicensePlate || ''})`
     },
   });
 
-  useEffect(() => {
-    form.reset({
-      date: initialDate,
-      amount: charge?.amount ?? 0,
-      note: (charge as any)?.note || `Renta Diaria (${charge?.vehicleLicensePlate || ''})`
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [charge?.id, open]);
+  const selectedDate = form.watch("date");
 
-  const handleFormSubmit = useCallback(
-    async (values: DailyChargeFormValues) => {
-      setIsSubmitting(true);
-      try {
-        await onSave(values);
-        onOpenChange(false);
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [onSave, onOpenChange]
-  );
-  
-  const handleSelectDate = useCallback(
-    (d?: Date) => {
-      if (!d) return;
-      const fixed = toMidday(d);
-      form.setValue("date", fixed, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-      requestAnimationFrame(() => setIsCalendarOpen(false));
-    },
-    [form]
-  );
+  useEffect(() => {
+    const base = toMidday(toDate(charge?.date) ?? new Date());
+    form.reset({
+      date: base,
+      amount: charge?.amount ?? 0,
+    });
+  }, [open, charge?.id, charge?.date, charge?.amount, form]);
+
+  const handleFormSubmit = async (values: DailyChargeFormValues) => {
+    setIsSubmitting(true);
+    try {
+      await onSave(values);
+      onOpenChange(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -134,47 +98,60 @@ export function EditDailyChargeDialog({
         <DialogHeader>
           <DialogTitle>Editar Cargo de Renta Diaria</DialogTitle>
           <DialogDescription>
-            Ajusta la fecha o el monto de un cargo de renta. Úsalo para excepciones
-            (ej. día no cobrado por falla).
+            Ajusta la fecha o el monto del cargo de renta diaria.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-2">
+            {/* Fecha */}
             <FormField
               control={form.control}
               name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
+              render={() => (
+                <FormItem className="flex flex-col gap-2">
                   <FormLabel>Fecha del Cargo</FormLabel>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className={cn(
-                            "pl-3 text-left font-normal bg-white",
-                            !field.value && "text-muted-foreground"
-                          )}
-                          onClick={() => setIsCalendarOpen((o) => !o)}
+                        <div
+                          className="relative w-full cursor-pointer"
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") setIsCalendarOpen((o) => !o);
+                          }}
+                          onClick={() => setIsCalendarOpen(true)}
                         >
-                          {field.value
-                            ? format(field.value, "PPP", { locale: es })
-                            : "Seleccionar fecha"}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
+                          <Input
+                            readOnly
+                            className="bg-white pr-10"
+                            value={selectedDate ? format(selectedDate, "PPP", { locale: es }) : ""}
+                            placeholder="Seleccionar fecha"
+                          />
+                          <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+                        </div>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={handleSelectDate}
-                        // fallback si DayPicker manda undefined al re-clicar el mismo día
-                        onDayClick={(day) => handleSelectDate(day)}
-                        initialFocus
-                        locale={es}
+
+                    <PopoverContent className="p-2 w-auto" align="start" sideOffset={8}>
+                      <ReactCalendar
+                        value={selectedDate ?? new Date()}
+                        onChange={(val) => {
+                          const d = Array.isArray(val) ? val[0] : val;
+                          if (!d) return;
+                          form.setValue("date", toMidday(d), {
+                            shouldDirty: true,
+                            shouldTouch: true,
+                            shouldValidate: true,
+                          });
+                          setIsCalendarOpen(false);
+                        }}
+                        locale="es-MX"
+                        calendarType="iso8601"
+                        selectRange={false}
+                        minDetail="month"
+                        maxDetail="month"
                       />
                     </PopoverContent>
                   </Popover>
@@ -182,30 +159,16 @@ export function EditDailyChargeDialog({
                 </FormItem>
               )}
             />
-            
-            <FormField control={form.control} name="amount" render={({ field }) => (
+
+            {/* Monto */}
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Monto del Cargo ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" inputMode="decimal" step="0.01" min={0} className="bg-white" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-            )}/>
-            
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Ej: Renta diaria..."
-                      {...field}
-                      value={field.value ?? ''}
-                      className="bg-white"
-                    />
+                    <Input type="number" step="0.01" min={0} {...field} className="bg-white" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
