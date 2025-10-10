@@ -88,9 +88,9 @@ const processFinancialChartData = (
                     // Lógica de costo robusta con fallbacks
                     const itemUnitCost =
                         inventoryItem?.purchasePrice ??
-                        inventoryItem?.costPrice ??
-                        inventoryItem?.averageCost ??
-                        inventoryItem?.unitCost ??
+                        (inventoryItem as any)?.costPrice ??
+                        (inventoryItem as any)?.averageCost ??
+                        inventoryItem?.unitPrice ??
                         0;
                     return sum + (itemUnitCost * item.quantity);
                 }, 0);
@@ -249,38 +249,87 @@ const OperationsVolumeChart = React.memo(({ data }: { data: any[] }) => (
 ));
 OperationsVolumeChart.displayName = 'OperationsVolumeChart';
 
-const ServiceDistributionChart = React.memo(({ data }: { data: any[] }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Distribución de Tipos de Servicio</CardTitle>
-      <CardDescription>Servicios más comunes en el período seleccionado.</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie 
-            data={data} 
-            dataKey="value" 
-            nameKey="name" 
-            cx="50%" 
-            cy="50%" 
-            outerRadius={80} 
-            labelLine={true}
-            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-            fontSize={12}
-            className="text-xs"
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomPieTooltip />} />
-        </PieChart>
-      </ResponsiveContainer>
-    </CardContent>
-  </Card>
-));
-ServiceDistributionChart.displayName = 'ServiceDistributionChart';
+const ServiceDistributionChart = React.memo(({ data }: { data: any[] }) => {
+  // Opcional: si prefieres agrupar rebanadas pequeñas en "Otros", usa esta función:
+  const grouped = React.useMemo(() => {
+    if (!data?.length) return [];
+    const total = data.reduce((s: number, d: any) => s + (d.value || 0), 0);
+    const shown: any[] = [];
+    let others = 0;
+    for (const d of data) {
+      const pct = total ? d.value / total : 0;
+      if (pct < 0.04) others += d.value;          // umbral 4%
+      else shown.push(d);
+    }
+    if (others > 0) shown.push({ name: "Otros", value: others });
+    return shown;
+  }, [data]);
+
+  // Etiqueta personalizada: oculta si la rebanada < 5%
+  const renderLabel = (props: any) => {
+    const { name, percent, cx, cy, outerRadius, midAngle } = props;
+    if (!percent || percent < 0.05) return null;  // umbral 5%
+    const RAD = Math.PI / 180;
+    const r = outerRadius + 12;
+    const x = cx + r * Math.cos(-midAngle * RAD);
+    const y = cy + r * Math.sin(-midAngle * RAD);
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="#6b7280"
+        fontSize={12}
+        textAnchor={x > cx ? "start" : "end"}
+        dominantBaseline="central"
+      >
+        {`${name} (${(percent * 100).toFixed(0)}%)`}
+      </text>
+    );
+  };
+
+  const series = grouped.length ? grouped : data;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Distribución de Tipos de Servicio</CardTitle>
+        <CardDescription>Servicios más comunes en el período seleccionado.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={320}>
+          <PieChart margin={{ right: 140, left: 8, top: 8, bottom: 8 }}>
+            <Pie
+              data={series}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={60}        // dona: ayuda a leer
+              outerRadius={100}
+              paddingAngle={2}        // separa rebanadas
+              minAngle={5}            // evita rebanadas “filo”
+              labelLine={false}       // líneas generan más empalme
+              label={renderLabel}     // solo >5% renderiza etiqueta
+              isAnimationActive={false}
+            >
+              {series.map((entry: any, idx: number) => (
+                <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+              ))}
+            </Pie>
+            <Legend
+              layout="vertical"
+              align="right"
+              verticalAlign="middle"
+              wrapperStyle={{ fontSize: 12 }}
+            />
+            <Tooltip content={<CustomPieTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+});
+ServiceDistributionChart.displayName = "ServiceDistributionChart";
 
 
 // --- Main Component ---
