@@ -72,6 +72,10 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
   const sortedSuppliers = React.useMemo(() => 
     [...suppliers].sort((a, b) => a.name.localeCompare(b.name)),
   [suppliers]);
+  
+  const sortedCategories = React.useMemo(() =>
+    [...categories].sort((a, b) => a.name.localeCompare(b.name)),
+  [categories]);
 
 
   return (
@@ -94,7 +98,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
         />
         <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder={isService ? "Mano de Obra" : "Filtro de Aceite"} {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-card"/></FormControl><FormMessage /></FormItem> )}/>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Categoría</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione categoría" /></SelectTrigger></FormControl><SelectContent>{categories.map(c=><SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+          <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Categoría</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione categoría" /></SelectTrigger></FormControl><SelectContent>{sortedCategories.map(c=><SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
           <FormField control={form.control} name="supplier" render={({ field }) => ( <FormItem><FormLabel>Proveedor</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione proveedor" /></SelectTrigger></FormControl><SelectContent>{sortedSuppliers.map(s=><SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
