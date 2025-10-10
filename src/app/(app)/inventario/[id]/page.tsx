@@ -31,8 +31,8 @@ import { format, isValid } from "date-fns";
 import { es } from 'date-fns/locale';
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
-import { InventoryItemDialog } from '../components/inventory-item-dialog';
-import type { InventoryItemFormValues } from '../components/inventory-item-form';
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { useToast } from '@/hooks/use-toast';
 import { inventoryService, serviceService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
@@ -40,6 +40,8 @@ import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog
 import { formatNumber, formatCurrency } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { InventoryItemDialog } from '../components/inventory-item-dialog';
+import type { InventoryItemFormValues } from '../components/inventory-item-form';
 
 // Helpers locales
 const unitLabel = (ut?: string) => (ut === 'ml' ? 'ml' : ut === 'liters' ? 'L' : '');
@@ -224,7 +226,7 @@ export default function InventoryItemDetailPage() {
       />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 lg:w-full mb-6">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             Información del Ítem
           </TabsTrigger>
@@ -239,7 +241,7 @@ export default function InventoryItemDetailPage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <p className="text-sm font-medium text-primary">{item.isService ? 'Servicio' : 'Producto'}</p>
-                        <CardTitle className="flex items-center gap-2 mt-1">
+                        <CardTitle className="flex items-center gap-2 mt-2">
                           <Package className="h-5 w-5 text-muted-foreground" />
                           {item.category}
                         </CardTitle>
