@@ -118,7 +118,7 @@ export default function TableroPage() {
   }, []);
 
 
-  const columnOrder: KanbanColumnId[] = ['Agendado', 'En Espera de Refacciones', 'Reparando', 'Completado'];
+  const columnOrder: KanbanColumnId[] = useMemo(() => ['Agendado', 'En Espera de Refacciones', 'Reparando', 'Completado'], []);
   
   const kanbanColumns = useMemo((): KanbanColumn[] => {
     const columns: Record<KanbanColumnId, KanbanColumn> = {
@@ -130,7 +130,7 @@ export default function TableroPage() {
 
     services.forEach(service => {
         // Only include services scheduled for today and that have been confirmed
-        if(service.status === 'Agendado' && service.appointmentStatus === 'Confirmada' && service.serviceDate && isValid(parseISO(service.serviceDate)) && isToday(parseISO(service.serviceDate))) {
+        if(service.status === 'Agendado' && service.appointmentStatus === 'Confirmada' && service.serviceDate && isValid(parseISO(service.serviceDate as string)) && isToday(parseISO(service.serviceDate as string))) {
             columns['Agendado'].services.push(service);
         } else if (service.status === 'En Taller') {
             switch(service.subStatus) {
@@ -157,7 +157,7 @@ export default function TableroPage() {
     }
     
     return columnOrder.map(id => columns[id]);
-  }, [services]);
+  }, [services, columnOrder]);
 
   const handleCardClick = (serviceId: string) => {
     router.push(`/servicios/${serviceId}`);

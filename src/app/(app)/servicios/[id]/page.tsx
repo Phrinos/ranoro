@@ -202,7 +202,7 @@ export default function ServicioPage() {
 
     methods.reset(norm);
     hydratedRef.current = initialData.id;
-  }, [initialData?.id, users, methods]);
+  }, [initialData, users, methods]);
   
   const advisorId = methods.watch("serviceAdvisorId");
   useEffect(() => {

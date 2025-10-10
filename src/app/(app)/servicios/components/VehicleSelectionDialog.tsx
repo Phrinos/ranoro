@@ -47,7 +47,7 @@ export function VehicleSelectionDialog({
   const [searchTerm, setSearchTerm] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+  const safeVehicles = useMemo(() => (Array.isArray(vehicles) ? vehicles : []), [vehicles]);
 
   const filtered = useMemo(() => {
     const q = normalize(searchTerm.trim());

@@ -103,11 +103,11 @@ export default function ActivosTabContent({
     });
   }, [activeServices]);
   
-  const handleEditService = (serviceId: string) => {
+  const handleEditService = useCallback((serviceId: string) => {
     router.push(`/servicios/${serviceId}`);
-  };
+  }, [router]);
 
-  const handleCancelService = async (serviceId: string) => {
+  const handleCancelService = useCallback(async (serviceId: string) => {
     const reason = prompt('Motivo de la cancelación:');
     if (reason) {
       try {
@@ -117,7 +117,7 @@ export default function ActivosTabContent({
         toast({ title: 'Error', description: 'No se pudo cancelar el servicio.', variant: 'destructive' });
       }
     }
-  };
+  }, [toast]);
   
   const renderServiceCard = useCallback(
     (service: ServiceRecord) => (

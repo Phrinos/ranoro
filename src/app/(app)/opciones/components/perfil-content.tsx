@@ -22,6 +22,7 @@ import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 
 import { auth } from '@/lib/firebaseClient';
 import { capitalizeWords } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import Image from 'next/image';
 
 const profileSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -147,7 +148,7 @@ export function PerfilPageContent() {
                   <FormDescription>Esta firma se usará en los documentos que generes.</FormDescription>
                   <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
                       {form.watch('signatureDataUrl') ? 
-                          <img src={form.watch('signatureDataUrl')} alt="Firma guardada" className="max-w-[250px] max-h-[125px] object-contain"/> : 
+                          <Image src={form.watch('signatureDataUrl')!} alt="Firma guardada" className="max-w-[250px] max-h-[125px] object-contain" width={250} height={125}/> : 
                           <span className="text-sm text-muted-foreground">No hay firma guardada.</span>
                       }
                   </div>

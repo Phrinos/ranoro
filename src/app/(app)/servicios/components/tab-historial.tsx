@@ -76,7 +76,7 @@ const toNumber = (v: unknown) => {
   return Number.isFinite(n) ? n : 0;
 };
 const fmtLocal = (iso?: string | null) =>
-  iso ? new Date(iso).toLocaleString("es-MX") : "";
+  iso ? new Date(iso).toLocaleString('es-MX') : '';
 
 export default function HistorialTabContent({
   services,
@@ -284,7 +284,7 @@ export default function HistorialTabContent({
     });
   };
 
-  const handleEditService = (serviceId: string) => router.push(`/servicios/${serviceId}`);
+  const handleEditService = useCallback((serviceId: string) => router.push(`/servicios/${serviceId}`), [router]);
 
   const renderServiceCard = useCallback(
     (record: ServiceRecord) => (
@@ -300,7 +300,7 @@ export default function HistorialTabContent({
         onShowTicket={() => onShowTicket(record)}
       />
     ),
-    [vehicles, personnel, currentUser, onShowShareDialog, onDelete, onShowTicket]
+    [vehicles, personnel, currentUser, onShowShareDialog, onDelete, onShowTicket, handleEditService]
   );
 
   return (

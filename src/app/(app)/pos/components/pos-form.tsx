@@ -9,6 +9,7 @@ import { SaleSummary } from './sale-summary';
 import { PosItemsTable } from "./pos-items-table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
+import { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 
 
 interface POSFormProps {
@@ -44,7 +45,7 @@ export function PosForm({
       reset(initialData);
     }
     // sólo cuando cambia el ID de la venta
-  }, [initialData?.id, reset]);
+  }, [initialData, reset]);
 
   return (
     <>

@@ -40,16 +40,22 @@ export function useTableManager<T extends Record<string, any>>({
   const [currentPage, setCurrentPage] = useState(1);
 
   const didInitRange = useRef(false);
+
+  const initialFromTime = initialDateRange?.from?.getTime();
+  const initialToTime = initialDateRange?.to?.getTime();
+
   useEffect(() => {
     if (!initialDateRange) return;
     setDateRange(prev => {
       const same =
-        prev?.from?.getTime() === initialDateRange.from?.getTime() &&
-        prev?.to?.getTime() === initialDateRange.to?.getTime();
+        prev?.from?.getTime() === initialFromTime &&
+        prev?.to?.getTime() === initialToTime;
       return same ? prev : initialDateRange;
     });
     if (!didInitRange.current) didInitRange.current = true;
-  }, [initialDateRange?.from?.getTime(), initialDateRange?.to?.getTime()]);
+  }, [initialFromTime, initialToTime, initialDateRange]);
+
+  const stringifiedOtherFilters = JSON.stringify(otherFilters);
 
   const fullFilteredData = useMemo(() => {
     let data = [...initialData];
@@ -123,11 +129,14 @@ export function useTableManager<T extends Record<string, any>>({
     }
 
     return data;
-  }, [initialData, searchTerm, sortOption, dateRange?.from?.getTime(), dateRange?.to?.getTime(), JSON.stringify(otherFilters), searchKeys, dateFilterKey]);
+  }, [initialData, searchTerm, sortOption, dateRange, stringifiedOtherFilters, searchKeys, dateFilterKey, otherFilters]);
+
+  const dateRangeFromTime = dateRange?.from?.getTime();
+  const dateRangeToTime = dateRange?.to?.getTime();
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sortOption, dateRange?.from?.getTime(), dateRange?.to?.getTime(), JSON.stringify(otherFilters)]);
+  }, [searchTerm, sortOption, dateRangeFromTime, dateRangeToTime, stringifiedOtherFilters]);
 
   const totalItems = fullFilteredData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);

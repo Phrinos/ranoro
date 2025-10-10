@@ -39,12 +39,13 @@ export function VehicleSelectionCard({
   onOpenNewVehicleDialog,
   initialVehicleId,
 }: VehicleSelectionCardProps) {
-  const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
   const { control, watch, setValue } = useFormContext();
 
   const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
 
   const selectedVehicleId = watch("vehicleId") as string | undefined;
+
+  const safeVehicles = useMemo(() => Array.isArray(vehicles) ? vehicles : [], [vehicles]);
 
   const selectedVehicle = useMemo(
     () => safeVehicles.find((v) => v.id === selectedVehicleId),

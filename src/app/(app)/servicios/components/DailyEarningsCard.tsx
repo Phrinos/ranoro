@@ -25,30 +25,11 @@ function getAmount(s: any): number {
   return toNumberLoose(s?.Total ?? s?.total ?? s?.payments?.Total ?? s?.payments?.total ?? 0);
 }
 
-/** Hash barato para reaccionar a cambios aunque muten el array in-place */
-function servicesHash(services: ServiceRecord[]): string {
-  try {
-    return services
-      .map((s: any) => [
-        s?.id ?? "",
-        s?.status ?? "",
-        s?.deliveryDateTime ?? "",
-        getAmount(s),
-      ].join("|"))
-      .join("~");
-  } catch {
-    // En caso extremo, forzamos recomputando siempre
-    return String(Math.random());
-  }
-}
-
 interface DailyEarningsCardProps {
   services: ServiceRecord[];
 }
 
 export function DailyEarningsCard({ services }: DailyEarningsCardProps) {
-  const hash = useMemo(() => servicesHash(services), [services]); // <- cambia si cambian campos relevantes
-
   const { sum, count } = useMemo(() => {
     const now = new Date();
     const start = startOfDay(now);
@@ -82,8 +63,7 @@ export function DailyEarningsCard({ services }: DailyEarningsCardProps) {
     }
 
     return { sum, count };
-  // 👇 dependemos del hash para detectar cambios profundos sin stringify gigante
-  }, [hash, services]);
+  }, [services]);
 
   return (
     <Card className="mb-6" aria-label="Ingresos del Día">

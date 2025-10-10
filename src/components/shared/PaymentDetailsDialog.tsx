@@ -1,7 +1,7 @@
 // src/app/(app)/servicios/components/PaymentDetailsDialog.tsx
 "use client";
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PaymentSection } from "./PaymentSection";
@@ -70,14 +70,15 @@ export function PaymentDetailsDialog({
   });
 
   const { handleSubmit, formState: { isSubmitting }, reset, getValues } = methods;
+  const getValuesHook = methods.getValues;
 
   useEffect(() => {
     if (!record) return;
     reset({
       payments: [{ method: 'Efectivo', amount: totalAmount, date: new Date() }],
-      nextServiceInfo: getValues('nextServiceInfo') ?? { nextServiceDate: null, nextServiceMileage: null },
+      nextServiceInfo: getValuesHook('nextServiceInfo') ?? { nextServiceDate: null, nextServiceMileage: null },
     });
-  }, [record, totalAmount, open, reset]);
+  }, [record, totalAmount, open, reset, getValuesHook]);
 
   const processSubmit = (values: PaymentDetailsFormValues) => {
     const normalized = {

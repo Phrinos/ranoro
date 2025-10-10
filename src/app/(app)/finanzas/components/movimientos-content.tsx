@@ -1,7 +1,7 @@
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { DateRange } from "react-day-picker";
 import type {
@@ -188,11 +188,12 @@ function MovimientosTabContent({
     initialDateRange: dateRange,
   });
 
+  const onDateRangeChangeCallback = tableManager.onDateRangeChange;
   useEffect(() => {
-    if (tableManager.onDateRangeChange) {
-      tableManager.onDateRangeChange(dateRange);
+    if (onDateRangeChangeCallback) {
+        onDateRangeChangeCallback(dateRange);
     }
-  }, [dateRange, tableManager.onDateRangeChange]);
+  }, [dateRange, onDateRangeChangeCallback]);
 
   // ---- KPI: Ingresos = pagos positivos (todos métodos); Egresos = Salidas de caja (ledger) ----
   const summary = useMemo(() => {

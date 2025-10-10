@@ -2,7 +2,7 @@
 // src/app/(app)/servicios/components/service-dialog.tsx
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ServiceForm } from './ServiceForm';
 import { useForm, FormProvider } from 'react-hook-form';
@@ -47,7 +47,7 @@ export function ServiceDialog({
   const { isExpanded } = useSidebar();
   
   // Forzar valores por defecto para un nuevo servicio
-  const defaultValues: Partial<ServiceFormValues> = initialData ? {
+  const defaultValues = useMemo(() => (initialData ? {
     ...initialData,
     status: initialData.status || 'Cotizacion',
   } : {
@@ -55,11 +55,11 @@ export function ServiceDialog({
     serviceDate: new Date().toISOString(),
     serviceItems: [],
     payments: [],
-  };
+  }), [initialData]);
 
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
-    defaultValues,
+    defaultValues: defaultValues as any,
     mode: 'onBlur', // Validar solo cuando el usuario deja el campo
     reValidateMode: 'onChange',
   });
@@ -69,9 +69,9 @@ export function ServiceDialog({
   React.useEffect(() => {
     // Resetear el formulario con los valores correctos cada vez que se abre
     if (open) {
-      reset(defaultValues);
+      reset(defaultValues as any);
     }
-  }, [open, initialData, reset]);
+  }, [open, defaultValues, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

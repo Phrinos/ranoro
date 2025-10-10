@@ -2,7 +2,7 @@
 // src/app/(app)/servicios/components/ServiceItemsList.tsx
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,16 +62,14 @@ export function ServiceItemsList({
     name: "serviceItems",
   });
 
-  // Observa todos los items para:
-  // 1) Convertir sellingPrice / unitCost / quantity a number si vienen como string
-  // 2) Mantener "total" y "Total" del servicio sincronizados
   const items = watch("serviceItems") || [];
+  const itemsSource = useMemo(() => items ?? [], [items]);
 
   useEffect(() => {
     let mutated = false;
     let runningTotal = 0;
 
-    (items as any[]).forEach((item, i) => {
+    itemsSource.forEach((item: any, i) => {
       // sellingPrice
       if (typeof item?.sellingPrice === "string") {
         const n = toNumberLoose(item.sellingPrice);
@@ -113,7 +111,7 @@ export function ServiceItemsList({
     setValue("total", runningTotal, { shouldDirty: mutated, shouldValidate: false });
     // Algunos lugares consumen "Total" (T mayúscula); mantenlo también:
     setValue("Total" as any, runningTotal as any, { shouldDirty: mutated, shouldValidate: false });
-  }, [items, setValue]);
+  }, [itemsSource, setValue]);
 
   return (
     <Card className="h-full flex flex-col">
