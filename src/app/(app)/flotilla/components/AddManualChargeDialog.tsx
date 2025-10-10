@@ -141,10 +141,9 @@ export function AddManualChargeDialog({
                         mode="single"
                         selected={field.value}
                         onSelect={(d) => {
-                          if (d) {
-                            field.onChange(toMidday(d));
+                            if (!d) return;
+                            field.onChange(d);
                             setIsCalendarOpen(false);
-                          }
                         }}
                         initialFocus
                         locale={es}

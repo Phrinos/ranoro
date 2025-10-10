@@ -129,11 +129,12 @@ export function EditDailyChargeDialog({
                       <FormControl>
                         <Button
                           type="button"
-                          variant="outline"
+                          variant={"outline"}
                           className={cn(
                             "pl-3 text-left font-normal bg-white",
                             !field.value && "text-muted-foreground"
                           )}
+                          onClick={() => setIsCalendarOpen(true)}
                         >
                           {field.value
                             ? format(field.value, "PPP", { locale: es })

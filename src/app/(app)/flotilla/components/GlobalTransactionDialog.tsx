@@ -208,7 +208,7 @@ export function GlobalTransactionDialog({
                             selected={field.value}
                             onSelect={(d) => {
                                 if (d) {
-                                    field.onChange(toMidday(d));
+                                    field.onChange(d);
                                     setIsCalendarOpen(false);
                                 }
                             }}
