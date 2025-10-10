@@ -264,8 +264,8 @@ const ServiceDistributionChart = React.memo(({ data }: { data: any[] }) => (
             nameKey="name" 
             cx="50%" 
             cy="50%" 
-            outerRadius={120} 
-            labelLine={false}
+            outerRadius={80} 
+            labelLine={true}
             label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
             fontSize={12}
             className="text-xs"
