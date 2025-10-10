@@ -1,24 +1,12 @@
 
 // src/app/api/services/[id]/confirm/route.ts
 import { NextResponse } from 'next/server';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getAdminDb } from '@/lib/firebaseAdmin';
 
 export const runtime = 'nodejs';         // Admin SDK => Node runtime
 export const dynamic = 'force-dynamic';  // opcional: evita cacheos
 
-// --- Firebase Admin SDK Initialization ---
-if (!getApps().length) {
-  const sa = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (!sa) {
-    // Falla temprano si falta la credencial
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY no está configurada');
-  }
-  const serviceAccount = JSON.parse(sa);
-  initializeApp({ credential: cert(serviceAccount) });
-}
-
-const db = getFirestore();
+const db = getAdminDb();
 
 type RouteCtx = { params: { id: string } };
 

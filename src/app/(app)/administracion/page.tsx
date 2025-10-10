@@ -10,8 +10,8 @@ import { AdministracionTabs } from "./components/administracion-tabs";
 type PageProps = { searchParams?: { tab?: string } };
 
 async function getAuditLogs(): Promise<AuditLog[]> {
-  const db = getAdminDb();
   try {
+    const db = getAdminDb();
     const q = query(collection(db, 'auditLogs'), orderBy("date", "desc"));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => {
