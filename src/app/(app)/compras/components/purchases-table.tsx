@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
+import { formatCurrency } from "@/lib/utils";
 
 // Definimos la estructura de un documento de compra
 interface Purchase {
@@ -91,12 +92,12 @@ export function PurchasesTable() {
   return (
     <div className="rounded-lg border">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-black">
           <TableRow>
-            <SortableTableHeader sortKey="supplierName" label="Proveedor" onSort={handleSort} currentSort={sortOption} />
-            <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={sortOption} />
-            <SortableTableHeader sortKey="status" label="Estado" onSort={handleSort} currentSort={sortOption} />
-            <SortableTableHeader sortKey="totalAmount" label="Monto Total" onSort={handleSort} currentSort={sortOption} className="text-right" />
+            <SortableTableHeader sortKey="supplierName" label="Proveedor" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+            <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+            <SortableTableHeader sortKey="status" label="Estado" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+            <SortableTableHeader sortKey="totalAmount" label="Monto Total" onSort={handleSort} currentSort={sortOption} className="text-right" textClassName="text-white" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -113,7 +114,7 @@ export function PurchasesTable() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  ${purchase.totalAmount.toFixed(2)}
+                  {formatCurrency(purchase.totalAmount)}
                 </TableCell>
               </TableRow>
             ))
