@@ -56,21 +56,20 @@ export function VehicleSelectionCard({
 
     const preset = safeVehicles.find((v) => v.id === initialVehicleId);
     if (preset) {
-      setValue("vehicleId", preset.id, { shouldValidate: true });
-      setValue("customerName", preset.ownerName || "");
-      setValue("ownerPhone", preset.ownerPhone || "");
-      // Usamos el campo del formulario "mileage"
-      setValue("mileage", preset.currentMileage ?? null);
+      setValue("vehicleId", preset.id, { shouldValidate: false, shouldDirty: true });
+      setValue("customerName", preset.ownerName || "", { shouldValidate: false, shouldDirty: true });
+      setValue("ownerPhone", preset.ownerPhone || "", { shouldValidate: false, shouldDirty: true });
+      setValue("mileage", preset.currentMileage ?? null, { shouldValidate: false, shouldDirty: true });
     }
   }, [initialVehicleId, safeVehicles, selectedVehicleId, setValue]);
 
   const handleVehicleSelect = (vehicleId: string) => {
     const vehicle = safeVehicles.find((v) => v.id === vehicleId);
     if (vehicle) {
-      setValue("vehicleId", vehicle.id, { shouldValidate: false });
-      setValue("customerName", vehicle.ownerName || "", { shouldValidate: false });
-      setValue("ownerPhone", vehicle.ownerPhone || "", { shouldValidate: false });
-      setValue("mileage", vehicle.currentMileage ?? null, { shouldValidate: false });
+      setValue("vehicleId", vehicle.id, { shouldValidate: false, shouldDirty: true });
+      setValue("customerName", vehicle.ownerName || "", { shouldValidate: false, shouldDirty: true });
+      setValue("ownerPhone", vehicle.ownerPhone || "", { shouldValidate: false, shouldDirty: true });
+      setValue("mileage", vehicle.currentMileage ?? null, { shouldValidate: false, shouldDirty: true });
     }
     setIsSelectionDialogOpen(false);
   };
@@ -105,10 +104,11 @@ export function VehicleSelectionCard({
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="outline" size="sm" onClick={handleEditVehicle} className="bg-white">
+                    <Button type="button" variant="outline" size="sm" onClick={handleEditVehicle} className="bg-white">
                       <Edit className="mr-2 h-4 w-4" /> Editar
                     </Button>
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => setIsSelectionDialogOpen(true)}
@@ -169,7 +169,6 @@ export function VehicleSelectionCard({
                         value={field.value ?? ""}
                         onChange={(e) => {
                           const val = e.target.value;
-                          // Guardamos null si está vacío; entero si hay valor
                           field.onChange(val === "" ? null : parseInt(val, 10));
                         }}
                         inputMode="numeric"
@@ -184,6 +183,7 @@ export function VehicleSelectionCard({
             </div>
           ) : (
             <Button
+              type="button"
               variant="outline"
               className="w-full bg-card"
               onClick={() => setIsSelectionDialogOpen(true)}
@@ -200,7 +200,6 @@ export function VehicleSelectionCard({
         vehicles={safeVehicles}
         onSelectVehicle={handleVehicleSelect}
         onNewVehicle={(plate) => {
-          setIsSelectionDialogOpen(false);
           onOpenNewVehicleDialog({ licensePlate: plate });
         }}
       />

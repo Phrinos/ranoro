@@ -78,10 +78,8 @@ export function VehicleSelectionDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
         className="sm:max-w-[640px] p-0 overflow-hidden"
-        // 👇 Forzamos foco al input cuando abre el diálogo
         onOpenAutoFocus={(e) => {
-          e.preventDefault(); // evita que Radix mueva el foco a otro lado
-          // pequeño delay por si el portal todavía está montando
+          e.preventDefault();
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
       >
@@ -101,14 +99,12 @@ export function VehicleSelectionDialog({
               "[&_[cmdk-input]]:text-sm [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
             )}
           >
-            {/* Barra de búsqueda */}
             <div className="sticky top-0 z-10 border-b bg-white">
               <CommandInput
                 ref={inputRef as any}
                 placeholder="Buscar por placa, marca, modelo, propietario…"
                 value={searchTerm}
                 onValueChange={setSearchTerm}
-                // Enter: selecciona el primer resultado, o crea nuevo si no hay
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -122,12 +118,12 @@ export function VehicleSelectionDialog({
               />
             </div>
 
-            {/* Lista scrolleable */}
             <CommandList className="max-h-[52vh] overflow-y-auto">
               <CommandEmpty>
                 <div className="text-center p-4">
                   <p>No se encontraron vehículos.</p>
                   <Button
+                    type="button"
                     variant="link"
                     onClick={() => onNewVehicle(searchTerm || undefined)}
                     className="mt-2"
@@ -147,8 +143,8 @@ export function VehicleSelectionDialog({
                     <CommandItem
                       key={v.id}
                       value={searchValue}
-                      onSelect={() => handleSelect(v.id)} // teclado/enter de cmdk
-                      onClick={() => handleSelect(v.id)}   // ratón/click directo
+                      onSelect={() => handleSelect(v.id)}
+                      onClick={() => handleSelect(v.id)}
                       className="flex items-center gap-3 data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto cursor-pointer"
                     >
                       <Car className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -165,7 +161,6 @@ export function VehicleSelectionDialog({
             </CommandList>
           </Command>
 
-          {/* Acción rápida: crear nuevo desde el buscador con Enter si no hay resultados */}
           {filtered.length === 0 && (
             <div className="sr-only" aria-live="polite">
               No hay resultados
