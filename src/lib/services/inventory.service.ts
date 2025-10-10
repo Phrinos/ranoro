@@ -248,6 +248,11 @@ const getVehicleDocRef = (id: string) => {
     return doc(db, 'vehicles', id);
 }
 
+const deleteVehicle = async (id: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await deleteDoc(doc(db, "vehicles", id));
+};
+
 // --- Paperwork and Fines (Sub-collections of Vehicle) ---
 
 const savePaperwork = async (vehicleId: string, paperwork: Omit<Paperwork, 'id'>, id?: string): Promise<void> => {
@@ -368,6 +373,7 @@ export const inventoryService = {
   getVehicleById,
   addVehicle,
   saveVehicle,
+  deleteVehicle,
   getVehicleDocRef,
   savePaperwork,
   deletePaperwork,

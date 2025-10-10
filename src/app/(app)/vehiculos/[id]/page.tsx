@@ -108,7 +108,7 @@ export default function VehicleDetailPage() {
     // }
 
     try {
-      await inventoryService.deleteDoc("vehicles", vehicle.id);
+      await inventoryService.deleteVehicle(vehicle.id);
       toast({ title: "Vehículo eliminado", variant: "destructive" });
 
       // Evita que queden listeners activos a un doc que ya no existe
