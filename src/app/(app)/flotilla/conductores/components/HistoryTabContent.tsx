@@ -101,7 +101,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
       ...dailyCharges.map(c => ({
         ...c,
         type: 'charge' as const,
-        note: `Renta Diaria (${c.vehicleLicensePlate})`
+        note: (c as any).note || `Renta Diaria (${c.vehicleLicensePlate})`
       })),
       ...payments.map(p => ({
         ...p,
@@ -168,7 +168,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
     if (!editingCharge) return;
     await rentalService.saveDailyCharge(
       editingCharge.id,
-      { ...data, date: data.date.toISOString() }
+      { ...data, date: data.date.toISOString(), note: data.note }
     );
     toast({ title: "Cargo Actualizado" });
     setIsEditDialogOpen(false);
@@ -305,7 +305,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
-                  <TableRow className="hover:bg-transparent">
+                  <TableRow>
                     <TableHead>Fecha</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Descripción</TableHead>

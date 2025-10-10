@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/components/EditDailyChargeDialog.tsx
 "use client";
 
@@ -25,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"; // Añadido
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -38,6 +38,7 @@ import { parseDate } from '@/lib/forms';
 const chargeSchema = z.object({
   date: z.date({ required_error: "La fecha es obligatoria." }),
   amount: z.coerce.number().min(0, "El monto no puede ser negativo."),
+  note: z.string().optional(), // Añadido
 });
 
 export type DailyChargeFormValues = z.infer<typeof chargeSchema>;
@@ -68,6 +69,7 @@ export function EditDailyChargeDialog({
     defaultValues: {
       date: initialDate,
       amount: charge?.amount ?? 0,
+      note: (charge as any)?.note || `Renta Diaria (${charge?.vehicleLicensePlate || ''})`
     },
   });
 
@@ -75,6 +77,7 @@ export function EditDailyChargeDialog({
     form.reset({
       date: initialDate,
       amount: charge?.amount ?? 0,
+      note: (charge as any)?.note || `Renta Diaria (${charge?.vehicleLicensePlate || ''})`
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [charge?.id, open]);
@@ -154,21 +157,29 @@ export function EditDailyChargeDialog({
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
+            
+            <FormField control={form.control} name="amount" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Monto del Cargo ($)</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      step="0.01"
-                      min={0}
-                      className="bg-white"
+                    <Input type="number" inputMode="decimal" step="0.01" min={0} className="bg-white" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+            )}/>
+            
+            <FormField
+              control={form.control}
+              name="note"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descripción</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Ej: Renta diaria..."
                       {...field}
+                      value={field.value ?? ''}
+                      className="bg-white"
                     />
                   </FormControl>
                   <FormMessage />
