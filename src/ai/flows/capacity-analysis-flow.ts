@@ -1,13 +1,15 @@
-
 'use server';
 /**
- * @fileOverview An AI flow to analyze the daily capacity of the workshop.
+ * @fileOverview AI flow to analyze the daily capacity of the workshop.
  */
+
+export const runtime = 'nodejs'; // <-- Asegura Node cuando se use como route. Si es server action, pon esto en el caller.
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { differenceInMinutes, parseISO, isValid } from 'date-fns';
 
+// -------- Schemas --------
 const ServiceForDaySchema = z.object({
   description: z.string().describe("The description of a service scheduled for today."),
 });
@@ -19,28 +21,25 @@ const TechnicianInputSchema = z.object({
 
 const ServiceHistoryItemSchema = z.object({
   description: z.string().describe("The description of a past service."),
-  serviceDate: z.string().optional().describe("The start date and time of the service in ISO format."),
-  deliveryDateTime: z.string().optional().describe("The end date and time of the service in ISO format."),
+  serviceDate: z.string().optional(),
+  deliveryDateTime: z.string().optional(),
 });
 
-// The input for the main flow, which is called from the UI
 const CapacityAnalysisInputSchema = z.object({
-  servicesForDay: z.array(ServiceForDaySchema).describe("A list of services scheduled for the day to be analyzed."),
-  technicians: z.array(TechnicianInputSchema).describe("A list of all active technicians and their standard daily hours."),
-  serviceHistory: z.array(ServiceHistoryItemSchema).describe("A comprehensive history of past services to learn time estimations from."),
+  servicesForDay: z.array(ServiceForDaySchema),
+  technicians: z.array(TechnicianInputSchema),
+  serviceHistory: z.array(ServiceHistoryItemSchema),
 });
 export type CapacityAnalysisInput = z.infer<typeof CapacityAnalysisInputSchema>;
 
-
 const CapacityAnalysisOutputSchema = z.object({
-  totalRequiredHours: z.number().describe("The AI's total estimated hours required to complete all of today's scheduled services."),
-  totalAvailableHours: z.number().describe("The total number of standard workable hours available from all active technicians."),
-  capacityPercentage: z.number().describe("The calculated capacity percentage (totalRequiredHours / totalAvailableHours). Can be over 100."),
-  recommendation: z.string().describe("A brief, actionable recommendation based on the capacity. E.g., 'Capacidad óptima', 'Taller al límite', 'Se pueden aceptar más trabajos'."),
+  totalRequiredHours: z.number(),
+  totalAvailableHours: z.number(),
+  capacityPercentage: z.number(),
+  recommendation: z.string(),
 });
 export type CapacityAnalysisOutput = z.infer<typeof CapacityAnalysisOutputSchema>;
 
-// The input for the AI prompt itself, which receives pre-processed data
 const ProcessedHistoryItemSchema = z.object({
   description: z.string(),
   durationInHours: z.number(),
@@ -50,31 +49,49 @@ const CapacityAnalysisPromptInputSchema = z.object({
   processedServiceHistory: z.array(ProcessedHistoryItemSchema),
 });
 
-
+// -------- Prompt --------
 const capacityAnalysisPrompt = ai.definePrompt({
   name: 'capacityAnalysisPrompt',
-  system: 'You are an expert workshop manager. Your task is to estimate the time required for a list of scheduled services based on a history of past work.',
+  system:
+    'You are an expert workshop manager. Estimate hours for today’s services, learning from historical jobs.',
   input: { schema: CapacityAnalysisPromptInputSchema },
-  output: { schema: z.object({ serviceDurations: z.array(z.object({ description: z.string(), estimatedHours: z.number() })) }) },
+  output: {
+    schema: z.object({
+      serviceDurations: z.array(
+        z.object({
+          description: z.string(),
+          estimatedHours: z.number().nonnegative().finite(),
+        })
+      ),
+    }),
+  },
   prompt: `
-**Instructions:**
-1.  **Analyze Historical Data:** Review the \`processedServiceHistory\`. This contains job descriptions and their actual durations in hours. Learn the typical duration for different types of job descriptions.
-2.  **Estimate Durations for Today's Services:** For each service in the \`servicesForDay\` list, use the knowledge gained from the historical data to estimate its duration in hours.
-3.  **Handle Unknowns:** If a service description is new or unclear, make a reasonable estimation based on keywords (e.g., 'revisión' might be 1-2 hours, 'cambio' 1-3 hours, 'diagnóstico' 2 hours, 'reparación' 4+ hours). A standard service is 1 hour.
-4.  **Return Estimations:** Provide a list of each service description for the day along with its estimated duration in hours.
+Return ONLY a JSON object with this exact shape:
+{"serviceDurations":[{"description":string,"estimatedHours":number}, ...]}
 
-**Historical Data (for learning):**
+Rules:
+- Learn typical durations from "processedServiceHistory".
+- If no close match exists, infer by keywords:
+  - "revisión": 1-2h (1.5 if unsure)
+  - "cambio": 1-3h (2 if unsure)
+  - "diagnóstico": ~2h
+  - "reparación": 4-6h (5 if unsure)
+  - default: 1h
+- No extra keys or prose.
+
+Historical Data:
 {{#each processedServiceHistory}}
-- Description: "{{description}}", Actual Duration: {{durationInHours}} hours
+{"description":"{{description}}","durationInHours":{{durationInHours}}}
 {{/each}}
 
-**Services to Estimate for Today:**
+Today’s Services:
 {{#each servicesForDay}}
-- "{{description}}"
+"{{description}}"
 {{/each}}
 `,
 });
 
+// -------- Flow --------
 const capacityAnalysisFlow = ai.defineFlow(
   {
     name: 'capacityAnalysisFlow',
@@ -82,80 +99,97 @@ const capacityAnalysisFlow = ai.defineFlow(
     outputSchema: CapacityAnalysisOutputSchema,
   },
   async (input) => {
-    // Pre-process the service history to calculate durations in code for accuracy.
+    // 1) Pre-process history
     const processedServiceHistory = input.serviceHistory
-      .map(item => {
-        if (!item.serviceDate || !item.deliveryDateTime) {
-          return null; // Ignore items without full date information for this summary
-        }
+      .map((item) => {
+        if (!item.serviceDate || !item.deliveryDateTime) return null;
         const startDate = parseISO(item.serviceDate);
         const endDate = parseISO(item.deliveryDateTime);
-        if (!isValid(startDate) || !isValid(endDate)) {
-          return null;
-        }
-        const durationInMinutes = differenceInMinutes(endDate, startDate);
-        // Only include reasonable durations to avoid skewing the data
-        if (durationInMinutes <= 0 || durationInMinutes > 16 * 60) {
-            return null;
-        }
+        if (!isValid(startDate) || !isValid(endDate)) return null;
+
+        const minutes = differenceInMinutes(endDate, startDate);
+        if (minutes <= 0 || minutes > 16 * 60) return null; // evitar outliers
+
         return {
           description: item.description,
-          durationInHours: Math.round((durationInMinutes / 60) * 10) / 10, // Round to one decimal place
+          durationInHours: Math.round((minutes / 60) * 10) / 10,
         };
       })
-      .filter((item): item is z.infer<typeof ProcessedHistoryItemSchema> => item !== null);
-    
-    // Now, call the AI with the clean, pre-processed data.
-    const promptInput = {
-      servicesForDay: input.servicesForDay,
-      processedServiceHistory: processedServiceHistory,
-    };
-    
-    const result = await capacityAnalysisPrompt(promptInput, {
-      config: { temperature: 0.2 },
-    });
-    const output = result.output;
+      .filter((x): x is z.infer<typeof ProcessedHistoryItemSchema> => x !== null);
 
-    if (!output || !output.serviceDurations) {
-      throw new Error("La IA no pudo estimar las duraciones. La respuesta fue nula o malformada.");
+    // 2) Llamada IA con logs claros
+    const promptInput = { servicesForDay: input.servicesForDay, processedServiceHistory };
+
+    let serviceDurations:
+      | { description: string; estimatedHours: number }[]
+      | undefined;
+
+    try {
+      const result = await capacityAnalysisPrompt(promptInput, {
+        config: { temperature: 0.2 },
+      });
+
+      // Si Genkit valida el schema, esto ya debería venir limpio
+      serviceDurations = result.output?.serviceDurations;
+    } catch (e: any) {
+      // Logs útiles en dev
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[capacityAnalysisPrompt] Error:', e?.message || e);
+        // Algunos motores adjuntan info de validación:
+        if (e?.issues) console.error('[Zod issues]:', e.issues);
+        if (e?.cause) console.error('[Cause]:', e.cause);
+      }
     }
-    
-    const totalRequiredHours = output.serviceDurations.reduce((sum, s) => sum + s.estimatedHours, 0);
-    const totalAvailableHours = input.technicians.reduce((sum, t) => sum + t.standardHoursPerDay, 0);
-    const capacityPercentage = totalAvailableHours > 0 ? (totalRequiredHours / totalAvailableHours) * 100 : 0;
-    
-    let recommendation = "Capacidad desconocida";
-    if (capacityPercentage < 75) {
-        recommendation = "Se pueden aceptar más trabajos";
-    } else if (capacityPercentage <= 95) {
-        recommendation = "Capacidad óptima";
-    } else if (capacityPercentage <= 110) {
-        recommendation = "Taller al límite";
-    } else {
-        recommendation = "Taller sobrecargado. Se requieren horas extra.";
+
+    // 3) Fallback heurístico si la IA falló
+    if (!serviceDurations || !Array.isArray(serviceDurations)) {
+      const guess = (d: string): number => {
+        const s = d.toLowerCase();
+        if (s.includes('revisión')) return 1.5;
+        if (s.includes('diagnóstico')) return 2;
+        if (s.includes('cambio')) return 2;
+        if (s.includes('reparación')) return 5;
+        return 1;
+      };
+      serviceDurations = input.servicesForDay.map((s) => ({
+        description: s.description,
+        estimatedHours: guess(s.description),
+      }));
     }
+
+    // 4) Post-proceso
+    const totalRequiredHours = serviceDurations.reduce((sum, s) => sum + (Number.isFinite(s.estimatedHours) ? s.estimatedHours : 0), 0);
+    const totalAvailableHours = input.technicians.reduce((sum, t) => sum + (t.standardHoursPerDay || 0), 0);
+    const capacityPct = totalAvailableHours > 0 ? (totalRequiredHours / totalAvailableHours) * 100 : 0;
+
+    let recommendation = 'Capacidad desconocida';
+    if (capacityPct < 75) recommendation = 'Se pueden aceptar más trabajos';
+    else if (capacityPct <= 95) recommendation = 'Capacidad óptima';
+    else if (capacityPct <= 110) recommendation = 'Taller al límite';
+    else recommendation = 'Taller sobrecargado. Se requieren horas extra.';
 
     return {
-      totalRequiredHours,
+      totalRequiredHours: Math.round(totalRequiredHours * 10) / 10,
       totalAvailableHours,
-      capacityPercentage: Math.round(capacityPercentage),
+      capacityPercentage: Math.round(capacityPct),
       recommendation,
     };
   }
 );
 
-
-/**
- * The main exported function that the UI calls.
- * This function orchestrates the pre-processing, AI call, and post-processing.
- * @param input The raw data from the application.
- * @returns A promise that resolves to the capacity analysis output.
- */
-export async function analyzeWorkshopCapacity(input: CapacityAnalysisInput): Promise<CapacityAnalysisOutput> {
-    try {
-        return await capacityAnalysisFlow(input);
-    } catch (error) {
-        console.error('AI Error in análisis de capacidad:', error);
-        throw new Error('Ocurrió un error al consultar la IA. Por favor, intente de nuevo más tarde.');
-    }
+// -------- Public API --------
+export async function analyzeWorkshopCapacity(
+  input: CapacityAnalysisInput
+): Promise<CapacityAnalysisOutput> {
+  try {
+    return await capacityAnalysisFlow(input);
+  } catch (error: any) {
+    // En dev, devuelve más detalle para diagnóstico
+    const msg =
+      process.env.NODE_ENV !== 'production'
+        ? `IA error: ${error?.message || error}`
+        : 'Ocurrió un error al consultar la IA. Por favor, intente de nuevo más tarde.';
+    console.error('AI Error en análisis de capacidad:', error);
+    throw new Error(msg);
+  }
 }
