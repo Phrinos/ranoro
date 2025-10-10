@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { useAuth } from "@/hooks/useAuth"; // Importar el nuevo hook
+import { Toaster } from "@/components/ui/toaster"; // Importar el Toaster
 
 export default function AppLayout({
   children,
@@ -46,6 +47,7 @@ export default function AppLayout({
               {children}
             </div>
           </main>
+          <Toaster />
         </SidebarInset>
       </SidebarProvider>
     </ThemeProvider>
