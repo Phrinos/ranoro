@@ -14,7 +14,8 @@ import type {
   InventoryItem,
   ServiceTypeRecord,
   InventoryCategory,
-  Supplier
+  Supplier,
+  NextServiceInfo
 } from '@/types';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
@@ -209,9 +210,10 @@ export default function ServicioPage() {
   
   const advisorId = methods.watch("serviceAdvisorId");
   useEffect(() => {
-    if (!users.length) return;
+    if (!users.length || !advisorId) return;
     const currentName = methods.getValues("serviceAdvisorName");
-    if (advisorId && !currentName) {
+    // Only update if name is missing, to avoid overwriting manual changes
+    if (!currentName) {
       const u = users.find(x => x.id === advisorId);
       if (u) {
         methods.setValue("serviceAdvisorName", u.name ?? "", { shouldDirty: false });
@@ -220,24 +222,6 @@ export default function ServicioPage() {
     }
   }, [advisorId, users, methods]);
   
-  useEffect(() => {
-    if (!users.length) return;
-    const curId = methods.getValues("serviceAdvisorId");
-    const curName = methods.getValues("serviceAdvisorName");
-    if (!curId && curName) {
-      const norm = (s?: string) => (s ?? "").toLowerCase()
-        .normalize("NFD").replace(/\p{Diacritic}/gu, "")
-        .replace(/\s+/g, " ").trim();
-
-      const u = users.find(x => norm(x.name) === norm(curName));
-      if (u) {
-        methods.setValue("serviceAdvisorId", u.id, { shouldDirty: false });
-        methods.setValue("serviceAdvisorName", u.name ?? "", { shouldDirty: false });
-        methods.setValue("serviceAdvisorSignatureDataUrl", u.signatureDataUrl ?? null, { shouldDirty: false });
-      }
-    }
-  }, [users, methods]);
-
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -396,7 +380,7 @@ export default function ServicioPage() {
   const handleSaveVehicle = async (data: VehicleFormValues) => {
     if(!onVehicleCreated) return;
     const newVehicle = await onVehicleCreated(data);
-    methods.setValue('vehicleId', newVehicle.id, { shouldValidate: false, shouldDirty: true });
+    methods.setValue('vehicleId', newVehicle.id, { shouldValidate: true, shouldDirty: true });
     setIsVehicleFormDialogOpen(false);
   };
 
