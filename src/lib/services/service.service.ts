@@ -181,53 +181,64 @@ const updateService = async (id: string, data: Partial<ServiceRecord>) => {
     await batch.commit();
 };
 
-const completeService = async (service: ServiceRecord, paymentDetails: any, batch: any) => {
+const completeService = async (service: ServiceRecord, paymentDetails: any) => {
     if (!db) throw new Error("Database not initialized");
 
-    const serviceRef = doc(db, 'serviceRecords', service.id);
-    const publicServiceRef = doc(db, 'publicServices', service.publicId || service.id);
+    return runTransaction(db, async (transaction) => {
+        const serviceRef = doc(db, 'serviceRecords', service.id);
+        const publicServiceRef = doc(db, 'publicServices', service.publicId || service.id);
+        
+        const updateData = {
+            status: 'Entregado' as const,
+            payments: paymentDetails.payments,
+            deliveryDateTime: new Date().toISOString(),
+            updatedAt: serverTimestamp(),
+            nextServiceInfo: paymentDetails.nextServiceInfo,
+        };
+        
+        transaction.update(serviceRef, updateData);
+        transaction.update(publicServiceRef, {
+            status: 'Entregado',
+            deliveryDateTime: updateData.deliveryDateTime,
+            payments: paymentDetails.payments,
+            updatedAt: serverTimestamp(),
+        });
+        
+        // Discount supplies from inventory
+        const suppliesToDiscount = (service.serviceItems || [])
+            .flatMap(item => item.suppliesUsed || [])
+            .filter(supply => !supply.isService && supply.supplyId && supply.quantity > 0)
+            .map(supply => ({ id: supply.supplyId, quantity: supply.quantity }));
 
-    const updateData = {
-        status: 'Entregado' as const,
-        payments: paymentDetails.payments,
-        deliveryDateTime: new Date().toISOString(),
-        updatedAt: serverTimestamp(),
-        nextServiceInfo: paymentDetails.nextServiceInfo,
-    };
-    
-    batch.update(serviceRef, updateData);
-    batch.update(publicServiceRef, {
-        status: 'Entregado',
-        deliveryDateTime: updateData.deliveryDateTime,
-        payments: paymentDetails.payments,
-        updatedAt: serverTimestamp(),
-    });
-
-    const suppliesToDiscount = (service.serviceItems || [])
-        .flatMap(item => item.suppliesUsed || [])
-        .filter(supply => !supply.isService)
-        .map(supply => ({ id: supply.supplyId, quantity: supply.quantity }));
-
-    if (suppliesToDiscount.length > 0) {
-        await inventoryService.updateInventoryStock(batch, suppliesToDiscount, 'subtract');
-    }
-    
-    // Registrar pagos en efectivo en la caja
-    for (const payment of paymentDetails.payments) {
-        if (payment.method === 'Efectivo' && payment.amount > 0) {
-            const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
-            batch.set(cashTransactionRef, {
-                date: new Date().toISOString(),
-                type: 'Entrada',
-                amount: payment.amount,
-                concept: `Pago de servicio #${service.folio || service.id.slice(-6)}`,
-                userId: service.serviceAdvisorId,
-                userName: service.serviceAdvisorName,
-                relatedType: 'Servicio',
-                relatedId: service.id,
-            });
+        if (suppliesToDiscount.length > 0) {
+            for (const item of suppliesToDiscount) {
+                const itemRef = doc(db, 'inventory', item.id);
+                const itemDoc = await transaction.get(itemRef);
+                if (itemDoc.exists()) {
+                    const currentStock = itemDoc.data().quantity || 0;
+                    const newStock = currentStock - item.quantity;
+                    transaction.update(itemRef, { quantity: newStock });
+                }
+            }
         }
-    }
+        
+        // Add cash payments to cash drawer
+        for (const payment of paymentDetails.payments) {
+            if (payment.method === 'Efectivo' && payment.amount > 0) {
+                const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
+                transaction.set(cashTransactionRef, {
+                    date: new Date().toISOString(),
+                    type: 'Entrada',
+                    amount: payment.amount,
+                    concept: `Pago de servicio #${service.folio || service.id.slice(-6)}`,
+                    userId: service.serviceAdvisorId,
+                    userName: service.serviceAdvisorName,
+                    relatedType: 'Servicio',
+                    relatedId: service.id,
+                });
+            }
+        }
+    });
 };
 
 export const serviceService = {
@@ -237,5 +248,5 @@ export const serviceService = {
   getDocById,
   saveService,
   updateService,
-  completeService, // Add this export
+  completeService,
 };

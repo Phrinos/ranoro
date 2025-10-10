@@ -386,7 +386,7 @@ export default function ServicioPage() {
   const handleSaveVehicle = async (data: VehicleFormValues) => {
     if(!onVehicleCreated) return;
     const newVehicle = await onVehicleCreated(data);
-    methods.setValue('vehicleId', newVehicle.id, { shouldValidate: true, shouldDirty: true });
+    methods.setValue('vehicleId', newVehicle.id, { shouldValidate: false, shouldDirty: true });
     setIsVehicleFormDialogOpen(false);
   };
 
@@ -396,15 +396,13 @@ export default function ServicioPage() {
   }, []);
 
   const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
-    if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
     try {
-      const batch = writeBatch(db);
-      await serviceService.completeService(service, { ...paymentDetails, nextServiceInfo }, batch);
-      await batch.commit();
+      await serviceService.completeService(service, { ...paymentDetails, nextServiceInfo });
       toast({ title: "Servicio Completado" });
       const updatedService = { ...service, ...paymentDetails, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
       handleShowShareDialog(updatedService); // Show share dialog after completion
     } catch (e) {
+      console.error('Completion error:', e);
       toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
     } finally {
       setIsPaymentDialogOpen(false);
