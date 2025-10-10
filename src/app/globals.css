@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 /* Tema del calendario (react-day-picker) */
-@import "./components/ui/calendar.css";
+/* @import "./components/ui/calendar.css"; <--- This line is removed */
 
 @layer base {
   :root {
