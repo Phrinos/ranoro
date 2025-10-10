@@ -1,4 +1,4 @@
-
+// src/app/(app)/dashboard/page.tsx
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -19,6 +19,7 @@ import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { toZonedTime } from 'date-fns-tz';
 import { GlobalTransactionDialog, GlobalTransactionFormValues } from '../flotilla/components/GlobalTransactionDialog';
+import { DashboardCharts } from './components/DashboardCharts';
 
 const TZ = "America/Mexico_City";
 
@@ -60,6 +61,7 @@ export default function DashboardPage() {
   const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -77,6 +79,7 @@ export default function DashboardPage() {
       inventoryService.onItemsUpdate(setAllInventory),
       personnelService.onPersonnelUpdate(setAllPersonnel),
       personnelService.onDriversUpdate(setDrivers),
+      inventoryService.onFixedExpensesUpdate(setFixedExpenses),
       inventoryService.onVehiclesUpdate((vehicles) => {
         setVehicles(vehicles);
         setIsLoading(false);
@@ -310,7 +313,20 @@ export default function DashboardPage() {
           </Card>
         </div>
         
-        {/* Las gráficas han sido removidas de aquí */}
+        {isLoading ? (
+          <div className="flex h-64 w-full items-center justify-center">
+            <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+            Cargando reportes...
+          </div>
+        ) : (
+          <DashboardCharts
+            services={allServices}
+            sales={allSales}
+            inventory={allInventory}
+            fixedExpenses={fixedExpenses}
+            personnel={allPersonnel}
+          />
+        )}
 
       </div>
       <GlobalTransactionDialog

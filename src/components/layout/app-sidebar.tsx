@@ -1,4 +1,3 @@
-
 // src/components/layout/app-sidebar.tsx
 "use client";
 
@@ -56,7 +55,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Finanzas (Nueva Categoría)
   { label: 'Movimientos', path: '/finanzas', icon: Wallet, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
-  { label: 'Reportes', path: '/reportes', icon: BarChart3, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
 
   // Opciones
