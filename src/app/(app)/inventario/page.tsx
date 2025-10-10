@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/page.tsx
 "use client";
 
@@ -46,10 +45,12 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { differenceInMonths, isValid } from 'date-fns';
-import { parseDate } from "@/lib/forms";
+import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { PurchaseFormValues } from './components/register-purchase-dialog';
+import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
+
 
 // Lazy load dialogs that are not immediately visible
 const RegisterPurchaseDialog = lazy(() => import('./components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
@@ -168,7 +169,7 @@ const ProductosContent = ({
                     label="Categoría"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
-                    className="hidden md:table-cell text-white"
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="name"
@@ -189,28 +190,31 @@ const ProductosContent = ({
                     label="Stock"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
-                    className="text-right text-white"
+                    className="text-right"
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="updatedAt"
                     label="Últ. Modificación"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
-                    className="hidden lg:table-cell text-white"
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="unitPrice"
                     label="Precio Compra"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
-                    className="text-right hidden sm:table-cell text-white"
+                    className="text-right"
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="sellingPrice"
                     label="Precio Venta"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
-                    className="text-right text-white"
+                    className="text-right"
+                    textClassName="text-white"
                   />
                 </TableRow>
               </TableHeader>
@@ -226,7 +230,7 @@ const ProductosContent = ({
                         onClick={() => router.push(`/inventario/${item.id}`)}
                         className="cursor-pointer hover:bg-muted/50"
                       >
-                        <TableCell className="hidden md:table-cell">{item.category}</TableCell>
+                        <TableCell>{item.category}</TableCell>
                         <TableCell className="font-medium">
                           <p
                             className={cn(
@@ -252,10 +256,10 @@ const ProductosContent = ({
                         >
                           {item.isService ? "N/A" : item.quantity}
                         </TableCell>
-                        <TableCell className="hidden lg:table-cell">
+                        <TableCell>
                           {updatedAt && isValid(updatedAt) ? format(updatedAt, 'dd/MM/yy, HH:mm', { locale: es }) : 'N/A'}
                         </TableCell>
-                        <TableCell className="text-right hidden sm:table-cell">{formatCurrency(item.unitPrice)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
                         <TableCell className="text-right font-bold text-primary">
                           {formatCurrency(item.sellingPrice)}
                         </TableCell>
@@ -614,8 +618,8 @@ function InventarioPage() {
   }, []);
 
 
-  const handleOpenItemDialog = useCallback((item: Partial<InventoryItem> | null = null) => {
-    setEditingItem(item);
+  const handleOpenItemDialog = useCallback(() => {
+    setEditingItem(null);
     setIsItemDialogOpen(true);
   }, []);
   
@@ -704,100 +708,102 @@ function InventarioPage() {
   ];
 
   return (
-    <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
-        <p className="text-primary-foreground/80 mt-1">
-          Gestiona productos, proveedores, categorías y obtén análisis inteligentes.
-        </p>
-      </div>
-      
-      <DashboardCards 
-        summaryData={inventorySummary}
-        onNewItemClick={() => handleOpenItemDialog()}
-        onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
-      />
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
-          <div className="w-full">
-              <div className="flex flex-wrap w-full gap-2 sm:gap-4">
-              {tabsConfig.map(tabInfo => (
-                  <button
-                  key={tabInfo.value}
-                  onClick={() => setActiveTab(tabInfo.value)}
-                  className={cn(
-                      'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
-                      'break-words whitespace-normal leading-snug',
-                      activeTab === tabInfo.value
-                      ? 'bg-primary text-primary-foreground shadow'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  )}
-                  >
-                  {tabInfo.label}
-                  </button>
-              ))}
-              </div>
-          </div>
-          
-          <TabsContent value="productos" className="mt-6">
-            <Suspense fallback={<Loader2 className="animate-spin" />}>
-                <ProductosContent 
-                    inventoryItems={inventoryItems}
-                    onPrint={handlePrint}
-                    onNewItemFromSearch={handleNewItemFromSearch}
-                />
-            </Suspense>
-          </TabsContent>
-          <TabsContent value="categorias" className="mt-6">
-            <Suspense fallback={<Loader2 className="animate-spin" />}>
-                <CategoriasContent 
-                    categories={categories} 
-                    inventoryItems={inventoryItems} 
-                    onSaveCategory={handleSaveCategory}
-                    onDeleteCategory={handleDeleteCategory}
-                />
-            </Suspense>
-          </TabsContent>
-      </Tabs>
-      
-      <Suspense fallback={null}>
-          {isRegisterPurchaseOpen && (
-            <RegisterPurchaseDialog
-              open={isRegisterPurchaseOpen}
-              onOpenChange={setIsRegisterPurchaseOpen}
-              suppliers={sortedSuppliers}
-              inventoryItems={inventoryItems}
-              onSave={handleSavePurchase}
-              onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
-              categories={categories}
-            />
-          )}
-
-          <InventoryItemDialog
-            open={isItemDialogOpen}
-            onOpenChange={setIsItemDialogOpen}
-            onSave={handleSaveItem}
-            item={editingItem}
-            categories={categories}
-            suppliers={suppliers}
-          />
-      </Suspense>
-
-      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-        <DialogContent className="max-w-4xl p-0 no-print">
-          <div className="printable-content bg-white">
-              <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
-                  <InventoryReportContent items={itemsToPrint} />
+    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+        <>
+        <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+            <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
+            <p className="text-primary-foreground/80 mt-1">
+              Gestiona productos, proveedores, categorías y obtén análisis inteligentes.
+            </p>
+        </div>
+        
+        <DashboardCards 
+          summaryData={inventorySummary}
+          onNewItemClick={handleOpenItemDialog}
+          onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
+        />
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
+            <div className="w-full">
+                <div className="flex flex-wrap w-full gap-2 sm:gap-4">
+                {tabsConfig.map(tabInfo => (
+                    <button
+                    key={tabInfo.value}
+                    onClick={() => setActiveTab(tabInfo.value)}
+                    className={cn(
+                        'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
+                        'break-words whitespace-normal leading-snug',
+                        activeTab === tabInfo.value
+                        ? 'bg-primary text-primary-foreground shadow'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    )}
+                    >
+                    {tabInfo.label}
+                    </button>
+                ))}
+                </div>
+            </div>
+            
+            <TabsContent value="productos" className="mt-6">
+              <Suspense fallback={<Loader2 className="animate-spin" />}>
+                  <ProductosContent 
+                      inventoryItems={inventoryItems}
+                      onPrint={handlePrint}
+                      onNewItemFromSearch={handleNewItemFromSearch}
+                  />
               </Suspense>
-          </div>
-          <DialogFooter className="p-4 border-t bg-background sm:justify-end no-print">
-              <Button onClick={() => window.print()}>
-                  <Printer className="mr-2 h-4 w-4" /> Imprimir
-              </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+            </TabsContent>
+            <TabsContent value="categorias" className="mt-6">
+              <Suspense fallback={<Loader2 className="animate-spin" />}>
+                  <CategoriasContent 
+                      categories={categories} 
+                      inventoryItems={inventoryItems} 
+                      onSaveCategory={handleSaveCategory}
+                      onDeleteCategory={handleDeleteCategory}
+                  />
+              </Suspense>
+            </TabsContent>
+        </Tabs>
+        
+        <Suspense fallback={null}>
+            {isRegisterPurchaseOpen && (
+              <RegisterPurchaseDialog
+                open={isRegisterPurchaseOpen}
+                onOpenChange={setIsRegisterPurchaseOpen}
+                suppliers={sortedSuppliers}
+                inventoryItems={inventoryItems}
+                onSave={handleSavePurchase}
+                onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
+                categories={categories}
+              />
+            )}
+
+            <InventoryItemDialog
+              open={isItemDialogOpen}
+              onOpenChange={setIsItemDialogOpen}
+              onSave={handleSaveItem}
+              item={editingItem}
+              categories={categories}
+              suppliers={suppliers}
+            />
+        </Suspense>
+
+        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+          <DialogContent className="max-w-4xl p-0 no-print">
+            <div className="printable-content bg-white">
+                <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
+                    <InventoryReportContent items={itemsToPrint} />
+                </Suspense>
+            </div>
+            <DialogFooter className="p-4 border-t bg-background sm:justify-end no-print">
+                <Button onClick={() => window.print()}>
+                    <Printer className="mr-2 h-4 w-4" /> Imprimir
+                </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        </>
+    </Suspense>
   );
 }
 
