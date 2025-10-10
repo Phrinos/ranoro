@@ -1,12 +1,36 @@
+
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
-import { adminService } from "@/lib/services";
+import { getAdminDb } from "@/lib/firebaseAdmin";
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import type { AuditLog } from "@/types";
+import { parseDate } from "@/lib/forms";
 import { AdministracionTabs } from "./components/administracion-tabs";
 
 type PageProps = { searchParams?: { tab?: string } };
 
+async function getAuditLogs(): Promise<AuditLog[]> {
+  const db = getAdminDb();
+  try {
+    const q = query(collection(db, 'auditLogs'), orderBy("date", "desc"));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        const date = parseDate(data.date);
+        return {
+            id: doc.id,
+            ...data,
+            date: date ? date.toISOString() : new Date().toISOString(),
+        } as AuditLog;
+    });
+  } catch (error) {
+    console.error("Error fetching audit logs on server:", error instanceof Error ? error.message : String(error));
+    return [];
+  }
+}
+
 export default async function AdministracionPage({ searchParams }: PageProps) {
-  const initialLogs = await adminService.getAuditLogs();
+  const initialLogs = await getAuditLogs();
   const defaultTab = searchParams?.tab === "migracion" ? "migracion" : "auditoria";
 
   return (

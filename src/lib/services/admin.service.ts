@@ -101,33 +101,6 @@ const onAuditLogsUpdate = (callback: (logs: AuditLog[]) => void): (() => void) =
 };
 
 /**
- * Fetches all audit logs once, ordered by date descending.
- * @returns A promise that resolves to an array of audit logs.
- */
-const getAuditLogs = async (): Promise<AuditLog[]> => {
-    if (!db) {
-        console.error("Audit log fetch failed: Database not initialized.");
-        return [];
-    }
-    try {
-        const q = query(collection(db, 'auditLogs'), orderBy("date", "desc"));
-        const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            const date = parseDate(data.date);
-            return {
-                id: doc.id,
-                ...data,
-                date: date ? date.toISOString() : new Date().toISOString(),
-            } as AuditLog;
-        });
-    } catch (error) {
-        console.error("Error fetching audit logs:", error instanceof Error ? error.message : String(error));
-        return [];
-    }
-};
-
-/**
  * Creates or updates a user in Firestore.
  * @param user - The user object to be saved. Can be a partial object for updates.
  * @param adminUser - The administrator performing the action.
@@ -265,7 +238,6 @@ export const adminService = {
     onUsersUpdatePromise,
     onRolesUpdate,
     onAuditLogsUpdate,
-    getAuditLogs,
     saveUser,
     archiveUser,
     saveRole,
