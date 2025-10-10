@@ -48,10 +48,13 @@ const saveItem = async (data: Partial<InventoryItem>, id?: string): Promise<Inve
     if (!db) throw new Error("Database not initialized.");
     if (id) {
         await updateDoc(doc(db, 'inventory', id), cleanObjectForFirestore(data));
-        return { ...(await getDoc(doc(db, 'inventory', id))).data(), id } as InventoryItem;
+        const updatedDoc = await getDoc(doc(db, 'inventory', id));
+        if (!updatedDoc.exists()) throw new Error("Failed to retrieve updated item.");
+        return { ...updatedDoc.data(), id } as InventoryItem;
     } else {
         const docRef = await addDoc(collection(db, 'inventory'), cleanObjectForFirestore(data));
-        return { ...(await getDoc(docRef)).data(), id: docRef.id } as InventoryItem;
+        const newDoc = await getDoc(docRef);
+        return { ...newDoc.data(), id: docRef.id } as InventoryItem;
     }
 };
 
