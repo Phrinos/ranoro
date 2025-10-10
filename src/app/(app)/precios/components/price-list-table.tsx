@@ -1,5 +1,4 @@
-
-
+// src/app/(app)/precios/components/price-list-table.tsx
 "use client";
 
 import React from "react";
@@ -72,7 +71,7 @@ export const PriceListTable = React.memo(({ records, onEdit, onDelete, sortOptio
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
         <TableHeader className="bg-black">
-          <TableRow>
+          <TableRow className="hover:bg-transparent">
             <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
             <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
             <TableHead className="text-white font-bold">Años</TableHead>

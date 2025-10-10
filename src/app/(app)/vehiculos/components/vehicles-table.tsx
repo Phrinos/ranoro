@@ -69,7 +69,7 @@ export function VehiclesTable({ vehicles, onSave }: VehiclesTableProps) {
       <div className="rounded-md border">
         <Table>
           <TableHeader className="bg-black">
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden sm:table-cell text-white" />
               <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={tableManager.sortOption} className="text-white" />
               <SortableTableHeader sortKey="year" label="Año" onSort={handleSort} currentSort={tableManager.sortOption} className="text-white" />

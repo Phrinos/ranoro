@@ -385,7 +385,7 @@ export default function CajaContent() {
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={sortOption} />
                   <SortableTableHeader sortKey="type" label="Tipo" onSort={handleSort} currentSort={sortOption} />
                   <SortableTableHeader sortKey="source" label="Origen" onSort={handleSort} currentSort={sortOption} />

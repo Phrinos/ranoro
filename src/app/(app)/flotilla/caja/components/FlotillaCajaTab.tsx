@@ -166,7 +166,7 @@ export function FlotillaCajaTab({
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader className="bg-black">
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
                   <SortableTableHeader sortKey="transactionType" label="Tipo" onSort={handleSort} currentSort={sortOption} className="hidden md:table-cell" textClassName="text-white" />
                   <SortableTableHeader sortKey="description" label="Descripción" onSort={handleSort} currentSort={sortOption} className="hidden md:table-cell" textClassName="text-white" />

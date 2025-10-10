@@ -1,4 +1,4 @@
-
+// src/app/(app)/personal/components/usuarios-content.tsx
 
 "use client";
 
@@ -131,7 +131,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                   <div className="overflow-x-auto rounded-md border">
                   <Table>
                     <TableHeader className="bg-black">
-                      <TableRow data-table="nohover">
+                      <TableRow className="hover:bg-transparent">
                           <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
                           <SortableTableHeader sortKey="role" label="Rol" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
                           <SortableTableHeader sortKey="hireDate" label="Fecha Contratación" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />

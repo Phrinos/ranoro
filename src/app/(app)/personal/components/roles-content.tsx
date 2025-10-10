@@ -1,4 +1,4 @@
-
+// src/app/(app)/personal/components/roles-content.tsx
 
 "use client";
 
@@ -126,7 +126,7 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
                         <div className="overflow-x-auto rounded-md border">
                             <Table>
                                 <TableHeader className="bg-black">
-                                    <TableRow>
+                                    <TableRow className="hover:bg-transparent">
                                         <SortableTableHeader sortKey="name" label="Nombre del Rol" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
                                         <SortableTableHeader sortKey="permissions" label="Permisos" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
                                         <TableHead className="text-right text-white">Acciones</TableHead>

@@ -74,7 +74,7 @@ export function FlotillaVehiculosTab({ vehicles, onAddVehicle }: FlotillaVehicul
             <div className="rounded-md border">
             <Table>
                 <TableHeader className="bg-black text-white">
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                     <SortableTableHeader sortKey="licensePlate" label="Placa" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
                     <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell text-white" />
                     <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell text-white" />

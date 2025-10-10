@@ -71,7 +71,7 @@ export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConduct
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader className="bg-black text-white">
-                <TableRow data-table="nohover">
+                <TableRow className="hover:bg-transparent">
                   <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
                   <SortableTableHeader sortKey="phone" label="Teléfono" onSort={handleSort} currentSort={sortOption} className="hidden sm:table-cell text-white" />
                   <SortableTableHeader sortKey="assignedVehicleLicensePlate" label="Vehículo Asignado" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />

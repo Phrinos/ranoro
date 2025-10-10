@@ -111,7 +111,7 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
                 <div className="overflow-x-auto rounded-md border">
                     <Table>
                         <TableHeader className="bg-black">
-                            <TableRow>
+                            <TableRow className="hover:bg-transparent">
                                 <SortableTableHeader sortKey="name" label="Conductor" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} textClassName="text-white" />
                                 <SortableTableHeader sortKey="totalCharges" label="Cargos" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} className="hidden sm:table-cell justify-end" textClassName="text-white"/>
                                 <SortableTableHeader sortKey="totalPayments" label="Abonos" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} className="hidden sm:table-cell justify-end" textClassName="text-white"/>

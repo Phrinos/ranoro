@@ -284,7 +284,7 @@ function MovimientosTabContent({
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <SortableTableHeader
                     sortKey="date"
                     label="Fecha"
