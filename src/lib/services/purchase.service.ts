@@ -10,6 +10,7 @@ import {
   onSnapshot,
   query,
   orderBy,
+  runTransaction, // Importar runTransaction
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
