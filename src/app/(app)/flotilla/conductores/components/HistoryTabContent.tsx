@@ -9,9 +9,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, cn, parseDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, PlusCircle, HandCoins, Printer, Copy, Share2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -99,7 +99,12 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
       ...manualDebts.map(d => ({ ...d, type: 'debt' as const })),
     ];
 
-    allTransactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    allTransactions.sort((a, b) => {
+        const dateA = parseDate(a.date);
+        const dateB = parseDate(b.date);
+        if (dateA && dateB) return dateA.getTime() - dateB.getTime();
+        return 0;
+    });
 
     let balance = 0;
     const transactionsWithBalance = allTransactions.map(t => {
@@ -220,9 +225,11 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
                 </TableRow></TableHeader>
                 <TableBody>
                   {transactions.length > 0 ? (
-                    transactions.map(t => (
+                    transactions.map(t => {
+                      const transactionDate = parseDate(t.date);
+                      return (
                       <TableRow key={`${t.type}-${t.id}`}>
-                        <TableCell>{format(parseISO(t.date), "dd MMM yyyy", { locale: es })}</TableCell>
+                        <TableCell>{transactionDate ? format(transactionDate, "dd MMM yyyy", { locale: es }) : 'N/A'}</TableCell>
                         <TableCell>
                           <Badge variant={t.type === 'payment' ? 'success' : 'destructive'}>
                             {t.type === 'charge' ? 'Renta' : t.type === 'debt' ? 'Adeudo' : 'Pago'}
@@ -253,7 +260,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
                             }} />
                         </TableCell>
                       </TableRow>
-                    ))
+                    )})
                   ) : <TableRow><TableCell colSpan={7} className="h-24 text-center">No hay movimientos.</TableCell></TableRow>}
                 </TableBody>
               </Table>
