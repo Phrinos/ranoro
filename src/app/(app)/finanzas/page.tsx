@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Users, Shield, TrendingUp, BookOpen, DatabaseZap } from 'lucide-react';
-import { adminService, operationsService, inventoryService } from '@/lib/services';
+import { adminService, operationsService, inventoryService, serviceService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { DateRange } from 'react-day-picker';
@@ -32,8 +32,8 @@ function FinanzasPage() {
       setIsLoading(true);
       const unsubs: (() => void)[] = [
         serviceService.onServicesUpdate(setAllServices),
-        operationsService.onSalesUpdate(setAllSales),
-        operationsService.onExpensesUpdate((expenses) => {
+        saleService.onSalesUpdate(setAllSales),
+        inventoryService.onFixedExpensesUpdate((expenses) => {
           setAllExpenses(expenses);
           setIsLoading(false);
         }),
