@@ -33,22 +33,27 @@ const nextConfig = {
     ];
   },
 
-  // 5. Webpack config
-  webpack: (config, { isServer }) => {
-    config.ignoreWarnings = [
-      ...(config.ignoreWarnings || []),
-      /require.extensions is not supported by webpack. Use a loader instead./,
-    ];
-    
-    // Add this to improve HMR stability
-    if (!isServer) {
-        config.watchOptions = {
-            poll: 1000,
-            aggregateTimeout: 300,
+  // 5. Configuración para Turbopack (compatible con la configuración de Webpack existente)
+  experimental: {
+    turbopack: {
+      webpack: {
+        config: (config, { isServer }) => {
+          config.ignoreWarnings = [
+            ...(config.ignoreWarnings || []),
+            /require.extensions is not supported by webpack. Use a loader instead./,
+          ];
+          
+          if (!isServer) {
+            config.watchOptions = {
+              poll: 1000,
+              aggregateTimeout: 300,
+            };
+          }
+          
+          return config;
         }
+      }
     }
-    
-    return config;
   }
 };
 

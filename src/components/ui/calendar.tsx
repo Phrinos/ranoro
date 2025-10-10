@@ -1,43 +1,66 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { DayPicker } from "react-day-picker";
-import type { DayPickerProps } from "react-day-picker";
-import { es } from "date-fns/locale";
+import * as React from 'react';
+import { DayPicker, type DayPickerProps } from 'react-day-picker';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { es as esLocale } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { buttonVariants } from '@/components/ui/button';
 
-// Importa SOLO el CSS base de la librería (desde node_modules)
-import "react-day-picker/style.css";
-// Overrides pequeños, seguros (no cambian el layout de la grilla)
-import "./calendar.css";
-
-export type CalendarProps = DayPickerProps;
+export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+  locale?: DayPickerProps['locale'];
+};
 
 export function Calendar({
   className,
+  classNames,
   showOutsideDays = true,
-  locale,
+  locale = esLocale,
   ...props
 }: CalendarProps) {
   return (
     <DayPicker
-      {...props}
       showOutsideDays={showOutsideDays}
-      fixedWeeks
-      locale={locale ?? es}
-      className={["rdp", className].filter(Boolean).join(" ")}
-      // Iconos simples; puedes cambiarlos si quieres usar lucide
-      components={{
-        IconLeft: () => (
-          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+      locale={locale}
+      style={
+        {
+          '--rdp-accent-color': 'hsl(var(--primary))',
+          '--rdp-accent-color-dark': 'hsl(var(--primary))',
+          '--rdp-background-color': 'hsl(var(--primary))',
+          '--rdp-outline': '2px solid hsl(var(--ring))',
+          '--rdp-outline-selected': '2px solid hsl(var(--ring))',
+        } as React.CSSProperties
+      }
+      className={cn('p-3', className)}
+      classNames={{
+        caption: 'flex items-center justify-center pt-1 relative',
+        caption_label: 'text-base font-semibold',
+        nav: 'flex items-center space-x-1',
+        nav_button: cn(
+          buttonVariants({ variant: 'outline' }),
+          'h-7 w-7 p-0 bg-transparent opacity-70 hover:opacity-100'
         ),
-        IconRight: () => (
-          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+        nav_button_previous: 'absolute left-1',
+        nav_button_next: 'absolute right-1',
+        table: 'w-full border-collapse',
+        head_cell:
+          'text-muted-foreground w-9 font-medium text-[0.8rem] text-center',
+        day: cn(
+          buttonVariants({ variant: 'ghost' }),
+          'h-9 w-9 p-0 font-normal aria-selected:opacity-100'
         ),
+        day_selected:
+          'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
+        day_today: 'text-destructive font-semibold',
+        day_outside: 'text-muted-foreground opacity-50',
+        day_disabled: 'text-muted-foreground opacity-50',
+        ...classNames,
       }}
+      components={{
+        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+        IconRight: () => <ChevronRight className="h-4 w-4" />,
+      }}
+      {...props}
     />
   );
 }

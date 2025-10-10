@@ -1,72 +1,200 @@
-/* Variables propias de react-day-picker; no tocamos layout (filas/columnas) */
+
 .rdp {
-  --rdp-accent-color: hsl(var(--primary));
-  --rdp-accent-background-color: hsl(var(--primary) / 0.14);
-  --rdp-background-color: transparent;
-  --rdp-outline: 2px solid hsl(var(--ring));
-  --rdp-outline-selected: 2px solid hsl(var(--ring));
-  --rdp-cell-size: 36px;
-  --rdp-caption-font-size: 1rem;
+  --rdp-cell-size: 40px;
+  --rdp-caption-font-size: 18px;
+  --rdp-accent-color: #0000ff;
+  --rdp-background-color: #ffffff;
+  --rdp-accent-color-dark: #3003e2;
+  --rdp-background-color-dark: #180270;
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  --rdp-outline-selected: 3px solid var(--rdp-accent-color);
+  --rdp-selected-color: #fff;
+  margin: 1em 0;
 }
-
-@media (min-width: 640px) {
-  .rdp { --rdp-cell-size: 40px; }
+.rdp-v6 {
+  --rdp-cell-size: 2.5rem;
+  --rdp-caption-font-size: 1.125rem;
 }
-
-/* Título del mes */
-.rdp .rdp-caption_label {
-  font-weight: 600;
-  font-size: 1.1rem;
+.rdp-shared-calendar {
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
 }
-
-/* Nombres de días */
-.rdp .rdp-weekday {
+.rdp-button:focus,
+.rdp-button:active {
+  outline: var(--rdp-outline);
+  outline-offset: 1px;
+}
+.rdp-button[disabled]:not(.rdp-day-selected) {
+  opacity: 0.25;
+}
+.rdp-button {
+  border: 2px solid transparent;
+}
+.rdp-months {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+.rdp-month {
+  margin: 0 1em;
+}
+.rdp-month:first-child {
+  margin-left: 0;
+}
+.rdp-month:last-child {
+  margin-right: 0;
+}
+.rdp-table {
+  margin: 0;
+  max-width: calc(var(--rdp-cell-size) * 7);
+  border-collapse: collapse;
+}
+.rdp-caption {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  padding: 0 0.5em;
+  text-align: left;
+  height: calc(var(--rdp-cell-size) * 1.2);
+}
+.rdp-caption-label {
+  font-size: var(--rdp-caption-font-size);
+  font-weight: 700;
+}
+.rdp-nav {
+  white-space: nowrap;
+}
+.rdp-nav-button {
+  display: inline-block;
+  vertical-align: middle;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: #000;
+  width: var(--rdp-cell-size);
+  height: var(--rdp-cell-size);
+  padding: 0.5em;
+}
+.rdp-nav-button-previous {
+  margin-right: 0.5em;
+}
+.rdp-dropdown-year,
+.rdp-dropdown-month {
+  display: inline-block;
+  vertical-align: middle;
+}
+.rdp-dropdown {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border: 0;
+  background-color: transparent;
+  padding: 0.5em 1em 0.5em 0.5em;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.rdp-dropdown-month .rdp-dropdown {
+  margin-right: 0.5em;
+}
+.rdp-dropdown-label {
+  position: relative;
+  display: inline-block;
+}
+.rdp-dropdown-label-icon {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  -webkit-transform: translateY(-50%);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.rdp-head {
+  border: 0;
+}
+.rdp-head-row,
+.rdp-row {
+  height: var(--rdp-cell-size);
+}
+.rdp-head-cell {
+  vertical-align: middle;
   text-transform: uppercase;
+  font-size: 0.75em;
   font-weight: 700;
-  letter-spacing: .02em;
+  text-align: center;
+  height: 100%;
+  padding: 0;
+  color: #666;
 }
-
-/* Fines de semana en rojo suave (sin romper selección) */
-.rdp .rdp-weekday:nth-child(6),
-.rdp .rdp-weekday:nth-child(7) {
-  color: hsl(var(--destructive)); /* sábado/domingo encabezado */
+.rdp-body {
+  border: 0;
 }
-.rdp .rdp-day_weekend:not(.rdp-day_selected):not(.rdp-day_disabled) {
-  color: hsl(var(--destructive));
+.rdp-weeknumber {
+  color: #666;
+  font-size: 0.75em;
+  text-align: center;
 }
-
-/* Hoy destacado en rojo cuando NO está seleccionado */
-.rdp .rdp-day_today:not(.rdp-day_selected) {
-  color: hsl(var(--destructive));
+.rdp-day {
+  width: var(--rdp-cell-size);
+  height: var(--rdp-cell-size);
+}
+.rdp-day-today:not(.rdp-day-outside) {
   font-weight: 700;
 }
-
-/* Selección */
-.rdp .rdp-day_selected,
-.rdp .rdp-day_selected:hover,
-.rdp .rdp-day_selected:focus-visible {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+.rdp-day-selected:not([disabled]),
+.rdp-day-selected:focus:not([disabled]),
+.rdp-day-selected:active:not([disabled]) {
+  background-color: var(--rdp-accent-color);
+  color: var(--rdp-selected-color);
 }
-
-/* Navegación */
-.rdp .rdp-nav_button {
-  width: 2rem;
-  height: 2rem;
-  border-radius: .5rem;
-  border: 1px solid hsl(var(--border));
+.rdp-day-selected:hover:not([disabled]) {
+  background-color: var(--rdp-accent-color);
 }
-.rdp .rdp-nav_button:hover {
-  background: hsl(var(--muted));
+.rdp-day:focus,
+.rdp-day:active {
+  outline: var(--rdp-outline);
 }
-
-/* Días fuera de mes: sutiles, sin romper layout */
-.rdp .rdp-day_outside {
-  opacity: .5;
+.rdp-day-range-start {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
-
-/* Deshabilitados */
-.rdp .rdp-button[disabled] {
-  opacity: .5;
-  cursor: not-allowed;
+.rdp-day-range-end {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.rdp-day-range-middle,
+.rdp-day-range-middle:hover {
+  border-radius: 0;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+:root .rdp-day-range-middle.rdp-day-selected {
+  background-color: var(--rdp-accent-color);
+}
+.rdp-day-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.rdp-root {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+@media (prefers-color-scheme: dark) {
+  .rdp {
+    --rdp-accent-color: var(--rdp-accent-color-dark);
+    --rdp-background-color: var(--rdp-background-color-dark);
+    color: #fff;
+  }
 }
