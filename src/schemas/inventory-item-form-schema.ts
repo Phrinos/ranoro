@@ -16,19 +16,22 @@ export const inventoryItemFormSchema = z.object({
   supplier: z.string().min(1, "El proveedor es obligatorio."),
   rendimiento: z.coerce.number().int().min(0, "El rendimiento debe ser un número positivo.").optional(),
 }).superRefine((data, ctx) => {
-  if (!data.isService && data.quantity === undefined) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "La cantidad es obligatoria para productos.",
-      path: ["quantity"],
-    });
-  }
-  if (!data.isService && data.lowStockThreshold === undefined) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "El umbral de stock bajo es obligatorio para productos.",
-      path: ["lowStockThreshold"],
-    });
+  // Only require quantity and lowStockThreshold if the item is NOT a service
+  if (!data.isService) {
+    if (data.quantity === undefined || data.quantity === null || isNaN(data.quantity)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La cantidad es obligatoria para productos.",
+        path: ["quantity"],
+      });
+    }
+    if (data.lowStockThreshold === undefined || data.lowStockThreshold === null || isNaN(data.lowStockThreshold)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El umbral de stock bajo es obligatorio para productos.",
+        path: ["lowStockThreshold"],
+      });
+    }
   }
 });
 
