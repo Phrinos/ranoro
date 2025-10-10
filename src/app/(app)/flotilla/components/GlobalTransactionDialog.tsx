@@ -202,9 +202,9 @@ export function GlobalTransactionDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="p-0 w-auto" align="start">
-                        <NewCalendar // Changed component
+                        <NewCalendar
                             value={field.value}
-                            onChange={(d) => { // Changed prop and logic
+                            onChange={(d) => {
                                 if (d && !Array.isArray(d)) {
                                     field.onChange(d);
                                     setIsCalendarOpen(false);

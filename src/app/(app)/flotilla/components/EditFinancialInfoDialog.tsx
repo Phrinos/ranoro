@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
+import { NewCalendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -113,16 +113,14 @@ export function EditFinancialInfoDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(d) => {
-                            if(d) {
+                      <NewCalendar
+                        value={field.value}
+                        onChange={(d) => {
+                            if(d && !Array.isArray(d)) {
                                 field.onChange(d);
                                 setIsCalendarOpen(false);
                             }
                         }}
-                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>

@@ -1,4 +1,4 @@
-'''
+
 "use client";
 
 import * as React from "react";
@@ -14,8 +14,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-// The original component used a DateRange type from react-day-picker.
-// We'll define a compatible type here.
 interface DateRange {
   from: Date | undefined;
   to: Date | undefined;
@@ -35,13 +33,16 @@ export function DatePickerWithRange({
   const handleCalendarChange = (value: any) => {
     if (Array.isArray(value) && value.length === 2) {
       onDateChange({ from: value[0], to: value[1] });
-    } else {
+    } else if (value === null) {
       onDateChange(undefined);
+    } else if (value instanceof Date) {
+      // If only one date is selected, you might want to handle it
+      // For now, we'll wait for a range.
     }
   };
 
-  // Convert our DateRange object to the array format react-calendar expects
-  const calendarValue = date?.from && date?.to ? [date.from, date.to] : undefined;
+  const calendarValue = date?.from && date?.to ? [date.from, date.to] : date?.from ? [date.from, date.from] : undefined;
+
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -51,7 +52,7 @@ export function DatePickerWithRange({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[300px] justify-start text-left font-normal",
+              "w-[300px] justify-start text-left font-normal bg-white",
               !date && "text-muted-foreground",
             )}
           >
@@ -75,11 +76,9 @@ export function DatePickerWithRange({
             selectRange={true}
             value={calendarValue}
             onChange={handleCalendarChange}
-            numberOfMonths={2}
           />
         </PopoverContent>
       </Popover>
     </div>
   );
 }
-'''

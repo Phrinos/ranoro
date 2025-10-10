@@ -30,7 +30,7 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { RentalPayment } from "@/types";
-import { Calendar } from "@/components/ui/calendar";
+import { NewCalendar } from "@/components/ui/calendar";
 
 const paymentSchema = z.object({
   paymentDate: z.date({ required_error: "La fecha es obligatoria." }),
@@ -138,17 +138,14 @@ export function RegisterPaymentDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(d) => {
-                            if(d) {
+                      <NewCalendar
+                        value={field.value}
+                        onChange={(d) => {
+                            if(d && !Array.isArray(d)) {
                                 field.onChange(d);
                                 setIsCalendarOpen(false);
                             }
                         }}
-                        initialFocus
-                        locale={es}
                       />
                     </PopoverContent>
                   </Popover>
