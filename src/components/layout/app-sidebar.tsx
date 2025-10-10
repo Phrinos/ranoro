@@ -281,9 +281,6 @@ export function AppSidebar({
              <DropdownMenuItem asChild>
                <Link href="/administracion"><Shield className="mr-2 h-4 w-4" /> Administración</Link>
             </DropdownMenuItem>
-             <DropdownMenuItem asChild>
-               <Link href="/opciones?tab=manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual de Uso</Link>
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
                  <DropdownMenuItem onClick={handleLogout}>
                    <LogOut className="mr-2 h-4 w-4 text-destructive" />
