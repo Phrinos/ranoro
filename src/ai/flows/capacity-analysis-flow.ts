@@ -3,8 +3,6 @@
  * @fileOverview AI flow to analyze the daily capacity of the workshop.
  */
 
-export const runtime = 'nodejs'; // <-- Asegura Node cuando se use como route. Si es server action, pon esto en el caller.
-
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { differenceInMinutes, parseISO, isValid } from 'date-fns';
