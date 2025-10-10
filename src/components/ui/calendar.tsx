@@ -23,6 +23,7 @@ export function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       locale={locale}
+      hideHead // <-- LA SOLUCIÓN CLAVE: Oculta los días de la semana
       style={
         {
           "--rdp-accent-color": "hsl(var(--primary))",
@@ -34,22 +35,16 @@ export function Calendar({
       }
       className={cn("p-3", className)}
       classNames={{
-        caption: "flex items-center justify-center pt-1 relative mb-2",
+        caption: "flex justify-center items-center h-10 relative mb-2",
         caption_label: "text-base font-semibold",
-        nav: "flex items-center gap-2", // Use gap for spacing
+        nav: "flex items-center absolute w-full justify-between",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
           "h-7 w-7 p-0 bg-transparent opacity-70 hover:opacity-100"
         ),
-        // Remove absolute positioning
-        nav_button_previous: "", 
-        nav_button_next: "",
+        nav_button_previous: "absolute left-1", 
+        nav_button_next: "absolute right-1",
         table: "w-full border-collapse",
-        // Hide the table head
-        head: "hidden", 
-        head_row: "hidden",
-        head_cell:
-          "text-muted-foreground w-9 font-medium text-center",
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
