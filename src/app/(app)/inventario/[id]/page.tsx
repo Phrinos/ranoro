@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldAlert, Edit, CalendarCheck, Package, DollarSign, Boxes, Trash2, ArrowRight, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 
 import { format, isValid } from "date-fns";
@@ -67,7 +67,6 @@ export default function InventoryItemDetailPage() {
         if (fetchedItem) {
           const [servicesData, salesData, categoriesData, suppliersData] = await Promise.all([
             serviceService.onServicesUpdatePromise(),
-            // Assuming a similar promise-based fetch for sales
             getDocs(collection(db, 'sales')).then(snap => snap.docs.map(d => ({...d.data(), id: d.id}))),
             inventoryService.onCategoriesUpdatePromise(),
             inventoryService.onSuppliersUpdatePromise(),
@@ -202,7 +201,7 @@ export default function InventoryItemDetailPage() {
       <PageHeader title={item.name} description={`ID: ${item.id}`} />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 lg:w-1/3 mb-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             Información del Ítem
           </TabsTrigger>
