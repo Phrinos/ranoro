@@ -117,6 +117,25 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceRecord));
 };
 
+const onServicesForVehicleUpdate = (
+  vehicleId: string,
+  callback: (services: ServiceRecord[]) => void
+): (() => void) => {
+  if (!db || !vehicleId) return () => {};
+  const q = query(
+    collection(db, "serviceRecords"),
+    where("vehicleId", "==", vehicleId),
+    orderBy("serviceDate", "desc")
+  );
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceRecord)));
+  }, (error) => {
+    console.error(`Error listening to services for vehicle ${vehicleId}:`, error.message);
+    callback([]);
+  });
+};
+
+
 const getDocById = async (collectionName: 'serviceRecords', id: string): Promise<any> => {
   if (!db) throw new Error('Database not initialized.');
   const ref = doc(db, collectionName, id);
@@ -166,6 +185,7 @@ const updateService = async (id: string, data: Partial<ServiceRecord>) => {
 export const serviceService = {
   onServicesUpdate,
   onServicesUpdatePromise,
+  onServicesForVehicleUpdate,
   getDocById,
   saveService,
   updateService

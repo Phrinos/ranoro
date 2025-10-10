@@ -55,6 +55,8 @@ export default function VehicleDetailPage() {
   const [selectedService, setSelectedService] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
+    if (!vehicleId) return;
+
     const fetchVehicle = async () => {
       const fetchedVehicle = await inventoryService.getVehicleById(vehicleId);
       setVehicle(fetchedVehicle || null);
