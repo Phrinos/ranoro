@@ -55,7 +55,7 @@ export function ServiceForm({
   onTabChange: (v: string) => void;
   isChecklistWizardOpen: boolean;
   setIsChecklistWizardOpen: (v: boolean) => void;
-  onOpenNewVehicleDialog: () => void;
+  onOpenNewVehicleDialog: (vehicle?: Partial<Vehicle> | null) => void;
   isNewRecord: boolean;
 }) {
   const { toast } = useToast();
@@ -118,10 +118,6 @@ export function ServiceForm({
         <div className="space-y-6 p-1 pb-24 md:pb-6">
           <VehicleSelectionCard
             vehicles={vehicles}
-            onVehicleSelect={(v) => {
-                setValue('vehicleId', v?.id || '', { shouldDirty: true });
-                setValue('customerName', v?.ownerName || '', { shouldDirty: true });
-            }}
             serviceHistory={serviceHistory}
             onOpenNewVehicleDialog={onOpenNewVehicleDialog}
             initialVehicleId={initialData?.vehicleId}
@@ -160,6 +156,9 @@ export function ServiceForm({
                             serviceTypes={serviceTypes}
                             technicians={technicians}
                             mode={mode}
+                            onNewInventoryItemCreated={async () => ({} as InventoryItem)}
+                            categories={categories}
+                            suppliers={suppliers}
                         />
                     </CardContent>
                 </Card>

@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 "use client";
 
@@ -27,7 +26,6 @@ import { Input } from "@/components/ui/input";
 interface VehicleSelectionCardProps {
   vehicles: Vehicle[]; // puede llegar vacío; internamente hacemos fallback
   serviceHistory: ServiceRecord[]; // (no usado aquí, pero se conserva por compatibilidad)
-  onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>; // (opcional/no usado)
   onOpenNewVehicleDialog: (vehicle?: Partial<Vehicle> | null) => void;
   initialVehicleId?: string;
 }
@@ -35,7 +33,6 @@ interface VehicleSelectionCardProps {
 export function VehicleSelectionCard({
   vehicles,
   serviceHistory,
-  onVehicleCreated,
   onOpenNewVehicleDialog,
   initialVehicleId,
 }: VehicleSelectionCardProps) {

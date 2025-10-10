@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
@@ -17,6 +16,7 @@ import type {
   InventoryCategory,
   Supplier
 } from '@/types';
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form';
 import { PageHeader } from '@/components/page-header';
@@ -163,6 +163,9 @@ export default function ServicioPage() {
   const [isServicesSheetOpen, setIsServicesSheetOpen] = useState(false);
   const [isChecklistWizardOpen, setIsChecklistWizardOpen] = useState(false);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isVehicleFormDialogOpen, setIsVehicleFormDialogOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
+
 
   const isEditMode = serviceId !== 'nuevo';
 
@@ -378,6 +381,24 @@ export default function ServicioPage() {
     router.push('/servicios?tab=cotizaciones');
   };
 
+  const handleOpenNewVehicleDialog = (vehicle?: Partial<Vehicle> | null) => {
+    setEditingVehicle(vehicle);
+    setIsVehicleFormDialogOpen(true);
+  };
+  
+  const handleSaveVehicle = async (data: VehicleFormValues) => {
+    if(!onVehicleCreated) return;
+    const newVehicle = await onVehicleCreated(data);
+    setValue('vehicleId', newVehicle.id, { shouldValidate: true });
+    setIsVehicleFormDialogOpen(false);
+  };
+  
+  const onVehicleCreated = async (data: VehicleFormValues): Promise<Vehicle> => {
+      const newVehicle = await inventoryService.addVehicle(data);
+      toast({ title: "Vehículo Creado", description: `${newVehicle.make} ${newVehicle.model} ha sido agregado.` });
+      return newVehicle;
+  };
+
   const formMode: 'quote' | 'service' = isEditMode ? (initialData?.status === 'Cotizacion' ? 'quote' : 'service') : 'quote';
   
   const pageTitle = isEditMode
@@ -412,14 +433,14 @@ export default function ServicioPage() {
         onSave={handleSaveService}
         onValidationErrors={onValidationErrors}
         onComplete={() => {}}
-        onVehicleCreated={async () => ({} as Vehicle)}
+        onVehicleCreated={onVehicleCreated}
         onCancel={formMode === 'quote' ? handleDeleteQuote : handleCancelService}
         mode={formMode}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         isChecklistWizardOpen={isChecklistWizardOpen}
         setIsChecklistWizardOpen={setIsChecklistWizardOpen}
-        onOpenNewVehicleDialog={() => {}}
+        onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
         isNewRecord={!isEditMode}
       />
 
@@ -449,6 +470,13 @@ export default function ServicioPage() {
       />
 
       <PhotoReportModal open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen} />
+
+      <VehicleDialog
+        open={isVehicleFormDialogOpen}
+        onOpenChange={setIsVehicleFormDialogOpen}
+        vehicle={editingVehicle}
+        onSave={handleSaveVehicle}
+      />
     </FormProvider>
   );
 }
