@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/[id]/page.tsx
 "use client";
 
@@ -290,7 +289,7 @@ export default function InventoryItemDetailPage() {
 
       <Tabs defaultValue="details" className="w-full">
         {/* TabsList optimizado para móvil: scroll horizontal y no se rompe */}
-        <TabsList className="w-full overflow-x-auto scrollbar-hide flex justify-start gap-2 md:gap-4 rounded-lg p-1 bg-muted/60 md:grid md:grid-cols-2 lg:w-1/2">
+        <TabsList className="w-full overflow-x-auto scrollbar-hide flex gap-2 md:gap-4 rounded-lg p-1 bg-muted/60">
           <TabsTrigger
             value="details"
             className="whitespace-nowrap px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -307,29 +306,26 @@ export default function InventoryItemDetailPage() {
 
         <TabsContent value="details">
           <div className="space-y-6">
+            {/* PRIMERA FILA */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
+              <Card className="md:col-span-2">
                 <CardHeader className="flex flex-row items-start justify-between">
                    <div className="flex flex-col gap-1">
-                      <Badge
-                        variant={item.isService ? "secondary" : "default"}
-                        className="w-fit mb-1"
-                      >
+                      <p className="text-sm font-medium text-primary mb-1">
                         {item.isService ? "Servicio" : "Producto"}
-                      </Badge>
-                      {item.category && (
-                        <p className="text-lg font-semibold flex items-center gap-2">
-                          <Tag className="h-5 w-5 text-muted-foreground" />
-                          {item.category}
-                        </p>
-                      )}
-                      <CardTitle className="text-2xl pt-1">
-                        {item.brand} {item.name}
+                      </p>
+                      <p className="text-lg font-semibold flex items-center gap-2">
+                        <Tag className="h-5 w-5 text-muted-foreground" />
+                        {item.category}
+                      </p>
+                      <CardTitle className="text-2xl mt-2">
+                          {item.brand} {item.name}
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="pt-1">
                         SKU: {item.sku || "N/A"} • Proveedor: {item.supplier || "N/A"}
                       </CardDescription>
                   </div>
+
                   <div className="flex items-center gap-1 sm:gap-2">
                     <ConfirmDialog
                       triggerButton={
@@ -356,14 +352,17 @@ export default function InventoryItemDetailPage() {
                     </Button>
                   </div>
                 </CardHeader>
+
                 <CardContent className="space-y-4">
                   {item.description && (
-                    <div className="pt-2">
+                    <div className="pt-1">
                       <p className="text-sm text-foreground whitespace-pre-wrap">
                         {item.description}
                       </p>
                     </div>
                   )}
+
+                  {/* Chips informativas compactas para móvil */}
                   <div className="flex flex-wrap gap-2 pt-1">
                     {!item.isService && (
                       <Badge variant={lowStock ? "destructive" : "secondary"}>
