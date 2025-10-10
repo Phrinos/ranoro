@@ -1,3 +1,4 @@
+
 // src/components/layout/app-sidebar.tsx
 "use client";
 
@@ -281,7 +282,7 @@ export function AppSidebar({
                <Link href="/administracion"><Shield className="mr-2 h-4 w-4" /> Administración</Link>
             </DropdownMenuItem>
              <DropdownMenuItem asChild>
-               <Link href="/manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual de Uso</Link>
+               <Link href="/opciones?tab=manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual de Uso</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
                  <DropdownMenuItem onClick={handleLogout}>
