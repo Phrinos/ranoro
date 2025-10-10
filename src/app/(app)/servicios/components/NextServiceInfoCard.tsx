@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { NewCalendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -72,15 +72,13 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(d) => {
+                <NewCalendar
+                  value={date}
+                  onChange={(d: any) => {
                     setDate(d);
                     setIsCalendarOpen(false);
                   }}
                   disabled={(date) => date < new Date()}
-                  initialFocus
                 />
               </PopoverContent>
             </Popover>

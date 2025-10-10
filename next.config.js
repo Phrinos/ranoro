@@ -27,34 +27,11 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
           { key: 'Access-Control-Allow-Origin', value: '*' },
           { key: 'Access-Control-Allow-Methods', value: 'GET,DELETE,PATCH,POST,PUT,OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
+          { key: 'Access-control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
         ],
       },
     ];
   },
-
-  // 5. Configuración para Turbopack (compatible con la configuración de Webpack existente)
-  experimental: {
-    turbopack: {
-      webpack: {
-        config: (config, { isServer }) => {
-          config.ignoreWarnings = [
-            ...(config.ignoreWarnings || []),
-            /require.extensions is not supported by webpack. Use a loader instead./,
-          ];
-          
-          if (!isServer) {
-            config.watchOptions = {
-              poll: 1000,
-              aggregateTimeout: 300,
-            };
-          }
-          
-          return config;
-        }
-      }
-    }
-  }
 };
 
 export default nextConfig;

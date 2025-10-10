@@ -145,7 +145,7 @@ export async function saveSignatureAction(
     
     await db.runTransaction(async (transaction) => {
         transaction.update(mainServiceRef, updateData);
-        transaction.update(publicServiceRef, updateData);
+        transaction.update(publicServicef, updateData);
     });
 
     return { success: true };

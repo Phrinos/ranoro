@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Calendar } from "@/components/ui/calendar";
+import { NewCalendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { ServiceRecord, Vehicle, Technician, User } from '@/types';
@@ -70,10 +70,9 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-1">
         <Card className="sticky top-4 flex justify-center p-8">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
+            <NewCalendar
+              value={selectedDate}
+              onChange={setSelectedDate}
               locale={es}
               modifiers={modifiers}
               modifiersClassNames={{ hasEvent: 'has-event' }}

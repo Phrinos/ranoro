@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { User, AppRole, AuditLog } from "@/types";
-import { cleanObjectForFirestore } from '../forms';
+import { cleanObjectForFirestore, parseDate } from '../forms';
 
 /**
  * Logs an audit trail entry for significant actions.
@@ -40,7 +40,6 @@ export const logAudit = async (
     ...details,
     actionType,
     description,
-    // CORRECCIÓN: Usar Timestamp para consistencia y queries
     date: Timestamp.now(),
   };
   try {
@@ -102,6 +101,33 @@ const onAuditLogsUpdate = (callback: (logs: AuditLog[]) => void): (() => void) =
 };
 
 /**
+ * Fetches all audit logs once, ordered by date descending.
+ * @returns A promise that resolves to an array of audit logs.
+ */
+const getAuditLogs = async (): Promise<AuditLog[]> => {
+    if (!db) {
+        console.error("Audit log fetch failed: Database not initialized.");
+        return [];
+    }
+    try {
+        const q = query(collection(db, 'auditLogs'), orderBy("date", "desc"));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            const date = parseDate(data.date);
+            return {
+                id: doc.id,
+                ...data,
+                date: date ? date.toISOString() : new Date().toISOString(),
+            } as AuditLog;
+        });
+    } catch (error) {
+        console.error("Error fetching audit logs:", error instanceof Error ? error.message : String(error));
+        return [];
+    }
+};
+
+/**
  * Creates or updates a user in Firestore.
  * @param user - The user object to be saved. Can be a partial object for updates.
  * @param adminUser - The administrator performing the action.
@@ -120,7 +146,6 @@ const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => 
             if(!userId) throw new Error("User ID is missing for an update operation.");
             await updateDoc(doc(db, 'users', userId), cleanedData);
         } else {
-            // CORRECCIÓN: Se elimina .toISOString() y se pasa el Timestamp directamente.
             const newUserRef = await addDoc(collection(db, 'users'), { ...cleanedData, createdAt: Timestamp.now() });
             userId = newUserRef.id;
         }
@@ -240,6 +265,7 @@ export const adminService = {
     onUsersUpdatePromise,
     onRolesUpdate,
     onAuditLogsUpdate,
+    getAuditLogs,
     saveUser,
     archiveUser,
     saveRole,
