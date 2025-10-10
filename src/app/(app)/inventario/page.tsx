@@ -2,14 +2,17 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from "react";
-import dynamic from "next/dynamic";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import {
   PlusCircle,
   Printer,
+  Car,
   AlertTriangle,
+  Activity,
+  CalendarX,
   DollarSign,
+  Tags,
   Package,
   Edit,
   Trash2,
@@ -78,7 +81,7 @@ const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { s
 };
 
 
-// --- ProductosContent (responsive: móvil solo nombre/stock/precio venta) ---
+// --- ProductosContent (responsive + sort robusto en el componente) ---
 const itemSortOptions = [
   { value: "updatedAt_desc", label: "Modificación (Más reciente)" },
   { value: "updatedAt_asc", label: "Modificación (Más antiguo)" },
@@ -108,9 +111,72 @@ const ProductosContent = ({
     itemsPerPage: 100,
   });
 
-  const customSortedItems = useMemo(() => {
-    return [...tableManager.fullFilteredData];
-  }, [tableManager.fullFilteredData]);
+  // Normalizadores para comparar distintos tipos
+  const getSortValue = (it: InventoryItem, key: string) => {
+    switch (key) {
+      case "name":
+        return (it.name ?? "").toString();
+      case "category":
+        return (it.category ?? "").toString();
+      case "isService":
+        // Ordena productos antes que servicios (0/1)
+        return it.isService ? 1 : 0;
+      case "quantity":
+        // En servicios mostramos N/A; ponlos siempre al final
+        return it.isService ? null : (typeof it.quantity === "number" ? it.quantity : 0);
+      case "updatedAt": {
+        const d = parseDate(it.updatedAt);
+        return d && isValid(d) ? d : null;
+      }
+      case "unitPrice":
+        return typeof it.unitPrice === "number" ? it.unitPrice : 0;
+      case "sellingPrice":
+        return typeof it.sellingPrice === "number" ? it.sellingPrice : 0;
+      default:
+        return "";
+    }
+  };
+
+  const sortedItems = React.useMemo(() => {
+    const items = [...tableManager.fullFilteredData];
+    const so = tableManager.sortOption || "name_asc";
+    const [key, dir] = so.split("_");
+    const direction = dir === "desc" ? -1 : 1;
+
+    // sort estable
+    return items
+      .map((v, idx) => ({ v, idx }))
+      .sort((a, b) => {
+        const va = getSortValue(a.v, key);
+        const vb = getSortValue(b.v, key);
+
+        // Nulos siempre al final
+        const aNull = va === null || va === undefined;
+        const bNull = vb === null || vb === undefined;
+        if (aNull && bNull) return a.idx - b.idx;
+        if (aNull) return 1;
+        if (bNull) return -1;
+
+        // Fechas
+        if (va instanceof Date && vb instanceof Date) {
+          const diff = va.getTime() - vb.getTime();
+          return diff === 0 ? a.idx - b.idx : diff * direction;
+        }
+
+        // Números (incluye booleanos mapeados)
+        if (typeof va === "number" && typeof vb === "number") {
+          const diff = va - vb;
+          return diff === 0 ? a.idx - b.idx : diff * direction;
+        }
+
+        // Texto
+        const sa = String(va);
+        const sb = String(vb);
+        const diff = sa.localeCompare(sb, "es", { sensitivity: "base" });
+        return diff === 0 ? a.idx - b.idx : diff * direction;
+      })
+      .map(({ v }) => v);
+  }, [tableManager.fullFilteredData, tableManager.sortOption]);
 
   const handleSort = (key: string) => {
     const isAsc = tableManager.sortOption === `${key}_asc`;
@@ -125,7 +191,7 @@ const ProductosContent = ({
         searchPlaceholder="Buscar por nombre, SKU, marca..."
         actions={
           <Button
-            onClick={() => onPrint(customSortedItems)}
+            onClick={() => onPrint(sortedItems)}
             variant="outline"
             size="sm"
             className="bg-white"
@@ -142,7 +208,6 @@ const ProductosContent = ({
             <Table className="w-full text-sm md:text-base">
               <TableHeader className="bg-black text-white">
                 <TableRow>
-                  {/* Categoría (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="category"
                     label="Categoría"
@@ -151,7 +216,6 @@ const ProductosContent = ({
                     className="hidden md:table-cell"
                     textClassName="text-white"
                   />
-                  {/* Nombre (siempre visible) */}
                   <SortableTableHeader
                     sortKey="name"
                     label="Nombre"
@@ -159,7 +223,6 @@ const ProductosContent = ({
                     currentSort={tableManager.sortOption}
                     textClassName="text-white"
                   />
-                  {/* Tipo (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="isService"
                     label="Tipo"
@@ -168,7 +231,6 @@ const ProductosContent = ({
                     className="hidden md:table-cell"
                     textClassName="text-white"
                   />
-                  {/* Stock (siempre visible) */}
                   <SortableTableHeader
                     sortKey="quantity"
                     label="Stock"
@@ -177,7 +239,6 @@ const ProductosContent = ({
                     className="text-right"
                     textClassName="text-white"
                   />
-                  {/* Últ. Modificación (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="updatedAt"
                     label="Últ. Modificación"
@@ -186,7 +247,6 @@ const ProductosContent = ({
                     className="hidden md:table-cell"
                     textClassName="text-white"
                   />
-                  {/* Precio Compra (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="unitPrice"
                     label="Precio Compra"
@@ -195,7 +255,6 @@ const ProductosContent = ({
                     className="hidden md:table-cell text-right"
                     textClassName="text-white"
                   />
-                  {/* Precio Venta (siempre visible) */}
                   <SortableTableHeader
                     sortKey="sellingPrice"
                     label="Precio Venta"
@@ -208,11 +267,12 @@ const ProductosContent = ({
               </TableHeader>
 
               <TableBody>
-                {customSortedItems.length > 0 ? (
-                  customSortedItems.map((item) => {
+                {sortedItems.length ? (
+                  sortedItems.map((item) => {
                     const isLowStock =
                       !item.isService && item.quantity <= item.lowStockThreshold;
                     const updatedAt = parseDate(item.updatedAt);
+
                     return (
                       <TableRow
                         key={item.id}
@@ -220,12 +280,10 @@ const ProductosContent = ({
                         onClick={() => router.push(`/inventario/${item.id}`)}
                         className="cursor-pointer hover:bg-muted/50"
                       >
-                        {/* Categoría (solo escritorio) */}
                         <TableCell className="hidden md:table-cell">
                           {item.category}
                         </TableCell>
 
-                        {/* Nombre (siempre) */}
                         <TableCell className="font-medium align-top">
                           <div className="flex items-center gap-2">
                             <p
@@ -235,7 +293,6 @@ const ProductosContent = ({
                             >
                               {item.name}
                             </p>
-                            {/* En móvil añadimos indicación de Servicio ya que ocultamos la columna "Tipo" */}
                             {item.isService && (
                               <span className="md:hidden inline-flex rounded border px-1.5 py-0.5 text-[10px] leading-none text-foreground">
                                 Servicio
@@ -247,14 +304,12 @@ const ProductosContent = ({
                           </p>
                         </TableCell>
 
-                        {/* Tipo (solo escritorio) */}
                         <TableCell className="hidden md:table-cell">
                           <Badge variant={item.isService ? "outline" : "secondary"}>
                             {item.isService ? "Servicio" : "Producto"}
                           </Badge>
                         </TableCell>
 
-                        {/* Stock (siempre) */}
                         <TableCell
                           className={cn(
                             "text-right font-semibold whitespace-nowrap",
@@ -265,19 +320,16 @@ const ProductosContent = ({
                           {item.isService ? "N/A" : item.quantity}
                         </TableCell>
 
-                        {/* Últ. Modificación (solo escritorio) */}
                         <TableCell className="hidden md:table-cell">
                           {updatedAt && isValid(updatedAt)
                             ? format(updatedAt, "dd/MM/yy, HH:mm", { locale: es })
                             : "N/A"}
                         </TableCell>
 
-                        {/* Precio Compra (solo escritorio) */}
                         <TableCell className="hidden md:table-cell text-right whitespace-nowrap">
                           {formatCurrency(item.unitPrice)}
                         </TableCell>
 
-                        {/* Precio Venta (siempre) */}
                         <TableCell className="text-right font-bold text-primary whitespace-nowrap">
                           {formatCurrency(item.sellingPrice)}
                         </TableCell>
@@ -829,10 +881,12 @@ function InventarioPage() {
 }
 
 // Wrapper component to be exported as default
-export default function InventarioPageWrapper() {
+function InventarioPageWrapper() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+    <Suspense fallback={<div className="flex justify-center items-center h-64"><p>Cargando...</p></div>}>
         <InventarioPage />
     </Suspense>
   );
 }
+
+export default InventarioPageWrapper;
