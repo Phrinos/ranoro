@@ -289,31 +289,47 @@ export default function InventoryItemDetailPage() {
       />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="w-full grid grid-cols-2">
+        {/* TabsList optimizado para móvil: scroll horizontal y no se rompe */}
+        <TabsList className="w-full overflow-x-auto scrollbar-hide flex justify-start gap-2 md:gap-4 rounded-lg p-1 bg-muted/60 md:grid md:grid-cols-2 lg:w-1/2">
           <TabsTrigger
             value="details"
+            className="whitespace-nowrap px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             Información del Ítem
           </TabsTrigger>
           <TabsTrigger
             value="history"
+            className="whitespace-nowrap px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             Historial
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details" className="mt-6">
+        <TabsContent value="details">
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-start justify-between">
-                  <div>
-                    <Badge variant={item.isService ? "secondary" : "default"} className="mb-2">{item.isService ? "Servicio" : "Producto"}</Badge>
-                    <p className="text-lg font-semibold flex items-center gap-2"><Tag className="h-5 w-5 text-muted-foreground" />{item.category}</p>
-                    <CardTitle className="text-2xl mt-1">{item.brand} {item.name}</CardTitle>
-                    <CardDescription className="mt-1">SKU: {item.sku || "N/A"} • Proveedor: {item.supplier || "N/A"}</CardDescription>
+                   <div className="flex flex-col gap-1">
+                      <Badge
+                        variant={item.isService ? "secondary" : "default"}
+                        className="w-fit mb-1"
+                      >
+                        {item.isService ? "Servicio" : "Producto"}
+                      </Badge>
+                      {item.category && (
+                        <p className="text-lg font-semibold flex items-center gap-2">
+                          <Tag className="h-5 w-5 text-muted-foreground" />
+                          {item.category}
+                        </p>
+                      )}
+                      <CardTitle className="text-2xl pt-1">
+                        {item.brand} {item.name}
+                      </CardTitle>
+                      <CardDescription>
+                        SKU: {item.sku || "N/A"} • Proveedor: {item.supplier || "N/A"}
+                      </CardDescription>
                   </div>
-
                   <div className="flex items-center gap-1 sm:gap-2">
                     <ConfirmDialog
                       triggerButton={
@@ -340,6 +356,23 @@ export default function InventoryItemDetailPage() {
                     </Button>
                   </div>
                 </CardHeader>
+                <CardContent className="space-y-4">
+                  {item.description && (
+                    <div className="pt-2">
+                      <p className="text-sm text-foreground whitespace-pre-wrap">
+                        {item.description}
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {!item.isService && (
+                      <Badge variant={lowStock ? "destructive" : "secondary"}>
+                        {lowStock ? "Bajo stock" : "Stock OK"}
+                      </Badge>
+                    )}
+                    {unit && <Badge variant="outline">Unidad: {unit}</Badge>}
+                  </div>
+                </CardContent>
               </Card>
             </div>
 
@@ -435,7 +468,7 @@ export default function InventoryItemDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="history" className="mt-6">
+        <TabsContent value="history">
           <Card className="mb-4">
             <CardHeader>
               <CardTitle>Resumen de Movimientos</CardTitle>
