@@ -13,7 +13,7 @@ import { DateRange } from 'react-day-picker';
 
 const MovimientosContent = lazy(() => import('./components/movimientos-content'));
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
-const CajaContent = lazy(() => import('./components/caja-content').then(m => ({ default: m.CajaContent })));
+const CajaContent = lazy(() => import('./components/caja-content'));
 
 function FinanzasPage() {
     const searchParams = useSearchParams();
@@ -43,10 +43,14 @@ function FinanzasPage() {
       return () => unsubs.forEach(unsub => unsub());
     }, []);
 
+    const handleDateRangeChange = useCallback((range?: DateRange) => {
+        // Implement if you need to lift the date range state up
+    }, []);
+
     if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
     
     const tabs = [
-      { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosContent allServices={allServices} allSales={allSales} allExpenses={allExpenses} onDateRangeChange={()=>{}} /></Suspense> },
+      { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosContent allServices={allServices} allSales={allSales} allExpenses={allExpenses} allInventory={[]} dateRange={undefined} onDateRangeChange={handleDateRangeChange} /></Suspense> },
       { value: "egresos", label: "Egresos", content: (
         <Suspense fallback={<Loader2 className="animate-spin" />}>
           <EgresosContent 
@@ -57,7 +61,7 @@ function FinanzasPage() {
           />
         </Suspense>
       )},
-      { value: "caja", label: "Caja", content: <Suspense fallback={<Loader2 className="animate-spin" />}><CajaContent allServices={allServices} allSales={allSales} /></Suspense> },
+      { value: "caja", label: "Caja", content: <Suspense fallback={<Loader2 className="animate-spin" />}><CajaContent /></Suspense> },
     ];
 
     return (
