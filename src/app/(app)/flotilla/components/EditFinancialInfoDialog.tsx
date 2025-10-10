@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/components/EditFinancialInfoDialog.tsx
 "use client";
 
@@ -61,13 +60,14 @@ export function EditFinancialInfoDialog({
   });
 
   useEffect(() => {
-    if (!open) return;
-    form.reset({
-      contractDate: driver?.contractDate ? new Date(driver.contractDate) : undefined,
-      requiredDepositAmount: driver?.requiredDepositAmount || 0,
-      depositAmount: driver?.depositAmount || 0,
-    });
-  }, [open, driver, form]);
+    if (driver) {
+      form.reset({
+        contractDate: driver?.contractDate ? new Date(driver.contractDate) : undefined,
+        requiredDepositAmount: driver?.requiredDepositAmount || 0,
+        depositAmount: driver?.depositAmount || 0,
+      });
+    }
+  }, [driver, form, open]);
 
   const handleFormSubmit = async (values: FinancialInfoFormValues) => {
     setIsSubmitting(true);
@@ -97,9 +97,9 @@ export function EditFinancialInfoDialog({
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
-                          variant="outline"
+                          variant={"outline"}
                           className={cn(
-                            "pl-3 text-left font-normal bg-white",
+                            "w-full pl-3 text-left font-normal bg-white",
                             !field.value && "text-muted-foreground"
                           )}
                         >
@@ -112,11 +112,16 @@ export function EditFinancialInfoDialog({
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
+                    <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={(d) => { field.onChange(d); setIsCalendarOpen(false); }}
+                        onSelect={(d) => {
+                            if(d) {
+                                field.onChange(d);
+                                setIsCalendarOpen(false);
+                            }
+                        }}
                         initialFocus
                       />
                     </PopoverContent>

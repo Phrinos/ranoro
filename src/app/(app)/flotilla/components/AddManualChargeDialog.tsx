@@ -25,9 +25,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
-import ReactCalendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
 
 const chargeSchema = z.object({
   date: z.date({ required_error: "La fecha es obligatoria." }),
@@ -76,8 +76,6 @@ export function AddManualChargeDialog({
     },
   });
 
-  const selectedDate = form.watch("date");
-
   useEffect(() => {
     const base = toMidday(toDate(debtToEdit?.date) ?? new Date());
     form.reset({
@@ -85,7 +83,7 @@ export function AddManualChargeDialog({
       amount: debtToEdit?.amount ?? undefined,
       note: debtToEdit?.note ?? "",
     });
-  }, [open, debtToEdit?.id, debtToEdit?.date, debtToEdit?.amount, debtToEdit?.note, form]);
+  }, [open, debtToEdit, form]);
 
   const handleSubmit = async (values: ManualChargeFormValues) => {
     setIsSubmitting(true);
@@ -113,54 +111,43 @@ export function AddManualChargeDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-2">
-            {/* Fecha */}
             <FormField
               control={form.control}
               name="date"
-              render={() => (
-                <FormItem className="flex flex-col gap-2">
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
                   <FormLabel>Fecha del Cargo</FormLabel>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
-                        <div
-                          className="relative w-full cursor-pointer"
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") setIsCalendarOpen((o) => !o);
-                          }}
-                          onClick={() => setIsCalendarOpen(true)}
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal bg-white",
+                            !field.value && "text-muted-foreground"
+                          )}
                         >
-                          <Input
-                            readOnly
-                            className="bg-white pr-10"
-                            value={selectedDate ? format(selectedDate, "PPP", { locale: es }) : ""}
-                            placeholder="Seleccionar fecha"
-                          />
-                          <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
-                        </div>
+                          {field.value ? (
+                            format(field.value, "PPP", { locale: es })
+                          ) : (
+                            <span>Seleccionar fecha</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
                       </FormControl>
                     </PopoverTrigger>
-
-                    <PopoverContent className="p-2 w-auto" align="start" sideOffset={8}>
-                      <ReactCalendar
-                        value={selectedDate ?? new Date()}
-                        onChange={(val) => {
-                          const d = Array.isArray(val) ? val[0] : val;
-                          if (!d) return;
-                          form.setValue("date", toMidday(d), {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                            shouldValidate: true,
-                          });
-                          setIsCalendarOpen(false);
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(d) => {
+                          if (d) {
+                            field.onChange(toMidday(d));
+                            setIsCalendarOpen(false);
+                          }
                         }}
-                        locale="es-MX"
-                        calendarType="iso8601"
-                        selectRange={false}
-                        minDetail="month"
-                        maxDetail="month"
+                        initialFocus
+                        locale={es}
                       />
                     </PopoverContent>
                   </Popover>
@@ -169,7 +156,6 @@ export function AddManualChargeDialog({
               )}
             />
 
-            {/* Monto */}
             <FormField
               control={form.control}
               name="amount"
@@ -192,7 +178,6 @@ export function AddManualChargeDialog({
               )}
             />
 
-            {/* Nota */}
             <FormField
               control={form.control}
               name="note"

@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/components/GlobalTransactionDialog.tsx
 "use client";
 
@@ -25,9 +24,8 @@ import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList
 } from '@/components/ui/command';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
 
-import ReactCalendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
 
 const transactionSchema = z.object({
   driverId: z.string({ required_error: "Debe seleccionar un conductor." }),
@@ -205,19 +203,17 @@ export function GlobalTransactionDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="p-0 w-auto" align="start">
-                      <ReactCalendar
-                        value={field.value}
-                        onChange={(val) => {
-                          const d = Array.isArray(val) ? val[0] : val;
-                          if (d) {
-                            field.onChange(toMidday(d));
-                            setIsCalendarOpen(false);
-                          }
-                        }}
-                        locale="es-MX"
-                        calendarType="iso8601"
-                        className="react-calendar styled"
-                      />
+                        <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(d) => {
+                                if (d) {
+                                    field.onChange(toMidday(d));
+                                    setIsCalendarOpen(false);
+                                }
+                            }}
+                            initialFocus
+                        />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
@@ -289,53 +285,6 @@ export function GlobalTransactionDialog({
           </form>
         </Form>
       </DialogContent>
-      
-      {/* Estilos para react-calendar */}
-      <style jsx global>{`
-        .react-calendar.styled {
-          background: hsl(var(--background));
-          border: 1px solid hsl(var(--border));
-          border-radius: 0.75rem;
-          padding: 0.5rem;
-          font-size: 0.9rem;
-        }
-        .react-calendar.styled .react-calendar__navigation {
-          margin-bottom: 0.25rem;
-        }
-        .react-calendar.styled .react-calendar__navigation button {
-          border-radius: 0.5rem;
-          padding: 0.35rem 0.5rem;
-          color: hsl(var(--foreground));
-        }
-        .react-calendar.styled .react-calendar__navigation button:hover {
-          background: hsl(var(--muted));
-        }
-        .react-calendar.styled .react-calendar__tile {
-          border-radius: 0.5rem;
-          padding: 0.4rem 0;
-        }
-        .react-calendar.styled .react-calendar__month-view__weekdays__weekday {
-          padding: 0.4rem 0;
-          color: hsl(var(--muted-foreground));
-          abbr[title] {
-            text-decoration: none;
-          }
-        }
-        .react-calendar.styled .react-calendar__tile:enabled:hover {
-          background: hsl(var(--muted));
-        }
-        .react-calendar.styled .react-calendar__tile--now {
-          background: hsl(var(--muted) / 0.5);
-        }
-        .react-calendar.styled .react-calendar__tile--active,
-        .react-calendar.styled .react-calendar__tile--hasActive {
-          background: hsl(var(--primary));
-          color: hsl(var(--primary-foreground));
-        }
-        .react-calendar.styled .react-calendar__tile--active:hover {
-          filter: brightness(0.95);
-        }
-      `}</style>
     </Dialog>
   );
 }

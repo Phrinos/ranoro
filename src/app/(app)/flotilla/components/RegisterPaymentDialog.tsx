@@ -5,10 +5,20 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,11 +27,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { RentalPayment } from "@/types";
-
-import ReactCalendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
+import { Calendar } from "@/components/ui/calendar";
 
 const paymentSchema = z.object({
   paymentDate: z.date({ required_error: "La fecha es obligatoria." }),
@@ -63,8 +72,6 @@ export function RegisterPaymentDialog({
     },
   });
 
-  const selectedPaymentDate = form.watch("paymentDate");
-
   useEffect(() => {
     if (!open) return;
     if (paymentToEdit) {
@@ -97,64 +104,51 @@ export function RegisterPaymentDialog({
         <DialogHeader className="p-6 pb-4">
           <DialogTitle>{paymentToEdit ? "Editar Pago" : "Registrar Pago"}</DialogTitle>
           <DialogDescription>
-            {paymentToEdit ? "Actualiza los detalles del pago." : "Registra un nuevo abono a la cuenta del conductor."}
+            {paymentToEdit
+              ? "Actualiza los detalles del pago."
+              : "Registra un nuevo abono a la cuenta del conductor."}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-6 pt-0">
-            {/* Fecha */}
             <FormField
               control={form.control}
               name="paymentDate"
-              render={() => (
-                <FormItem className="flex flex-col gap-2">
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
                   <FormLabel>Fecha del Pago</FormLabel>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
-                        <div
-                          className="relative w-full cursor-pointer"
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") setIsCalendarOpen((o) => !o);
-                          }}
+                        <Button
+                          type="button"
+                          variant={"outline"}
+                          className={cn(
+                            "pl-3 text-left font-normal bg-white",
+                            !field.value && "text-muted-foreground"
+                          )}
                           onClick={() => setIsCalendarOpen(true)}
                         >
-                          <Input
-                            readOnly
-                            className="bg-white pr-10"
-                            value={
-                              selectedPaymentDate
-                                ? format(selectedPaymentDate, "d 'de' MMMM 'de' yyyy", { locale: es })
-                                : ""
-                            }
-                            placeholder="Seleccionar fecha"
-                          />
-                          <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
-                        </div>
+                          {field.value
+                            ? format(field.value, "PPP", { locale: es })
+                            : "Seleccionar fecha"}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
                       </FormControl>
                     </PopoverTrigger>
-
-                    <PopoverContent className="p-2 w-auto" align="start" sideOffset={8}>
-                      <ReactCalendar
-                        value={selectedPaymentDate ?? new Date()}
-                        onChange={(val) => {
-                          const d = Array.isArray(val) ? val[0] : val;
-                          if (!d) return;
-                          form.setValue("paymentDate", toMidday(d), {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                            shouldValidate: true,
-                          });
-                          setIsCalendarOpen(false);
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(d) => {
+                            if(d) {
+                                field.onChange(toMidday(d));
+                                setIsCalendarOpen(false);
+                            }
                         }}
-                        locale="es-MX"
-                        calendarType="iso8601"
-                        selectRange={false}
-                        minDetail="month"
-                        maxDetail="month"
+                        initialFocus
+                        locale={es}
                       />
                     </PopoverContent>
                   </Popover>
@@ -162,8 +156,7 @@ export function RegisterPaymentDialog({
                 </FormItem>
               )}
             />
-
-            {/* Método de Pago */}
+            
             <FormField
               control={form.control}
               name="paymentMethod"
@@ -186,7 +179,6 @@ export function RegisterPaymentDialog({
               )}
             />
 
-            {/* Monto */}
             <FormField
               control={form.control}
               name="amount"
@@ -209,7 +201,6 @@ export function RegisterPaymentDialog({
               )}
             />
 
-            {/* Descripción */}
             <FormField
               control={form.control}
               name="note"

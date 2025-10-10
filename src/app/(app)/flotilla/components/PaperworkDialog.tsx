@@ -15,11 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-
-import ReactCalendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
+import { cn } from "@/lib/utils";
 
 const paperworkSchema = z.object({
   name: z.string().min(3, "El nombre del trámite es obligatorio."),
@@ -27,18 +26,18 @@ const paperworkSchema = z.object({
 });
 export type PaperworkFormValues = z.infer<typeof paperworkSchema>;
 
-const toMidday = (d: Date) => {
-  const n = new Date(d);
-  n.setHours(12, 0, 0, 0);
-  return n;
-};
-
 interface PaperworkDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   paperwork?: Paperwork | null;
   onSave: (values: PaperworkFormValues) => void;
 }
+
+const toMidday = (d: Date) => {
+    const n = new Date(d);
+    n.setHours(12, 0, 0, 0);
+    return n;
+};
 
 export function PaperworkDialog({
   open,
@@ -55,12 +54,9 @@ export function PaperworkDialog({
     },
   });
 
-  const selectedDate = form.watch("dueDate");
-
   useEffect(() => {
     form.reset({
       name: paperwork?.name ?? "",
-      // Paperwork.dueDate puede venir como ISO string o Timestamp
       // @ts-expect-error toDate en Timestamp
       dueDate: toMidday(new Date(paperwork?.dueDate?.toDate?.() ?? paperwork?.dueDate ?? new Date())),
     });
@@ -91,55 +87,43 @@ export function PaperworkDialog({
                 </FormItem>
               )}
             />
-
-            {/* Fecha */}
             <FormField
               control={form.control}
               name="dueDate"
-              render={() => (
-                <FormItem className="flex flex-col gap-2">
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
                   <FormLabel>Fecha de Vencimiento</FormLabel>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
-                        <div
-                          className="relative w-full cursor-pointer"
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") setIsCalendarOpen((o) => !o);
-                          }}
-                          onClick={() => setIsCalendarOpen(true)}
+                        <Button
+                          type="button"
+                          variant={"outline"}
+                          className={cn(
+                            "pl-3 text-left font-normal bg-white",
+                            !field.value && "text-muted-foreground"
+                          )}
+                          onClick={() => setIsCalendarOpen((o) => !o)}
                         >
-                          <Input
-                            readOnly
-                            className="bg-white pr-10"
-                            value={selectedDate ? format(selectedDate, "PPP", { locale: es }) : ""}
-                            placeholder="Seleccionar fecha"
-                          />
-                          <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
-                        </div>
+                          {field.value
+                            ? format(field.value, "PPP", { locale: es })
+                            : "Seleccionar fecha"}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
                       </FormControl>
                     </PopoverTrigger>
-
-                    <PopoverContent className="p-2 w-auto" align="start" sideOffset={8}>
-                      <ReactCalendar
-                        value={selectedDate ?? new Date()}
-                        onChange={(val) => {
-                          const d = Array.isArray(val) ? val[0] : val;
-                          if (!d) return;
-                          form.setValue("dueDate", toMidday(d), {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                            shouldValidate: true,
-                          });
-                          setIsCalendarOpen(false);
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(d) => {
+                            if (d) {
+                                field.onChange(toMidday(d));
+                                setIsCalendarOpen(false);
+                            }
                         }}
-                        locale="es-MX"
-                        calendarType="iso8601"
-                        selectRange={false}
-                        minDetail="month"
-                        maxDetail="month"
+                        initialFocus
+                        locale={es}
                       />
                     </PopoverContent>
                   </Popover>
@@ -147,7 +131,6 @@ export function PaperworkDialog({
                 </FormItem>
               )}
             />
-
             <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
