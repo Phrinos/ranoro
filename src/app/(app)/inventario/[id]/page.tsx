@@ -8,9 +8,9 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, CalendarCheck, Package, DollarSign, Boxes, Trash2, ArrowRight, Loader2 } from 'lucide-react';
+import { ShieldAlert, Edit, CalendarCheck, Package, DollarSign, Boxes, Trash2, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 
@@ -198,7 +198,16 @@ export default function InventoryItemDetailPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <PageHeader title={item.name} description={`ID: ${item.id}`} />
+      <PageHeader
+        title={item.name}
+        description={`ID: ${item.id}`}
+        actions={
+          <Button variant="outline" onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver
+          </Button>
+        }
+      />
 
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
