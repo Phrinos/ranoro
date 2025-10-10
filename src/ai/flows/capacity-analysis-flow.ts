@@ -111,17 +111,10 @@ const capacityAnalysisFlow = ai.defineFlow(
       processedServiceHistory: processedServiceHistory,
     };
     
-    let output;
-    try {
-      const result = await capacityAnalysisPrompt(promptInput, {
-        config: { temperature: 0.2 },
-      });
-      output = result.output;
-    } catch (error) {
-      console.error('AI Error in análisis de capacidad:', error);
-      throw new Error('Ocurrió un error al consultar la IA. Por favor, intente de nuevo más tarde.');
-    }
-
+    const result = await capacityAnalysisPrompt(promptInput, {
+      config: { temperature: 0.2 },
+    });
+    const output = result.output;
 
     if (!output || !output.serviceDurations) {
       throw new Error("La IA no pudo estimar las duraciones. La respuesta fue nula o malformada.");
@@ -159,5 +152,10 @@ const capacityAnalysisFlow = ai.defineFlow(
  * @returns A promise that resolves to the capacity analysis output.
  */
 export async function analyzeWorkshopCapacity(input: CapacityAnalysisInput): Promise<CapacityAnalysisOutput> {
-  return capacityAnalysisFlow(input);
+    try {
+        return await capacityAnalysisFlow(input);
+    } catch (error) {
+        console.error('AI Error in análisis de capacidad:', error);
+        throw new Error('Ocurrió un error al consultar la IA. Por favor, intente de nuevo más tarde.');
+    }
 }
