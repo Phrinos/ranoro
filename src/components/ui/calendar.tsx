@@ -21,10 +21,17 @@ export function Calendar({
   locale = esLocale,
   ...props
 }: CalendarProps) {
+
+  // Función para formatear los nombres de los días de la semana a su nombre completo en español
+  const formatWeekdayName = (day: Date) => {
+    return esLocale.localize?.day(day.getDay(), { width: 'long' });
+  };
+  
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       locale={locale}
+      formatters={{ formatWeekdayName }}
       // Usamos las variables de react-day-picker para integrar con tu tema
       style={
         {
@@ -51,7 +58,7 @@ export function Calendar({
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse",
         head_cell:
-          "text-muted-foreground w-9 font-medium text-center",
+          "text-muted-foreground w-9 font-medium text-center text-sm", // Restaurado a text-sm para visualización completa
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
