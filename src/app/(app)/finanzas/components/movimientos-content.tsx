@@ -87,12 +87,14 @@ function MovimientosTabContent({
   allSales,
   allServices,
   allInventory, // sin uso aquí
+  allExpenses,
   dateRange,
   onDateRangeChange,
 }: {
   allSales: SaleReceipt[];
   allServices: ServiceRecord[];
   allInventory: InventoryItem[];
+  allExpenses: any[];
   dateRange?: DateRange;
   onDateRangeChange: (range?: DateRange) => void;
 }) {
@@ -432,5 +434,4 @@ function MovimientosTabContent({
   );
 }
 
-MovimientosTabContent.displayName = "MovimientosTabContent";
 export default MovimientosTabContent;
