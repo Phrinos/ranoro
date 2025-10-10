@@ -34,50 +34,44 @@ export const SortableTableHeader: React.FC<SortableTableHeaderProps> = ({
     !isSorted ? "none" : direction === "asc" ? "ascending" : "descending";
 
   return (
-    <TableHead aria-sort={ariaSort} className={cn("p-0 select-none", className)}>
+    <TableHead
+      aria-sort={ariaSort}
+      className={cn(
+        // Importante: sin decoraciones/underline del th
+        "p-0 select-none align-middle",
+        className
+      )}
+    >
       <button
         type="button"
         onClick={() => onSort(sortKey)}
-        aria-label={`Ordenar por ${label}`}
+        // Solo esta celda cambia de fondo; sin subrayado
         className={cn(
-          "group relative w-full h-12 px-4 inline-flex items-center gap-2",
+          "w-full h-12 px-4 inline-flex items-center gap-2 rounded-[3px]",
           "bg-transparent text-inherit outline-none",
-          "focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm",
-          // Subrayado suave SOLO del texto de este header
-          "hover:[&_span.header-text]:underline hover:[&_span.header-text]:underline-offset-4"
+          "no-underline [text-decoration:none]",
+          // hover/focus solo en el botón (no toda la fila)
+          "hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary/40",
+          // cuando está ordenado, la dejamos con un leve realce
+          isSorted && "bg-white/10"
         )}
-        data-sorted={isSorted ? "true" : "false"}
+        aria-label={`Ordenar por ${label}`}
+        aria-pressed={isSorted ? "true" : "false"}
       >
         <span
           className={cn(
-            "header-text truncate transition-colors",
-            textClassName,
-            // Color base tenue + más intenso en hover o cuando está ordenado
-            "text-white/90 group-hover:text-white group-data-[sorted=true]:text-white"
+            "truncate no-underline [text-decoration:none]",
+            textClassName
           )}
         >
           {label}
         </span>
-
         <ArrowUpDown
           aria-hidden
           className={cn(
-            "h-4 w-4 transition-all",
-            "opacity-0 group-hover:opacity-100",
-            "text-white/80 group-hover:text-white group-data-[sorted=true]:text-white",
+            "h-4 w-4 shrink-0 opacity-70 transition-transform",
             isSorted && "opacity-100",
             direction === "asc" && "rotate-180"
-          )}
-        />
-
-        {/* Línea inferior sutil SOLO en este header (hover o sorted) */}
-        <span
-          aria-hidden
-          className={cn(
-            "pointer-events-none absolute left-3 right-3 bottom-1 h-0.5 rounded",
-            "bg-white/70",
-            "opacity-0 group-hover:opacity-60",
-            isSorted && "opacity-100"
           )}
         />
       </button>
