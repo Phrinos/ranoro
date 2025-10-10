@@ -1,6 +1,6 @@
 
 "use client";
-
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -54,6 +54,21 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
 
   const isService = form.watch("isService");
   const unitType = form.watch("unitType");
+
+  React.useEffect(() => {
+    if (isService) {
+      form.unregister(["quantity", "lowStockThreshold", "unitType", "rendimiento"]);
+      form.setValue("quantity", undefined, { shouldValidate: false, shouldDirty: true });
+      form.setValue("lowStockThreshold", undefined, { shouldValidate: false, shouldDirty: true });
+      form.setValue("unitType", "units", { shouldValidate: false, shouldDirty: true });
+      form.setValue("rendimiento", undefined, { shouldValidate: false, shouldDirty: true });
+    } else {
+      if (form.getValues("quantity") == null) form.setValue("quantity", 0, { shouldValidate: false });
+      if (form.getValues("lowStockThreshold") == null) form.setValue("lowStockThreshold", 5, { shouldValidate: false });
+      if (!form.getValues("unitType")) form.setValue("unitType", "units", { shouldValidate: false });
+    }
+  }, [isService, form]);
+
 
   return (
     <Form {...form}>

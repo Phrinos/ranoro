@@ -124,7 +124,7 @@ const capacityAnalysisFlow = ai.defineFlow(
 
 
     if (!output || !output.serviceDurations) {
-      throw new Error("AI failed to provide estimated durations. Output was null or malformed.");
+      throw new Error("La IA no pudo estimar las duraciones. La respuesta fue nula o malformada.");
     }
     
     const totalRequiredHours = output.serviceDurations.reduce((sum, s) => sum + s.estimatedHours, 0);
