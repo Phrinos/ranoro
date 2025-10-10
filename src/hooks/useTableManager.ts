@@ -55,8 +55,6 @@ export function useTableManager<T extends Record<string, any>>({
     if (!didInitRange.current) didInitRange.current = true;
   }, [initialFromTime, initialToTime, initialDateRange]);
 
-  const stringifiedOtherFilters = JSON.stringify(otherFilters);
-
   const fullFilteredData = useMemo(() => {
     let data = [...initialData];
 
@@ -129,10 +127,11 @@ export function useTableManager<T extends Record<string, any>>({
     }
 
     return data;
-  }, [initialData, searchTerm, sortOption, dateRange, stringifiedOtherFilters, searchKeys, dateFilterKey, otherFilters]);
+  }, [initialData, searchTerm, sortOption, dateRange, otherFilters, searchKeys, dateFilterKey]);
 
   const dateRangeFromTime = dateRange?.from?.getTime();
   const dateRangeToTime = dateRange?.to?.getTime();
+  const stringifiedOtherFilters = JSON.stringify(otherFilters);
 
   useEffect(() => {
     setCurrentPage(1);

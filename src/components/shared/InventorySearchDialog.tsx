@@ -59,11 +59,7 @@ export function InventorySearchDialog({
     return () => unsub();
   }, [open, inventoryItems, includeServices]);
 
-  const source = inventoryItems ?? autoLoaded ?? [];
-  const safeInventory = useMemo(
-    () => (Array.isArray(source) ? source.filter(Boolean) : []),
-    [source]
-  );
+  const source = useMemo(() => inventoryItems ?? autoLoaded ?? [], [inventoryItems, autoLoaded]);
 
   const score = (it: any) =>
     (it.timesSold || it.salesCount || 0) * 3 +
@@ -72,8 +68,8 @@ export function InventorySearchDialog({
     ((it.quantity ?? 0) > 0 ? 1 : 0);
 
   const frequentItems = useMemo(
-    () => [...safeInventory].sort((a, b) => score(b) - score(a)).slice(0, 30),
-    [safeInventory]
+    () => [...source].sort((a, b) => score(b) - score(a)).slice(0, 30),
+    [source]
   );
 
   const filteredItems = useMemo(() => {
@@ -81,7 +77,7 @@ export function InventorySearchDialog({
     if (!q) return frequentItems;
 
     const tokens = q.split(/\s+/).filter(Boolean);
-    return safeInventory
+    return source
       .filter((item) => {
         const haystack = normalize(
           [item.name, item.sku, (item as any).brand, item.category, (item as any).keywords]
@@ -92,7 +88,7 @@ export function InventorySearchDialog({
       })
       .sort((a, b) => score(b) - score(a))
       .slice(0, 100);
-  }, [safeInventory, searchTerm, frequentItems]);
+  }, [source, searchTerm, frequentItems]);
 
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item, 1);
