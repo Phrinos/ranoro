@@ -10,6 +10,7 @@ import {
   getDocs,
   orderBy,
   serverTimestamp,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, User } from '@/types';
@@ -172,7 +173,6 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
     return { ...saved.data(), id: serviceId } as ServiceRecord;
 };
 
-// ... other functions like cancelService, deleteService, etc.
 const updateService = async (id: string, data: Partial<ServiceRecord>) => {
     if (!db) throw new Error('Database not initialized.');
     const serviceRef = doc(db, 'serviceRecords', id);
@@ -181,6 +181,54 @@ const updateService = async (id: string, data: Partial<ServiceRecord>) => {
     await batch.commit();
 };
 
+const completeService = async (service: ServiceRecord, paymentDetails: any, batch: any) => {
+    if (!db) throw new Error("Database not initialized");
+
+    const serviceRef = doc(db, 'serviceRecords', service.id);
+    const publicServiceRef = doc(db, 'publicServices', service.publicId || service.id);
+
+    const updateData = {
+        status: 'Entregado' as const,
+        payments: paymentDetails.payments,
+        deliveryDateTime: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+        nextServiceInfo: paymentDetails.nextServiceInfo,
+    };
+    
+    batch.update(serviceRef, updateData);
+    batch.update(publicServiceRef, {
+        status: 'Entregado',
+        deliveryDateTime: updateData.deliveryDateTime,
+        payments: paymentDetails.payments,
+        updatedAt: serverTimestamp(),
+    });
+
+    const suppliesToDiscount = (service.serviceItems || [])
+        .flatMap(item => item.suppliesUsed || [])
+        .filter(supply => !supply.isService)
+        .map(supply => ({ id: supply.supplyId, quantity: supply.quantity }));
+
+    if (suppliesToDiscount.length > 0) {
+        await inventoryService.updateInventoryStock(batch, suppliesToDiscount, 'subtract');
+    }
+    
+    // Registrar pagos en efectivo en la caja
+    for (const payment of paymentDetails.payments) {
+        if (payment.method === 'Efectivo' && payment.amount > 0) {
+            const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
+            batch.set(cashTransactionRef, {
+                date: new Date().toISOString(),
+                type: 'Entrada',
+                amount: payment.amount,
+                concept: `Pago de servicio #${service.folio || service.id.slice(-6)}`,
+                userId: service.serviceAdvisorId,
+                userName: service.serviceAdvisorName,
+                relatedType: 'Servicio',
+                relatedId: service.id,
+            });
+        }
+    }
+};
 
 export const serviceService = {
   onServicesUpdate,
@@ -188,5 +236,6 @@ export const serviceService = {
   onServicesForVehicleUpdate,
   getDocById,
   saveService,
-  updateService
+  updateService,
+  completeService, // Add this export
 };

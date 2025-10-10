@@ -22,7 +22,7 @@ const toNumber = (v: any) =>
   typeof v === 'number'
     ? (Number.isFinite(v) ? v : 0)
     : typeof v === 'string'
-      ? (Number(v.replace(/[^\\d.-]/g, '')) || 0)
+      ? (Number(v.replace(/[^\d.-]/g, '')) || 0)
       : 0;
 
 export const ServiceFormFooter = ({
@@ -128,8 +128,8 @@ export const ServiceFormFooter = ({
           </Button>
 
           <Button
-            type="submit"
-            form="service-form"
+            type="button" // Change from submit to button to prevent default form submission
+            onClick={onSaveClick}
             disabled={isSubmitting}
             className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
           >

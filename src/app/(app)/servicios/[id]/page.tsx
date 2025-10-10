@@ -25,7 +25,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { FormProvider, useForm, type SubmitErrorHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { doc, collection } from 'firebase/firestore';
+import { doc, collection, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
 import { ServiceMobileBar } from '../components/ServiceMobileBar';
@@ -191,22 +191,18 @@ export default function ServicioPage() {
   });
 
   useEffect(() => {
-    hydratedRef.current = null;
-  }, [serviceId]);
-
-  useEffect(() => {
     if (!initialData?.id || !users.length) return;
     if (hydratedRef.current === initialData.id) return;
-
+  
     const norm = normalizeForForm(initialData, users);
-
+  
     const currentAdvisorId = methods.getValues("serviceAdvisorId");
     if (!norm.serviceAdvisorId && currentAdvisorId) {
       norm.serviceAdvisorId = currentAdvisorId;
       norm.serviceAdvisorName = methods.getValues("serviceAdvisorName") ?? "";
       norm.serviceAdvisorSignatureDataUrl = methods.getValues("serviceAdvisorSignatureDataUrl") ?? null;
     }
-
+  
     methods.reset(norm);
     hydratedRef.current = initialData.id;
   }, [initialData, users, methods]);
@@ -215,7 +211,6 @@ export default function ServicioPage() {
   useEffect(() => {
     if (!users.length || !advisorId) return;
     const currentName = methods.getValues("serviceAdvisorName");
-    // Only update if name is missing, to avoid overwriting manual changes
     if (!currentName) {
       const u = users.find(x => x.id === advisorId);
       if (u) {
@@ -258,7 +253,7 @@ export default function ServicioPage() {
           if (!serviceData) {
             setNotFound(true);
           } else {
-            setInitialData(normalizeForForm(serviceData, usersData) as ServiceRecord);
+            setInitialData(serviceData);
           }
         } else if (user) {
           const newId = doc(collection(db, 'serviceRecords')).id;
@@ -272,7 +267,7 @@ export default function ServicioPage() {
             serviceAdvisorName: user.name,
             serviceAdvisorSignatureDataUrl: user.signatureDataUrl ?? null,
           };
-          setInitialData(normalizeForForm(draft, usersData) as ServiceRecord);
+          setInitialData(draft as ServiceRecord);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -356,14 +351,22 @@ export default function ServicioPage() {
 
   const handleCancelService = async () => {
     if (!initialData?.id) return;
-    await serviceService.cancelService(initialData.id, "Cancelado desde el panel");
-    toast({ title: "Servicio Cancelado" });
-    router.push('/servicios?tab=historial');
+    const reason = prompt("Por favor, ingrese un motivo para la cancelación:");
+    if (reason) {
+      await serviceService.updateService(initialData.id, { status: 'Cancelado', cancellationReason: reason });
+      toast({ title: "Servicio Cancelado" });
+      router.push('/servicios?tab=historial');
+    }
   };
 
   const handleDeleteQuote = async () => {
     if (!initialData?.id) return;
-    await serviceService.deleteService(initialData.id);
+    const serviceRef = doc(db, 'serviceRecords', initialData.id);
+    const publicRef = doc(db, 'publicServices', initialData.publicId || initialData.id);
+    const batch = writeBatch(db);
+    batch.delete(serviceRef);
+    batch.delete(publicRef);
+    await batch.commit();
     toast({ title: "Cotización Eliminada" });
     router.push('/servicios?tab=cotizaciones');
   };
@@ -391,6 +394,22 @@ export default function ServicioPage() {
     setServiceToComplete(service);
     setIsPaymentDialogOpen(true);
   }, []);
+
+  const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
+    if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
+    try {
+      const batch = writeBatch(db);
+      await serviceService.completeService(service, { ...paymentDetails, nextServiceInfo }, batch);
+      await batch.commit();
+      toast({ title: "Servicio Completado" });
+      const updatedService = { ...service, ...paymentDetails, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
+      handleShowShareDialog(updatedService); // Show share dialog after completion
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
+    } finally {
+      setIsPaymentDialogOpen(false);
+    }
+  }, [toast, handleShowShareDialog]);
 
   const formMode: 'quote' | 'service' = isEditMode ? (initialData?.status === 'Cotizacion' ? 'quote' : 'service') : 'quote';
   
@@ -425,7 +444,7 @@ export default function ServicioPage() {
         serviceHistory={serviceHistory}
         onSave={handleSaveService}
         onValidationErrors={onValidationErrors}
-        onComplete={() => handleOpenCompletionDialog(methods.getValues() as ServiceRecord)}
+        onComplete={() => methods.handleSubmit(() => handleOpenCompletionDialog(methods.getValues() as ServiceRecord), onValidationErrors)()}
         onVehicleCreated={onVehicleCreated}
         onCancel={formMode === 'quote' ? handleDeleteQuote : handleCancelService}
         mode={formMode}
@@ -476,7 +495,7 @@ export default function ServicioPage() {
             open={isPaymentDialogOpen}
             onOpenChange={setIsPaymentDialogOpen}
             record={serviceToComplete}
-            onConfirm={(id, values) => console.log('confirming', id, values)} // Placeholder
+            onConfirm={(id, details) => handleConfirmCompletion(serviceToComplete, details, methods.getValues('nextServiceInfo'))}
             recordType="service"
             isCompletionFlow={true}
         />
