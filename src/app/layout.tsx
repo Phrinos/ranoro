@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -16,8 +17,7 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
-  // (opcional)
-  manifest: "/site.webmanifest",
+  // manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
