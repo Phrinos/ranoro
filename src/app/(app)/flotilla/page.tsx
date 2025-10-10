@@ -155,7 +155,7 @@ function FlotillaPageComponent() {
         { value: 'balance', label: 'Balance', content: <FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} /> },
         { value: 'conductores', label: 'Conductores', content: <FlotillaConductoresTab drivers={drivers} onAddDriver={() => setIsDriverDialogOpen(true)} /> },
         { value: 'vehiculos', label: 'Vehículos', content: <FlotillaVehiculosTab vehicles={vehicles} onAddVehicle={() => setIsVehicleSelectionDialogOpen(true)} /> },
-        { value: 'caja', label: 'Caja', content: <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allDailyCharges={dailyCharges} allManualDebts={manualDebts} handleShowTicket={handleShowTicket} /> },
+        { value: 'caja', label: 'Caja', content: <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allDailyCharges={dailyCharges} allManualDebts={manualDebts} handleShowTicket={handleShowTicket} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} /> },
     ];
     
     return (
@@ -172,7 +172,7 @@ function FlotillaPageComponent() {
                     {activeTab === 'balance' && <FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} />}
                     {activeTab === 'conductores' && <FlotillaConductoresTab drivers={drivers} onAddDriver={() => setIsDriverDialogOpen(true)} />}
                     {activeTab === 'vehiculos' && <FlotillaVehiculosTab vehicles={vehicles} onAddVehicle={() => setIsVehicleSelectionDialogOpen(true)} />}
-                    {activeTab === 'caja' && <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allDailyCharges={dailyCharges} allManualDebts={manualDebts} handleShowTicket={handleShowTicket} />}
+                    {activeTab === 'caja' && <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allDailyCharges={dailyCharges} allManualDebts={manualDebts} handleShowTicket={handleShowTicket} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} />}
                 </Suspense>
             </TabbedPageLayout>
             
