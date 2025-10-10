@@ -386,17 +386,17 @@ export default function ServicioPage() {
     setIsVehicleFormDialogOpen(true);
   };
   
-  const handleSaveVehicle = async (data: VehicleFormValues) => {
-    if(!onVehicleCreated) return;
-    const newVehicle = await onVehicleCreated(data);
-    setValue('vehicleId', newVehicle.id, { shouldValidate: true });
-    setIsVehicleFormDialogOpen(false);
-  };
-  
   const onVehicleCreated = async (data: VehicleFormValues): Promise<Vehicle> => {
       const newVehicle = await inventoryService.addVehicle(data);
       toast({ title: "Vehículo Creado", description: `${newVehicle.make} ${newVehicle.model} ha sido agregado.` });
       return newVehicle;
+  };
+  
+  const handleSaveVehicle = async (data: VehicleFormValues) => {
+    if(!onVehicleCreated) return;
+    const newVehicle = await onVehicleCreated(data);
+    methods.setValue('vehicleId', newVehicle.id, { shouldValidate: true });
+    setIsVehicleFormDialogOpen(false);
   };
 
   const formMode: 'quote' | 'service' = isEditMode ? (initialData?.status === 'Cotizacion' ? 'quote' : 'service') : 'quote';
