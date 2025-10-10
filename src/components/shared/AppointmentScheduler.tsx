@@ -10,7 +10,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Calendar } from '@/components/ui/calendar';
+import { NewCalendar } from '@/components/ui/calendar'; // Changed import
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { isWeekend, setHours, setMinutes, format } from 'date-fns';
@@ -76,7 +76,8 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
 
   const tileDisabled = ({ date, view }: { date: Date, view: string }) => {
     if (view === 'month') {
-      return date < today || (isWeekend(date) && date.getDay() === 0);
+      // Disable past dates and Sundays
+      return date < today || date.getDay() === 0;
     }
     return false;
   };
@@ -92,7 +93,7 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
         </DialogHeader>
         <div className="px-6 space-y-4">
             <div className="flex justify-center">
-                <Calendar
+                <NewCalendar // Changed component
                     value={selectedDate}
                     onChange={handleDateSelect}
                     tileDisabled={tileDisabled}

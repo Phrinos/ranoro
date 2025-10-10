@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import "@/components/ui/calendar.css"; // <-- aquí
 
 const inter = Inter({ subsets: ["latin"] });
 
