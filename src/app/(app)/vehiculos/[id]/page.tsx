@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ShieldAlert, Edit, CalendarCheck } from "lucide-react";
+import { ShieldAlert, Edit, CalendarCheck, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -38,6 +38,7 @@ import { parseDate } from "@/lib/forms";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 import { formatNumber, formatCurrency } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 export default function VehicleDetailPage() {
   const params = useParams();
@@ -82,6 +83,17 @@ export default function VehicleDetailPage() {
         description: "No se pudieron guardar los cambios.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDeleteVehicle = async () => {
+    if (!vehicle) return;
+    try {
+        await inventoryService.deleteDoc('vehicles', vehicle.id);
+        toast({ title: "Vehículo eliminado", variant: "destructive" });
+        router.push('/vehiculos');
+    } catch (e) {
+        toast({ title: "Error", description: "No se pudo eliminar el vehículo.", variant: "destructive" });
     }
   };
 
@@ -173,14 +185,22 @@ export default function VehicleDetailPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Datos del Vehículo y Propietario</CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditDialogOpen(true)}
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar
-                  </Button>
+                  <div className="flex items-center gap-1">
+                      <ConfirmDialog
+                        triggerButton={
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        }
+                        title="¿Eliminar Vehículo?"
+                        description="Esta acción es permanente y no se puede deshacer. ¿Seguro que quieres eliminar este vehículo?"
+                        onConfirm={handleDeleteVehicle}
+                        confirmText="Sí, eliminar"
+                      />
+                      <Button variant="outline" size="icon" onClick={() => setIsEditDialogOpen(true)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="font-bold text-xl">{vehicle.licensePlate}</p>
