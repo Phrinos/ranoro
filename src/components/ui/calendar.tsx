@@ -22,9 +22,10 @@ export function Calendar({
   ...props
 }: CalendarProps) {
 
-  // Función para formatear los nombres de los días de la semana a su nombre completo en español
+  // Función para formatear los nombres de los días de la semana a su nombre corto ("lun.", "mar.", etc.)
   const formatWeekdayName = (day: Date) => {
-    return esLocale.localize?.day(day.getDay(), { width: 'long' });
+    // Usar 'short' para obtener la abreviatura correcta que espera react-day-picker
+    return esLocale.localize?.day(day.getDay(), { width: 'short' }) ?? '';
   };
   
   return (
