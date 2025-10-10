@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/page.tsx
 "use client";
 
@@ -158,8 +157,8 @@ const DashboardCards = ({
 
 // --- ProductosContent ---
 const itemSortOptions = [
-    { value: 'updatedAt_asc', label: 'Modificación (Más antiguo)' },
     { value: 'updatedAt_desc', label: 'Modificación (Más reciente)' },
+    { value: 'updatedAt_asc', label: 'Modificación (Más antiguo)' },
     { value: 'name_asc', label: 'Nombre (A-Z)' },
     { value: 'name_desc', label: 'Nombre (Z-A)' },
     { value: 'quantity_asc', label: 'Stock (Menor a Mayor)' },
@@ -229,18 +228,18 @@ const ProductosContent = ({
               <TableHeader className="bg-black text-white">
                 <TableRow>
                   <SortableTableHeader
+                    sortKey="category"
+                    label="Categoría"
+                    onSort={handleSort}
+                    currentSort={tableManager.sortOption}
+                    className="hidden md:table-cell text-white"
+                  />
+                  <SortableTableHeader
                     sortKey="name"
                     label="Nombre"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
                     textClassName="text-white"
-                  />
-                  <SortableTableHeader
-                    sortKey="updatedAt"
-                    label="Últ. Modificación"
-                    onSort={handleSort}
-                    currentSort={tableManager.sortOption}
-                    className="hidden lg:table-cell text-white"
                   />
                   <SortableTableHeader
                     sortKey="isService"
@@ -257,8 +256,22 @@ const ProductosContent = ({
                     className="text-right text-white"
                   />
                   <SortableTableHeader
+                    sortKey="updatedAt"
+                    label="Últ. Modificación"
+                    onSort={handleSort}
+                    currentSort={tableManager.sortOption}
+                    className="hidden lg:table-cell text-white"
+                  />
+                  <SortableTableHeader
+                    sortKey="unitPrice"
+                    label="Precio Compra"
+                    onSort={handleSort}
+                    currentSort={tableManager.sortOption}
+                    className="text-right hidden sm:table-cell text-white"
+                  />
+                  <SortableTableHeader
                     sortKey="sellingPrice"
-                    label="Precio de Venta"
+                    label="Precio Venta"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
                     className="text-right text-white"
@@ -277,6 +290,7 @@ const ProductosContent = ({
                         onClick={() => router.push(`/inventario/${item.id}`)}
                         className="cursor-pointer hover:bg-muted/50"
                       >
+                        <TableCell className="hidden md:table-cell">{item.category}</TableCell>
                         <TableCell className="font-medium">
                           <p
                             className={cn(
@@ -288,9 +302,6 @@ const ProductosContent = ({
                           <p className="text-xs text-muted-foreground">
                             {item.brand} ({item.sku || "N/A"})
                           </p>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          {updatedAt && isValid(updatedAt) ? format(updatedAt, 'dd/MM/yy, HH:mm', { locale: es }) : 'N/A'}
                         </TableCell>
                         <TableCell>
                           <Badge variant={item.isService ? "outline" : "secondary"}>
@@ -305,15 +316,19 @@ const ProductosContent = ({
                         >
                           {item.isService ? "N/A" : item.quantity}
                         </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {updatedAt && isValid(updatedAt) ? format(updatedAt, 'dd/MM/yy, HH:mm', { locale: es }) : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right hidden sm:table-cell">{formatCurrency(item.purchasePrice)}</TableCell>
                         <TableCell className="text-right font-bold text-primary">
                           {formatCurrency(item.sellingPrice)}
                         </TableCell>
                       </TableRow>
-                    );
+                    )
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       {tableManager.searchTerm ? (
                         <Button
                           variant="link"
@@ -598,16 +613,10 @@ const CategoriasContent = ({
 
 // --- Página principal ---
 export default function InventarioPage() {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get('tab');
   const { toast } = useToast();
-
-  const [activeTab, setActiveTab] = useState<"productos" | "categorias">(() => {
-    if (typeof window !== "undefined") {
-      const u = new URL(window.location.href);
-      const t = (u.searchParams.get("tab") as "productos" | "categorias") || "productos";
-      return t;
-    }
-    return "productos";
-  });
+  const [activeTab, setActiveTab] = useState(tab || 'productos');
 
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
@@ -636,7 +645,7 @@ export default function InventarioPage() {
     unsubs.push(
       inventoryService.onSuppliersUpdate((data) => {
         setSuppliers(data);
-        setIsLoading(false);
+        setIsLoading(false); 
       })
     );
 
@@ -649,7 +658,7 @@ export default function InventarioPage() {
       if (item.isService) services++;
       else {
         products++;
-        cost += (item.quantity || 0) * (item.unitPrice || 0);
+        cost += (item.quantity || 0) * (item.purchasePrice || 0);
         sellingPriceValue += (item.quantity || 0) * (item.sellingPrice || 0);
         if ((item.quantity || 0) <= (item.lowStockThreshold || 0)) lowStock++;
       }
@@ -704,17 +713,11 @@ export default function InventarioPage() {
     [toast]
   );
   
-  const handleInventoryItemCreatedFromPurchase = useCallback(
-    async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
+  const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
       const newItem = await inventoryService.addItem(formData);
-      toast({
-        title: "Producto Creado",
-        description: `"${newItem.name}" ha sido agregado al inventario.`,
-      });
+      toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
       return newItem;
-    },
-    [toast]
-  );
+  }, [toast]);
   
   const handleSaveCategory = useCallback(
     async (name: string, id?: string) => {
@@ -768,15 +771,15 @@ export default function InventarioPage() {
     <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
         <>
         <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
-          <p className="text-primary-foreground/80 mt-1">
-            Gestiona productos, proveedores, categorías y obtén análisis inteligentes.
-          </p>
+            <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
+            <p className="text-primary-foreground/80 mt-1">
+              Gestiona productos, proveedores, categorías y obtén análisis inteligentes.
+            </p>
         </div>
         
         <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={() => handleOpenItemDialog()}
+          onNewItemClick={handleOpenItemDialog}
           onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
         
