@@ -5,7 +5,6 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-
 import {
   Dialog,
   DialogContent,
@@ -50,6 +49,30 @@ interface EditDailyChargeDialogProps {
   onSave: (values: DailyChargeFormValues) => Promise<void>;
 }
 
+// --- helpers ---
+const toMidday = (d: Date) => {
+  const n = new Date(d);
+  n.setHours(12, 0, 0, 0);
+  return n;
+};
+
+function normalizeToDate(input: unknown): Date | null {
+  if (!input) return null;
+  if (input instanceof Date) return input;
+  // Firestore Timestamp
+  // @ts-expect-error toDate puede existir en Timestamp
+  if (typeof input === "object" && typeof input?.toDate === "function") {
+    // @ts-expect-error
+    const d = input.toDate();
+    return d instanceof Date && !isNaN(d.getTime()) ? d : null;
+  }
+  if (typeof input === "string" || typeof input === "number") {
+    const d = new Date(input);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
 export function EditDailyChargeDialog({
   open,
   onOpenChange,
@@ -60,8 +83,8 @@ export function EditDailyChargeDialog({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const initialDate = useMemo(() => {
-    const d = parseDate(charge?.date) ?? new Date();
-    return d;
+    const d = normalizeToDate(charge?.date) ?? new Date();
+    return toMidday(d);
   }, [charge?.date]);
 
   const form = useForm<DailyChargeFormValues>({
@@ -96,10 +119,11 @@ export function EditDailyChargeDialog({
   );
   
   const handleSelectDate = useCallback(
-    (d: Date | undefined) => {
+    (d?: Date) => {
       if (!d) return;
-      form.setValue("date", d, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-      setIsCalendarOpen(false); // Cierra el popover al seleccionar
+      const fixed = toMidday(d);
+      form.setValue("date", fixed, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+      requestAnimationFrame(() => setIsCalendarOpen(false));
     },
     [form]
   );
@@ -127,16 +151,15 @@ export function EditDailyChargeDialog({
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
-                          variant="outline"
                           type="button"
+                          variant="outline"
                           className={cn(
                             "pl-3 text-left font-normal bg-white",
                             !field.value && "text-muted-foreground"
                           )}
-                          aria-label="Seleccionar fecha"
                           onClick={() => setIsCalendarOpen((o) => !o)}
                         >
-                          {field.value && isValid(field.value)
+                          {field.value
                             ? format(field.value, "PPP", { locale: es })
                             : "Seleccionar fecha"}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -148,6 +171,8 @@ export function EditDailyChargeDialog({
                         mode="single"
                         selected={field.value}
                         onSelect={handleSelectDate}
+                        // fallback si DayPicker manda undefined al re-clicar el mismo día
+                        onDayClick={(day) => handleSelectDate(day)}
                         initialFocus
                         locale={es}
                       />

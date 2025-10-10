@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/components/PaperworkDialog.tsx
 "use client";
 
@@ -71,12 +70,23 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
               <FormItem><FormLabel>Nombre del Trámite</FormLabel><FormControl><Input {...field} placeholder="Ej: Verificación, Tenencia..." className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="dueDate" render={({ field }) => (
-              <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel>
+              <FormItem className="flex flex-col">
+                <FormLabel>Fecha de Vencimiento</FormLabel>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}>
-                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                      <Button
+                        type="button"
+                        variant={"outline"}
+                        className={cn(
+                          "pl-3 text-left font-normal bg-white",
+                          !field.value && "text-muted-foreground"
+                        )}
+                        onClick={() => setIsCalendarOpen((o) => !o)}
+                      >
+                        {field.value
+                          ? format(field.value, "PPP", { locale: es })
+                          : <span>Seleccionar fecha</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
@@ -85,13 +95,17 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
                     <Calendar
                       mode="single"
                       selected={field.value}
-                      onSelect={(d) => { field.onChange(d); setIsCalendarOpen(false); }}
+                      onSelect={(d) => {
+                        field.onChange(d);
+                        setIsCalendarOpen(false); // Cierra al seleccionar
+                      }}
                       initialFocus
                       locale={es}
                     />
                   </PopoverContent>
                 </Popover>
-              <FormMessage /></FormItem>
+                <FormMessage />
+              </FormItem>
             )}/>
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
