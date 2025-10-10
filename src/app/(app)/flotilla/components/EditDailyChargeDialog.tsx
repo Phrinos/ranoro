@@ -28,10 +28,11 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { DailyRentalCharge } from "@/types";
+import { parseDate } from '@/lib/forms';
 
 /** Schema */
 const chargeSchema = z.object({
@@ -40,27 +41,6 @@ const chargeSchema = z.object({
 });
 
 export type DailyChargeFormValues = z.infer<typeof chargeSchema>;
-
-/** Normaliza a Date desde Date | string | number | Firestore Timestamp */
-function normalizeToDate(input: unknown): Date | null {
-  if (!input) return null;
-  if (input instanceof Date) return input;
-  // Firestore Timestamp
-  // @ts-expect-error .toDate puede existir si es Timestamp
-  if (typeof input === "object" && typeof input?.toDate === "function") {
-    // @ts-expect-error
-    return input.toDate();
-  }
-  if (typeof input === "string") {
-    const d = new Date(input);
-    return isNaN(d.getTime()) ? null : d;
-  }
-  if (typeof input === "number") {
-    const d = new Date(input > 1e12 ? input : v * 1000);
-    return isNaN(d.getTime()) ? null : d;
-  }
-  return null;
-}
 
 interface EditDailyChargeDialogProps {
   open: boolean;
@@ -79,7 +59,7 @@ export function EditDailyChargeDialog({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const initialDate = useMemo(() => {
-    const d = normalizeToDate(charge?.date) ?? new Date();
+    const d = parseDate(charge?.date) ?? new Date();
     return d;
   }, [charge?.date]);
 
@@ -116,7 +96,7 @@ export function EditDailyChargeDialog({
     (d: Date | undefined) => {
       if (!d) return;
       form.setValue("date", d, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-      requestAnimationFrame(() => setIsCalendarOpen(false));
+      setIsCalendarOpen(false); // Cierra el popover al seleccionar
     },
     [form]
   );
@@ -153,7 +133,7 @@ export function EditDailyChargeDialog({
                           aria-label="Seleccionar fecha"
                           onClick={() => setIsCalendarOpen((o) => !o)}
                         >
-                          {field.value
+                          {field.value && isValid(field.value)
                             ? format(field.value, "PPP", { locale: es })
                             : "Seleccionar fecha"}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -165,7 +145,6 @@ export function EditDailyChargeDialog({
                         mode="single"
                         selected={field.value}
                         onSelect={handleSelectDate}
-                        onDayClick={handleSelectDate}
                         initialFocus
                         locale={es}
                       />
