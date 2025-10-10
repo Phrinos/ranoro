@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/page.tsx
 "use client";
 
@@ -38,15 +39,15 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn, capitalizeWords, formatCurrency } from "@/lib/utils";
-import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
+import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TableToolbar } from "@/components/shared/table-toolbar";
-import { useTableManager } from "@/hooks/useTableManager";
-import { Badge } from "@/components/ui/badge";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { TableToolbar } from '@/components/shared/table-toolbar';
+import { useTableManager } from '@/hooks/useTableManager';
+import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
@@ -207,7 +208,8 @@ const ProductosContent = ({
           <div className="rounded-md border overflow-x-auto md:overflow-visible">
             <Table className="w-full text-sm md:text-base">
               <TableHeader className="bg-black text-white">
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
+                  {/* Categoría (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="category"
                     label="Categoría"
@@ -216,6 +218,7 @@ const ProductosContent = ({
                     className="hidden md:table-cell"
                     textClassName="text-white"
                   />
+                  {/* Nombre (siempre visible) */}
                   <SortableTableHeader
                     sortKey="name"
                     label="Nombre"
@@ -223,6 +226,7 @@ const ProductosContent = ({
                     currentSort={tableManager.sortOption}
                     textClassName="text-white"
                   />
+                  {/* Tipo (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="isService"
                     label="Tipo"
@@ -231,6 +235,7 @@ const ProductosContent = ({
                     className="hidden md:table-cell"
                     textClassName="text-white"
                   />
+                  {/* Stock (siempre visible) */}
                   <SortableTableHeader
                     sortKey="quantity"
                     label="Stock"
@@ -239,6 +244,7 @@ const ProductosContent = ({
                     className="text-right"
                     textClassName="text-white"
                   />
+                  {/* Últ. Modificación (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="updatedAt"
                     label="Últ. Modificación"
@@ -247,6 +253,7 @@ const ProductosContent = ({
                     className="hidden md:table-cell"
                     textClassName="text-white"
                   />
+                  {/* Precio Compra (solo escritorio) */}
                   <SortableTableHeader
                     sortKey="unitPrice"
                     label="Precio Compra"
@@ -255,6 +262,7 @@ const ProductosContent = ({
                     className="hidden md:table-cell text-right"
                     textClassName="text-white"
                   />
+                  {/* Precio Venta (siempre visible) */}
                   <SortableTableHeader
                     sortKey="sellingPrice"
                     label="Precio Venta"
@@ -280,10 +288,12 @@ const ProductosContent = ({
                         onClick={() => router.push(`/inventario/${item.id}`)}
                         className="cursor-pointer hover:bg-muted/50"
                       >
+                        {/* Categoría (solo escritorio) */}
                         <TableCell className="hidden md:table-cell">
                           {item.category}
                         </TableCell>
 
+                        {/* Nombre (siempre) */}
                         <TableCell className="font-medium align-top">
                           <div className="flex items-center gap-2">
                             <p
@@ -293,6 +303,7 @@ const ProductosContent = ({
                             >
                               {item.name}
                             </p>
+                            {/* En móvil añadimos indicación de Servicio ya que ocultamos la columna "Tipo" */}
                             {item.isService && (
                               <span className="md:hidden inline-flex rounded border px-1.5 py-0.5 text-[10px] leading-none text-foreground">
                                 Servicio
@@ -304,12 +315,14 @@ const ProductosContent = ({
                           </p>
                         </TableCell>
 
+                        {/* Tipo (solo escritorio) */}
                         <TableCell className="hidden md:table-cell">
                           <Badge variant={item.isService ? "outline" : "secondary"}>
                             {item.isService ? "Servicio" : "Producto"}
                           </Badge>
                         </TableCell>
 
+                        {/* Stock (siempre) */}
                         <TableCell
                           className={cn(
                             "text-right font-semibold whitespace-nowrap",
@@ -320,16 +333,19 @@ const ProductosContent = ({
                           {item.isService ? "N/A" : item.quantity}
                         </TableCell>
 
+                        {/* Últ. Modificación (solo escritorio) */}
                         <TableCell className="hidden md:table-cell">
                           {updatedAt && isValid(updatedAt)
                             ? format(updatedAt, "dd/MM/yy, HH:mm", { locale: es })
                             : "N/A"}
                         </TableCell>
 
+                        {/* Precio Compra (solo escritorio) */}
                         <TableCell className="hidden md:table-cell text-right whitespace-nowrap">
                           {formatCurrency(item.unitPrice)}
                         </TableCell>
 
+                        {/* Precio Venta (siempre) */}
                         <TableCell className="text-right font-bold text-primary whitespace-nowrap">
                           {formatCurrency(item.sellingPrice)}
                         </TableCell>
@@ -517,7 +533,7 @@ const CategoriasContent = ({
           <div className="w-full overflow-x-auto rounded-md border">
             <Table className="min-w-[560px]">
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <SortableTableHeader
                     sortKey="name"
                     label="Nombre de Categoría"
@@ -879,8 +895,6 @@ function InventarioPage() {
     </Suspense>
   );
 }
-
-// Wrapper component to be exported as default
 function InventarioPageWrapper() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center h-64"><p>Cargando...</p></div>}>
@@ -888,5 +902,4 @@ function InventarioPageWrapper() {
     </Suspense>
   );
 }
-
 export default InventarioPageWrapper;
