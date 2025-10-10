@@ -175,7 +175,7 @@ export function ServiceForm({
         <ServiceFormFooter
           onSaveClick={handleSubmit(onSave, onValidationErrors)}
           onCancel={onCancel}
-          onComplete={onComplete ? () => onComplete(getValues()) : undefined}
+          onComplete={onComplete ? handleSubmit(onComplete, onValidationErrors) : undefined}
           mode={mode}
           initialData={initialData}
           isSubmitting={isSubmitting}

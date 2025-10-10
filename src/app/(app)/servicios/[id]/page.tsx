@@ -31,6 +31,7 @@ import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
 import { ServiceMobileBar } from '../components/ServiceMobileBar';
 import { ActiveServicesSheet } from '../components/ActiveServicesSheet';
 import { PhotoReportModal } from '../components/PhotoReportModal';
+import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 
 // --- NORMALIZATION HELPERS ---
 
@@ -166,6 +167,8 @@ export default function ServicioPage() {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isVehicleFormDialogOpen, setIsVehicleFormDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
 
 
   const isEditMode = serviceId !== 'nuevo';
@@ -384,6 +387,11 @@ export default function ServicioPage() {
     setIsVehicleFormDialogOpen(false);
   };
 
+  const handleOpenCompletionDialog = useCallback((service: ServiceRecord) => {
+    setServiceToComplete(service);
+    setIsPaymentDialogOpen(true);
+  }, []);
+
   const formMode: 'quote' | 'service' = isEditMode ? (initialData?.status === 'Cotizacion' ? 'quote' : 'service') : 'quote';
   
   const pageTitle = isEditMode
@@ -417,7 +425,7 @@ export default function ServicioPage() {
         serviceHistory={serviceHistory}
         onSave={handleSaveService}
         onValidationErrors={onValidationErrors}
-        onComplete={() => {}}
+        onComplete={() => handleOpenCompletionDialog(methods.getValues() as ServiceRecord)}
         onVehicleCreated={onVehicleCreated}
         onCancel={formMode === 'quote' ? handleDeleteQuote : handleCancelService}
         mode={formMode}
@@ -462,6 +470,17 @@ export default function ServicioPage() {
         vehicle={editingVehicle}
         onSave={handleSaveVehicle}
       />
+
+      {serviceToComplete && (
+        <PaymentDetailsDialog
+            open={isPaymentDialogOpen}
+            onOpenChange={setIsPaymentDialogOpen}
+            record={serviceToComplete}
+            onConfirm={(id, values) => console.log('confirming', id, values)} // Placeholder
+            recordType="service"
+            isCompletionFlow={true}
+        />
+      )}
     </FormProvider>
   );
 }
