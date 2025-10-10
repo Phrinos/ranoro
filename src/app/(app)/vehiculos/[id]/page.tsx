@@ -2,7 +2,6 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { db } from "@/lib/firebaseClient"; // (si no lo usas aquí, puedes quitarlo)
 import type { Vehicle, ServiceRecord } from "@/types";
 
 import { PageHeader } from "@/components/page-header";
@@ -74,10 +73,19 @@ export default function VehicleDetailPage() {
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
     if (!vehicle) return;
     try {
-      await inventoryService.saveVehicle(formData, vehicle.id);
+      // Armamos el payload con el id actual
+      const payload = { ...vehicle, ...formData, id: vehicle.id } as Vehicle;
+
+      // Si tu servicio acepta (data, id)
+      const saved = await inventoryService.saveVehicle(payload, vehicle.id);
+
+      // Refleja en UI lo que quedó en DB (cae al payload si el servicio no devuelve el doc)
+      setVehicle(saved ?? payload);
+
       setIsEditDialogOpen(false);
       toast({ title: "Vehículo actualizado" });
     } catch (e) {
+      console.error(e);
       toast({
         title: "Error",
         description: "No se pudieron guardar los cambios.",
@@ -88,14 +96,35 @@ export default function VehicleDetailPage() {
 
   const handleDeleteVehicle = async () => {
     if (!vehicle) return;
+
+    // Si NO quieres permitir borrar con historial, descomenta este guard:
+    // if (services.length > 0) {
+    //   toast({
+    //     title: "No se puede eliminar",
+    //     description: "Este vehículo tiene servicios relacionados.",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
+
     try {
-        await inventoryService.deleteDoc('vehicles', vehicle.id);
-        toast({ title: "Vehículo eliminado", variant: "destructive" });
-        router.push('/vehiculos');
+      await inventoryService.deleteDoc("vehicles", vehicle.id);
+      toast({ title: "Vehículo eliminado", variant: "destructive" });
+
+      // Evita que queden listeners activos a un doc que ya no existe
+      setVehicle(null);
+      setServices([]);
+      router.push("/vehiculos");
     } catch (e) {
-        toast({ title: "Error", description: "No se pudo eliminar el vehículo.", variant: "destructive" });
+      console.error(e);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el vehículo.",
+        variant: "destructive",
+      });
     }
   };
+
 
   if (vehicle === undefined) {
     return (
@@ -188,12 +217,21 @@ export default function VehicleDetailPage() {
                   <div className="flex items-center gap-1">
                       <ConfirmDialog
                         triggerButton={
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         }
                         title="¿Eliminar Vehículo?"
-                        description="Esta acción es permanente y no se puede deshacer. ¿Seguro que quieres eliminar este vehículo?"
+                        description={
+                          services.length > 0
+                            ? "Este vehículo tiene servicios registrados. El borrado no elimina el historial. ¿Deseas continuar?"
+                            : "Esta acción es permanente y no se puede deshacer. ¿Seguro que quieres eliminar este vehículo?"
+                        }
                         onConfirm={handleDeleteVehicle}
                         confirmText="Sí, eliminar"
                       />
