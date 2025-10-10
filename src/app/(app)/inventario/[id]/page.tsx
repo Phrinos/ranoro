@@ -239,7 +239,7 @@ export default function InventoryItemDetailPage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <Package className="h-5 w-5 text-muted-foreground" />
-                      {item.name}
+                      {item.category}
                     </CardTitle>
                     <div className="flex items-center gap-2">
                         <ConfirmDialog
@@ -266,7 +266,7 @@ export default function InventoryItemDetailPage() {
                       <p className="text-sm text-muted-foreground">(SKU: {item.sku || 'N/A'})</p>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {item.category} | {item.brand || 'N/A'} | {item.supplier}
+                      {item.brand || 'N/A'} | {item.supplier}
                     </p>
                   </div>
                   {item.description && (
