@@ -1,4 +1,5 @@
 
+// src/app/(app)/flotilla/components/RegisterPaymentDialog.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -157,13 +158,14 @@ export function RegisterPaymentDialog({
                       sideOffset={8}
                     >
                         <Calendar
-                          value={selectedPaymentDate ?? new Date()}
-                          onChange={(val: any) => {
-                            const d = Array.isArray(val) ? val[0] : val;
-                            if (!d) return;
-                            field.onChange(toMidday(d));
+                          mode="single"
+                          selected={selectedPaymentDate ?? new Date()}
+                          onSelect={(d) => {
+                            if (d) field.onChange(toMidday(d));
                             setIsCalendarOpen(false);
                           }}
+                          initialFocus
+                          locale={es}
                         />
                     </PopoverContent>
                   </Popover>
@@ -209,6 +211,7 @@ export function RegisterPaymentDialog({
                       min="0.01"
                       inputMode="decimal"
                       {...field}
+                      value={field.value === undefined ? '' : field.value}
                       className="bg-white"
                       placeholder="0.00"
                     />
@@ -226,7 +229,7 @@ export function RegisterPaymentDialog({
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" placeholder="Abono de Renta" />
+                    <Textarea {...field} className="bg-white" placeholder="Abono de Renta" value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

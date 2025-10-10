@@ -1,125 +1,67 @@
 
-"use client";
+"use client"
 
-import * as React from "react";
-import ReactCalendar from "react-calendar";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import * as React from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { DayPicker } from "react-day-picker"
 
-export type CalendarProps = React.ComponentProps<typeof ReactCalendar>;
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
 
-export function Calendar({ className, ...props }: CalendarProps) {
+export type CalendarProps = React.ComponentProps<typeof DayPicker>
+
+function Calendar({
+  className,
+  classNames,
+  showOutsideDays = true,
+  ...props
+}: CalendarProps) {
   return (
-    <div className={cn("rc rc-red p-2 select-none", className)}>
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-/* ======= Tema Ranoro (Rojo) - sin CSS por defecto de react-calendar ======= */
-.rc.rc-red{
-  --rc-primary: #a2231d;               /* rojo Ranoro */
-  --rc-primary-600: #dc2626;           /* rojo 600 para hover/acentos */
-  --rc-mid: rgba(162, 35, 29, .14);    /* rojo translúcido para tramo medio */
-  --rc-text: #111827;
-  --rc-muted:#9ca3af;
-  --rc-border: hsl(240 5.9% 88%);
-  --rc-bg:#fff;
+    <DayPicker
+      showOutsideDays={showOutsideDays}
+      className={cn("p-3", className)}
+      classNames={{
+        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+        month: "space-y-4",
+        caption: "flex justify-center pt-1 relative items-center",
+        caption_label: "text-sm font-medium",
+        nav: "space-x-1 flex items-center",
+        nav_button: cn(
+          buttonVariants({ variant: "outline" }),
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+        ),
+        nav_button_previous: "absolute left-1",
+        nav_button_next: "absolute right-1",
+        table: "w-full border-collapse space-y-1",
+        head_row: "flex",
+        head_cell:
+          "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+        row: "flex w-full mt-2",
+        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+        day: cn(
+          buttonVariants({ variant: "ghost" }),
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+        ),
+        day_range_end: "day-range-end",
+        day_selected:
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+        day_today: "bg-accent text-accent-foreground",
+        day_outside:
+          "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+        day_disabled: "text-muted-foreground opacity-50",
+        day_range_middle:
+          "aria-selected:bg-accent aria-selected:text-accent-foreground",
+        day_hidden: "invisible",
+        ...classNames,
+      }}
+      components={{
+        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
+        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+      }}
+      {...props}
+    />
+  )
 }
+Calendar.displayName = "Calendar"
 
-/* Contenedor */
-.rc-red .react-calendar{
-  width:100%;
-  background:var(--rc-bg);
-  border:1px solid var(--rc-border);
-  border-radius:.75rem;
-  box-shadow:0 1px 2px rgba(0,0,0,.04);
-  font-family:inherit;
-  line-height:1.1;
-}
-
-/* Navegación */
-.rc-red .react-calendar__navigation{
-  display:flex; align-items:center; justify-content:center; gap:.5rem;
-  padding:.25rem .5rem .5rem;
-  position:relative;
-}
-.rc-red .react-calendar__navigation__label{
-  font-weight:700; color:var(--rc-primary); pointer-events:none;
-}
-.rc-red .react-calendar__navigation button{
-  min-width:2rem; height:2rem; border-radius:9999px;
-  color:var(--rc-primary); background:transparent; border:none;
-}
-.rc-red .react-calendar__navigation button:hover{ background:rgba(162,35,29,.08); }
-.rc-red .react-calendar__navigation__prev-button{ position:absolute; left:.25rem; }
-.rc-red .react-calendar__navigation__next-button{ position:absolute; right:.25rem; }
-
-/* Semanas */
-.rc-red .react-calendar__month-view__weekdays{
-  text-transform:none; font-size:.75rem; color:var(--rc-muted);
-}
-.rc-red .react-calendar__month-view__weekdays__weekday abbr{ text-decoration:none; }
-
-/* Días */
-.rc-red .react-calendar__tile{
-  padding:.5rem 0; border-radius:.6rem; background-image:none !important;
-}
-.rc-red .react-calendar__tile:enabled:hover{ background:rgba(17,24,39,.05); }
-.rc-red .react-calendar__tile--now{ outline:1px solid rgba(162,35,29,.35); }
-
-/* === RESET fuerte: desactiva el sólido de --active del CSS por defecto === */
-.rc-red .react-calendar .react-calendar__tile--active{
-  background:transparent !important;
-  color:inherit !important;
-  background-image:none !important;
-}
-
-/* Tramo medio del rango (translúcido) */
-.rc-red .react-calendar .react-calendar__tile--range:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd),
-.rc-red .react-calendar.react-calendar--selectRange
-  .react-calendar__tile.react-calendar__tile--active:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd){
-  background:var(--rc-mid) !important;
-  color:#7f1d1d !important;
-  border-radius:0 !important;
-}
-
-/* Extremos del rango (sólidos, en píldora) */
-.rc-red .react-calendar .react-calendar__tile--rangeStart,
-.rc-red .react-calendar .react-calendar__tile--rangeEnd{
-  background:var(--rc-primary) !important;
-  color:#fff !important;
-  border-radius:9999px !important;
-}
-
-/* Día único (inicio = fin) */
-.rc-red .react-calendar .react-calendar__tile--rangeBothEnds{
-  background:var(--rc-primary) !important; color:#fff !important; border-radius:.6rem !important;
-}
-
-/* Neighbors (otros meses) */
-.rc-red .react-calendar__month-view__days__day--neighboringMonth{ color:#d1d5db; }
-
-/* Botón focus */
-.rc-red .react-calendar__tile:focus-visible{
-  outline:2px solid rgba(162,35,29,.35);
-  outline-offset:2px;
-}
-          `,
-        }}
-      />
-
-      <ReactCalendar
-        view="month"
-        minDetail="month"
-        maxDetail="month"
-        showNeighboringMonth
-        next2Label={null}
-        prev2Label={null}
-        nextLabel={<ChevronRight className="h-4 w-4" />}
-        prevLabel={<ChevronLeft className="h-4 w-4" />}
-        locale="es-MX" // Locale for Spanish (Mexico)
-        {...props}
-      />
-    </div>
-  );
-}
-Calendar.displayName = "Calendar";
+export { Calendar }

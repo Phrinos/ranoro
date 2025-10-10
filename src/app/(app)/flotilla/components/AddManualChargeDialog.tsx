@@ -141,13 +141,14 @@ export function AddManualChargeDialog({
                       sideOffset={8}
                     >
                         <Calendar
-                          value={selectedDate ?? new Date()}
-                          onChange={(val: any) => {
-                            const d = Array.isArray(val) ? val[0] : val;
-                            if (!d) return;
-                            field.onChange(toMidday(d));
+                          mode="single"
+                          selected={selectedDate ?? new Date()}
+                          onSelect={(d) => {
+                            if (d) field.onChange(toMidday(d));
                             setIsCalendarOpen(false);
                           }}
+                          initialFocus
+                          locale={es}
                         />
                     </PopoverContent>
                   </Popover>
