@@ -14,6 +14,7 @@ import { format, parseISO, isWithinInterval, startOfDay, endOfDay, isValid } fro
 import { es } from 'date-fns/locale';
 import type { DateRange } from 'react-day-picker';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
+import { adminService } from '@/lib/services';
 
 export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] }) {
   const [logs, setLogs] = useState<AuditLog[]>(initialLogs);
@@ -21,8 +22,9 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
-    setLogs(initialLogs);
-  }, [initialLogs]);
+    const unsubscribe = adminService.onAuditLogsUpdate(setLogs);
+    return () => unsubscribe();
+  }, []);
 
   const filteredLogs = useMemo(() => {
     let filtered = [...logs];
@@ -38,7 +40,7 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
       filtered = filtered.filter(log => {
-          const logDate = parseISO(log.date);
+          const logDate = parseISO(log.date.toString());
           return isValid(logDate) && isWithinInterval(logDate, { start: from, end: to });
       });
     }
@@ -83,7 +85,7 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
                 {filteredLogs.length > 0 ? (
                   filteredLogs.map(log => (
                     <TableRow key={log.id}>
-                      <TableCell className="font-mono text-xs whitespace-nowrap">{log.date ? format(parseISO(log.date), "dd/MM/yy, HH:mm:ss", { locale: es }) : "Fecha no disponible"}</TableCell>
+                      <TableCell className="font-mono text-xs whitespace-nowrap">{log.date ? format(parseISO(log.date.toString()), "dd/MM/yy, HH:mm:ss", { locale: es }) : "Fecha no disponible"}</TableCell>
                       <TableCell className="font-medium">{log.userName}</TableCell>
                       <TableCell><Badge variant={log.actionType === 'Eliminar' || log.actionType === 'Cancelar' ? 'destructive' : 'secondary'}>{log.actionType}</Badge></TableCell>
                       <TableCell>{log.description}</TableCell>
