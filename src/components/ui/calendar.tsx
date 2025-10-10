@@ -116,6 +116,7 @@ export function Calendar({ className, ...props }: CalendarProps) {
         prev2Label={null}
         nextLabel={<ChevronRight className="h-4 w-4" />}
         prevLabel={<ChevronLeft className="h-4 w-4" />}
+        locale="es-MX" // Locale for Spanish (Mexico)
         {...props}
       />
     </div>

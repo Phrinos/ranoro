@@ -1,10 +1,12 @@
+
 // src/app/(app)/flotilla/components/EditDailyChargeDialog.tsx
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
 import {
   Dialog,
   DialogContent,
@@ -13,23 +15,52 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2 } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import type { DailyRentalCharge } from '@/types';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon, Loader2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import type { DailyRentalCharge } from "@/types";
 
+/** Schema */
 const chargeSchema = z.object({
   date: z.date({ required_error: "La fecha es obligatoria." }),
   amount: z.coerce.number().min(0, "El monto no puede ser negativo."),
 });
 
 export type DailyChargeFormValues = z.infer<typeof chargeSchema>;
+
+/** Normaliza a Date desde Date | string | number | Firestore Timestamp */
+function normalizeToDate(input: unknown): Date | null {
+  if (!input) return null;
+  if (input instanceof Date) return input;
+  // Firestore Timestamp
+  // @ts-expect-error .toDate puede existir si es Timestamp
+  if (typeof input === "object" && typeof input?.toDate === "function") {
+    // @ts-expect-error
+    return input.toDate();
+  }
+  if (typeof input === "string") {
+    const d = new Date(input);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof input === "number") {
+    const d = new Date(input > 1e12 ? input : v * 1000);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
 
 interface EditDailyChargeDialogProps {
   open: boolean;
@@ -38,27 +69,57 @@ interface EditDailyChargeDialogProps {
   onSave: (values: DailyChargeFormValues) => Promise<void>;
 }
 
-export function EditDailyChargeDialog({ open, onOpenChange, charge, onSave }: EditDailyChargeDialogProps) {
+export function EditDailyChargeDialog({
+  open,
+  onOpenChange,
+  charge,
+  onSave,
+}: EditDailyChargeDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  const initialDate = useMemo(() => {
+    const d = normalizeToDate(charge?.date) ?? new Date();
+    return d;
+  }, [charge?.date]);
+
   const form = useForm<DailyChargeFormValues>({
     resolver: zodResolver(chargeSchema),
+    defaultValues: {
+      date: initialDate,
+      amount: charge?.amount ?? 0,
+    },
   });
 
   useEffect(() => {
-    if (charge) {
-      form.reset({
-        date: new Date(charge.date),
-        amount: charge.amount,
-      });
-    }
-  }, [charge, form, open]);
+    form.reset({
+      date: initialDate,
+      amount: charge?.amount ?? 0,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [charge?.id, open]);
+
+  const handleFormSubmit = useCallback(
+    async (values: DailyChargeFormValues) => {
+      setIsSubmitting(true);
+      try {
+        await onSave(values);
+        onOpenChange(false);
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [onSave, onOpenChange]
+  );
   
-  const handleFormSubmit = async (values: DailyChargeFormValues) => {
-    setIsSubmitting(true);
-    await onSave(values);
-    setIsSubmitting(false);
-  };
+  const handleSelectDate = useCallback(
+    (d: Date | undefined) => {
+      if (!d) return;
+      form.setValue("date", d, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+      requestAnimationFrame(() => setIsCalendarOpen(false));
+    },
+    [form]
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,42 +127,80 @@ export function EditDailyChargeDialog({ open, onOpenChange, charge, onSave }: Ed
         <DialogHeader>
           <DialogTitle>Editar Cargo de Renta Diaria</DialogTitle>
           <DialogDescription>
-            Ajusta la fecha o el monto de un cargo de renta. Usa esto para casos especiales (ej. día no cobrado por falla).
+            Ajusta la fecha o el monto de un cargo de renta. Úsalo para excepciones
+            (ej. día no cobrado por falla).
           </DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
-            <FormField control={form.control} name="date" render={({ field }) => (
-              <FormItem className="flex flex-col"><FormLabel>Fecha del Cargo</FormLabel>
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button variant={"outline"} className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}>
-                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      initialFocus
-                      locale={es}
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-2">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Fecha del Cargo</FormLabel>
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          type="button"
+                          className={cn(
+                            "pl-3 text-left font-normal bg-white",
+                            !field.value && "text-muted-foreground"
+                          )}
+                          aria-label="Seleccionar fecha"
+                          onClick={() => setIsCalendarOpen((o) => !o)}
+                        >
+                          {field.value
+                            ? format(field.value, "PPP", { locale: es })
+                            : "Seleccionar fecha"}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={handleSelectDate}
+                        onDayClick={handleSelectDate}
+                        initialFocus
+                        locale={es}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Monto del Cargo ($)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min={0}
+                      className="bg-white"
+                      {...field}
                     />
-                     <div className="p-2 border-t flex justify-center">
-                        <Button size="sm" onClick={() => setIsCalendarOpen(false)}>Aceptar</Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              <FormMessage /></FormItem>
-            )}/>
-            <FormField control={form.control} name="amount" render={({ field }) => (
-                <FormItem><FormLabel>Monto del Cargo ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-            )}/>
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Guardar Cambios

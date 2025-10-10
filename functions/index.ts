@@ -1,110 +1,91 @@
 // functions/index.ts
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { firestore } from 'firebase-admin';
 import * as admin from 'firebase-admin';
-import { startOfDay, endOfDay, format } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
 import * as logger from 'firebase-functions/logger';
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { startOfDay, endOfDay } from 'date-fns';
+import { toZonedTime, zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
 
 admin.initializeApp();
 
 const db = admin.firestore();
+const TZ = 'America/Mexico_City';
 
-// --- Daily Rental Charges Generation ---
-export const generateDailyRentalCharges = onSchedule({
-  schedule: '0 3 * * *', // Runs daily at 3:00 AM
-  timeZone: 'America/Mexico_City',
-}, async (_context) => {
+// --- Daily Rental Charges Generation (fixed) ---
+export const generateDailyRentalCharges = onSchedule(
+  {
+    schedule: '0 3 * * *', // 03:00 todos los días
+    timeZone: TZ,
+  },
+  async () => {
     logger.info('Starting daily rental charge generation...');
-    const timeZone = 'America/Mexico_City';
-    const now = toZonedTime(new Date(), timeZone);
-    const todayStart = startOfDay(now);
-    const todayEnd = endOfDay(now);
 
-    const driversRef = db.collection('drivers');
-    const activeDriversQuery = driversRef.where('isArchived', '==', false).where('assignedVehicleId', '!=', null);
-    
-    const activeDriversSnap = await activeDriversQuery.get();
-    
+    // 1) Ahora en UTC y representado en la zona horaria local para cálculos de "día"
+    const nowUtc = new Date();                 // instante actual (UTC)
+    const nowZoned = toZonedTime(nowUtc, TZ);  // “reloj” en CDMX
+
+    // 2) Inicio/fin del día de CDMX convertidos a UTC para consultar en Firestore
+    const dayStartUtc = zonedTimeToUtc(startOfDay(nowZoned), TZ);
+    const dayEndUtc   = zonedTimeToUtc(endOfDay(nowZoned), TZ);
+
+    // 3) Clave de día estable en CDMX (idempotencia y agrupación)
+    const dateKey = formatInTimeZone(nowUtc, TZ, 'yyyy-MM-dd');
+
+    const activeDriversSnap = await db
+      .collection('drivers')
+      .where('isArchived', '==', false)
+      .where('assignedVehicleId', '!=', null)
+      .get();
+
     if (activeDriversSnap.empty) {
-        logger.info('No active drivers with assigned vehicles found.');
-        return;
+      logger.info('No active drivers with assigned vehicles found.');
+      return;
     }
 
-    const promises = activeDriversSnap.docs.map(async (driverDoc) => {
-        const driver = driverDoc.data();
-        if (!driver.assignedVehicleId) return;
+    const ops = activeDriversSnap.docs.map(async (driverDoc) => {
+      const driver = driverDoc.data() as any;
+      const vehicleId = driver.assignedVehicleId as string | undefined;
+      if (!vehicleId) return;
 
-        const vehicleRef = db.collection('vehicles').doc(driver.assignedVehicleId);
-        const vehicleDoc = await vehicleRef.get();
-        if (!vehicleDoc.exists || !vehicleDoc.data()?.dailyRentalCost) {
-            logger.warn(`Vehicle ${driver.assignedVehicleId} for driver ${driver.name} not found or has no daily rental cost.`);
-            return;
+      const vehicleDoc = await db.collection('vehicles').doc(vehicleId).get();
+      const vehicle = vehicleDoc.data() as any;
+
+      const dailyRentalCost = vehicle?.dailyRentalCost;
+      if (!vehicleDoc.exists || !dailyRentalCost) {
+        logger.warn(
+          `Vehicle ${vehicleId} for driver ${driver.name} not found or has no daily rental cost.`
+        );
+        return;
+      }
+
+      // 4) Idempotente: un cargo por driver/día local => ID determinista
+      const chargeId = `${driverDoc.id}_${dateKey}`;
+      const chargeRef = db.collection('dailyRentalCharges').doc(chargeId);
+
+      try {
+        await chargeRef.create({
+          driverId: driverDoc.id,
+          vehicleId,
+          amount: dailyRentalCost,
+          vehicleLicensePlate: vehicle?.licensePlate || '',
+          // guarda siempre en UTC; la presentación se hace con la zona que quieras
+          date: admin.firestore.Timestamp.fromDate(nowUtc),
+          // metacampos útiles:
+          dateKey, // 'yyyy-MM-dd' en CDMX
+          dayStartUtc: admin.firestore.Timestamp.fromDate(dayStartUtc),
+          dayEndUtc: admin.firestore.Timestamp.fromDate(dayEndUtc),
+        });
+        logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
+      } catch (err: any) {
+        // Ya existe -> ok (pasa en reintentos del job)
+        if (err?.code === 6 || err?.code === 'ALREADY_EXISTS') {
+          logger.info(`Charge already exists for ${driver.name} (${dateKey}).`);
+        } else {
+          logger.error(`Failed to create charge for ${driver.name}:`, err);
         }
-        
-        const vehicle = vehicleDoc.data();
-        const dailyRentalCost = vehicle?.dailyRentalCost;
-
-        const chargesRef = db.collection('dailyRentalCharges');
-        // Correct Query: Use Firestore Timestamps for date range comparison
-        const existingChargeQuery = chargesRef
-            .where('driverId', '==', driverDoc.id)
-            .where('date', '>=', firestore.Timestamp.fromDate(todayStart))
-            .where('date', '<=', firestore.Timestamp.fromDate(todayEnd));
-            
-        const existingChargeSnap = await existingChargeQuery.get();
-        
-        if (!existingChargeSnap.empty) {
-            logger.info(`Charge already exists for driver ${driver.name} for today.`);
-            return;
-        }
-
-        const newCharge = {
-            driverId: driverDoc.id,
-            vehicleId: vehicleDoc.id,
-            date: firestore.Timestamp.fromDate(now), // Correct Data Type: Save as Timestamp
-            amount: dailyRentalCost,
-            vehicleLicensePlate: vehicle?.licensePlate || '',
-        };
-        
-        await chargesRef.add(newCharge);
-        logger.info(`Successfully created charge for driver ${driver.name} for today.`);
+      }
     });
 
-    await Promise.all(promises);
+    await Promise.all(ops);
     logger.info('Daily rental charge generation finished successfully.');
-});
-
-
-// --- Service Folio Generation ---
-export const generateServiceFolio = onDocumentCreated('serviceRecords/{serviceId}', async (event) => {
-    const serviceId = event.params.serviceId;
-    const serviceRef = db.collection('serviceRecords').doc(serviceId);
-    
-    const timeZone = 'America/Mexico_City';
-    const now = toZonedTime(new Date(), timeZone);
-    const datePrefix = format(now, 'yyMMdd');
-    
-    const counterRef = db.collection('counters').doc(`folio_${datePrefix}`);
-
-    try {
-        const newFolioNumber = await db.runTransaction(async (transaction) => {
-            const counterDoc = await transaction.get(counterRef);
-            const currentCount = counterDoc.exists ? counterDoc.data()?.count || 0 : 0;
-            const newCount = currentCount + 1;
-            
-            transaction.set(counterRef, { count: newCount }, { merge: true });
-            
-            return newCount;
-        });
-
-        const folio = `${datePrefix}-${String(newFolioNumber).padStart(4, '0')}`;
-        
-        await serviceRef.update({ folio });
-        logger.info(`Generated folio ${folio} for service ${serviceId}`);
-
-    } catch (error) {
-        logger.error(`Failed to generate folio for service ${serviceId}:`, error);
-    }
-});
+  }
+);

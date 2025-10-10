@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/PaperworkDialog.tsx
 "use client";
 
@@ -84,13 +85,10 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
                     <Calendar
                       mode="single"
                       selected={field.value}
-                      onSelect={field.onChange}
+                      onSelect={(d) => { field.onChange(d); setIsCalendarOpen(false); }}
                       initialFocus
                       locale={es}
                     />
-                     <div className="p-2 border-t flex justify-center">
-                        <Button size="sm" onClick={() => setIsCalendarOpen(false)}>Aceptar</Button>
-                    </div>
                   </PopoverContent>
                 </Popover>
               <FormMessage /></FormItem>

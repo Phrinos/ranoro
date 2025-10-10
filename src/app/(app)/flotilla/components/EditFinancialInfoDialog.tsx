@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/EditFinancialInfoDialog.tsx
 "use client";
 
@@ -115,12 +116,9 @@ export function EditFinancialInfoDialog({
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(d) => { field.onChange(d); setIsCalendarOpen(false); }}
                         initialFocus
                       />
-                       <div className="p-2 border-t flex justify-center">
-                          <Button size="sm" onClick={() => setIsCalendarOpen(false)}>Aceptar</Button>
-                      </div>
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
