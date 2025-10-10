@@ -14,7 +14,7 @@ import * as z from 'zod';
 import type { AppRole, User } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, Shield } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { adminService } from '@/lib/services';
 import { PERMISSION_GROUPS } from '@/lib/permissions';
@@ -129,7 +129,7 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
                                     <TableRow>
                                         <SortableTableHeader sortKey="name" label="Nombre del Rol" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
                                         <SortableTableHeader sortKey="permissions" label="Permisos" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
-                                        <div className="text-right text-white">Acciones</div>
+                                        <TableHead className="text-right text-white">Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
