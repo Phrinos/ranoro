@@ -308,7 +308,7 @@ export default function InventoryItemDetailPage() {
         <TabsContent value="details">
           <div className="space-y-6">
             {/* PRIMERA FILA */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-start justify-between">
                   <div>
@@ -389,15 +389,6 @@ export default function InventoryItemDetailPage() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Acciones</CardTitle>
-                  <CardDescription>Operaciones rápidas para este ítem</CardDescription>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">
-                  Próximamente: ajuste de inventario, órdenes de compra, etc.
-                </CardContent>
-              </Card>
             </div>
 
             {/* SEGUNDA FILA */}
