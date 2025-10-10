@@ -68,10 +68,9 @@ export function VehicleSelectionCard({
     const vehicle = safeVehicles.find((v) => v.id === vehicleId);
     if (vehicle) {
       setValue("vehicleId", vehicle.id, { shouldValidate: false });
-      setValue("customerName", vehicle.ownerName || "");
-      setValue("ownerPhone", vehicle.ownerPhone || "");
-      // Mantener consistencia con el formulario: "mileage"
-      setValue("mileage", vehicle.currentMileage ?? null);
+      setValue("customerName", vehicle.ownerName || "", { shouldValidate: false });
+      setValue("ownerPhone", vehicle.ownerPhone || "", { shouldValidate: false });
+      setValue("mileage", vehicle.currentMileage ?? null, { shouldValidate: false });
     }
     setIsSelectionDialogOpen(false);
   };

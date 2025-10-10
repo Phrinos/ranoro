@@ -386,16 +386,19 @@ export default function ServicioPage() {
     setIsVehicleFormDialogOpen(true);
   };
   
-  const onVehicleCreated = async (data: VehicleFormValues): Promise<Vehicle> => {
+  const onVehicleCreated = useCallback(async (data: VehicleFormValues): Promise<Vehicle> => {
       const newVehicle = await inventoryService.addVehicle(data);
       toast({ title: "Vehículo Creado", description: `${newVehicle.make} ${newVehicle.model} ha sido agregado.` });
+      // Update local state to include the new vehicle immediately
+      setVehicles(prev => [...prev, newVehicle]);
       return newVehicle;
-  };
+  }, [toast]);
   
   const handleSaveVehicle = async (data: VehicleFormValues) => {
     if(!onVehicleCreated) return;
     const newVehicle = await onVehicleCreated(data);
-    methods.setValue('vehicleId', newVehicle.id, { shouldValidate: true });
+    // After creating, select it in the form
+    methods.setValue('vehicleId', newVehicle.id, { shouldValidate: false });
     setIsVehicleFormDialogOpen(false);
   };
 
