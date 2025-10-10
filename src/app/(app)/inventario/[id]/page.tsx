@@ -3,17 +3,31 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import type { InventoryItem, ServiceRecord, InventoryCategory, Supplier } from '@/types';
-import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, CalendarCheck, Package, DollarSign, Boxes, Trash2, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebaseClient";
+import { db } from "@/lib/firebaseClient"; // (si no lo usas aquí, puedes quitarlo)
+import type { Vehicle, ServiceRecord, InventoryItem, InventoryCategory, Supplier } from '@/types';
 
+import { PageHeader } from '@/components/page-header';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { ShieldAlert, Edit, CalendarCheck, Package, DollarSign, Boxes, Trash2, ArrowRight, Loader2, ArrowLeft } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { format, isValid } from "date-fns";
 import { es } from 'date-fns/locale';
 import Link from "next/link";
@@ -199,7 +213,7 @@ export default function InventoryItemDetailPage() {
   return (
     <div className="container mx-auto py-8">
       <PageHeader
-        title={item.name}
+        title="Detalles del Producto/Servicio"
         description={`ID: ${item.id}`}
         actions={
           <Button variant="outline" onClick={() => router.back()}>
@@ -210,7 +224,7 @@ export default function InventoryItemDetailPage() {
       />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 lg:w-full mb-6">
           <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             Información del Ítem
           </TabsTrigger>
@@ -225,7 +239,7 @@ export default function InventoryItemDetailPage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <Package className="h-5 w-5 text-muted-foreground" />
-                      Detalles del Producto/Servicio
+                      {item.name}
                     </CardTitle>
                     <div className="flex items-center gap-2">
                         <ConfirmDialog
