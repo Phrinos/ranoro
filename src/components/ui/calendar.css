@@ -1,0 +1,72 @@
+/* Variables propias de react-day-picker; no tocamos layout (filas/columnas) */
+.rdp {
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-accent-background-color: hsl(var(--primary) / 0.14);
+  --rdp-background-color: transparent;
+  --rdp-outline: 2px solid hsl(var(--ring));
+  --rdp-outline-selected: 2px solid hsl(var(--ring));
+  --rdp-cell-size: 36px;
+  --rdp-caption-font-size: 1rem;
+}
+
+@media (min-width: 640px) {
+  .rdp { --rdp-cell-size: 40px; }
+}
+
+/* Título del mes */
+.rdp .rdp-caption_label {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Nombres de días */
+.rdp .rdp-weekday {
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+/* Fines de semana en rojo suave (sin romper selección) */
+.rdp .rdp-weekday:nth-child(6),
+.rdp .rdp-weekday:nth-child(7) {
+  color: hsl(var(--destructive)); /* sábado/domingo encabezado */
+}
+.rdp .rdp-day_weekend:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  color: hsl(var(--destructive));
+}
+
+/* Hoy destacado en rojo cuando NO está seleccionado */
+.rdp .rdp-day_today:not(.rdp-day_selected) {
+  color: hsl(var(--destructive));
+  font-weight: 700;
+}
+
+/* Selección */
+.rdp .rdp-day_selected,
+.rdp .rdp-day_selected:hover,
+.rdp .rdp-day_selected:focus-visible {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Navegación */
+.rdp .rdp-nav_button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: .5rem;
+  border: 1px solid hsl(var(--border));
+}
+.rdp .rdp-nav_button:hover {
+  background: hsl(var(--muted));
+}
+
+/* Días fuera de mes: sutiles, sin romper layout */
+.rdp .rdp-day_outside {
+  opacity: .5;
+}
+
+/* Deshabilitados */
+.rdp .rdp-button[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
