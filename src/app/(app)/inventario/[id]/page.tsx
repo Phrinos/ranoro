@@ -1,13 +1,13 @@
 // src/app/(app)/inventario/[id]/page.tsx
 "use client";
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter } from "next/navigation";
 import type { InventoryItem, ServiceRecord, SaleReceipt, InventoryCategory, Supplier } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, Package, ArrowRight, Loader2, ArrowLeft, DollarSign, Boxes } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, Package, ArrowRight, Loader2, ArrowLeft, DollarSign, Boxes, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -224,9 +224,8 @@ export default function InventoryItemDetailPage() {
                 <div className="flex items-center gap-2">
                   <ConfirmDialog
                     triggerButton={
-                      <Button variant="destructive" size="sm">
-                        <Archive className="mr-2 h-4 w-4" />
-                        Eliminar
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     }
                     title={`¿Estás seguro de eliminar "${item.name}"?`}
@@ -234,9 +233,8 @@ export default function InventoryItemDetailPage() {
                     onConfirm={handleDeleteItem}
                     confirmText="Sí, Eliminar"
                   />
-                  <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar
+                  <Button variant="ghost" size="icon" onClick={() => setIsEditDialogOpen(true)}>
+                    <Edit className="h-4 w-4" />
                   </Button>
                 </div>
               </CardHeader>
