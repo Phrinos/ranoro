@@ -34,18 +34,22 @@ export function Calendar({
       }
       className={cn("p-3", className)}
       classNames={{
-        caption: "flex items-center justify-center pt-1 relative",
+        caption: "flex items-center justify-center pt-1 relative mb-2",
         caption_label: "text-base font-semibold",
-        nav: "flex items-center space-x-1",
+        nav: "flex items-center gap-2", // Use gap for spacing
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
           "h-7 w-7 p-0 bg-transparent opacity-70 hover:opacity-100"
         ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
+        // Remove absolute positioning
+        nav_button_previous: "", 
+        nav_button_next: "",
         table: "w-full border-collapse",
+        // Hide the table head
+        head: "hidden", 
+        head_row: "hidden",
         head_cell:
-          "text-muted-foreground w-9 font-medium text-[0.8rem] text-center",
+          "text-muted-foreground w-9 font-medium text-center",
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
