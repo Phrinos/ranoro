@@ -13,6 +13,7 @@ import {
   getDocs,
   where,
   WriteBatch,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, VehiclePriceList } from "@/types";
@@ -46,13 +47,14 @@ const onItemsUpdatePromise = async (): Promise<InventoryItem[]> => {
 
 const saveItem = async (data: Partial<InventoryItem>, id?: string): Promise<InventoryItem> => {
     if (!db) throw new Error("Database not initialized.");
+    const dataToSave = { ...cleanObjectForFirestore(data), updatedAt: serverTimestamp() };
     if (id) {
-        await updateDoc(doc(db, 'inventory', id), cleanObjectForFirestore(data));
+        await updateDoc(doc(db, 'inventory', id), dataToSave);
         const updatedDoc = await getDoc(doc(db, 'inventory', id));
         if (!updatedDoc.exists()) throw new Error("Failed to retrieve updated item.");
         return { ...updatedDoc.data(), id } as InventoryItem;
     } else {
-        const docRef = await addDoc(collection(db, 'inventory'), cleanObjectForFirestore(data));
+        const docRef = await addDoc(collection(db, 'inventory'), { ...dataToSave, createdAt: serverTimestamp() });
         const newDoc = await getDoc(docRef);
         return { ...newDoc.data(), id: docRef.id } as InventoryItem;
     }
@@ -60,7 +62,8 @@ const saveItem = async (data: Partial<InventoryItem>, id?: string): Promise<Inve
 
 const addItem = async (data: Partial<InventoryItem>): Promise<InventoryItem> => {
     if (!db) throw new Error("Database not initialized.");
-    const docRef = await addDoc(collection(db, 'inventory'), cleanObjectForFirestore(data));
+    const dataToSave = { ...cleanObjectForFirestore(data), createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+    const docRef = await addDoc(collection(db, 'inventory'), dataToSave);
     const docSnap = await getDoc(docRef);
     return { id: docSnap.id, ...docSnap.data() } as InventoryItem;
 };
@@ -88,7 +91,10 @@ const updateInventoryStock = async (
                 ? currentStock + item.quantity
                 : currentStock - item.quantity;
             
-            const updateData: { quantity: number; unitPrice?: number } = { quantity: newStock };
+            const updateData: { quantity: number; unitPrice?: number, updatedAt: any } = { 
+                quantity: newStock,
+                updatedAt: serverTimestamp() 
+            };
             if (item.unitPrice !== undefined) {
                 updateData.unitPrice = item.unitPrice;
             }

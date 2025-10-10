@@ -41,6 +41,7 @@ export type InventoryItem = {
   lowStockThreshold: number;
   isService: boolean;
   sku?: string;
+  updatedAt?: any; // To store Firestore Timestamp
 };
 
 export type ServiceTypeRecord = {

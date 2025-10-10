@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/page.tsx
 "use client";
 
@@ -19,9 +20,11 @@ import type {
   InventoryItem,
   InventoryCategory,
   Supplier,
+  Vehicle,
+  VehiclePriceList,
 } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { inventoryService, purchaseService } from "@/lib/services";
 import {
@@ -51,6 +54,9 @@ import { Input } from "@/components/ui/input";
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import type { PurchaseFormValues } from "@/app/(app)/compras/components/register-purchase-dialog";
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
+import { parseDate } from "@/lib/forms";
+import { format, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 // ✅ Cambiamos React.lazy por next/dynamic (aislado al cliente)
 const RegisterPurchaseDialog = dynamic(
@@ -63,7 +69,7 @@ const InventoryItemDialog = dynamic(
   { ssr: false }
 );
 const InventoryReportContent = dynamic(
-  () => import("./components/inventory-report-content").then((m) => m.InventoryReportContent),
+  () => import("./components/inventory-report-content").then((m) => m.default),
   { ssr: false }
 );
 
@@ -152,7 +158,8 @@ const DashboardCards = ({
 
 // --- ProductosContent ---
 const itemSortOptions = [
-    { value: 'default_order', label: 'Orden Personalizado' },
+    { value: 'updatedAt_asc', label: 'Modificación (Más antiguo)' },
+    { value: 'updatedAt_desc', label: 'Modificación (Más reciente)' },
     { value: 'name_asc', label: 'Nombre (A-Z)' },
     { value: 'name_desc', label: 'Nombre (Z-A)' },
     { value: 'quantity_asc', label: 'Stock (Menor a Mayor)' },
@@ -180,25 +187,16 @@ const ProductosContent = ({
   const { filteredData, ...tableManager } = useTableManager<InventoryItem>({
     initialData: inventoryItems,
     searchKeys: ["name", "sku", "brand", "category"],
-    dateFilterKey: "",
-    initialSortOption: "default_order",
+    dateFilterKey: "updatedAt",
+    initialSortOption: "updatedAt_asc",
     itemsPerPage: 100,
   });
 
   const customSortedItems = useMemo(() => {
     const items = [...tableManager.fullFilteredData];
-    if (tableManager.sortOption === "default_order") {
-      return items.sort((a, b) => {
-        const priorityA = getSortPriority(a);
-        const priorityB = getSortPriority(b);
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-        return a.name.localeCompare(b.name);
-      });
-    }
+    // No default sort needed if useTableManager handles it
     return items;
-  }, [tableManager.fullFilteredData, tableManager.sortOption]);
+  }, [tableManager.fullFilteredData]);
 
   const handleSort = (key: string) => {
     const isAsc = tableManager.sortOption === `${key}_asc`;
@@ -238,15 +236,8 @@ const ProductosContent = ({
                     textClassName="text-white"
                   />
                   <SortableTableHeader
-                    sortKey="category"
-                    label="Categoría"
-                    onSort={handleSort}
-                    currentSort={tableManager.sortOption}
-                    className="hidden md:table-cell text-white"
-                  />
-                  <SortableTableHeader
-                    sortKey="supplier"
-                    label="Proveedor"
+                    sortKey="updatedAt"
+                    label="Últ. Modificación"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
                     className="hidden lg:table-cell text-white"
@@ -279,6 +270,7 @@ const ProductosContent = ({
                   customSortedItems.map((item) => {
                     const isLowStock =
                       !item.isService && item.quantity <= item.lowStockThreshold;
+                    const updatedAt = parseDate(item.updatedAt);
                     return (
                       <TableRow
                         key={item.id}
@@ -297,11 +289,8 @@ const ProductosContent = ({
                             {item.brand} ({item.sku || "N/A"})
                           </p>
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {item.category}
-                        </TableCell>
                         <TableCell className="hidden lg:table-cell">
-                          {item.supplier}
+                          {updatedAt && isValid(updatedAt) ? format(updatedAt, 'dd/MM/yy, HH:mm', { locale: es }) : 'N/A'}
                         </TableCell>
                         <TableCell>
                           <Badge variant={item.isService ? "outline" : "secondary"}>
@@ -655,11 +644,7 @@ export default function InventarioPage() {
   }, []);
 
   const inventorySummary = useMemo(() => {
-    let cost = 0,
-      sellingPriceValue = 0,
-      lowStock = 0,
-      products = 0,
-      services = 0;
+    let cost = 0, sellingPriceValue = 0, lowStock = 0, products = 0, services = 0;
     inventoryItems.forEach((item) => {
       if (item.isService) services++;
       else {
@@ -669,12 +654,12 @@ export default function InventarioPage() {
         if ((item.quantity || 0) <= (item.lowStockThreshold || 0)) lowStock++;
       }
     });
-    return {
-      totalInventoryCost: cost,
-      totalInventorySellingPrice: sellingPriceValue,
-      lowStockItemsCount: lowStock,
-      productsCount: products,
-      servicesCount: services,
+    return { 
+        totalInventoryCost: cost, 
+        totalInventorySellingPrice: sellingPriceValue, 
+        lowStockItemsCount: lowStock, 
+        productsCount: products, 
+        servicesCount: services, 
     };
   }, [inventoryItems]);
 
@@ -791,7 +776,7 @@ export default function InventarioPage() {
         
         <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={handleOpenItemDialog}
+          onNewItemClick={() => handleOpenItemDialog()}
           onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
         

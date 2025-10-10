@@ -1,10 +1,11 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { isWithinInterval, isValid, startOfDay, endOfDay, compareAsc, compareDesc } from 'date-fns';
-import { parseDate } from '@/lib/forms';
+import { parseDate } from '../forms';
 
 interface UseTableManagerOptions<T> {
   initialData: T[];
@@ -103,7 +104,7 @@ export function useTableManager<T extends Record<string, any>>({
       data.sort((a, b) => {
         const [sortKey, dir] = sortOption.split('_');
         const isAsc = dir === 'asc';
-        const isDateKey = sortKey.toLowerCase().includes('date');
+        const isDateKey = sortKey.toLowerCase().includes('date') || sortKey.toLowerCase().includes('at');
 
         if (isDateKey) {
           const da = getSortDate(a, sortKey);
