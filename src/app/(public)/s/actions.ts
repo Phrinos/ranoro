@@ -68,7 +68,8 @@ export async function scheduleAppointmentAction(
     return { success: true };
   } catch (e: any) {
     console.error("[SERVER] scheduleAppointmentAction error:", e);
-    return { success: false, error: e?.message ?? "Error desconocido al agendar" };
+    const errorMessage = e instanceof Error ? e.message : "Error desconocido al agendar";
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -94,7 +95,8 @@ export async function confirmAppointmentAction(
     return { success: true };
   } catch (e: any) {
     console.error("confirmAppointmentAction error:", e);
-    return { success: false, error: e?.message ?? "Error desconocido" };
+    const errorMessage = e instanceof Error ? e.message : "Error desconocido";
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -119,7 +121,8 @@ export async function cancelAppointmentAction(
     return { success: true };
   } catch (e: any) {
     console.error("cancelAppointmentAction error:", e);
-    return { success: false, error: e?.message ?? "Error desconocido" };
+    const errorMessage = e instanceof Error ? e.message : "Error desconocido";
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -145,12 +148,13 @@ export async function saveSignatureAction(
     
     await db.runTransaction(async (transaction) => {
         transaction.update(mainServiceRef, updateData);
-        transaction.update(publicServicef, updateData);
+        transaction.update(publicServiceRef, updateData);
     });
 
     return { success: true };
   } catch (e: any) {
     console.error("saveSignatureAction error:", e);
-    return { success: false, error: e?.message ?? "Error desconocido" };
+    const errorMessage = e instanceof Error ? e.message : "Error desconocido";
+    return { success: false, error: errorMessage };
   }
 }

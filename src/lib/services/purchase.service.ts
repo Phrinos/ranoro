@@ -100,50 +100,67 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
 };
 
 
-const registerPayableAccountPayment = async (accountId: string, amount: number, paymentMethod: PaymentMethod, note: string | undefined, user: User | null): Promise<void> => {
+const registerPayableAccountPayment = async (
+    accountId: string, 
+    amount: number, 
+    paymentMethod: PaymentMethod, 
+    note: string | undefined, 
+    user: User | null
+): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
 
     const accountRef = doc(db, 'payableAccounts', accountId);
-    const accountSnap = await getDoc(accountRef);
-    if (!accountSnap.exists()) throw new Error("Payable account not found.");
 
-    const accountData = accountSnap.data() as PayableAccount;
-    const newPaidAmount = (accountData.paidAmount || 0) + amount;
-    const newBalance = accountData.totalAmount - newPaidAmount;
-    const newStatus = newBalance <= 0 ? 'Pagado' : 'Pagado Parcialmente';
+    // Usamos una transacción para asegurar la atomicidad de las operaciones
+    await runTransaction(db, async (transaction) => {
+        const accountSnap = await transaction.get(accountRef);
+        if (!accountSnap.exists()) {
+            throw new Error("La cuenta por pagar no fue encontrada.");
+        }
 
-    const batch = writeBatch(db);
+        const accountData = accountSnap.data() as PayableAccount;
+        const newPaidAmount = (accountData.paidAmount || 0) + amount;
+        const newBalance = accountData.totalAmount - newPaidAmount;
+        const newStatus = newBalance <= 0.01 ? 'Pagado' : 'Pagado Parcialmente';
 
-    batch.update(accountRef, {
-      paidAmount: newPaidAmount,
-      status: newStatus,
-    });
-    
-    // Update supplier debt
-    const supplierRef = doc(db, 'suppliers', accountData.supplierId);
-    const supplierSnap = await getDoc(supplierRef);
-    if (supplierSnap.exists()) {
-      const currentDebt = supplierSnap.data().debtAmount || 0;
-      batch.update(supplierRef, { debtAmount: currentDebt - amount });
-    }
-
-    // Add cash transaction if it was paid with cash
-    if (paymentMethod === 'Efectivo') {
-        const transactionRef = doc(collection(db, 'cashDrawerTransactions'));
-        batch.set(transactionRef, {
-            date: new Date().toISOString(),
-            type: 'Salida',
-            amount,
-            concept: `Pago a proveedor: ${accountData.supplierName} (Factura: ${accountData.invoiceId})`,
-            userId: user?.id || 'system',
-            userName: user?.name || 'Sistema',
-            relatedType: 'Compra',
-            relatedId: accountId,
+        // 1. Actualizar la cuenta por pagar
+        transaction.update(accountRef, {
+            paidAmount: newPaidAmount,
+            status: newStatus,
         });
-    }
 
-    await batch.commit();
-    await adminService.logAudit('Pagar', `Registró pago de ${formatCurrency(amount)} a la cuenta de ${accountData.supplierName}.`, { entityType: 'Cuentas Por Pagar', entityId: accountId, userId: user?.id || 'system', userName: user?.name || 'Sistema' });
+        // 2. Actualizar la deuda del proveedor
+        const supplierRef = doc(db, 'suppliers', accountData.supplierId);
+        const supplierSnap = await transaction.get(supplierRef);
+        if (supplierSnap.exists()) {
+            const currentDebt = supplierSnap.data().debtAmount || 0;
+            transaction.update(supplierRef, { debtAmount: currentDebt - amount });
+        }
+
+        // 3. Registrar salida de caja si es en efectivo
+        if (paymentMethod === 'Efectivo') {
+            const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
+            transaction.set(cashTransactionRef, {
+                date: new Date().toISOString(),
+                type: 'Salida',
+                amount,
+                concept: `Pago a proveedor: ${accountData.supplierName} (Factura: ${accountData.invoiceId})`,
+                userId: user?.id || 'system',
+                userName: user?.name || 'Sistema',
+                relatedType: 'Compra',
+                relatedId: accountId,
+            });
+        }
+    });
+
+    // 4. Log de auditoría (fuera de la transacción)
+    const accountData = (await getDoc(accountRef)).data() as PayableAccount;
+    await adminService.logAudit('Pagar', `Registró pago de ${formatCurrency(amount)} a la cuenta de ${accountData.supplierName}.`, { 
+        entityType: 'Cuentas Por Pagar', 
+        entityId: accountId, 
+        userId: user?.id || 'system', 
+        userName: user?.name || 'Sistema' 
+    });
 };
 
 

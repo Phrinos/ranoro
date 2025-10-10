@@ -23,24 +23,24 @@ export function calcCardCommission(total: number, payments?: Payment[], fallback
   return Math.round(c * 100) / 100; // redondeo para evitar flapping
 }
 
-/** Ganancia efectiva: total - insumos - comisión */
+/** Ganancia efectiva: (total de la venta) - (costo de insumos) - (comisión de tarjeta) */
 export function calcEffectiveProfit(s: ServiceRecord): number {
-  // CORRECCIÓN: Calcular el total siempre desde los items para asegurar consistencia.
   const total    = calcTotalFromItems(s.serviceItems);
-  const supplies = Number(s.totalSuppliesWorkshopCost ?? calcSuppliesCostFromItems(s.serviceItems));
+  const supplies = calcSuppliesCostFromItems(s.serviceItems);
 
-  // ¿hay señales de pago con tarjeta?
   const hasCardSignals =
     (s.payments?.some(p => p.method === 'Tarjeta' || p.method === 'Tarjeta MSI') ?? false) ||
     s.paymentMethod === 'Tarjeta' || s.paymentMethod === 'Tarjeta MSI';
 
-  const computed = calcCardCommission(total, s.payments, s.paymentMethod as any);
-  const persisted = Number(s.cardCommission ?? 0);
+  const computedCommission = calcCardCommission(total, s.payments, s.paymentMethod as any);
+  const persistedCommission = Number(s.cardCommission ?? 0);
 
-  // Si hay pagos con tarjeta/MSI => usa el calculado; si no, usa el guardado (si > 0)
   const commission = hasCardSignals
-    ? computed
-    : (persisted > 0 ? persisted : computed);
+    ? computedCommission
+    : (persistedCommission > 0 ? persistedCommission : computedCommission);
 
-  return total - supplies - commission;
+  // La ganancia es el total de la venta menos el costo de los insumos y la comisión
+  const profit = total - supplies - commission;
+  
+  return isFinite(profit) ? profit : 0;
 }
