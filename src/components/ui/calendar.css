@@ -13,10 +13,24 @@
   .rdp { --rdp-cell-size: 40px; }
 }
 
-/* Título del mes */
+/* Título del mes y navegación */
+.rdp .rdp-caption {
+  display: flex;
+  justify-content: space-between; /* Alinea los elementos */
+  align-items: center;
+  position: relative;
+}
+
 .rdp .rdp-caption_label {
   font-weight: 600;
   font-size: 1.1rem;
+  flex-grow: 1;
+  text-align: center;
+}
+
+.rdp .rdp-nav {
+  display: flex;
+  gap: 0.25rem;
 }
 
 /* Nombres de días */

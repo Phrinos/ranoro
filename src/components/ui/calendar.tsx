@@ -24,6 +24,7 @@ export function Calendar({
       showOutsideDays={showOutsideDays}
       fixedWeeks
       locale={locale ?? es}
+      captionLayout="buttons" // Habilita la navegación por año
       className={["rdp-root", className].filter(Boolean).join(" ")}
       // Iconos simples; puedes cambiarlos si quieres usar lucide
       components={{
