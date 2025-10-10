@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Users, Shield, TrendingUp, BookOpen, DatabaseZap } from 'lucide-react';
-import { adminService, operationsService, inventoryService, serviceService } from '@/lib/services';
+import { adminService, inventoryService, serviceService, saleService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { DateRange } from 'react-day-picker';
