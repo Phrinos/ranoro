@@ -10,7 +10,7 @@ export const inventoryItemFormSchema = z.object({
   quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa.").optional(),
   unitPrice: z.coerce.number().min(0, "El precio de compra no puede ser negativo.").optional(),
   sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo.").optional(),
-  lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo."),
+  lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo.").optional(),
   unitType: z.enum(['units', 'ml', 'liters']).default('units'),
   category: z.string().min(1, "La categoría es obligatoria."),
   supplier: z.string().min(1, "El proveedor es obligatorio."),

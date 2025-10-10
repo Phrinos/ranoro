@@ -1,8 +1,7 @@
-
 // src/app/(app)/inventario/page.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef } from "react";
+import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -153,12 +152,12 @@ const DashboardCards = ({
 
 // --- ProductosContent ---
 const itemSortOptions = [
-    { value: "default_order", label: "Orden Personalizado" },
-    { value: "name_asc", label: "Nombre (A-Z)" },
-    { value: "name_desc", label: "Nombre (Z-A)" },
-    { value: "quantity_asc", label: "Stock (Menor a Mayor)" },
-    { value: "quantity_desc", label: "Stock (Mayor a Menor)" },
-    { value: "sellingPrice_desc", label: "Precio Venta (Mayor a Menor)" },
+    { value: 'default_order', label: 'Orden Personalizado' },
+    { value: 'name_asc', label: 'Nombre (A-Z)' },
+    { value: 'name_desc', label: 'Nombre (Z-A)' },
+    { value: 'quantity_asc', label: 'Stock (Menor a Mayor)' },
+    { value: 'quantity_desc', label: 'Stock (Mayor a Menor)' },
+    { value: 'sellingPrice_desc', label: 'Precio Venta (Mayor a Menor)' },
 ];
 
 const getSortPriority = (item: InventoryItem) => {
@@ -634,11 +633,15 @@ export default function InventarioPage() {
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
   
+  const sortedSuppliers = React.useMemo(() => 
+    [...suppliers].sort((a, b) => a.name.localeCompare(b.name)),
+  [suppliers]);
+  
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
-
+    
     unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
     unsubs.push(inventoryService.onCategoriesUpdate(setCategories));
     unsubs.push(
@@ -681,8 +684,8 @@ export default function InventarioPage() {
   }, []);
 
 
-  const handleOpenItemDialog = useCallback(() => {
-    setEditingItem(null);
+  const handleOpenItemDialog = useCallback((item: Partial<InventoryItem> | null = null) => {
+    setEditingItem(item);
     setIsItemDialogOpen(true);
   }, []);
   
@@ -690,15 +693,20 @@ export default function InventarioPage() {
     setEditingItem({ name });
     setIsItemDialogOpen(true);
   }, []);
-
-  const handleItemUpdated = async (data: InventoryItemFormValues) => {
-    if (!editingItem || !("id" in editingItem)) return;
-    await inventoryService.saveItem(data, editingItem.id!);
-    toast({ title: "Producto Actualizado" });
-    setIsItemDialogOpen(false);
-  };
   
-
+  const handleSaveItem = useCallback(
+    async (itemData: InventoryItemFormValues) => {
+      const isEditing = !!editingItem?.id;
+      await inventoryService.saveItem(itemData, editingItem?.id);
+      toast({
+        title: `Ítem ${isEditing ? "Actualizado" : "Creado"}`,
+        description: `"${itemData.name}" ha sido ${isEditing ? 'actualizado' : 'agregado'}.`,
+      });
+      setIsItemDialogOpen(false);
+    },
+    [toast, editingItem]
+  );
+  
   const handleSavePurchase = useCallback(
     async (data: PurchaseFormValues) => {
       await purchaseService.registerPurchase(data);
@@ -707,18 +715,6 @@ export default function InventarioPage() {
         description: `La compra de ${data.items.length} artículo(s) ha sido registrada.`,
       });
       setIsRegisterPurchaseOpen(false);
-    },
-    [toast]
-  );
-  
-  const handleSaveItem = useCallback(
-    async (itemData: InventoryItemFormValues) => {
-      await inventoryService.addItem(itemData);
-      toast({
-        title: "Producto Creado",
-        description: `"${itemData.name}" ha sido agregado al inventario.`,
-      });
-      setIsItemDialogOpen(false);
     },
     [toast]
   );
@@ -781,102 +777,104 @@ export default function InventarioPage() {
   const tabsConfig = [
     { value: "productos", label: "Productos y Servicios" },
     { value: "categorias", label: "Categorías" },
-  ] as const;
+  ];
 
   return (
-    <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
-        <p className="text-primary-foreground/80 mt-1">
-          Gestiona productos, proveedores, categorías y obtén análisis inteligentes.
-        </p>
-      </div>
-
-      <DashboardCards
-        summaryData={inventorySummary}
-        onNewItemClick={handleOpenItemDialog}
-        onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
-      />
-      
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full mt-6">
-        <div className="w-full">
-          <div className="flex flex-wrap w-full gap-2 sm:gap-4">
-            {tabsConfig.map((tabInfo) => (
-              <button
-                key={tabInfo.value}
-                onClick={() => setActiveTab(tabInfo.value)}
-                className={cn(
-                  "flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base",
-                  "break-words whitespace-normal leading-snug",
-                  activeTab === tabInfo.value
-                    ? "bg-primary text-primary-foreground shadow"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                )}
-              >
-                {tabInfo.label}
-              </button>
-            ))}
-          </div>
+    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+        <>
+        <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
+          <p className="text-primary-foreground/80 mt-1">
+            Gestiona productos, proveedores, categorías y obtén análisis inteligentes.
+          </p>
         </div>
         
-        <TabsContent value="productos" className="mt-6">
-          <Suspense fallback={<Loader2 className="animate-spin" />}>
-              <ProductosContent 
-                  inventoryItems={inventoryItems}
-                  onPrint={handlePrint}
-                  onNewItemFromSearch={handleNewItemFromSearch}
-              />
-          </Suspense>
-        </TabsContent>
-        
-        <TabsContent value="categorias" className="mt-6">
-          <Suspense fallback={<Loader2 className="animate-spin" />}>
-              <CategoriasContent 
-                  categories={categories} 
-                  inventoryItems={inventoryItems} 
-                  onSaveCategory={handleSaveCategory}
-                  onDeleteCategory={handleDeleteCategory}
-              />
-          </Suspense>
-        </TabsContent>
-      </Tabs>
-      
-      {isRegisterPurchaseOpen && (
-        <RegisterPurchaseDialog
-          open={isRegisterPurchaseOpen}
-          onOpenChange={setIsRegisterPurchaseOpen}
-          suppliers={suppliers}
-          inventoryItems={inventoryItems}
-          onSave={handleSavePurchase}
-          onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
-          categories={categories}
+        <DashboardCards 
+          summaryData={inventorySummary}
+          onNewItemClick={handleOpenItemDialog}
+          onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
-      )}
+        
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full mt-6">
+            <div className="w-full">
+                <div className="flex flex-wrap w-full gap-2 sm:gap-4">
+                {tabsConfig.map(tabInfo => (
+                    <button
+                    key={tabInfo.value}
+                    onClick={() => setActiveTab(tabInfo.value)}
+                    className={cn(
+                        'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
+                        'break-words whitespace-normal leading-snug',
+                        activeTab === tabInfo.value
+                        ? 'bg-primary text-primary-foreground shadow'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    )}
+                    >
+                    {tabInfo.label}
+                    </button>
+                ))}
+                </div>
+            </div>
+            
+            <TabsContent value="productos" className="mt-6">
+              <Suspense fallback={<Loader2 className="animate-spin" />}>
+                  <ProductosContent 
+                      inventoryItems={inventoryItems}
+                      onPrint={handlePrint}
+                      onNewItemFromSearch={handleNewItemFromSearch}
+                  />
+              </Suspense>
+            </TabsContent>
+            <TabsContent value="categorias" className="mt-6">
+              <Suspense fallback={<Loader2 className="animate-spin" />}>
+                  <CategoriasContent 
+                      categories={categories} 
+                      inventoryItems={inventoryItems} 
+                      onSaveCategory={handleSaveCategory}
+                      onDeleteCategory={handleDeleteCategory}
+                  />
+              </Suspense>
+            </TabsContent>
+        </Tabs>
+        
+        <Suspense fallback={null}>
+            {isRegisterPurchaseOpen && (
+              <RegisterPurchaseDialog
+                open={isRegisterPurchaseOpen}
+                onOpenChange={setIsRegisterPurchaseOpen}
+                suppliers={sortedSuppliers}
+                inventoryItems={inventoryItems}
+                onSave={handleSavePurchase}
+                onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
+                categories={categories}
+              />
+            )}
 
-      <InventoryItemDialog
-        open={isItemDialogOpen}
-        onOpenChange={setIsItemDialogOpen}
-        onSave={handleSaveItem}
-        item={editingItem}
-        categories={categories}
-        suppliers={suppliers}
-      />
+            <InventoryItemDialog
+              open={isItemDialogOpen}
+              onOpenChange={setIsItemDialogOpen}
+              onSave={handleSaveItem}
+              item={editingItem}
+              categories={categories}
+              suppliers={suppliers}
+            />
+        </Suspense>
 
-      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-        <DialogContent className="max-w-4xl p-0 no-print">
-          <div className="printable-content bg-white">
-            <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
-                <InventoryReportContent items={itemsToPrint} />
-            </Suspense>
-          </div>
-          <DialogFooter className="p-4 border-t bg-background sm:justify-end no-print">
-            <Button onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+          <DialogContent className="max-w-4xl p-0 no-print">
+            <div className="printable-content bg-white">
+                <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
+                    <InventoryReportContent items={itemsToPrint} />
+                </Suspense>
+            </div>
+            <DialogFooter className="p-4 border-t bg-background sm:justify-end no-print">
+                <Button onClick={() => window.print()}>
+                    <Printer className="mr-2 h-4 w-4" /> Imprimir
+                </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        </>
+    </Suspense>
   );
 }
-

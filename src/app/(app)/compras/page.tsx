@@ -167,6 +167,10 @@ export default function ComprasUnificadasPage() {
     null
   );
   const [isNewPurchaseDialogOpen, setIsNewPurchaseDialogOpen] = useState(false);
+  
+  const sortedSuppliers = React.useMemo(() => 
+    [...suppliers].sort((a, b) => a.name.localeCompare(b.name)),
+  [suppliers]);
 
   useEffect(() => {
     let alive = true;
@@ -314,7 +318,7 @@ export default function ComprasUnificadasPage() {
         <RegisterPurchaseDialog
           open={isNewPurchaseDialogOpen}
           onOpenChange={setIsNewPurchaseDialogOpen}
-          suppliers={suppliers}
+          suppliers={sortedSuppliers}
           inventoryItems={inventoryItems}
           onSave={handleSavePurchase}
           onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
