@@ -180,7 +180,7 @@ export function ServiceItemCard({
                 )}
             />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
             <Controller
                 control={control}
                 name={`serviceItems.${serviceIndex}.sellingPrice`}
@@ -206,31 +206,6 @@ export function ServiceItemCard({
                 </FormItem>
                 )}
             />
-             {serviceStatus !== 'Cotizacion' && serviceStatus !== 'Agendado' && (
-              <FormField
-                control={control}
-                name={`serviceItems.${serviceIndex}.technicianId`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Asignar Técnico</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={isReadOnly}>
-                      <FormControl>
-                        <SelectTrigger className="bg-card">
-                          <SelectValue placeholder="Seleccione un técnico" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {technicians.map((t) => (
-                          <SelectItem key={t.id} value={t.id}>
-                            {t.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            )}
         </div>
       </div>
 

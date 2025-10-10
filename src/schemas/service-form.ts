@@ -17,7 +17,6 @@ export const serviceItemSchema = z.object({
   sellingPrice: z.coerce.number({ invalid_type_error: "El precio debe ser un número." }).optional(),
   suppliesUsed: z.array(supplySchema).default([]),
   serviceType: z.string().optional(),
-  technicianId: z.string().optional(),
   technicianCommission: z.coerce.number().optional(),
 });
 
