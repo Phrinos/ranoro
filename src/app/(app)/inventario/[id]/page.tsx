@@ -3,9 +3,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { db } from "@/lib/firebaseClient"; // (si no lo usas aquí, puedes quitarlo)
+import { db } from "@/lib/firebaseClient"; 
 import type { Vehicle, ServiceRecord, InventoryItem, InventoryCategory, Supplier } from '@/types';
-
 import { PageHeader } from '@/components/page-header';
 import {
   Card,
@@ -81,6 +80,7 @@ export default function InventoryItemDetailPage() {
         if (fetchedItem) {
           const [servicesData, salesData, categoriesData, suppliersData] = await Promise.all([
             serviceService.onServicesUpdatePromise(),
+            // Assuming a similar promise-based fetch for sales
             getDocs(collection(db, 'sales')).then(snap => snap.docs.map(d => ({...d.data(), id: d.id}))),
             inventoryService.onCategoriesUpdatePromise(),
             inventoryService.onSuppliersUpdatePromise(),
@@ -237,10 +237,13 @@ export default function InventoryItemDetailPage() {
           <div className="space-y-6">
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Package className="h-5 w-5 text-muted-foreground" />
-                      {item.category}
-                    </CardTitle>
+                    <div>
+                        <p className="text-sm font-medium text-primary">{item.isService ? 'Servicio' : 'Producto'}</p>
+                        <CardTitle className="flex items-center gap-2 mt-1">
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                          {item.category}
+                        </CardTitle>
+                    </div>
                     <div className="flex items-center gap-2">
                         <ConfirmDialog
                           triggerButton={
@@ -260,13 +263,9 @@ export default function InventoryItemDetailPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-primary">{item.isService ? 'Servicio' : 'Producto'}</p>
-                    <div className="flex items-baseline gap-2 mt-1">
-                      <h2 className="text-2xl font-bold">{item.name}</h2>
-                      <p className="text-sm text-muted-foreground">(SKU: {item.sku || 'N/A'})</p>
-                    </div>
+                    <h2 className="text-2xl font-bold">{item.name}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {item.brand || 'N/A'} | {item.supplier}
+                      SKU: {item.sku || 'N/A'} | Marca: {item.brand || 'N/A'} | Proveedor: {item.supplier}
                     </p>
                   </div>
                   {item.description && (
