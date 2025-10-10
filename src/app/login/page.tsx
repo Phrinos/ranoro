@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 import Image from "next/image";
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { auth, db } from '@/lib/firebaseClient';
+import { auth, db } from '@/lib/firebaseClient.js';
 import { 
   signInWithEmailAndPassword, 
   type User as FirebaseUser
@@ -37,12 +37,11 @@ export default function LoginPage() {
     if (userDoc.exists()) {
       userData = { id: firebaseUser.uid, ...userDoc.data() } as User;
     } else {
-      // Fallback: si un usuario existe en Auth pero no en Firestore, se le crea un perfil básico.
       userData = {
         id: firebaseUser.uid,
         name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Nuevo Usuario',
         email: firebaseUser.email!,
-        role: 'Admin', // Rol por defecto para un caso inesperado
+        role: 'Admin',
       };
       await setDoc(userDocRef, { 
         name: userData.name,
@@ -89,21 +88,8 @@ export default function LoginPage() {
   };
   
   return (
-    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
-      <div className="lg:hidden relative h-48 sm:h-64 w-full bg-muted">
-        <Image
-            src="/login.png"
-            alt="Ranoro Login"
-            fill
-            className="object-cover object-center"
-            sizes="100vw"
-            priority
-            data-ai-hint="mechanic tools"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent"></div>
-      </div>
-      <div className="flex items-center justify-center py-12 lg:py-0">
-        <Card className="mx-4 w-full sm:mx-auto sm:w-[420px] max-w-full animate-fade-in-up shadow-xl lg:shadow-none lg:border-none lg:animate-none">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+        <Card className="mx-auto w-full max-w-sm border-none shadow-none">
           <CardHeader className="text-center">
             <Link href="/" className="mb-4 inline-block relative w-[180px] h-[45px] mx-auto">
               <Image
@@ -116,12 +102,11 @@ export default function LoginPage() {
                   data-ai-hint="ranoro logo"
               />
             </Link>
-            <p className="text-lg italic text-muted-foreground -mt-2">Tu Taller en una App</p>
-          </CardHeader>
-          <CardContent>
             <CardDescription className="text-center pt-4">
                 Ingresa tus credenciales para acceder al sistema.
             </CardDescription>
+          </CardHeader>
+          <CardContent>
             <form onSubmit={handleLogin} className="space-y-4 pt-4">
                 <div className="grid gap-2 text-left">
                     <Label htmlFor="email-login">Correo Electrónico</Label>
@@ -136,30 +121,8 @@ export default function LoginPage() {
                     Ingresar al Sistema
                 </Button>
             </form>
-            <div className="mt-4 text-center text-sm text-muted-foreground">
-              Al iniciar sesión aceptas nuestros{" "}
-              <Link href="/legal/terminos" className="underline hover:text-primary">
-                Términos de Servicio
-              </Link> y {" "}
-              <Link href="/legal/privacidad" className="underline hover:text-primary">
-                Aviso de Privacidad
-              </Link>.
-            </div>
           </CardContent>
         </Card>
-      </div>
-      <div className="hidden bg-muted lg:block relative overflow-hidden">
-        <Image
-          src="/login.png"
-          alt="Ranoro Login"
-          fill
-          className="object-cover object-center"
-          sizes="50vw"
-          priority
-          data-ai-hint="mechanic tools"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent"></div>
-      </div>
     </div>
   );
 }
