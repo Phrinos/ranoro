@@ -3,46 +3,12 @@ import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import type { AuditLog } from "@/types";
 import { AdministracionTabs } from "./components/administracion-tabs";
-import { getAdminDb } from '@/lib/firebaseAdmin';
-import { collection, query, orderBy, getDocs, Timestamp } from 'firebase/firestore';
-
-
-async function getAuditLogs(): Promise<AuditLog[]> {
-  try {
-    // Usamos el adminDB para asegurar que tenemos permisos
-    const db = getAdminDb();
-    const q = query(collection(db, 'auditLogs'), orderBy("date", "desc"));
-    const snapshot = await getDocs(q);
-    
-    // Mapea y normaliza los Timestamps a strings ISO
-    return snapshot.docs.map(doc => {
-        const data = doc.data();
-        const dateValue = data.date;
-        let isoDate;
-
-        if (dateValue instanceof Timestamp) {
-            isoDate = dateValue.toDate().toISOString();
-        } else if (typeof dateValue === 'string') {
-            isoDate = dateValue;
-        } else if (dateValue && typeof dateValue === 'object' && dateValue.seconds) {
-            isoDate = new Date(dateValue.seconds * 1000).toISOString();
-        } else {
-            isoDate = new Date().toISOString(); // Fallback
-        }
-        
-        return { id: doc.id, ...data, date: isoDate } as AuditLog;
-    });
-  } catch (error) {
-    console.error("Error fetching audit logs on server:", error instanceof Error ? error.message : String(error));
-    return [];
-  }
-}
 
 type PageProps = { searchParams?: { tab?: string } };
 
-
 export default async function AdministracionPage({ searchParams }: PageProps) {
-  const initialLogs = await getAuditLogs();
+  // Los registros ahora se cargarán en el cliente para evitar problemas de permisos/inicialización del servidor.
+  const initialLogs: AuditLog[] = []; 
   const defaultTab = searchParams?.tab === "migracion" ? "migracion" : "auditoria";
 
   return (

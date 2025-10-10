@@ -16,14 +16,20 @@ import type { DateRange } from 'react-day-picker';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { adminService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
+import { Loader2 } from 'lucide-react';
 
 export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] }) {
   const [logs, setLogs] = useState<AuditLog[]>(initialLogs);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
-    const unsubscribe = adminService.onAuditLogsUpdate(setLogs);
+    setIsLoading(true);
+    const unsubscribe = adminService.onAuditLogsUpdate((updatedLogs) => {
+        setLogs(updatedLogs);
+        setIsLoading(false);
+    });
     return () => unsubscribe();
   }, []);
 
@@ -32,9 +38,9 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
       filtered = filtered.filter(log =>
-        log.userName.toLowerCase().includes(lowerSearch) ||
-        log.description.toLowerCase().includes(lowerSearch) ||
-        log.actionType.toLowerCase().includes(lowerSearch)
+        (log.userName || '').toLowerCase().includes(lowerSearch) ||
+        (log.description || '').toLowerCase().includes(lowerSearch) ||
+        (log.actionType || '').toLowerCase().includes(lowerSearch)
       );
     }
     if (dateRange?.from) {
@@ -45,7 +51,7 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
           return logDate && isValid(logDate) && isWithinInterval(logDate, { start: from, end: to });
       });
     }
-    // Data is already sorted by date from Firestore, but re-sorting is safe
+    // La data ya viene ordenada por fecha desde Firestore
     return filtered;
   }, [logs, searchTerm, dateRange]);
 
@@ -83,7 +89,16 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLogs.length > 0 ? (
+                {isLoading ? (
+                    <TableRow>
+                        <TableCell colSpan={4} className="h-48 text-center">
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                                <span>Cargando registros...</span>
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                ) : filteredLogs.length > 0 ? (
                   filteredLogs.map(log => {
                     const logDate = parseDate(log.date);
                     return (
