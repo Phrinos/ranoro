@@ -19,6 +19,7 @@ import { DocumentsCard } from '../../components/DocumentsCard';
 import { HistoryTabContent } from '../components/HistoryTabContent';
 import { EditContactInfoDialog, type ContactInfoFormValues } from '../../components/EditContactInfoDialog';
 import { EditFinancialInfoDialog, type FinancialInfoFormValues } from '../../components/EditFinancialInfoDialog';
+import { ContractGeneratorCard } from '../../components/ContractGeneratorCard';
 
 export default function FlotillaConductorProfilePage() {
   const params = useParams();
@@ -109,7 +110,7 @@ export default function FlotillaConductorProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-6">
               <ContactInfoCard driver={driver} onEdit={() => setIsContactInfoDialogOpen(true)} />
-              <FinancialInfoCard driver={driver} onEdit={() => setIsFinancialInfoDialogOpen(true)} />
+              <ContractGeneratorCard driver={driver} onEdit={() => setIsFinancialInfoDialogOpen(true)} />
             </div>
             <div className="space-y-6">
               <AssignedVehicleCard assignedVehicle={assignedVehicle} />
