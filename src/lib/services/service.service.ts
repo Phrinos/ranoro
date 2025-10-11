@@ -188,12 +188,15 @@ const completeService = async (service: ServiceRecord, paymentDetails: any) => {
         const serviceRef = doc(db, 'serviceRecords', service.id);
         const publicServiceRef = doc(db, 'publicServices', service.publicId || service.id);
         
+        // Clean the nextServiceInfo object before saving
+        const cleanedNextServiceInfo = cleanObjectForFirestore(paymentDetails.nextServiceInfo);
+
         const updateData = {
             status: 'Entregado' as const,
             payments: paymentDetails.payments,
             deliveryDateTime: new Date().toISOString(),
             updatedAt: serverTimestamp(),
-            nextServiceInfo: paymentDetails.nextServiceInfo,
+            nextServiceInfo: cleanedNextServiceInfo,
         };
         
         transaction.update(serviceRef, updateData);
@@ -241,6 +244,17 @@ const completeService = async (service: ServiceRecord, paymentDetails: any) => {
     });
 };
 
+const deleteService = async (id: string): Promise<void> => {
+  if (!db) throw new Error("Database not initialized.");
+  const batch = writeBatch(db);
+  const serviceRef = doc(db, 'serviceRecords', id);
+  const publicRef = doc(db, 'publicServices', id);
+  batch.delete(serviceRef);
+  batch.delete(publicRef);
+  await batch.commit();
+}
+
+
 export const serviceService = {
   onServicesUpdate,
   onServicesUpdatePromise,
@@ -249,4 +263,5 @@ export const serviceService = {
   saveService,
   updateService,
   completeService,
+  deleteService,
 };
