@@ -16,17 +16,14 @@ export async function POST(req: NextRequest) {
     const buffer = await pdf(element).toBuffer();
 
     return new Response(buffer, {
+      status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Contrato_Arrendamiento_${(data?.vehicle?.plates || "vehiculo").replace(/\s+/g, "_")}.pdf"`,
-        "Cache-Control": "no-store",
+        "Content-Disposition": `attachment; filename="contrato-arrendamiento.pdf"`,
       },
     });
-  } catch (e: any) {
-    console.error("PDF generation error:", e);
-    return new Response(
-      JSON.stringify({ error: "No se pudo generar el PDF." }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    return new Response("Error al generar el PDF", { status: 500 });
   }
 }
