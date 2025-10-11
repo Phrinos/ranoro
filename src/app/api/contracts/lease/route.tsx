@@ -1,12 +1,12 @@
 // src/app/api/contracts/lease/route.tsx
-import { NextRequest } from "next/server";
+import React from "react";
+import { NextRequest, NextResponse } from "next/server";
 import { pdf } from "@react-pdf/renderer";
-import LeasePdf from "@/lib/contracts/LeasePdf";
+import { LeasePdf } from "@/lib/contracts/LeasePdf";
 import type { LeaseContractInput } from "@/lib/contracts/types";
-import React from 'react';
 
-export const runtime = "nodejs";        // fuerza Node.js (no edge)
-export const dynamic = "force-dynamic"; // sin caché estática
+// Forzar runtime Node para @react-pdf/renderer (Edge NO funciona)
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,14 +16,16 @@ export async function POST(req: NextRequest) {
     const buffer = await pdf(element).toBuffer();
 
     return new Response(buffer, {
-      status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="contrato-arrendamiento.pdf"`,
+        "Content-Disposition": `attachment; filename="contrato-${data?.contractId ?? "lease"}.pdf"`,
       },
     });
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    return new Response("Error al generar el PDF", { status: 500 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "No se pudo generar el PDF del contrato." },
+      { status: 500 }
+    );
   }
 }
