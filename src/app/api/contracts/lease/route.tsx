@@ -1,7 +1,7 @@
-// src/app/api/contracts/lease/route.ts
+// src/app/api/contracts/lease/route.tsx
 import { NextRequest } from "next/server";
 import { pdf } from "@react-pdf/renderer";
-import { LeasePdf } from "@/lib/contracts/LeasePdf";
+import LeasePdf from "@/lib/contracts/LeasePdf";
 import type { LeaseContractInput } from "@/lib/contracts/types";
 import React from 'react';
 
