@@ -384,9 +384,8 @@ export default function ServicioPage() {
   }, [toast]);
   
   const handleSaveVehicle = async (data: VehicleFormValues) => {
-    if(!onVehicleCreated) return;
     const newVehicle = await onVehicleCreated(data);
-    methods.setValue('vehicleId', newVehicle.id, { shouldValidate: false, shouldDirty: true });
+    methods.setValue('vehicleId', newVehicle.id, { shouldValidate: true, shouldDirty: true });
     setIsVehicleFormDialogOpen(false);
   };
 
@@ -400,7 +399,7 @@ export default function ServicioPage() {
       await serviceService.completeService(service, { ...paymentDetails, nextServiceInfo });
       toast({ title: "Servicio Completado" });
       const updatedService = { ...service, ...paymentDetails, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
-      handleShowShareDialog(updatedService); // Show share dialog after completion
+      handleShowShareDialog(updatedService, '/servicios?tab=activos');
     } catch (e) {
       console.error('Completion error:', e);
       toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
