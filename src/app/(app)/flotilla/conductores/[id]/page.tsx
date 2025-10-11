@@ -13,7 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { ContactInfoCard } from '../../components/ContactInfoCard';
-import { FinancialInfoCard } from '../../components/FinancialInfoCard';
 import { AssignedVehicleCard } from '../../components/AssignedVehicleCard';
 import { DocumentsCard } from '../../components/DocumentsCard';
 import { HistoryTabContent } from '../components/HistoryTabContent';
