@@ -8,8 +8,8 @@ import { HEADER_LEFT, HEADER_RIGHT, DECLARACIONES, CLAUSULAS, ANEXO_A_LABELS, PA
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 11, lineHeight: 1.4 },
   header: { display: "flex", flexDirection: "row", justifyContent: "space-between", marginBottom: 10, fontSize: 9 },
-  h1: { fontSize: 16, marginTop: 8, marginBottom: 8, fontWeight: 700 },
-  h2: { fontSize: 12, marginTop: 8, marginBottom: 6, fontWeight: 700 },
+  h1: { fontSize: 16, marginTop: 8, marginBottom: 8, fontWeight: "bold" },
+  h2: { fontSize: 12, marginTop: 8, marginBottom: 6, fontWeight: "bold" },
   small: { fontSize: 9, color: "#666" },
   row: { flexDirection: "row", gap: 12, marginBottom: 6, flexWrap: "wrap" },
   col: { flexGrow: 1, flexBasis: "48%" },
@@ -18,14 +18,14 @@ const styles = StyleSheet.create({
   sigBox: { width: "48%", borderTop: 1, borderColor: "#222", paddingTop: 6 },
   mono: { fontSize: 10 },
   list: { marginTop: 4, marginBottom: 4 },
-  listItem: { marginBottom: 4, textAlign: "justify" as const },
-  justified: { textAlign: "justify" as const },
+  listItem: { marginBottom: 4, textAlign: "justify" },
+  justified: { textAlign: "justify" },
   annexItem: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
 });
 
 const Item = ({ label, value }: { label: string; value?: string }) => (
   <Text style={{ marginBottom: 2 }}>
-    <Text style={{ fontWeight: 700 }}>{label}: </Text>
+    <Text style={{ fontWeight: "bold" }}>{label}: </Text>
     <Text>{value || ""}</Text>
   </Text>
 );
@@ -69,7 +69,7 @@ export function LeasePdf({ data }: { data: LeaseContractInput }) {
         </View>
 
         <View style={styles.box}>
-          <Text style={{ fontWeight: 700, marginBottom: 4 }}>
+          <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
             “VEHÍCULO”
           </Text>
           <Item label="Marca / Modelo / Año" value={`${data.vehicle.make} ${data.vehicle.model} ${data.vehicle.year}`} />
@@ -80,7 +80,7 @@ export function LeasePdf({ data }: { data: LeaseContractInput }) {
         </View>
 
         <View style={{ marginTop: 10 }}>
-          <Text style={{ fontWeight: 700, marginBottom: 4 }}>“ARRENDADOR”</Text>
+          <Text style={{ fontWeight: "bold", marginBottom: 4 }}>“ARRENDADOR”</Text>
           <View style={styles.row}>
             <View style={styles.col}>
               <Item label="Nombre" value={data.lessor.companyName || data.lessor.name} />
@@ -99,7 +99,7 @@ export function LeasePdf({ data }: { data: LeaseContractInput }) {
         </View>
 
         <View style={{ marginTop: 10 }}>
-          <Text style={{ fontWeight: 700, marginBottom: 4 }}>“ARRENDATARIO”</Text>
+          <Text style={{ fontWeight: "bold", marginBottom: 4 }}>“ARRENDATARIO”</Text>
           <View style={styles.row}>
             <View style={styles.col}>
               <Item label="Nombre" value={data.lessee.name} />

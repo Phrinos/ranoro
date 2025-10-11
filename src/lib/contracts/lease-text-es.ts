@@ -30,7 +30,7 @@ export const CLAUSULAS = [
   "OCTAVA. Seguro del vehículo. El VEHÍCULO cuenta con una póliza de seguro de cobertura amplia. El ARRENDATARIO será responsable del pago del deducible en caso de siniestro.",
   "NOVENA. Depósito en garantía. El ARRENDATARIO entrega un depósito en garantía para cubrir posibles daños, multas o rentas no pagadas, el cual será devuelto al finalizar el contrato si no existen adeudos.",
   "DÉCIMA. Inexistencia de Relación Laboral. Este contrato es de naturaleza mercantil, por lo que no crea ninguna relación de trabajo entre las partes.",
-  "DÉCIMA PRIMERA. Revisiones y Reparaciones. El ARRENDADOR es responsable de los mantenimientos preventivos. Las reparaciones por mal uso serán cubiertas por el ARRENDATARIO.",
+  "DÉCIMA PRIMERA. Revisiones y Reparaciones Físico-mecánicas. El ARRENDADOR es responsable de los mantenimientos preventivos. Las reparaciones por mal uso serán cubiertas por el ARRENDATARIO.",
   "DÉCIMO SEGUNDA. Terminación. El contrato podrá darse por terminado anticipadamente por incumplimiento de cualquiera de las partes.",
   "DÉCIMO TERCERA. Caso Fortuito y Fuerza Mayor. Ninguna de las partes será responsable por el incumplimiento de sus obligaciones si éste se debe a un caso fortuito o de fuerza mayor.",
 ];
