@@ -253,7 +253,7 @@ export default function VehicleDetailPage() {
 
                   <p className="font-semibold">{vehicle.ownerName}</p>
                   <p className="text-sm text-muted-foreground">
-                    {vehicle.ownerPhone || "N/A"} | {vehicle.ownerEmail || "N/A"}
+                    {vehicle.ownerPhone || "N/A"} | {(vehicle as any).ownerEmail || "N/A"}
                   </p>
 
                   {vehicle.notes && (
@@ -272,9 +272,9 @@ export default function VehicleDetailPage() {
             </div>
 
             <div className="lg:col-span-1">
-              {vehicle.nextServiceInfo &&
-                vehicle.nextServiceInfo.date &&
-                isValid(parseDate(vehicle.nextServiceInfo.date)!) && (
+              {(vehicle as any).nextServiceInfo &&
+                (vehicle as any).nextServiceInfo.date &&
+                isValid(parseDate((vehicle as any).nextServiceInfo.date)!) && (
                   <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
@@ -287,16 +287,16 @@ export default function VehicleDetailPage() {
                         <p className="font-semibold">Fecha:</p>
                         <p>
                           {format(
-                            parseDate(vehicle.nextServiceInfo.date)!,
+                            parseDate((vehicle as any).nextServiceInfo.date)!,
                             "dd 'de' MMMM 'de' yyyy",
                             { locale: es }
                           )}
                         </p>
                       </div>
-                      {vehicle.nextServiceInfo.mileage && (
+                      {(vehicle as any).nextServiceInfo.mileage && (
                         <div>
                           <p className="font-semibold">Kilometraje:</p>
-                          <p>{formatNumber(vehicle.nextServiceInfo.mileage)} km</p>
+                          <p>{formatNumber((vehicle as any).nextServiceInfo.mileage)} km</p>
                         </div>
                       )}
                     </CardContent>
@@ -366,8 +366,8 @@ export default function VehicleDetailPage() {
                           >
                             <TableCell>{formattedDate}</TableCell>
                             <TableCell>
-                              {service.mileage
-                                ? `${formatNumber(service.mileage)} km`
+                              {(service as any).mileage
+                                ? `${formatNumber((service as any).mileage)} km`
                                 : "N/A"}
                             </TableCell>
                             <TableCell>{getServiceDescriptionText(service)}</TableCell>
@@ -408,6 +408,7 @@ export default function VehicleDetailPage() {
         <UnifiedPreviewDialog
           open={isViewServiceDialogOpen}
           onOpenChange={setIsViewServiceDialogOpen}
+          title="Vista Previa del Servicio"
           service={selectedService}
           vehicle={vehicle}
         />
