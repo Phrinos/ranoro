@@ -35,7 +35,8 @@ import { HistorialSummary } from "./HistorialSummary";
 import type { ServiceRecord, Vehicle, User, Payment, PaymentMethod } from "@/types";
 import { useTableManager } from "@/hooks/useTableManager";
 import { ServiceAppointmentCard } from "./ServiceAppointmentCard";
-import { startOfMonth, endOfMonth } from "date-fns";
+import { startOfMonth, endOfMonth, isValid } from "date-fns";
+import { parseDate } from '@/lib/forms';
 
 interface HistorialTabContentProps {
   services: ServiceRecord[];
@@ -78,6 +79,17 @@ const toNumber = (v: unknown) => {
 const fmtLocal = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString('es-MX') : '';
 
+// Función para obtener la fecha relevante de un servicio
+const getRelevantDateForFiltering = (item: ServiceRecord): Date | null => {
+    return (
+        parseDate(item.deliveryDateTime) ||
+        parseDate((item as any).cancellationTimestamp) || // Para cancelados
+        parseDate(item.serviceDate) ||
+        null
+    );
+};
+
+
 export default function HistorialTabContent({
   services,
   vehicles,
@@ -111,7 +123,7 @@ export default function HistorialTabContent({
     () => ({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) }),
     []
   );
-
+  
   const { paginatedData, fullFilteredData, ...tableManager } =
     useTableManager<ServiceRecord>({
       initialData: historicalServices,
@@ -124,13 +136,15 @@ export default function HistorialTabContent({
         "serviceItems.name",
         "suppliesUsed.supplyName",
       ],
-      dateFilterKey: "deliveryDateTime",
+      // Se usa una función personalizada para el filtrado de fecha
+      dateFilterKey: getRelevantDateForFiltering, 
       initialSortOption: "deliveryDateTime_desc",
       initialDateRange: defaultRange,
       itemsPerPage: 50,
     });
 
-  // ——— EXPORTACIÓN CSV: “profesional”
+
+  // --- EXPORTACIÓN CSV: “profesional”
   const handleExport = () => {
     const data = fullFilteredData;
     if (!data.length) {

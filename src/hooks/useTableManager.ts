@@ -7,12 +7,14 @@ import type { DateRange } from 'react-day-picker';
 import { isWithinInterval, isValid, startOfDay, endOfDay, compareAsc, compareDesc } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 
+type FilterFn<T> = (item: T) => Date | null;
+
 interface UseTableManagerOptions<T> {
   initialData: T[];
   initialSortOption?: string;
   initialDateRange?: DateRange;
   searchKeys: (keyof T | string)[];
-  dateFilterKey: keyof T | string;
+  dateFilterKey: keyof T | string | FilterFn<T>;
   itemsPerPage?: number;
 }
 
@@ -80,9 +82,13 @@ export function useTableManager<T extends Record<string, any>>({
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
       data = data.filter(item => {
-        const raw = getNestedValue(item, dateFilterKey as string);
-        if (!raw) return false;
-        const d = parseDate(raw);
+        let d: Date | null;
+        if (typeof dateFilterKey === 'function') {
+          d = dateFilterKey(item);
+        } else {
+          const raw = getNestedValue(item, dateFilterKey as string);
+          d = raw ? parseDate(raw) : null;
+        }
         return d && isValid(d) && isWithinInterval(d, { start: from, end: to });
       });
     }
