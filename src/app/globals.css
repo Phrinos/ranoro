@@ -162,6 +162,29 @@
 
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Custom styles for react-calendar */
+  .react-calendar {
+    @apply border-none bg-popover text-popover-foreground;
+  }
+  .react-calendar__navigation button {
+    @apply font-bold hover:bg-accent;
+  }
+  .react-calendar__month-view__weekdays__weekday {
+    @apply text-muted-foreground;
+  }
+  .react-calendar__tile {
+    @apply rounded-md hover:bg-accent;
+  }
+  .react-calendar__tile--now {
+    @apply bg-accent text-accent-foreground;
+  }
+  .react-calendar__tile--active {
+    @apply bg-primary text-primary-foreground;
+  }
+  .react-calendar__tile--rangeStart, .react-calendar__tile--rangeEnd {
+    @apply bg-primary text-primary-foreground;
+  }
 }
 
 /* Hide number input arrows */
@@ -172,5 +195,3 @@ input::-webkit-inner-spin-button {
 }
 /* Quita las flechas de los number inputs (Firefox) */
 input[type="number"] { -moz-appearance: textfield; }
-
-/* ===== FIN: sin reglas .rdp-* para no modificar el calendario globalmente ===== */
