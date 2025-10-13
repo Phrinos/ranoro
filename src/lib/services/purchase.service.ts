@@ -1,3 +1,4 @@
+
 // src/lib/services/purchase.service.ts
 
 import {
@@ -114,31 +115,33 @@ const registerPayableAccountPayment = async (
 
     // Usamos una transacción para asegurar la atomicidad de las operaciones
     await runTransaction(db, async (transaction) => {
+        // --- 1. ALL READS FIRST ---
         const accountSnap = await transaction.get(accountRef);
         if (!accountSnap.exists()) {
             throw new Error("La cuenta por pagar no fue encontrada.");
         }
-
         const accountData = accountSnap.data() as PayableAccount;
+        
+        const supplierRef = doc(db, 'suppliers', accountData.supplierId);
+        const supplierSnap = await transaction.get(supplierRef);
+        
+        // --- 2. ALL WRITES AFTER ---
         const newPaidAmount = (accountData.paidAmount || 0) + amount;
-        const newBalance = accountData.totalAmount - newPaidAmount;
-        const newStatus = newBalance <= 0.01 ? 'Pagado' : 'Pagado Parcialmente';
+        const newStatus = (accountData.totalAmount - newPaidAmount) <= 0.01 ? 'Pagado' : 'Pagado Parcialmente';
 
-        // 1. Actualizar la cuenta por pagar
+        // Update payable account
         transaction.update(accountRef, {
             paidAmount: newPaidAmount,
             status: newStatus,
         });
 
-        // 2. Actualizar la deuda del proveedor
-        const supplierRef = doc(db, 'suppliers', accountData.supplierId);
-        const supplierSnap = await transaction.get(supplierRef);
+        // Update supplier's debt
         if (supplierSnap.exists()) {
             const currentDebt = supplierSnap.data().debtAmount || 0;
             transaction.update(supplierRef, { debtAmount: currentDebt - amount });
         }
 
-        // 3. Registrar salida de caja si es en efectivo
+        // Register cash out if applicable
         if (paymentMethod === 'Efectivo') {
             const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
             transaction.set(cashTransactionRef, {
