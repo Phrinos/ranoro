@@ -34,7 +34,7 @@ const processFinancialChartData = (
     } = {};
     const now = new Date();
 
-    for (let i = 5; i >= 0; i--) {
+    for (let i = 2; i >= 0; i--) {
         const date = subMonths(now, i);
         const monthKey = format(date, 'yyyy-MM');
         const monthName = format(date, 'MMM yy', { locale: es });
@@ -130,7 +130,7 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
     const now = new Date();
     const serviceTypeCounts: { [key: string]: number } = {};
 
-    for (let i = 5; i >= 0; i--) {
+    for (let i = 2; i >= 0; i--) {
         const date = subMonths(now, i);
         const monthKey = format(date, 'yyyy-MM');
         const monthName = format(date, 'MMM yy', { locale: es });
@@ -197,7 +197,7 @@ const CustomPieTooltip = ({ active, payload }: TooltipProps<number, string>) => 
 const FinancialChart = React.memo(({ data }: { data: any[] }) => (
   <Card>
     <CardHeader>
-      <CardTitle>Rendimiento del Taller (Últimos 6 Meses)</CardTitle>
+      <CardTitle>Rendimiento del Taller (Últimos 3 Meses)</CardTitle>
       <CardDescription>Análisis de la rentabilidad y volumen de operaciones.</CardDescription>
     </CardHeader>
     <CardContent>
@@ -350,4 +350,5 @@ export const DashboardCharts = React.memo(function DashboardCharts({ services, s
 
 DashboardCharts.displayName = 'DashboardCharts';
 
+    
     
