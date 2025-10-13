@@ -349,14 +349,11 @@ export default function ServicioPage() {
     }
   };
 
-  const handleCancelService = async () => {
+  const handleCancelService = async (reason: string) => {
     if (!initialData?.id) return;
-    const reason = prompt("Por favor, ingrese un motivo para la cancelación:");
-    if (reason) {
-      await serviceService.updateService(initialData.id, { status: 'Cancelado', cancellationReason: reason });
-      toast({ title: "Servicio Cancelado" });
-      router.push('/servicios?tab=historial');
-    }
+    await serviceService.updateService(initialData.id, { status: 'Cancelado', cancellationReason: reason });
+    toast({ title: "Servicio Cancelado" });
+    router.push('/servicios?tab=historial');
   };
 
   const handleDeleteQuote = async () => {

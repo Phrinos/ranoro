@@ -188,9 +188,16 @@ const completeService = async (service: ServiceRecord, paymentDetails: any) => {
         const serviceRef = doc(db, 'serviceRecords', service.id);
         const publicServiceRef = doc(db, 'publicServices', service.publicId || service.id);
         
-        // Clean the nextServiceInfo object before saving
-        const cleanedNextServiceInfo = cleanObjectForFirestore(paymentDetails.nextServiceInfo);
+        // --- 1. ALL READS FIRST ---
+        const suppliesToDiscount = (service.serviceItems || [])
+            .flatMap(item => item.suppliesUsed || [])
+            .filter(supply => !supply.isService && supply.supplyId && supply.quantity > 0);
 
+        const itemRefs = suppliesToDiscount.map(item => doc(db, 'inventory', item.supplyId));
+        const itemDocs = await Promise.all(itemRefs.map(ref => transaction.get(ref)));
+
+        // --- 2. ALL WRITES AFTER ---
+        const cleanedNextServiceInfo = cleanObjectForFirestore(paymentDetails.nextServiceInfo);
         const updateData = {
             status: 'Entregado' as const,
             payments: paymentDetails.payments,
@@ -206,24 +213,15 @@ const completeService = async (service: ServiceRecord, paymentDetails: any) => {
             payments: paymentDetails.payments,
             updatedAt: serverTimestamp(),
         });
-        
-        // Discount supplies from inventory
-        const suppliesToDiscount = (service.serviceItems || [])
-            .flatMap(item => item.suppliesUsed || [])
-            .filter(supply => !supply.isService && supply.supplyId && supply.quantity > 0)
-            .map(supply => ({ id: supply.supplyId, quantity: supply.quantity }));
 
-        if (suppliesToDiscount.length > 0) {
-            for (const item of suppliesToDiscount) {
-                const itemRef = doc(db, 'inventory', item.id);
-                const itemDoc = await transaction.get(itemRef);
-                if (itemDoc.exists()) {
-                    const currentStock = itemDoc.data().quantity || 0;
-                    const newStock = currentStock - item.quantity;
-                    transaction.update(itemRef, { quantity: newStock });
-                }
+        // Discount supplies from inventory
+        itemDocs.forEach((itemDoc, index) => {
+            if (itemDoc.exists()) {
+                const currentStock = itemDoc.data().quantity || 0;
+                const newStock = currentStock - suppliesToDiscount[index].quantity;
+                transaction.update(itemDoc.ref, { quantity: newStock });
             }
-        }
+        });
         
         // Add cash payments to cash drawer
         for (const payment of paymentDetails.payments) {

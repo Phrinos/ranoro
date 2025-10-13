@@ -1,16 +1,17 @@
 // src/app/(app)/servicios/components/ServiceFormFooter.tsx
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, Ban, DollarSign } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import type { ServiceFormValues } from '@/schemas/service-form';
 import type { ServiceRecord } from '@/types';
+import { Textarea } from '@/components/ui/textarea';
 
 interface ServiceFormFooterProps {
-  onCancel?: () => void;
+  onCancel: (reason?: string) => void;
   onComplete?: () => void;
   onSaveClick: () => void;
   mode: 'service' | 'quote';
@@ -34,6 +35,7 @@ export const ServiceFormFooter = ({
   isSubmitting
 }: ServiceFormFooterProps) => {
   const { control } = useFormContext<ServiceFormValues>();
+  const [cancellationReason, setCancellationReason] = useState("");
 
   const [status, serviceItems = []] = useWatch({
     control,
@@ -63,7 +65,7 @@ export const ServiceFormFooter = ({
   let cancelTexts = {
     button: 'Cancelar Servicio',
     title: '¿Cancelar servicio?',
-    description: 'El servicio se marcará como cancelado y los insumos se devolverán al inventario.',
+    description: 'El servicio se marcará como cancelado. Por favor, especifique un motivo.',
     confirm: 'Sí, Cancelar Servicio'
   };
 
@@ -71,17 +73,22 @@ export const ServiceFormFooter = ({
     cancelTexts = {
       button: 'Eliminar Cotización',
       title: '¿Eliminar cotización?',
-      description: 'Esta acción es permanente y no se puede deshacer.',
+      description: 'Esta acción es permanente y no se puede deshacer. No se requiere un motivo.',
       confirm: 'Sí, Eliminar'
     };
   } else if (isScheduledMode) {
     cancelTexts = {
       button: 'Cancelar Cita',
       title: '¿Cancelar cita?',
-      description: 'La cita se cancelará y el registro volverá a ser una cotización.',
+      description: 'La cita se cancelará y el registro volverá a ser una cotización. Por favor, especifique un motivo.',
       confirm: 'Sí, Cancelar Cita'
     };
   }
+  
+  const handleConfirmCancel = () => {
+    onCancel(cancellationReason);
+    setCancellationReason("");
+  };
 
   return (
     <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm hidden md:block">
@@ -97,9 +104,18 @@ export const ServiceFormFooter = ({
               }
               title={cancelTexts.title}
               description={cancelTexts.description}
-              onConfirm={onCancel}
+              onConfirm={handleConfirmCancel}
               confirmText={cancelTexts.confirm}
-            />
+            >
+              {!isQuoteMode && (
+                <Textarea
+                  placeholder="Motivo de la cancelación..."
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  className="mt-4"
+                />
+              )}
+            </ConfirmDialog>
           )}
         </div>
 
@@ -123,7 +139,7 @@ export const ServiceFormFooter = ({
             </Button>
           )}
           
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          <Button type="button" variant="outline" onClick={() => (window.history.length > 1 ? window.history.back() : router.push('/servicios'))} disabled={isSubmitting}>
               Cancelar
           </Button>
 
