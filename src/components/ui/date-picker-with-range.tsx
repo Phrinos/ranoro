@@ -2,13 +2,13 @@
 
 import * as React from "react"
 import { CalendarIcon } from "@radix-ui/react-icons"
-import { format, startOfWeek, endOfWeek } from "date-fns"
+import { format, startOfWeek, endOfWeek, subDays, startOfMonth, endOfMonth } from "date-fns"
 import { es } from "date-fns/locale"
 import type { DateRange } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { NewCalendar } from "@/components/ui/calendar"
+import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "./separator"
 
@@ -18,7 +18,6 @@ interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 export function DatePickerWithRange({ className, date, onDateChange }: DatePickerWithRangeProps) {
-  const setDate = onDateChange
   const [open, setOpen] = React.useState(false)
 
   // Controlamos el mes mostrado por el calendario (en vez de defaultMonth)
@@ -35,8 +34,9 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
   const selectRange = (from: Date, to: Date) => {
     const start = normalize(from)
     const end = normalize(to)
-    setDate({ from: start, to: end })
+    onDateChange({ from: start, to: end })
     setMonth(start)
+    setOpen(false) // Cierra el popover después de seleccionar un rango predefinido
   }
 
   const thisMonth = () => {
@@ -84,20 +84,21 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
             <Button onClick={() => selectRange(today, today)} variant="ghost" className="w-full justify-start">Hoy</Button>
             <Button onClick={() => { const y = new Date(today); y.setDate(y.getDate() - 1); selectRange(y, y) }} variant="ghost" className="w-full justify-start">Ayer</Button>
             <Button onClick={() => { const from = new Date(today); from.setDate(from.getDate() - 6); selectRange(from, today) }} variant="ghost" className="w-full justify-start">Últimos 7 días</Button>
-            <Button onClick={() => { selectRange(startOfWeek(today, { locale: es }), endOfWeek(today, { locale: es })) }} variant="ghost" className="w-full justify-start">Esta semana</Button>
+            <Button onClick={() => { selectRange(startOfWeek(today, { weekStartsOn: 1 }), endOfWeek(today, { weekStartsOn: 1 })) }} variant="ghost" className="w-full justify-start">Esta semana</Button>
             <Button onClick={thisMonth} variant="ghost" className="w-full justify-start">Este mes</Button>
             <Button onClick={lastMonth} variant="ghost" className="w-full justify-start">Mes pasado</Button>
           </div>
 
           <Separator orientation="vertical" />
 
-          <NewCalendar
+          <Calendar
             initialFocus
             mode="range"
             month={month}
             onMonthChange={setMonth}
+            defaultMonth={date?.from}
             selected={date}
-            onSelect={(r) => { setDate(r); if (r?.from) setMonth(r.from) }}
+            onSelect={onDateChange}
             numberOfMonths={1}
             locale={es}
           />

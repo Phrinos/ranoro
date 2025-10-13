@@ -10,7 +10,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { NewCalendar } from '@/components/ui/calendar'; // Changed import
+import { Calendar } from '@/components/ui/calendar'; // Changed import
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { isWeekend, setHours, setMinutes, format } from 'date-fns';
@@ -40,8 +40,8 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
   
   const today = new Date();
 
-  const handleDateSelect = (date: any) => {
-    if (date && !Array.isArray(date)) {
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
       setSelectedDate(date);
       setSelectedTime(null); // Reset time when date changes
     }
@@ -74,12 +74,9 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
     }
   };
 
-  const tileDisabled = ({ date, view }: { date: Date, view: string }) => {
-    if (view === 'month') {
-      // Disable past dates and Sundays
-      return date < today || date.getDay() === 0;
-    }
-    return false;
+  const isDateDisabled = (date: Date) => {
+    // Disable past dates and Sundays
+    return date < today || date.getDay() === 0;
   };
 
   return (
@@ -93,10 +90,12 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
         </DialogHeader>
         <div className="px-6 space-y-4">
             <div className="flex justify-center">
-                <NewCalendar // Changed component
-                    value={selectedDate}
-                    onChange={handleDateSelect}
-                    tileDisabled={tileDisabled}
+                <Calendar 
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={handleDateSelect}
+                    disabled={isDateDisabled}
+                    initialFocus
                 />
             </div>
 
