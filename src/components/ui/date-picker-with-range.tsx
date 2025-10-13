@@ -8,7 +8,7 @@ import type { DateRange } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { NewCalendar } from "@/components/ui/calendar"
 import {
   Popover,
   PopoverContent,
@@ -66,7 +66,7 @@ export function DatePickerWithRange({
                     <Button onClick={() => setDate({ from: startOfMonth(subDays(new Date(), new Date().getDate())), to: endOfMonth(subDays(new Date(), new Date().getDate())) })} variant="ghost" className="w-full justify-start">Mes Pasado</Button>
                 </div>
             </div>
-            <Calendar
+            <NewCalendar
                 initialFocus
                 mode="range"
                 defaultMonth={date?.from}
