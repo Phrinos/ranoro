@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
+import { Separator } from "./separator"
 
 interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> {
     date: DateRange | undefined;
@@ -54,18 +54,16 @@ export function DatePickerWithRange({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <div className="flex">
-            <div className="p-4 border-r">
-                <div className="space-y-2">
-                    <Button onClick={() => setDate({ from: new Date(), to: new Date() })} variant="ghost" className="w-full justify-start">Hoy</Button>
-                    <Button onClick={() => setDate({ from: subDays(new Date(), 1), to: subDays(new Date(), 1) })} variant="ghost" className="w-full justify-start">Ayer</Button>
-                    <Button onClick={() => setDate({ from: subDays(new Date(), 6), to: new Date() })} variant="ghost" className="w-full justify-start">Últimos 7 días</Button>
-                    <Button onClick={() => setDate({ from: startOfWeek(new Date(), { locale: es }), to: endOfWeek(new Date(), { locale: es }) })} variant="ghost" className="w-full justify-start">Esta Semana</Button>
-                    <Button onClick={() => setDate({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })} variant="ghost" className="w-full justify-start">Este Mes</Button>
-                    <Button onClick={() => setDate({ from: startOfMonth(subDays(new Date(), new Date().getDate())), to: endOfMonth(subDays(new Date(), new Date().getDate())) })} variant="ghost" className="w-full justify-start">Mes Pasado</Button>
-                </div>
+        <PopoverContent className="w-auto p-0 flex" align="start">
+            <div className="flex flex-col space-y-2 p-4 border-r">
+                <Button onClick={() => setDate({ from: new Date(), to: new Date() })} variant="ghost" className="w-full justify-start">Hoy</Button>
+                <Button onClick={() => setDate({ from: subDays(new Date(), 1), to: subDays(new Date(), 1) })} variant="ghost" className="w-full justify-start">Ayer</Button>
+                <Button onClick={() => setDate({ from: subDays(new Date(), 6), to: new Date() })} variant="ghost" className="w-full justify-start">Últimos 7 días</Button>
+                <Button onClick={() => setDate({ from: startOfWeek(new Date(), { locale: es }), to: endOfWeek(new Date(), { locale: es }) })} variant="ghost" className="w-full justify-start">Esta Semana</Button>
+                <Button onClick={() => setDate({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })} variant="ghost" className="w-full justify-start">Este Mes</Button>
+                <Button onClick={() => setDate({ from: startOfMonth(subDays(new Date(), new Date().getDate())), to: endOfMonth(subDays(new Date(), new Date().getDate())) })} variant="ghost" className="w-full justify-start">Mes Pasado</Button>
             </div>
+            <Separator orientation="vertical" />
             <NewCalendar
                 initialFocus
                 mode="range"
@@ -75,7 +73,6 @@ export function DatePickerWithRange({
                 numberOfMonths={1}
                 locale={es}
             />
-          </div>
         </PopoverContent>
       </Popover>
     </div>
