@@ -109,15 +109,18 @@ const processFinancialChartData = (
         const monthStartDate = new Date(year, month - 1, 1);
         
         if (monthStartDate > now) {
-            monthData.gastosFijos = 0;
+            monthData.gastosFijos = 0; // Mes futuro, sin gastos aún.
         } else if (monthStartDate.getFullYear() === now.getFullYear() && monthStartDate.getMonth() === now.getMonth()) {
+            // Mes actual: aplicar prorrata
             const daysInMonth = getDaysInMonth(monthStartDate);
             const dayOfMonth = now.getDate();
             const expenseFactor = dayOfMonth / daysInMonth;
             monthData.gastosFijos = totalMonthlyFixedExpenses * expenseFactor;
         } else {
+            // Meses pasados: aplicar el 100% de los gastos fijos
             monthData.gastosFijos = totalMonthlyFixedExpenses;
         }
+        
         monthData.utilidadNeta = monthData.gananciaBruta - monthData.gastosFijos;
     });
 
@@ -350,5 +353,6 @@ export const DashboardCharts = React.memo(function DashboardCharts({ services, s
 
 DashboardCharts.displayName = 'DashboardCharts';
 
+    
     
     
