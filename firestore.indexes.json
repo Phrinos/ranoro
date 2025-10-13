@@ -30,6 +30,20 @@
       ]
     },
     {
+      "collectionGroup": "serviceRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "licensePlate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "serviceDate",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "dailyRentalCharges",
       "queryScope": "COLLECTION",
       "fields": [
