@@ -85,13 +85,8 @@ const processFinancialChartData = (
                 const income = sale.totalAmount;
                 const costOfGoods = sale.items.reduce((sum, item) => {
                     const inventoryItem = inventoryMap.get(item.inventoryItemId);
-                    // Lógica de costo robusta con fallbacks
-                    const itemUnitCost =
-                        inventoryItem?.purchasePrice ??
-                        (inventoryItem as any)?.costPrice ??
-                        (inventoryItem as any)?.averageCost ??
-                        inventoryItem?.unitPrice ??
-                        0;
+                    // FIX: Use only `unitPrice` which represents the cost for the workshop.
+                    const itemUnitCost = inventoryItem?.unitPrice ?? 0;
                     return sum + (itemUnitCost * item.quantity);
                 }, 0);
                 
@@ -354,3 +349,5 @@ export const DashboardCharts = React.memo(function DashboardCharts({ services, s
 });
 
 DashboardCharts.displayName = 'DashboardCharts';
+
+    

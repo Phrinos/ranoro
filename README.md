@@ -1,4 +1,4 @@
-ildnpm
+firebase deploy --only firestore:indexesildnpm
 # Firebase Studio
 
 This is a NextJS starter in Firebase Studio.
