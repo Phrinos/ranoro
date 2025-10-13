@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PaymentSection } from "./PaymentSection";
-import type { ServiceRecord, SaleReceipt } from "@/types";
+import type { ServiceRecord, SaleReceipt, Payment } from "@/types";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { paymentDetailsSchema, PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
@@ -22,7 +22,7 @@ interface PaymentDetailsDialogProps {
   isCompletionFlow?: boolean;
 }
 
-const toNumber = (v: any) =>
+const toNumber = (v: any): number =>
   typeof v === 'number'
     ? (Number.isFinite(v) ? v : 0)
     : typeof v === 'string'
@@ -63,22 +63,43 @@ export function PaymentDetailsDialog({
   const methods = useForm<PaymentDetailsFormValues>({
     resolver: zodResolver(paymentDetailsSchema),
     defaultValues: {
-      payments: [{ method: 'Efectivo', amount: totalAmount, date: new Date() }],
+      payments: [],
       nextServiceInfo: { nextServiceDate: null, nextServiceMileage: null },
     },
     mode: 'onChange'
   });
 
-  const { handleSubmit, formState: { isSubmitting }, reset, getValues } = methods;
-  const getValuesHook = methods.getValues;
+  const { handleSubmit, formState: { isSubmitting }, reset } = methods;
 
   useEffect(() => {
-    if (!record) return;
-    reset({
-      payments: [{ method: 'Efectivo', amount: totalAmount, date: new Date() }],
-      nextServiceInfo: getValuesHook('nextServiceInfo') ?? { nextServiceDate: null, nextServiceMileage: null },
-    });
-  }, [record, totalAmount, open, reset, getValuesHook]);
+    if (open && record) {
+      const existingPayments = (record as any).payments;
+      const legacyPaymentMethod = (record as any).paymentMethod;
+      
+      let initialPayments: any[] = [];
+      
+      if (Array.isArray(existingPayments) && existingPayments.length > 0) {
+        // Cargar los pagos existentes
+        initialPayments = existingPayments.map(p => ({
+          method: p.method,
+          amount: p.amount,
+          folio: p.folio || '',
+          date: p.date ? new Date(p.date) : new Date(),
+        }));
+      } else if (legacyPaymentMethod) {
+        // Usar método de pago legacy si existe
+        initialPayments = [{ method: legacyPaymentMethod, amount: totalAmount, date: new Date() }];
+      } else {
+        // Valor por defecto si no hay nada
+        initialPayments = [{ method: 'Efectivo', amount: totalAmount, date: new Date() }];
+      }
+
+      reset({
+        payments: initialPayments,
+        nextServiceInfo: 'nextServiceInfo' in record ? (record as ServiceRecord).nextServiceInfo : { nextServiceDate: null, nextServiceMileage: null },
+      });
+    }
+  }, [record, totalAmount, open, reset]);
 
   const processSubmit = (values: PaymentDetailsFormValues) => {
     const normalized = {
@@ -91,9 +112,9 @@ export function PaymentDetailsDialog({
     };
 
     const totalPaid = normalized.payments.reduce((acc, p) => acc + toNumber(p.amount), 0);
-    if (totalPaid < toNumber(totalAmount)) {
+    if (Math.abs(totalAmount - totalPaid) > 0.01) {
       toast({
-        title: "Monto insuficiente",
+        title: "El monto del pago no coincide",
         description: `Pagado: ${currency.format(totalPaid)} / Requerido: ${currency.format(toNumber(totalAmount))}`,
         variant: "destructive",
       });
@@ -120,8 +141,10 @@ export function PaymentDetailsDialog({
             <ScrollArea className="max-h-[65vh] p-1">
               <div className="space-y-6 p-4">
                 <PaymentSection totalAmount={toNumber(totalAmount)} />
-                {recordType === 'service' && vehicle && (
-                  <NextServiceInfoCard currentMileage={vehicle.mileage} />
+                {recordType === 'service' && isCompletionFlow && (
+                  <NextServiceInfoCard 
+                    currentMileage={vehicle?.currentMileage} 
+                  />
                 )}
               </div>
             </ScrollArea>

@@ -1,4 +1,3 @@
-
 // src/components/shared/PaymentSection.tsx
 "use client";
 
@@ -26,7 +25,6 @@ const paymentMethodIcons: Record<Payment["method"], React.ElementType> = {
 interface PaymentSectionProps {
   onOpenValidateDialog?: (index: number) => void;
   validatedFolios?: Record<number, boolean>;
-  /** Opcional. Si no viene, calculamos el total en vivo desde serviceItems */
   totalAmount?: number;
 }
 
@@ -47,7 +45,6 @@ export function PaymentSection({
   const { control, watch, setValue } = useFormContext();
   const { fields, append, remove } = useFieldArray({ control, name: "payments" });
 
-  // Observa items para calcular total en vivo si no viene por prop
   const items = useWatch({ control, name: "serviceItems" }) as any[] | undefined;
 
   const totalAmountLive = useMemo(
@@ -55,24 +52,20 @@ export function PaymentSection({
     [items]
   );
 
-  // Escoge el total a usar: en vivo si existe, si no el prop
   const totalAmount = totalAmountLive > 0 ? totalAmountLive : toNumber(totalAmountProp);
 
   const watchedPayments = watch("payments") as Payment[] | undefined;
 
-  // Total pagado y faltante
   const totalPaid = useMemo(
     () => (watchedPayments ?? []).reduce((acc, p) => acc + toNumber(p?.amount), 0),
     [watchedPayments]
   );
   const remaining = Math.max(0, totalAmount - totalPaid);
 
-  // Autorrelleno: si hay UNA línea y está vacía, la llenamos con el total
   useEffect(() => {
     if (!watchedPayments || watchedPayments.length === 0) return;
     if (totalAmount <= 0) return;
 
-    // Solo si el primer pago está undefined / null / "" / 0
     const v = watchedPayments[0]?.amount;
     const isEmpty = v === undefined || v === null || v === "" || toNumber(v) === 0;
 

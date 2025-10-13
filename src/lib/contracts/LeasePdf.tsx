@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { LeaseContractInput } from "./types";
+import type { LeaseContractInput } from "./types";
 import { formatDateLong, formatMXN } from "./format";
 import { HEADER_LEFT, HEADER_RIGHT, DECLARACIONES, CLAUSULAS, ANEXO_A_LABELS, PAGARE_TEXT } from "./lease-text-es";
 
@@ -16,7 +16,6 @@ const styles = StyleSheet.create({
   box: { border: 1, borderColor: "#ddd", padding: 8, borderRadius: 4, marginTop: 6 },
   sigRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 48 },
   sigBox: { width: "48%", borderTop: 1, borderColor: "#222", paddingTop: 6 },
-  mono: { fontSize: 10 },
   list: { marginTop: 4, marginBottom: 4 },
   listItem: { marginBottom: 4, textAlign: "justify" as const },
   justified: { textAlign: "justify" as const },
@@ -31,11 +30,36 @@ const Item = ({ label, value }: { label: string; value?: string }) => (
 );
 
 function LeasePdf({ data }: { data: LeaseContractInput }) {
+  const lessor = {
+    companyName: data.lessor?.companyName ?? "",
+    name: data.lessor?.name ?? "",
+    address: data.lessor?.address ?? "",
+    phone: data.lessor?.phone ?? "",
+    representativeName: data.lessor?.representativeName ?? "",
+    representativeTitle: data.lessor?.representativeTitle ?? "",
+  };
+
+  const lessee = {
+    name: data.lessee?.name ?? "",
+    address: data.lessee?.address ?? "",
+    phone: data.lessee?.phone ?? "",
+  };
+
+  const vehicle = {
+    make: data.vehicle?.make ?? "",
+    model: data.vehicle?.model ?? "",
+    year: String(data.vehicle?.year ?? ""),
+    color: data.vehicle?.color ?? "",
+    plates: data.vehicle?.plates ?? "",
+    vin: data.vehicle?.vin ?? "",
+    engine: data.vehicle?.engine ?? "",
+  };
+
   const signDate = formatDateLong(data.signDate);
   const startDate = formatDateLong(data.startDate);
   const endDate = data.endDate ? formatDateLong(data.endDate) : "";
 
-  const headerLeft = data.lessor.companyName || HEADER_LEFT;
+  const headerLeft = lessor.companyName || HEADER_LEFT;
 
   const pagaréLines = PAGARE_TEXT(
     data.place,
@@ -72,28 +96,28 @@ function LeasePdf({ data }: { data: LeaseContractInput }) {
           <Text style={{ fontWeight: 700, marginBottom: 4 }}>
             “VEHÍCULO”
           </Text>
-          <Item label="Marca / Modelo / Año" value={`${data.vehicle.make} ${data.vehicle.model} ${data.vehicle.year}`} />
-          <Item label="Color" value={data.vehicle.color || "—"} />
-          <Item label="Placas" value={data.vehicle.plates} />
-          <Item label="Serie (VIN)" value={data.vehicle.vin} />
-          <Item label="Motor" value={data.vehicle.engine || "—"} />
+          <Item label="Marca / Modelo / Año" value={`${vehicle.make} ${vehicle.model} ${vehicle.year}`} />
+          <Item label="Color" value={vehicle.color || "—"} />
+          <Item label="Placas" value={vehicle.plates} />
+          <Item label="Serie (VIN)" value={vehicle.vin} />
+          <Item label="Motor" value={vehicle.engine || "—"} />
         </View>
 
         <View style={{ marginTop: 10 }}>
           <Text style={{ fontWeight: 700, marginBottom: 4 }}>“ARRENDADOR”</Text>
           <View style={styles.row}>
             <View style={styles.col}>
-              <Item label="Nombre" value={data.lessor.companyName || data.lessor.name} />
-              {data.lessor.representativeName ? (
+              <Item label="Nombre" value={lessor.companyName || lessor.name} />
+              {lessor.representativeName ? (
                 <Item
                   label="Representante"
-                  value={`${data.lessor.representativeName}${data.lessor.representativeTitle ? " / " + data.lessor.representativeTitle : ""}`}
+                  value={`${lessor.representativeName}${lessor.representativeTitle ? " / " + lessor.representativeTitle : ""}`}
                 />
               ) : null}
             </View>
             <View style={styles.col}>
-              <Item label="Domicilio" value={data.lessor.address} />
-              <Item label="Teléfono" value={data.lessor.phone || "—"} />
+              <Item label="Domicilio" value={lessor.address} />
+              <Item label="Teléfono" value={lessor.phone || "—"} />
             </View>
           </View>
         </View>
@@ -102,11 +126,11 @@ function LeasePdf({ data }: { data: LeaseContractInput }) {
           <Text style={{ fontWeight: 700, marginBottom: 4 }}>“ARRENDATARIO”</Text>
           <View style={styles.row}>
             <View style={styles.col}>
-              <Item label="Nombre" value={data.lessee.name} />
-              <Item label="Teléfono" value={data.lessee.phone || "—"} />
+              <Item label="Nombre" value={lessee.name} />
+              <Item label="Teléfono" value={lessee.phone || "—"} />
             </View>
             <View style={styles.col}>
-              <Item label="Domicilio" value={data.lessee.address} />
+              <Item label="Domicilio" value={lessee.address} />
             </View>
           </View>
         </View>
@@ -114,11 +138,11 @@ function LeasePdf({ data }: { data: LeaseContractInput }) {
         <View style={styles.sigRow}>
           <View style={styles.sigBox}>
             <Text style={styles.small}>Firma ARRENDADOR</Text>
-            <Text style={styles.small}>{data.lessor.companyName || data.lessor.name}</Text>
+            <Text style={styles.small}>{lessor.companyName || lessor.name}</Text>
           </View>
           <View style={styles.sigBox}>
             <Text style={styles.small}>Firma ARRENDATARIO</Text>
-            <Text style={styles.small}>{data.lessee.name}</Text>
+            <Text style={styles.small}>{lessee.name}</Text>
           </View>
         </View>
       </Page>
@@ -133,13 +157,13 @@ function LeasePdf({ data }: { data: LeaseContractInput }) {
         <Text style={styles.h2}>CONTRATO DE ARRENDAMIENTO</Text>
         <Text style={[styles.justified, { marginBottom: 8 }]}>
           CONTRATO DE ARRENDAMIENTO DE VEHÍCULOS (“El Contrato”) celebrado entre {headerLeft}
-          {" "} (en lo sucesivo “ARRENDADOR”) y {data.lessee.name} (en lo sucesivo “ARRENDATARIO”), para el
+          {" "} (en lo sucesivo “ARRENDADOR”) y {lessee.name} (en lo sucesivo “ARRENDATARIO”), para el
           arrendamiento del bien mueble descrito en la Hoja de Firmas (“VEHÍCULO”).
         </Text>
 
         <Text style={styles.h2}>DECLARACIONES</Text>
         <View style={styles.list}>
-          {(DECLARACIONES).map((line, idx) => (
+          {DECLARACIONES.map((line, idx) => (
             <Text key={idx} style={styles.listItem}>{line}</Text>
           ))}
         </View>
@@ -173,9 +197,9 @@ function LeasePdf({ data }: { data: LeaseContractInput }) {
         ))}
         <View style={{ marginTop: 24 }}>
           <Text style={{ marginBottom: 12 }}>DATOS DEL SUSCRIPTOR</Text>
-          <Item label="NOMBRE" value={data.lessee.name} />
-          <Item label="DIRECCIÓN" value={data.lessee.address} />
-          <Item label="TELÉFONO" value={data.lessee.phone || ""} />
+          <Item label="NOMBRE" value={lessee.name} />
+          <Item label="DIRECCIÓN" value={lessee.address} />
+          <Item label="TELÉFONO" value={lessee.phone || ""} />
         </View>
 
         <View style={styles.sigRow}>
@@ -197,13 +221,13 @@ function LeasePdf({ data }: { data: LeaseContractInput }) {
 
         <Text style={styles.h2}>ANEXO “A”</Text>
         <View style={styles.box}>
-          <Item label="Marca" value={data.vehicle.make} />
-          <Item label="Modelo" value={data.vehicle.model} />
-          <Item label="Año" value={String(data.vehicle.year)} />
-          <Item label="Color" value={data.vehicle.color || "—"} />
-          <Item label="Placas" value={data.vehicle.plates} />
-          <Item label="Serie (VIN)" value={data.vehicle.vin} />
-          <Item label="Motor" value={data.vehicle.engine || "—"} />
+          <Item label="Marca" value={vehicle.make} />
+          <Item label="Modelo" value={vehicle.model} />
+          <Item label="Año" value={String(vehicle.year)} />
+          <Item label="Color" value={vehicle.color || "—"} />
+          <Item label="Placas" value={vehicle.plates} />
+          <Item label="Serie (VIN)" value={vehicle.vin} />
+          <Item label="Motor" value={vehicle.engine || "—"} />
         </View>
 
         <View style={[styles.row, { marginTop: 12 }]}>
@@ -250,4 +274,4 @@ function LeasePdf({ data }: { data: LeaseContractInput }) {
 }
 
 export default LeasePdf;
-export { LeasePdf };
+export { LeasePdf }; // (opcional, por si en algún lugar lo importas como named)
