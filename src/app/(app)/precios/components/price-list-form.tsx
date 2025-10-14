@@ -204,7 +204,7 @@ function ServiceSuppliesArray({ serviceIndex, control, inventoryItems, onNewInve
              {fields.map((supplyField, supplyIndex) => (
                 <div key={supplyField.id} className="grid grid-cols-10 gap-x-2 gap-y-1 items-center p-2 rounded-md border bg-card">
                     <div className="col-span-9 md:col-span-5">
-                       <p className="text-sm font-medium">{supplyField.supplyName}</p>
+                       <p className="text-sm font-medium">{(supplyField as any).supplyName}</p>
                     </div>
                     <div className="col-span-4 md:col-span-1">
                         <FormField control={control} name={`services.${serviceIndex}.supplies.${supplyIndex}.quantity`} render={({ field }) => ( <FormControl><Input type="number" className="h-8 text-sm bg-white" placeholder="Cant." {...field} value={field.value ?? ''} /></FormControl> )}/>
@@ -213,7 +213,7 @@ function ServiceSuppliesArray({ serviceIndex, control, inventoryItems, onNewInve
                          <FormField control={control} name={`services.${serviceIndex}.supplies.${supplyIndex}.unitPrice`} render={({ field }) => ( <FormControl><Input type="number" className="h-8 text-sm bg-white" placeholder="Costo" {...field} value={field.value ?? ''} /></FormControl> )}/>
                     </div>
                     <div className="col-span-2 md:col-span-1 text-right">
-                       <p className="text-sm font-semibold">{formatCurrency((supplyField.quantity || 0) * (supplyField.unitPrice || 0))}</p>
+                       <p className="text-sm font-semibold">{formatCurrency(((supplyField as any).quantity || 0) * ((supplyField as any).unitPrice || 0))}</p>
                     </div>
                     <div className="col-span-1 text-right">
                         <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => remove(supplyIndex)}><X className="h-4 w-4"/></Button>

@@ -1,3 +1,4 @@
+
 // src/components/layout/app-sidebar.tsx
 "use client";
 
@@ -23,7 +24,7 @@ import {
   LogOut,
   LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, 
   Truck, LineChart, Shield, PlusCircle, Landmark, LayoutGrid, CalendarDays, 
-  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3, Wallet, BrainCircuit, LifeBuoy
+  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3, Wallet, BrainCircuit, LifeBuoy, Tags
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -46,6 +47,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Tablero', path: '/tablero', icon: LayoutGrid, groupTag: 'Mi Taller', permissions: ['dashboard:view'] },
   { label: 'Servicios', path: '/servicios', icon: Wrench, groupTag: 'Mi Taller', permissions: ['services:view_history'] },
   { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: 'Mi Taller', permissions: ['vehicles:manage'] },
+  { label: 'Precotizaciones', path: '/precios', icon: Tags, groupTag: 'Mi Taller', permissions: ['inventory:view_public_info'] },
   { label: 'Flotilla', path: '/flotilla', icon: Truck, groupTag: 'Mi Taller', permissions: ['fleet:manage'] },
 
   // Operaciones
@@ -105,7 +107,7 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
 
-    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/compras', '/finanzas', '/personal', '/opciones', '/facturacion-admin', '/administracion', '/ai', '/flotilla', '/reportes'];
+    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/compras', '/finanzas', '/personal', '/opciones', '/facturacion-admin', '/administracion', '/ai', '/flotilla', '/reportes', '/precios'];
     
     if (parentRoutes.includes(cleanEntryPath) && cleanPathname.startsWith(cleanEntryPath)) {
         if (cleanPathname === cleanEntryPath) {
