@@ -135,7 +135,7 @@ export default function CajaContent() {
           relatedType: 'Servicio',
           refId: s.id,
           user: advisor,
-          description: amt >= 0 ? 'Pago efectivo (Servicio)' : 'Reembolso efectivo (Servicio)',
+          description: amt >= 0 ? `Pago efectivo (Servicio #${(s.folio || s.id).slice(-6)})` : `Reembolso efectivo (Servicio #${(s.folio || s.id).slice(-6)})`,
           amount: Math.abs(amt),
           method: p.method,
         });
@@ -160,7 +160,7 @@ export default function CajaContent() {
           relatedType: 'Venta',
           refId: s.id,
           user: client,
-          description: amt >= 0 ? 'Pago efectivo (Venta)' : 'Reembolso efectivo (Venta)',
+          description: amt >= 0 ? `Pago efectivo (Venta #${s.id.slice(-6)})` : `Reembolso efectivo (Venta #${s.id.slice(-6)})`,
           amount: Math.abs(amt),
           method: p.method,
         });
@@ -170,9 +170,11 @@ export default function CajaContent() {
     return rows;
   }, [allSales, allServices]);
 
-  // Libro (entradas/salidas)
+  // Libro (entradas/salidas) - SOLO MANUALES
   const ledgerRows = useMemo((): FlowRow[] => {
-    return (cashTransactions || []).map((t) => {
+    return (cashTransactions || [])
+      .filter(t => t.relatedType === 'Manual')
+      .map((t) => {
       const d = parseDate((t as any).date || (t as any).createdAt) || null;
       const user = (t as any).userName || (t as any).user || 'Sistema';
       const desc = (t as any).fullDescription || t.description || (t as any).concept || '';
@@ -223,19 +225,12 @@ export default function CajaContent() {
     const ledgerIn = flowRows.filter(r => r.source === 'Libro' && r.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
     const ledgerOut = flowRows.filter(r => r.source === 'Libro' && r.type === 'Salida').reduce((s, r) => s + r.amount, 0);
 
-    // Tarjetas superiores (requerimiento): Ingresos = pagos efectivo detectados; Egresos = salidas libro
-    const topIncome = detectedIn;
-    const topOutcome = ledgerOut;
+    // Tarjetas superiores: Ingresos = pagos efectivo detectados + entradas libro; Egresos = salidas libro
+    const topIncome = detectedIn + ledgerIn;
+    const topOutcome = detectedOut + ledgerOut;
     const topNet = topIncome - topOutcome;
 
-    // Conciliación (mostramos ambas patas y las diferencias)
-    const diffIn = ledgerIn - detectedIn;
-    const diffOut = ledgerOut - detectedOut;
-    const ledgerNet = ledgerIn - ledgerOut;
-    const detectedNet = detectedIn - detectedOut;
-    const diffNet = ledgerNet - detectedNet;
-
-    return { detectedIn, detectedOut, ledgerIn, ledgerOut, topIncome, topOutcome, topNet, diffIn, diffOut, ledgerNet, detectedNet, diffNet };
+    return { topIncome, topOutcome, topNet };
   }, [flowRows]);
 
   // abrir ref
@@ -306,7 +301,7 @@ export default function CajaContent() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-600">Entradas Totales (Pagos en Efectivo)</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-600">Entradas Totales (Efectivo)</CardTitle>
             <ArrowUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(kpis.topIncome)}</div></CardContent>
@@ -326,43 +321,6 @@ export default function CajaContent() {
           <CardContent><div className="text-2xl font-bold">{formatCurrency(kpis.topNet)}</div></CardContent>
         </Card>
       </div>
-
-      {/* Conciliación corregida */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Conciliación de Caja (Efectivo)</CardTitle>
-          <CardDescription>Compara el Libro vs Pagos detectados en efectivo por fecha de pago.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="p-3 rounded-md border">
-              <p className="text-sm text-muted-foreground">Entradas Libro</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(kpis.ledgerIn)}</p>
-            </div>
-            <div className="p-3 rounded-md border">
-              <p className="text-sm text-muted-foreground">Salidas Libro</p>
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(kpis.ledgerOut)}</p>
-            </div>
-            <div className="p-3 rounded-md border">
-              <p className="text-sm text-muted-foreground">Entradas Detectadas</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(kpis.detectedIn)}</p>
-            </div>
-            <div className="p-3 rounded-md border">
-              <p className="text-sm text-muted-foreground">Salidas Detectadas</p>
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(kpis.detectedOut)}</p>
-            </div>
-            <div className="p-3 rounded-md border">
-              <p className="text-sm text-muted-foreground">Diferencia Neta (Libro − Detectadas)</p>
-              <p className={cn("text-2xl font-bold", kpis.diffNet >= 0 ? "text-green-600" : "text-orange-500")}>
-                {formatCurrency(kpis.diffNet)}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Tip: si registras también entradas de caja por cada cobro en efectivo, verás diferencias positivas. Lo ideal es registrar sólo los pagos en el módulo de ventas/servicios y las salidas reales en el libro.
-          </p>
-        </CardContent>
-      </Card>
 
       {/* Tabla ÚNICA: Flujo de Caja */}
       <Card>
