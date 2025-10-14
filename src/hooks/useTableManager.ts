@@ -39,11 +39,7 @@ export function useTableManager<T extends Record<string, any>>({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<string>(initialSortOption);
   
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
-    if (initialDateRange) return initialDateRange;
-    const now = new Date();
-    return { from: startOfMonth(now), to: dfnsEndOdMonth(now) };
-  });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(initialDateRange);
   
   const [otherFilters, setOtherFilters] = useState<Record<string, string | 'all'>>({});
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,7 +50,7 @@ export function useTableManager<T extends Record<string, any>>({
   const initialToTime = initialDateRange?.to?.getTime();
 
   useEffect(() => {
-    if (!initialDateRange) return;
+    if (initialDateRange === undefined) return;
     setDateRange(prev => {
       const same =
         prev?.from?.getTime() === initialFromTime &&

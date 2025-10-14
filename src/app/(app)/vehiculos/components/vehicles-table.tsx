@@ -15,6 +15,7 @@ import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { useRouter } from 'next/navigation';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
@@ -31,6 +32,7 @@ export function VehiclesTable({ vehicles, onSave }: VehiclesTableProps) {
     initialSortOption: 'lastServiceDate_desc',
     itemsPerPage: 10,
     dateFilterKey: 'lastServiceDate',
+    initialDateRange: undefined, // No date filter by default
   });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -47,9 +49,8 @@ export function VehiclesTable({ vehicles, onSave }: VehiclesTableProps) {
   };
 
   const handleSort = (key: string) => {
-    const isSorted = tableManager.sortOption.startsWith(key);
-    const direction = tableManager.sortOption.endsWith('_asc') ? 'desc' : 'asc';
-    tableManager.onSortOptionChange(`${key}_${isSorted ? direction : 'desc'}`);
+    const isAsc = tableManager.sortOption.startsWith(key) && tableManager.sortOption.endsWith('_asc');
+    tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
   };
 
   return (
@@ -58,6 +59,8 @@ export function VehiclesTable({ vehicles, onSave }: VehiclesTableProps) {
         searchTerm={tableManager.searchTerm}
         onSearchTermChange={tableManager.onSearchTermChange}
         searchPlaceholder="Buscar por placa, marca, modelo..."
+        dateRange={tableManager.dateRange}
+        onDateRangeChange={tableManager.onDateRangeChange}
         actions={
           <Button onClick={() => handleOpenDialog()} className="w-full sm:w-auto">
             <PlusCircle className="mr-2 h-4 w-4" />
