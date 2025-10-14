@@ -56,7 +56,7 @@ const sortOptions = [
   { value: "date_desc", label: "Más Reciente" },
   { value: "date_asc", label: "Más Antiguo" },
   { value: "total_desc", label: "Monto (Mayor a Menor)" },
-  { value: "total_asc", label: "Monto (Menor a Menor)" },
+  { value: "total_asc", label: "Monto (Menor a Mayor)" },
 ];
 
 const methodIcon: Record<NonNullable<Payment["method"]>, React.ElementType> = {
@@ -283,37 +283,42 @@ function MovimientosTabContent({
         <CardContent className="p-0">
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-black">
                 <TableRow className="hover:bg-transparent">
                   <SortableTableHeader
                     sortKey="date"
                     label="Fecha"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="type"
                     label="Tipo"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="folio"
                     label="Folio/Ref."
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="client"
                     label="Cliente/Usuario"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="description"
                     label="Descripción"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="total"
@@ -321,6 +326,7 @@ function MovimientosTabContent({
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
                     className="text-right"
+                    textClassName="text-white"
                   />
                 </TableRow>
               </TableHeader>
