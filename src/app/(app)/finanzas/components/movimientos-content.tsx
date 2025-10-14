@@ -120,6 +120,7 @@ function MovimientosTabContent({
             const d = getPaymentDate(p) || parseDate(s.deliveryDateTime) || parseDate(s.serviceDate);
             const amt = Number(p.amount) || 0;
             const isRefund = amt < 0;
+            const folio = s.folio || s.id.slice(-6);
             return {
               id: `${s.id}-svc-pay-${idx}`,
               origin: "payment",
@@ -131,8 +132,8 @@ function MovimientosTabContent({
               total: Math.abs(amt),
               isRefund,
               description: isRefund
-                ? `Reembolso (${p.method})`
-                : `Pago (${p.method})`,
+                ? `Reembolso Servicio #${folio}`
+                : `Pago Servicio #${folio}`,
             } as Movement;
           });
       });
@@ -150,6 +151,7 @@ function MovimientosTabContent({
             const d = getPaymentDate(p) || parseDate(s.saleDate);
             const amt = Number(p.amount) || 0;
             const isRefund = amt < 0;
+            const folio = s.id.slice(-6);
             return {
               id: `${s.id}-sale-pay-${idx}`,
               origin: "payment",
@@ -161,15 +163,14 @@ function MovimientosTabContent({
               total: Math.abs(amt),
               isRefund,
               description: isRefund
-                ? `Reembolso (${p.method})`
-                : `Pago (${p.method})`,
+                ? `Reembolso Venta #${folio}`
+                : `Pago Venta #${folio}`,
             } as Movement;
           });
       });
 
     // 3) ASIENTOS de CAJA (ledger) – se muestran todos
     const ledgerMovs: Movement[] = (cashTransactions || [])
-       // IMPORTANTE: Filtrar los movimientos de caja que ya están representados por pagos.
       .filter(t => t.relatedType !== 'Venta' && t.relatedType !== 'Servicio')
       .map((t) => ({
         id: t.id,
@@ -190,7 +191,6 @@ function MovimientosTabContent({
     searchKeys: ["folio", "client", "description"],
     dateFilterKey: "date",
     initialSortOption: "date_desc",
-    initialDateRange: dateRange,
   });
 
   const onDateRangeChangeCallback = tableManager.onDateRangeChange;
@@ -207,6 +207,10 @@ function MovimientosTabContent({
       .filter((m) => m.origin === "payment" && !m.isRefund)
       .reduce((sum, m) => sum + (m.total || 0), 0);
 
+    const ingresosEfectivo = rows
+      .filter((m) => m.origin === "payment" && !m.isRefund && m.method === 'Efectivo')
+      .reduce((sum, m) => sum + (m.total || 0), 0);
+      
     const egresosCaja = rows
       .filter((m) => m.origin === "ledger" && m.type === "Salida")
       .reduce((sum, m) => sum + (m.total || 0), 0);
@@ -215,6 +219,7 @@ function MovimientosTabContent({
     return {
       totalMovements: rows.length,
       totalIncome: ingresos,
+      cashIncome: ingresosEfectivo,
       totalOutcome: egresosCaja,
       netBalance: neto,
     };
@@ -246,11 +251,11 @@ function MovimientosTabContent({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium"># Movimientos</CardTitle>
-            <LineChart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-green-600">Ingresos en Efectivo</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.totalMovements}</div>
+            <div className="text-2xl font-bold">{formatCurrency(summary.cashIncome)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -303,13 +308,6 @@ function MovimientosTabContent({
                     textClassName="text-white"
                   />
                   <SortableTableHeader
-                    sortKey="folio"
-                    label="Folio/Ref."
-                    onSort={handleSort}
-                    currentSort={tableManager.sortOption}
-                    textClassName="text-white"
-                  />
-                  <SortableTableHeader
                     sortKey="client"
                     label="Cliente/Usuario"
                     onSort={handleSort}
@@ -326,6 +324,14 @@ function MovimientosTabContent({
                   <SortableTableHeader
                     sortKey="total"
                     label="Monto"
+                    onSort={handleSort}
+                    currentSort={tableManager.sortOption}
+                    className="text-right"
+                    textClassName="text-white"
+                  />
+                  <SortableTableHeader
+                    sortKey="method"
+                    label="Método"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
                     className="text-right"
@@ -383,22 +389,28 @@ function MovimientosTabContent({
                           </Badge>
                         </TableCell>
 
-                        <TableCell className="font-mono">{m.folio.slice(-6)}</TableCell>
-
                         <TableCell>{m.client}</TableCell>
 
-                        <TableCell>
-                          {m.origin === "payment" ? (
-                            <span className="inline-flex items-center gap-1">
-                              {Icon && <Icon className="h-3 w-3 opacity-70" />} {m.description || "Pago"}
-                            </span>
-                          ) : (
-                            m.description || "Movimiento de caja"
-                          )}
-                        </TableCell>
+                        <TableCell>{m.description || "Movimiento de caja"}</TableCell>
 
                         <TableCell className={`text-right font-semibold ${amountClass}`}>
                           {formatCurrency(m.total)}
+                        </TableCell>
+                         <TableCell className="text-right">
+                          {Icon && (
+                             <TooltipProvider>
+                               <Tooltip>
+                                 <TooltipTrigger asChild>
+                                    <div className="inline-flex items-center justify-center p-1 rounded-full bg-muted">
+                                      <Icon className="h-4 w-4 opacity-80" />
+                                    </div>
+                                 </TooltipTrigger>
+                                 <TooltipContent>
+                                   <p>{m.method}</p>
+                                 </TooltipContent>
+                               </Tooltip>
+                             </TooltipProvider>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
