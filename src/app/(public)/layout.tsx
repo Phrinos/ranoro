@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Header } from './landing/Header'; // Import the new header
 
 export const metadata: Metadata = {
   title: 'Ranoro Taller en Aguascalientes | Mecánica, Hojalatería y Pintura',
@@ -30,26 +31,7 @@ export default function PublicPageLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
-        <header className="sticky top-0 z-40 w-full border-b bg-background print:hidden">
-             <div className="container mx-auto flex h-auto min-h-20 flex-wrap items-center justify-between gap-y-2 py-2 px-4 md:px-6">
-                <Link href="/" className="relative w-[140px] h-[40px]">
-                    <Image
-                    src="/ranoro-logo.png"
-                    alt="Ranoro Logo"
-                    fill
-                    style={{ objectFit: 'contain' }}
-                    sizes="140px"
-                    priority
-                    data-ai-hint="ranoro logo"
-                    />
-                </Link>
-                <div className="flex items-center gap-2 text-sm">
-                    <Button asChild>
-                      <Link href="/login">Iniciar Sesión</Link>
-                    </Button>
-                </div>
-            </div>
-        </header>
+        <Header />
         <main className="flex-1">
             {children}
             <Analytics />
