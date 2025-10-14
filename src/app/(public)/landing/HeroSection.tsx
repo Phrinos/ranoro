@@ -1,3 +1,4 @@
+
 "use client";
 import React from 'react';
 import Link from 'next/link';
@@ -25,10 +26,10 @@ export function HeroSection() {
             <div className="absolute inset-0 bg-black/30"></div>
           </div>
           <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-end">
+            <div className="flex justify-start">
               <AnimatedDiv className="w-full max-w-md">
                 <Card className="bg-black/70 backdrop-blur-sm border-white/20 text-white">
-                  <CardContent className="p-8 text-center">
+                  <CardContent className="p-8">
                     <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl text-shadow">
                       Ranoro: Servicio Certificado
                     </h1>
