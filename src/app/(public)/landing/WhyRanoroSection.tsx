@@ -12,7 +12,7 @@ const benefits = [
     {
         icon: "twemoji:shield",
         title: "Garantía Ranoro",
-        description: "Ofrecemos 90 días o 3,000 km de garantía en mano de obra para tu total tranquilidad.",
+        description: "Ofrecemos 60 dias o 1000km de garantía en mano de obra para tu total tranquilidad.",
     },
     {
         icon: "twemoji:stopwatch",
