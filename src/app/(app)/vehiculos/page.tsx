@@ -1,3 +1,4 @@
+
 // src/app/(app)/vehiculos/page.tsx
 "use client";
 
@@ -10,23 +11,11 @@ import type { Vehicle, VehiclePriceList, InventoryItem, InventoryCategory, Suppl
 import type { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PriceListDialog } from '../precios/components/price-list-dialog';
-import type { PriceListFormValues } from '../precios/components/price-list-form';
 import { VehiclesTable } from './components/vehicles-table';
-import { PriceListTable } from '../precios/components/price-list-table';
-import { TableToolbar } from '@/components/shared/table-toolbar';
-import { useTableManager } from '@/hooks/useTableManager';
 import { inventoryService } from '@/lib/services';
 import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { VehicleDialog } from './components/vehicle-dialog';
-
-const priceListSortOptions = [
-  { value: 'make_asc', label: 'Marca (A-Z)' },
-  { value: 'make_desc', label: 'Marca (Z-A)' },
-  { value: 'model_asc', label: 'Modelo (A-Z)' },
-  { value: 'model_desc', label: 'Modelo (Z-A)' },
-];
 
 function VehiculosPage() {
   const searchParams = useSearchParams();
@@ -36,41 +25,20 @@ function VehiculosPage() {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [isPriceListDialogOpen, setIsPriceListDialogOpen] = useState(false);
-  const [editingPriceRecord, setEditingPriceRecord] = useState<VehiclePriceList | null>(null);
-  
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
 
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
-  const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [categories, setCategories] = useState<InventoryCategory[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-
-  const priceListTableManager = useTableManager<VehiclePriceList>({
-    initialData: priceLists,
-    searchKeys: ["make", "model", "years"],
-    initialSortOption: 'make_asc',
-    dateFilterKey: '',
-  });
 
   useEffect(() => {
     setIsLoading(true);
-    const unsubscribeVehicles = inventoryService.onVehiclesUpdate(setAllVehicles);
-    const unsubscribePriceLists = inventoryService.onPriceListsUpdate(setPriceLists);
-    const unsubscribeInventory = inventoryService.onItemsUpdate(setInventoryItems);
-    const unsubscribeCategories = inventoryService.onCategoriesUpdate(setCategories);
-    const unsubscribeSuppliers = inventoryService.onSuppliersUpdate((data) => {
-      setSuppliers(data);
+    const unsubscribeVehicles = inventoryService.onVehiclesUpdate((data) => {
+      setAllVehicles(data);
       setIsLoading(false);
     });
+    
     return () => {
       unsubscribeVehicles();
-      unsubscribePriceLists();
-      unsubscribeInventory();
-      unsubscribeCategories();
-      unsubscribeSuppliers();
     };
   }, []);
 
@@ -125,32 +93,12 @@ function VehiculosPage() {
       toast({ title: "Error", description: "No se pudo eliminar el vehículo.", variant: "destructive" });
     }
   };
-
-  const handleOpenPriceListDialog = useCallback((record: VehiclePriceList | null = null) => {
-    setEditingPriceRecord(record);
-    setIsPriceListDialogOpen(true);
-  }, []);
-
-  const handleSavePriceListRecord = async (formData: PriceListFormValues) => {
-    try {
-      await inventoryService.savePriceList(formData, editingPriceRecord?.id);
-      toast({ title: `Precotización ${editingPriceRecord ? 'Actualizada' : 'Creada'}` });
-      setIsPriceListDialogOpen(false);
-    } catch (error) {
-      console.error("Error saving price list record: ", error);
-      toast({ title: "Error", description: "No se pudo guardar la lista de precios.", variant: "destructive" });
-    }
+  
+  const handleOpenVehicleDialog = (vehicle: Partial<Vehicle> | null = null) => {
+    setEditingVehicle(vehicle);
+    setIsVehicleDialogOpen(true);
   };
 
-  const handleDeletePriceListRecord = async (recordId: string) => {
-    try {
-      await inventoryService.deletePriceList(recordId);
-      toast({ title: "Registro Eliminado", variant: 'destructive' });
-    } catch (error) {
-      console.error("Error deleting price list record: ", error);
-      toast({ title: "Error", description: "No se pudo eliminar el registro.", variant: "destructive" });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -162,7 +110,6 @@ function VehiculosPage() {
 
   const tabs = [
     { value: "vehiculos", label: "Lista de Vehículos" },
-    { value: "precotizaciones", label: "Precotizaciones" },
   ];
 
   return (
@@ -172,7 +119,7 @@ function VehiculosPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Gestión de Vehículos</h1>
             <p className="text-primary-foreground/80 mt-1">
-              Administra la información, historial y precios de tus vehículos.
+              Administra la información y el historial de los vehículos de tus clientes.
             </p>
           </div>
         </div>
@@ -180,7 +127,7 @@ function VehiculosPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-1">
             {tabs.map((tabInfo) => (
               <TabsTrigger key={tabInfo.value} value={tabInfo.value}>
                 {tabInfo.label}
@@ -203,51 +150,9 @@ function VehiculosPage() {
                 <VehiclesTable
                   vehicles={allVehicles}
                   onSave={(data, id) => {
-                      setEditingVehicle(id ? { ...data, id } : data);
-                      setIsVehicleDialogOpen(true);
+                      handleOpenVehicleDialog(id ? { ...data, id } : data);
                   }}
                   onDelete={handleDeleteVehicle}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="precotizaciones" className="mt-6">
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Lista de Precios de Vehículos</h2>
-                <p className="text-muted-foreground">
-                  Precios estandarizados por modelo para agilizar cotizaciones.
-                </p>
-              </div>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <TableToolbar
-                  searchTerm={priceListTableManager.searchTerm}
-                  onSearchTermChange={priceListTableManager.onSearchTermChange}
-                  sortOption={priceListTableManager.sortOption}
-                  onSortOptionChange={priceListTableManager.onSortOptionChange}
-                  sortOptions={priceListSortOptions}
-                  searchPlaceholder="Buscar por marca, modelo o año..."
-                  actions={
-                    <Button onClick={() => handleOpenPriceListDialog()} className="w-full sm:w-auto">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Nueva Lista
-                    </Button>
-                  }
-                />
-              </CardHeader>
-              <CardContent>
-                <PriceListTable
-                  records={priceListTableManager.fullFilteredData}
-                  onEdit={handleOpenPriceListDialog}
-                  onDelete={handleDeletePriceListRecord}
-                  sortOption={priceListTableManager.sortOption}
-                  onSortOptionChange={priceListTableManager.onSortOptionChange}
                 />
               </CardContent>
             </Card>
@@ -260,16 +165,6 @@ function VehiculosPage() {
         onOpenChange={setIsVehicleDialogOpen}
         onSave={handleSaveVehicle}
         vehicle={editingVehicle}
-      />
-
-      <PriceListDialog
-        open={isPriceListDialogOpen}
-        onOpenChange={setIsPriceListDialogOpen}
-        onSave={handleSavePriceListRecord}
-        record={editingPriceRecord}
-        inventoryItems={inventoryItems}
-        categories={categories}
-        suppliers={suppliers}
       />
     </>
   );
