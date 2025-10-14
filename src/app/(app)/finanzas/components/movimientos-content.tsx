@@ -36,6 +36,7 @@ import {
 import { parseDate } from "@/lib/forms";
 import { cashService } from "@/lib/services/cash.service";
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 // --- Tipos UI ---
 type MovementOrigin = "payment" | "ledger";
@@ -131,9 +132,7 @@ function MovimientosTabContent({
               method: p.method,
               total: Math.abs(amt),
               isRefund,
-              description: isRefund
-                ? `Reembolso Servicio #${folio}`
-                : `Pago Servicio #${folio}`,
+              description: `Pago Servicio #${folio}`,
             } as Movement;
           });
       });
@@ -162,9 +161,7 @@ function MovimientosTabContent({
               method: p.method,
               total: Math.abs(amt),
               isRefund,
-              description: isRefund
-                ? `Reembolso Venta #${folio}`
-                : `Pago Venta #${folio}`,
+              description: `Pago Venta #${folio}`,
             } as Movement;
           });
       });
