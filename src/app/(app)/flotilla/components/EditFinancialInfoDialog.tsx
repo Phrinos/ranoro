@@ -114,15 +114,14 @@ export function EditFinancialInfoDialog({
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(d) => {
+                        onChange={(d: any) => {
                             if(d) {
                                 field.onChange(d);
                                 setIsCalendarOpen(false);
                             }
                         }}
-                        initialFocus
+                        value={field.value}
+                        locale="es-MX"
                       />
                     </PopoverContent>
                   </Popover>

@@ -53,7 +53,7 @@ export function ServiceAppointmentCard({
 }: ServiceAppointmentCardProps) {
   const { toast } = useToast();
   // CORRECCIÓN: Usar 'default' como fallback si service.status es undefined.
-  const { color, icon: Icon, label } = getStatusInfo(service.status || 'default', service.subStatus);
+  const { color, icon: Icon, label } = getStatusInfo(service.status as any || 'default', service.subStatus);
 
   const technician = useMemo(() => personnel.find(u => u.id === service.technicianId), [personnel, service.technicianId]);
   const advisor = useMemo(() => personnel.find(u => u.id === service.serviceAdvisorId), [personnel, service.serviceAdvisorId]);
@@ -91,7 +91,7 @@ export function ServiceAppointmentCard({
       return service.payments.reduce((prev, current) => ((prev.amount ?? 0) > (current.amount ?? 0)) ? prev : current);
     }
     if ((service as any).paymentMethod) {
-      return { method: (service as any).paymentMethod as any, amount: service.totalCost };
+      return { method: (service as any).paymentMethod as any, amount: service.totalCost || 0 };
     }
     return undefined;
   };
@@ -143,8 +143,8 @@ export function ServiceAppointmentCard({
               </p>
             </div>
             {primaryPayment && (
-              <Badge variant={getPaymentMethodVariant(primaryPayment.method)} className="mt-1">
-                 {React.createElement(paymentMethodIcons[primaryPayment.method] || Wallet, { className: "h-3 w-3 mr-1" })}
+              <Badge variant={getPaymentMethodVariant(primaryPayment.method as any)} className="mt-1">
+                 {React.createElement(paymentMethodIcons[primaryPayment.method as any] || Wallet, { className: "h-3 w-3 mr-1" })}
                 {primaryPayment.method} {service.payments && service.payments.length > 1 ? `(+${service.payments.length - 1})` : ''}
               </Badge>
             )}

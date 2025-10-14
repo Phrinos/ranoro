@@ -203,15 +203,14 @@ export function GlobalTransactionDialog({
                     </PopoverTrigger>
                     <PopoverContent className="p-0 w-auto" align="start">
                         <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={(d) => {
+                            onChange={(d: any) => {
                                 if (d) {
                                     field.onChange(d);
                                     setIsCalendarOpen(false);
                                 }
                             }}
-                            initialFocus
+                            value={field.value}
+                            locale="es-MX"
                         />
                     </PopoverContent>
                   </Popover>

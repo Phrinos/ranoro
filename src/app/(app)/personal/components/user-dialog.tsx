@@ -16,7 +16,7 @@ interface UserDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   user?: User | null;
   roles: AppRole[];
-  onSave: (data: UserFormValues) => Promise<void>;
+  onSave: (data: UserFormValues, id?: string) => Promise<void>;
   onArchive: (userId: string, archive: boolean) => Promise<void>;
 }
 
@@ -27,7 +27,7 @@ export function UserDialog({ open, onOpenChange, user, roles, onSave, onArchive 
   const handleSubmit = async (values: UserFormValues) => {
     setIsSubmitting(true);
     try {
-      await onSave(values);
+      await onSave(values, user?.id);
       onOpenChange(false);
     } catch (error) {
       toast({ title: "Error al guardar", description: "No se pudo guardar el usuario.", variant: "destructive" });

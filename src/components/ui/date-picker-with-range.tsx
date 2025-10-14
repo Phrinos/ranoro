@@ -6,11 +6,10 @@ import { CalendarIcon } from "@radix-ui/react-icons"
 import { format, startOfWeek, endOfWeek, subDays, startOfMonth, endOfMonth } from "date-fns"
 import { es } from "date-fns/locale"
 import type { DateRange } from "react-day-picker"
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "./separator"
 
@@ -20,36 +19,38 @@ interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 export function DatePickerWithRange({ className, date, onDateChange }: DatePickerWithRangeProps) {
-  const [open, setOpen] = React.useState(false);
+  const setDate = onDateChange
+  const [open, setOpen] = React.useState(false)
 
-  const handleCalendarChange = (value: any) => {
-    if (Array.isArray(value) && value.length === 2) {
-      onDateChange({ from: value[0], to: value[1] });
-    } else {
-      onDateChange({ from: value, to: value });
-    }
-  };
-  
-  const today = new Date();
+  // Controlamos el mes mostrado por el calendario (en vez de defaultMonth)
+  const [month, setMonth] = React.useState<Date>(date?.from ?? new Date())
+  React.useEffect(() => {
+    if (date?.from) setMonth(date.from)
+  }, [date?.from])
+
+  const today = new Date()
+
+  // Normaliza a 00:00 para evitar off-by-one por TZ
+  const normalize = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 
   const selectRange = (from: Date, to: Date) => {
-    onDateChange({ from, to });
-    setOpen(false);
-  };
+    const start = normalize(from)
+    const end = normalize(to)
+    setDate({ from: start, to: end })
+    setMonth(start)
+  }
 
   const thisMonth = () => {
-    const from = startOfMonth(today);
-    const to = endOfMonth(today);
-    selectRange(from, to);
+    const from = new Date(today.getFullYear(), today.getMonth(), 1)
+    const to = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+    selectRange(from, to)
   }
 
   const lastMonth = () => {
-    const from = startOfMonth(subDays(today, today.getDate()));
-    const to = endOfMonth(subDays(today, today.getDate()));
-    selectRange(from, to);
+    const from = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+    const to = new Date(today.getFullYear(), today.getMonth(), 0)
+    selectRange(from, to)
   }
-  
-  const calendarValue = date?.from && date?.to ? [date.from, date.to] : (date?.from ? date.from : undefined);
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -90,14 +91,20 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
           </div>
 
           <Separator orientation="vertical" />
-           <div className="p-2">
+          <div className="p-2">
             <Calendar
-                onChange={handleCalendarChange}
-                value={calendarValue}
+                onChange={(value: any) => {
+                  if (Array.isArray(value) && value.length === 2) {
+                    setDate({ from: value[0], to: value[1] });
+                  } else {
+                    setDate({ from: value, to: value });
+                  }
+                }}
+                value={date?.from && date.to ? [date.from, date.to] : date?.from}
                 selectRange={true}
                 locale="es-MX"
             />
-           </div>
+          </div>
         </PopoverContent>
       </Popover>
     </div>
