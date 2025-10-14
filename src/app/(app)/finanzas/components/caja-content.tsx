@@ -196,6 +196,21 @@ export default function CajaContent() {
   const flowRows = useMemo(() => {
     if (!range) return [];
     const inRange = (d: Date | null) => d && isValid(d) && isWithinInterval(d, { start: range.from, end: range.to });
+    
+    // CORRECCIÓN: Filtra cashTransactions para no incluir los que ya están representados por cashPayments
+    const filteredCashTransactions = cashTransactions.filter(t => t.relatedType !== 'Venta' && t.relatedType !== 'Servicio');
+
+    const ledgerRows: FlowRow[] = filteredCashTransactions
+      .map((t) => {
+        const d = parseDate((t as any).date || (t as any).createdAt) || null;
+        const user = (t as any).userName || (t as any).user || 'Sistema';
+        const desc = (t as any).fullDescription || t.description || (t as any).concept || '';
+        return {
+          id: t.id, date: d, type: t.type, source: 'Libro',
+          relatedType: (t as any).relatedType || 'Manual', refId: (t as any).relatedId,
+          user, description: desc, amount: Math.abs(Number(t.amount) || 0),
+        };
+    });
 
     const rows = [...cashPayments, ...ledgerRows].filter(r => inRange(r.date || null));
 
@@ -213,7 +228,7 @@ export default function CajaContent() {
       const cmp = String(valA).localeCompare(String(valB), 'es', { numeric: true });
       return direction === 'asc' ? cmp : -cmp;
     });
-  }, [cashPayments, ledgerRows, range, sortOption]);
+  }, [cashPayments, cashTransactions, range, sortOption]);
 
   // KPI superiores y Conciliación corregida
   const kpis = useMemo(() => {

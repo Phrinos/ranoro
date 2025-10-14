@@ -81,12 +81,16 @@ const fmtLocal = (iso?: string | null) =>
 
 // Función para obtener la fecha relevante de un servicio
 const getRelevantDateForFiltering = (item: ServiceRecord): Date | null => {
-    return (
-        parseDate(item.deliveryDateTime) ||
-        parseDate((item as any).cancellationTimestamp) || // Para cancelados
-        parseDate(item.serviceDate) ||
-        null
-    );
+    const deliveryDate = parseDate(item.deliveryDateTime);
+    if (deliveryDate && isValid(deliveryDate)) return deliveryDate;
+
+    const cancellationDate = parseDate((item as any).cancellationTimestamp);
+    if (cancellationDate && isValid(cancellationDate)) return cancellationDate;
+    
+    const serviceDate = parseDate(item.serviceDate);
+    if (serviceDate && isValid(serviceDate)) return serviceDate;
+
+    return null;
 };
 
 
@@ -131,11 +135,10 @@ export default function HistorialTabContent({
         "serviceItems.name",
         "suppliesUsed.supplyName",
       ],
-      // Se usa una función personalizada para el filtrado de fecha
       dateFilterKey: getRelevantDateForFiltering, 
       initialSortOption: "deliveryDateTime_desc",
       initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
-      itemsPerPage: 50,
+      itemsPerPage: 10,
     });
 
 

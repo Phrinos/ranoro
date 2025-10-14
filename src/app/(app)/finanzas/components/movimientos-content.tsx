@@ -60,7 +60,7 @@ const sortOptions = [
   { value: "total_asc", label: "Monto (Menor a Mayor)" },
 ];
 
-const methodIcon: Record<NonNullable<Payment["method"]>, React.ElementType> = {
+const paymentMethodIcons: Record<NonNullable<Payment["method"]>, React.ElementType> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
@@ -166,9 +166,9 @@ function MovimientosTabContent({
           });
       });
 
-    // 3) ASIENTOS de CAJA (ledger) – se muestran todos
+    // 3) ASIENTOS de CAJA (ledger) – Solo manuales para evitar duplicados
     const ledgerMovs: Movement[] = (cashTransactions || [])
-      .filter(t => t.relatedType !== 'Venta' && t.relatedType !== 'Servicio')
+      .filter(t => t.relatedType === 'Manual')
       .map((t) => ({
         id: t.id,
         origin: "ledger",

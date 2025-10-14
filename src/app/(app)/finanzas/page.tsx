@@ -10,7 +10,9 @@ import { adminService, inventoryService, serviceService, saleService } from '@/l
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { DateRange } from 'react-day-picker';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval, isValid, getDaysInMonth, differenceInDays } from 'date-fns';
+import { parseDate } from '@/lib/forms';
+import { calcEffectiveProfit } from '@/lib/money-helpers';
 
 const MovimientosContent = lazy(() => import('./components/movimientos-content'));
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
@@ -28,6 +30,7 @@ function FinanzasPage() {
     const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
     const [allExpenses, setAllExpenses] = useState<MonthlyFixedExpense[]>([]);
     const [allUsers, setAllUsers] = useState<Personnel[]>([]);
+    const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
     const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
@@ -43,6 +46,9 @@ function FinanzasPage() {
         inventoryService.onFixedExpensesUpdate(setAllExpenses),
         adminService.onUsersUpdate((users) => {
           setAllUsers(users);
+        }),
+        inventoryService.onItemsUpdate((items) => {
+          setInventoryItems(items);
           setIsLoading(false);
         })
       ];
@@ -53,14 +59,77 @@ function FinanzasPage() {
         setDateRange(range);
     }, []);
 
+    const financialSummary = useMemo<FinancialSummary>(() => {
+      if (!dateRange?.from) return { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0, totalFixedExpenses: 0, totalVariableCommissions: 0, totalBaseExpenses: 0 };
+  
+      const from = startOfMonth(dateRange.from);
+      const to = endOfMonth(dateRange.to ?? dateRange.from);
+  
+      const periodDays = differenceInDays(to, from) + 1;
+      const daysInMonth = getDaysInMonth(from);
+      const periodFactor = periodDays / daysInMonth;
+  
+      const activePersonnel = allUsers.filter(p => {
+        if (p.isArchived) return false;
+        const hireDate = p.hireDate ? parseDate(p.hireDate) : null;
+        return !hireDate || (hireDate && isValid(hireDate) && hireDate <= to);
+      });
+  
+      const activeExpenses = allExpenses.filter(e => {
+        const createdAt = (e as any).createdAt ? parseDate((e as any).createdAt) : null;
+        return !createdAt || (createdAt && isValid(createdAt) && createdAt <= to);
+      });
+  
+      const totalTechnicianSalaries = activePersonnel
+        .filter(p => (p.functions?.includes('tecnico') || p.role.toLowerCase().includes('tecnico')))
+        .reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
+  
+      const totalAdministrativeSalaries = activePersonnel
+        .filter(p => !(p.functions?.includes('tecnico') || p.role.toLowerCase().includes('tecnico')))
+        .reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
+  
+      const totalFixedExpenses = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
+  
+      const deliveredServices = allServices.filter(s => {
+        const d = s.deliveryDateTime ? parseDate(s.deliveryDateTime) : null;
+        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, { start: from, end: to });
+      });
+  
+      const totalVariableCommissions = deliveredServices.reduce((sum, s) => {
+        const profit = calcEffectiveProfit(s);
+        if (profit <= 0) return sum;
+  
+        let commission = 0;
+        const advisor = activePersonnel.find(p => p.id === s.serviceAdvisorId);
+        if (advisor?.commissionRate) commission += profit * (advisor.commissionRate / 100);
+        
+        s.serviceItems.forEach(item => {
+          const tech = activePersonnel.find(p => p.id === item.technicianId);
+          if (tech?.commissionRate) {
+            const itemProfit = (item.sellingPrice || 0) - (inventoryService.getSuppliesCostForItem(item, inventoryItems) || 0);
+            if (itemProfit > 0) commission += itemProfit * (tech.commissionRate / 100);
+          }
+        });
+        return sum + commission;
+      }, 0);
+  
+      return {
+        totalTechnicianSalaries,
+        totalAdministrativeSalaries,
+        totalFixedExpenses,
+        totalVariableCommissions,
+        totalBaseExpenses: (totalTechnicianSalaries + totalAdministrativeSalaries + totalFixedExpenses) * periodFactor,
+      };
+    }, [dateRange, allServices, allUsers, allExpenses, inventoryItems]);
+
     if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
     
     const tabs = [
-      { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosContent allServices={allServices} allSales={allSales} allExpenses={allExpenses} allInventory={[]} dateRange={dateRange} onDateRangeChange={handleDateRangeChange} /></Suspense> },
+      { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosContent allServices={allServices} allSales={allSales} allExpenses={allExpenses} allInventory={inventoryItems} dateRange={dateRange} onDateRangeChange={handleDateRangeChange} /></Suspense> },
       { value: "egresos", label: "Egresos", content: (
         <Suspense fallback={<Loader2 className="animate-spin" />}>
           <EgresosContent 
-            financialSummary={{} as FinancialSummary} 
+            financialSummary={financialSummary} 
             fixedExpenses={allExpenses} 
             personnel={allUsers}
             onExpensesUpdated={setAllExpenses}
