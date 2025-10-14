@@ -60,9 +60,7 @@ export function PromotionsSection() {
                                 </div>
                             </CardContent>
                             <div className="p-6 pt-0">
-                                <Button size="sm" variant="link" className="p-0 h-auto text-primary" asChild>
-                                    <Link href="/promo/cambio-de-aceite">Ver detalles de la promoción</Link>
-                                </Button>
+                                
                             </div>
                         </Card>
                     </AnimatedDiv>
@@ -98,9 +96,7 @@ export function PromotionsSection() {
                                 </div>
                             </CardContent>
                              <div className="p-6 pt-0">
-                                <Button size="sm" variant="link" className="p-0 h-auto text-primary" asChild>
-                                    <Link href="/promo/afinacion-integral">Ver detalles y condiciones</Link>
-                                </Button>
+                                
                             </div>
                         </Card>
                     </AnimatedDiv>
