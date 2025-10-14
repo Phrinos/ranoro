@@ -28,14 +28,14 @@ const benefits = [
 
 export function WhyRanoroSection() {
     return (
-        <section id="why-ranoro" className="py-20 md:py-28 bg-muted/50">
+        <section id="why-ranoro" className="py-20 md:py-28 bg-white">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimatedDiv className="text-center max-w-3xl mx-auto">
                     <h2 className="text-3xl md:text-4xl font-extrabold">¿Por qué elegirnos?</h2>
                 </AnimatedDiv>
                  <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {benefits.map(benefit => (
-                        <AnimatedDiv key={benefit.title} className="text-center">
+                        <AnimatedDiv key={benefit.title} className="text-center p-4 rounded-lg hover:bg-muted transition-colors">
                             <div className="mx-auto h-16 w-16 text-primary flex items-center justify-center">
                                 <Icon icon={benefit.icon} className="h-12 w-12"/>
                             </div>

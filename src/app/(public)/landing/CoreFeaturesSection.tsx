@@ -23,7 +23,7 @@ export function CoreFeaturesSection() {
             <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {features.map(feature => (
                 <AnimatedDiv key={feature.name}>
-                  <Card className="h-full">
+                  <Card className="h-full hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
                       <Icon icon={feature.icon} className="h-12 w-12 text-primary mb-2"/>
                       <CardTitle>{feature.name}</CardTitle>
