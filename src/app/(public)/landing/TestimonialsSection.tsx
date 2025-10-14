@@ -73,7 +73,7 @@ export function TestimonialsSection() {
                 <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 min-h-[450px]">
                     {currentTestimonials.map((testimonial, index) => (
                         <AnimatedDiv key={`${currentPage}-${index}`}>
-                            <Card className="border-l-4 border-primary h-full shadow-lg hover:shadow-xl transition-shadow">
+                            <Card className="h-full shadow-lg hover:shadow-xl transition-shadow">
                                 <CardContent className="p-6">
                                     <div className="flex gap-1 text-yellow-400 mb-2">
                                         {[...Array(5)].map((_, i) => (
