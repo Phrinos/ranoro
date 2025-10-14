@@ -1,4 +1,3 @@
-
 "use client";
 import React from 'react';
 import Link from 'next/link';
@@ -30,7 +29,7 @@ export function Footer() {
                 </div>
                 <div className="mt-8 border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
                     <p>© 2025 Servicio Profesional Ranoro Taller. Todos los derechos reservados.</p>
-                    <p>Desarrollado por <a href="https://valdelamar.com.mx" target="_blank" rel="noopener noreferrer" className="hover:text-white">Arturo Valdelamar</a></p>
+                    <p>Desarrollado por <a href="https://valdelamar.com.mx" target="_blank" rel="noopener noreferrer" className="font-bold text-white hover:text-white/80">Arturo Valdelamar</a></p>
                 </div>
             </div>
         </footer>
