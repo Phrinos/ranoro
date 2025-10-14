@@ -12,7 +12,7 @@ import {
   parseISO,
   isWithinInterval,
   isValid,
-  startOfDay, endOfDay,
+  startOfDay, endOfDay, startOfMonth, endOfMonth,
 } from "date-fns";
 import { es } from 'date-fns/locale';
 import { ShoppingCart, DollarSign, TrendingUp, BarChart2 } from "lucide-react";
@@ -30,7 +30,7 @@ interface InformePosContentProps {
 export function InformePosContent({ allSales, allServices, allInventory }: InformePosContentProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
-    return { from: startOfDay(now), to: endOfDay(now) };
+    return { from: startOfMonth(now), to: endOfMonth(now) };
   });
 
   const summaryData = useMemo(() => {

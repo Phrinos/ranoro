@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { isWithinInterval, isValid, startOfDay, endOfDay, compareAsc, compareDesc } from 'date-fns';
-import { parseDate } from '@/lib/forms';
+import { parseDate } from '../forms';
 
 type FilterFn<T> = (item: T) => Date | null;
 
@@ -38,7 +38,7 @@ export function useTableManager<T extends Record<string, any>>({
 }: UseTableManagerOptions<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<string>(initialSortOption);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(initialDateRange);
   const [otherFilters, setOtherFilters] = useState<Record<string, string | 'all'>>({});
   const [currentPage, setCurrentPage] = useState(1);
 

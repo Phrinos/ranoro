@@ -119,11 +119,6 @@ export default function HistorialTabContent({
     [services]
   );
 
-  const defaultRange = useMemo(
-    () => ({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) }),
-    []
-  );
-  
   const { paginatedData, fullFilteredData, ...tableManager } =
     useTableManager<ServiceRecord>({
       initialData: historicalServices,
@@ -139,7 +134,7 @@ export default function HistorialTabContent({
       // Se usa una función personalizada para el filtrado de fecha
       dateFilterKey: getRelevantDateForFiltering, 
       initialSortOption: "deliveryDateTime_desc",
-      initialDateRange: defaultRange,
+      initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
       itemsPerPage: 50,
     });
 

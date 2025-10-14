@@ -13,6 +13,7 @@ import {
   isWithinInterval,
   isValid,
   startOfDay, endOfDay,
+  startOfMonth, endOfMonth
 } from "date-fns";
 import { es } from 'date-fns/locale';
 import { ShoppingCart, DollarSign, TrendingUp, BarChart2 } from "lucide-react";
@@ -30,7 +31,7 @@ interface InformePosContentProps {
 export function InformePosContent({ allSales, allServices, allInventory }: InformePosContentProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
-    return { from: startOfDay(now), to: endOfDay(now) };
+    return { from: startOfMonth(now), to: endOfMonth(now) };
   });
 
   const summaryData = useMemo(() => {
@@ -41,7 +42,7 @@ export function InformePosContent({ allSales, allServices, allInventory }: Infor
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), interval));
+    const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate as unknown as string)) && isWithinInterval(parseISO(s.saleDate as unknown as string), interval));
     const servicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), interval));
     
     const salesRevenue = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
