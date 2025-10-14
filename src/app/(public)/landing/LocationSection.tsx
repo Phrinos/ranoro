@@ -1,4 +1,3 @@
-
 "use client";
 import React from 'react';
 import Link from 'next/link';
@@ -15,7 +14,7 @@ function LocationSection() {
                         <h2 className="text-3xl font-extrabold">Visítanos o Contáctanos</h2>
                         <p className="mt-4 text-muted-foreground">Estamos listos para atenderte.</p>
                         <div className="mt-8 space-y-4 text-lg">
-                            <div className="flex items-center gap-4"><MapPin className="h-6 w-6 text-primary"/><p>Av de la Convencion de 1914 #1421, Jardines de la Convencion, 20267, Aguascalientes, Aguascalientes.</p></div>
+                            <div className="flex items-center gap-4"><MapPin className="h-6 w-6 text-primary"/><p>Av. de la Convencion de 1914 Sur #1421, Jardines de la Convencion, 20267, Aguascalientes, Aguascalientes.</p></div>
                             <div className="flex items-center gap-4"><Clock className="h-6 w-6 text-primary"/><p>Lunes a Viernes: 8:30 AM – 5:30 PM | Sábados: 8:30 AM - 1:30 PM</p></div>
                             <div className="flex items-center gap-4"><CreditCard className="h-6 w-6 text-primary"/><p>Aceptamos: Efectivo, Tarjeta, Transferencia</p></div>
                         </div>
