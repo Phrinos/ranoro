@@ -17,7 +17,7 @@ export function HeroSection() {
               src="/home.png"
               alt="Taller mecánico moderno con un coche deportivo"
               fill
-              className="object-cover object-right-top"
+              className="object-cover object-center"
               sizes="100vw"
               data-ai-hint="mechanic workshop"
               priority
@@ -28,14 +28,14 @@ export function HeroSection() {
             <div className="flex justify-center md:justify-start">
               <AnimatedDiv className="w-full max-w-md mb-8 md:mb-0">
                 <Card className="bg-black/70 backdrop-blur-sm border-white/20 text-white">
-                  <CardContent className="p-8">
-                    <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl text-shadow">
+                  <CardContent className="p-6">
+                    <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-shadow">
                       Servicio Profesional Certificado
                     </h1>
-                    <p className="mt-6 text-lg text-gray-200">
+                    <p className="mt-4 text-base text-gray-200">
                       El mejor servicio en Aguascalientes, donde te ofrecemos excelentes precios con un diagnostico claro y nuestra garantía Ranoro en cada servicio hasta 60 dias o 1000km.
                     </p>
-                    <div className="mt-8 space-y-3">
+                    <div className="mt-6 space-y-3">
                        <Button size="lg" asChild className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-lg w-full">
                         <Link href="/cotizar">
                           Cotizar mi Vehículo
