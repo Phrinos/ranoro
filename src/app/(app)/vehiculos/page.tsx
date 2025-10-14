@@ -110,7 +110,6 @@ function VehiculosPage() {
 
   const tabs = [
     { value: "vehiculos", label: "Lista de Vehículos" },
-    { value: "database", label: "Base de Datos" },
   ];
 
   return (
@@ -128,7 +127,7 @@ function VehiculosPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-1">
             {tabs.map((tabInfo) => (
               <TabsTrigger key={tabInfo.value} value={tabInfo.value}>
                 {tabInfo.label}
@@ -158,9 +157,6 @@ function VehiculosPage() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-        <TabsContent value="database" className="mt-6">
-           <DatabaseManagementTab />
         </TabsContent>
       </Tabs>
       
