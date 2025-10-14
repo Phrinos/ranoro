@@ -1,7 +1,7 @@
 // src/app/(app)/servicios/components/ServiceItemCard.tsx
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useFormContext, Controller, useWatch } from "react-hook-form";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import type {
@@ -17,7 +17,6 @@ import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/for
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { PlusCircle, Trash2, Wrench, Tags } from "lucide-react";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { capitalizeWords, formatCurrency, cn } from "@/lib/utils";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
@@ -26,7 +25,6 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { usePermissions } from "@/hooks/usePermissions";
 import { ServiceSuppliesArray } from "./ServiceSuppliesArray";
 import { Separator } from "@/components/ui/separator";
-import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
 
 const IVA_RATE = 0.16;
 const toNumber = (v: unknown): number => {
@@ -87,28 +85,6 @@ export function ServiceItemCard({
   }, [sellingPrice, suppliesUsed]);
 
   const serviceItemErrors = (errors as any)?.serviceItems?.[serviceIndex];
-
-  const [isAddToPriceListDialogOpen, setIsAddToPriceListDialogOpen] = useState(false);
-  const currentVehicle = null as unknown as Vehicle | null;
-
-  const handleSaveToPriceList = async (list: VehiclePriceList, service: Omit<PricedService, "id">) => {
-    try {
-      const serviceWithId = { ...service, id: `SVC_${Date.now()}` };
-      const updatedServices = [...list.services, serviceWithId];
-      await inventoryService.savePriceList({ ...list, services: updatedServices }, list.id);
-      toast({
-        title: "Servicio Guardado",
-        description: `Se ha añadido "${service.serviceName}" a la lista de precios de ${list.make} ${list.model}.`,
-      });
-      setIsAddToPriceListDialogOpen(false);
-    } catch {
-      toast({
-        title: "Error",
-        description: "No se pudo guardar en la lista de precios.",
-        variant: "destructive",
-      });
-    }
-  };
   
   const sortedServiceTypes = useMemo(() => {
     return [...serviceTypes].sort((a, b) => a.name.localeCompare(b.name));
@@ -122,18 +98,6 @@ export function ServiceItemCard({
           Trabajo a Realizar #{serviceIndex + 1}
         </h4>
         <div className="flex items-center">
-          {mode === "quote" && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-primary"
-              onClick={() => setIsAddToPriceListDialogOpen(true)}
-              title="Guardar en Precotizaciones"
-            >
-              <Tags className="h-4 w-4" />
-            </Button>
-          )}
           {!isReadOnly && (
             <Button
               type="button"
@@ -248,17 +212,6 @@ export function ServiceItemCard({
           <span className="font-bold text-lg text-green-600">{formatCurrency(profit)}</span>
         </div>
       </div>
-
-      <AddToPriceListDialog
-        open={isAddToPriceListDialogOpen}
-        onOpenChange={setIsAddToPriceListDialogOpen}
-        serviceToSave={{
-          name: undefined, 
-          price: sellingPrice ?? 0,
-        } as any}
-        currentVehicle={currentVehicle as any}
-        onSave={handleSaveToPriceList}
-      />
     </Card>
   );
 }
