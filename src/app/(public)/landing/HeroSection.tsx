@@ -35,7 +35,12 @@ export function HeroSection() {
                     <p className="mt-6 text-lg text-gray-200">
                       El mejor servicio en Aguascalientes, donde te ofrecemos excelentes precios con un diagnostico claro y nuestra garantía Ranoro en cada servicio hasta 60 dias o 1000km.
                     </p>
-                    <div className="mt-8">
+                    <div className="mt-8 space-y-3">
+                       <Button size="lg" asChild className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-lg w-full">
+                        <Link href="/cotizar">
+                          Cotizar mi Vehículo
+                        </Link>
+                      </Button>
                       <Button size="lg" asChild className="bg-primary hover:bg-primary/90 text-lg w-full">
                         <Link href={whatsappLink} target="_blank" rel="noopener noreferrer">
                           Agendar Cita
