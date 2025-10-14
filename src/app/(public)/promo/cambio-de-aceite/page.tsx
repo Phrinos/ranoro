@@ -72,7 +72,7 @@ export default function OilChangePromoPage() {
                       <span className="text-primary mr-2">▸</span>
                       <span className="text-muted-foreground">Aplica para vehículos de 4 cilindros de aspiración natural (sedanes, hatchbacks).</span>
                     </li>
-                    <li className="flex items-start">
+                     <li className="flex items-start">
                       <span className="text-primary mr-2">▸</span>
                       <span className="text-muted-foreground">Aceite totalmente sintético, litros adicionales o filtros premium tienen costo extra.</span>
                     </li>

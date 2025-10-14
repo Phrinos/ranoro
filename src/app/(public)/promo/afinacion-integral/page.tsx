@@ -15,27 +15,31 @@ export const metadata: Metadata = {
 const whatsappLink = "https://wa.me/524493930914?text=Hola%2C%20quisiera%20agendar%20la%20promoción%20de%20afinación%20integral%20por%20%241%2C999.";
 
 const includedItems = [
-  "Cambio de bujías convencionales (hasta 4)",
-  "Limpieza de cuerpo de aceleración",
-  "Lavado de inyectores con boya",
-  "Cambio de filtro de aire",
-  "Escaneo y diagnóstico con OBD-II",
-  "Borrado de códigos de falla (si es posible)",
-  "Revisión básica del sistema eléctrico",
+  "Aceite Raloy Mineral para motor",
+  "Bujías de cobre Champion / NGK (hasta 4)",
+  "Filtro de aceite y aire",
+  "Filtro de gasolina externo",
+  "Lavado de inyectores por ultrasonido y laboratorio",
+  "Lavado y calibración del cuerpo de aceleración no electrónico",
+  "Lavado de válvula PCV y IAC",
+  "Escaneo y borrado de códigos",
+  "Relleno de líquidos",
+  "Revisión de 26 puntos de seguridad",
+  "Transporte Uber de cortesía (ida o vuelta)",
 ];
 
 const notIncludedItems = [
-  "Bujías de iridium o platino",
-  "Filtro de combustible externo",
-  "Reemplazo de bobinas o sensores",
-  "Servicio para motores con turbo, V6 u V8",
+  "Bujías de platino o iridio (disponibles con costo extra)",
+  "Filtro de combustible interno (dentro del tanque)",
+  "Reparación de fallas electrónicas o mecánicas encontradas durante el escaneo",
+  "Servicio para motores con turbo, GDI, V6 u V8 (requiere cotización especial)",
 ];
 
 const faqItems = [
-  { question: "¿Por qué mi auto hace ruidos extraños?", answer: "Puede ser desde una banda floja hasta problemas en la suspensión. Una afinación ayuda a detectar y prevenir muchos de estos ruidos." },
-  { question: "¿Es normal que salga humo del escape?", answer: "El humo azul indica quema de aceite, el negro una mezcla rica de combustible, y el blanco vapor de agua o refrigerante. La afinación ayuda a corregir problemas de mezcla." },
-  { question: "¿Por qué mi auto gasta más gasolina?", answer: "Un motor mal afinado es menos eficiente. Inyectores sucios, bujías gastadas o un filtro de aire tapado aumentan el consumo." },
-  { question: "Se prendió la luz de Check Engine, ¿qué hago?", answer: "Esta luz indica una falla detectada por la computadora. Nuestro escaneo OBD-II lee el código de error para diagnosticar el problema exacto." },
+  { question: "¿Por qué mi auto hace ruidos extraños?", answer: "Puede ser desde una banda floja hasta problemas en la suspensión. Una afinación ayuda a detectar y prevenir muchos de estos ruidos al revisar los componentes del motor." },
+  { question: "¿Es normal que salga humo del escape?", answer: "El humo azul indica quema de aceite, el negro una mezcla rica de combustible, y el blanco vapor de agua o refrigerante. La afinación ayuda a corregir problemas de mezcla de combustible." },
+  { question: "¿Por qué mi auto gasta más gasolina?", answer: "Un motor mal afinado es menos eficiente. Inyectores sucios, bujías gastadas o un filtro de aire tapado aumentan el consumo de combustible." },
+  { question: "Se prendió la luz de Check Engine, ¿qué hago?", answer: "Esta luz indica una falla detectada por la computadora. Nuestro escaneo OBD-II lee el código de error para diagnosticar el problema exacto, que puede o no estar relacionado con la afinación." },
 ];
 
 export default function TuneUpPromoPage() {
@@ -58,10 +62,10 @@ export default function TuneUpPromoPage() {
             <CardHeader className="text-center p-6">
               <p className="text-base font-semibold text-primary tracking-wide uppercase">Devuélvele la Potencia</p>
               <CardTitle className="text-4xl md:text-5xl font-extrabold tracking-tight">
-                Afinación Integral <span className="text-primary">$1,999</span>
+                Afinación Integral <span className="text-primary">desde $1,999</span>
               </CardTitle>
               <CardDescription className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
-                Recupera la eficiencia y suavidad de tu motor con un mantenimiento completo. Duración aproximada: 3-4 horas.
+                Recupera la eficiencia y suavidad de tu motor con un mantenimiento completo. Duración aproximada: 4-5 horas.
               </CardDescription>
             </CardHeader>
             <CardContent className="px-6 pb-8">

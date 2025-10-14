@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { capitalizeWords } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 export function PromotionsSection() {
     const currentMonthAndYear = capitalizeWords(format(new Date(), "MMMM yyyy", { locale: es }));
@@ -43,17 +44,37 @@ export function PromotionsSection() {
                     <AnimatedDiv>
                         <Card className="bg-card/80 backdrop-blur-sm border-primary/50 shadow-lg h-full flex flex-col">
                             <CardHeader>
-                                <CardTitle className="text-xl text-primary">Afinación integral $1,999</CardTitle>
+                                <CardTitle className="text-xl text-primary">Afinación Integral desde $1,999</CardTitle>
                                 <CardDescription>
-                                    Cambio de bujías, limpieza de cuerpo de aceleración, lavado de inyectores, filtro de aire y escaneo.
+                                    Servicio completo para restaurar la eficiencia y potencia de tu motor.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="text-xs text-muted-foreground flex-grow">
-                                <p>No incluye: bujías iridium/platino, filtro de combustible externo, bobinas/sensores. Turbo o V6/V8 requiere cotización.</p>
+                            <CardContent className="text-xs text-muted-foreground flex-grow space-y-4">
+                                <div>
+                                    <h4 className="font-semibold text-foreground mb-2">INCLUYE:</h4>
+                                    <ul className="list-disc list-inside space-y-1">
+                                        <li>Aceite Raloy Mineral y filtro de aceite</li>
+                                        <li>Filtro de aire y gasolina (externo)</li>
+                                        <li>Bujías de cobre Champion/NGK (hasta 4)</li>
+                                        <li>Lavado de inyectores por ultrasonido</li>
+                                        <li>Limpieza de cuerpo de aceleración y válvulas PCV/IAC</li>
+                                        <li>Revisión de 26 puntos de seguridad y relleno de líquidos</li>
+                                    </ul>
+                                </div>
+                                <Separator />
+                                <div>
+                                    <h4 className="font-semibold text-foreground mb-2">MEJORA TU PAQUETE:</h4>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                        <span className="font-medium">Bujía Platino:</span><span className="font-bold">+$390</span>
+                                        <span className="font-medium">Bujía Iridio:</span><span className="font-bold">+$690</span>
+                                        <span className="font-medium">Aceite Sintético Raloy:</span><span className="font-bold">+$490</span>
+                                        <span className="font-medium">Aceite Sintético Mobil:</span><span className="font-bold">+$790</span>
+                                    </div>
+                                </div>
                             </CardContent>
                              <div className="p-6 pt-0">
                                 <Button size="sm" variant="link" className="p-0 h-auto text-primary" asChild>
-                                    <Link href="/promo/afinacion-integral">Ver detalles de la promoción</Link>
+                                    <Link href="/promo/afinacion-integral">Ver detalles y condiciones</Link>
                                 </Button>
                             </div>
                         </Card>
