@@ -109,10 +109,10 @@ export function TestimonialsSection() {
                     </Button>
                 </AnimatedDiv>
                  <div className="mt-16 pt-10 border-t border-gray-200 flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
-                    <Badge variant="secondary" className="px-4 py-2 text-base">4.9 de 5 estrellas</Badge>
-                    <Badge variant="secondary" className="px-4 py-2 text-base">100+ reseñas</Badge>
-                    <Badge variant="secondary" className="px-4 py-2 text-base">15+ años de experiencia</Badge>
-                    <Badge variant="secondary" className="px-4 py-2 text-base">5,000+ vehículos atendidos</Badge>
+                    <Badge variant="secondary" className="px-4 py-2 text-base">4.7 de 5 estrellas</Badge>
+                    <Badge variant="secondary" className="px-4 py-2 text-base">200+ reseñas</Badge>
+                    <Badge variant="secondary" className="px-4 py-2 text-base">7+ años de experiencia</Badge>
+                    <Badge variant="secondary" className="px-4 py-2 text-base">11,000+ vehículos atendidos</Badge>
                 </div>
             </div>
         </section>
