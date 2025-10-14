@@ -1,4 +1,3 @@
-
 "use client";
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -6,12 +5,12 @@ import { AnimatedDiv } from './AnimatedDiv';
 import { Icon } from '@iconify/react';
 
 const services = [
-    { name: "Mantenimiento y diagnósticos", icon: "mdi:clock-check-outline" },
-    { name: "Frenos y suspensión", icon: "mdi:car-brake-abs" },
-    { name: "Enfriamiento y dirección", icon: "mdi:car-coolant-level" },
-    { name: "Hojalatería y pintura", icon: "mdi:spray-gun" },
-    { name: "Eléctrico y escaneo OBD-II", icon: "mdi:car-wireless" },
-    { name: "Flotillas y empresas", icon: "mdi:truck-outline" },
+    { name: "Mantenimiento y diagnósticos", icon: "twemoji:gear" },
+    { name: "Frenos y suspensión", icon: "twemoji:racing-car" },
+    { name: "Enfriamiento y dirección", icon: "twemoji:snowflake" },
+    { name: "Hojalatería y pintura", icon: "twemoji:artist-palette" },
+    { name: "Eléctrico y escaneo OBD-II", icon: "twemoji:laptop" },
+    { name: "Flotillas y empresas", icon: "twemoji:delivery-truck" },
 ];
 
 function ServicesSection() {

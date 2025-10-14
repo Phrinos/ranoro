@@ -5,13 +5,13 @@ import Image from "next/image";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AnimatedDiv } from './AnimatedDiv';
-import { MessageSquare } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 const whatsappLink = "https://wa.me/524491425323?text=Hola%2C%20quisiera%20agendar%20una%20cita.";
 
 export function HeroSection() {
     return (
-        <section className="relative w-full h-screen md:h-[70vh] flex flex-col justify-end md:justify-center">
+        <section className="relative w-full h-screen md:h-[70vh] flex flex-col justify-end md:justify-start">
           <div className="absolute inset-0 z-0">
             <Image
               src="/home.png"
@@ -38,7 +38,7 @@ export function HeroSection() {
                     <div className="mt-8">
                       <Button size="lg" asChild className="bg-primary hover:bg-primary/90 text-lg w-full">
                         <Link href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                          <MessageSquare className="mr-2 h-5 w-5"/> Agendar Cita
+                          <Icon icon="twemoji:speech-balloon" className="mr-2 h-5 w-5"/> Agendar Cita
                         </Link>
                       </Button>
                     </div>

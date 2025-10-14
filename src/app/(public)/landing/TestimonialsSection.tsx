@@ -1,4 +1,3 @@
-
 "use client";
 import React from 'react';
 import Link from 'next/link';
@@ -55,7 +54,7 @@ export function TestimonialsSection() {
                                 <CardContent className="p-6">
                                     <div className="flex gap-1 text-yellow-400 mb-2">
                                         {[...Array(5)].map((_, i) => (
-                                            <Icon key={i} icon="mdi:star" className="h-5 w-5"/>
+                                            <Icon key={i} icon="twemoji:star" className="h-5 w-5"/>
                                         ))}
                                     </div>
                                     <blockquote className="text-lg italic text-muted-foreground">“{testimonial.quote}”</blockquote>

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Wrench, Car } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 const mecanicaServices = [
   "Afinación Integral",
@@ -48,12 +48,12 @@ export function Header() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost">
-                Servicios <ChevronDown className="ml-2 h-4 w-4" />
+                Servicios <Icon icon="twemoji:down-arrow" className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-64">
               <DropdownMenuLabel className="flex items-center gap-2">
-                <Wrench className="h-4 w-4" />
+                <Icon icon="twemoji:wrench" className="h-4 w-4" />
                 Mecánica
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -64,7 +64,7 @@ export function Header() {
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="flex items-center gap-2">
-                <Car className="h-4 w-4" />
+                <Icon icon="twemoji:automobile" className="h-4 w-4" />
                 Hojalatería y Pintura
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

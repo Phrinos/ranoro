@@ -1,4 +1,3 @@
-
 "use client";
 import React from 'react';
 import Link from 'next/link';
@@ -9,7 +8,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { capitalizeWords } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-import { Check, Info, Car, Truck } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 export function PromotionsSection() {
     const currentMonthAndYear = capitalizeWords(format(new Date(), "MMMM yyyy", { locale: es }));
@@ -35,12 +34,12 @@ export function PromotionsSection() {
                             <CardContent className="flex-grow space-y-4">
                                <div className="grid grid-cols-2 gap-4 text-center">
                                     <div className="p-3 bg-muted/50 rounded-lg">
-                                        <Car className="mx-auto h-6 w-6 text-primary"/>
+                                        <Icon icon="twemoji:automobile" className="mx-auto h-6 w-6 text-primary"/>
                                         <p className="font-bold text-lg mt-1">$799</p>
                                         <p className="text-xs text-muted-foreground">Autos</p>
                                     </div>
                                     <div className="p-3 bg-muted/50 rounded-lg">
-                                        <Truck className="mx-auto h-6 w-6 text-primary"/>
+                                        <Icon icon="twemoji:delivery-truck" className="mx-auto h-6 w-6 text-primary"/>
                                         <p className="font-bold text-lg mt-1">$999</p>
                                         <p className="text-xs text-muted-foreground">SUV / Pick-Up</p>
                                     </div>
@@ -51,12 +50,12 @@ export function PromotionsSection() {
                                 <div>
                                     <h4 className="font-semibold text-foreground mb-2 text-sm">INCLUYE:</h4>
                                     <ul className="space-y-2 text-sm">
-                                        <li className="flex items-start"><Check className="h-4 w-4 mr-2 mt-0.5 text-green-500 flex-shrink-0"/><span className="text-muted-foreground">Hasta 5L de aceite sintético Raloy</span></li>
-                                        <li className="flex items-start"><Check className="h-4 w-4 mr-2 mt-0.5 text-green-500 flex-shrink-0"/><span className="text-muted-foreground">Filtro de Aceite Estándar</span></li>
+                                        <li className="flex items-start"><Icon icon="twemoji:check-mark-button" className="h-4 w-4 mr-2 mt-0.5 text-green-500 flex-shrink-0"/><span className="text-muted-foreground">Hasta 5L de aceite sintético Raloy</span></li>
+                                        <li className="flex items-start"><Icon icon="twemoji:check-mark-button" className="h-4 w-4 mr-2 mt-0.5 text-green-500 flex-shrink-0"/><span className="text-muted-foreground">Filtro de Aceite Estándar</span></li>
                                     </ul>
                                 </div>
                                 <div className="text-xs text-muted-foreground pt-4 border-t">
-                                    <Info className="h-4 w-4 inline mr-1"/>
+                                    <Icon icon="twemoji:information" className="h-4 w-4 inline mr-1"/>
                                     Válido para todos los vehículos excepto Acura, BMW, Mercedes Benz, Audi, GMC, Lincoln, Land Rover, Lexus, Porsche, Infiniti y Cadillac.
                                 </div>
                             </CardContent>
