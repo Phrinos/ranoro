@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Header } from './landing/Header'; // Import the new header
 
 export const metadata: Metadata = {
   title: 'Ranoro Taller en Aguascalientes | Mecánica, Hojalatería y Pintura',
@@ -31,7 +30,6 @@ export default function PublicPageLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
-        <Header />
         <main className="flex-1">
             {children}
             <Analytics />

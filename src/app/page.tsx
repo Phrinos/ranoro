@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { Header } from './(public)/landing/Header';
 import { HeroSection } from './(public)/landing/HeroSection';
 import { PromotionsSection } from './(public)/landing/PromotionsSection';
 import { WhyRanoroSection } from './(public)/landing/WhyRanoroSection';
@@ -16,6 +17,7 @@ export default function LandingPage() {
 
   return (
     <div className="bg-background text-foreground">
+      <Header />
       <main>
         <HeroSection />
         <PromotionsSection />
