@@ -20,10 +20,10 @@ function LocationSection() {
                         </div>
                         <div className="mt-8 flex gap-4">
                              <Button size="lg" asChild className="bg-green-500 hover:bg-green-600 text-white">
-                                <Link href="https://wa.me/524493930914?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer"><MessageSquare className="mr-2 h-5 w-5"/> Agendar por WhatsApp</Link>
+                                <Link href="https://wa.me/524491425323?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer"><MessageSquare className="mr-2 h-5 w-5"/> Agendar por WhatsApp</Link>
                             </Button>
                              <Button size="lg" variant="outline" asChild>
-                                <Link href="tel:4493930914"><Phone className="mr-2 h-5 w-5"/> Llamar ahora</Link>
+                                <Link href="tel:4491425323"><Phone className="mr-2 h-5 w-5"/> Llamar ahora</Link>
                             </Button>
                         </div>
                     </AnimatedDiv>

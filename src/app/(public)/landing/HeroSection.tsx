@@ -8,8 +8,8 @@ import { AnimatedDiv } from './AnimatedDiv';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Phone, MessageSquare } from 'lucide-react';
 
-const whatsappLink = "https://wa.me/524493930914?text=Hola%2C%20quisiera%20agendar%20una%20cita.";
-const phoneLink = "tel:4493930914";
+const whatsappLink = "https://wa.me/524491425323?text=Hola%2C%20quisiera%20agendar%20una%20cita.";
+const phoneLink = "tel:4491425323";
 
 export function HeroSection() {
     return (
