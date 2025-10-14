@@ -340,8 +340,6 @@ function MovimientosTabContent({
               <TableBody>
                 {paginatedData.length > 0 ? (
                   paginatedData.map((m) => {
-                    const Icon =
-                      m.origin === "payment" && m.method ? methodIcon[m.method] || Landmark : undefined;
                     const badgeVariant =
                       m.type === "Venta"
                         ? "secondary"
@@ -394,20 +392,7 @@ function MovimientosTabContent({
                           {formatCurrency(m.total)}
                         </TableCell>
                          <TableCell className="text-right">
-                          {Icon && (
-                             <TooltipProvider>
-                               <Tooltip>
-                                 <TooltipTrigger asChild>
-                                    <div className="inline-flex items-center justify-center p-1 rounded-full bg-muted">
-                                      <Icon className="h-4 w-4 opacity-80" />
-                                    </div>
-                                 </TooltipTrigger>
-                                 <TooltipContent>
-                                   <p>{m.method}</p>
-                                 </TooltipContent>
-                               </Tooltip>
-                             </TooltipProvider>
-                          )}
+                          {m.method || ''}
                         </TableCell>
                       </TableRow>
                     );
