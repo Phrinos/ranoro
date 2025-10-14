@@ -1,18 +1,26 @@
-
+// src/app/(public)/cotizar/page.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Car, Wrench } from 'lucide-react';
+import { Loader2, Car, Wrench, AlertTriangle } from 'lucide-react';
 import { inventoryService } from '@/lib/services';
 import type { VehiclePriceList } from '@/types';
+import { formatCurrency } from '@/lib/utils';
+import { AnimatedDiv } from '../landing/AnimatedDiv';
 
-function CotizadorPage() {
+// Normaliza y capitaliza un string para consistencia.
+const normalizeString = (str?: string): string => {
+    if (!str) return '';
+    return str.trim().toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+};
+
+function CotizadorPageComponent() {
   const searchParams = useSearchParams();
   const serviceQuery = searchParams.get('service');
   
@@ -26,6 +34,7 @@ function CotizadorPage() {
   
   const [result, setResult] = useState<{ price: number; time: number; } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = inventoryService.onPriceListsUpdate((data) => {
@@ -35,23 +44,32 @@ function CotizadorPage() {
     return () => unsubscribe();
   }, []);
 
-  const makes = React.useMemo(() => [...new Set(priceLists.map(p => p.make))].sort(), [priceLists]);
-  const models = React.useMemo(() => {
+  const makes = useMemo(() => {
+    const uniqueMakes = [...new Set(priceLists.map(p => normalizeString(p.make)))];
+    return uniqueMakes.sort();
+  }, [priceLists]);
+  
+  const models = useMemo(() => {
     if (!selectedMake) return [];
-    return [...new Set(priceLists.filter(p => p.make === selectedMake).map(p => p.model))].sort();
+    return [...new Set(priceLists
+        .filter(p => normalizeString(p.make) === selectedMake)
+        .map(p => p.model))]
+        .sort();
   }, [priceLists, selectedMake]);
-  const years = React.useMemo(() => {
+
+  const years = useMemo(() => {
     if (!selectedModel) return [];
     const allYears = priceLists
-      .filter(p => p.make === selectedMake && p.model === selectedModel)
+      .filter(p => normalizeString(p.make) === selectedMake && p.model === selectedModel)
       .flatMap(p => p.years);
     return [...new Set(allYears)].sort((a, b) => b - a);
   }, [priceLists, selectedMake, selectedModel]);
-  const services = React.useMemo(() => {
+  
+  const services = useMemo(() => {
     if (!selectedYear) return [];
     const allServices = priceLists
         .filter(p => 
-            p.make === selectedMake && 
+            normalizeString(p.make) === selectedMake && 
             p.model === selectedModel && 
             p.years.includes(Number(selectedYear))
         )
@@ -59,14 +77,35 @@ function CotizadorPage() {
     return [...new Set(allServices)].sort();
   }, [priceLists, selectedMake, selectedModel, selectedYear]);
 
+  // Handlers para resetear selecciones dependientes
+  const handleMakeChange = (make: string) => {
+      setSelectedMake(make);
+      setSelectedModel('');
+      setSelectedYear('');
+      setSelectedService('');
+      setResult(null);
+  }
+  const handleModelChange = (model: string) => {
+      setSelectedModel(model);
+      setSelectedYear('');
+      setSelectedService('');
+      setResult(null);
+  }
+  const handleYearChange = (year: string) => {
+      setSelectedYear(year);
+      setSelectedService('');
+      setResult(null);
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSearching(true);
     setResult(null);
+    setSearchError(null);
 
     setTimeout(() => {
       const list = priceLists.find(p => 
-        p.make === selectedMake && 
+        normalizeString(p.make) === selectedMake && 
         p.model === selectedModel && 
         p.years.includes(Number(selectedYear))
       );
@@ -75,10 +114,10 @@ function CotizadorPage() {
       if (service) {
         setResult({ price: service.customerPrice, time: service.estimatedTimeHours || 2 });
       } else {
-        setResult(null); // Or show a "not found" message
+        setSearchError("No se encontró una cotización para los criterios seleccionados. Por favor, contáctanos directamente.");
       }
       setIsSearching(false);
-    }, 1500);
+    }, 1000);
   };
 
   return (
@@ -115,37 +154,47 @@ function CotizadorPage() {
                     <CardContent>
                        {isLoading ? <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
                          <form onSubmit={handleSubmit} className="space-y-4">
-                            <Select value={selectedMake} onValueChange={setSelectedMake}>
+                            <Select value={selectedMake} onValueChange={handleMakeChange}>
                                 <SelectTrigger><SelectValue placeholder="Selecciona la Marca..." /></SelectTrigger>
                                 <SelectContent>{makes.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                             </Select>
-                            <Select value={selectedModel} onValueChange={setSelectedModel} disabled={!selectedMake}>
-                                <SelectTrigger><SelectValue placeholder="Selecciona el Modelo..." /></SelectTrigger>
+                            <Select value={selectedModel} onValueChange={handleModelChange} disabled={!selectedMake}>
+                                <SelectTrigger><SelectValue placeholder={!selectedMake ? 'Primero elige una marca' : 'Selecciona el Modelo...'} /></SelectTrigger>
                                 <SelectContent>{models.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                             </Select>
-                            <Select value={selectedYear} onValueChange={setSelectedYear} disabled={!selectedModel}>
-                                <SelectTrigger><SelectValue placeholder="Selecciona el Año..." /></SelectTrigger>
+                            <Select value={selectedYear} onValueChange={handleYearChange} disabled={!selectedModel}>
+                                <SelectTrigger><SelectValue placeholder={!selectedModel ? 'Primero elige un modelo' : 'Selecciona el Año...'} /></SelectTrigger>
                                 <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
                             </Select>
                              <Select value={selectedService} onValueChange={setSelectedService} disabled={!selectedYear}>
-                                <SelectTrigger><SelectValue placeholder="Selecciona el Servicio..." /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder={!selectedYear ? 'Primero elige un año' : 'Selecciona el Servicio...'} /></SelectTrigger>
                                 <SelectContent>{services.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                             </Select>
-                            <Button type="submit" className="w-full" disabled={!selectedService || isSearching}>
+                            <Button type="submit" className="w-full h-12 text-lg" disabled={!selectedService || isSearching}>
                                 {isSearching ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Buscando...</> : "Cotizar Ahora"}
                             </Button>
                          </form>
                        )}
 
-                       {isSearching && <div className="text-center p-4 text-muted-foreground">Analizando nuestra base de datos...</div>}
-
                        {result && (
-                         <div className="mt-6 p-6 bg-green-50 border-2 border-dashed border-green-200 rounded-lg text-center">
-                            <h3 className="text-lg font-semibold text-green-800">Estimación de Costo</h3>
-                            <p className="text-4xl font-bold text-green-600 my-2">${result.price.toLocaleString('es-MX')}</p>
-                            <p className="text-sm text-green-700">Tiempo estimado de servicio: {result.time} horas</p>
-                            <Button asChild className="mt-4"><Link href="https://wa.me/524491425323?text=Hola%2C%20me%20gustar%C3%ADa%20agendar%20una%20cita%20con%20la%20cotizaci%C3%B3n%20que%20obtuve.">Agendar por WhatsApp</Link></Button>
-                         </div>
+                         <AnimatedDiv>
+                            <div className="mt-6 p-6 bg-green-50 border-2 border-dashed border-green-200 rounded-lg text-center">
+                                <h3 className="text-lg font-semibold text-green-800">Estimación de Costo</h3>
+                                <p className="text-4xl font-bold text-green-600 my-2">{formatCurrency(result.price)}</p>
+                                <p className="text-sm text-green-700">Tiempo estimado de servicio: {result.time} horas</p>
+                                <Button asChild className="mt-4"><Link href="https://wa.me/524491425323?text=Hola%2C%20me%20gustar%C3%ADa%20agendar%20una%20cita%20con%20la%20cotizaci%C3%B3n%20que%20obtuve.">Agendar por WhatsApp</Link></Button>
+                            </div>
+                         </AnimatedDiv>
+                       )}
+
+                       {searchError && (
+                          <AnimatedDiv>
+                            <div className="mt-6 p-6 bg-yellow-50 border-2 border-dashed border-yellow-200 rounded-lg text-center">
+                              <AlertTriangle className="mx-auto h-8 w-8 text-yellow-600 mb-2" />
+                              <h3 className="font-semibold text-yellow-800">No disponible</h3>
+                              <p className="text-sm text-yellow-700">{searchError}</p>
+                            </div>
+                          </AnimatedDiv>
                        )}
                     </CardContent>
                  </Card>
@@ -155,4 +204,10 @@ function CotizadorPage() {
   );
 }
 
-export default CotizadorPage;
+export default function CotizadorPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+            <CotizadorPageComponent />
+        </Suspense>
+    );
+}
