@@ -5,7 +5,6 @@ import { Header } from './(public)/landing/Header';
 import { HeroSection } from './(public)/landing/HeroSection';
 import { PromotionsSection } from './(public)/landing/PromotionsSection';
 import { WhyRanoroSection } from './(public)/landing/WhyRanoroSection';
-import BeforeAfterSection from './(public)/landing/BeforeAfterSection';
 import { TestimonialsSection } from './(public)/landing/TestimonialsSection';
 import LocationSection from './(public)/landing/LocationSection';
 import FinalCta from './(public)/landing/FinalCta';
@@ -23,7 +22,6 @@ export default function LandingPage() {
         <PromotionsSection />
         <WhyRanoroSection />
         <ServicesSection />
-        <BeforeAfterSection />
         <TestimonialsSection />
         <LocationSection />
         <FinalCta />

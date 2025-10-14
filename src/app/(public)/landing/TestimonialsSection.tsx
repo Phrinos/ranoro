@@ -1,11 +1,12 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { AnimatedDiv } from './AnimatedDiv';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@iconify/react';
 import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const testimonials = [
     { quote: "Precio justo y me explicaron todo el proceso. Muy transparentes.", author: "Carlos M." },
@@ -40,16 +41,38 @@ const testimonials = [
     { quote: "Finalmente encontré un taller en Aguascalientes en el que puedo confiar ciegamente.", author: "Francisco L." },
 ];
 
+const ITEMS_PER_PAGE = 4;
+
 export function TestimonialsSection() {
+    const [currentPage, setCurrentPage] = useState(0);
+    const totalPages = Math.ceil(testimonials.length / ITEMS_PER_PAGE);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentPage((prevPage) => (prevPage + 1) % totalPages);
+        }, 15000); // 15 seconds
+        return () => clearInterval(timer);
+    }, [totalPages]);
+    
+    const goToNextPage = () => {
+        setCurrentPage((prevPage) => (prevPage + 1) % totalPages);
+    };
+
+    const goToPrevPage = () => {
+        setCurrentPage((prevPage) => (prevPage - 1 + totalPages) % totalPages);
+    };
+
+    const currentTestimonials = testimonials.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
+
     return (
         <section id="testimonials" className="py-20 md:py-28 bg-white">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                  <AnimatedDiv className="text-center max-w-3xl mx-auto">
                     <h2 className="text-3xl md:text-4xl font-extrabold">Lo que dicen nuestros clientes</h2>
                 </AnimatedDiv>
-                <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8">
-                    {testimonials.slice(0, 4).map((testimonial, index) => (
-                        <AnimatedDiv key={index}>
+                <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 min-h-[450px]">
+                    {currentTestimonials.map((testimonial, index) => (
+                        <AnimatedDiv key={`${currentPage}-${index}`}>
                             <Card className="border-l-4 border-primary h-full shadow-lg hover:shadow-xl transition-shadow">
                                 <CardContent className="p-6">
                                     <div className="flex gap-1 text-yellow-400 mb-2">
@@ -64,6 +87,19 @@ export function TestimonialsSection() {
                         </AnimatedDiv>
                     ))}
                 </div>
+
+                <div className="flex justify-center items-center mt-8 gap-4">
+                    <Button variant="outline" size="icon" onClick={goToPrevPage} aria-label="Anterior">
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                        Página {currentPage + 1} de {totalPages}
+                    </span>
+                    <Button variant="outline" size="icon" onClick={goToNextPage} aria-label="Siguiente">
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+
                 <AnimatedDiv className="text-center mt-12">
                     <Button asChild size="lg" variant="outline">
                         <Link href="https://share.google/oBweULXW1ADrwdoY8" target="_blank" rel="noopener noreferrer">
