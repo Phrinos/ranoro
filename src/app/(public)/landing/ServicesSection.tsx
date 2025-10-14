@@ -30,7 +30,7 @@ function ServicesSection() {
                                     {typeof service.icon === 'string' ? <Icon icon={service.icon} className="h-10 w-10 mx-auto text-primary"/> : <service.icon className="h-10 w-10 mx-auto text-primary" />}
                                 </CardHeader>
                                 <CardContent>
-                                    <h3 className="font-semibold">{service.name}</h3>
+                                    <h3 className="font-semibold text-white">{service.name}</h3>
                                 </CardContent>
                             </Card>
                         </AnimatedDiv>
