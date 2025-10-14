@@ -90,6 +90,7 @@ export type Vehicle = {
   make: string;
   model: string;
   year: number;
+  engine?: string;
   licensePlate: string;
   vin?: string;
   color?: string;

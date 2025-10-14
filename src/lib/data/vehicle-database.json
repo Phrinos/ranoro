@@ -1,11 +1,9 @@
-
 [
   {
     "make": "Toyota",
     "models": [
       {
         "name": "Camry",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2002,
@@ -20,13 +18,12 @@
           {
             "startYear": 2018,
             "endYear": 2025,
-            "engines": ["2.5L I4 gasolina Motorpasion"]
+            "engines": ["2.5L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Corolla",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2000,
@@ -41,24 +38,22 @@
           {
             "startYear": 2020,
             "endYear": 2025,
-            "engines": ["1.8L I4 gasolina (140 hp)", "2.0L I4 gasolina (168 hp) Autocosmos"]
+            "engines": ["1.8L I4 gasolina", "2.0L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Yaris",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2015,
             "endYear": 2025,
-            "engines": ["1.5L I4 gasolina (~106 hp)"]
+            "engines": ["1.5L I4 gasolina"]
           }
         ]
       },
       {
         "name": "RAV4",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2000,
@@ -84,7 +79,6 @@
       },
       {
         "name": "4Runner",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2000,
@@ -100,7 +94,6 @@
       },
       {
         "name": "Highlander",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2008,
@@ -111,7 +104,6 @@
       },
       {
         "name": "C-HR",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2017,
@@ -122,21 +114,16 @@
       },
       {
         "name": "Hilux",
-        "category": "Pick-ups",
         "generations": [
           {
             "startYear": 2005,
             "endYear": 2025,
-            "engines": [
-              "2.7L I4 gasolina (166 hp), manual 5 velocidades Motorpasion",
-              "2.8L I4 turbo diesel (201 hp, 310-369 lb-ft), manual 6 vel / automática 6 vel El FinancieroToyota Costa Rica"
-            ]
+            "engines": ["2.7L I4 gasolina", "2.8L I4 turbo diesel"]
           }
         ]
       },
       {
         "name": "Tacoma",
-        "category": "Pick-ups",
         "generations": [
           {
             "startYear": 2005,
@@ -146,22 +133,17 @@
           {
             "startYear": 2016,
             "endYear": 2025,
-            "engines": ["2.7L I4 gasolina", "3.5L V6 gasolina Revista Magazzine"]
+            "engines": ["2.7L I4 gasolina", "3.5L V6 gasolina"]
           }
         ]
       },
       {
         "name": "Hiace",
-        "category": "Vans",
         "generations": [
           {
             "startYear": 2005,
             "endYear": 2025,
-            "engines": [
-              "2.7L I4 gasolina",
-              "3.5L V6 gasolina (277 hp)",
-              "2.8L I4 diesel (174 hp, 310 lb-ft) Autocosmos"
-            ]
+            "engines": ["2.7L I4 gasolina", "3.5L V6 gasolina", "2.8L I4 diesel"]
           }
         ]
       }
@@ -172,18 +154,16 @@
     "models": [
       {
         "name": "Tsuru",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 1992,
             "endYear": 2017,
-            "engines": ["1.6L I4 gasolina (88-115 hp, motor GA16DE) MotorpasionMiauto"]
+            "engines": ["1.6L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Sentra",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2000,
@@ -203,18 +183,17 @@
           {
             "startYear": 2020,
             "endYear": 2025,
-            "engines": ["2.0L I4 gasolina AutocosmosAutocosmos"]
+            "engines": ["2.0L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Versa/Tiida",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2004,
             "endYear": 2011,
-            "engines": ["1.6L I4 gasolina", "1.8L I4 gasolina (126 hp) Wikipedia"]
+            "engines": ["1.6L I4 gasolina", "1.8L I4 gasolina"]
           },
           {
             "startYear": 2012,
@@ -224,24 +203,22 @@
           {
             "startYear": 2020,
             "endYear": 2025,
-            "engines": ["1.6L I4 gasolina AutocosmosAutocosmos"]
+            "engines": ["1.6L I4 gasolina"]
           }
         ]
       },
       {
         "name": "March",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2011,
             "endYear": 2025,
-            "engines": ["1.6L I4 gasolina (107 hp) Autocosmos"]
+            "engines": ["1.6L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Altima",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2000,
@@ -252,23 +229,21 @@
       },
       {
         "name": "Kicks",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2017,
             "endYear": 2024,
-            "engines": ["1.6L I4 gasolina (118 hp)"]
+            "engines": ["1.6L I4 gasolina"]
           },
           {
             "startYear": 2025,
             "endYear": 2025,
-            "engines": ["1.5L I4 gasolina", "2.0L I4 gasolina Autocosmos +2"]
+            "engines": ["1.5L I4 gasolina", "2.0L I4 gasolina"]
           }
         ]
       },
       {
         "name": "X-Trail",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2002,
@@ -279,18 +254,16 @@
       },
       {
         "name": "Pathfinder",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2000,
             "endYear": 2025,
-            "engines": ["3.5L V6 gasolina (260-290 hp) AutocosmosAutocosmos"]
+            "engines": ["3.5L V6 gasolina"]
           }
         ]
       },
       {
         "name": "Murano",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2003,
@@ -301,7 +274,6 @@
       },
       {
         "name": "Magnite",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2023,
@@ -312,7 +284,6 @@
       },
       {
         "name": "NP300/Frontier",
-        "category": "Pick-ups",
         "generations": [
           {
             "startYear": 2000,
@@ -332,13 +303,12 @@
           {
             "startYear": 2021,
             "endYear": 2025,
-            "engines": ["3.8L V6 gasolina Autocosmos +2"]
+            "engines": ["3.8L V6 gasolina"]
           }
         ]
       },
       {
         "name": "Urvan",
-        "category": "Vans",
         "generations": [
           {
             "startYear": 2002,
@@ -354,7 +324,6 @@
     "models": [
       {
         "name": "Accord",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2003,
@@ -374,13 +343,12 @@
           {
             "startYear": 2018,
             "endYear": 2025,
-            "engines": ["1.5L I4 turbo gasolina", "2.0L I4 turbo gasolina Expansión +2"]
+            "engines": ["1.5L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
           }
         ]
       },
       {
         "name": "Civic",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2001,
@@ -411,18 +379,16 @@
       },
       {
         "name": "City",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2009,
             "endYear": 2025,
-            "engines": ["1.5L I4 gasolina (120 hp) Expansión"]
+            "engines": ["1.5L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Fit",
-        "category": "Sedanes y Compactos",
         "generations": [
           {
             "startYear": 2002,
@@ -433,7 +399,6 @@
       },
       {
         "name": "CR-V",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2002,
@@ -443,13 +408,12 @@
           {
             "startYear": 2017,
             "endYear": 2025,
-            "engines": ["1.5L I4 turbo gasolina Expansión"]
+            "engines": ["1.5L I4 turbo gasolina"]
           }
         ]
       },
       {
         "name": "HR-V",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2015,
@@ -459,13 +423,12 @@
           {
             "startYear": 2023,
             "endYear": 2025,
-            "engines": ["2.0L I4 gasolina ExpansiónAutocosmos"]
+            "engines": ["2.0L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Pilot",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2009,
@@ -476,7 +439,6 @@
       },
       {
         "name": "Odyssey",
-        "category": "Minivans",
         "generations": [
           {
             "startYear": 2007,
@@ -492,18 +454,16 @@
     "models": [
       {
         "name": "Mazda2",
-        "category": "Sedanes y Hatchbacks",
         "generations": [
           {
             "startYear": 2011,
             "endYear": 2025,
-            "engines": ["1.5L I4 Skyactiv gasolina (110 hp) AutocosmosMazda"]
+            "engines": ["1.5L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Mazda3",
-        "category": "Sedanes y Hatchbacks",
         "generations": [
           {
             "startYear": 2004,
@@ -513,18 +473,17 @@
           {
             "startYear": 2014,
             "endYear": 2018,
-            "engines": ["2.0L I4 Skyactiv gasolina", "2.5L I4 Skyactiv gasolina"]
+            "engines": ["2.0L I4 gasolina", "2.5L I4 gasolina"]
           },
           {
             "startYear": 2019,
             "endYear": 2025,
-            "engines": ["2.5L I4 Skyactiv (186 hp) gasolina", "2.5L I4 turbo (250 hp) gasolina Autocosmos +2"]
+            "engines": ["2.5L I4 gasolina", "2.5L I4 turbo gasolina"]
           }
         ]
       },
       {
         "name": "Mazda6",
-        "category": "Sedanes y Hatchbacks",
         "generations": [
           {
             "startYear": 2003,
@@ -539,68 +498,62 @@
           {
             "startYear": 2014,
             "endYear": 2021,
-            "engines": ["2.5L I4 Skyactiv gasolina", "2.5L I4 turbo Skyactiv gasolina MazdaMazda"]
+            "engines": ["2.5L I4 gasolina", "2.5L I4 turbo gasolina"]
           }
         ]
       },
       {
         "name": "CX-3",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2016,
             "endYear": 2024,
-            "engines": ["2.0L I4 Skyactiv gasolina (146 hp) Autocosmos +2"]
+            "engines": ["2.0L I4 gasolina"]
           }
         ]
       },
       {
         "name": "CX-30",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2020,
             "endYear": 2025,
-            "engines": ["2.5L I4 Skyactiv (186 hp) gasolina", "2.5L I4 turbo (250 hp) gasolina Autocosmos +2"]
+            "engines": ["2.5L I4 gasolina", "2.5L I4 turbo gasolina"]
           }
         ]
       },
       {
         "name": "CX-5",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2013,
             "endYear": 2025,
-            "engines": ["2.5L I4 Skyactiv (187 hp) gasolina", "2.5L I4 turbo Skyactiv (227-250 hp) gasolina Autocosmos +2"]
+            "engines": ["2.5L I4 gasolina", "2.5L I4 turbo gasolina"]
           }
         ]
       },
       {
         "name": "CX-50",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2023,
             "endYear": 2025,
-            "engines": ["2.5L I4 Skyactiv gasolina", "2.5L I4 turbo Skyactiv gasolina Autocosmos"]
+            "engines": ["2.5L I4 gasolina", "2.5L I4 turbo gasolina"]
           }
         ]
       },
       {
         "name": "CX-7",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2007,
             "endYear": 2012,
-            "engines": ["2.3L I4 turbo gasolina", "2.5L I4 gasolina MazdaAutocosmos"]
+            "engines": ["2.3L I4 turbo gasolina", "2.5L I4 gasolina"]
           }
         ]
       },
       {
         "name": "CX-9",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2007,
@@ -610,29 +563,37 @@
           {
             "startYear": 2016,
             "endYear": 2025,
-            "engines": ["2.5L I4 turbo Skyactiv (250 hp) gasolina MazdaAutocosmos"]
+            "engines": ["2.5L I4 turbo gasolina"]
           }
         ]
       },
       {
-        "name": "CX-70/CX-90",
-        "category": "SUVs",
+        "name": "CX-70",
         "generations": [
           {
             "startYear": 2024,
             "endYear": 2025,
-            "engines": ["3.3L I6 turbo gasolina (280 hp) Mazda México"]
+            "engines": ["3.3L I6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "CX-90",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["3.3L I6 turbo gasolina"]
           }
         ]
       },
       {
         "name": "BT-50",
-        "category": "Pick-up",
         "generations": [
           {
             "startYear": 2025,
             "endYear": 2025,
-            "engines": ["3.0L I4 turbo diesel (190 hp) Autocosmos +4"]
+            "engines": ["3.0L I4 turbo diesel"]
           }
         ]
       }
@@ -643,7 +604,6 @@
     "models": [
       {
         "name": "Accent",
-        "category": "Compactos y Sedanes",
         "generations": [
           {
             "startYear": 2000,
@@ -654,29 +614,26 @@
       },
       {
         "name": "Grand i10",
-        "category": "Compactos y Sedanes",
         "generations": [
           {
             "startYear": 2014,
             "endYear": 2025,
-            "engines": ["1.2L I4 gasolina (83 hp)"]
+            "engines": ["1.2L I4 gasolina"]
           }
         ]
       },
       {
         "name": "HB20",
-        "category": "Compactos y Sedanes",
         "generations": [
           {
             "startYear": 2023,
             "endYear": 2025,
-            "engines": ["1.0L I3 turbo gasolina (120 hp)"]
+            "engines": ["1.0L I3 turbo gasolina"]
           }
         ]
       },
       {
         "name": "Elantra",
-        "category": "Compactos y Sedanes",
         "generations": [
           {
             "startYear": 2001,
@@ -696,13 +653,12 @@
           {
             "startYear": 2021,
             "endYear": 2025,
-            "engines": ["1.5L I4 gasolina", "2.0L I4 gasolina Autocosmos"]
+            "engines": ["1.5L I4 gasolina", "2.0L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Sonata",
-        "category": "Compactos y Sedanes",
         "generations": [
           {
             "startYear": 2006,
@@ -713,29 +669,26 @@
       },
       {
         "name": "Creta",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2017,
             "endYear": 2025,
-            "engines": ["1.5L I4 gasolina (115 hp)", "1.5L I4 turbo (140 hp) Autocosmos"]
+            "engines": ["1.5L I4 gasolina", "1.5L I4 turbo gasolina"]
           }
         ]
       },
       {
         "name": "Creta Grand",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2022,
             "endYear": 2025,
-            "engines": ["1.5L I4 gasolina (115 hp)"]
+            "engines": ["1.5L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Tucson",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2005,
@@ -750,13 +703,12 @@
           {
             "startYear": 2021,
             "endYear": 2025,
-            "engines": ["2.5L I4 gasolina (187 hp) Autocosmos"]
+            "engines": ["2.5L I4 gasolina"]
           }
         ]
       },
       {
         "name": "Santa Fe",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2001,
@@ -766,34 +718,3607 @@
           {
             "startYear": 2013,
             "endYear": 2018,
-            "engines": ["2.4L I4 gasolina", "3.3L V6 gasolina (290 hp) Hyundaimexico"]
+            "engines": ["2.4L I4 gasolina", "3.3L V6 gasolina"]
           },
           {
             "startYear": 2019,
             "endYear": 2025,
-            "engines": ["2.5L I4 gasolina", "2.5L I4 turbo gasolina Autocosmos"]
+            "engines": ["2.5L I4 gasolina", "2.5L I4 turbo gasolina"]
           }
         ]
       },
       {
         "name": "Palisade",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2020,
             "endYear": 2025,
-            "engines": ["3.8L V6 gasolina (291 hp)"]
+            "engines": ["3.8L V6 gasolina"]
           }
         ]
       },
       {
         "name": "Venue",
-        "category": "SUVs",
         "generations": [
           {
             "startYear": 2020,
             "endYear": 2025,
             "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Kia",
+    "models": [
+      {
+        "name": "Rio",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2023,
+            "engines": ["1.4L I4 gasolina", "1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Forte/K3",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["1.8L I4 gasolina", "2.0L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Optima/K5",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2023,
+            "engines": ["2.0L I4 gasolina", "2.4L I4 gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Stinger",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2022,
+            "engines": ["2.0L I4 turbo gasolina", "3.3L V6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Soul",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina", "2.0L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sonet",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Seltos",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina", "1.4L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sportage",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2016,
+            "engines": ["2.0L I4 gasolina", "2.4L I4 gasolina", "2.7L V6 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2022,
+            "engines": ["2.0L I4 gasolina", "2.4L I4 gasolina"]
+          },
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.6L I4 turbo gasolina", "2.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sorento",
+        "generations": [
+          {
+            "startYear": 2003,
+            "endYear": 2015,
+            "engines": ["2.4L I4 gasolina", "3.3L V6 gasolina", "3.5L V6 gasolina", "3.8L V6 gasolina"]
+          },
+          {
+            "startYear": 2016,
+            "endYear": 2020,
+            "engines": ["2.4L I4 gasolina", "3.3L V6 gasolina"]
+          },
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["2.5L I4 turbo gasolina", "3.5L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Telluride",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["3.8L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sedona/Carnival",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2014,
+            "engines": ["3.8L V6 gasolina"]
+          },
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["3.3L V6 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Suzuki",
+    "models": [
+      {
+        "name": "Swift",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2025,
+            "engines": ["1.2L I4 gasolina", "1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Baleno",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["1.4L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Ciaz",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["1.4L I4 gasolina", "1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Vitara",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2023,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "S-Cross",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["1.4L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Jimny",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Grand Vitara",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2016,
+            "engines": ["2.4L I4 gasolina", "2.7L V6 gasolina", "3.2L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Ertiga",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "XL7",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Mitsubishi",
+    "models": [
+      {
+        "name": "Mirage",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["1.2L I3 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Lancer",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2017,
+            "engines": ["1.6L I4 gasolina", "2.4L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Outlander Sport (ASX)",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2025,
+            "engines": ["2.0L I4 gasolina", "2.4L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Outlander",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2013,
+            "engines": ["2.4L I4 gasolina", "3.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2014,
+            "endYear": 2021,
+            "engines": ["2.4L I4 gasolina"]
+          },
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Montero Sport",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["3.0L V6 gasolina", "3.8L V6 gasolina", "2.4L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Xpander",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "L200",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["2.4L I4 gasolina", "2.5L I4 turbo diesel"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Subaru",
+    "models": [
+      {
+        "name": "Forester",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["2.5L H4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Crosstrek (XV)",
+        "generations": [
+          {
+            "startYear": 2013,
+            "endYear": 2025,
+            "engines": ["2.0L H4 gasolina", "2.5L H4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Outback",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["2.5L H4 gasolina", "3.6L H6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "WRX",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2021,
+            "engines": ["2.0L H4 turbo gasolina"]
+          },
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["2.4L H4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "BRZ",
+        "generations": [
+          {
+            "startYear": 2013,
+            "endYear": 2020,
+            "engines": ["2.0L H4 gasolina"]
+          },
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["2.4L H4 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Ford",
+    "models": [
+      {
+        "name": "Fiesta",
+        "generations": [
+          {
+            "startYear": 2003,
+            "endYear": 2019,
+            "engines": ["1.4L I4 gasolina", "1.5L I4 gasolina", "1.6L I4 gasolina", "2.0L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Focus",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2018,
+            "engines": ["2.0L I4 gasolina", "2.3L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Fusion",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2020,
+            "engines": ["2.3L I4 gasolina", "3.0L V6 gasolina", "3.5L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Ikon",
+        "generations": [
+          {
+            "startYear": 2003,
+            "endYear": 2007,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Escape",
+        "generations": [
+          {
+            "startYear": 2001,
+            "endYear": 2012,
+            "engines": ["2.0L I4 gasolina", "3.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2013,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina", "1.6L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Edge",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2023,
+            "engines": ["2.0L I4 turbo gasolina", "2.7L V6 gasolina", "3.5L V6 gasolina", "3.7L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Explorer",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2010,
+            "engines": ["4.0L V6 gasolina", "5.0L V8 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2025,
+            "engines": ["2.3L I4 turbo gasolina", "3.0L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Expedition",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["3.5L V6 turbo gasolina", "5.4L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Bronco",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["2.3L I4 turbo gasolina", "2.7L V6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Bronco Sport",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.5L I3 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "EcoSport",
+        "generations": [
+          {
+            "startYear": 2004,
+            "endYear": 2021,
+            "engines": ["1.5L I3 gasolina", "2.0L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "F-150",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["2.7L V6 turbo gasolina", "3.3L V6 gasolina", "3.5L V6 turbo gasolina", "4.6L V8 gasolina", "5.0L V8 gasolina", "5.4L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "F-250/F-350",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["5.4L V8 gasolina", "6.2L V8 gasolina", "6.8L V10 gasolina", "7.3L V8 gasolina", "6.4L V8 diesel", "6.7L V8 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Ranger",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2011,
+            "engines": ["4.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo diesel", "2.3L I4 turbo gasolina", "3.0L V6 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Transit",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.0L I4 diesel", "3.5L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Transit Connect",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["2.0L I4 gasolina", "2.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Mustang",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2014,
+            "engines": ["4.6L V8 gasolina", "5.4L V8 gasolina"]
+          },
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.3L I4 turbo gasolina", "3.7L V6 gasolina", "5.0L V8 gasolina", "5.2L V8 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Lincoln",
+    "models": [
+      {
+        "name": "MKZ",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2020,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L V6 gasolina", "3.7L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Navigator",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["3.5L V6 turbo gasolina", "5.4L V8 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Chevrolet",
+    "models": [
+      {
+        "name": "Chevy (C2)",
+        "generations": [
+          {
+            "startYear": 1994,
+            "endYear": 2012,
+            "engines": ["1.4L I4 gasolina", "1.6L I4 gasolina", "1.8L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Aveo",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2017,
+            "engines": ["1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sonic",
+        "generations": [
+          {
+            "startYear": 2012,
+            "endYear": 2017,
+            "engines": ["1.4L I4 turbo gasolina", "1.6L I4 gasolina", "1.8L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Cruze",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2018,
+            "engines": ["1.4L I4 turbo gasolina", "1.8L I4 gasolina", "2.0L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Malibu",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2012,
+            "engines": ["2.4L I4 gasolina", "3.6L V6 gasolina"]
+          },
+          {
+            "startYear": 2013,
+            "endYear": 2015,
+            "engines": ["2.5L I4 gasolina", "2.0L I4 turbo gasolina"]
+          },
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Tracker",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["1.0L I3 turbo gasolina", "1.2L I3 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Trax",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["1.2L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Equinox",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2017,
+            "engines": ["2.4L I4 gasolina", "3.0L V6 gasolina", "3.6L V6 gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Blazer",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "2.5L I4 gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Traverse",
+        "generations": [
+          {
+            "startYear": 2009,
+            "endYear": 2017,
+            "engines": ["3.6L V6 gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Tahoe",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["4.8L V8 gasolina", "5.3L V8 gasolina", "6.2L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Suburban",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["4.8L V8 gasolina", "5.3L V8 gasolina", "6.2L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Captiva",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Silverado/Cheyenne",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["2.7L I4 turbo gasolina", "4.3L V6 gasolina", "5.3L V8 gasolina", "6.2L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Silverado HD",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["6.0L V8 gasolina", "6.6L V8 turbo diesel", "6.6L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Colorado",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina", "2.8L I4 turbo diesel", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Tornado",
+        "generations": [
+          {
+            "startYear": 2004,
+            "endYear": 2020,
+            "engines": ["1.8L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Express",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["4.3L V6 gasolina", "4.8L V8 gasolina", "6.0L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Corvette",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["5.7L V8 gasolina", "6.0L V8 gasolina", "6.2L V8 gasolina", "7.0L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Camaro",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.6L V6 gasolina", "6.2L V8 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "GMC",
+    "models": [
+      {
+        "name": "Terrain",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina", "2.0L I4 turbo gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Acadia",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2016,
+            "engines": ["3.6L V6 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Yukon/Yukon XL",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["5.3L V8 gasolina", "6.2L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sierra",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["2.7L I4 turbo gasolina", "3.0L I6 turbo diesel", "4.3L V6 gasolina", "5.3L V8 gasolina", "6.2L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sierra HD",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["6.0L V8 gasolina", "6.6L V8 turbo diesel", "6.6L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Canyon",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.7L I4 turbo gasolina", "2.8L I4 turbo diesel", "3.6L V6 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Cadillac",
+    "models": [
+      {
+        "name": "CTS",
+        "generations": [
+          {
+            "startYear": 2003,
+            "endYear": 2019,
+            "engines": ["2.0L I4 turbo gasolina", "2.8L V6 gasolina", "3.6L V6 gasolina", "6.2L V8 supercharged gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "ATS",
+        "generations": [
+          {
+            "startYear": 2013,
+            "endYear": 2018,
+            "engines": ["2.0L I4 turbo gasolina", "2.5L I4 gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "CT4",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "2.7L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "CT5",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L V6 turbo gasolina", "6.2L V8 supercharged gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Escalade",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["5.3L V8 gasolina", "6.2L V8 gasolina", "6.2L V8 supercharged gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Escalade EXT",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2013,
+            "engines": ["6.0L V8 gasolina", "6.2L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "SRX",
+        "generations": [
+          {
+            "startYear": 2004,
+            "endYear": 2009,
+            "engines": ["3.6L V6 gasolina", "4.6L V8 gasolina"]
+          },
+          {
+            "startYear": 2010,
+            "endYear": 2016,
+            "engines": ["3.0L V6 gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "XT4",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "XT5",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "XT6",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Dodge",
+    "models": [
+      {
+        "name": "Neon",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2005,
+            "engines": ["2.0L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Attitude",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2014,
+            "engines": ["1.4L I4 gasolina", "1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["1.2L I3 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Avenger",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2014,
+            "engines": ["2.4L I4 gasolina", "2.7L V6 gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Charger",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2025,
+            "engines": ["3.6L V6 gasolina", "5.7L V8 gasolina", "6.4L V8 gasolina", "6.2L V8 supercharged gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Challenger",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2025,
+            "engines": ["3.6L V6 gasolina", "5.7L V8 gasolina", "6.4L V8 gasolina", "6.2L V8 supercharged gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Journey",
+        "generations": [
+          {
+            "startYear": 2009,
+            "endYear": 2020,
+            "engines": ["2.4L I4 gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Durango",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2025,
+            "engines": ["3.6L V6 gasolina", "5.7L V8 gasolina", "6.4L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Nitro",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2012,
+            "engines": ["3.7L V6 gasolina", "4.0L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Grand Caravan",
+        "generations": [
+          {
+            "startYear": 2001,
+            "endYear": 2010,
+            "engines": ["3.3L V6 gasolina", "3.8L V6 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2016,
+            "engines": ["3.6L V6 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "RAM",
+    "models": [
+      {
+        "name": "700",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "1000",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["1.8L I4 gasolina", "2.0L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "1200",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["Gasolina", "Diesel"]
+          }
+        ]
+      },
+      {
+        "name": "1500",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2025,
+            "engines": ["3.6L V6 gasolina", "3.0L V6 diesel", "5.7L V8 gasolina", "6.4L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "2500/3500",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["5.7L V8 gasolina", "6.4L V8 gasolina", "6.7L I6 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "ProMaster",
+        "generations": [
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "ProMaster City",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.4L I4 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Jeep",
+    "models": [
+      {
+        "name": "Renegade",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["1.3L I4 turbo gasolina", "1.8L I4 gasolina", "2.4L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Compass",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2016,
+            "engines": ["2.4L I4 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["1.3L I4 turbo gasolina", "2.0L I4 turbo gasolina", "1.6L I4 diesel", "2.4L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Cherokee",
+        "generations": [
+          {
+            "startYear": 2014,
+            "endYear": 2022,
+            "engines": ["2.0L I4 turbo gasolina", "2.4L I4 gasolina", "3.2L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Commander",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2010,
+            "engines": ["3.7L V6 gasolina", "4.7L V8 gasolina", "5.7L V8 gasolina"]
+          },
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.3L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Grand Cherokee",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2010,
+            "engines": ["3.0L V6 diesel", "3.7L V6 gasolina", "4.7L V8 gasolina", "5.7L V8 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2021,
+            "engines": ["3.0L V6 diesel", "3.6L V6 gasolina", "5.7L V8 gasolina", "6.4L V8 gasolina"]
+          },
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["3.6L V6 gasolina", "5.7L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Wrangler",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2011,
+            "engines": ["3.8L V6 gasolina"]
+          },
+          {
+            "startYear": 2012,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Gladiator",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["3.0L V6 turbo diesel", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Wagoneer/Grand Wagoneer",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["3.0L I6 turbo gasolina", "5.7L V8 gasolina", "6.4L V8 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Chrysler",
+    "models": [
+      {
+        "name": "200",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2017,
+            "engines": ["2.4L I4 gasolina", "3.6L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "300",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2010,
+            "engines": ["2.7L V6 gasolina", "3.5L V6 gasolina", "5.7L V8 gasolina", "6.1L V8 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2025,
+            "engines": ["3.6L V6 gasolina", "5.7L V8 gasolina", "6.4L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Town & Country/Pacifica",
+        "generations": [
+          {
+            "startYear": 2001,
+            "endYear": 2010,
+            "engines": ["3.3L V6 gasolina", "3.8L V6 gasolina", "4.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2025,
+            "engines": ["3.6L V6 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Volkswagen",
+    "models": [
+      {
+        "name": "Polo",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2014,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Virtus",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["1.0L I3 turbo gasolina", "1.4L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Jetta",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2010,
+            "engines": ["2.5L I5 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2025,
+            "engines": ["1.4L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Golf",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2021,
+            "engines": ["1.4L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Vento",
+        "generations": [
+          {
+            "startYear": 2013,
+            "endYear": 2021,
+            "engines": ["1.6L I4 gasolina", "1.8L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Beetle (New Beetle)",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2010,
+            "engines": ["1.8L I4 turbo gasolina", "2.0L I4 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2019,
+            "engines": ["2.5L I5 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Vocho (Sedán)",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2003,
+            "engines": ["1.6L H4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Bora",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2010,
+            "engines": ["2.0L I4 gasolina", "2.5L I5 gasolina", "1.8L I4 turbo gasolina", "2.0L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Passat",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2005,
+            "engines": ["1.8L I4 turbo gasolina", "2.8L V6 gasolina"]
+          },
+          {
+            "startYear": 2006,
+            "endYear": 2010,
+            "engines": ["2.0L I4 turbo gasolina", "3.6L VR6 gasolina", "2.0L I4 turbo diesel"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2022,
+            "engines": ["2.0L I4 turbo gasolina", "3.6L VR6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Tiguan",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2017,
+            "engines": ["2.0L I4 turbo gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["1.4L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Taos",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.4L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Taigun",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Teramont (Atlas)",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.6L VR6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Teramont Cross Sport",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Amarok",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo diesel", "3.0L V6 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Saveiro",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Caddy",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2020,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Transporter (T6)",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo diesel", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Crafter",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo diesel"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "SEAT",
+    "models": [
+      {
+        "name": "Ibiza",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2007,
+            "engines": ["1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2008,
+            "endYear": 2017,
+            "engines": ["1.2L I4 gasolina", "1.4L I4 gasolina", "1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["1.0L I3 turbo gasolina", "1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Leon",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2005,
+            "engines": ["1.6L I4 gasolina", "1.8L I4 gasolina", "2.0L I4 gasolina"]
+          },
+          {
+            "startYear": 2006,
+            "endYear": 2012,
+            "engines": ["1.8L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          },
+          {
+            "startYear": 2013,
+            "endYear": 2020,
+            "engines": ["1.4L I4 turbo gasolina", "1.8L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          },
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.4L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Toledo",
+        "generations": [
+          {
+            "startYear": 2013,
+            "endYear": 2018,
+            "engines": ["1.2L I4 turbo gasolina", "1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Cordoba",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2008,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Arona",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["1.0L I3 turbo gasolina", "1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Ateca",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["1.4L I4 turbo gasolina", "1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Tarraco",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["1.4L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Audi",
+    "models": [
+      {
+        "name": "A1",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2021,
+            "engines": ["1.0L I3 turbo gasolina", "1.4L I4 turbo gasolina", "1.8L I4 turbo gasolina"]
+          },
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.0L I3 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "A3",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2013,
+            "engines": ["1.8L I4 turbo gasolina", "3.2L V6 gasolina"]
+          },
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["1.4L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "A4",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2008,
+            "engines": ["1.8L I4 turbo gasolina", "3.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2009,
+            "endYear": 2015,
+            "engines": ["2.0L I4 turbo gasolina", "3.2L V6 gasolina"]
+          },
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "A5",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2016,
+            "engines": ["2.0L I4 turbo gasolina", "3.2L V6 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "A6",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2010,
+            "engines": ["2.8L V6 gasolina", "4.2L V8 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2018,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "A7",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2017,
+            "engines": ["3.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["3.0L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "A8",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2010,
+            "engines": ["4.2L V8 gasolina", "6.0L W12 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2025,
+            "engines": ["3.0L V6 gasolina", "4.0L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Q2",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["1.4L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Q3",
+        "generations": [
+          {
+            "startYear": 2012,
+            "endYear": 2018,
+            "engines": ["1.4L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          },
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["1.4L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Q5",
+        "generations": [
+          {
+            "startYear": 2009,
+            "endYear": 2016,
+            "engines": ["2.0L I4 turbo gasolina", "3.2L V6 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Q7",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2014,
+            "engines": ["3.6L V6 gasolina", "4.2L V8 gasolina"]
+          },
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Q8",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["3.0L V6 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Peugeot",
+    "models": [
+      {
+        "name": "206",
+        "generations": [
+          {
+            "startYear": 2001,
+            "endYear": 2008,
+            "engines": ["1.4L I4 gasolina", "1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "207",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2014,
+            "engines": ["1.4L I4 gasolina", "1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "208",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["1.2L I3 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "307",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2008,
+            "engines": ["1.6L I4 gasolina", "2.0L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "308",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2014,
+            "engines": ["1.6L I4 turbo gasolina", "2.0L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "2008",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["1.2L I3 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "3008",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2016,
+            "engines": ["1.6L I4 turbo gasolina", "2.0L I4 turbo diesel"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["1.6L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Rifter",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina", "1.6L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Partner",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2018,
+            "engines": ["1.6L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Expert",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Manager",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["2.2L I4 turbo diesel"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Renault",
+    "models": [
+      {
+        "name": "Kwid",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["1.0L I3 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Clio",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2010,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Logan",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2010,
+            "engines": ["1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2015,
+            "endYear": 2020,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sandero",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2020,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Fluence",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2018,
+            "engines": ["2.0L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Megane",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2008,
+            "engines": ["1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2009,
+            "endYear": 2013,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Kardian",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["1.0L I3 turbo gasolina", "1.3L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Arkana",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.3L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Duster",
+        "generations": [
+          {
+            "startYear": 2012,
+            "endYear": 2019,
+            "engines": ["1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina", "1.3L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Koleos",
+        "generations": [
+          {
+            "startYear": 2009,
+            "endYear": 2015,
+            "engines": ["2.5L I4 gasolina"]
+          },
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Oroch",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["2.0L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Kangoo",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2018,
+            "engines": ["1.6L I4 gasolina", "1.6L I4 diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Master",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["2.3L I4 turbo diesel"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Fiat",
+    "models": [
+      {
+        "name": "Mobi",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["1.0L I3 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Argo",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["1.3L I4 gasolina", "1.8L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Pulse",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.3L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Fastback",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.3L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Ducato",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2025,
+            "engines": ["2.3L I4 turbo diesel"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Mercedes-Benz",
+    "models": [
+      {
+        "name": "Clase A",
+        "generations": [
+          {
+            "startYear": 2013,
+            "endYear": 2025,
+            "engines": ["1.3L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "CLA",
+        "generations": [
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["1.3L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Clase C",
+        "generations": [
+          {
+            "startYear": 2001,
+            "endYear": 2013,
+            "engines": ["1.8L I4 gasolina", "3.5L V6 gasolina"]
+          },
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "4.0L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Clase E",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2009,
+            "engines": ["3.2L V6 gasolina", "5.0L V8 gasolina"]
+          },
+          {
+            "startYear": 2010,
+            "endYear": 2016,
+            "engines": ["3.5L V6 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 turbo gasolina", "4.0L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Clase S",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2013,
+            "engines": ["5.0L V8 gasolina", "6.0L V12 gasolina"]
+          },
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["3.0L I6 gasolina", "4.0L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "GLA",
+        "generations": [
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["1.3L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "GLB",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "GLC",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "GLE",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 gasolina", "4.0L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "GLS",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["3.0L I6 gasolina", "4.0L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Clase G",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["4.0L V8 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "AMG GT",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2021,
+            "engines": ["4.0L V8 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sprinter",
+        "generations": [
+          {
+            "startYear": 2012,
+            "endYear": 2025,
+            "engines": ["2.1L I4 turbo diesel", "3.0L V6 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Vito/Metris",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.0L I4 diesel"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "BMW",
+    "models": [
+      {
+        "name": "Serie 2 Gran Coupe",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["1.5L I3 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Serie 3",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2018,
+            "engines": ["2.0L I4 gasolina", "3.0L I6 gasolina"]
+          },
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Serie 4",
+        "generations": [
+          {
+            "startYear": 2014,
+            "endYear": 2020,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 turbo gasolina"]
+          },
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Serie 5",
+        "generations": [
+          {
+            "startYear": 2004,
+            "endYear": 2016,
+            "engines": ["2.5L I6 gasolina", "4.4L V8 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Serie 7",
+        "generations": [
+          {
+            "startYear": 2001,
+            "endYear": 2008,
+            "engines": ["4.4L V8 gasolina", "6.0L V12 gasolina"]
+          },
+          {
+            "startYear": 2009,
+            "endYear": 2025,
+            "engines": ["3.0L I6 turbo gasolina", "4.4L V8 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Serie 8",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["3.0L I6 turbo gasolina", "4.4L V8 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X1",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2015,
+            "engines": ["2.0L I4 gasolina"]
+          },
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X2",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X3",
+        "generations": [
+          {
+            "startYear": 2004,
+            "endYear": 2010,
+            "engines": ["2.5L I6 gasolina", "3.0L I6 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2017,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 turbo gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X4",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X5",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2013,
+            "engines": ["4.4L V8 gasolina"]
+          },
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["3.0L I6 turbo gasolina", "4.4L V8 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X6",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2019,
+            "engines": ["3.0L I6 turbo gasolina", "4.4L V8 turbo gasolina"]
+          },
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["3.0L I6 turbo gasolina", "4.4L V8 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X7",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["3.0L I6 turbo gasolina", "4.4L V8 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "M2",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2020,
+            "engines": ["3.0L I6 turbo gasolina"]
+          },
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["3.0L I6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "M3",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2013,
+            "engines": ["4.0L V8 gasolina"]
+          },
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["3.0L I6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "M4",
+        "generations": [
+          {
+            "startYear": 2014,
+            "endYear": 2020,
+            "engines": ["3.0L I6 turbo gasolina"]
+          },
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["3.0L I6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "M5",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2010,
+            "engines": ["5.0L V10 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2025,
+            "engines": ["4.4L V8 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "M8",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["4.4L V8 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Z4",
+        "generations": [
+          {
+            "startYear": 2003,
+            "endYear": 2008,
+            "engines": ["2.5L I6 gasolina", "3.0L I6 gasolina"]
+          },
+          {
+            "startYear": 2009,
+            "endYear": 2016,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 turbo gasolina"]
+          },
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "3.0L I6 turbo gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Volvo",
+    "models": [
+      {
+        "name": "S40",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2012,
+            "engines": ["2.4L I5 gasolina", "2.5L I5 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "S60",
+        "generations": [
+          {
+            "startYear": 2001,
+            "endYear": 2018,
+            "engines": ["2.5L I5 turbo gasolina"]
+          },
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "S90",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "V50/V60",
+        "generations": [
+          {
+            "startYear": 2004,
+            "endYear": 2016,
+            "engines": ["2.0L I4 gasolina", "2.5L I5 turbo gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "V90",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "XC40",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "XC60",
+        "generations": [
+          {
+            "startYear": 2009,
+            "endYear": 2017,
+            "engines": ["3.0L I6 turbo gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "XC90",
+        "generations": [
+          {
+            "startYear": 2003,
+            "endYear": 2014,
+            "engines": ["4.4L V8 gasolina"]
+          },
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "2.0L I4 twincharged gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Porsche",
+    "models": [
+      {
+        "name": "Macan",
+        "generations": [
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "2.9L V6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Cayenne",
+        "generations": [
+          {
+            "startYear": 2003,
+            "endYear": 2010,
+            "engines": ["3.2L V6 gasolina", "4.5L V8 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2017,
+            "engines": ["3.6L V6 gasolina", "4.8L V8 gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["3.0L V6 turbo gasolina", "4.0L V8 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Panamera",
+        "generations": [
+          {
+            "startYear": 2010,
+            "endYear": 2016,
+            "engines": ["4.8L V8 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["2.9L V6 turbo gasolina", "4.0L V8 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "911",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2011,
+            "engines": ["3.6L H6 gasolina"]
+          },
+          {
+            "startYear": 2012,
+            "endYear": 2025,
+            "engines": ["3.0L H6 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "718 Boxster/Cayman",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2023,
+            "engines": ["2.0L H4 turbo gasolina", "2.5L H4 turbo gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "MINI",
+    "models": [
+      {
+        "name": "Cooper",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2013,
+            "engines": ["1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["1.5L I3 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Countryman",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2016,
+            "engines": ["1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["1.5L I3 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Clubman",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2014,
+            "engines": ["1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["1.5L I3 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "JAC",
+    "models": [
+      {
+        "name": "J4",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sei4 (S4)",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sei2",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2020,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sei3",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2020,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X200",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["2.8L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "X250",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["2.8L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "X350",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["2.8L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "T6",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Frison T8",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "2.0L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Frison T9",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "J7",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Sunray",
+        "generations": [
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["2.7L I4 turbo diesel"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "MG",
+    "models": [
+      {
+        "name": "MG5",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "MG GT",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "ZS",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "HS",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "RX5",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "RX8",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "RX9",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "MG3",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2020,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Chirey",
+    "models": [
+      {
+        "name": "Tiggo 2 Pro",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Tiggo 4 Pro",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Tiggo 7 Pro Max",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Tiggo 8 Pro",
+        "generations": [
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Tiggo 8 Pro Max",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Arrizo 8",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["1.6L I4 turbo gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Omoda",
+    "models": [
+      {
+        "name": "O5",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.6L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "O5 GT",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.6L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "C5",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina", "1.6L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "C7",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["1.6L I4 turbo gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Jaecoo",
+    "models": [
+      {
+        "name": "J7",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["1.6L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "J8",
+        "generations": [
+          {
+            "startYear": 2025,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Haval",
+    "models": [
+      {
+        "name": "H6 (HEV)",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo híbrido"]
+          }
+        ]
+      },
+      {
+        "name": "Jolion",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Tank",
+    "models": [
+      {
+        "name": "300",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo híbrido"]
+          }
+        ]
+      },
+      {
+        "name": "500",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["3.0L V6 turbo híbrido"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Poer",
+    "models": [
+      {
+        "name": "Pick-up",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina", "2.0L I4 turbo diesel"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Wey",
+    "models": [
+      {
+        "name": "Hybrid SUV",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["Híbrido"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "BAIC",
+    "models": [
+      {
+        "name": "X25",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2019,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X35 (U5)",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2020,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X55",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "X65",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2018,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "BJ40 Plus",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.3L I4 turbo gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Dongfeng",
+    "models": [
+      {
+        "name": "Shine",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Shine MAX",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo híbrido"]
+          }
+        ]
+      },
+      {
+        "name": "Shine GS",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "SX3",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "T5 EVO",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "T5L",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["1.8L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "M4",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Huge",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo híbrido"]
+          }
+        ]
+      },
+      {
+        "name": "Rich 6",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["2.4L I4 gasolina", "2.5L I4 diesel"]
+          }
+        ]
+      },
+      {
+        "name": "M3",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Geely",
+    "models": [
+      {
+        "name": "Coolray",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.5L I3 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Geometry C",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["Eléctrico"]
+          }
+        ]
+      },
+      {
+        "name": "Monjaro",
+        "generations": [
+          {
+            "startYear": 2026,
+            "endYear": 2026,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Starray",
+        "generations": [
+          {
+            "startYear": 2025,
+            "endYear": 2025,
+            "engines": ["Híbrido"]
+          }
+        ]
+      },
+      {
+        "name": "GX3",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Foton",
+    "models": [
+      {
+        "name": "Tunland G7",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["2.0L I4 gasolina", "2.0L I4 turbo diesel"]
+          }
+        ]
+      },
+      {
+        "name": "Tunland V7",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["Híbrido"]
+          }
+        ]
+      },
+      {
+        "name": "Tunland V9",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["Híbrido"]
+          }
+        ]
+      },
+      {
+        "name": "Tunland G9",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["2.0L I4 gasolina", "2.0L I4 turbo diesel"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Mastretta",
+    "models": [
+      {
+        "name": "MXT",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2014,
+            "engines": ["2.0L I4 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "VUHL",
+    "models": [
+      {
+        "name": "05",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "05RR",
+        "generations": [
+          {
+            "startYear": 2019,
+            "endYear": 2019,
+            "engines": ["2.0L I4 turbo gasolina"]
           }
         ]
       }

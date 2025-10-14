@@ -6,6 +6,7 @@ export const vehicleFormSchema = z.object({
   make: z.string().min(2, { message: "La marca debe tener al menos 2 caracteres." }),
   model: z.string().min(1, { message: "El modelo es obligatorio." }),
   year: z.coerce.number().min(1900, "Año inválido.").max(new Date().getFullYear() + 2, "Año inválido."),
+  engine: z.string().optional(),
   licensePlate: z.string().min(3, "La placa debe tener al menos 3 caracteres."),
   vin: z.string().optional(),
   color: z.string().optional(),
