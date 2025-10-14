@@ -166,5 +166,637 @@
         ]
       }
     ]
+  },
+  {
+    "make": "Nissan",
+    "models": [
+      {
+        "name": "Tsuru",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 1992,
+            "endYear": 2017,
+            "engines": ["1.6L I4 gasolina (88-115 hp, motor GA16DE) MotorpasionMiauto"]
+          }
+        ]
+      },
+      {
+        "name": "Sentra",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2006,
+            "engines": ["1.8L I4 gasolina", "2.0L I4 gasolina"]
+          },
+          {
+            "startYear": 2007,
+            "endYear": 2012,
+            "engines": ["2.0L I4 gasolina"]
+          },
+          {
+            "startYear": 2013,
+            "endYear": 2019,
+            "engines": ["1.8L I4 gasolina"]
+          },
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["2.0L I4 gasolina AutocosmosAutocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "Versa/Tiida",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2004,
+            "endYear": 2011,
+            "engines": ["1.6L I4 gasolina", "1.8L I4 gasolina (126 hp) Wikipedia"]
+          },
+          {
+            "startYear": 2012,
+            "endYear": 2019,
+            "engines": ["1.6L I4 gasolina"]
+          },
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina AutocosmosAutocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "March",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina (107 hp) Autocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "Altima",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina", "3.5L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Kicks",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2024,
+            "engines": ["1.6L I4 gasolina (118 hp)"]
+          },
+          {
+            "startYear": 2025,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina", "2.0L I4 gasolina Autocosmos +2"]
+          }
+        ]
+      },
+      {
+        "name": "X-Trail",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Pathfinder",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2025,
+            "engines": ["3.5L V6 gasolina (260-290 hp) AutocosmosAutocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "Murano",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2003,
+            "endYear": 2022,
+            "engines": ["3.5L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Magnite",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.0L I3 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "NP300/Frontier",
+        "category": "Pick-ups",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2015,
+            "engines": ["2.4L I4 gasolina"]
+          },
+          {
+            "startYear": 2008,
+            "endYear": 2020,
+            "engines": ["2.5L I4 diesel"]
+          },
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["2.4L I4 gasolina", "2.5L I4 diesel"]
+          },
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["3.8L V6 gasolina Autocosmos +2"]
+          }
+        ]
+      },
+      {
+        "name": "Urvan",
+        "category": "Vans",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Honda",
+    "models": [
+      {
+        "name": "Accord",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2003,
+            "endYear": 2007,
+            "engines": ["2.4L I4 gasolina", "3.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2008,
+            "endYear": 2012,
+            "engines": ["2.4L I4 gasolina", "3.5L V6 gasolina"]
+          },
+          {
+            "startYear": 2013,
+            "endYear": 2017,
+            "engines": ["2.4L I4 gasolina", "3.5L V6 gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina", "2.0L I4 turbo gasolina Expansión +2"]
+          }
+        ]
+      },
+      {
+        "name": "Civic",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2001,
+            "endYear": 2005,
+            "engines": ["1.7L I4 gasolina"]
+          },
+          {
+            "startYear": 2006,
+            "endYear": 2011,
+            "engines": ["1.8L I4 gasolina", "2.0L I4 gasolina"]
+          },
+          {
+            "startYear": 2012,
+            "endYear": 2015,
+            "engines": ["1.8L I4 gasolina"]
+          },
+          {
+            "startYear": 2016,
+            "endYear": 2021,
+            "engines": ["1.5L I4 turbo gasolina", "2.0L I4 gasolina"]
+          },
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina", "2.0L I4 turbo gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "City",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2009,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina (120 hp) Expansión"]
+          }
+        ]
+      },
+      {
+        "name": "Fit",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2020,
+            "engines": ["1.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "CR-V",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2016,
+            "engines": ["2.4L I4 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["1.5L I4 turbo gasolina Expansión"]
+          }
+        ]
+      },
+      {
+        "name": "HR-V",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2022,
+            "engines": ["1.8L I4 gasolina"]
+          },
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["2.0L I4 gasolina ExpansiónAutocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "Pilot",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2009,
+            "endYear": 2025,
+            "engines": ["3.5L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Odyssey",
+        "category": "Minivans",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2025,
+            "engines": ["3.5L V6 gasolina"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Mazda",
+    "models": [
+      {
+        "name": "Mazda2",
+        "category": "Sedanes y Hatchbacks",
+        "generations": [
+          {
+            "startYear": 2011,
+            "endYear": 2025,
+            "engines": ["1.5L I4 Skyactiv gasolina (110 hp) AutocosmosMazda"]
+          }
+        ]
+      },
+      {
+        "name": "Mazda3",
+        "category": "Sedanes y Hatchbacks",
+        "generations": [
+          {
+            "startYear": 2004,
+            "endYear": 2013,
+            "engines": ["2.0L I4 gasolina", "2.3L I4 gasolina", "2.5L I4 gasolina"]
+          },
+          {
+            "startYear": 2014,
+            "endYear": 2018,
+            "engines": ["2.0L I4 Skyactiv gasolina", "2.5L I4 Skyactiv gasolina"]
+          },
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.5L I4 Skyactiv (186 hp) gasolina", "2.5L I4 turbo (250 hp) gasolina Autocosmos +2"]
+          }
+        ]
+      },
+      {
+        "name": "Mazda6",
+        "category": "Sedanes y Hatchbacks",
+        "generations": [
+          {
+            "startYear": 2003,
+            "endYear": 2008,
+            "engines": ["2.3L I4 gasolina", "3.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2009,
+            "endYear": 2013,
+            "engines": ["2.5L I4 gasolina"]
+          },
+          {
+            "startYear": 2014,
+            "endYear": 2021,
+            "engines": ["2.5L I4 Skyactiv gasolina", "2.5L I4 turbo Skyactiv gasolina MazdaMazda"]
+          }
+        ]
+      },
+      {
+        "name": "CX-3",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2016,
+            "endYear": 2024,
+            "engines": ["2.0L I4 Skyactiv gasolina (146 hp) Autocosmos +2"]
+          }
+        ]
+      },
+      {
+        "name": "CX-30",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["2.5L I4 Skyactiv (186 hp) gasolina", "2.5L I4 turbo (250 hp) gasolina Autocosmos +2"]
+          }
+        ]
+      },
+      {
+        "name": "CX-5",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2013,
+            "endYear": 2025,
+            "engines": ["2.5L I4 Skyactiv (187 hp) gasolina", "2.5L I4 turbo Skyactiv (227-250 hp) gasolina Autocosmos +2"]
+          }
+        ]
+      },
+      {
+        "name": "CX-50",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["2.5L I4 Skyactiv gasolina", "2.5L I4 turbo Skyactiv gasolina Autocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "CX-7",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2012,
+            "engines": ["2.3L I4 turbo gasolina", "2.5L I4 gasolina MazdaAutocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "CX-9",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2007,
+            "endYear": 2015,
+            "engines": ["3.7L V6 gasolina"]
+          },
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["2.5L I4 turbo Skyactiv (250 hp) gasolina MazdaAutocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "CX-70/CX-90",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2024,
+            "endYear": 2025,
+            "engines": ["3.3L I6 turbo gasolina (280 hp) Mazda México"]
+          }
+        ]
+      },
+      {
+        "name": "BT-50",
+        "category": "Pick-up",
+        "generations": [
+          {
+            "startYear": 2025,
+            "endYear": 2025,
+            "engines": ["3.0L I4 turbo diesel (190 hp) Autocosmos +4"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "make": "Hyundai",
+    "models": [
+      {
+        "name": "Accent",
+        "category": "Compactos y Sedanes",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2017,
+            "engines": ["1.4L I4 gasolina", "1.5L I4 gasolina", "1.6L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Grand i10",
+        "category": "Compactos y Sedanes",
+        "generations": [
+          {
+            "startYear": 2014,
+            "endYear": 2025,
+            "engines": ["1.2L I4 gasolina (83 hp)"]
+          }
+        ]
+      },
+      {
+        "name": "HB20",
+        "category": "Compactos y Sedanes",
+        "generations": [
+          {
+            "startYear": 2023,
+            "endYear": 2025,
+            "engines": ["1.0L I3 turbo gasolina (120 hp)"]
+          }
+        ]
+      },
+      {
+        "name": "Elantra",
+        "category": "Compactos y Sedanes",
+        "generations": [
+          {
+            "startYear": 2001,
+            "endYear": 2010,
+            "engines": ["1.8L I4 gasolina", "2.0L I4 gasolina"]
+          },
+          {
+            "startYear": 2011,
+            "endYear": 2016,
+            "engines": ["1.8L I4 gasolina"]
+          },
+          {
+            "startYear": 2017,
+            "endYear": 2020,
+            "engines": ["2.0L I4 gasolina"]
+          },
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina", "2.0L I4 gasolina Autocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "Sonata",
+        "category": "Compactos y Sedanes",
+        "generations": [
+          {
+            "startYear": 2006,
+            "endYear": 2019,
+            "engines": ["2.4L I4 gasolina", "3.3L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Creta",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina (115 hp)", "1.5L I4 turbo (140 hp) Autocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "Creta Grand",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2022,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina (115 hp)"]
+          }
+        ]
+      },
+      {
+        "name": "Tucson",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2015,
+            "engines": ["2.0L I4 gasolina", "2.4L I4 gasolina", "2.7L V6 gasolina"]
+          },
+          {
+            "startYear": 2016,
+            "endYear": 2020,
+            "engines": ["2.0L I4 gasolina"]
+          },
+          {
+            "startYear": 2021,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina (187 hp) Autocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "Santa Fe",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2001,
+            "endYear": 2012,
+            "engines": ["2.7L V6 gasolina", "3.3L V6 gasolina", "3.5L V6 gasolina"]
+          },
+          {
+            "startYear": 2013,
+            "endYear": 2018,
+            "engines": ["2.4L I4 gasolina", "3.3L V6 gasolina (290 hp) Hyundaimexico"]
+          },
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina", "2.5L I4 turbo gasolina Autocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "Palisade",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["3.8L V6 gasolina (291 hp)"]
+          }
+        ]
+      },
+      {
+        "name": "Venue",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["1.6L I4 gasolina"]
+          }
+        ]
+      }
+    ]
   }
 ]
