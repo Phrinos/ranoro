@@ -104,7 +104,7 @@ function FinanzasPage() {
         if (advisor?.commissionRate) commission += profit * (advisor.commissionRate / 100);
         
         s.serviceItems.forEach(item => {
-          const tech = activePersonnel.find(p => p.id === item.technicianId);
+          const tech = activePersonnel.find(p => p.id === (item as any).technicianId);
           if (tech?.commissionRate) {
             const itemProfit = (item.sellingPrice || 0) - (inventoryService.getSuppliesCostForItem(item, inventoryItems) || 0);
             if (itemProfit > 0) commission += itemProfit * (tech.commissionRate / 100);

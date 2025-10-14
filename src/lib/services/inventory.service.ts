@@ -16,7 +16,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, VehiclePriceList } from "@/types";
+import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, VehiclePriceList, ServiceItem } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { nanoid } from 'nanoid';
 
@@ -104,6 +104,20 @@ const updateInventoryStock = async (
     });
 
     await Promise.all(itemUpdates);
+};
+
+const getSuppliesCostForItem = (
+    serviceItem: ServiceItem,
+    inventory: InventoryItem[]
+): number => {
+    if (!serviceItem.suppliesUsed || serviceItem.suppliesUsed.length === 0) {
+        return 0;
+    }
+    const inventoryMap = new Map(inventory.map(i => [i.id, i.unitPrice]));
+    return serviceItem.suppliesUsed.reduce((totalCost, supply) => {
+        const cost = inventoryMap.get(supply.supplyId) ?? supply.unitPrice ?? 0;
+        return totalCost + cost * supply.quantity;
+    }, 0);
 };
 
 // --- Service Types ---
@@ -356,6 +370,7 @@ export const inventoryService = {
   addItem,
   deleteItem,
   updateInventoryStock,
+  getSuppliesCostForItem,
   onServiceTypesUpdate,
   onServiceTypesUpdatePromise,
   saveServiceType,
