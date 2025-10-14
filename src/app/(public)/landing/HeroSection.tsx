@@ -11,22 +11,22 @@ const whatsappLink = "https://wa.me/524491425323?text=Hola%2C%20quisiera%20agend
 
 export function HeroSection() {
     return (
-        <section className="relative w-full h-[60vh] md:h-[70vh] flex items-center">
+        <section className="relative w-full h-screen md:h-[70vh] flex flex-col justify-end md:justify-center">
           <div className="absolute inset-0 z-0">
             <Image
               src="/home.png"
               alt="Taller mecánico moderno con un coche deportivo"
               fill
-              className="object-cover object-center"
+              className="object-cover object-right-top"
               sizes="100vw"
               data-ai-hint="mechanic workshop"
               priority
             />
-            <div className="absolute inset-0 bg-black/30"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
           </div>
           <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-start">
-              <AnimatedDiv className="w-full max-w-md">
+            <div className="flex justify-center md:justify-start">
+              <AnimatedDiv className="w-full max-w-md mb-8 md:mb-0">
                 <Card className="bg-black/70 backdrop-blur-sm border-white/20 text-white">
                   <CardContent className="p-8">
                     <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl text-shadow">
