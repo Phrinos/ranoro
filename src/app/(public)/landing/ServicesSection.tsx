@@ -5,12 +5,12 @@ import { AnimatedDiv } from './AnimatedDiv';
 import { Icon } from '@iconify/react';
 
 const services = [
-    { name: "Mantenimiento y diagnósticos", icon: "twemoji:gear" },
-    { name: "Frenos y suspensión", icon: "twemoji:racing-car" },
-    { name: "Enfriamiento y dirección", icon: "twemoji:snowflake" },
-    { name: "Hojalatería y pintura", icon: "twemoji:artist-palette" },
-    { name: "Eléctrico y escaneo OBD-II", icon: "twemoji:laptop" },
-    { name: "Flotillas y empresas", icon: "twemoji:delivery-truck" },
+    { name: "Afinación Integral", icon: "twemoji:station" },
+    { name: "Cambio de Aceite", icon: "twemoji:oil-drum" },
+    { name: "Diagnóstico por Computadora", icon: "twemoji:laptop" },
+    { name: "Frenos", icon: "twemoji:stop-sign" },
+    { name: "Suspensión", icon: "twemoji:racing-car" },
+    { name: "Hojalatería y Pintura", icon: "twemoji:artist-palette" },
 ];
 
 function ServicesSection() {
