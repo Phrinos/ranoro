@@ -10,12 +10,11 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import { VehicleDialog } from './vehicle-dialog';
 import type { VehicleFormValues } from './vehicle-form';
-import { format, isValid, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { useRouter } from 'next/navigation';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
-import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
@@ -32,10 +31,6 @@ export function VehiclesTable({ vehicles, onSave }: VehiclesTableProps) {
     initialSortOption: 'lastServiceDate_desc',
     itemsPerPage: 10,
     dateFilterKey: 'lastServiceDate',
-    initialDateRange: {
-      from: startOfMonth(new Date()),
-      to: endOfMonth(new Date()),
-    },
   });
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -62,8 +57,6 @@ export function VehiclesTable({ vehicles, onSave }: VehiclesTableProps) {
         searchTerm={tableManager.searchTerm}
         onSearchTermChange={tableManager.onSearchTermChange}
         searchPlaceholder="Buscar por placa, marca, modelo..."
-        dateRange={tableManager.dateRange}
-        onDateRangeChange={tableManager.onDateRangeChange}
         actions={
           <Button onClick={() => handleOpenDialog()} className="w-full sm:w-auto">
             <PlusCircle className="mr-2 h-4 w-4" />
