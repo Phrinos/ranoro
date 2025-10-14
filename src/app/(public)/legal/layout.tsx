@@ -1,5 +1,4 @@
 
-
 import Link from 'next/link';
 import Image from "next/image";
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,6 @@ export default function LegalLayout({
               alt="Ranoro Logo"
               fill
               style={{ objectFit: 'contain' }}
-              className="dark:invert"
               priority
               sizes="(max-width: 768px) 120px, 140px"
               data-ai-hint="ranoro logo"

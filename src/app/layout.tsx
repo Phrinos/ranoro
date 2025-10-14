@@ -2,13 +2,15 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ranoro.mx"),
-  title: { default: "Ranoro V1.4", template: "%s | Ranoro" },
-  description: "Software para la gestión de talleres mecánicos.",
+  title: { default: "Ranoro Taller en Aguascalientes | Mecánica, Hojalatería y Pintura", template: "%s | Ranoro" },
+  description: "Taller mecánico en Aguascalientes. Mantenimientos claros, trabajo garantizado y trato honesto. Especialistas en mecánica rápida, frenos, suspensión y pintura.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -17,7 +19,6 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
-  // manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
@@ -25,7 +26,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        <Analytics />
+        <SpeedInsights />
+      </body>
     </html>
   );
 }

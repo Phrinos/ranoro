@@ -14,7 +14,7 @@ export function CtaSection() {
                     <p className="mt-4 text-base sm:text-lg text-gray-300">
                         Dale a tus clientes la atención de una agencia, mejora tus ingresos y conserva tu equipo actual.
                     </p>
-                    <Button size="lg" className="mt-8" asChild>
+                    <Button size="lg" className="mt-8 bg-primary hover:bg-primary/90" asChild>
                         <Link href="https://wa.me/524493930914" target="_blank" rel="noopener noreferrer">Solicita una demo</Link>
                     </Button>
                  </AnimatedDiv>

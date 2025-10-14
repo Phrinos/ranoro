@@ -2,36 +2,48 @@
 "use client";
 import React from 'react';
 import { AnimatedDiv } from './AnimatedDiv';
-import { Icon } from '@iconify/react';
+import { ShieldCheck, Clock, FileText, SprayCan } from 'lucide-react';
+
+const benefits = [
+    {
+        icon: FileText,
+        title: "Transparencia Total",
+        description: "Precios por escrito y explicaciones claras antes de empezar cualquier trabajo. Sin sorpresas.",
+    },
+    {
+        icon: ShieldCheck,
+        title: "Garantía Ranoro",
+        description: "Ofrecemos 90 días o 3,000 km de garantía en mano de obra para tu total tranquilidad.",
+    },
+    {
+        icon: Clock,
+        title: "Entrega a Tiempo",
+        description: "Te mantenemos informado por WhatsApp con fotos y videos del proceso para que sepas cuándo estará listo tu auto.",
+    },
+    {
+        icon: SprayCan,
+        title: "Carrocería Profesional",
+        description: "Usamos igualado de color por computadora y materiales de alto desempeño para un acabado impecable.",
+    },
+];
 
 export function WhyRanoroSection() {
     return (
         <section id="why-ranoro" className="py-20 md:py-28 bg-muted/50">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimatedDiv className="text-center max-w-3xl mx-auto">
-                    <h2 className="text-3xl md:text-4xl font-extrabold">¿Por qué elegir Ranoro?</h2>
+                    <h2 className="text-3xl md:text-4xl font-extrabold">¿Por qué elegirnos?</h2>
                 </AnimatedDiv>
                  <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <AnimatedDiv className="text-center">
-                        <Icon icon="noto:open-book" className="mx-auto h-12 w-12 mb-2"/>
-                        <h4 className="font-bold text-lg">Enfoque vertical</h4>
-                        <p className="text-muted-foreground mt-1">Diseñado exclusivamente para talleres, con herramientas pensadas para tu día a día.</p>
-                    </AnimatedDiv>
-                    <AnimatedDiv className="text-center">
-                        <Icon icon="twemoji:hourglass-done" className="mx-auto h-12 w-12 mb-2"/>
-                        <h4 className="font-bold text-lg">Migración rápida</h4>
-                        <p className="text-muted-foreground mt-1">Migra tu información fácil de tus sistemas actuales con nuestro onboarding guiado.</p>
-                    </AnimatedDiv>
-                    <AnimatedDiv className="text-center">
-                        <Icon icon="noto:money-with-wings" className="mx-auto h-12 w-12 mb-2"/>
-                        <h4 className="font-bold text-lg">Precios accesibles</h4>
-                        <p className="text-muted-foreground mt-1">Todo incluido sin compromisos ni aumento en nómina.</p>
-                    </AnimatedDiv>
-                    <AnimatedDiv className="text-center">
-                        <Icon icon="flat-color-icons:support" className="mx-auto h-12 w-12 mb-2"/>
-                        <h4 className="font-bold text-lg">Soporte continuo</h4>
-                        <p className="text-muted-foreground mt-1">Estamos contigo siempre, con actualizaciones y mejoras constantes.</p>
-                    </AnimatedDiv>
+                    {benefits.map(benefit => (
+                        <AnimatedDiv key={benefit.title} className="text-center">
+                            <div className="mx-auto h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                                <benefit.icon className="h-6 w-6"/>
+                            </div>
+                            <h4 className="font-bold text-lg mt-4">{benefit.title}</h4>
+                            <p className="text-muted-foreground mt-1 text-sm">{benefit.description}</p>
+                        </AnimatedDiv>
+                    ))}
                 </div>
             </div>
         </section>
