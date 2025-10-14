@@ -22,9 +22,6 @@ function LocationSection() {
                              <Button size="lg" asChild className="bg-green-500 hover:bg-green-600 text-white">
                                 <Link href="https://wa.me/524491425323?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer"><Icon icon="logos:whatsapp-icon" className="mr-2 h-5 w-5"/> Agendar por WhatsApp</Link>
                             </Button>
-                             <Button size="lg" variant="outline" asChild>
-                                <Link href="tel:4491425323"><Icon icon="twemoji:telephone-receiver" className="mr-2 h-5 w-5"/> Llamar ahora</Link>
-                            </Button>
                         </div>
                     </AnimatedDiv>
                     <AnimatedDiv>
