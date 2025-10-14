@@ -168,15 +168,18 @@ function MovimientosTabContent({
       });
 
     // 3) ASIENTOS de CAJA (ledger) – se muestran todos
-    const ledgerMovs: Movement[] = (cashTransactions || []).map((t) => ({
-      id: t.id,
-      origin: "ledger",
-      date: parseDate((t as any).date || (t as any).createdAt) || null,
-      folio: t.id,
-      type: t.type === "Entrada" ? "Entrada" : "Salida",
-      client: (t as any).userName || (t as any).user || "Sistema",
-      total: Math.abs(Number(t.amount) || 0),
-      description: (t as any).description || (t as any).concept || "",
+    const ledgerMovs: Movement[] = (cashTransactions || [])
+       // IMPORTANTE: Filtrar los movimientos de caja que ya están representados por pagos.
+      .filter(t => t.relatedType !== 'Venta' && t.relatedType !== 'Servicio')
+      .map((t) => ({
+        id: t.id,
+        origin: "ledger",
+        date: parseDate((t as any).date || (t as any).createdAt) || null,
+        folio: t.id,
+        type: t.type === "Entrada" ? "Entrada" : "Salida",
+        client: (t as any).userName || (t as any).user || "Sistema",
+        total: Math.abs(Number(t.amount) || 0),
+        description: (t as any).description || (t as any).concept || "",
     }));
 
     return [...salePaymentMovs, ...servicePaymentMovs, ...ledgerMovs];
