@@ -22,7 +22,6 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/comp
 
 const AnalisisIaContent = lazy(() => import('@/app/(app)/ai/components/analisis-ia-content').then(module => ({ default: module.AnalisisIaContent })));
 const AsistenteComprasContent = lazy(() => import('@/app/(app)/ai/components/asistente-compras-content'));
-const CotizadorIaContent = lazy(() => import('@/app/(app)/ai/components/cotizador-ia-content'));
 
 
 function AiPageComponent() {
@@ -60,7 +59,6 @@ function AiPageComponent() {
             : <AnalisisIaContent inventoryItems={inventoryItems} serviceRecords={serviceRecords} />
     )},
     { value: 'compras', label: 'Asistente de Compras', content: <AsistenteComprasContent /> },
-    { value: 'cotizador', label: 'Cotizador', content: <CotizadorIaContent /> },
   ];
 
   return (
