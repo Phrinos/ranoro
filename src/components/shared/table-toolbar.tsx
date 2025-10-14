@@ -64,51 +64,68 @@ export function TableToolbar({
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col sm:flex-row w-full flex-grow items-center gap-2">
-            {onSearchTermChange && (
-                 <div className="relative w-full sm:w-auto flex-grow">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder={searchPlaceholder}
-                        value={searchTerm ?? ''}
-                        onChange={(e) => onSearchTermChange(e.target.value)}
-                        className="h-10 w-full pl-8 bg-white"
-                    />
-                </div>
-            )}
-            {/* Filtros */}
-            {filterOptions?.map((block) => {
-            const current = (otherFilters?.[block.value] ?? "all") as string;
-            return (
-                <Select
-                key={`filter:${block.value}:${current}`}
-                defaultValue={current}
-                onValueChange={(val) => handleFilterChange(block.value, val)}
-                >
-                <SelectTrigger className="h-10 min-w-[10rem] w-full sm:w-auto bg-white">
-                    <SelectValue placeholder={block.label} />
-                </SelectTrigger>
-                <SelectContent>
-                    {block.options.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                    </SelectItem>
-                    ))}
-                </SelectContent>
-                </Select>
-            );
-            })}
+      {/* Search Input on the left */}
+      {onSearchTermChange && (
+        <div className="relative w-full flex-grow">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={searchPlaceholder}
+            value={searchTerm ?? ''}
+            onChange={(e) => onSearchTermChange(e.target.value)}
+            className="h-10 w-full pl-8 bg-white"
+          />
+        </div>
+      )}
 
-            {/* Rango de fechas */}
-            {onDateRangeChange && (
-            <DatePickerWithRange date={dateRange} onDateChange={onDateRangeChange} />
-            )}
-        </div>
-        
-        {/* Acciones */}
-        <div className="flex w-full sm:w-auto items-center justify-end gap-2">
-            {actions}
-        </div>
+      {/* Filters and Actions on the right */}
+      <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto flex-shrink-0">
+        {/* Other select filters */}
+        {filterOptions?.map((block) => {
+          const current = (otherFilters?.[block.value] ?? "all") as string;
+          return (
+            <Select
+              key={`filter:${block.value}:${current}`}
+              defaultValue={current}
+              onValueChange={(val) => handleFilterChange(block.value, val)}
+            >
+              <SelectTrigger className="h-10 min-w-[10rem] w-full sm:w-auto bg-white">
+                <SelectValue placeholder={block.label} />
+              </SelectTrigger>
+              <SelectContent>
+                {block.options.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+        })}
+
+        {/* Date Range Picker */}
+        {onDateRangeChange && (
+          <DatePickerWithRange date={dateRange} onDateChange={onDateRangeChange} />
+        )}
+
+        {/* Sort Options */}
+        {sortOptions && onSortOptionChange && (
+          <Select value={sortOption} onValueChange={onSortOptionChange}>
+            <SelectTrigger className="h-10 w-full sm:w-auto bg-white">
+              <SelectValue placeholder="Ordenar por..." />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Custom Actions */}
+        {actions}
+      </div>
     </div>
   );
 }

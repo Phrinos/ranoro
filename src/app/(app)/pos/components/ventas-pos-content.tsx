@@ -168,24 +168,19 @@ export function VentasPosContent({
           </Card>
         </div>
         
-        <div className="space-y-2">
-            <div className="flex flex-col sm:flex-row items-center gap-2">
-                <Input
-                    placeholder="Buscar por ID, cliente, artículo..."
-                    value={tableManager.searchTerm}
-                    onChange={(event) => tableManager.onSearchTermChange(event.target.value)}
-                    className="h-10 w-full lg:w-[250px] bg-white"
-                />
-                <Button asChild className="w-full sm:w-auto flex-grow sm:flex-grow-0">
+        <TableToolbar
+            searchTerm={tableManager.searchTerm}
+            onSearchTermChange={tableManager.onSearchTermChange}
+            searchPlaceholder="Buscar por ID, cliente, artículo..."
+            filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
+            dateRange={tableManager.dateRange}
+            onDateRangeChange={tableManager.onDateRangeChange}
+            actions={
+                <Button asChild className="w-full sm:w-auto">
                     <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
                 </Button>
-            </div>
-            <TableToolbar
-                filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
-                dateRange={tableManager.dateRange}
-                onDateRangeChange={tableManager.onDateRangeChange}
-            />
-        </div>
+            }
+        />
         
         {paginatedData.length > 0 ? (
           <div className="space-y-4">
