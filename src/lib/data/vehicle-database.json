@@ -1858,7 +1858,7 @@
           {
             "startYear": 2001,
             "endYear": 2010,
-            "engines": ["3.3L V6 gasolina", "3.8L V6 gasolina"]
+            "engines": ["3.3L V6 gasolina", "3.8L V6 gasolina", "4.0L V6 gasolina"]
           },
           {
             "startYear": 2011,
@@ -3970,61 +3970,6 @@
     ]
   },
   {
-    "make": "Tank",
-    "models": [
-      {
-        "name": "300",
-        "generations": [
-          {
-            "startYear": 2023,
-            "endYear": 2025,
-            "engines": ["2.0L I4 turbo híbrido"]
-          }
-        ]
-      },
-      {
-        "name": "500",
-        "generations": [
-          {
-            "startYear": 2024,
-            "endYear": 2025,
-            "engines": ["3.0L V6 turbo híbrido"]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "make": "Poer",
-    "models": [
-      {
-        "name": "Pick-up",
-        "generations": [
-          {
-            "startYear": 2023,
-            "endYear": 2025,
-            "engines": ["2.0L I4 turbo gasolina", "2.0L I4 turbo diesel"]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "make": "Wey",
-    "models": [
-      {
-        "name": "Hybrid SUV",
-        "generations": [
-          {
-            "startYear": 2023,
-            "endYear": 2025,
-            "engines": ["Híbrido"]
-          }
-        ]
-      }
-    ]
-  },
-  {
     "make": "BAIC",
     "models": [
       {
@@ -4080,166 +4025,6 @@
     ]
   },
   {
-    "make": "Dongfeng",
-    "models": [
-      {
-        "name": "Shine",
-        "generations": [
-          {
-            "startYear": 2023,
-            "endYear": 2025,
-            "engines": ["1.5L I4 gasolina"]
-          }
-        ]
-      },
-      {
-        "name": "Shine MAX",
-        "generations": [
-          {
-            "startYear": 2023,
-            "endYear": 2025,
-            "engines": ["1.5L I4 turbo híbrido"]
-          }
-        ]
-      },
-      {
-        "name": "Shine GS",
-        "generations": [
-          {
-            "startYear": 2024,
-            "endYear": 2025,
-            "engines": ["1.5L I4 gasolina"]
-          }
-        ]
-      },
-      {
-        "name": "SX3",
-        "generations": [
-          {
-            "startYear": 2022,
-            "endYear": 2025,
-            "engines": ["1.5L I4 gasolina"]
-          }
-        ]
-      },
-      {
-        "name": "T5 EVO",
-        "generations": [
-          {
-            "startYear": 2022,
-            "endYear": 2025,
-            "engines": ["1.5L I4 turbo gasolina"]
-          }
-        ]
-      },
-      {
-        "name": "T5L",
-        "generations": [
-          {
-            "startYear": 2020,
-            "endYear": 2025,
-            "engines": ["1.8L I4 turbo gasolina"]
-          }
-        ]
-      },
-      {
-        "name": "M4",
-        "generations": [
-          {
-            "startYear": 2023,
-            "endYear": 2025,
-            "engines": ["1.5L I4 gasolina"]
-          }
-        ]
-      },
-      {
-        "name": "Huge",
-        "generations": [
-          {
-            "startYear": 2024,
-            "endYear": 2025,
-            "engines": ["1.5L I4 turbo híbrido"]
-          }
-        ]
-      },
-      {
-        "name": "Rich 6",
-        "generations": [
-          {
-            "startYear": 2024,
-            "endYear": 2025,
-            "engines": ["2.4L I4 gasolina", "2.5L I4 diesel"]
-          }
-        ]
-      },
-      {
-        "name": "M3",
-        "generations": [
-          {
-            "startYear": 2024,
-            "endYear": 2025,
-            "engines": ["1.6L I4 gasolina"]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "make": "Geely",
-    "models": [
-      {
-        "name": "Coolray",
-        "generations": [
-          {
-            "startYear": 2023,
-            "endYear": 2025,
-            "engines": ["1.5L I3 turbo gasolina"]
-          }
-        ]
-      },
-      {
-        "name": "Geometry C",
-        "generations": [
-          {
-            "startYear": 2023,
-            "endYear": 2025,
-            "engines": ["Eléctrico"]
-          }
-        ]
-      },
-      {
-        "name": "Monjaro",
-        "generations": [
-          {
-            "startYear": 2026,
-            "endYear": 2026,
-            "engines": ["2.0L I4 turbo gasolina"]
-          }
-        ]
-      },
-      {
-        "name": "Starray",
-        "generations": [
-          {
-            "startYear": 2025,
-            "endYear": 2025,
-            "engines": ["Híbrido"]
-          }
-        ]
-      },
-      {
-        "name": "GX3",
-        "generations": [
-          {
-            "startYear": 2024,
-            "endYear": 2025,
-            "engines": ["1.5L I4 gasolina"]
-          }
-        ]
-      }
-    ]
-  },
-  {
     "make": "Foton",
     "models": [
       {
@@ -4279,46 +4064,6 @@
             "startYear": 2024,
             "endYear": 2025,
             "engines": ["2.0L I4 gasolina", "2.0L I4 turbo diesel"]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "make": "Mastretta",
-    "models": [
-      {
-        "name": "MXT",
-        "generations": [
-          {
-            "startYear": 2011,
-            "endYear": 2014,
-            "engines": ["2.0L I4 gasolina"]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "make": "VUHL",
-    "models": [
-      {
-        "name": "05",
-        "generations": [
-          {
-            "startYear": 2015,
-            "endYear": 2025,
-            "engines": ["2.0L I4 turbo gasolina"]
-          }
-        ]
-      },
-      {
-        "name": "05RR",
-        "generations": [
-          {
-            "startYear": 2019,
-            "endYear": 2019,
-            "engines": ["2.0L I4 turbo gasolina"]
           }
         ]
       }
