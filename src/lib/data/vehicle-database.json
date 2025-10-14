@@ -1,0 +1,170 @@
+
+[
+  {
+    "make": "Toyota",
+    "models": [
+      {
+        "name": "Camry",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2002,
+            "endYear": 2011,
+            "engines": ["2.4L I4 gasolina", "3.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2012,
+            "endYear": 2017,
+            "engines": ["2.5L I4 gasolina", "3.5L V6 gasolina"]
+          },
+          {
+            "startYear": 2018,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina Motorpasion"]
+          }
+        ]
+      },
+      {
+        "name": "Corolla",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2013,
+            "engines": ["1.8L I4 gasolina"]
+          },
+          {
+            "startYear": 2014,
+            "endYear": 2019,
+            "engines": ["1.8L I4 gasolina"]
+          },
+          {
+            "startYear": 2020,
+            "endYear": 2025,
+            "engines": ["1.8L I4 gasolina (140 hp)", "2.0L I4 gasolina (168 hp) Autocosmos"]
+          }
+        ]
+      },
+      {
+        "name": "Yaris",
+        "category": "Sedanes y Compactos",
+        "generations": [
+          {
+            "startYear": 2015,
+            "endYear": 2025,
+            "engines": ["1.5L I4 gasolina (~106 hp)"]
+          }
+        ]
+      },
+      {
+        "name": "RAV4",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2005,
+            "engines": ["2.0L I4 gasolina", "2.4L I4 gasolina"]
+          },
+          {
+            "startYear": 2006,
+            "endYear": 2012,
+            "engines": ["2.4L I4 gasolina", "3.5L V6 gasolina"]
+          },
+          {
+            "startYear": 2013,
+            "endYear": 2018,
+            "engines": ["2.5L I4 gasolina"]
+          },
+          {
+            "startYear": 2019,
+            "endYear": 2025,
+            "engines": ["2.5L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "4Runner",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2000,
+            "endYear": 2009,
+            "engines": ["4.0L V6 gasolina", "4.7L V8 gasolina"]
+          },
+          {
+            "startYear": 2010,
+            "endYear": 2025,
+            "engines": ["4.0L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Highlander",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2008,
+            "endYear": 2025,
+            "engines": ["3.5L V6 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "C-HR",
+        "category": "SUVs",
+        "generations": [
+          {
+            "startYear": 2017,
+            "endYear": 2024,
+            "engines": ["2.0L I4 gasolina"]
+          }
+        ]
+      },
+      {
+        "name": "Hilux",
+        "category": "Pick-ups",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2025,
+            "engines": [
+              "2.7L I4 gasolina (166 hp), manual 5 velocidades Motorpasion",
+              "2.8L I4 turbo diesel (201 hp, 310-369 lb-ft), manual 6 vel / automática 6 vel El FinancieroToyota Costa Rica"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Tacoma",
+        "category": "Pick-ups",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2015,
+            "engines": ["2.7L I4 gasolina", "4.0L V6 gasolina"]
+          },
+          {
+            "startYear": 2016,
+            "endYear": 2025,
+            "engines": ["2.7L I4 gasolina", "3.5L V6 gasolina Revista Magazzine"]
+          }
+        ]
+      },
+      {
+        "name": "Hiace",
+        "category": "Vans",
+        "generations": [
+          {
+            "startYear": 2005,
+            "endYear": 2025,
+            "engines": [
+              "2.7L I4 gasolina",
+              "3.5L V6 gasolina (277 hp)",
+              "2.8L I4 diesel (174 hp, 310 lb-ft) Autocosmos"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
