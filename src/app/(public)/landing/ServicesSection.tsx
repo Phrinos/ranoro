@@ -37,7 +37,7 @@ const services = [
     },
     {
         name: "Reparación de Plásticos",
-        icon: "twemoji:plastic-bag",
+        icon: "twemoji:hammer",
         description: "Restauramos fascias y molduras a su estado original."
     },
     {
