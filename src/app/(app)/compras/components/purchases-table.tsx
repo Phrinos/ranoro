@@ -17,6 +17,7 @@ import { es } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { formatCurrency } from "@/lib/utils";
+import { TableHead } from "@/components/ui/table";
 
 // Definimos la estructura de un documento de compra
 interface Purchase {

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -82,8 +83,8 @@ export function DatePickerWithRange({ className, date, onDateChange }: DatePicke
           <div className="flex flex-col space-y-2 p-4 border-r">
             <Button onClick={() => selectRange(today, today)} variant="ghost" className="w-full justify-start">Hoy</Button>
             <Button onClick={() => { const y = new Date(today); y.setDate(y.getDate() - 1); selectRange(y, y) }} variant="ghost" className="w-full justify-start">Ayer</Button>
-            <Button onClick={() => { const from = subDays(today, 6); selectRange(from, today) }} variant="ghost" className="w-full justify-start">Últimos 7 días</Button>
-            <Button onClick={() => { selectRange(startOfWeek(today, { weekStartsOn: 1 }), endOfWeek(today, { weekStartsOn: 1 })) }} variant="ghost" className="w-full justify-start">Esta semana</Button>
+            <Button onClick={() => { const from = new Date(today); from.setDate(from.getDate() - 6); selectRange(from, today) }} variant="ghost" className="w-full justify-start">Últimos 7 días</Button>
+            <Button onClick={() => { selectRange(startOfWeek(today, { locale: es }), endOfWeek(today, { locale: es })) }} variant="ghost" className="w-full justify-start">Esta semana</Button>
             <Button onClick={thisMonth} variant="ghost" className="w-full justify-start">Este mes</Button>
             <Button onClick={lastMonth} variant="ghost" className="w-full justify-start">Mes pasado</Button>
           </div>

@@ -23,7 +23,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { NewCalendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
@@ -310,9 +310,11 @@ export function RegisterPurchaseDialog({
                                 </FormControl>
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-0" align="start">
-                                <NewCalendar
-                                  value={field.value}
-                                  onChange={field.onChange}
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
                                   locale={es}
                                 />
                               </PopoverContent>

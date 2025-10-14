@@ -163,7 +163,7 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Custom styles for react-calendar */
+  /* Custom styles for react-calendar */
   .react-calendar {
     @apply border-none bg-popover text-popover-foreground;
   }

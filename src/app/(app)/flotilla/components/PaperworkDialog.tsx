@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -14,9 +15,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { NewCalendar } from "@/components/ui/calendar";
+import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -113,16 +114,14 @@ export function PaperworkDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(d) => {
+                      <NewCalendar
+                        value={field.value}
+                        onChange={(d: any) => {
                             if (d) {
                                 field.onChange(d);
                                 setIsCalendarOpen(false);
                             }
                         }}
-                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>

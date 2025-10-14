@@ -73,10 +73,10 @@ const normalize = (s?: string) =>
 /** Mapea un InventoryItem a una fila válida del POS.
  *  Ajusta aquí si tu schema usa otros nombres.
  */
-function createPOSItemFromInventory(item: InventoryItem) {
+const createPOSItemFromInventory = (item: InventoryItem) => {
   // Intenta usar price de venta; si no, fallback a price/cost 0
   const unitPrice =
-    (item as any).salePrice ??
+    (item as any).sellingPrice ??
     (item as any).price ??
     (item as any).unitPrice ??
     0;
@@ -88,15 +88,15 @@ function createPOSItemFromInventory(item: InventoryItem) {
     (item as any).sku ??
     "Artículo";
 
-  const id = (item as any).id ?? (item as any).sku ?? String(price) + Math.random();
+  const id = (item as any).id ?? (item as any).sku ?? String(unitPrice) + Math.random();
 
   // Campos comunes y conservadores para la mayoría de schemas:
   return {
     id, // id del renglón; si tu schema pide otro (p. ej. inventoryItemId), duplícalo
     inventoryItemId: (item as any).id ?? null,
-    name,
+    itemName: name,
     quantity: 1,
-    unitPrice,
+    unitPrice: unitPrice,
     discount: 0,
     totalPrice: unitPrice * 1,
   };
@@ -158,7 +158,7 @@ function QuickAddItemDialog({
             <CommandGroup heading="Coincidencias">
               {filtered.map((it) => {
                 const price =
-                  (it as any).salePrice ??
+                  (it as any).sellingPrice ??
                   (it as any).price ??
                   (it as any).unitPrice ??
                   0;
@@ -337,14 +337,14 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
 
       const newSaleReceipt: SaleReceipt = {
         id: saleId,
-        saleDate: new Date().toISOString(),
+        saleDate: new Date(),
         items: values.items,
         customerName: values.customerName,
         payments: values.payments,
         subTotal,
         tax,
         totalAmount,
-        status: "Completado",
+        status: 'Completado',
         registeredById: currentUser.id,
         registeredByName: currentUser.name,
         cardCommission: (values as any).cardCommission,
@@ -534,14 +534,14 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         setValue("items", updated as any, { shouldDirty: true, shouldTouch: true });
         toast({
           title: "Cantidad actualizada",
-          description: `Se incrementó la cantidad de "${row.name}".`,
+          description: `Se incrementó la cantidad de "${row.itemName}".`,
         });
       } else {
         const updated = [...current, newRow];
         setValue("items", updated as any, { shouldDirty: true, shouldTouch: true });
         toast({
           title: "Artículo añadido",
-          description: `"${newRow.name}" agregado al ticket.`,
+          description: `"${newRow.itemName}" agregado al ticket.`,
         });
       }
     } finally {

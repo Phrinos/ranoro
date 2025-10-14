@@ -25,7 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar } from "@/components/ui/calendar";
+import { NewCalendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
 
@@ -137,16 +137,15 @@ export function AddManualChargeDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(d) => {
+                      <NewCalendar
+                        value={field.value}
+                        onChange={(d: any) => {
                             if (d) {
                                 field.onChange(d);
                                 setIsCalendarOpen(false);
                             }
                         }}
-                        initialFocus
+                        
                       />
                     </PopoverContent>
                   </Popover>
