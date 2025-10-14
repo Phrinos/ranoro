@@ -168,7 +168,7 @@ export function DatabaseManagementTab() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Marca</label>
             <Select value={selectedMake} onValueChange={setSelectedMake}>
-              <SelectTrigger><SelectValue placeholder="Seleccione una marca para editar..." /></SelectTrigger>
+              <SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione una marca para editar..." /></SelectTrigger>
               <SelectContent>{makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}</SelectContent>
             </Select>
           </div>
@@ -177,7 +177,7 @@ export function DatabaseManagementTab() {
             <div className="space-y-4 pt-4 border-t">
               <h3 className="font-semibold text-lg">Modelos de {selectedMake}</h3>
               <div className="flex items-center gap-2">
-                <Input value={newModelName} onChange={(e) => setNewModelName(e.target.value)} placeholder="Nombre del nuevo modelo" />
+                <Input value={newModelName} onChange={(e) => setNewModelName(e.target.value)} placeholder="Nombre del nuevo modelo" className="bg-white" />
                 <Button onClick={handleAddModel}><PlusCircle className="mr-2 h-4 w-4" />Añadir Modelo</Button>
               </div>
 
@@ -189,13 +189,13 @@ export function DatabaseManagementTab() {
                       {model.generations.map((gen, genIndex) => (
                         <Card key={genIndex} className="p-4 bg-muted/50">
                           <div className="grid grid-cols-2 gap-4">
-                            <Input type="number" value={gen.startYear} onChange={(e) => handleUpdateGeneration(model.name, genIndex, 'startYear', parseInt(e.target.value))} placeholder="Año Inicial"/>
-                            <Input type="number" value={gen.endYear} onChange={(e) => handleUpdateGeneration(model.name, genIndex, 'endYear', parseInt(e.target.value))} placeholder="Año Final"/>
+                            <Input type="number" value={gen.startYear} onChange={(e) => handleUpdateGeneration(model.name, genIndex, 'startYear', parseInt(e.target.value))} placeholder="Año Inicial" className="bg-white" />
+                            <Input type="number" value={gen.endYear} onChange={(e) => handleUpdateGeneration(model.name, genIndex, 'endYear', parseInt(e.target.value))} placeholder="Año Final" className="bg-white" />
                           </div>
                           <div className="mt-2 space-y-2">
                             {gen.engines.map((engine, engineIndex) => (
                               <div key={engineIndex} className="flex items-center gap-2">
-                                <Input value={engine} readOnly className="flex-1" />
+                                <Input value={engine} readOnly className="flex-1 bg-white" />
                                 <Button size="icon" variant="ghost" onClick={() => handleDeleteEngine(model.name, genIndex, engineIndex)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                               </div>
                             ))}
@@ -231,7 +231,7 @@ function AddEngineForm({ onAdd }: { onAdd: (engine: string) => void }) {
   };
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-2 mt-2">
-      <Input value={engine} onChange={(e) => setEngine(e.target.value)} placeholder="Ej: 1.6L I4 gasolina" />
+      <Input value={engine} onChange={(e) => setEngine(e.target.value)} placeholder="Ej: 1.6L I4 gasolina" className="bg-white" />
       <Button type="submit" size="sm"><PlusCircle className="mr-2 h-4 w-4" />Añadir Motor</Button>
     </form>
   );
