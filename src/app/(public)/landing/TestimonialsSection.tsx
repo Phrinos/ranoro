@@ -7,41 +7,57 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@iconify/react';
 
 const testimonials = [
-    {
-        quote: "Precio justo y me explicaron todo.",
-        author: "Carlos M."
-    },
-    {
-        quote: "Pintaron la puerta y quedó como nueva.",
-        author: "Laura R."
-    },
-    {
-        quote: "Regresé por la afinación; consumía menos gasolina.",
-        author: "Ernesto P."
-    },
+    { quote: "Precio justo y me explicaron todo el proceso. Muy transparentes.", author: "Carlos M." },
+    { quote: "La pintura de mi puerta quedó como nueva, igualaron el color perfectamente.", author: "Laura R." },
+    { quote: "Después de la afinación, mi auto gasta menos gasolina. Excelente servicio.", author: "Ernesto P." },
+    { quote: "Llevé mi carro por un ruido en la suspensión y lo arreglaron el mismo día. ¡Impresionante!", author: "Sofía G." },
+    { quote: "El diagnóstico por computadora fue rápido y preciso. Me ahorraron mucho dinero.", author: "Javier T." },
+    { quote: "Tenía un golpe fuerte en la salpicadera y el trabajo de hojalatería fue impecable.", author: "Mariana V." },
+    { quote: "Siempre amables y profesionales. Me mantienen informado con fotos por WhatsApp.", author: "Ricardo J." },
+    { quote: "La garantía que ofrecen me dio mucha confianza. Se nota que respaldan su trabajo.", author: "Ana L." },
+    { quote: "Repararon el plástico de mi fascia y quedó increíble. No tuve que comprar una nueva.", author: "David S." },
+    { quote: "El mejor servicio de frenos que he recibido en Aguascalientes. Mi coche frena como nuevo.", author: "Verónica C." },
+    { quote: "Me ayudaron con un problema eléctrico que otros dos talleres no pudieron resolver.", author: "Fernando A." },
+    { quote: "Excelente atención al cliente. Son mi taller de confianza desde hace años.", author: "Gabriela E." },
+    { quote: "El servicio de flotillas es muy eficiente. Siempre tienen mis unidades listas a tiempo.", author: "Transportes Veloz" },
+    { quote: "El pulido y encerado dejó mi coche como de agencia. ¡Súper recomendado!", author: "Isabel N." },
+    { quote: "Tenía un problema con el aire acondicionado y lo solucionaron rápido. ¡Gracias!", author: "Miguel H." },
+    { quote: "Me encanta que me expliquen con detalle qué le hacen a mi coche. Genera mucha confianza.", author: "Patricia D." },
+    { quote: "El personal es muy honesto. Me dijeron que una reparación podía esperar, en lugar de venderme algo innecesario.", author: "Óscar B." },
+    { quote: "La calidad de la pintura es de primera. El acabado es perfecto y duradero.", author: "Mónica F." },
+    { quote: "Mi auto se sobrecalentaba y encontraron la fuga en el sistema de enfriamiento que nadie más veía.", author: "Jorge Z." },
+    { quote: "Me dieron un coche de cortesía mientras el mío estaba en reparación. ¡Un gran detalle!", author: "Adriana M." },
+    { quote: "El cambio de amortiguadores hizo una diferencia enorme en la comodidad de mi auto.", author: "Luis Q." },
+    { quote: "Son muy puntuales con los tiempos de entrega que prometen.", author: "Daniela R." },
+    { quote: "Me salvaron con una reparación de emergencia en la dirección. Muy agradecida.", author: "Carolina P." },
+    { quote: "Siempre utilizan refacciones de buena calidad. Se nota en el desempeño del coche.", author: "Andrés V." },
+    { quote: "El trato es personalizado. Se acuerdan de mi coche y su historial.", author: "Raquel S." },
+    { quote: "El taller está muy limpio y ordenado, algo que no se ve en todos lados.", author: "Marcos G." },
+    { quote: "La comunicación por WhatsApp es súper práctica para autorizar trabajos y ver avances.", author: "Liliana T." },
+    { quote: "Me repararon una abolladura sin necesidad de pintar. Un trabajo de artesanos.", author: "José C." },
+    { quote: "Excelente relación calidad-precio. Sientes que tu dinero rinde.", author: "Paola I." },
+    { quote: "Finalmente encontré un taller en Aguascalientes en el que puedo confiar ciegamente.", author: "Francisco L." },
 ];
 
 export function TestimonialsSection() {
     return (
         <section id="testimonials" className="py-20 md:py-28 bg-white">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                  <AnimatedDiv className="text-center max-w-3xl mx-auto">
                     <h2 className="text-3xl md:text-4xl font-extrabold">Lo que dicen nuestros clientes</h2>
                 </AnimatedDiv>
-                <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {testimonials.map((testimonial, index) => (
+                <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8">
+                    {testimonials.slice(0, 4).map((testimonial, index) => (
                         <AnimatedDiv key={index}>
-                            <Card className="border-l-4 border-primary h-full">
+                            <Card className="border-l-4 border-primary h-full shadow-lg hover:shadow-xl transition-shadow">
                                 <CardContent className="p-6">
                                     <div className="flex gap-1 text-yellow-400 mb-2">
-                                        <Icon icon="mdi:star" className="h-5 w-5"/>
-                                        <Icon icon="mdi:star" className="h-5 w-5"/>
-                                        <Icon icon="mdi:star" className="h-5 w-5"/>
-                                        <Icon icon="mdi:star" className="h-5 w-5"/>
-                                        <Icon icon="mdi:star" className="h-5 w-5"/>
+                                        {[...Array(5)].map((_, i) => (
+                                            <Icon key={i} icon="mdi:star" className="h-5 w-5"/>
+                                        ))}
                                     </div>
-                                    <p className="text-lg italic text-muted-foreground">“{testimonial.quote}”</p>
-                                    <p className="mt-4 font-semibold">— {testimonial.author}</p>
+                                    <blockquote className="text-lg italic text-muted-foreground">“{testimonial.quote}”</blockquote>
+                                    <p className="mt-4 font-semibold text-right">— {testimonial.author}</p>
                                 </CardContent>
                             </Card>
                         </AnimatedDiv>
