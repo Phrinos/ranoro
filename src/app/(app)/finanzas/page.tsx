@@ -7,9 +7,10 @@ import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense, Personnel, 
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Users, Shield, TrendingUp, BookOpen, DatabaseZap } from 'lucide-react';
 import { adminService, inventoryService, serviceService, saleService } from '@/lib/services';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { DateRange } from 'react-day-picker';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 const MovimientosContent = lazy(() => import('./components/movimientos-content'));
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
@@ -28,6 +29,11 @@ function FinanzasPage() {
     const [allExpenses, setAllExpenses] = useState<MonthlyFixedExpense[]>([]);
     const [allUsers, setAllUsers] = useState<Personnel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+        const now = new Date();
+        return { from: startOfMonth(now), to: endOfMonth(now) };
+    });
 
     useEffect(() => {
       setIsLoading(true);
@@ -44,13 +50,13 @@ function FinanzasPage() {
     }, []);
 
     const handleDateRangeChange = useCallback((range?: DateRange) => {
-        // Implement if you need to lift the date range state up
+        setDateRange(range);
     }, []);
 
     if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
     
     const tabs = [
-      { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosContent allServices={allServices} allSales={allSales} allExpenses={allExpenses} allInventory={[]} dateRange={undefined} onDateRangeChange={handleDateRangeChange} /></Suspense> },
+      { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosContent allServices={allServices} allSales={allSales} allExpenses={allExpenses} allInventory={[]} dateRange={dateRange} onDateRangeChange={handleDateRangeChange} /></Suspense> },
       { value: "egresos", label: "Egresos", content: (
         <Suspense fallback={<Loader2 className="animate-spin" />}>
           <EgresosContent 
