@@ -1,4 +1,3 @@
-
 "use client";
 import React from 'react';
 import Link from 'next/link';
@@ -31,10 +30,10 @@ export function HeroSection() {
                 <Card className="bg-black/70 backdrop-blur-sm border-white/20 text-white">
                   <CardContent className="p-8">
                     <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl text-shadow">
-                      Ranoro: Servicio Certificado
+                      Servicio Profesional Certificado
                     </h1>
                     <p className="mt-6 text-lg text-gray-200">
-                      El mejor servicio en Aguascalientes, diagnostico claro y garantía en cada servicio.
+                      El mejor servicio en Aguascalientes, donde te ofrecemos excelentes precios con un diagnostico claro y nuestra garantía Ranoro en cada servicio hasta 60 dias o 1000km.
                     </p>
                     <div className="mt-8">
                       <Button size="lg" asChild className="bg-primary hover:bg-primary/90 text-lg w-full">
