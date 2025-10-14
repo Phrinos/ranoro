@@ -10,7 +10,7 @@ function FinalCta() {
             <div className="container mx-auto flex items-center justify-center gap-4">
                 <p className="hidden sm:block font-semibold">Agenda hoy y manejas mejor mañana.</p>
                  <Button size="lg" asChild className="bg-white text-primary hover:bg-gray-200 font-bold">
-                    <Link href="https://wa.me/524491425323?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer"><Icon icon="twemoji:speech-balloon" className="mr-2 h-5 w-5"/> Agendar Ahora</Link>
+                    <Link href="https://wa.me/524491425323?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer">Agendar Ahora</Link>
                 </Button>
             </div>
         </section>

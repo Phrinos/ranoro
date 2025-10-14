@@ -97,7 +97,7 @@ export default function TuneUpPromoPage() {
                <div className="mt-8 text-center">
                 <Button size="lg" asChild className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white text-lg">
                   <Link href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                    <MessageSquare className="mr-3 h-6 w-6"/> Agendar Afinación
+                    Agendar Afinación
                   </Link>
                 </Button>
               </div>

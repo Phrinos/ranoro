@@ -38,7 +38,7 @@ export function HeroSection() {
                     <div className="mt-8">
                       <Button size="lg" asChild className="bg-primary hover:bg-primary/90 text-lg w-full">
                         <Link href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                          <Icon icon="twemoji:speech-balloon" className="mr-2 h-5 w-5"/> Agendar Cita
+                          Agendar Cita
                         </Link>
                       </Button>
                     </div>
