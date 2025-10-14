@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { inventoryService } from '@/lib/services';
 import type { VehiclePriceList } from '@/types';
 import { PriceListManagementContent } from './components/price-list-management-content';
+import vehicleDatabase from '@/lib/data/vehicle-database.json';
 
 function PreciosPageComponent() {
     const searchParams = useSearchParams();
@@ -22,17 +23,9 @@ function PreciosPageComponent() {
         return () => unsubscribe();
     }, []);
 
-    const { quoted, unquoted } = useMemo(() => {
-        const quotedMakes = new Set<string>();
-        priceLists.forEach(list => quotedMakes.add(list.make));
-        
-        const allMakes = [...new Set(vehicleDatabase.map(v => v.make))];
-        
-        const quotedList = allMakes.filter(make => quotedMakes.has(make));
-        const unquotedList = allMakes.filter(make => !quotedMakes.has(make));
-
-        return { quoted: quotedList, unquoted: unquotedList };
-    }, [priceLists]);
+    const allMakes = useMemo(() => {
+        return [...new Set(vehicleDatabase.map(v => v.make))].sort();
+    }, []);
 
     if (isLoading) {
         return (
@@ -52,8 +45,7 @@ function PreciosPageComponent() {
             </div>
             <PriceListManagementContent 
                 priceLists={priceLists}
-                quotedMakes={quoted}
-                unquotedMakes={unquoted}
+                allMakes={allMakes}
             />
         </>
     );
@@ -67,6 +59,3 @@ export default function PreciosPageWrapper() {
     </Suspense>
   );
 }
-
-// Dummy vehicleDatabase to avoid breaking the build, will be replaced by the real one.
-const vehicleDatabase: { make: string }[] = [];
