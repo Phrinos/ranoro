@@ -1,10 +1,12 @@
 
 "use client";
 import React from 'react';
+import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { AnimatedDiv } from './AnimatedDiv';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@iconify/react';
+import { Button } from '@/components/ui/button';
 
 const testimonials = [
     { quote: "Precio justo y me explicaron todo el proceso. Muy transparentes.", author: "Carlos M." },
@@ -63,6 +65,14 @@ export function TestimonialsSection() {
                         </AnimatedDiv>
                     ))}
                 </div>
+                <AnimatedDiv className="text-center mt-12">
+                    <Button asChild size="lg" variant="outline">
+                        <Link href="https://share.google/oBweULXW1ADrwdoY8" target="_blank" rel="noopener noreferrer">
+                            <Icon icon="logos:google-icon" className="mr-2 h-5 w-5"/>
+                            Ver más reseñas en Google
+                        </Link>
+                    </Button>
+                </AnimatedDiv>
                  <div className="mt-16 pt-10 border-t border-gray-200 flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
                     <Badge variant="secondary" className="px-4 py-2 text-base">15+ años de experiencia</Badge>
                     <Badge variant="secondary" className="px-4 py-2 text-base">5,000+ vehículos atendidos</Badge>
