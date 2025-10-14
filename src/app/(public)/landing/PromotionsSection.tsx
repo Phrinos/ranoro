@@ -4,13 +4,18 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AnimatedDiv } from './AnimatedDiv';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { capitalizeWords } from '@/lib/utils';
 
 export function PromotionsSection() {
+    const currentMonthAndYear = capitalizeWords(format(new Date(), "MMMM yyyy", { locale: es }));
+
     return (
         <section id="promotions" className="py-20 md:py-28 bg-background">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimatedDiv className="text-center max-w-3xl mx-auto">
-                  <h2 className="text-3xl md:text-4xl font-extrabold">Promociones del Mes</h2>
+                  <h2 className="text-3xl md:text-4xl font-extrabold">Promociones del Mes de {currentMonthAndYear}</h2>
                   <p className="mt-4 text-lg text-muted-foreground">
                     Aprovecha nuestros precios especiales en servicios esenciales para mantener tu auto en perfecto estado.
                   </p>
