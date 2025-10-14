@@ -1,9 +1,10 @@
+
 "use client";
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AnimatedDiv } from './AnimatedDiv';
-import { MapPin, Clock, CreditCard, Phone, MessageSquare } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 function LocationSection() {
     return (
@@ -14,16 +15,16 @@ function LocationSection() {
                         <h2 className="text-3xl font-extrabold">Visítanos o Contáctanos</h2>
                         <p className="mt-4 text-muted-foreground">Estamos listos para atenderte.</p>
                         <div className="mt-8 space-y-4 text-lg">
-                            <div className="flex items-center gap-4"><MapPin className="h-6 w-6 text-primary"/><p>Av. de la Convencion de 1914 Sur #1421, Jardines de la Convencion, 20267, Aguascalientes, Aguascalientes.</p></div>
-                            <div className="flex items-center gap-4"><Clock className="h-6 w-6 text-primary"/><p>Lunes a Viernes: 8:30 AM – 5:30 PM | Sábados: 8:30 AM - 1:30 PM</p></div>
-                            <div className="flex items-center gap-4"><CreditCard className="h-6 w-6 text-primary"/><p>Aceptamos: Efectivo, Tarjeta, Transferencia</p></div>
+                            <div className="flex items-center gap-4"><Icon icon="mdi:map-marker-outline" className="h-6 w-6 text-primary"/><p>Av. de la Convencion de 1914 Sur #1421, Jardines de la Convencion, 20267, Aguascalientes, Aguascalientes.</p></div>
+                            <div className="flex items-center gap-4"><Icon icon="mdi:clock-outline" className="h-6 w-6 text-primary"/><p>Lunes a Viernes: 8:30 AM – 5:30 PM | Sábados: 8:30 AM - 1:30 PM</p></div>
+                            <div className="flex items-center gap-4"><Icon icon="mdi:credit-card-outline" className="h-6 w-6 text-primary"/><p>Aceptamos: Efectivo, Tarjeta, Transferencia</p></div>
                         </div>
                         <div className="mt-8 flex gap-4">
                              <Button size="lg" asChild className="bg-green-500 hover:bg-green-600 text-white">
-                                <Link href="https://wa.me/524491425323?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer"><MessageSquare className="mr-2 h-5 w-5"/> Agendar por WhatsApp</Link>
+                                <Link href="https://wa.me/524491425323?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer"><Icon icon="logos:whatsapp-icon" className="mr-2 h-5 w-5"/> Agendar por WhatsApp</Link>
                             </Button>
                              <Button size="lg" variant="outline" asChild>
-                                <Link href="tel:4491425323"><Phone className="mr-2 h-5 w-5"/> Llamar ahora</Link>
+                                <Link href="tel:4491425323"><Icon icon="mdi:phone-outline" className="mr-2 h-5 w-5"/> Llamar ahora</Link>
                             </Button>
                         </div>
                     </AnimatedDiv>

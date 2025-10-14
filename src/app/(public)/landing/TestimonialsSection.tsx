@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { AnimatedDiv } from './AnimatedDiv';
 import { Badge } from '@/components/ui/badge';
-import { Star } from 'lucide-react';
+import { Icon } from '@iconify/react';
 
 const testimonials = [
     {
@@ -34,11 +34,11 @@ export function TestimonialsSection() {
                             <Card className="border-l-4 border-primary h-full">
                                 <CardContent className="p-6">
                                     <div className="flex gap-1 text-yellow-400 mb-2">
-                                        <Star fill="currentColor" className="h-5 w-5"/>
-                                        <Star fill="currentColor" className="h-5 w-5"/>
-                                        <Star fill="currentColor" className="h-5 w-5"/>
-                                        <Star fill="currentColor" className="h-5 w-5"/>
-                                        <Star fill="currentColor" className="h-5 w-5"/>
+                                        <Icon icon="mdi:star" className="h-5 w-5"/>
+                                        <Icon icon="mdi:star" className="h-5 w-5"/>
+                                        <Icon icon="mdi:star" className="h-5 w-5"/>
+                                        <Icon icon="mdi:star" className="h-5 w-5"/>
+                                        <Icon icon="mdi:star" className="h-5 w-5"/>
                                     </div>
                                     <p className="text-lg italic text-muted-foreground">“{testimonial.quote}”</p>
                                     <p className="mt-4 font-semibold">— {testimonial.author}</p>

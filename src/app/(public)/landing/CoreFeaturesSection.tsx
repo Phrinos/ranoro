@@ -5,13 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AnimatedDiv } from './AnimatedDiv';
 import { Icon } from '@iconify/react';
-import { Wrench, Package, DollarSign, Truck } from 'lucide-react';
 
 const features = [
-    { name: "Gestión de Servicios", icon: Wrench, description: "Desde la cita hasta la facturación, todo en un solo flujo de trabajo." },
-    { name: "Control de Inventario", icon: Package, description: "Maneja tu stock, proveedores y compras de forma inteligente." },
-    { name: "Finanzas Claras", icon: DollarSign, description: "Reportes de ingresos y rentabilidad para tomar decisiones informadas." },
-    { name: "Módulo de Flotillas", icon: Truck, description: "Administra rentas, pagos y mantenimientos de tus flotillas de vehículos." },
+    { name: "Gestión de Servicios", icon: "mdi:wrench-cog-outline", description: "Desde la cita hasta la facturación, todo en un solo flujo de trabajo." },
+    { name: "Control de Inventario", icon: "mdi:package-variant-closed-check", description: "Maneja tu stock, proveedores y compras de forma inteligente." },
+    { name: "Finanzas Claras", icon: "mdi:finance", description: "Reportes de ingresos y rentabilidad para tomar decisiones informadas." },
+    { name: "Módulo de Flotillas", icon: "mdi:truck-check-outline", description: "Administra rentas, pagos y mantenimientos de tus flotillas de vehículos." },
 ];
 
 export function CoreFeaturesSection() {
@@ -26,7 +25,7 @@ export function CoreFeaturesSection() {
                 <AnimatedDiv key={feature.name}>
                   <Card className="h-full">
                     <CardHeader>
-                      <feature.icon className="h-10 w-10 text-primary mb-2"/>
+                      <Icon icon={feature.icon} className="h-12 w-12 text-primary mb-2"/>
                       <CardTitle>{feature.name}</CardTitle>
                     </CardHeader>
                     <CardContent>
