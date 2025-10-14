@@ -28,6 +28,10 @@ export function Footer() {
                     <div><h4 className="font-semibold tracking-wider uppercase text-sm">Nosotros</h4><ul className="mt-4 space-y-3"><li><Link href="#why-ranoro" className="text-gray-400 hover:text-white">¿Por qué Ranoro?</Link></li><li><Link href="#location" className="text-gray-400 hover:text-white">Ubicación</Link></li></ul></div>
                     <div><h4 className="font-semibold tracking-wider uppercase text-sm">Legal</h4><ul className="mt-4 space-y-3"><li><Link href="/legal/terminos" className="text-gray-400 hover:text-white">Términos</Link></li><li><Link href="/legal/privacidad" className="text-gray-400 hover:text-white">Privacidad</Link></li></ul></div>
                 </div>
+                <div className="mt-8 border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
+                    <p>© 2025 Servicio Profesional Ranoro Taller. Todos los derechos reservados.</p>
+                    <p>Desarrollado por <a href="https://valdelamar.com.mx" target="_blank" rel="noopener noreferrer" className="hover:text-white">Arturo Valdelamar</a></p>
+                </div>
             </div>
         </footer>
     );
