@@ -1,27 +1,19 @@
-
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
-import type { ServiceRecord, Vehicle, User, PurchaseRecommendation, WorkshopInfo, InventoryItem } from '@/types';
+import React, { useState, useEffect, useCallback } from 'react';
+import type { ServiceRecord, PurchaseRecommendation, WorkshopInfo, InventoryItem } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShoppingCart, AlertTriangle, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
 import { serviceService, inventoryService } from '@/lib/services';
-import { isToday, parseISO, isValid } from 'date-fns';
-import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+import { isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { parseDate } from '@/lib/forms';
 import { useTableManager } from '@/hooks/useTableManager';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import { PurchaseOrderContent } from './components/purchase-order-content';
+import { PurchaseOrderContent } from './purchase-order-content';
 import ReactDOMServer from 'react-dom/server';
-import { MensajeriaPageContent } from '../administracion/components/mensajeria-content';
-
-
-const AnalisisIaContent = lazy(() => import('@/app/(app)/ai/components/analisis-ia-content').then(module => ({ default: module.AnalisisIaContent })));
-
 
 const handleAiError = (error: any, toast: any, context: string): string => {
     console.error(`AI Error in ${context}:`, error);
@@ -34,7 +26,7 @@ const handleAiError = (error: any, toast: any, context: string): string => {
 };
 
 
-function AsistenteComprasContent() {
+export default function AsistenteComprasContent() {
     const { toast } = useToast();
     const [purchaseRecommendations, setPurchaseRecommendations] = useState<PurchaseRecommendation[] | null>(null);
     const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
@@ -65,7 +57,7 @@ function AsistenteComprasContent() {
         try {
             const servicesForToday = allServices.filter(s => {
                 const serviceDay = parseDate(s.serviceDate);
-                return serviceDay && isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Entregado' && s.status !== 'Cancelado';
+                return serviceDay && isToday(serviceDay) && s.status !== 'Entregado' && s.status !== 'Cancelado';
             });
 
             if (servicesForToday.length === 0) {
@@ -127,61 +119,13 @@ function AsistenteComprasContent() {
                     open={isPurchaseOrderDialogOpen}
                     onOpenChange={setIsPurchaseOrderDialogOpen}
                     title="Orden de Compra Sugerida por IA"
-                    documentType="text"
-                    textContent={ReactDOMServer.renderToString(
-                        <PurchaseOrderContent
-                            recommendations={purchaseRecommendations}
-                            workshopInfo={workshopInfo}
-                        />
-                    )}
-                />
+                >
+                    <PurchaseOrderContent
+                        recommendations={purchaseRecommendations}
+                        workshopInfo={workshopInfo}
+                    />
+                </UnifiedPreviewDialog>
             )}
         </>
     );
-}
-
-
-export default function AiPageComponent({ tab }: { tab?: string }) {
-  const defaultTab = tab || 'inventario';
-  const [activeTab, setActiveTab] = useState(defaultTab);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setIsLoading(true);
-    const unsubs = [
-      inventoryService.onItemsUpdate((items) => {
-          setInventoryItems(items);
-      }),
-      serviceService.onServicesUpdate((services) => {
-          setServiceRecords(services);
-          setIsLoading(false);
-      })
-    ];
-    return () => unsubs.forEach(unsub => unsub());
-  }, []);
-
-  const tabs = [
-    { value: 'inventario', label: 'Análisis de Inventario', content: (
-        isLoading 
-            ? <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
-// @ts-expect-error: The props for the lazy-loaded component are not correctly inferred.
-            : <AnalisisIaContent inventoryItems={inventoryItems} serviceRecords={serviceRecords} />
-    ) },
-    { value: 'compras', label: 'Asistente de Compras', content: <AsistenteComprasContent /> },
-    { value: 'mensajeria', label: 'Mensajería y Notificaciones', content: <MensajeriaPageContent /> },
-  ];
-
-  return (
-    <>
-      <TabbedPageLayout
-        title="I.A."
-        description="Herramientas inteligentes para optimizar las operaciones de tu taller."
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        tabs={tabs}
-      />
-    </> 
-  );
 }
