@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ShieldAlert, Edit, CalendarCheck, Trash2 } from "lucide-react";
+import { ShieldAlert, Edit, CalendarCheck, Trash2, ArrowLeft } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -190,6 +190,12 @@ export default function VehicleDetailPage() {
       <PageHeader
         title={`${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}`}
         description={`ID Vehículo: ${vehicle.id}`}
+        actions={
+            <Button variant="outline" onClick={() => router.back()}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Volver
+            </Button>
+        }
       />
 
       <Tabs defaultValue="details" className="w-full">
