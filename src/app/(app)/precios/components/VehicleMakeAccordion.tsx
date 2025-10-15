@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import vehicleDatabase from '@/lib/data/vehicle-database.json';
-import { VehicleModelAccordion } from './VehicleModelAccordion'; // Importar el nuevo componente
+import { VehicleModelAccordion } from './VehicleModelAccordion';
 
 interface VehicleMakeAccordionProps {
   make: string;
