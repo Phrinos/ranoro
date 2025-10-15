@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 import { CalendarIcon } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -49,6 +50,13 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
     const current = Number(currentMileage || 0);
     setMileage(current + km);
   };
+  
+  const onCalendarChange = (newDate: Date | Date[] | null) => {
+    if (newDate && !Array.isArray(newDate)) {
+      setDate(newDate);
+      setIsCalendarOpen(false);
+    }
+  };
 
   return (
     <Card>
@@ -73,14 +81,10 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(d: any) => {
-                    setDate(d);
-                    setIsCalendarOpen(false);
-                  }}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
+                  onChange={onCalendarChange}
+                  value={date}
+                  minDate={new Date()}
+                  locale="es-MX"
                 />
               </PopoverContent>
             </Popover>
