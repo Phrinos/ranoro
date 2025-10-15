@@ -7,12 +7,17 @@ import type { ServiceRecord, User } from '@/types';
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, isValid, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { cn, formatCurrency } from "@/lib/utils";
-import type { DateRange } from "react-day-picker";
 import { serviceService, adminService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from "@/components/ui/badge";
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
+
+
+interface DateRange {
+  from: Date | undefined;
+  to?: Date | undefined;
+}
 
 const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | "black" => {
     const lowerCaseRole = role.toLowerCase();

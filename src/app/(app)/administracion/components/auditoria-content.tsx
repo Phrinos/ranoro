@@ -12,11 +12,16 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { format, isWithinInterval, startOfDay, endOfDay, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { DateRange } from 'react-day-picker';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { adminService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { Loader2 } from 'lucide-react';
+
+
+interface DateRange {
+  from: Date | undefined;
+  to?: Date | undefined;
+}
 
 export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] }) {
   const [logs, setLogs] = useState<AuditLog[]>(initialLogs);

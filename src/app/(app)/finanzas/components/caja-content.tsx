@@ -3,7 +3,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { DateRange } from "react-day-picker";
 import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
@@ -26,6 +25,12 @@ import { useToast } from '@/hooks/use-toast';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
+
+
+interface DateRange {
+  from: Date | undefined;
+  to?: Date | undefined;
+}
 
 const cashTransactionSchema = z.object({
   description: z.string().min(3, "La descripción debe tener al menos 3 caracteres."),

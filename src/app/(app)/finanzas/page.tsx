@@ -9,10 +9,14 @@ import { Loader2, Users, Shield, TrendingUp, BookOpen, DatabaseZap } from 'lucid
 import { adminService, inventoryService, serviceService, saleService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
-import { DateRange } from 'react-day-picker';
 import { startOfMonth, endOfMonth, isWithinInterval, isValid, getDaysInMonth, differenceInDays } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { calcEffectiveProfit } from '@/lib/money-helpers';
+
+interface DateRange {
+  from: Date | undefined;
+  to?: Date | undefined;
+}
 
 const MovimientosContent = lazy(() => import('./components/movimientos-content'));
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));

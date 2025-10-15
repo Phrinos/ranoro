@@ -1,9 +1,8 @@
-// src/app/(app)/finanzas/components/movimientos-content.tsx
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import type { DateRange } from "react-day-picker";
 import type {
   SaleReceipt,
   ServiceRecord,
@@ -37,6 +36,12 @@ import { parseDate } from "@/lib/forms";
 import { cashService } from "@/lib/services/cash.service";
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+
+interface DateRange {
+  from: Date | undefined;
+  to?: Date | undefined;
+}
 
 // --- Tipos UI ---
 type MovementOrigin = "payment" | "ledger";
