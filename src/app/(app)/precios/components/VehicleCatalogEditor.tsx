@@ -80,6 +80,7 @@ function toFormDoc(make: string, data: any | null): MakeDocForm {
 
   const models: ModelForm[] = rawModels.map((m: any) => {
     const gensRaw = Array.isArray(m?.generations) ? m.generations : [];
+
     const gens: GenerationForm[] = (
       gensRaw.length
         ? gensRaw
@@ -106,6 +107,7 @@ function toFormDoc(make: string, data: any | null): MakeDocForm {
 
   return { make, models };
 }
+
 
 function toFirestoreDoc(form: MakeDocForm) {
   return {
@@ -279,7 +281,6 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                           }
                           className="h-8 w-[280px]"
                         />
-                        <Badge variant="outline">{gens.length} gen.</Badge>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -299,11 +300,11 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
                                     <span className="font-semibold">
-                                      {from || to ? `${from ?? "?"} - ${to ?? "?"}` : "Generación"}
+                                      Años:
                                     </span>
                                     <div className="flex items-center gap-2">
                                       <Input
-                                        placeholder="Desde (año)"
+                                        placeholder="Desde"
                                         inputMode="numeric"
                                         className="h-8 w-[120px]"
                                         value={from ?? ""}
@@ -315,8 +316,9 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                                           )
                                         }
                                       />
+                                      <span className="text-muted-foreground">-</span>
                                       <Input
-                                        placeholder="Hasta (año)"
+                                        placeholder="Hasta"
                                         inputMode="numeric"
                                         className="h-8 w-[120px]"
                                         value={to ?? ""}
@@ -340,6 +342,7 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                                       <PlusCircle className="mr-2 h-4 w-4" />
                                       Añadir motor
                                     </Button>
+                                    {gens.length > 1 && (
                                     <Button
                                       type="button"
                                       variant="ghost"
@@ -348,6 +351,7 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                                     >
                                       <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
+                                    )}
                                   </div>
                                 </div>
 
@@ -403,7 +407,7 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                             onClick={() => appendGeneration(mi)}
                           >
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Añadir generación
+                            Añadir Rango de Años
                           </Button>
                           <Button
                             type="button"
