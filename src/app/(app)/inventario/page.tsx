@@ -1,5 +1,6 @@
 
 // src/app/(app)/inventario/page.tsx
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from "react";
@@ -53,12 +54,12 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { PurchaseFormValues } from './components/register-purchase-dialog';
+import type { PurchaseFormValues } from './compras/components/register-purchase-dialog';
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 
 
 // Lazy load dialogs that are not immediately visible
-const RegisterPurchaseDialog = dynamic(() => import('./components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
+const RegisterPurchaseDialog = dynamic(() => import('./compras/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = dynamic(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
 const InventoryReportContent = dynamic(() => import('./components/inventory-report-content').then(module => ({ default: module.default })));
 
@@ -93,6 +94,12 @@ const itemSortOptions = [
   { value: "quantity_desc", label: "Stock (Mayor a Menor)" },
   { value: "sellingPrice_desc", label: "Precio Venta (Mayor a Menor)" },
 ];
+
+const getSortPriority = (item: InventoryItem) => {
+    if (item.isService) return 3;
+    if (item.quantity <= item.lowStockThreshold) return 1;
+    return 2;
+};
 
 const ProductosContent = ({
   inventoryItems,
@@ -641,6 +648,7 @@ const CategoriasContent = ({
   );
 };
 
+
 // --- Página principal ---
 function InventarioPage() {
   const searchParams = useSearchParams();
@@ -904,4 +912,3 @@ function InventarioPageWrapper() {
   );
 }
 export default InventarioPageWrapper;
-

@@ -53,11 +53,11 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Operaciones
   { label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones', permissions: ['pos:view_sales'] },
   { label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', permissions: ['inventory:view_public_info'] },
-  { label: 'Compras', path: '/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:manage'] },
+  { label: 'Compras', path: '/inventario/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:manage'] },
   
   // Finanzas (Nueva Categoría)
   { label: 'Finanzas', path: '/finanzas', icon: Wallet, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
-  { label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
+  { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
 
   // Opciones
   { label: 'I.A.', path: '/ai', icon: BrainCircuit, groupTag: 'Opciones', permissions: ['dashboard:view'] },
@@ -107,7 +107,7 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
 
-    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/proveedores', '/compras', '/finanzas', '/personal', '/opciones', '/facturacion-admin', '/administracion', '/ai', '/flotilla', '/reportes', '/precios'];
+    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/inventario/proveedores', '/inventario/compras', '/finanzas', '/personal', '/opciones', '/facturacion-admin', '/ai', '/flotilla', '/reportes', '/precios'];
     
     if (parentRoutes.includes(cleanEntryPath) && cleanPathname.startsWith(cleanEntryPath)) {
         if (cleanPathname === cleanEntryPath) {
