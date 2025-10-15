@@ -1,19 +1,17 @@
 // src/app/(app)/precios/components/VehicleCatalogEditor.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, FormProvider, useFieldArray, useFormContext } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { nanoid } from "nanoid";
 
 import { db } from "@/lib/firebaseClient";
-import { doc, onSnapshot, setDoc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
 
-import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -109,6 +107,60 @@ function toFirestoreDoc(form: MakeDocForm) {
 /* ============================
    Subcomponentes
    ============================ */
+
+function ModelAccordionItem({
+  model,
+  modelIdx,
+  removeModel,
+  openEngineDialog,
+}: {
+  model: ModelForm;
+  modelIdx: number;
+  removeModel: (index: number) => void;
+  openEngineDialog: (modelIdx: number, genIdx: number, engIdx: number) => void;
+}) {
+  const { control, watch } = useFormContext<MakeDocForm>();
+  const { fields, append, remove } = useFieldArray({ control, name: `models.${modelIdx}.generations` });
+  const modelName = watch(`models.${modelIdx}.name`);
+
+  return (
+    <AccordionItem key={model.id} value={model.id} className="border-b-0 rounded-lg bg-card overflow-hidden">
+      <AccordionTrigger className="text-lg font-semibold px-4 py-3 hover:no-underline">
+        <div className="flex items-center gap-3 w-full">
+          <Input
+            value={modelName ?? ""}
+            onChange={(e) => control.setValue(`models.${modelIdx}.name`, e.target.value, { shouldDirty: true })}
+            className="h-8 w-full max-w-xs bg-white"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <Badge variant="outline">{fields.length} gen.</Badge>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="p-4 pt-2">
+        <div className="space-y-4">
+          {fields.map((generation, genIdx) => (
+            <GenerationBlock
+              key={generation.id}
+              modelIdx={modelIdx}
+              genIdx={genIdx}
+              removeGeneration={remove}
+              openEngineDialog={openEngineDialog}
+            />
+          ))}
+          <div className="flex items-center gap-2 pt-4 mt-4 border-t">
+            <Button type="button" variant="outline" onClick={() => append({ id: nanoid(), engines: [] })}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Añadir Rango de Años
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => removeModel(modelIdx)}>
+              <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Eliminar Modelo
+            </Button>
+          </div>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  );
+}
+
 function GenerationBlock({
   modelIdx,
   genIdx,
@@ -198,71 +250,17 @@ function GenerationBlock({
   );
 }
 
-function ModelAccordionItem({
-  model,
-  modelIdx,
-  removeModel,
-  openEngineDialog,
-}: {
-  model: ModelForm;
-  modelIdx: number;
-  removeModel: (index: number) => void;
-  openEngineDialog: (modelIdx: number, genIdx: number, engIdx: number) => void;
-}) {
-  const { control, watch, setValue } = useFormContext<MakeDocForm>();
-  const { fields, append, remove } = useFieldArray({ control, name: `models.${modelIdx}.generations` });
-  const modelName = watch(`models.${modelIdx}.name`);
-
-  return (
-    <AccordionItem key={model.id} value={model.id} className="border-b-0 rounded-lg bg-card overflow-hidden">
-      <AccordionTrigger className="text-lg font-semibold px-4 py-3 hover:no-underline">
-        <div className="flex items-center gap-3 w-full">
-          <Input
-            value={modelName ?? ""}
-            onChange={(e) => setValue(`models.${modelIdx}.name`, e.target.value, { shouldDirty: true })}
-            className="h-8 w-full max-w-xs bg-white"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <Badge variant="outline">{fields.length} gen.</Badge>
-        </div>
-      </AccordionTrigger>
-      <AccordionContent className="p-4 pt-2">
-        <div className="space-y-4">
-          {fields.map((generation, genIdx) => (
-            <GenerationBlock
-              key={generation.id}
-              modelIdx={modelIdx}
-              genIdx={genIdx}
-              removeGeneration={remove}
-              openEngineDialog={openEngineDialog}
-            />
-          ))}
-          <div className="flex items-center gap-2 pt-4 mt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => append({ id: nanoid(), engines: [] })}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Añadir Rango de Años
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => removeModel(modelIdx)}>
-              <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Eliminar Modelo
-            </Button>
-          </div>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-  );
-}
-
 /* ============================
    Editor principal
    ============================ */
 export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
   const { toast } = useToast();
   const methods = useForm<MakeDocForm>({
-    resolver: zodResolver(makeDocFormSchema),
     defaultValues: { make, models: [] },
     mode: "onBlur",
   });
 
-  const { control, reset, handleSubmit, getValues, setValue } = methods;
+  const { control, reset, getValues, setValue } = methods;
   const { fields, append, remove } = useFieldArray({ control, name: "models", keyName: "k" });
 
   const [engineEditor, setEngineEditor] = useState<{
@@ -273,7 +271,6 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
     data?: EngineData;
   }>({ open: false });
 
-  // Live data
   useEffect(() => {
     const ref = doc(db, VEHICLE_COLLECTION, make);
     const unsub = onSnapshot(
@@ -284,10 +281,11 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
     return () => unsub();
   }, [make, reset]);
 
-  const onSaveAll = async (form: MakeDocForm) => {
-    console.log("[onSaveAll] Form data:", form);
+  const handleSave = async () => {
+    const formValues = getValues();
+    console.log("[onSaveAll] Form data:", formValues);
     try {
-      const payload = stripUndefinedDeep(toFirestoreDoc(form));
+      const payload = stripUndefinedDeep(toFirestoreDoc(formValues));
       console.log("[onSaveAll] Payload to send:", payload);
       await setDoc(doc(db, VEHICLE_COLLECTION, make), payload, { merge: true });
       toast({ description: "Catálogo actualizado correctamente." });
@@ -312,7 +310,7 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSaveAll)} className="space-y-4">
+      <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Modelos de {make}</h2>
           <div className="flex items-center gap-2">
