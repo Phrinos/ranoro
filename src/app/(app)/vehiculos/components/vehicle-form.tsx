@@ -1,3 +1,4 @@
+
 // src/app/(app)/vehiculos/components/vehicle-form.tsx
 "use client";
 
@@ -94,7 +95,8 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
         if (!watchedMake || !watchedModel || !watchedYear) return [];
         const makeData = vehicleDb.find(db => db.make === watchedMake);
         const modelData = makeData?.models.find(m => m.name === watchedModel);
-        const generation = modelData?.generations.find(g => watchedYear >= g.startYear && watchedYear <= g.endYear);
+        const year = watchedYear;
+        const generation = modelData?.generations.find(g => year >= g.startYear && year <= g.endYear);
         return generation ? generation.engines.sort((a, b) => a.name.localeCompare(b.name)) : [];
     }, [watchedMake, watchedModel, watchedYear, vehicleDb]);
 
@@ -173,3 +175,4 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
     
   );
 }
+

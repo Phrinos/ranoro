@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from "react";
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import {
@@ -57,9 +58,9 @@ import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 
 
 // Lazy load dialogs that are not immediately visible
-const RegisterPurchaseDialog = lazy(() => import('./components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
-const InventoryItemDialog = lazy(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
-const InventoryReportContent = lazy(() => import('./components/inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
+const RegisterPurchaseDialog = dynamic(() => import('./components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
+const InventoryItemDialog = dynamic(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
+const InventoryReportContent = dynamic(() => import('./components/inventory-report-content').then(module => ({ default: module.default })));
 
 
 // --- DashboardCards Component Logic (Integrated) ---
@@ -903,3 +904,4 @@ function InventarioPageWrapper() {
   );
 }
 export default InventarioPageWrapper;
+
