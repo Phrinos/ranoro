@@ -91,56 +91,9 @@ function toFirestoreDoc(form: MakeDocForm) {
   };
 }
 
-// Sub-component for managing generations
-function GenerationBlock({ modelIdx, genIdx, removeGeneration }: { modelIdx: number; genIdx: number; removeGeneration: (index: number) => void; }) {
-  const { control, getValues, setValue, watch } = useFormContext<MakeDocForm>();
-  const { fields: enginesFA, append, remove } = useFieldArray({ control, name: `models.${modelIdx}.generations.${genIdx}.engines` });
-
-  const startYear = watch(`models.${modelIdx}.generations.${genIdx}.startYear`);
-  const endYear = watch(`models.${modelIdx}.generations.${genIdx}.endYear`);
-
-  const openEngineDialog = (engineIndex: number) => {
-    const formValues = getValues();
-    if((formValues as any).openEngineDialog) {
-        (formValues as any).openEngineDialog(modelIdx, genIdx, engineIndex);
-    }
-  };
-
-  return (
-    <div className="space-y-3 border-l-2 pl-4 ml-2">
-      <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-              <span className="font-semibold text-sm">
-                  Rango: {startYear || to ? `${startYear ?? "?"} - ${endYear ?? "?"}` : "Generación"}
-              </span>
-              <div className="flex items-center gap-2">
-                  <Input placeholder="Desde (año)" inputMode="numeric" className="h-8 w-[120px] bg-white" value={startYear ?? ""} onChange={e => setValue(`models.${modelIdx}.generations.${genIdx}.startYear`, e.target.value === '' ? undefined : Number(e.target.value))} />
-                  <Input placeholder="Hasta (año)" inputMode="numeric" className="h-8 w-[120px] bg-white" value={endYear ?? ""} onChange={e => setValue(`models.${modelIdx}.generations.${genIdx}.endYear`, e.target.value === '' ? undefined : Number(e.target.value))} />
-              </div>
-          </div>
-          <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => append({ name: "Nuevo Motor" })}><PlusCircle className="mr-2 h-4 w-4" />Añadir motor</Button>
-              <Button type="button" variant="ghost" size="icon" onClick={() => removeGeneration(genIdx)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-          </div>
-      </div>
-      <ul className="list-disc pl-6 space-y-2">
-          {enginesFA.map((e, ei) => (
-              <li key={e.id} className="flex items-center gap-3">
-                  <Input className="h-8 w-[260px] bg-white" value={watch(`models.${modelIdx}.generations.${genIdx}.engines.${ei}.name`) ?? ""} onChange={ev => setValue(`models.${modelIdx}.generations.${genIdx}.engines.${ei}.name`, ev.target.value, { shouldDirty: true })} />
-                  <Button type="button" variant="secondary" size="sm" onClick={() => openEngineDialog(ei)}> <Settings className="mr-2 h-4 w-4" /> Detalles </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => remove(ei)}> <Trash2 className="h-4 w-4 text-destructive" /> </Button>
-              </li>
-          ))}
-          {enginesFA.length === 0 && <li className="text-sm text-muted-foreground">No hay motores. Agrega uno.</li>}
-      </ul>
-      <Separator />
-    </div>
-  );
-}
-
 // Componente para un solo modelo en el acordeón
 function ModelAccordionItem({ model, modelIdx, removeModel }: { model: ModelForm; modelIdx: number; removeModel: (index: number) => void; }) {
-    const { control, watch, setValue } = useFormContext<MakeDocForm>();
+    const { control, watch } = useFormContext<MakeDocForm>();
     const { fields, append, remove } = useFieldArray({ control, name: `models.${modelIdx}.generations` });
     const modelName = watch(`models.${modelIdx}.name`);
 
@@ -148,7 +101,7 @@ function ModelAccordionItem({ model, modelIdx, removeModel }: { model: ModelForm
         <AccordionItem key={model.id} value={model.id} className="border-b-0 rounded-lg bg-card overflow-hidden">
             <AccordionTrigger className="text-lg font-semibold px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-3 w-full">
-                    <Input value={modelName ?? ""} onChange={(e) => setValue(`models.${modelIdx}.name`, e.target.value)} className="h-8 w-full max-w-xs bg-white" onClick={(e) => e.stopPropagation()} />
+                    <Input value={modelName ?? ""} onChange={(e) => control.setValue(`models.${modelIdx}.name`, e.target.value)} className="h-8 w-full max-w-xs bg-white" onClick={(e) => e.stopPropagation()} />
                     <Badge variant="outline">{fields.length} gen.</Badge>
                 </div>
             </AccordionTrigger>
@@ -167,8 +120,56 @@ function ModelAccordionItem({ model, modelIdx, removeModel }: { model: ModelForm
     );
 }
 
+
+// Componente para una sola generación (rango de años)
+function GenerationBlock({ modelIdx, genIdx, removeGeneration }: { modelIdx: number; genIdx: number; removeGeneration: (index: number) => void; }) {
+    const { control, getValues, setValue, watch } = useFormContext<MakeDocForm>();
+    const { fields: enginesFA, append, remove } = useFieldArray({ control, name: `models.${modelIdx}.generations.${genIdx}.engines` });
+
+    const startYear = watch(`models.${modelIdx}.generations.${genIdx}.startYear`);
+    const endYear = watch(`models.${modelIdx}.generations.${genIdx}.endYear`);
+
+    const openEngineDialog = (engineIndex: number) => {
+      const formValues = getValues();
+      if((formValues as any).openEngineDialog) {
+          (formValues as any).openEngineDialog(modelIdx, genIdx, engineIndex);
+      }
+    };
+
+    return (
+      <div className="space-y-3 border-l-2 pl-4 ml-2">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <span className="font-semibold text-sm">
+                    Rango: {startYear || endYear ? `${startYear ?? "?"} - ${endYear ?? "?"}` : "Generación"}
+                </span>
+                <div className="flex items-center gap-2">
+                    <Input placeholder="Desde (año)" inputMode="numeric" className="h-8 w-[120px] bg-white" value={startYear ?? ""} onChange={e => setValue(`models.${modelIdx}.generations.${genIdx}.startYear`, e.target.value === '' ? undefined : Number(e.target.value))} />
+                    <Input placeholder="Hasta (año)" inputMode="numeric" className="h-8 w-[120px] bg-white" value={endYear ?? ""} onChange={e => setValue(`models.${modelIdx}.generations.${genIdx}.endYear`, e.target.value === '' ? undefined : Number(e.target.value))} />
+                </div>
+            </div>
+            <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: "Nuevo Motor" })}><PlusCircle className="mr-2 h-4 w-4" />Añadir motor</Button>
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeGeneration(genIdx)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+            </div>
+        </div>
+        <ul className="list-disc pl-6 space-y-2">
+            {enginesFA.map((e, ei) => (
+                <li key={e.id} className="flex items-center gap-3">
+                    <Input className="h-8 w-[260px] bg-white" value={watch(`models.${modelIdx}.generations.${genIdx}.engines.${ei}.name`) ?? ""} onChange={ev => setValue(`models.${modelIdx}.generations.${genIdx}.engines.${ei}.name`, ev.target.value, { shouldDirty: true })} />
+                    <Button type="button" variant="secondary" size="sm" onClick={() => openEngineDialog(ei)}> <Settings className="mr-2 h-4 w-4" /> Detalles </Button>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(ei)}> <Trash2 className="h-4 w-4 text-destructive" /> </Button>
+                </li>
+            ))}
+            {enginesFA.length === 0 && <li className="text-sm text-muted-foreground">No hay motores. Agrega uno.</li>}
+        </ul>
+        <Separator />
+      </div>
+    );
+  }
+
 // Componente principal del editor de catálogo
-export function VehicleCatalogEditor({ make }: { make: string }) {
+export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
   const { toast } = useToast();
   const methods = useForm<MakeDocForm>({ resolver: zodResolver(makeDocFormSchema), defaultValues: { make, models: [] }, mode: "onBlur" });
   const { control, reset, handleSubmit, getValues, setValue } = methods;
