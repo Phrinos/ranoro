@@ -54,6 +54,16 @@ const servicioCostoSchema = z.object({
   precioPublico: numberCoercion,
 });
 
+const afinacionIntegralSchema = servicioCostoSchema.extend({
+  upgrades: z.object({
+    conAceiteSintetico: numberCoercion,
+    conAceiteMobil: numberCoercion,
+    conBujiasPlatino: numberCoercion,
+    conBujiasIridio: numberCoercion,
+  }).optional(),
+});
+
+
 export const engineDataSchema = z.object({
   name: z.string(),
   insumos: z.object({
@@ -68,7 +78,7 @@ export const engineDataSchema = z.object({
     inyector: inyectorSchema,
   }),
   servicios: z.object({
-    afinacionIntegral: servicioCostoSchema,
+    afinacionIntegral: afinacionIntegralSchema,
     cambioAceite: servicioCostoSchema,
     balatasDelanteras: servicioCostoSchema,
     balatasTraseras: servicioCostoSchema,

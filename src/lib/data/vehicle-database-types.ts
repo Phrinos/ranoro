@@ -39,10 +39,19 @@ interface Inyector {
 }
 
 // --- Tipos para Servicios Estandarizados ---
+interface AfinacionUpgrades {
+    conAceiteSintetico: number;
+    conAceiteMobil: number;
+    conBujiasPlatino: number;
+    conBujiasIridio: number;
+}
+
 interface ServicioCosto {
     costoInsumos: number;
     precioPublico: number;
+    upgrades?: Partial<AfinacionUpgrades>;
 }
+
 
 // --- Estructura principal ---
 export interface InsumosData {

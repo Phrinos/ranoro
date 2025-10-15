@@ -77,6 +77,14 @@ export function VehicleEngineAccordion({ engine, onSave }: VehicleEngineAccordio
                         <h4 className="font-bold text-sm mb-2">Servicios</h4>
                         <Separator />
                         <ServiceItem label="Afinación Integral" cost={servicios.afinacionIntegral.costoInsumos} price={servicios.afinacionIntegral.precioPublico} />
+                        {servicios.afinacionIntegral.upgrades && (
+                            <div className="pl-4 text-xs space-y-1">
+                                <DetailItem label="+ Aceite Sintético" value={formatCurrency(servicios.afinacionIntegral.upgrades.conAceiteSintetico)} />
+                                <DetailItem label="+ Aceite Mobil" value={formatCurrency(servicios.afinacionIntegral.upgrades.conAceiteMobil)} />
+                                <DetailItem label="+ Bujías Platino" value={formatCurrency(servicios.afinacionIntegral.upgrades.conBujiasPlatino)} />
+                                <DetailItem label="+ Bujías Iridio" value={formatCurrency(servicios.afinacionIntegral.upgrades.conBujiasIridio)} />
+                            </div>
+                        )}
                         <ServiceItem label="Cambio de Aceite" cost={servicios.cambioAceite.costoInsumos} price={servicios.cambioAceite.precioPublico} />
                         <ServiceItem label="Balatas Delanteras" cost={servicios.balatasDelanteras.costoInsumos} price={servicios.balatasDelanteras.precioPublico} />
                         <ServiceItem label="Balatas Traseras" cost={servicios.balatasTraseras.costoInsumos} price={servicios.balatasTraseras.precioPublico} />

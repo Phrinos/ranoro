@@ -1,4 +1,4 @@
-
+// src/app/(app)/precios/components/EditEngineDataDialog.tsx
 "use client";
 
 import React from "react";
@@ -52,16 +52,12 @@ interface EditEngineDataDialogProps {
   onSave: (data: EngineData) => void;
 }
 
-const toNumber = (value: any): number => {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const num = Number(String(value).replace(/[^0-9.-]/g, ""));
-    return isNaN(num) ? 0 : num;
-  }
-  return 0;
+const toNumber = (value: any): number | undefined => {
+    if (value === "" || value === null || value === undefined) return undefined;
+    const n = Number(String(value).replace(/[^0-9.-]/g, ""));
+    return isNaN(n) ? undefined : n;
 };
 
-// Defaults seguros para evitar "uncontrolled to controlled" y mantener el formulario compacto
 const buildDefaults = (e: EngineData): EngineDataFormValues => ({
   name: e?.name ?? "",
   insumos: {
@@ -111,6 +107,12 @@ const buildDefaults = (e: EngineData): EngineDataFormValues => ({
     afinacionIntegral: {
       costoInsumos: e?.servicios?.afinacionIntegral?.costoInsumos ?? undefined,
       precioPublico: e?.servicios?.afinacionIntegral?.precioPublico ?? undefined,
+      upgrades: {
+        conAceiteSintetico: e?.servicios?.afinacionIntegral?.upgrades?.conAceiteSintetico ?? undefined,
+        conAceiteMobil: e?.servicios?.afinacionIntegral?.upgrades?.conAceiteMobil ?? undefined,
+        conBujiasPlatino: e?.servicios?.afinacionIntegral?.upgrades?.conBujiasPlatino ?? undefined,
+        conBujiasIridio: e?.servicios?.afinacionIntegral?.upgrades?.conBujiasIridio ?? undefined,
+      }
     },
     cambioAceite: {
       costoInsumos: e?.servicios?.cambioAceite?.costoInsumos ?? undefined,
@@ -155,7 +157,6 @@ export function EditEngineDataDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* overflow-hidden para que sólo el cuerpo scrollee */}
       <DialogContent className="max-w-3xl md:max-w-4xl p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-2 border-b bg-card/60 backdrop-blur">
           <DialogTitle className="text-base md:text-lg">
@@ -171,7 +172,6 @@ export function EditEngineDataDialog({
         <FormProvider {...methods}>
           <Form {...methods}>
             <form id="edit-engine-form" onSubmit={handleSubmit(processSubmit)}>
-              {/* El ScrollArea contiene todo el contenido para hacerlo compacto y desplazable */}
               <ScrollArea className="h-[70vh] md:h-[72vh] px-6 py-5">
                 <Accordion
                   type="multiple"
@@ -187,477 +187,57 @@ export function EditEngineDataDialog({
                       Insumos
                     </AccordionTrigger>
                     <AccordionContent className="space-y-5 pt-3">
-                      {/* Aceite */}
-                      <div className="space-y-3">
+                      {/* ... (Contenido de Insumos sin cambios) ... */}
+                       <div className="space-y-3">
                         <h4 className="font-semibold text-sm">Aceite</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <FormField
-                            control={control}
-                            name="insumos.aceite.grado"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Grado
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="10W30" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.aceite.litros"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Litros
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    placeholder="4.5"
-                                    onChange={(e) =>
-                                      field.onChange(toNumber(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.aceite.costoUnitario"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Costo/Litro
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    placeholder="150"
-                                    onChange={(e) =>
-                                      field.onChange(toNumber(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <FormField control={control} name="insumos.aceite.grado" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Grado</FormLabel><FormControl><Input {...field} placeholder="10W30" /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.aceite.litros" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Litros</FormLabel><FormControl><Input type="number" {...field} placeholder="4.5" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.aceite.costoUnitario" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Costo/Litro</FormLabel><FormControl><Input type="number" {...field} placeholder="150" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
                         </div>
                       </div>
-
                       <Separator />
-
-                      {/* Filtros */}
                       <div className="space-y-3">
                         <h4 className="font-semibold text-sm">Filtros</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                          <FormField
-                            control={control}
-                            name="insumos.filtroAceite.sku"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  SKU Filtro Aceite
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="W-123" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.filtroAceite.costoUnitario"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Costo Filtro Aceite
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    placeholder="120"
-                                    onChange={(e) =>
-                                      field.onChange(toNumber(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.filtroAire.sku"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  SKU Filtro Aire
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="A-456" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.filtroAire.costoUnitario"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Costo Filtro Aire
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    placeholder="180"
-                                    onChange={(e) =>
-                                      field.onChange(toNumber(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <FormField control={control} name="insumos.filtroAceite.sku" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">SKU Filtro Aceite</FormLabel><FormControl><Input {...field} placeholder="W-123" /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.filtroAceite.costoUnitario" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Costo Filtro Aceite</FormLabel><FormControl><Input type="number" {...field} placeholder="120" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.filtroAire.sku" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">SKU Filtro Aire</FormLabel><FormControl><Input {...field} placeholder="A-456" /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.filtroAire.costoUnitario" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Costo Filtro Aire</FormLabel><FormControl><Input type="number" {...field} placeholder="180" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
                         </div>
                       </div>
-
                       <Separator />
-
-                      {/* Balatas */}
                       <div className="space-y-3">
                         <h4 className="font-semibold text-sm">Balatas</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <FormField
-                            control={control}
-                            name="insumos.balatas.delanteras.modelo"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Modelo Delanteras
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="D1234" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.balatas.delanteras.tipo"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Tipo Delanteras
-                                </FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  value={field.value || undefined}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Seleccionar..." />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {balataTipos.map((t) => (
-                                      <SelectItem key={t} value={t}>
-                                        {capitalizeWords(t)}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.balatas.delanteras.costoJuego"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Costo Juego Delanteras
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    placeholder="650"
-                                    onChange={(e) =>
-                                      field.onChange(toNumber(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <FormField control={control} name="insumos.balatas.delanteras.modelo" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Modelo Delanteras</FormLabel><FormControl><Input {...field} placeholder="D1234" /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.balatas.delanteras.tipo" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Tipo Delanteras</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{balataTipos.map((t) => ( <SelectItem key={t} value={t}>{capitalizeWords(t)}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.balatas.delanteras.costoJuego" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Costo Juego Delanteras</FormLabel><FormControl><Input type="number" {...field} placeholder="650" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
                         </div>
-
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <FormField
-                            control={control}
-                            name="insumos.balatas.traseras.modelo"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Modelo Traseras
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="D5678" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.balatas.traseras.tipo"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Tipo Traseras
-                                </FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  value={field.value || undefined}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Seleccionar..." />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {balataTipos.map((t) => (
-                                      <SelectItem key={t} value={t}>
-                                        {capitalizeWords(t)}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.balatas.traseras.costoJuego"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Costo Juego Traseras
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    placeholder="620"
-                                    onChange={(e) =>
-                                      field.onChange(toNumber(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <FormField control={control} name="insumos.balatas.traseras.modelo" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Modelo Traseras</FormLabel><FormControl><Input {...field} placeholder="D5678" /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.balatas.traseras.tipo" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Tipo Traseras</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{balataTipos.map((t) => ( <SelectItem key={t} value={t}>{capitalizeWords(t)}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.balatas.traseras.costoJuego" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Costo Juego Traseras</FormLabel><FormControl><Input type="number" {...field} placeholder="620" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
                         </div>
                       </div>
-
                       <Separator />
-
-                      {/* Bujías */}
                       <div className="space-y-3">
                         <h4 className="font-semibold text-sm">Bujías</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                          <FormField
-                            control={control}
-                            name="insumos.bujias.cantidad"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Cantidad
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    placeholder="4"
-                                    onChange={(e) =>
-                                      field.onChange(toNumber(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.bujias.modelos.cobre"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  SKU Cobre
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="BKR5E-11" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.bujias.modelos.platino"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  SKU Platino
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="PFR5G-11" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.bujias.modelos.iridio"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  SKU Iridio
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="IK16" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <FormField control={control} name="insumos.bujias.cantidad" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Cantidad</FormLabel><FormControl><Input type="number" {...field} placeholder="4" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.bujias.modelos.cobre" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">SKU Cobre</FormLabel><FormControl><Input {...field} placeholder="BKR5E-11" /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.bujias.modelos.platino" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">SKU Platino</FormLabel><FormControl><Input {...field} placeholder="PFR5G-11" /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.bujias.modelos.iridio" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">SKU Iridio</FormLabel><FormControl><Input {...field} placeholder="IK16" /></FormControl><FormMessage /></FormItem> )}/>
                         </div>
-
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <FormField
-                            control={control}
-                            name="insumos.bujias.costoUnitario.cobre"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Costo Unit. Cobre
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    placeholder="80"
-                                    onChange={(e) =>
-                                      field.onChange(toNumber(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.bujias.costoUnitario.platino"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Costo Unit. Platino
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    placeholder="180"
-                                    onChange={(e) =>
-                                      field.onChange(toNumber(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="insumos.bujias.costoUnitario.iridio"
-                            render={({ field }) => (
-                              <FormItem className="space-y-1">
-                                <FormLabel className="text-xs">
-                                  Costo Unit. Iridio
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    {...field}
-                                    placeholder="250"
-                                    onChange={(e) =>
-                                      field.onChange(toNumber(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <FormField control={control} name="insumos.bujias.costoUnitario.cobre" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Costo Unit. Cobre</FormLabel><FormControl><Input type="number" {...field} placeholder="80" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.bujias.costoUnitario.platino" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Costo Unit. Platino</FormLabel><FormControl><Input type="number" {...field} placeholder="180" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                          <FormField control={control} name="insumos.bujias.costoUnitario.iridio" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Costo Unit. Iridio</FormLabel><FormControl><Input type="number" {...field} placeholder="250" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
                         </div>
                       </div>
-
                       <Separator />
-
-                      {/* Inyector */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <FormField
-                          control={control}
-                          name="insumos.inyector.tipo"
-                          render={({ field }) => (
-                            <FormItem className="space-y-1">
-                              <FormLabel className="text-xs">
-                                Tipo de Inyector
-                              </FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                value={field.value || undefined}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {inyectorTipos.map((t) => (
-                                    <SelectItem key={t} value={t}>
-                                      {t}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <FormField control={control} name="insumos.inyector.tipo" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Tipo de Inyector</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{inyectorTipos.map((t) => ( <SelectItem key={t} value={t}>{t}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -671,8 +251,24 @@ export function EditEngineDataDialog({
                       Servicios
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-3">
+                        {/* AFINACION INTEGRAL - CON NUEVA SECCION */}
+                        <div className="space-y-3 border-b pb-4">
+                            <h4 className="font-semibold text-sm">Afinación Integral</h4>
+                            <div className="grid grid-cols-2 gap-3">
+                                <FormField control={control} name="servicios.afinacionIntegral.costoInsumos" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Costo Insumos</FormLabel><FormControl><Input type="number" {...field} placeholder="850.00" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                                <FormField control={control} name="servicios.afinacionIntegral.precioPublico" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Precio Público</FormLabel><FormControl><Input type="number" {...field} placeholder="1200.00" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                            </div>
+                            <Separator className="my-3"/>
+                            <h5 className="font-semibold text-xs text-muted-foreground">Actualizaciones (Costo Adicional)</h5>
+                            <div className="grid grid-cols-2 gap-3">
+                                <FormField control={control} name="servicios.afinacionIntegral.upgrades.conAceiteSintetico" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Aceite Sintético</FormLabel><FormControl><Input type="number" {...field} placeholder="350" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                                <FormField control={control} name="servicios.afinacionIntegral.upgrades.conAceiteMobil" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Aceite Mobil</FormLabel><FormControl><Input type="number" {...field} placeholder="550" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                                <FormField control={control} name="servicios.afinacionIntegral.upgrades.conBujiasPlatino" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Bujías de Platino</FormLabel><FormControl><Input type="number" {...field} placeholder="400" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                                <FormField control={control} name="servicios.afinacionIntegral.upgrades.conBujiasIridio" render={({ field }) => ( <FormItem className="space-y-1"><FormLabel className="text-xs">Bujías de Iridio</FormLabel><FormControl><Input type="number" {...field} placeholder="700" onChange={(e) => field.onChange(toNumber(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
+                            </div>
+                        </div>
+
                       {[
-                        { name: "afinacionIntegral", label: "Afinación Integral" },
                         { name: "cambioAceite", label: "Cambio de Aceite" },
                         { name: "balatasDelanteras", label: "Balatas Delanteras" },
                         { name: "balatasTraseras", label: "Balatas Traseras" },
@@ -698,7 +294,7 @@ export function EditEngineDataDialog({
                                   <Input
                                     type="number"
                                     {...field}
-                                    placeholder="850.00"
+                                    placeholder="0.00"
                                     onChange={(e) =>
                                       field.onChange(toNumber(e.target.value))
                                     }
@@ -720,7 +316,7 @@ export function EditEngineDataDialog({
                                   <Input
                                     type="number"
                                     {...field}
-                                    placeholder="1200.00"
+                                    placeholder="0.00"
                                     onChange={(e) =>
                                       field.onChange(toNumber(e.target.value))
                                     }
@@ -737,7 +333,6 @@ export function EditEngineDataDialog({
                 </Accordion>
               </ScrollArea>
 
-              {/* Footer fijo */}
               <DialogFooter className="px-6 py-4 border-t bg-card/60 backdrop-blur">
                 <Button
                   type="button"
