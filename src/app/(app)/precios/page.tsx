@@ -11,8 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';
 import type { EngineData } from '@/lib/data/vehicle-database-types';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
+import { VEHICLE_COLLECTION } from '@/lib/vehicle-constants';
 
 function PreciosPageComponent() {
     const searchParams = useSearchParams();
@@ -37,13 +38,16 @@ function PreciosPageComponent() {
         if (!db) return toast({ title: "Error de conexión", variant: "destructive" });
     
         try {
-            const makeDoc = priceLists.find(m => m.make === makeName);
-            if (!makeDoc) throw new Error("Marca no encontrada");
-    
-            const modelIndex = makeDoc.models.findIndex((m: any) => m.name === modelName);
+            const makeDocRef = doc(db, VEHICLE_COLLECTION, makeName);
+            const makeDocSnap = await getDoc(makeDocRef);
+
+            if (!makeDocSnap.exists()) throw new Error("Marca no encontrada en la base de datos.");
+            const makeDocData = makeDocSnap.data();
+
+            const modelIndex = makeDocData.models.findIndex((m: any) => m.name === modelName);
             if (modelIndex === -1) throw new Error("Modelo no encontrado");
             
-            const updatedModels = [...makeDoc.models];
+            const updatedModels = [...makeDocData.models];
             const updatedGenerations = [...updatedModels[modelIndex].generations];
             const updatedEngines = [...updatedGenerations[generationIndex].engines];
             
@@ -51,8 +55,7 @@ function PreciosPageComponent() {
             updatedGenerations[generationIndex] = { ...updatedGenerations[generationIndex], engines: updatedEngines };
             updatedModels[modelIndex] = { ...updatedModels[modelIndex], generations: updatedGenerations };
             
-            const docRef = doc(db, 'vehicleData', makeName);
-            await setDoc(docRef, { models: updatedModels }, { merge: true });
+            await setDoc(makeDocRef, { models: updatedModels }, { merge: true });
     
             toast({ title: 'Guardado', description: `Se actualizaron los datos para ${updatedEngineData.name}.` });
         } catch (error) {

@@ -6,7 +6,8 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 import { VehicleModelAccordion } from './VehicleModelAccordion';
 import type { EngineData } from '@/lib/data/vehicle-database-types';
 import { db } from '@/lib/firebaseClient';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
 
 interface VehicleMakeAccordionProps {
   make: string;
@@ -22,33 +23,28 @@ interface Model {
     // other properties
 }
 
-
 export function VehicleMakeAccordion({ make, onEngineDataSave }: VehicleMakeAccordionProps) {
   const [makeData, setMakeData] = useState<MakeData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMakeData = async () => {
-      setLoading(true);
-      try {
-        const docRef = doc(db, 'vehicleData', make);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setMakeData(docSnap.data() as MakeData);
-        } else {
-          console.warn(`No vehicle data found for make: ${make}`);
-          setMakeData(null);
-        }
-      } catch (error) {
-        console.error(`Error fetching data for make ${make}:`, error);
+    setLoading(true);
+    const ref = doc(db, VEHICLE_COLLECTION, make);
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        setMakeData(snap.exists() ? (snap.data() as MakeData) : null);
+        setLoading(false);
+      },
+      (err) => {
+        console.error(`onSnapshot ${VEHICLE_COLLECTION}/${make}:`, err);
         setMakeData(null);
-      } finally {
         setLoading(false);
       }
-    };
-
-    fetchMakeData();
+    );
+    return () => unsub();
   }, [make]);
+
 
   const models = useMemo(() => {
     if (!makeData || !Array.isArray(makeData.models)) return [];

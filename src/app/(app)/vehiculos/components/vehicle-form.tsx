@@ -22,6 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { db } from "@/lib/firebaseClient";
 import { collection, getDocs } from 'firebase/firestore';
+import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
 
 // Tipos para la data que viene de Firestore
 interface VehicleMake {
@@ -66,7 +67,7 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
     const fetchVehicleData = async () => {
       setIsLoadingDb(true);
       try {
-        const querySnapshot = await getDocs(collection(db, "vehicleData"));
+        const querySnapshot = await getDocs(collection(db, VEHICLE_COLLECTION));
         const data = querySnapshot.docs.map(doc => ({ make: doc.id, ...doc.data() })) as VehicleMake[];
         setVehicleDb(data);
       } catch (error) {

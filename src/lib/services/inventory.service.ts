@@ -19,6 +19,7 @@ import { db } from '../firebaseClient';
 import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, VehiclePriceList, ServiceItem } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { nanoid } from 'nanoid';
+import { VEHICLE_COLLECTION } from '../vehicle-constants';
 
 // Generic function to get a document by ID from any collection
 const getDocById = async (collectionName: string, id: string): Promise<any> => {
@@ -346,7 +347,7 @@ const onPriceListsUpdate = (callback: (lists: VehiclePriceList[]) => void): (() 
 
 const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "vehicleData"));
+    const q = query(collection(db, VEHICLE_COLLECTION));
     return onSnapshot(q, (snapshot) => {
       callback(snapshot.docs.map(doc => ({ make: doc.id, ...doc.data() })));
     });
