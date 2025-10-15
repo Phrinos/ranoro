@@ -1,3 +1,4 @@
+
 // src/app/(app)/precios/components/EditEngineDataDialog.tsx
 "use client";
 
@@ -53,9 +54,15 @@ interface EditEngineDataDialogProps {
   onSave: (data: EngineData) => void;
 }
 
+// NUEVO: Helper para asegurar que los valores sean números o 0.
+const ensureNumber = (value: any): number => {
+  const num = Number(value);
+  return isNaN(num) ? 0 : num;
+};
+
+// Función `buildDefaults` robustecida para prevenir `undefined`.
 const buildDefaults = (e?: EngineData | null): EngineDataFormValues => {
     const data = e || {};
-    
     const ensureArray = (value: any) => Array.isArray(value) ? value : [];
 
     return {
@@ -63,65 +70,65 @@ const buildDefaults = (e?: EngineData | null): EngineDataFormValues => {
         insumos: {
             aceite: {
                 grado: data.insumos?.aceite?.grado ?? "",
-                litros: data.insumos?.aceite?.litros ?? 0,
-                costoUnitario: data.insumos?.aceite?.costoUnitario ?? 0,
+                litros: ensureNumber(data.insumos?.aceite?.litros),
+                costoUnitario: ensureNumber(data.insumos?.aceite?.costoUnitario),
                 lastUpdated: data.insumos?.aceite?.lastUpdated,
             },
             filtroAceite: {
                 sku: data.insumos?.filtroAceite?.sku ?? "",
-                costoUnitario: data.insumos?.filtroAceite?.costoUnitario ?? 0,
+                costoUnitario: ensureNumber(data.insumos?.filtroAceite?.costoUnitario),
                 lastUpdated: data.insumos?.filtroAceite?.lastUpdated,
             },
             filtroAire: {
                 sku: data.insumos?.filtroAire?.sku ?? "",
-                costoUnitario: data.insumos?.filtroAire?.costoUnitario ?? 0,
+                costoUnitario: ensureNumber(data.insumos?.filtroAire?.costoUnitario),
                 lastUpdated: data.insumos?.filtroAire?.lastUpdated,
             },
             balatas: {
-                delanteras: ensureArray(data.insumos?.balatas?.delanteras).map(b => ({ ...b, id: b.id || nanoid() })),
-                traseras: ensureArray(data.insumos?.balatas?.traseras).map(b => ({ ...b, id: b.id || nanoid() })),
+                delanteras: ensureArray(data.insumos?.balatas?.delanteras).map(b => ({ ...b, id: b.id || nanoid(), costoJuego: ensureNumber(b.costoJuego) })),
+                traseras: ensureArray(data.insumos?.balatas?.traseras).map(b => ({ ...b, id: b.id || nanoid(), costoJuego: ensureNumber(b.costoJuego) })),
                 lastUpdated: data.insumos?.balatas?.lastUpdated,
             },
             bujias: {
-                cantidad: data.insumos?.bujias?.cantidad ?? 0,
+                cantidad: ensureNumber(data.insumos?.bujias?.cantidad),
                 modelos: {
                     cobre: data.insumos?.bujias?.modelos?.cobre ?? "",
                     platino: data.insumos?.bujias?.modelos?.platino ?? "",
                     iridio: data.insumos?.bujias?.modelos?.iridio ?? "",
                 },
                 costoUnitario: {
-                    cobre: data.insumos?.bujias?.costoUnitario?.cobre ?? 0,
-                    platino: data.insumos?.bujias?.costoUnitario?.platino ?? 0,
-                    iridio: data.insumos?.bujias?.costoUnitario?.iridio ?? 0,
+                    cobre: ensureNumber(data.insumos?.bujias?.costoUnitario?.cobre),
+                    platino: ensureNumber(data.insumos?.bujias?.costoUnitario?.platino),
+                    iridio: ensureNumber(data.insumos?.bujias?.costoUnitario?.iridio),
                 },
                 lastUpdated: data.insumos?.bujias?.lastUpdated,
             },
             inyector: {
-                tipo: data.insumos?.inyector?.tipo ?? null,
+                tipo: (data.insumos?.inyector?.tipo as any) ?? null,
             },
         },
         servicios: {
             afinacionIntegral: {
-                costoInsumos: data.servicios?.afinacionIntegral?.costoInsumos ?? 0,
-                precioPublico: data.servicios?.afinacionIntegral?.precioPublico ?? 0,
+                costoInsumos: ensureNumber(data.servicios?.afinacionIntegral?.costoInsumos),
+                precioPublico: ensureNumber(data.servicios?.afinacionIntegral?.precioPublico),
                 upgrades: {
-                    conAceiteSintetico: data.servicios?.afinacionIntegral?.upgrades?.conAceiteSintetico ?? 0,
-                    conAceiteMobil: data.servicios?.afinacionIntegral?.upgrades?.conAceiteMobil ?? 0,
-                    conBujiasPlatino: data.servicios?.afinacionIntegral?.upgrades?.conBujiasPlatino ?? 0,
-                    conBujiasIridio: data.servicios?.afinacionIntegral?.upgrades?.conBujiasIridio ?? 0,
+                    conAceiteSintetico: ensureNumber(data.servicios?.afinacionIntegral?.upgrades?.conAceiteSintetico),
+                    conAceiteMobil: ensureNumber(data.servicios?.afinacionIntegral?.upgrades?.conAceiteMobil),
+                    conBujiasPlatino: ensureNumber(data.servicios?.afinacionIntegral?.upgrades?.conBujiasPlatino),
+                    conBujiasIridio: ensureNumber(data.servicios?.afinacionIntegral?.upgrades?.conBujiasIridio),
                 }
             },
             cambioAceite: {
-                costoInsumos: data.servicios?.cambioAceite?.costoInsumos ?? 0,
-                precioPublico: data.servicios?.cambioAceite?.precioPublico ?? 0,
+                costoInsumos: ensureNumber(data.servicios?.cambioAceite?.costoInsumos),
+                precioPublico: ensureNumber(data.servicios?.cambioAceite?.precioPublico),
             },
             balatasDelanteras: {
-                costoInsumos: data.servicios?.balatasDelanteras?.costoInsumos ?? 0,
-                precioPublico: data.servicios?.balatasDelanteras?.precioPublico ?? 0,
+                costoInsumos: ensureNumber(data.servicios?.balatasDelanteras?.costoInsumos),
+                precioPublico: ensureNumber(data.servicios?.balatasDelanteras?.precioPublico),
             },
             balatasTraseras: {
-                costoInsumos: data.servicios?.balatasTraseras?.costoInsumos ?? 0,
-                precioPublico: data.servicios?.balatasTraseras?.precioPublico ?? 0,
+                costoInsumos: ensureNumber(data.servicios?.balatasTraseras?.costoInsumos),
+                precioPublico: ensureNumber(data.servicios?.balatasTraseras?.precioPublico),
             },
         },
     };
@@ -144,8 +151,15 @@ export function EditEngineDataDialog({
     handleSubmit,
     formState: { isSubmitting },
     control,
+    reset
   } = methods;
   
+  useEffect(() => {
+    if (open) {
+      reset(buildDefaults(engineData));
+    }
+  }, [open, engineData, reset]);
+
   const { fields: fieldsDelanteras, append: appendDelantera, remove: removeDelantera } = useFieldArray({ control, name: "insumos.balatas.delanteras" });
   const { fields: fieldsTraseras, append: appendTrasera, remove: removeTrasera } = useFieldArray({ control, name: "insumos.balatas.traseras" });
 

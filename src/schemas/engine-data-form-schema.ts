@@ -1,10 +1,11 @@
+
 // src/schemas/engine-data-form-schema.ts
 import { z } from "zod";
 import { nanoid } from 'nanoid';
 
-// Permite string vacío o convierte a número, con fallback a 0 si es inválido.
+// Permite string vacío, y si no es un número válido, lo convierte a 0.
 const numberCoercion = z.preprocess((v) => {
-  if (v === "" || v === null || v === undefined) return 0; // Default a 0
+  if (v === "" || v === null || v === undefined) return 0;
   const n = Number(String(v).replace(/[^0-9.]/g, ""));
   return isNaN(n) ? 0 : n;
 }, z.coerce.number().nonnegative({ message: "Debe ser un número >= 0" }));
@@ -55,18 +56,20 @@ const inyectorSchema = z.object({
   tipo: z.enum(["Normal", "Piezoelectrico", "GDI"]).nullable().optional(),
 });
 
+const afinacionUpgradesSchema = z.object({
+    conAceiteSintetico: numberCoercion,
+    conAceiteMobil: numberCoercion,
+    conBujiasPlatino: numberCoercion,
+    conBujiasIridio: numberCoercion,
+});
+
 const servicioCostoSchema = z.object({
   costoInsumos: numberCoercion,
   precioPublico: numberCoercion,
 });
 
 const afinacionIntegralSchema = servicioCostoSchema.extend({
-  upgrades: z.object({
-    conAceiteSintetico: numberCoercion,
-    conAceiteMobil: numberCoercion,
-    conBujiasPlatino: numberCoercion,
-    conBujiasIridio: numberCoercion,
-  }).optional(),
+  upgrades: afinacionUpgradesSchema.optional(),
 });
 
 
