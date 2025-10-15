@@ -71,6 +71,7 @@ function VehiculosPage() {
   }, [allVehicles]);
 
   const handleSaveVehicle = async (data: VehicleFormValues, id?: string) => {
+    console.log("Guardando vehículo:", { data, id });
     try {
       await inventoryService.saveVehicle(data, id);
       toast({ title: `Vehículo ${id ? 'Actualizado' : 'Creado'}` });
@@ -160,7 +161,7 @@ function VehiculosPage() {
           </div>
         </TabsContent>
         <TabsContent value="database" className="mt-6">
-            <DatabaseManagementTab onVehicleSave={handleSaveVehicle} />
+            <DatabaseManagementTab />
         </TabsContent>
       </Tabs>
       
