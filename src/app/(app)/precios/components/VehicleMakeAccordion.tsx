@@ -31,7 +31,7 @@ export function VehicleMakeAccordion({ make, onEngineDataSave }: VehicleMakeAcco
     const fetchMakeData = async () => {
       setLoading(true);
       try {
-        const docRef = doc(db, 'vehiclePriceLists', make);
+        const docRef = doc(db, 'vehicleData', make);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setMakeData(docSnap.data() as MakeData);

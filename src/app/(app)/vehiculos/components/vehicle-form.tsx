@@ -1,4 +1,3 @@
-
 // src/app/(app)/vehiculos/components/vehicle-form.tsx
 "use client";
 
@@ -21,7 +20,7 @@ import { vehicleFormSchema, type VehicleFormValues } from '@/schemas/vehicle-for
 import { capitalizeWords } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebaseClient";
 import { collection, getDocs } from 'firebase/firestore';
 
 // Tipos para la data que viene de Firestore

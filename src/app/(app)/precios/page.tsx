@@ -22,7 +22,7 @@ function PreciosPageComponent() {
     
     useEffect(() => {
         setIsLoading(true);
-        const unsubscribe = inventoryService.onPriceListsUpdate((data) => {
+        const unsubscribe = inventoryService.onVehicleDataUpdate((data) => {
             setPriceLists(data);
             setIsLoading(false);
         });
@@ -30,14 +30,14 @@ function PreciosPageComponent() {
     }, []);
 
     const allMakes = useMemo(() => {
-        return [...new Set(priceLists.map((list) => list.id))].sort();
+        return [...new Set(priceLists.map((list) => list.make))].sort();
     }, [priceLists]);
     
     const handleEngineDataSave = async (makeName: string, modelName: string, generationIndex: number, engineIndex: number, updatedEngineData: EngineData) => {
         if (!db) return toast({ title: "Error de conexión", variant: "destructive" });
     
         try {
-            const makeDoc = priceLists.find(m => m.id === makeName);
+            const makeDoc = priceLists.find(m => m.make === makeName);
             if (!makeDoc) throw new Error("Marca no encontrada");
     
             const modelIndex = makeDoc.models.findIndex((m: any) => m.name === modelName);
@@ -51,7 +51,7 @@ function PreciosPageComponent() {
             updatedGenerations[generationIndex] = { ...updatedGenerations[generationIndex], engines: updatedEngines };
             updatedModels[modelIndex] = { ...updatedModels[modelIndex], generations: updatedGenerations };
             
-            const docRef = doc(db, 'vehiclePriceLists', makeName);
+            const docRef = doc(db, 'vehicleData', makeName);
             await setDoc(docRef, { models: updatedModels }, { merge: true });
     
             toast({ title: 'Guardado', description: `Se actualizaron los datos para ${updatedEngineData.name}.` });

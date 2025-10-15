@@ -346,7 +346,7 @@ const onPriceListsUpdate = (callback: (lists: VehiclePriceList[]) => void): (() 
 
 const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "vehiclePriceLists"));
+    const q = query(collection(db, "vehicleData"));
     return onSnapshot(q, (snapshot) => {
       callback(snapshot.docs.map(doc => ({ make: doc.id, ...doc.data() })));
     });
@@ -355,11 +355,11 @@ const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
 const savePriceList = async (data: Partial<VehiclePriceList>, id?: string): Promise<VehiclePriceList> => {
     if (!db) throw new Error("Database not initialized.");
     if (id) {
-        await updateDoc(doc(db, 'vehiclePriceLists', id), cleanObjectForFirestore(data));
-        const updatedDoc = await getDoc(doc(db, 'vehiclePriceLists', id));
+        await updateDoc(doc(db, 'vehicleData', id), cleanObjectForFirestore(data));
+        const updatedDoc = await getDoc(doc(db, 'vehicleData', id));
         return { ...updatedDoc.data(), id } as VehiclePriceList;
     } else {
-        const docRef = await addDoc(collection(db, 'vehiclePriceLists'), cleanObjectForFirestore(data));
+        const docRef = await addDoc(collection(db, 'vehicleData'), cleanObjectForFirestore(data));
         const newDoc = await getDoc(docRef);
         return { ...newDoc.data(), id: docRef.id } as VehiclePriceList;
     }
@@ -367,7 +367,7 @@ const savePriceList = async (data: Partial<VehiclePriceList>, id?: string): Prom
 
 const deletePriceList = async (id: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
-    await deleteDoc(doc(db, "vehiclePriceLists", id));
+    await deleteDoc(doc(db, "vehicleData", id));
 };
 
 
