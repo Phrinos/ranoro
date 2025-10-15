@@ -1,16 +1,15 @@
 // src/app/(app)/vehiculos/[id]/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 import { inventoryService, serviceService } from '@/lib/services';
-import type { Vehicle, ServiceRecord } from '@/types';
+import type { Vehicle, ServiceRecord, VehiclePriceList } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VehicleInfoCard } from '../components/VehicleInfoCard';
 import { VehicleDialog } from '../components/vehicle-dialog';
 import type { VehicleFormValues } from '../components/vehicle-form';
@@ -26,6 +25,10 @@ import { formatNumber, formatCurrency, getStatusInfo } from '@/lib/utils';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 import { useTableManager } from '@/hooks/useTableManager';
+import { MaintenanceCard } from '../../flotilla/components/MaintenanceCard';
+import { VehiclePricingCard } from '../components/VehiclePricingCard';
+import type { EngineData } from '@/lib/data/vehicle-database-types';
+
 
 const getServiceDescriptionText = (service: ServiceRecord) => {
     if (service.serviceItems && service.serviceItems.length > 0) {
@@ -98,6 +101,7 @@ export default function VehicleDetailPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
+  const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
@@ -119,9 +123,29 @@ export default function VehicleDetailPage() {
     
     fetchVehicle();
 
-    const unsubscribe = serviceService.onServicesForVehicleUpdate(vehicleId, setServices);
-    return () => unsubscribe();
+    const unsubscribeServices = serviceService.onServicesForVehicleUpdate(vehicleId, setServices);
+    const unsubscribePriceLists = inventoryService.onVehicleDataUpdate(setPriceLists);
+    
+    return () => {
+        unsubscribeServices();
+        unsubscribePriceLists();
+    };
   }, [vehicleId, toast]);
+  
+  const vehicleEngineData = useMemo(() => {
+    if (!vehicle || !vehicle.engine || priceLists.length === 0) return null;
+    
+    const makeData = priceLists.find(pl => pl.make === vehicle.make);
+    if (!makeData) return null;
+    
+    const modelData = makeData.models.find(m => m.name === vehicle.model);
+    if (!modelData) return null;
+    
+    const generationData = modelData.generations.find(g => vehicle.year >= g.startYear && vehicle.year <= g.endYear);
+    if (!generationData) return null;
+    
+    return generationData.engines.find(e => e.name === vehicle.engine) || null;
+  }, [vehicle, priceLists]);
 
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
     if (!vehicle) return;
@@ -172,9 +196,15 @@ export default function VehicleDetailPage() {
         }
       />
 
-      <div className="space-y-6">
-        <VehicleInfoCard vehicle={vehicle} onEdit={() => setIsEditDialogOpen(true)} />
-        <ServiceHistoryTable services={services} onRowClick={openServicePreview} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className="lg:col-span-2 space-y-6">
+            <VehicleInfoCard vehicle={vehicle} onEdit={() => setIsEditDialogOpen(true)} />
+            <ServiceHistoryTable services={services} onRowClick={openServicePreview} />
+        </div>
+        <div className="lg:col-span-1 space-y-6">
+            <MaintenanceCard vehicle={vehicle} />
+            {vehicleEngineData && <VehiclePricingCard engineData={vehicleEngineData} />}
+        </div>
       </div>
 
       <VehicleDialog
