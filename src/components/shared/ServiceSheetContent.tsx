@@ -2,7 +2,7 @@
 
 "use client";
 
-import type { QuoteRecord, WorkshopInfo, Vehicle, ServiceRecord, SafetyInspection, SafetyCheckValue } from '@/types';
+import type { WorkshopInfo, Vehicle, ServiceRecord, SafetyInspection, SafetyCheckValue } from '@/types';
 import { format, isValid, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo, useState } from 'react';

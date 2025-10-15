@@ -146,7 +146,7 @@ function FinanzasPage() {
     return (
       <TabbedPageLayout
         title="Finanzas"
-        description="Seguimiento de ingresos, egresos, y estado de caja."
+        description="Analiza los movimientos de ingresos, egresos y el estado de caja de tu taller."
         activeTab={activeTab}
         onTabChange={setActiveTab}
         tabs={tabs}

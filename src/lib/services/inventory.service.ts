@@ -339,16 +339,6 @@ const deleteFixedExpense = async (id: string): Promise<void> => {
   await deleteDoc(doc(db, "monthlyFixedExpenses", id));
 };
 
-// --- Price Lists (DEPRECATED, use onVehicleDataUpdate) ---
-const onPriceListsUpdate = (callback: (lists: VehiclePriceList[]) => void): (() => void) => {
-    if (!db) return () => {};
-    const q = query(collection(db, "vehiclePriceLists"));
-    return onSnapshot(q, (snapshot) => {
-        const lists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehiclePriceList));
-        callback(lists);
-    });
-};
-
 // --- Vehicle Data (New structure) ---
 const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
     if (!db) return () => {};
@@ -393,6 +383,5 @@ export const inventoryService = {
   onFixedExpensesUpdate,
   saveFixedExpense,
   deleteFixedExpense,
-  onPriceListsUpdate,
   onVehicleDataUpdate,
 };

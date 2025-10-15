@@ -89,7 +89,6 @@ async function denormalizeService(
   }
   if (technician) {
     serviceData.technicianName = technician.name || serviceData.technicianName || null;
-    // Note: Technician signature is usually not denormalized automatically
   }
 
   // 3. Financial Denormalization

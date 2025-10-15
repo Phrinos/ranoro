@@ -1,4 +1,4 @@
-// src/app/(app)/compras/components/register-purchase-dialog.tsx
+// src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -312,7 +312,6 @@ export function RegisterPurchaseDialog({
                               <PopoverContent className="w-auto p-0" align="start">
                                 <NewCalendar
                                   mode="single"
-                                  selected={field.value}
                                   onSelect={field.onChange}
                                   initialFocus
                                   locale={es}

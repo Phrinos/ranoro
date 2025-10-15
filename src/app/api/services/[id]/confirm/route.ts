@@ -21,7 +21,7 @@ export async function POST(req: Request, { params }: RouteCtx) {
     }
 
     // 1) Carga del servicio
-    const serviceDocRef = db.collection('serviceRecords').doc(publicId);
+    const serviceDocRef = doc(db, 'serviceRecords', publicId);
     const serviceSnap = await serviceDocRef.get();
 
     if (!serviceSnap.exists) {
@@ -51,7 +51,7 @@ export async function POST(req: Request, { params }: RouteCtx) {
     batch.update(serviceDocRef, updateData);
 
     // Si el doc público no existe, update fallaría -> usamos set con merge
-    const publicDocRef = db.collection('publicServices').doc(publicId);
+    const publicDocRef = doc(db, 'publicServices', publicId);
     batch.set(publicDocRef, updateData, { merge: true });
 
     await batch.commit();
