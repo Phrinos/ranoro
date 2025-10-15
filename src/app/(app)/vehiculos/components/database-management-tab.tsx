@@ -20,7 +20,7 @@ import type { Vehicle } from '@/types';
 interface EngineGeneration {
   startYear: number;
   endYear: number;
-  engines: string[];
+  engines: { name: string;[key: string]: any }[];
 }
 
 interface VehicleModel {
@@ -157,7 +157,7 @@ export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data:
                               <p className="font-semibold text-sm">{gen.startYear} - {gen.endYear}</p>
                               <ul className="list-disc pl-5 mt-1 text-sm text-muted-foreground">
                                   {gen.engines.map((engine, engineIndex) => (
-                                      <li key={engineIndex}>{engine}</li>
+                                      <li key={engineIndex}>{engine.name}</li>
                                   ))}
                               </ul>
                            </div>
