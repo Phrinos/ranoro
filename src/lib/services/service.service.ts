@@ -49,15 +49,13 @@ const buildVehicleIdentifier = (v: any | null | undefined) => {
 // --- DENORMALIZATION: Central function to enrich service data ---
 async function denormalizeService(
   base: any, 
-  allVehicles: Vehicle[], 
-  allUsers: User[]
 ): Promise<any> {
   const serviceData = { ...base };
 
   // 1. Vehicle Denormalization
   let vehicle = serviceData.vehicle || null;
   if (!vehicle && serviceData.vehicleId) {
-    vehicle = allVehicles.find((v: any) => v.id === serviceData.vehicleId) || null;
+    vehicle = await inventoryService.getVehicleById(serviceData.vehicleId) || null;
   }
   if (vehicle) {
     serviceData.vehicleIdentifier = buildVehicleIdentifier(vehicle);
@@ -66,29 +64,32 @@ async function denormalizeService(
   }
 
   // 2. User (Advisor/Technician) Denormalization
-  const byId = (uid: any) => allUsers.find((u: any) => String(u.id) === String(uid));
-  const norm = (s?: string) => (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, " ").trim();
-  const byName = (name?: string) => allUsers.find((u: any) => norm(u.name) === norm(name));
-
+  const getUser = async (id?: string, name?: string): Promise<User | null> => {
+    if (id) {
+        const userDoc = await adminService.getDocById('users', id);
+        if (userDoc) return userDoc as User;
+    }
+    if (name) {
+        const users = await adminService.onUsersUpdatePromise();
+        const normName = name.toLowerCase().trim();
+        return users.find(u => u.name.toLowerCase().trim() === normName) || null;
+    }
+    return null;
+  };
+  
   // Advisor
-  let advisor = serviceData.serviceAdvisorId ? byId(serviceData.serviceAdvisorId) : null;
-  if (!advisor && serviceData.serviceAdvisorName) {
-    advisor = byName(serviceData.serviceAdvisorName);
-    if (advisor) serviceData.serviceAdvisorId = advisor.id;
-  }
+  const advisor = await getUser(serviceData.serviceAdvisorId, serviceData.serviceAdvisorName);
   if (advisor) {
-    serviceData.serviceAdvisorName = advisor.name || serviceData.serviceAdvisorName || null;
-    serviceData.serviceAdvisorSignatureDataUrl = advisor.signatureDataUrl || serviceData.serviceAdvisorSignatureDataUrl || null;
+    serviceData.serviceAdvisorId = advisor.id;
+    serviceData.serviceAdvisorName = advisor.name;
+    serviceData.serviceAdvisorSignatureDataUrl = advisor.signatureDataUrl || null;
   }
 
   // Technician
-  let technician = serviceData.technicianId ? byId(serviceData.technicianId) : null;
-  if (!technician && serviceData.technicianName) {
-    technician = byName(serviceData.technicianName);
-    if (technician) serviceData.technicianId = technician.id;
-  }
+  const technician = await getUser(serviceData.technicianId, serviceData.technicianName);
   if (technician) {
-    serviceData.technicianName = technician.name || serviceData.technicianName || null;
+      serviceData.technicianId = technician.id;
+      serviceData.technicianName = technician.name;
   }
 
   // 3. Financial Denormalization
@@ -171,12 +172,6 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
     const isNew = !data.id;
     const serviceId = isNew ? doc(collection(db, 'serviceRecords')).id : (data.id as string);
   
-    // Fetch dependencies for denormalization
-    const [allVehicles, allUsers] = await Promise.all([
-      inventoryService.onVehiclesUpdatePromise(),
-      adminService.onUsersUpdatePromise()
-    ]);
-
     const serviceData: any = {
       ...data,
       id: serviceId,
@@ -185,7 +180,7 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
       createdAt: (data as any).createdAt?.toDate ? (data as any).createdAt : (data as any).createdAt || serverTimestamp(),
     };
     
-    const denormalizedData = await denormalizeService(serviceData, allVehicles, allUsers);
+    const denormalizedData = await denormalizeService(serviceData);
   
     const serviceRef = doc(db, 'serviceRecords', serviceId);
     const publicRef = doc(db, 'publicServices', denormalizedData.publicId);
@@ -312,8 +307,7 @@ const saveMigratedServices = async (services: ServiceRecord[], vehicles: Vehicle
     if (!db) throw new Error('Database not initialized.');
 
     const batch = writeBatch(db);
-    const allUsers = await adminService.onUsersUpdatePromise();
-
+    
     for (const vehicle of vehicles) {
         const vehicleRef = doc(db, 'vehicles', vehicle.id);
         batch.set(vehicleRef, cleanObjectForFirestore(vehicle));
@@ -321,7 +315,7 @@ const saveMigratedServices = async (services: ServiceRecord[], vehicles: Vehicle
 
     for (const service of services) {
         const serviceRef = doc(db, 'serviceRecords', service.id);
-        const denormalizedData = await denormalizeService(service, vehicles, allUsers);
+        const denormalizedData = await denormalizeService(service);
         batch.set(serviceRef, cleanObjectForFirestore(denormalizedData));
         
         const publicId = (service as any).publicId || service.id;

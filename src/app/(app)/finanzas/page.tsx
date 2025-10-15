@@ -20,7 +20,6 @@ interface DateRange {
 
 const MovimientosContent = lazy(() => import('./components/movimientos-content'));
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
-const CajaContent = lazy(() => import('./components/caja-content'));
 
 function FinanzasPage() {
     const searchParams = useSearchParams();
@@ -140,7 +139,6 @@ function FinanzasPage() {
           />
         </Suspense>
       )},
-      { value: "caja", label: "Caja", content: <Suspense fallback={<Loader2 className="animate-spin" />}><CajaContent /></Suspense> },
     ];
 
     return (

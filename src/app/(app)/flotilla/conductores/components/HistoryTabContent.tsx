@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency, cn } from '@/lib/utils';
-import { parseDate } from '@/lib/forms'; // <- FIX: aquí sí existe
+import { parseDate } from '@/lib/forms';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, PlusCircle, HandCoins, Printer, Copy, Share2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -146,8 +146,9 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
     setIsPaymentDialogOpen(false);
 
     if (!editingPayment) {
-      setSelectedPayment(savedPayment);
-      setIsTicketOpen(true);
+        setSelectedPayment(savedPayment);
+        // Retraso para dar tiempo a que se renderice el diálogo.
+        setTimeout(() => setIsTicketOpen(true), 100); 
     }
     setEditingPayment(null);
   };
@@ -424,7 +425,6 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
           open={isTicketOpen}
           onOpenChange={setIsTicketOpen}
           title="Ticket de Pago"
-          rentalPayment={selectedPayment}
           footerContent={
             <div className="flex w-full justify-end gap-2">
               <TooltipProvider>
