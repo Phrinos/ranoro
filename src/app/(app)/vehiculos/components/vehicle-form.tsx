@@ -172,7 +172,23 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
           <FormField control={form.control} name="chatMetaLink" render={({ field }) => ( <FormItem><FormLabel>Chat Meta (Opcional)</FormLabel><FormControl><Input placeholder="https://wa.me/..." {...field} className="bg-card"/></FormControl><FormMessage /></FormItem> )}/>
         </div>
 
-        <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notas Adicionales (Opcional)</FormLabel><FormControl><Textarea placeholder="Detalles importantes..." {...field} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notas Adicionales (Opcional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Detalles importantes..."
+                  {...field}
+                  className="bg-card"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </form>
     </Form>
   );
