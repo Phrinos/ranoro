@@ -36,10 +36,8 @@ const engineMiniSchema = z.object({
 
 const generationSchema = z.object({
   id: z.string(),
-  years: z.object({
-    from: z.preprocess((v) => (v === "" || v == null ? undefined : Number(v)), z.number().int().nonnegative().optional()),
-    to: z.preprocess((v) => (v === "" || v == null ? undefined : Number(v)), z.number().int().nonnegative().optional()),
-  }).partial().optional(),
+  startYear: z.preprocess((v) => (v === "" || v == null ? undefined : Number(v)), z.number().int().nonnegative().optional()),
+  endYear: z.preprocess((v) => (v === "" || v == null ? undefined : Number(v)), z.number().int().nonnegative().optional()),
   engines: z.array(engineMiniSchema),
 });
 
@@ -87,12 +85,8 @@ function toFormDoc(make: string, data: any | null): MakeDocForm {
         : (Array.isArray(m?.engines) ? [{ engines: m.engines }] : [])
     ).map((g: any) => ({
       id: g?.id ?? nanoid(),
-      years: g?.years
-        ? {
-            from: Number.isFinite(+g.years.from) ? +g.years.from : undefined,
-            to: Number.isFinite(+g.years.to) ? +g.years.to : undefined,
-          }
-        : undefined,
+      startYear: Number.isFinite(+g.startYear) ? +g.startYear : undefined,
+      endYear: Number.isFinite(+g.endYear) ? +g.endYear : undefined,
       engines: Array.isArray(g?.engines)
         ? g.engines.map((e: any) => ({ name: e?.name ?? "", ...e }))
         : [],
@@ -108,13 +102,13 @@ function toFormDoc(make: string, data: any | null): MakeDocForm {
   return { make, models };
 }
 
-
 function toFirestoreDoc(form: MakeDocForm) {
   return {
     models: form.models.map((m) => ({
       name: m.name,
       generations: m.generations.map((g) => ({
-        years: g.years && (g.years.from || g.years.to) ? g.years : undefined,
+        startYear: g.startYear,
+        endYear: g.endYear,
         engines: g.engines.map((e) => stripUndefinedDeep(e)),
       })),
     })),
@@ -181,14 +175,14 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
     modelsFA.append({
       id: nanoid(),
       name: "Nuevo modelo",
-      generations: [{ id: nanoid(), years: undefined, engines: [] }],
+      generations: [{ id: nanoid(), startYear: undefined, endYear: undefined, engines: [] }],
     });
   };
   const removeModel = (i: number) => modelsFA.remove(i);
 
   const appendGeneration = (modelIdx: number) => {
     const gens = [...(getValues(`models.${modelIdx}.generations`) || [])];
-    gens.push({ id: nanoid(), years: undefined, engines: [] });
+    gens.push({ id: nanoid(), startYear: undefined, endYear: undefined, engines: [] });
     setValue(`models.${modelIdx}.generations`, gens, { shouldDirty: true });
   };
   const removeGeneration = (modelIdx: number, genIdx: number) => {
@@ -281,6 +275,7 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                           }
                           className="h-8 w-[280px]"
                         />
+                        <Badge variant="outline">{gens.length} rangos de años</Badge>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -289,10 +284,10 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                           const engines =
                             watch(`models.${mi}.generations.${gi}.engines`) || [];
                           const from = watch(
-                            `models.${mi}.generations.${gi}.years.from`
+                            `models.${mi}.generations.${gi}.startYear`
                           );
                           const to = watch(
-                            `models.${mi}.generations.${gi}.years.to`
+                            `models.${mi}.generations.${gi}.endYear`
                           );
                           return (
                             <Card key={g.id}>
@@ -310,7 +305,7 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                                         value={from ?? ""}
                                         onChange={(e) =>
                                           setValue(
-                                            `models.${mi}.generations.${gi}.years.from`,
+                                            `models.${mi}.generations.${gi}.startYear`,
                                             e.target.value === "" ? undefined : Number(e.target.value),
                                             { shouldDirty: true }
                                           )
@@ -324,7 +319,7 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                                         value={to ?? ""}
                                         onChange={(e) =>
                                           setValue(
-                                            `models.${mi}.generations.${gi}.years.to`,
+                                            `models.${mi}.generations.${gi}.endYear`,
                                             e.target.value === "" ? undefined : Number(e.target.value),
                                             { shouldDirty: true }
                                           )
