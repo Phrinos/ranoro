@@ -6,7 +6,7 @@ import { Accordion } from "@/components/ui/accordion";
 import type { VehiclePriceList, EngineData } from '@/types';
 import { VehicleMakeAccordion } from './VehicleMakeAccordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { isBefore, subDays, parseISO } from 'date-fns';
+import { isBefore, subDays, parseISO, isValid } from 'date-fns';
 import { AlertTriangle } from 'lucide-react';
 
 interface VencimientosContentProps {
@@ -15,13 +15,17 @@ interface VencimientosContentProps {
 }
 
 const isOutdated = (dateString?: string) => {
-    if (!dateString) return true; // Si no hay fecha, se considera desactualizado
+    // Si NO hay fecha, NO está desactualizado porque nunca se ha establecido.
+    if (!dateString) return false; 
+    
     const ninetyDaysAgo = subDays(new Date(), 90);
     try {
         const date = parseISO(dateString);
-        return isBefore(date, ninetyDaysAgo);
+        // Debe ser una fecha válida Y anterior a 90 días.
+        return isValid(date) && isBefore(date, ninetyDaysAgo);
     } catch {
-        return true;
+        // Si hay un error al parsear, no se puede considerar vencido.
+        return false;
     }
 };
 
@@ -38,6 +42,8 @@ const getOutdatedEngines = (priceLists: VehiclePriceList[]) => {
                 const outdatedEnginesInGen: any[] = [];
                 gen.engines.forEach((engine: EngineData, engineIndex: any) => {
                     const insumos = engine.insumos;
+                    
+                    // Comprueba si CUALQUIERA de los insumos está vencido
                     const isAnyOutdated = 
                         isOutdated(insumos.aceite.lastUpdated) ||
                         isOutdated(insumos.filtroAceite.lastUpdated) ||
