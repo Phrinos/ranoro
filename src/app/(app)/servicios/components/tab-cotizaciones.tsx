@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/tab-cotizaciones.tsx
 "use client";
 
@@ -10,7 +9,6 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
-import { serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 
 interface CotizacionesTabContentProps {

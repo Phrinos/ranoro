@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/compras/page.tsx
 "use client";
 
@@ -18,9 +17,9 @@ import { inventoryService, purchaseService } from "@/lib/services";
 import { TabbedPageLayout } from "@/components/layout/tabbed-page-layout";
 import { Button } from "@/components/ui/button";
 import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
-import type { PurchaseFormValues } from "./components/register-purchase-dialog";
-import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
-import type { SupplierFormValues } from "@/schemas/supplier-form-schema";
+import type { PurchaseFormValues } from './components/register-purchase-dialog';
+import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
+import type { SupplierFormValues } from '@/schemas/supplier-form-schema';
 import { SuppliersTable } from "./components/suppliers-table";
 import { TableToolbar } from "@/components/shared/table-toolbar";
 import { useTableManager } from "@/hooks/useTableManager";
@@ -245,17 +244,11 @@ export default function ComprasUnificadasPage() {
     [toast]
   );
 
-  const handleInventoryItemCreatedFromPurchase = useCallback(
-    async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
+  const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
       const newItem = await inventoryService.addItem(formData);
-      toast({
-        title: "Producto Creado",
-        description: `"${newItem.name}" ha sido agregado al inventario.`,
-      });
+      toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
       return newItem;
-    },
-    [toast]
-  );
+  }, [toast]);
 
   if (isLoading) {
     return (

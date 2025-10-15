@@ -1,4 +1,4 @@
-
+// src/app/(app)/inventario/compras/components/supplier-dialog.tsx
 "use client";
 
 import React, { useState } from 'react';

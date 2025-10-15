@@ -1,4 +1,3 @@
-
 // src/components/layout/app-sidebar.tsx
 "use client";
 
@@ -107,7 +106,7 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
 
-    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/inventario/proveedores', '/inventario/compras', '/finanzas', '/personal', '/opciones', '/facturacion-admin', '/ai', '/flotilla', '/reportes', '/precios'];
+    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/inventario/proveedores', '/inventario/compras', '/finanzas', '/personal', '/opciones', '/facturacion', '/ai', '/flotilla', '/reportes', '/precios'];
     
     if (parentRoutes.includes(cleanEntryPath) && cleanPathname.startsWith(cleanEntryPath)) {
         if (cleanPathname === cleanEntryPath) {

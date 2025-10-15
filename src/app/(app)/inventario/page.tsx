@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/page.tsx
 
 "use client";
@@ -904,6 +903,7 @@ function InventarioPage() {
     </Suspense>
   );
 }
+
 function InventarioPageWrapper() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center h-64"><p>Cargando...</p></div>}>

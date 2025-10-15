@@ -77,7 +77,7 @@ export function TableToolbar({
             placeholder={searchPlaceholder}
             value={searchTerm ?? ''}
             onChange={(e) => onSearchTermChange(e.target.value)}
-            className="h-10 w-full pl-8 bg-white"
+            className="h-10 w-full pl-8 bg-card"
           />
         </div>
       )}
@@ -93,7 +93,7 @@ export function TableToolbar({
               defaultValue={current}
               onValueChange={(val) => handleFilterChange(block.value, val)}
             >
-              <SelectTrigger className="h-10 min-w-[10rem] w-full sm:w-auto bg-white">
+              <SelectTrigger className="h-10 min-w-[10rem] w-full sm:w-auto bg-card">
                 <SelectValue placeholder={block.label} />
               </SelectTrigger>
               <SelectContent>
@@ -115,7 +115,7 @@ export function TableToolbar({
         {/* Sort Options */}
         {sortOptions && onSortOptionChange && (
           <Select value={sortOption} onValueChange={onSortOptionChange}>
-            <SelectTrigger className="h-10 w-full sm:w-auto bg-white">
+            <SelectTrigger className="h-10 w-full sm:w-auto bg-card">
               <SelectValue placeholder="Ordenar por..." />
             </SelectTrigger>
             <SelectContent>
