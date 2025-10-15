@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Car, Wrench, AlertTriangle } from 'lucide-react';
 import { inventoryService } from '@/lib/services';
-import type { VehiclePriceList } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { AnimatedDiv } from '../landing/AnimatedDiv';
+import type { VehicleMake, EngineData } from '@/lib/data/vehicle-database-types';
 
 // Normaliza y capitaliza un string para consistencia.
 const normalizeString = (str?: string): string => {
@@ -24,75 +24,90 @@ function CotizadorPageComponent() {
   const searchParams = useSearchParams();
   const serviceQuery = searchParams.get('service');
   
-  const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
+  const [vehicleDb, setVehicleDb] = useState<VehicleMake[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [selectedMake, setSelectedMake] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>('');
+  const [selectedEngine, setSelectedEngine] = useState<string>('');
   const [selectedService, setSelectedService] = useState<string>(serviceQuery || '');
   
-  const [result, setResult] = useState<{ price: number; time: number; } | null>(null);
+  const [result, setResult] = useState<{ price: number; } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = inventoryService.onPriceListsUpdate((data) => {
-      setPriceLists(data);
+    const unsubscribe = inventoryService.onVehicleDataUpdate((data) => {
+      setVehicleDb(data as VehicleMake[]);
       setIsLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  const makes = useMemo(() => {
-    const uniqueMakes = [...new Set(priceLists.map(p => normalizeString(p.make)))];
-    return uniqueMakes.sort();
-  }, [priceLists]);
+  const makes = useMemo(() => vehicleDb.map(m => m.make).sort(), [vehicleDb]);
   
   const models = useMemo(() => {
     if (!selectedMake) return [];
-    return [...new Set(priceLists
-        .filter(p => normalizeString(p.make) === selectedMake)
-        .map(p => p.model))]
-        .sort();
-  }, [priceLists, selectedMake]);
+    const makeData = vehicleDb.find(m => m.make === selectedMake);
+    return makeData ? makeData.models.map(model => model.name).sort() : [];
+  }, [vehicleDb, selectedMake]);
 
   const years = useMemo(() => {
     if (!selectedModel) return [];
-    const allYears = priceLists
-      .filter(p => normalizeString(p.make) === selectedMake && p.model === selectedModel)
-      .flatMap(p => p.years);
-    return [...new Set(allYears)].sort((a, b) => b - a);
-  }, [priceLists, selectedMake, selectedModel]);
+    const makeData = vehicleDb.find(m => m.make === selectedMake);
+    const modelData = makeData?.models.find(m => m.name === selectedModel);
+    if (!modelData) return [];
+    const yearSet = new Set<number>();
+    modelData.generations.forEach(g => {
+      for (let y = g.startYear; y <= g.endYear; y++) yearSet.add(y);
+    });
+    return Array.from(yearSet).sort((a, b) => b - a);
+  }, [vehicleDb, selectedMake, selectedModel]);
   
-  const services = useMemo(() => {
+  const engines = useMemo(() => {
     if (!selectedYear) return [];
-    const allServices = priceLists
-        .filter(p => 
-            normalizeString(p.make) === selectedMake && 
-            p.model === selectedModel && 
-            p.years.includes(Number(selectedYear))
-        )
-        .flatMap(p => p.services.map(s => s.serviceName));
-    return [...new Set(allServices)].sort();
-  }, [priceLists, selectedMake, selectedModel, selectedYear]);
+    const makeData = vehicleDb.find(m => m.make === selectedMake);
+    const modelData = makeData?.models.find(m => m.name === selectedModel);
+    const year = Number(selectedYear);
+    const generation = modelData?.generations.find(g => year >= g.startYear && year <= g.endYear);
+    return generation ? generation.engines.map(e => e.name).sort() : [];
+  }, [vehicleDb, selectedMake, selectedModel, selectedYear]);
 
+  const services = useMemo(() => {
+    if (!selectedEngine) return [];
+    return [
+        { id: 'afinacionIntegral', name: 'Afinación Integral' },
+        { id: 'cambioAceite', name: 'Cambio de Aceite' },
+        { id: 'balatasDelanteras', name: 'Frenos Delanteros' },
+        { id: 'balatasTraseras', name: 'Frenos Traseros' },
+    ];
+  }, [selectedEngine]);
+  
   // Handlers para resetear selecciones dependientes
   const handleMakeChange = (make: string) => {
       setSelectedMake(make);
       setSelectedModel('');
       setSelectedYear('');
+      setSelectedEngine('');
       setSelectedService('');
       setResult(null);
   }
   const handleModelChange = (model: string) => {
       setSelectedModel(model);
       setSelectedYear('');
+      setSelectedEngine('');
       setSelectedService('');
       setResult(null);
   }
   const handleYearChange = (year: string) => {
       setSelectedYear(year);
+      setSelectedEngine('');
+      setSelectedService('');
+      setResult(null);
+  }
+  const handleEngineChange = (engine: string) => {
+      setSelectedEngine(engine);
       setSelectedService('');
       setResult(null);
   }
@@ -104,19 +119,20 @@ function CotizadorPageComponent() {
     setSearchError(null);
 
     setTimeout(() => {
-      const list = priceLists.find(p => 
-        normalizeString(p.make) === selectedMake && 
-        p.model === selectedModel && 
-        p.years.includes(Number(selectedYear))
-      );
-      const service = list?.services.find(s => s.serviceName === selectedService);
-      
-      if (service) {
-        setResult({ price: service.customerPrice, time: service.estimatedTimeHours || 2 });
-      } else {
-        setSearchError("No se encontró una cotización para los criterios seleccionados. Por favor, contáctanos directamente.");
-      }
-      setIsSearching(false);
+        const makeData = vehicleDb.find(m => m.make === selectedMake);
+        const modelData = makeData?.models.find(m => m.name === selectedModel);
+        const year = Number(selectedYear);
+        const generation = modelData?.generations.find(g => year >= g.startYear && year <= g.endYear);
+        const engineData = generation?.engines.find(e => e.name === selectedEngine);
+
+        const serviceInfo = (engineData?.servicios as any)?.[selectedService];
+
+        if (serviceInfo && serviceInfo.precioPublico) {
+            setResult({ price: serviceInfo.precioPublico });
+        } else {
+            setSearchError("No se encontró una cotización para los criterios seleccionados. Por favor, contáctanos directamente.");
+        }
+        setIsSearching(false);
     }, 1000);
   };
 
@@ -166,9 +182,13 @@ function CotizadorPageComponent() {
                                 <SelectTrigger><SelectValue placeholder={!selectedModel ? 'Primero elige un modelo' : 'Selecciona el Año...'} /></SelectTrigger>
                                 <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
                             </Select>
-                             <Select value={selectedService} onValueChange={setSelectedService} disabled={!selectedYear}>
-                                <SelectTrigger><SelectValue placeholder={!selectedYear ? 'Primero elige un año' : 'Selecciona el Servicio...'} /></SelectTrigger>
-                                <SelectContent>{services.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                             <Select value={selectedEngine} onValueChange={handleEngineChange} disabled={!selectedYear}>
+                                <SelectTrigger><SelectValue placeholder={!selectedYear ? 'Primero elige un año' : 'Selecciona el Motor...'} /></SelectTrigger>
+                                <SelectContent>{engines.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
+                            </Select>
+                             <Select value={selectedService} onValueChange={setSelectedService} disabled={!selectedEngine}>
+                                <SelectTrigger><SelectValue placeholder={!selectedEngine ? 'Primero elige un motor' : 'Selecciona el Servicio...'} /></SelectTrigger>
+                                <SelectContent>{services.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                             </Select>
                             <Button type="submit" className="w-full h-12 text-lg" disabled={!selectedService || isSearching}>
                                 {isSearching ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Buscando...</> : "Cotizar Ahora"}
@@ -181,7 +201,6 @@ function CotizadorPageComponent() {
                             <div className="mt-6 p-6 bg-green-50 border-2 border-dashed border-green-200 rounded-lg text-center">
                                 <h3 className="text-lg font-semibold text-green-800">Estimación de Costo</h3>
                                 <p className="text-4xl font-bold text-green-600 my-2">{formatCurrency(result.price)}</p>
-                                <p className="text-sm text-green-700">Tiempo estimado de servicio: {result.time} horas</p>
                                 <Button asChild className="mt-4"><Link href="https://wa.me/524491425323?text=Hola%2C%20me%20gustar%C3%ADa%20agendar%20una%20cita%20con%20la%20cotizaci%C3%B3n%20que%20obtuve.">Agendar por WhatsApp</Link></Button>
                             </div>
                          </AnimatedDiv>
