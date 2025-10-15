@@ -13,11 +13,12 @@ import Link from 'next/link';
 interface VehiclePricingCardProps {
   engineData: EngineData | null;
   make?: string;
+  onEdit?: () => void; // Acepta una función para manejar la edición
 }
 
 const DetailRow = ({ label, value }: { label: string; value?: string | number | null }) => (
   <div className="flex justify-between items-center text-xs">
-    <span className="text-muted-foreground">{label}</span>
+    <span className="text-muted-foreground">{label}:</span>
     <span className="font-semibold text-right">{value || 'N/A'}</span>
   </div>
 );
@@ -29,7 +30,7 @@ const ServiceRow = ({ label, price }: { label: string; price?: number | null }) 
     </div>
 );
 
-export function VehiclePricingCard({ engineData, make }: VehiclePricingCardProps) {
+export function VehiclePricingCard({ engineData, make, onEdit }: VehiclePricingCardProps) {
   if (!engineData) {
     return (
       <Card>
@@ -43,7 +44,7 @@ export function VehiclePricingCard({ engineData, make }: VehiclePricingCardProps
            {make && (
               <div className="mt-4 text-center">
                  <Button asChild variant="secondary" size="sm">
-                   <Link href={`/precios?make=${encodeURIComponent(make)}`}>
+                   <Link href={`/precios?tab=editor&make=${encodeURIComponent(make)}`}>
                       <Edit className="h-4 w-4 mr-2"/>
                       Gestionar Precios para {make}
                    </Link>
@@ -67,12 +68,10 @@ export function VehiclePricingCard({ engineData, make }: VehiclePricingCardProps
                 <CardTitle>Precios y Costos</CardTitle>
                 <CardDescription>Referencia para el motor <span className="font-semibold">{engineData.name}</span>.</CardDescription>
              </div>
-             {make && (
-                <Button asChild variant="outline" size="sm">
-                   <Link href={`/precios?make=${encodeURIComponent(make)}`}>
-                      <Edit className="h-4 w-4 mr-2"/>
-                      Editar
-                   </Link>
+             {onEdit && (
+                <Button variant="outline" size="sm" onClick={onEdit}>
+                   <Edit className="h-4 w-4 mr-2"/>
+                   Editar
                 </Button>
              )}
          </div>

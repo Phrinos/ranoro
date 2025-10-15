@@ -144,7 +144,7 @@ export function VehicleSelectionCard({
         
         await setDoc(doc(db, VEHICLE_COLLECTION, make), { models: updatedModels }, { merge: true });
 
-        toast({ title: "Datos del motor actualizados", description: "La lista de precios se ha guardado correctamente." });
+        toast({ title: 'Guardado', description: `Se actualizaron los datos para ${updatedEngineData.name}.` });
         setIsEngineEditDialogOpen(false);
     } catch (error) {
         console.error("Error saving engine data:", error);
