@@ -5,12 +5,14 @@ import React, { useMemo } from 'react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import vehicleDatabase from '@/lib/data/vehicle-database.json';
 import { VehicleModelAccordion } from './VehicleModelAccordion';
+import { EngineData } from '@/lib/data/vehicle-database-types';
 
 interface VehicleMakeAccordionProps {
   make: string;
+  onEngineDataSave: (make: string, model: string, generationIndex: number, engineIndex: number, data: EngineData) => void;
 }
 
-export function VehicleMakeAccordion({ make }: VehicleMakeAccordionProps) {
+export function VehicleMakeAccordion({ make, onEngineDataSave }: VehicleMakeAccordionProps) {
   const makeData = useMemo(() => vehicleDatabase.find(m => m.make === make), [make]);
   const models = useMemo(() => makeData?.models.sort((a, b) => a.name.localeCompare(b.name)) || [], [makeData]);
 
@@ -22,7 +24,12 @@ export function VehicleMakeAccordion({ make }: VehicleMakeAccordionProps) {
           {models.length > 0 ? (
              <Accordion type="multiple" className="w-full space-y-2">
                 {models.map(model => (
-                    <VehicleModelAccordion key={model.name} model={model} />
+                    <VehicleModelAccordion 
+                        key={model.name} 
+                        makeName={make}
+                        model={model}
+                        onEngineDataSave={onEngineDataSave}
+                    />
                 ))}
              </Accordion>
           ) : (

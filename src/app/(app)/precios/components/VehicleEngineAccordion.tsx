@@ -1,21 +1,25 @@
 // src/app/(app)/precios/components/VehicleEngineAccordion.tsx
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import type { EngineData } from '@/lib/data/vehicle-database-types';
+import { Button } from '@/components/ui/button';
+import { Edit } from 'lucide-react';
+import { EditEngineDataDialog } from './EditEngineDataDialog';
 
 interface VehicleEngineAccordionProps {
   engine: EngineData;
+  onSave: (updatedEngine: EngineData) => void;
 }
 
 const DetailItem = ({ label, value }: { label: string; value?: string | number | null }) => (
     <div className="flex justify-between text-xs">
         <span className="text-muted-foreground">{label}:</span>
-        <span className="font-medium">{value || 'N/A'}</span>
+        <span className="font-medium text-right">{value || 'N/A'}</span>
     </div>
 );
 
@@ -29,10 +33,17 @@ const ServiceItem = ({ label, cost, price }: { label: string; cost?: number; pri
     </div>
 );
 
-export function VehicleEngineAccordion({ engine }: VehicleEngineAccordionProps) {
+export function VehicleEngineAccordion({ engine, onSave }: VehicleEngineAccordionProps) {
   const { insumos, servicios } = engine;
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const handleSave = (updatedData: EngineData) => {
+    onSave(updatedData);
+    setIsEditDialogOpen(false);
+  };
 
   return (
+    <>
     <AccordionItem value={engine.name} className="border rounded-md px-3 bg-background">
         <AccordionTrigger className="text-xs font-semibold py-3 hover:no-underline">{engine.name}</AccordionTrigger>
         <AccordionContent className="p-1">
@@ -47,8 +58,8 @@ export function VehicleEngineAccordion({ engine }: VehicleEngineAccordionProps) 
                         <DetailItem label="Filtro de Aire SKU" value={insumos.filtroAire?.sku} />
                         <Separator />
                         <h5 className="font-semibold text-xs text-muted-foreground pt-1">Balatas</h5>
-                        <DetailItem label="Delanteras" value={`${insumos.balatas.delanteras.modelo} (${insumos.balatas.delanteras.tipo})`} />
-                        <DetailItem label="Traseras" value={`${insumos.balatas.traseras.modelo} (${insumos.balatas.traseras.tipo})`} />
+                        <DetailItem label="Delanteras" value={`${insumos.balatas.delanteras.modelo || 'N/A'} (${insumos.balatas.delanteras.tipo || 'N/A'})`} />
+                        <DetailItem label="Traseras" value={`${insumos.balatas.traseras.modelo || 'N/A'} (${insumos.balatas.traseras.tipo || 'N/A'})`} />
                          <Separator />
                         <h5 className="font-semibold text-xs text-muted-foreground pt-1">Bujías</h5>
                         <DetailItem label="Cantidad" value={insumos.bujias.cantidad} />
@@ -72,7 +83,20 @@ export function VehicleEngineAccordion({ engine }: VehicleEngineAccordionProps) 
                     </CardContent>
                 </Card>
             </div>
+             <div className="flex justify-end mt-4">
+                <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                    <Edit className="h-3 w-3 mr-2" />
+                    Editar Datos del Motor
+                </Button>
+            </div>
         </AccordionContent>
     </AccordionItem>
+    <EditEngineDataDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        engineData={engine}
+        onSave={handleSave}
+    />
+    </>
   );
 }

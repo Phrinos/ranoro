@@ -4,13 +4,15 @@
 import React from 'react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { VehicleEngineAccordion } from './VehicleEngineAccordion';
-import type { VehicleModel } from '@/lib/data/vehicle-database-types';
+import type { VehicleModel, EngineData } from '@/lib/data/vehicle-database-types';
 
 interface VehicleModelAccordionProps {
+  makeName: string;
   model: VehicleModel;
+  onEngineDataSave: (make: string, model: string, generationIndex: number, engineIndex: number, data: EngineData) => void;
 }
 
-export function VehicleModelAccordion({ model }: VehicleModelAccordionProps) {
+export function VehicleModelAccordion({ makeName, model, onEngineDataSave }: VehicleModelAccordionProps) {
   return (
     <AccordionItem value={model.name} className="border-b-0">
       <AccordionTrigger className="text-sm hover:no-underline">{model.name}</AccordionTrigger>
@@ -21,7 +23,11 @@ export function VehicleModelAccordion({ model }: VehicleModelAccordionProps) {
               <p className="font-semibold text-xs text-muted-foreground my-2">{generation.startYear} - {generation.endYear}</p>
               <Accordion type="multiple" className="w-full space-y-2">
                 {generation.engines.map((engine, engineIndex) => (
-                  <VehicleEngineAccordion key={engine.name} engine={engine} />
+                  <VehicleEngineAccordion 
+                    key={engine.name} 
+                    engine={engine}
+                    onSave={(updatedEngine) => onEngineDataSave(makeName, model.name, genIndex, engineIndex, updatedEngine)} 
+                  />
                 ))}
               </Accordion>
             </div>
