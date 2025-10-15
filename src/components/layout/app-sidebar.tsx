@@ -1,3 +1,4 @@
+
 // src/components/layout/app-sidebar.tsx
 "use client";
 
@@ -64,7 +65,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Opciones', path: '/opciones', icon: Settings, groupTag: 'Opciones', permissions: ['dashboard:view'] },
 ];
 
-const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Finanzas', 'Flotilla', 'Opciones'];
+const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Finanzas', 'Opciones'];
 
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
