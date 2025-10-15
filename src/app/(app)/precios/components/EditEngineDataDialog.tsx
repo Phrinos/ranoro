@@ -36,7 +36,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Save, PlusCircle, Trash2 } from "lucide-react";
-import type { EngineData, BalataInfo } from "@/lib/data/vehicle-database-types";
+import type { EngineData } from "@/lib/data/vehicle-database-types";
 import { capitalizeWords, formatCurrency } from "@/lib/utils";
 import {
   Accordion,
@@ -58,11 +58,16 @@ const toNumberOrEmpty = (value: any) => {
   if (value === "" || value === null || value === undefined) {
     return "";
   }
-  return Number(String(value).replace(/[^0-9.]/g, ""));
+  const n = Number(String(value).replace(/[^0-9.]/g, ""));
+  return isNaN(n) ? "" : n;
 };
 
 const buildDefaults = (e?: EngineData | null): EngineDataFormValues => {
     const data = e || {};
+    
+    // Función para asegurar que un valor es un array
+    const ensureArray = (value: any) => Array.isArray(value) ? value : [];
+
     return {
         name: data.name ?? "",
         insumos: {
@@ -83,8 +88,8 @@ const buildDefaults = (e?: EngineData | null): EngineDataFormValues => {
                 lastUpdated: data.insumos?.filtroAire?.lastUpdated,
             },
             balatas: {
-                delanteras: (data.insumos?.balatas?.delanteras ?? []).map(b => ({ ...b, id: b.id || nanoid() })),
-                traseras: (data.insumos?.balatas?.traseras ?? []).map(b => ({ ...b, id: b.id || nanoid() })),
+                delanteras: ensureArray(data.insumos?.balatas?.delanteras).map(b => ({ ...b, id: b.id || nanoid() })),
+                traseras: ensureArray(data.insumos?.balatas?.traseras).map(b => ({ ...b, id: b.id || nanoid() })),
                 lastUpdated: data.insumos?.balatas?.lastUpdated,
             },
             bujias: {
