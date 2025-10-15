@@ -4,10 +4,11 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileJson, Settings, ExternalLink } from 'lucide-react';
+import { FileJson, Settings, ExternalLink, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function FacturacionPageComponent() {
   return (
@@ -16,6 +17,14 @@ function FacturacionPageComponent() {
         <h1 className="text-3xl font-bold tracking-tight">Módulo de Facturación</h1>
         <p className="text-primary-foreground/80 mt-1">Gestiona tus facturas (CFDI) y configura tu portal de auto-facturación.</p>
       </div>
+
+      <Alert variant="destructive" className="mb-6">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Sitio en Fase de Pruebas</AlertTitle>
+        <AlertDescription>
+          El módulo de facturación se encuentra en fase de desarrollo. La funcionalidad podría no operar como se espera.
+        </AlertDescription>
+      </Alert>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="col-span-1 md:col-span-2 lg:col-span-3">
