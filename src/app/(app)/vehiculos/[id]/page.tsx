@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 import { inventoryService, serviceService } from '@/lib/services';
 import type { Vehicle, ServiceRecord } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
