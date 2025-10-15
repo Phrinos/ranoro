@@ -4,7 +4,7 @@
 import React from 'react';
 import type { EngineData } from '@/lib/data/vehicle-database-types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DollarSign, Droplet, Wind, CircuitBoard, DiscAlbum, Edit } from 'lucide-react';
+import { DollarSign, Droplet, Edit } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import Link from 'next/link';
 interface VehiclePricingCardProps {
   engineData: EngineData | null;
   make?: string;
-  onEdit?: () => void; // Acepta una función para manejar la edición
+  onEdit?: () => void;
 }
 
 const DetailRow = ({ label, value }: { label: string; value?: string | number | null }) => (
@@ -24,10 +24,10 @@ const DetailRow = ({ label, value }: { label: string; value?: string | number | 
 );
 
 const ServiceRow = ({ label, price }: { label: string; price?: number | null }) => (
-    <div className="flex justify-between items-center text-sm">
-        <span className="font-medium">{label}</span>
-        <span className="font-bold text-primary">{formatCurrency(price || 0)}</span>
-    </div>
+  <div className="flex justify-between items-center text-sm">
+    <span className="font-medium">{label}</span>
+    <span className="font-bold text-primary">{formatCurrency(price || 0)}</span>
+  </div>
 );
 
 export function VehiclePricingCard({ engineData, make, onEdit }: VehiclePricingCardProps) {
@@ -41,16 +41,16 @@ export function VehiclePricingCard({ engineData, make, onEdit }: VehiclePricingC
           <p className="text-sm text-muted-foreground text-center py-4">
             No hay datos de precios para el motor seleccionado.
           </p>
-           {make && (
-              <div className="mt-4 text-center">
-                 <Button asChild variant="secondary" size="sm">
-                   <Link href={`/precios?tab=editor&make=${encodeURIComponent(make)}`}>
-                      <Edit className="h-4 w-4 mr-2"/>
-                      Gestionar Precios para {make}
-                   </Link>
-                </Button>
-              </div>
-           )}
+          {make && (
+            <div className="mt-4 text-center">
+              <Button asChild variant="secondary" size="sm" type="button">
+                <Link href={`/precios?tab=editor&make=${encodeURIComponent(make)}`}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Gestionar Precios para {make}
+                </Link>
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -63,22 +63,41 @@ export function VehiclePricingCard({ engineData, make, onEdit }: VehiclePricingC
   return (
     <Card>
       <CardHeader>
-         <div className="flex justify-between items-start">
-             <div>
-                <CardTitle>Precios y Costos</CardTitle>
-                <CardDescription>Referencia para el motor <span className="font-semibold">{engineData.name}</span>.</CardDescription>
-             </div>
-             {onEdit && (
-                <Button variant="outline" size="sm" onClick={onEdit}>
-                   <Edit className="h-4 w-4 mr-2"/>
-                   Editar
-                </Button>
-             )}
-         </div>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle>Precios y Costos</CardTitle>
+            <CardDescription>
+              Referencia para el motor <span className="font-semibold">{engineData.name}</span>.
+            </CardDescription>
+          </div>
+
+          {onEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              // ← clave: evita que el click burbujee al <form> padre
+              onMouseDown={(e) => e.preventDefault()} // evita focus que a veces dispara shortcuts
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEdit();
+              }}
+              // Si algún navegador intentara asociarlo a un form, esto lo desactiva:
+              formNoValidate
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          )}
+        </div>
       </CardHeader>
+
       <CardContent className="space-y-4">
         <div>
-          <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><Droplet className="h-4 w-4" /> Costo de Insumos</h4>
+          <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+            <Droplet className="h-4 w-4" /> Costo de Insumos
+          </h4>
           <div className="p-3 bg-muted/50 rounded-md space-y-1">
             <DetailRow label="Aceite" value={`${insumos.aceite?.grado || 'N/A'} (${insumos.aceite?.litros || 'N/A'} L)`} />
             <DetailRow label="Costo Aceite (x L)" value={formatCurrency(insumos.aceite?.costoUnitario)} />
@@ -101,7 +120,9 @@ export function VehiclePricingCard({ engineData, make, onEdit }: VehiclePricingC
         </div>
 
         <div>
-          <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><DollarSign className="h-4 w-4" /> Precios de Servicios (Público)</h4>
+          <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+            <DollarSign className="h-4 w-4" /> Precios de Servicios (Público)
+          </h4>
           <div className="p-3 bg-muted/50 rounded-md space-y-2">
             <ServiceRow label="Afinación Integral" price={servicios.afinacionIntegral?.precioPublico} />
             <ServiceRow label="Cambio de Aceite" price={servicios.cambioAceite?.precioPublico} />
