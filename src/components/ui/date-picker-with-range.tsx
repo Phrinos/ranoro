@@ -8,9 +8,10 @@ import { es } from "date-fns/locale"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "./separator"
+import Calendar from "react-calendar"
+import 'react-calendar/dist/Calendar.css';
 
 interface DateRange {
   from: Date | undefined

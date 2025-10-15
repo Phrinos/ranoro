@@ -21,13 +21,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
 import { parseDate } from "@/lib/forms";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { userFormSchema, type UserFormValues } from "@/schemas/user-form-schema";
+import Calendar from "react-calendar";
+import 'react-calendar/dist/Calendar.css';
 
 
 interface UserFormProps {
@@ -147,7 +148,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     locale="es-MX"
-                    onChange={(date) => {
+                    onChange={(date: any) => {
                       if (date) {
                         field.onChange(date);
                       }
