@@ -1,11 +1,14 @@
 // src/app/(app)/vehiculos/components/vehicle-dialog.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { FormDialog } from '@/components/shared/form-dialog';
 import { VehicleForm, type VehicleFormValues } from "./vehicle-form";
 import type { Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { vehicleFormSchema } from '@/schemas/vehicle-form-schema';
 
 interface VehicleDialogProps {
   trigger?: React.ReactNode;
@@ -14,6 +17,29 @@ interface VehicleDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
+
+const buildDefaults = (v?: Partial<Vehicle> | null): VehicleFormValues => ({
+  make: v?.make ?? "",
+  model: v?.model ?? "",
+  year: v?.year ?? new Date().getFullYear(),
+  engine: (v as any)?.engine ?? "",
+  licensePlate: v?.licensePlate ?? "",
+  vin: v?.vin ?? "",
+  color: v?.color ?? "",
+  ownerName: v?.ownerName ?? "",
+  ownerPhone: v?.ownerPhone ?? "",
+  chatMetaLink: (v as any)?.chatMetaLink ?? "",
+  notes: v?.notes ?? "",
+  isFleetVehicle: v?.isFleetVehicle ?? false,
+  purchasePrice: v?.purchasePrice,
+  dailyRentalCost: v?.dailyRentalCost,
+  gpsCost: v?.gpsCost,
+  insuranceCost: v?.insuranceCost,
+  adminCost: v?.adminCost,
+  currentMileage: v?.currentMileage,
+  assignedDriverId: v?.assignedDriverId,
+});
+
 
 export function VehicleDialog({
   trigger,
@@ -28,13 +54,28 @@ export function VehicleDialog({
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
+  
+  const methods = useForm<VehicleFormValues>({
+    resolver: zodResolver(vehicleFormSchema),
+    defaultValues: buildDefaults(vehicle),
+    mode: "onBlur",
+  });
+
+  const { handleSubmit, reset } = methods;
+
+  useEffect(() => {
+    if (open) {
+      reset(buildDefaults(vehicle));
+    }
+  }, [open, vehicle, reset]);
+
 
   const handleOpenChange = (isOpen: boolean) => {
     if (isControlled) setControlledOpen(isOpen);
     else setUncontrolledOpen(isOpen);
   };
 
-  const handleSubmit = async (values: VehicleFormValues) => {
+  const handleSubmitForm = async (values: VehicleFormValues) => {
     setIsSubmitting(true);
     try {
       await onSave(values);
@@ -68,7 +109,9 @@ export function VehicleDialog({
       submitButtonText={vehicle && 'id' in vehicle && vehicle.id ? "Actualizar Vehículo" : "Crear Vehículo"}
       dialogContentClassName="sm:max-w-2xl"
     >
-      <VehicleForm id="vehicle-form" initialData={vehicle as Vehicle | null} onSubmit={handleSubmit} />
+        <FormProvider {...methods}>
+            <VehicleForm id="vehicle-form" onSubmit={handleSubmitForm} />
+        </FormProvider>
     </FormDialog>
   );
 }

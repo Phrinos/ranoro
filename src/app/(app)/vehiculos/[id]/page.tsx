@@ -1,4 +1,3 @@
-
 // src/app/(app)/vehiculos/[id]/page.tsx
 "use client";
 
@@ -81,6 +80,8 @@ export default function VehicleDetailPage() {
     if (!editingVehicle) return;
     try {
       await inventoryService.saveVehicle(formData, editingVehicle.id);
+      // Actualización optimista del estado local
+      setVehicle((prev) => prev ? { ...prev, ...formData, id: prev.id } as Vehicle : prev);
       toast({ title: "Vehículo actualizado" });
       setIsEditDialogOpen(false);
     } catch (e) {

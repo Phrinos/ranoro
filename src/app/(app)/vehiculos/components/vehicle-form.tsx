@@ -1,10 +1,9 @@
-
 // src/app/(app)/vehiculos/components/vehicle-form.tsx
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFormContext, Controller } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -40,25 +39,15 @@ interface VehicleMake {
 
 interface VehicleFormProps {
   id?: string;
-  initialData?: Partial<Vehicle> | null;
   onSubmit: (values: VehicleFormValues) => Promise<void>;
 }
 
-export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
+export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
   const [vehicleDb, setVehicleDb] = useState<VehicleMake[]>([]);
   const [isLoadingDb, setIsLoadingDb] = useState(true);
 
-  const form = useForm<VehicleFormValues>({
-    resolver: zodResolver(vehicleFormSchema),
-    defaultValues: {
-      make: "", model: "", year: new Date().getFullYear(),
-      licensePlate: "", vin: "", color: "", ownerName: "",
-      ownerPhone: "", chatMetaLink: "", notes: "",
-      isFleetVehicle: false,
-    },
-  });
+  const { control, watch, setValue, handleSubmit } = useFormContext<VehicleFormValues>();
   
-  const { watch, setValue } = form;
   const watchedMake = watch("make");
   const watchedModel = watch("model");
   const watchedYear = watch("year");
@@ -80,33 +69,6 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
     };
     fetchVehicleData();
   }, []);
-
-  // Resetear el formulario cuando cambian los datos iniciales
-  useEffect(() => {
-    if (initialData) {
-      form.reset({
-        make: initialData.make ?? "",
-        model: initialData.model ?? "",
-        year: initialData.year ?? new Date().getFullYear(),
-        engine: (initialData as any).engine ?? "",
-        licensePlate: initialData.licensePlate ?? "",
-        vin: initialData.vin ?? "",
-        color: initialData.color ?? "",
-        ownerName: initialData.ownerName ?? "",
-        ownerPhone: initialData.ownerPhone ?? "",
-        chatMetaLink: (initialData as any).chatMetaLink ?? "",
-        notes: initialData.notes ?? "",
-        isFleetVehicle: initialData.isFleetVehicle ?? false,
-      });
-    } else {
-      form.reset({
-        make: "", model: "", year: new Date().getFullYear(),
-        engine: "", licensePlate: "", vin: "", color: "", ownerName: "",
-        ownerPhone: "", chatMetaLink: "", notes: "",
-        isFleetVehicle: false,
-      });
-    }
-  }, [initialData, form]);
   
     // Hooks para obtener listas dependientes (marcas, modelos, etc.)
     const makes = useMemo(() => vehicleDb.map(db => db.make).sort(), [vehicleDb]);
@@ -141,11 +103,9 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
   };
 
   return (
-    <Form {...form}>
-      <form id={id} onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-        
+    <form id={id} onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         <FormField
-          control={form.control}
+          control={control}
           name="isFleetVehicle"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-muted/50">
@@ -159,21 +119,21 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
         />
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <FormField control={form.control} name="make" render={({ field }) => ( <FormItem><FormLabel>Marca</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue("model", ""); setValue("year", 0); setValue("engine", ""); }} value={field.value ?? ''} disabled={isLoadingDb}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder={isLoadingDb ? "Cargando..." : "Seleccione..."} /></SelectTrigger></FormControl><SelectContent>{makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-            <FormField control={form.control} name="model" render={({ field }) => ( <FormItem><FormLabel>Modelo</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue("year", 0); setValue("engine", ""); }} value={field.value ?? ''} disabled={!watchedMake}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{models.map(model => <SelectItem key={model} value={model}>{model}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-            <FormField control={form.control} name="year" render={({ field }) => ( <FormItem><FormLabel>Año</FormLabel><Select onValueChange={(val) => { field.onChange(parseInt(val, 10)); setValue("engine", ""); }} value={String(field.value || '')} disabled={!watchedModel}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-            <FormField control={form.control} name="engine" render={({ field }) => ( <FormItem><FormLabel>Motor (Opcional)</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''} disabled={!watchedYear || engines.length === 0}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder={engines.length === 0 ? "No disponible" : "Seleccione..."} /></SelectTrigger></FormControl><SelectContent>{engines.map((engine, index) => <SelectItem key={`${engine.name}-${index}`} value={engine.name}>{engine.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={control} name="make" render={({ field }) => ( <FormItem><FormLabel>Marca</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue("model", ""); setValue("year", 0); setValue("engine", ""); }} value={field.value ?? ''} disabled={isLoadingDb}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder={isLoadingDb ? "Cargando..." : "Seleccione..."} /></SelectTrigger></FormControl><SelectContent>{makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={control} name="model" render={({ field }) => ( <FormItem><FormLabel>Modelo</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue("year", 0); setValue("engine", ""); }} value={field.value ?? ''} disabled={!watchedMake}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{models.map(model => <SelectItem key={model} value={model}>{model}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={control} name="year" render={({ field }) => ( <FormItem><FormLabel>Año</FormLabel><Select onValueChange={(val) => { field.onChange(parseInt(val, 10)); setValue("engine", ""); }} value={String(field.value || '')} disabled={!watchedModel}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={control} name="engine" render={({ field }) => ( <FormItem><FormLabel>Motor (Opcional)</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''} disabled={!watchedYear || engines.length === 0}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder={engines.length === 0 ? "No disponible" : "Seleccione..."} /></SelectTrigger></FormControl><SelectContent>{engines.map((engine, index) => <SelectItem key={`${engine.name}-${index}`} value={engine.name}>{engine.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField control={form.control} name="licensePlate" render={({ field }) => ( <FormItem><FormLabel>Placa</FormLabel><FormControl><Input placeholder="Ej: ABC-123" {...field} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
-          <FormField control={form.control} name="vin" render={({ field }) => ( <FormItem><FormLabel>VIN (Opcional)</FormLabel><FormControl><Input placeholder="Número de Serie" {...field} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
-          <FormField control={form.control} name="color" render={({ field }) => ( <FormItem><FormLabel>Color (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Blanco" {...field} onChange={e => field.onChange(capitalizeWords(e.target.value))} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="licensePlate" render={({ field }) => ( <FormItem><FormLabel>Placa</FormLabel><FormControl><Input placeholder="Ej: ABC-123" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="vin" render={({ field }) => ( <FormItem><FormLabel>VIN (Opcional)</FormLabel><FormControl><Input placeholder="Número de Serie" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="color" render={({ field }) => ( <FormItem><FormLabel>Color (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Blanco" {...field} value={field.value ?? ''} onChange={e => field.onChange(capitalizeWords(e.target.value))} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
-            control={form.control}
+            control={control}
             name="ownerName"
             render={({ field }) => (
               <FormItem>
@@ -182,6 +142,7 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
                   <Input
                     placeholder="Ej: Juan Pérez"
                     {...field}
+                    value={field.value ?? ''}
                     onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                     className="bg-card"
                   />
@@ -189,13 +150,13 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
               </FormItem>
             )}
           />
-          <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input placeholder="Ej: 449-123-4567" {...field} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input placeholder="Ej: 449-123-4567" {...field} value={field.value ?? ''} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
         </div>
 
-        <FormField control={form.control} name="chatMetaLink" render={({ field }) => ( <FormItem><FormLabel>Chat Meta (Opcional)</FormLabel><FormControl><Input placeholder="https://wa.me/..." {...field} className="bg-card"/></FormControl><FormMessage /></FormItem> )}/>
+        <FormField control={control} name="chatMetaLink" render={({ field }) => ( <FormItem><FormLabel>Chat Meta (Opcional)</FormLabel><FormControl><Input placeholder="https://wa.me/..." {...field} value={field.value ?? ''} className="bg-card"/></FormControl><FormMessage /></FormItem> )}/>
         
         <FormField
-          control={form.control}
+          control={control}
           name="notes"
           render={({ field }) => (
             <FormItem>
@@ -204,6 +165,7 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
                 <Textarea
                   placeholder="Detalles importantes..."
                   {...field}
+                  value={field.value ?? ''}
                   className="bg-card"
                 />
               </FormControl>
@@ -212,6 +174,6 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
           )}
         />
       </form>
-    </Form>
+    
   );
 }
