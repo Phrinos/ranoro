@@ -8,6 +8,8 @@ import type { EngineData, VehicleModel } from '@/lib/data/vehicle-database-types
 import { db } from '@/lib/firebaseClient';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
+import { CheckCircle } from 'lucide-react';
+import { isEngineDataComplete } from '@/lib/data/vehicle-data-check';
 
 interface VehicleMakeAccordionProps {
   make: string;
@@ -24,7 +26,6 @@ export function VehicleMakeAccordion({ make, initialData, onEngineDataSave }: Ve
   const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
-    // Si ya tenemos datos iniciales (desde la pestaña de vencidos), no necesitamos cargar de nuevo.
     if (initialData) {
         setMakeData(initialData);
         setLoading(false);
@@ -49,14 +50,26 @@ export function VehicleMakeAccordion({ make, initialData, onEngineDataSave }: Ve
   }, [make, initialData]);
 
 
-  const models = useMemo(() => {
-    if (!makeData || !Array.isArray(makeData.models)) return [];
-    return [...makeData.models].sort((a, b) => a.name.localeCompare(b.name));
+  const { models, isMakeComplete } = useMemo(() => {
+    if (!makeData || !Array.isArray(makeData.models)) return { models: [], isMakeComplete: false };
+    
+    const sortedModels = [...makeData.models].sort((a, b) => a.name.localeCompare(b.name));
+    
+    const allModelsComplete = sortedModels.every(model =>
+        model.generations.every(gen => gen.engines.every(isEngineDataComplete))
+    );
+
+    return { models: sortedModels, isMakeComplete: allModelsComplete };
   }, [makeData]);
 
   return (
     <AccordionItem value={make} className="border rounded-md px-4 bg-card">
-      <AccordionTrigger className="hover:no-underline font-semibold">{make}</AccordionTrigger>
+      <AccordionTrigger className="hover:no-underline font-semibold">
+          <div className="flex items-center gap-2">
+            {isMakeComplete && <CheckCircle className="h-5 w-5 text-green-500" />}
+            <span>{make}</span>
+          </div>
+      </AccordionTrigger>
       <AccordionContent>
         <div className="pl-4 border-l">
           {loading ? (

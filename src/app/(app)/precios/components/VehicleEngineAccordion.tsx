@@ -8,12 +8,13 @@ import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/lib/utils';
 import type { EngineData } from '@/lib/data/vehicle-database-types';
 import { Button } from '@/components/ui/button';
-import { Edit } from 'lucide-react';
+import { Edit, CheckCircle } from 'lucide-react';
 import { EditEngineDataDialog } from './EditEngineDataDialog';
 
 interface VehicleEngineAccordionProps {
   engine: EngineData;
   onSave: (updatedEngine: EngineData) => void;
+  isComplete: boolean;
 }
 
 const DetailItem = ({ label, value }: { label: string; value?: string | number | null }) => (
@@ -33,7 +34,7 @@ const ServiceItem = ({ label, cost, price }: { label: string; cost?: number; pri
     </div>
 );
 
-export function VehicleEngineAccordion({ engine, onSave }: VehicleEngineAccordionProps) {
+export function VehicleEngineAccordion({ engine, onSave, isComplete }: VehicleEngineAccordionProps) {
   const { insumos, servicios } = engine;
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
@@ -45,7 +46,12 @@ export function VehicleEngineAccordion({ engine, onSave }: VehicleEngineAccordio
   return (
     <>
     <AccordionItem value={engine.name} className="border rounded-md px-3 bg-background">
-        <AccordionTrigger className="text-xs font-semibold py-3 hover:no-underline">{engine.name}</AccordionTrigger>
+        <AccordionTrigger className="text-xs font-semibold py-3 hover:no-underline">
+           <div className="flex items-center gap-2">
+                {isComplete && <CheckCircle className="h-4 w-4 text-green-500" />}
+                <span>{engine.name}</span>
+            </div>
+        </AccordionTrigger>
         <AccordionContent className="p-1">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Columna de Insumos */}
@@ -58,8 +64,12 @@ export function VehicleEngineAccordion({ engine, onSave }: VehicleEngineAccordio
                         <DetailItem label="Filtro de Aire SKU" value={insumos.filtroAire?.sku} />
                         <Separator />
                         <h5 className="font-semibold text-xs text-muted-foreground pt-1">Balatas</h5>
-                        <DetailItem label="Delanteras" value={`${insumos.balatas.delanteras.modelo || 'N/A'} (${insumos.balatas.delanteras.tipo || 'N/A'})`} />
-                        <DetailItem label="Traseras" value={`${insumos.balatas.traseras.modelo || 'N/A'} (${insumos.balatas.traseras.tipo || 'N/A'})`} />
+                        {insumos.balatas.delanteras.map((balata, i) => (
+                          <DetailItem key={i} label={`Delantera ${i + 1}`} value={`${balata.modelo || 'N/A'} (${balata.tipo || 'N/A'})`} />
+                        ))}
+                        {insumos.balatas.traseras.map((balata, i) => (
+                           <DetailItem key={i} label={`Trasera ${i + 1}`} value={`${balata.modelo || 'N/A'} (${balata.tipo || 'N/A'})`} />
+                        ))}
                          <Separator />
                         <h5 className="font-semibold text-xs text-muted-foreground pt-1">Bujías</h5>
                         <DetailItem label="Cantidad" value={insumos.bujias.cantidad} />
