@@ -1,6 +1,6 @@
 
 // src/hooks/useAuth.ts
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebaseClient';
@@ -10,51 +10,70 @@ import { useRouter } from 'next/navigation';
 
 export function useAuth() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Inicia como true por defecto
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    // Intenta cargar el usuario desde localStorage para una carga inicial más rápida
-    const cachedUser = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-    if (cachedUser) {
-        try {
-            setCurrentUser(JSON.parse(cachedUser));
-        } catch (e) {
-            console.error("Error parsing cached user:", e);
-            localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
-        }
-    }
+  const handleLogout = useCallback(async () => {
+    // Limpia inmediatamente el estado local para una respuesta de UI rápida
+    setCurrentUser(null);
+    localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+    await signOut(auth);
+    // Redirigir al login ya lo hace el useEffect de AppClientLayout
+    // No es necesario hacerlo aquí.
+  }, []);
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
+  useEffect(() => {
+    // Sincroniza desde localStorage al inicio.
+    // Esto es rápido y evita el parpadeo de "Verificando sesión..."
+    const cachedUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    if (cachedUserString) {
+      try {
+        const cachedUser = JSON.parse(cachedUserString);
+        setCurrentUser(cachedUser);
+      } catch (e) {
+        console.error("Failed to parse cached user, clearing.", e);
+        localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+      }
+    }
+    
+    // El listener de Firebase Auth es la fuente de verdad definitiva.
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // Usuario autenticado. Escucha su documento en Firestore.
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
         const unsubscribeDoc = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
-            const userData = { id: user.uid, ...userDoc.data() } as User;
-            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
+            const userData = { id: firebaseUser.uid, ...userDoc.data() } as User;
+            // Actualiza tanto el estado como el localStorage.
             setCurrentUser(userData);
+            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
           } else {
-            // El usuario existe en Auth pero no en Firestore
-            signOut(auth);
+            // Caso raro: autenticado en Firebase pero sin documento en Firestore.
+            // Cierra la sesión para evitar un estado inconsistente.
+            console.warn(`User ${firebaseUser.uid} authenticated but not found in Firestore. Logging out.`);
+            handleLogout();
           }
-          setIsLoading(false);
+          setIsLoading(false); // Termina la carga después de obtener datos de Firestore.
+        }, (error) => {
+           console.error("Error listening to user document:", error);
+           handleLogout(); // Cierra sesión si hay error leyendo el doc.
+           setIsLoading(false);
         });
         return () => unsubscribeDoc();
       } else {
-        // No hay usuario
-        localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+        // No hay usuario en Firebase Auth. Limpia todo.
         setCurrentUser(null);
+        localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
         setIsLoading(false);
-        router.push('/login');
+        // AppClientLayout se encargará de la redirección.
       }
+    }, (error) => {
+        console.error("Auth state listener error:", error);
+        setIsLoading(false); // Termina la carga si hay un error en el listener.
     });
 
     return () => unsubscribeAuth();
-  }, [router]);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-  };
+  }, [handleLogout]);
 
   return { currentUser, isLoading, handleLogout };
 }

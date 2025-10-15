@@ -17,81 +17,49 @@ import { db } from '@/lib/firebaseClient';
 function PreciosPageComponent() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
+    const [priceLists, setPriceLists] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [dbState, setDbState] = useState<any[]>([]);
-    const [isSaving, setIsSaving] = useState(false);
-
+    
     useEffect(() => {
         setIsLoading(true);
-        const unsubs = [
-            inventoryService.onPriceListsUpdate(setPriceLists),
-            inventoryService.onVehicleDataUpdate((data) => {
-                setDbState(data);
-                setIsLoading(false);
-            })
-        ];
-        return () => unsubs.forEach(unsub => unsub());
+        const unsubscribe = inventoryService.onPriceListsUpdate((data) => {
+            setPriceLists(data);
+            setIsLoading(false);
+        });
+        return () => unsubscribe();
     }, []);
 
     const allMakes = useMemo(() => {
-        return [...new Set(dbState.map((v: any) => v.make))].sort();
-    }, [dbState]);
-
-    const handleEngineDataSave = (makeName: string, modelName: string, generationIndex: number, engineIndex: number, updatedEngineData: EngineData) => {
-        setDbState((currentDb: any[]) => {
-            return currentDb.map(make => {
-                if (make.make === makeName) {
-                    const models = make.models.map((model: any) => {
-                        if (model.name === modelName) {
-                            const generations = [...model.generations];
-                            if (generations[generationIndex]) {
-                                const engines = [...generations[generationIndex].engines];
-                                engines[engineIndex] = updatedEngineData;
-                                generations[generationIndex] = { ...generations[generationIndex], engines };
-                                return { ...model, generations };
-                            }
-                        }
-                        return model;
-                    });
-                    return { ...make, models };
-                }
-                return make;
-            });
-        });
-        toast({ title: 'Cambios guardados localmente', description: 'Haz clic en "Guardar en Base de Datos" para persistir los cambios.' });
-    };
-
-    const handleSaveToDatabase = async () => {
-        setIsSaving(true);
-        if (!db) {
-            toast({ title: "Error de conexión", description: "No se pudo conectar a la base de datos.", variant: "destructive" });
-            setIsSaving(false);
-            return;
-        }
-
+        return [...new Set(priceLists.map((list) => list.id))].sort();
+    }, [priceLists]);
+    
+    const handleEngineDataSave = async (makeName: string, modelName: string, generationIndex: number, engineIndex: number, updatedEngineData: EngineData) => {
+        if (!db) return toast({ title: "Error de conexión", variant: "destructive" });
+    
         try {
-            const batch = db.batch(); // Assuming 'db' is your Firestore instance
-            dbState.forEach(makeData => {
-                const { make, ...data } = makeData;
-                const docRef = doc(db, 'vehicleData', make);
-                batch.set(docRef, data);
-            });
-            await batch.commit();
+            const makeDoc = priceLists.find(m => m.id === makeName);
+            if (!makeDoc) throw new Error("Marca no encontrada");
+    
+            const modelIndex = makeDoc.models.findIndex((m: any) => m.name === modelName);
+            if (modelIndex === -1) throw new Error("Modelo no encontrado");
             
-            toast({
-                title: "Guardado en Base de Datos",
-                description: "La base de datos de vehículos ha sido actualizada en Firestore.",
-                duration: 5000,
-            });
+            const updatedModels = [...makeDoc.models];
+            const updatedGenerations = [...updatedModels[modelIndex].generations];
+            const updatedEngines = [...updatedGenerations[generationIndex].engines];
+            
+            updatedEngines[engineIndex] = updatedEngineData;
+            updatedGenerations[generationIndex] = { ...updatedGenerations[generationIndex], engines: updatedEngines };
+            updatedModels[modelIndex] = { ...updatedModels[modelIndex], generations: updatedGenerations };
+            
+            const docRef = doc(db, 'vehiclePriceLists', makeName);
+            await setDoc(docRef, { models: updatedModels }, { merge: true });
+    
+            toast({ title: 'Guardado', description: `Se actualizaron los datos para ${updatedEngineData.name}.` });
         } catch (error) {
-            console.error("Error saving to Firestore:", error);
-            toast({ title: 'Error', description: 'No se pudieron guardar los cambios en la base de datos.', variant: 'destructive'});
-        } finally {
-            setIsSaving(false);
+            console.error("Error saving engine data:", error);
+            toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
         }
     };
-
 
     if (isLoading) {
         return (
@@ -111,10 +79,6 @@ function PreciosPageComponent() {
                             Gestiona los costos de servicios e insumos para cada vehículo.
                         </p>
                     </div>
-                     <Button onClick={handleSaveToDatabase} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                        {isSaving ? 'Guardando...' : 'Guardar en Base de Datos'}
-                    </Button>
                 </div>
             </div>
             <PriceListManagementContent 

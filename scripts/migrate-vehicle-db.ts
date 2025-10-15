@@ -1,44 +1,49 @@
 // scripts/migrate-vehicle-db.ts
 import 'dotenv/config';
 import { getAdminDb } from '../src/lib/firebaseAdmin';
-import * as vehicleDatabase from '../src/lib/data/vehicle-database.json';
-import { writeBatch } from 'firebase-admin/firestore';
+import * as fs from 'fs';
+import * as path from 'path';
 
-async function migrateVehicleDatabase() {
-  const db = getAdminDb();
-  const batch = writeBatch(db);
+// Lee los datos del archivo JSON local.
+const dbData = JSON.parse(
+  fs.readFileSync(
+    path.resolve(process.cwd(), 'src/lib/data/vehicle-database.json'),
+    'utf-8'
+  )
+);
 
-  console.log('Iniciando migración de la base de datos de vehículos a Firestore...');
-
+async function migrateVehicleDb() {
   try {
-    // The default export might be nested under `default` when using dynamic imports
-    const dataToMigrate = (vehicleDatabase as any).default || vehicleDatabase;
+    const db = getAdminDb();
+    const batch = db.batch();
 
-    if (!Array.isArray(dataToMigrate)) {
-      throw new Error("El archivo JSON no es un array válido.");
-    }
-    
-    dataToMigrate.forEach((makeData: any) => {
+    console.log(`Iniciando la migración de ${dbData.length} marcas a la colección 'vehiclePriceLists'...`);
+
+    for (const makeData of dbData) {
       const makeName = makeData.make;
       if (!makeName) {
-        console.warn('Omitiendo entrada sin nombre de marca:', makeData);
-        return;
+        console.warn('Se encontró una marca sin nombre, se omitirá:', makeData);
+        continue;
       }
       
-      const docRef = db.collection('vehicleData').doc(makeName);
-      // We are setting the entire make object as the document data, with 'make' as the ID.
-      const { make, ...data } = makeData; 
-      batch.set(docRef, data);
-      console.log(`- Preparando para guardar: ${makeName}`);
-    });
+      // La ID del documento será el nombre de la marca.
+      const makeDocRef = db.collection('vehiclePriceLists').doc(makeName);
+      
+      // El documento contendrá el array de modelos.
+      batch.set(makeDocRef, { models: makeData.models });
+
+      console.log(`  - Agregando marca: ${makeName}`);
+    }
 
     await batch.commit();
-    console.log('¡Éxito! La base de datos de vehículos ha sido migrada a la colección "vehicleData" en Firestore.');
+
+    console.log(`\n¡Migración completada! Se procesaron ${dbData.length} marcas.`);
+    console.log("Los datos ahora están en la colección 'vehiclePriceLists' de Firestore.");
 
   } catch (error) {
     console.error("Error durante la migración:", error);
-    process.exit(1); // Salir con código de error
+    process.exit(1);
   }
 }
 
-migrateVehicleDatabase();
+migrateVehicleDb();

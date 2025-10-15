@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Save, Trash2, Loader2 } from 'lucide-react';
-import vehicleDatabaseData from '@/lib/data/vehicle-database.json';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { db } from '@/lib/firebase';
+import { collection, getDocs, doc, writeBatch } from 'firebase/firestore';
 
 // Definimos los tipos para la base de datos de vehículos
 interface EngineGeneration {
@@ -34,10 +35,25 @@ export function DatabaseManagementTab() {
   const [selectedMake, setSelectedMake] = useState<string>('');
   const [newModelName, setNewModelName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   useEffect(() => {
-    // Simulamos la carga de datos
-    setDb(JSON.parse(JSON.stringify(vehicleDatabaseData)));
+    const fetchVehicleData = async () => {
+      setIsLoading(true);
+      try {
+        const querySnapshot = await getDocs(collection(db, "vehicleData"));
+        const vehicleData: VehicleMake[] = querySnapshot.docs.map(doc => ({ make: doc.id, ...doc.data() } as VehicleMake));
+        setDb(vehicleData);
+      } catch (error) {
+        console.error("Error fetching vehicle data:", error);
+        toast({ title: 'Error', description: 'No se pudieron cargar los datos de vehículos.', variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+        setIsDataLoaded(true);
+      }
+    };
+
+    fetchVehicleData();
   }, []);
   
   const makes = useMemo(() => db.map(d => d.make).sort(), [db]);
@@ -142,19 +158,28 @@ export function DatabaseManagementTab() {
   };
 
   const handleSaveChanges = async () => {
+    if (!selectedMakeData) {
+      toast({ title: 'Error', description: 'No hay una marca seleccionada para guardar.', variant: 'destructive' });
+      return;
+    }
     setIsLoading(true);
-    // En un escenario real, aquí harías una llamada a una API
-    // que escriba en el archivo `vehicle-database.json`.
-    // Por ahora, simularemos la operación y mostraremos un toast.
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    console.log("Datos para guardar:", JSON.stringify(db, null, 2));
-    toast({
-      title: "Función no implementada",
-      description: "La escritura de archivos en el servidor no está permitida en este entorno. Los datos actualizados se han impreso en la consola.",
-      variant: "default",
-      duration: 7000,
-    });
-    setIsLoading(false);
+    try {
+        const batch = writeBatch(db);
+        const makeRef = doc(db, "vehicleData", selectedMakeData.make);
+        const { make, ...dataToSave } = selectedMakeData; // Exclude make from data
+        batch.set(makeRef, dataToSave);
+        await batch.commit();
+
+        toast({
+            title: 'Éxito',
+            description: `Los datos de ${selectedMakeData.make} se han guardado correctamente.`,
+        });
+    } catch (error) {
+        console.error("Error saving vehicle data:", error);
+        toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -167,10 +192,12 @@ export function DatabaseManagementTab() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Marca</label>
-            <Select value={selectedMake} onValueChange={setSelectedMake}>
-              <SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione una marca para editar..." /></SelectTrigger>
-              <SelectContent>{makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}</SelectContent>
-            </Select>
+            {isDataLoaded ? (
+              <Select value={selectedMake} onValueChange={setSelectedMake}>
+                <SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione una marca para editar..." /></SelectTrigger>
+                <SelectContent>{makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}</SelectContent>
+              </Select>
+            ) : <p>Cargando marcas...</p>}
           </div>
 
           {selectedMake && (
@@ -213,7 +240,7 @@ export function DatabaseManagementTab() {
         </CardContent>
       </Card>
       <div className="flex justify-end">
-        <Button onClick={handleSaveChanges} disabled={isLoading}>
+        <Button onClick={handleSaveChanges} disabled={isLoading || !selectedMake}>
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Guardar Cambios en la Base de Datos
         </Button>

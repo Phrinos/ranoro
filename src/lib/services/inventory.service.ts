@@ -339,7 +339,16 @@ const onPriceListsUpdate = (callback: (lists: VehiclePriceList[]) => void): (() 
     if (!db) return () => {};
     const q = query(collection(db, "vehiclePriceLists"));
     return onSnapshot(q, (snapshot) => {
-        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehiclePriceList)));
+        const lists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehiclePriceList));
+        callback(lists);
+    });
+};
+
+const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "vehiclePriceLists"));
+    return onSnapshot(q, (snapshot) => {
+      callback(snapshot.docs.map(doc => ({ make: doc.id, ...doc.data() })));
     });
 };
 
@@ -359,15 +368,6 @@ const savePriceList = async (data: Partial<VehiclePriceList>, id?: string): Prom
 const deletePriceList = async (id: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     await deleteDoc(doc(db, "vehiclePriceLists", id));
-};
-
-// --- Vehicle Database (for precotizaciones) ---
-const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
-  if (!db) return () => {};
-  const q = query(collection(db, "vehicleData"));
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ make: doc.id, ...doc.data() })));
-  });
 };
 
 
