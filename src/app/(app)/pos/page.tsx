@@ -21,10 +21,7 @@ import html2canvas from 'html2canvas';
 import ReactDOMServer from 'react-dom/server';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-
-const VentasPosContent = lazy(() => import('./components/ventas-pos-content').then(module => ({ default: module.VentasPosContent })));
 const InformePosContent = lazy(() => import('./components/informe-pos-content').then(module => ({ default: module.InformePosContent })));
-
 
 function PosPageComponent({ tab }: { tab?: string }) {
   const defaultTab = tab || 'resumen';
@@ -187,19 +184,6 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
 
   const tabs = [
     { value: 'resumen', label: 'Resumen', content: <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory}/> },
-    { value: 'ventas', label: 'Historial de Ventas', content: (
-        <VentasPosContent 
-          allSales={allSales} 
-          allInventory={allInventory}
-          allUsers={allUsers}
-          currentUser={currentUser}
-          onReprintTicket={handleReprintTicket}
-          onViewSale={handleViewSale}
-          onDeleteSale={handleDeleteSale}
-          onCancelSale={handleCancelSale}
-          onEditPayment={handleEditPayment}
-        />
-    )},
   ];
 
   if (isLoading) {

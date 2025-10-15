@@ -56,7 +56,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Compras', path: '/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:manage'] },
   
   // Finanzas (Nueva Categoría)
-  { label: 'Movimientos', path: '/finanzas', icon: Wallet, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
+  { label: 'Finanzas', path: '/finanzas', icon: Wallet, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Facturación', path: '/facturacion-admin', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
 
   // Opciones
@@ -279,7 +279,7 @@ export function AppSidebar({
               <Link href="/opciones?tab=perfil"><Users className="mr-2 h-4 w-4" /> Mi Perfil</Link>
             </DropdownMenuItem>
              <DropdownMenuItem asChild>
-               <Link href="/administracion"><Shield className="mr-2 h-4 w-4" /> Administración</Link>
+               <Link href="/opciones"><Shield className="mr-2 h-4 w-4" /> Opciones</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
                  <DropdownMenuItem onClick={handleLogout}>
