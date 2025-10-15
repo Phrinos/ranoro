@@ -1,12 +1,14 @@
 // src/schemas/engine-data-form-schema.ts
 import { z } from "zod";
+import { nanoid } from 'nanoid';
 
-// Permite 0 (no negativo) y valores opcionales
+// Permite string vacío o convierte a número, con fallback a 0 si es inválido.
 const numberCoercion = z.preprocess((v) => {
-  if (v === "" || v === null || v === undefined) return undefined;
-  const n = Number(String(v).replace(/[^0-9.-]/g, ""));
-  return isNaN(n) ? undefined : n;
-}, z.coerce.number().nonnegative({ message: "Debe ser un número >= 0" }).optional());
+  if (v === "" || v === null || v === undefined) return 0; // Default a 0
+  const n = Number(String(v).replace(/[^0-9.]/g, ""));
+  return isNaN(n) ? 0 : n;
+}, z.coerce.number().nonnegative({ message: "Debe ser un número >= 0" }));
+
 
 const aceiteSchema = z.object({
   grado: z.string().nullable().optional(),
@@ -22,7 +24,7 @@ const filtroSchema = z.object({
 });
 
 const balataInfoSchema = z.object({
-  id: z.string(), // ID para react-hook-form
+  id: z.string().default(() => nanoid()),
   modelo: z.string().nullable().optional(),
   tipo: z
     .enum(["metalicas", "semimetalicas", "ceramica", "organica"])
@@ -33,7 +35,7 @@ const balataInfoSchema = z.object({
 
 const bujiasSchema = z.object({
   cantidad: z.preprocess(
-    (v) => (v === "" || v === null ? undefined : v),
+    (v) => (v === "" || v === null || v === undefined ? 0 : v),
     z.coerce.number().int().nonnegative().optional()
   ),
   modelos: z.object({
