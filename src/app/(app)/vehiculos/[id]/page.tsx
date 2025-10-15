@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2, Edit } from 'lucide-react';
 import { inventoryService, serviceService } from '@/lib/services';
 import type { Vehicle, ServiceRecord, VehiclePriceList } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,6 +28,10 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { MaintenanceCard } from '../../flotilla/components/MaintenanceCard';
 import { VehiclePricingCard } from '../components/VehiclePricingCard';
 import type { EngineData } from '@/lib/data/vehicle-database-types';
+import { EditEngineDataDialog } from '@/app/(app)/precios/components/EditEngineDataDialog';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
+import { VEHICLE_COLLECTION } from '@/lib/vehicle-constants';
 
 
 const getServiceDescriptionText = (service: ServiceRecord) => {
@@ -106,6 +110,8 @@ export default function VehicleDetailPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceRecord | null>(null);
+  const [isEngineEditDialogOpen, setIsEngineEditDialogOpen] = useState(false);
+
 
   useEffect(() => {
     if (!vehicleId) return;
@@ -169,6 +175,41 @@ export default function VehicleDetailPage() {
         toast({ title: "Error", description: "No se pudo eliminar el vehículo.", variant: "destructive"});
     }
   };
+  
+  const handleEngineDataSave = async (updatedEngineData: EngineData) => {
+    if (!vehicle || !db) return;
+    const { make, model, year } = vehicle;
+
+    try {
+        const makeData = priceLists.find(pl => pl.make === make);
+        if (!makeData) throw new Error("Make data not found in price list.");
+
+        const modelIndex = makeData.models.findIndex(m => m.name === model);
+        if (modelIndex === -1) throw new Error("Model data not found.");
+
+        const genIndex = makeData.models[modelIndex].generations.findIndex(g => year >= g.startYear && year <= g.endYear);
+        if (genIndex === -1) throw new Error("Generation data not found.");
+        
+        const engineIndex = makeData.models[modelIndex].generations[genIndex].engines.findIndex(e => e.name === vehicleEngineData?.name);
+        if (engineIndex === -1) throw new Error("Engine data not found.");
+
+        const updatedModels = [...makeData.models];
+        const updatedGenerations = [...updatedModels[modelIndex].generations];
+        const updatedEngines = [...updatedGenerations[genIndex].engines];
+        
+        updatedEngines[engineIndex] = updatedEngineData;
+        updatedGenerations[genIndex] = { ...updatedGenerations[genIndex], engines: updatedEngines };
+        updatedModels[modelIndex] = { ...updatedModels[modelIndex], generations: updatedGenerations };
+        
+        await setDoc(doc(db, VEHICLE_COLLECTION, make), { models: updatedModels }, { merge: true });
+
+        toast({ title: 'Guardado', description: `Se actualizaron los datos para ${updatedEngineData.name}.` });
+        setIsEngineEditDialogOpen(false);
+    } catch (error) {
+        console.error("Error saving engine data:", error);
+        toast({ title: 'Error', description: 'No se pudieron guardar los cambios en la base de datos de precios.', variant: 'destructive' });
+    }
+  };
 
   const openServicePreview = (service: ServiceRecord) => {
     setSelectedService(service);
@@ -203,7 +244,11 @@ export default function VehicleDetailPage() {
         </div>
         <div className="lg:col-span-1 space-y-6">
             <MaintenanceCard vehicle={vehicle} />
-            <VehiclePricingCard engineData={vehicleEngineData as EngineData | null} make={vehicle.make} />
+            <VehiclePricingCard 
+                engineData={vehicleEngineData as EngineData | null} 
+                make={vehicle.make}
+                onEdit={() => setIsEngineEditDialogOpen(true)} 
+            />
         </div>
       </div>
 
@@ -213,6 +258,16 @@ export default function VehicleDetailPage() {
         vehicle={vehicle}
         onSave={handleSaveEditedVehicle}
       />
+      
+      {vehicleEngineData && (
+        <EditEngineDataDialog 
+            open={isEngineEditDialogOpen}
+            onOpenChange={setIsEngineEditDialogOpen}
+            engineData={vehicleEngineData}
+            onSave={handleEngineDataSave}
+        />
+      )}
+
       {selectedService && (
         <UnifiedPreviewDialog
           open={isViewServiceDialogOpen}

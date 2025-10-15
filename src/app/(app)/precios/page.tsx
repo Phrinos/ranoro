@@ -97,6 +97,13 @@ function PreciosPageComponent() {
         }
     ];
     
+    // Si se pasa 'make' como query param y la pestaña activa es 'editor',
+    // renderiza directamente el editor para esa marca.
+    const makeQueryParam = searchParams.get('make');
+    if (activeTab === 'editor' && makeQueryParam) {
+        return <VehicleCatalogEditor make={makeQueryParam} />;
+    }
+
     return (
         <TabbedPageLayout
             title="Precotizaciones"
@@ -110,13 +117,6 @@ function PreciosPageComponent() {
 
 
 export default function PreciosPageWrapper() {
-  const searchParams = useSearchParams();
-  const make = searchParams.get('make');
-  
-  if (make) {
-    return <VehicleCatalogEditor make={make} />;
-  }
-
   return (
     <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
       <PreciosPageComponent />
