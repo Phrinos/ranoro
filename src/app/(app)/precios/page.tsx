@@ -1,3 +1,4 @@
+
 // src/app/(app)/precios/page.tsx
 "use client";
 
@@ -15,8 +16,8 @@ import { db } from '@/lib/firebaseClient';
 import { VEHICLE_COLLECTION } from '@/lib/vehicle-constants';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
-const PriceListManagementContent = lazy(() => import('./components/price-list-management-content').then(m => ({ default: m.PriceListManagementContent })));
-const VencimientosContent = lazy(() => import('./components/VencimientosContent').then(m => ({ default: m.VencimientosContent })));
+const PriceListManagementContent = lazy(() => import('./components/price-list-management-content'));
+const VencimientosContent = lazy(() => import('./components/VencimientosContent'));
 
 
 function PreciosPageComponent() {
