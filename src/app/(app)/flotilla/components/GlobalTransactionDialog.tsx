@@ -143,7 +143,7 @@ export function GlobalTransactionDialog({
                             <CommandGroup>
                               {sortedDrivers.map((driver) => {
                                 const label = driver.name || driver.phone || String(driver.id);
-                                const searchValue = `${'\''\'''}${label}${driver.phone ?? ""}${ '\''\''' }`;
+                                const searchValue = `${label} ${driver.phone ?? ""}`;
                                 return (
                                   <CommandItem
                                     key={driver.id}
