@@ -124,8 +124,8 @@ interface VehicleCatalogEditorProps {
 }
 
 export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
-  const { toast } = useToast();
-  const methods = useForm<MakeDocForm>({
+    const { toast } = useToast();
+    const methods = useForm<MakeDocForm>({
     resolver: zodResolver(makeDocFormSchema),
     defaultValues: { make, models: [] },
     mode: "onBlur",
@@ -265,21 +265,22 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
               {modelsFA.fields.map((m, mi) => {
                 const gens = watch(`models.${mi}.generations`) || [];
                 return (
-                  <AccordionItem key={m.k} value={m.id}>
-                    <AccordionTrigger className="text-lg font-semibold">
-                      <div className="flex items-center gap-3">
+                  <AccordionItem key={m.k} value={m.id} className="border-b-0 rounded-lg bg-card overflow-hidden">
+                    <AccordionTrigger className="text-lg font-semibold px-4 py-3 hover:no-underline">
+                      <div className="flex items-center gap-3 w-full">
                         <Input
                           value={watch(`models.${mi}.name`) ?? ""}
                           onChange={(e) =>
                             setValue(`models.${mi}.name`, e.target.value, { shouldDirty: true })
                           }
-                          className="h-8 w-[280px]"
+                          className="h-8 w-full max-w-xs bg-white"
+                          onClick={(e) => e.stopPropagation()}
                         />
-                        <Badge variant="outline">{gens.length} rangos de años</Badge>
+                        <Badge variant="outline">{gens.length} rango(s) de años</Badge>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="pl-4 border-l space-y-4">
+                    <AccordionContent className="p-4 pt-2">
+                      <div className="pl-4 border-l-2 border-slate-200 space-y-4">
                         {gens.map((g: GenerationForm, gi: number) => {
                           const engines =
                             watch(`models.${mi}.generations.${gi}.engines`) || [];
@@ -290,127 +291,71 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                             `models.${mi}.generations.${gi}.endYear`
                           );
                           return (
-                            <Card key={g.id}>
-                              <CardContent className="pt-4 space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <span className="font-semibold">
-                                      Años:
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                      <Input
-                                        placeholder="Desde"
-                                        inputMode="numeric"
-                                        className="h-8 w-[120px]"
-                                        value={from ?? ""}
-                                        onChange={(e) =>
-                                          setValue(
-                                            `models.${mi}.generations.${gi}.startYear`,
-                                            e.target.value === "" ? undefined : Number(e.target.value),
-                                            { shouldDirty: true }
-                                          )
-                                        }
-                                      />
-                                      <span className="text-muted-foreground">-</span>
-                                      <Input
-                                        placeholder="Hasta"
-                                        inputMode="numeric"
-                                        className="h-8 w-[120px]"
-                                        value={to ?? ""}
-                                        onChange={(e) =>
-                                          setValue(
-                                            `models.${mi}.generations.${gi}.endYear`,
-                                            e.target.value === "" ? undefined : Number(e.target.value),
-                                            { shouldDirty: true }
-                                          )
-                                        }
-                                      />
-                                    </div>
+                            <div key={g.id} className="pt-4 border-t border-dashed first:border-t-0 first:pt-0">
+                               <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-sm">Rango de Años:</span>
+                                    <Input
+                                      placeholder="Desde"
+                                      inputMode="numeric"
+                                      className="h-8 w-24 bg-white"
+                                      value={from ?? ""}
+                                      onChange={(e) => setValue(`models.${mi}.generations.${gi}.startYear`, e.target.value === "" ? undefined : Number(e.target.value),{ shouldDirty: true })}
+                                    />
+                                    <span>-</span>
+                                    <Input
+                                      placeholder="Hasta"
+                                      inputMode="numeric"
+                                      className="h-8 w-24 bg-white"
+                                      value={to ?? ""}
+                                      onChange={(e) => setValue(`models.${mi}.generations.${gi}.endYear`, e.target.value === "" ? undefined : Number(e.target.value), { shouldDirty: true })}
+                                    />
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => appendEngine(mi, gi)}
-                                    >
-                                      <PlusCircle className="mr-2 h-4 w-4" />
-                                      Añadir motor
+                                     <Button type="button" variant="outline" size="sm" onClick={() => appendEngine(mi, gi)}>
+                                      <PlusCircle className="mr-2 h-4 w-4" />Motor
                                     </Button>
-                                    {gens.length > 1 && (
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => removeGeneration(mi, gi)}
-                                    >
-                                      <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                    )}
+                                     {gens.length > 1 && (
+                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeGeneration(mi, gi)}>
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                     )}
                                   </div>
-                                </div>
+                               </div>
 
-                                {/* Lista de motores */}
-                                <ul className="list-disc pl-6 space-y-2">
+                                <div className="pl-4 space-y-2">
                                   {engines.map((e: EngineData, ei: number) => (
-                                    <li key={`${g.id}-${ei}`} className="flex items-center gap-3">
+                                    <div key={`${g.id}-${ei}`} className="flex items-center gap-2 bg-muted/50 p-2 rounded-md">
                                       <Input
-                                        className="h-8 w-[260px]"
+                                        className="h-8 flex-1 bg-white"
                                         value={e?.name ?? ""}
-                                        onChange={(ev) =>
-                                          setValue(
-                                            `models.${mi}.generations.${gi}.engines.${ei}.name`,
-                                            ev.target.value,
-                                            { shouldDirty: true }
-                                          )
-                                        }
+                                        onChange={(ev) => setValue(`models.${mi}.generations.${gi}.engines.${ei}.name`,ev.target.value, { shouldDirty: true })}
                                       />
-                                      <Button
-                                        type="button"
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => openEngineDialog(mi, gi, ei)}
-                                      >
+                                      <Button type="button" variant="secondary" size="sm" onClick={() => openEngineDialog(mi, gi, ei)}>
                                         <Settings className="mr-2 h-4 w-4" />
                                         Detalles
                                       </Button>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => removeEngine(mi, gi, ei)}
-                                      >
+                                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeEngine(mi, gi, ei)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                       </Button>
-                                    </li>
+                                    </div>
                                   ))}
                                   {engines.length === 0 && (
-                                    <li className="text-sm text-muted-foreground">
-                                      No hay motores. Agrega uno.
-                                    </li>
+                                    <p className="text-sm text-muted-foreground text-center py-2">No hay motores para este rango de años. Agrega uno.</p>
                                   )}
-                                </ul>
-                              </CardContent>
-                            </Card>
+                                </div>
+                            </div>
                           );
                         })}
 
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => appendGeneration(mi)}
-                          >
+                        <div className="flex items-center gap-2 pt-4 mt-4 border-t">
+                          <Button type="button" variant="outline" onClick={() => appendGeneration(mi)}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Añadir Rango de Años
                           </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => removeModel(mi)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                            Eliminar modelo
+                          <Button type="button" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => removeModel(mi)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar Modelo
                           </Button>
                         </div>
                       </div>
@@ -419,6 +364,12 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                 );
               })}
             </Accordion>
+             {modelsFA.fields.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                    <p>No hay modelos para {make}.</p>
+                    <Button type="button" variant="link" onClick={addModel}>Añade el primero.</Button>
+                </div>
+            )}
           </div>
         </ScrollArea>
 
