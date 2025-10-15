@@ -1,4 +1,3 @@
-
 // src/app/(app)/vehiculos/components/vehicle-form.tsx
 "use client";
 
@@ -136,9 +135,14 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
         return generation ? generation.engines.sort((a, b) => a.name.localeCompare(b.name)) : [];
     }, [watchedMake, watchedModel, watchedYear, vehicleDb]);
 
+  const handleFormSubmit = (values: VehicleFormValues) => {
+    console.log("Vehicle form submitted with values:", values);
+    onSubmit(values);
+  };
+
   return (
     <Form {...form}>
-      <form id={id} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form id={id} onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         
         <FormField
           control={form.control}
