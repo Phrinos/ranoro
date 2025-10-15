@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle, Save, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebaseClient'; // Se renombra la importación para claridad
 import { collection, getDocs, doc, writeBatch } from 'firebase/firestore';
 
 // Definimos los tipos para la base de datos de vehículos
@@ -31,7 +31,8 @@ interface VehicleMake {
 
 export function DatabaseManagementTab() {
   const { toast } = useToast();
-  const [db, setDb] = useState<VehicleMake[]>([]);
+  // Se renombra el estado para evitar conflicto con la instancia de `db` de Firebase.
+  const [vehicleData, setVehicleData] = useState<VehicleMake[]>([]);
   const [selectedMake, setSelectedMake] = useState<string>('');
   const [newModelName, setNewModelName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,8 +43,8 @@ export function DatabaseManagementTab() {
       setIsLoading(true);
       try {
         const querySnapshot = await getDocs(collection(db, "vehicleData"));
-        const vehicleData: VehicleMake[] = querySnapshot.docs.map(doc => ({ make: doc.id, ...doc.data() } as VehicleMake));
-        setDb(vehicleData);
+        const data: VehicleMake[] = querySnapshot.docs.map(doc => ({ make: doc.id, ...doc.data() } as VehicleMake));
+        setVehicleData(data);
       } catch (error) {
         console.error("Error fetching vehicle data:", error);
         toast({ title: 'Error', description: 'No se pudieron cargar los datos de vehículos.', variant: 'destructive' });
@@ -54,10 +55,10 @@ export function DatabaseManagementTab() {
     };
 
     fetchVehicleData();
-  }, []);
+  }, [toast]);
   
-  const makes = useMemo(() => db.map(d => d.make).sort(), [db]);
-  const selectedMakeData = useMemo(() => db.find(d => d.make === selectedMake), [db, selectedMake]);
+  const makes = useMemo(() => vehicleData.map(d => d.make).sort(), [vehicleData]);
+  const selectedMakeData = useMemo(() => vehicleData.find(d => d.make === selectedMake), [vehicleData, selectedMake]);
 
   const handleAddModel = () => {
     if (!newModelName.trim() || !selectedMakeData) return;
@@ -68,7 +69,7 @@ export function DatabaseManagementTab() {
         return;
     }
 
-    const updatedDb = db.map(make => {
+    const updatedData = vehicleData.map(make => {
       if (make.make === selectedMake) {
         return {
           ...make,
@@ -77,12 +78,12 @@ export function DatabaseManagementTab() {
       }
       return make;
     });
-    setDb(updatedDb);
+    setVehicleData(updatedData);
     setNewModelName('');
   };
   
   const handleAddGeneration = (modelName: string) => {
-    const updatedDb = db.map(make => {
+    const updatedData = vehicleData.map(make => {
         if (make.make === selectedMake) {
             return {
                 ...make,
@@ -97,11 +98,11 @@ export function DatabaseManagementTab() {
         }
         return make;
     });
-    setDb(updatedDb);
+    setVehicleData(updatedData);
   };
   
   const handleUpdateGeneration = (modelName: string, genIndex: number, field: keyof EngineGeneration, value: any) => {
-    const updatedDb = db.map(make => {
+    const updatedData = vehicleData.map(make => {
         if (make.make === selectedMake) {
             const models = make.models.map(model => {
                 if (model.name === modelName) {
@@ -115,12 +116,12 @@ export function DatabaseManagementTab() {
         }
         return make;
     });
-    setDb(updatedDb);
+    setVehicleData(updatedData);
   };
 
   const handleAddEngine = (modelName: string, genIndex: number, newEngine: string) => {
     if (!newEngine.trim()) return;
-    const updatedDb = db.map(make => {
+    const updatedData = vehicleData.map(make => {
         if (make.make === selectedMake) {
             const models = make.models.map(model => {
                 if (model.name === modelName) {
@@ -135,11 +136,11 @@ export function DatabaseManagementTab() {
         }
         return make;
     });
-    setDb(updatedDb);
+    setVehicleData(updatedData);
   };
 
   const handleDeleteEngine = (modelName: string, genIndex: number, engineIndex: number) => {
-     const updatedDb = db.map(make => {
+     const updatedData = vehicleData.map(make => {
         if (make.make === selectedMake) {
             const models = make.models.map(model => {
                 if (model.name === modelName) {
@@ -154,7 +155,7 @@ export function DatabaseManagementTab() {
         }
         return make;
     });
-    setDb(updatedDb);
+    setVehicleData(updatedData);
   };
 
   const handleSaveChanges = async () => {
