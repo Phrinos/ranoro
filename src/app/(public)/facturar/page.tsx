@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Loader2, Search, FileText, FileJson, CheckCircle } from 'lucide-react';
+import { Loader2, Search, FileText, FileJson, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { billingService } from '@/lib/services/billing.service';
@@ -178,6 +178,13 @@ function FacturarPageComponent() {
       </header>
       <main className="flex-1 py-8 md:py-12 lg:py-16">
         <div className="container mx-auto max-w-xl px-4 md:px-6">
+           <Alert variant="destructive" className="mb-6">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Sitio en Fase de Pruebas</AlertTitle>
+                <AlertDescription>
+                  El módulo de facturación se encuentra en fase de desarrollo. La funcionalidad podría no operar como se espera.
+                </AlertDescription>
+            </Alert>
           <Card className="relative overflow-hidden">
              {isSubmitting && <LoadingOverlay message="Estamos timbrando tu factura, por favor espera un momento..." />}
             <CardHeader>
