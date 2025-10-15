@@ -1,12 +1,11 @@
 // src/app/(app)/precios/page.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { inventoryService } from '@/lib/services';
 import type { VehiclePriceList } from '@/types';
-import { PriceListManagementContent } from './components/price-list-management-content';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';
@@ -14,12 +13,18 @@ import type { EngineData } from '@/lib/data/vehicle-database-types';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { VEHICLE_COLLECTION } from '@/lib/vehicle-constants';
+import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+
+const PriceListManagementContent = lazy(() => import('./components/price-list-management-content').then(m => ({ default: m.PriceListManagementContent })));
+const VencimientosContent = lazy(() => import('./components/VencimientosContent').then(m => ({ default: m.VencimientosContent })));
+
 
 function PreciosPageComponent() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const [priceLists, setPriceLists] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'lista');
     
     useEffect(() => {
         setIsLoading(true);
@@ -71,25 +76,31 @@ function PreciosPageComponent() {
             </div>
         );
     }
-    
-    return (
-        <>
-             <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Precotizaciones</h1>
-                        <p className="text-primary-foreground/80 mt-1">
-                            Gestiona los costos de servicios e insumos para cada vehículo.
-                        </p>
-                    </div>
-                </div>
-            </div>
+
+    const tabs = [
+        { value: 'lista', label: 'Lista de Precios', content: 
             <PriceListManagementContent 
                 priceLists={priceLists}
                 allMakes={allMakes}
                 onEngineDataSave={handleEngineDataSave}
-            />
-        </>
+            /> 
+        },
+        { value: 'vencimientos', label: 'Vencimientos', content: 
+            <VencimientosContent 
+                priceLists={priceLists} 
+                onEngineDataSave={handleEngineDataSave} 
+            /> 
+        },
+    ];
+    
+    return (
+        <TabbedPageLayout
+            title="Precotizaciones"
+            description="Gestiona los costos de servicios e insumos para cada vehículo."
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={tabs}
+        />
     );
 }
 

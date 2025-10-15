@@ -5,7 +5,7 @@ import React from 'react';
 import { Accordion } from "@/components/ui/accordion";
 import type { VehiclePriceList } from '@/types';
 import { VehicleMakeAccordion } from './VehicleMakeAccordion';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 interface PriceListManagementContentProps {
   priceLists: VehiclePriceList[];
@@ -13,10 +13,14 @@ interface PriceListManagementContentProps {
   onEngineDataSave: (make: string, model: string, generationIndex: number, engineIndex: number, data: any) => void;
 }
 
-export function PriceListManagementContent({ priceLists, allMakes, onEngineDataSave }: PriceListManagementContentProps) {
+export default function PriceListManagementContent({ priceLists, allMakes, onEngineDataSave }: PriceListManagementContentProps) {
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardHeader>
+        <CardTitle>Base de Datos Completa</CardTitle>
+        <CardDescription>Explora y edita todas las marcas, modelos y motores en el sistema.</CardDescription>
+      </CardHeader>
+      <CardContent>
         <Accordion type="multiple" className="w-full space-y-2">
           {allMakes.map(make => (
             <VehicleMakeAccordion 

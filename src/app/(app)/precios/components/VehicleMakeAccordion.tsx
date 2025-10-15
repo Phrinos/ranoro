@@ -4,30 +4,33 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { VehicleModelAccordion } from './VehicleModelAccordion';
-import type { EngineData } from '@/lib/data/vehicle-database-types';
+import type { EngineData, VehicleModel } from '@/lib/data/vehicle-database-types';
 import { db } from '@/lib/firebaseClient';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
 
 interface VehicleMakeAccordionProps {
   make: string;
+  initialData?: any; // Para la pestaña de vencimientos
   onEngineDataSave: (make: string, model: string, generationIndex: number, engineIndex: number, data: EngineData) => void;
 }
 
 interface MakeData {
-    models: Model[];
+    models: VehicleModel[];
 }
 
-interface Model {
-    name: string;
-    // other properties
-}
-
-export function VehicleMakeAccordion({ make, onEngineDataSave }: VehicleMakeAccordionProps) {
-  const [makeData, setMakeData] = useState<MakeData | null>(null);
-  const [loading, setLoading] = useState(true);
+export function VehicleMakeAccordion({ make, initialData, onEngineDataSave }: VehicleMakeAccordionProps) {
+  const [makeData, setMakeData] = useState<MakeData | null>(initialData || null);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    // Si ya tenemos datos iniciales (desde la pestaña de vencidos), no necesitamos cargar de nuevo.
+    if (initialData) {
+        setMakeData(initialData);
+        setLoading(false);
+        return;
+    }
+    
     setLoading(true);
     const ref = doc(db, VEHICLE_COLLECTION, make);
     const unsub = onSnapshot(
@@ -43,7 +46,7 @@ export function VehicleMakeAccordion({ make, onEngineDataSave }: VehicleMakeAcco
       }
     );
     return () => unsub();
-  }, [make]);
+  }, [make, initialData]);
 
 
   const models = useMemo(() => {
