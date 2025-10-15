@@ -1,5 +1,5 @@
 
-import { sendConfirmationMessage } from './whatsapp/whatsapp.service';
+import { sendConfirmationMessage, sendTestMessage } from './whatsapp/whatsapp.service';
 
 /**
  * ----------------------------------------------------------
@@ -14,4 +14,5 @@ import { sendConfirmationMessage } from './whatsapp/whatsapp.service';
 export const messagingService = {
   // WhatsApp messaging
   sendWhatsappConfirmation: sendConfirmationMessage,
+  sendTestMessage: sendTestMessage,
 };

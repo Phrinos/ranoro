@@ -1,7 +1,9 @@
 // functions/src/index.ts
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
+import * as admin from 'firebase-admin';
+import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { startOfDay, endOfDay } from 'date-fns';
 import { toZonedTime, zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
 
@@ -22,15 +24,10 @@ export const generateDailyRentalCharges = onSchedule(
   async () => {
     logger.info('Starting daily rental charge generation...');
 
-    // 1) Ahora en UTC y representado en la zona horaria local para cálculos de "día"
-    const nowUtc = new Date();                 // instante actual (UTC)
-    const nowZoned = toZonedTime(nowUtc, TZ);  // “reloj” en CDMX
-
-    // 2) Inicio/fin del día de CDMX convertidos a UTC para consultar en Firestore
+    const nowUtc = new Date();
+    const nowZoned = toZonedTime(nowUtc, TZ);
     const dayStartUtc = zonedTimeToUtc(startOfDay(nowZoned), TZ);
-    const dayEndUtc   = zonedTimeToUtc(endOfDay(nowZoned), TZ);
-
-    // 3) Clave de día estable en CDMX (idempotencia y agrupación)
+    const dayEndUtc = zonedTimeToUtc(endOfDay(nowZoned), TZ);
     const dateKey = formatInTimeZone(nowUtc, TZ, 'yyyy-MM-dd');
 
     const activeDriversSnap = await db
@@ -54,13 +51,10 @@ export const generateDailyRentalCharges = onSchedule(
 
       const dailyRentalCost = vehicle?.dailyRentalCost;
       if (!vehicleDoc.exists || !dailyRentalCost) {
-        logger.warn(
-          `Vehicle ${vehicleId} for driver ${driver.name} not found or has no daily rental cost.`
-        );
+        logger.warn(`Vehicle ${vehicleId} for driver ${driver.name} not found or has no daily rental cost.`);
         return;
       }
 
-      // 4) Idempotente: un cargo por driver/día local => ID determinista
       const chargeId = `${driverDoc.id}_${dateKey}`;
       const chargeRef = db.collection('dailyRentalCharges').doc(chargeId);
 
@@ -70,16 +64,13 @@ export const generateDailyRentalCharges = onSchedule(
           vehicleId,
           amount: dailyRentalCost,
           vehicleLicensePlate: vehicle?.licensePlate || '',
-          // guarda siempre en UTC; la presentación se hace con la zona que quieras
           date: admin.firestore.Timestamp.fromDate(nowUtc),
-          // metacampos útiles:
-          dateKey, // 'yyyy-MM-dd' en CDMX
+          dateKey,
           dayStartUtc: admin.firestore.Timestamp.fromDate(dayStartUtc),
           dayEndUtc: admin.firestore.Timestamp.fromDate(dayEndUtc),
         });
         logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
       } catch (err: any) {
-        // Ya existe -> ok (pasa en reintentos del job)
         if (err?.code === 6 || err?.code === 'ALREADY_EXISTS') {
           logger.info(`Charge already exists for ${driver.name} (${dateKey}).`);
         } else {
@@ -92,3 +83,114 @@ export const generateDailyRentalCharges = onSchedule(
     logger.info('Daily rental charge generation finished successfully.');
   }
 );
+
+
+// --- Inventory Functions ---
+
+const isAdmin = async (uid: string): Promise<boolean> => {
+    try {
+      const user = await admin.auth().getUser(uid);
+      return user.customClaims?.role === "admin";
+    } catch (error) {
+      logger.error(`[Auth] Error checking admin status for UID: ${uid}`, error);
+      return false;
+    }
+};
+
+export const onStockExit = onDocumentUpdated("serviceRecords/{serviceId}", async (event) => {
+    const serviceId = event.params.serviceId;
+    const dataBefore = event.data?.before.data();
+    const dataAfter = event.data?.after.data();
+
+    if (!dataBefore || !dataAfter || dataAfter.status !== "entregado" || dataBefore.status === "entregado") return;
+
+    const items = dataAfter.items;
+    if (!items || items.length === 0) return;
+
+    logger.info(`[Inventory] Processing stock exit for service ${serviceId}.`);
+    try {
+        await db.runTransaction(async (transaction) => {
+            for (const item of items) {
+                if (!item.id || !item.quantity || item.quantity <= 0) continue;
+
+                const inventoryItemRef = db.collection("inventoryItems").doc(item.id);
+                const movementRef = db.collection("inventoryMovements").doc();
+                transaction.set(movementRef, {
+                    itemId: item.id, serviceId: serviceId, folio: dataAfter.folio || null, type: "sale",
+                    quantityChanged: -item.quantity, date: admin.firestore.FieldValue.serverTimestamp(),
+                    itemName: item.name || "N/A", itemSku: item.sku || "N/A",
+                });
+                transaction.update(inventoryItemRef, { stock: admin.firestore.FieldValue.increment(-item.quantity) });
+            }
+        });
+        logger.info(`[Inventory] Stock exit for service ${serviceId} processed successfully.`);
+    } catch (error) {
+        logger.error(`[Inventory] Transaction failed for service ${serviceId}:`, error);
+    }
+});
+
+const processStockEntry = async (purchaseSnap: FirebaseFirestore.DocumentSnapshot, purchaseId: string) => {
+    const purchaseData = purchaseSnap.data();
+    if (!purchaseData?.items || purchaseData.items.length === 0) return;
+
+    logger.info(`[Inventory] Processing stock entry for purchase ${purchaseId}.`);
+    try {
+        await db.runTransaction(async (transaction) => {
+            for (const item of purchaseData.items) {
+                if (!item.id || !item.quantity || item.quantity <= 0) continue;
+                const inventoryItemRef = db.collection("inventoryItems").doc(item.id);
+                const movementRef = db.collection("inventoryMovements").doc();
+                transaction.set(movementRef, {
+                    itemId: item.id, purchaseId: purchaseId, type: "purchase", quantityChanged: item.quantity,
+                    date: admin.firestore.FieldValue.serverTimestamp(), itemName: item.name || "N/A", itemSku: item.sku || "N/A",
+                });
+                transaction.update(inventoryItemRef, { stock: admin.firestore.FieldValue.increment(item.quantity) });
+            }
+        });
+        logger.info(`[Inventory] Stock entry for purchase ${purchaseId} processed successfully.`);
+    } catch (error) {
+        logger.error(`[Inventory] Transaction failed for purchase ${purchaseId}:`, error);
+    }
+};
+
+export const onPurchaseCreated = onDocumentCreated("purchases/{purchaseId}", async (event) => {
+    if (event.data?.data()?.status === 'completado') {
+        await processStockEntry(event.data, event.params.purchaseId);
+    }
+});
+
+export const onPurchaseUpdated = onDocumentUpdated("purchases/{purchaseId}", async (event) => {
+    if (event.data?.after.data()?.status === 'completado' && event.data?.before.data()?.status !== 'completado') {
+        await processStockEntry(event.data.after, event.params.purchaseId);
+    }
+});
+
+export const adjustStock = onCall(async (request) => {
+    if (!request.auth || !(await isAdmin(request.auth.uid))) throw new HttpsError("permission-denied", "Admin permission required.");
+    const { itemId, newQuantity, reason } = request.data;
+    if (!itemId || typeof newQuantity !== 'number' || newQuantity < 0 || !reason) throw new HttpsError("invalid-argument", "Missing parameters.");
+
+    const inventoryItemRef = db.collection("inventoryItems").doc(itemId);
+    const movementRef = db.collection("inventoryMovements").doc();
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const itemDoc = await transaction.get(inventoryItemRef);
+            if (!itemDoc.exists) throw new HttpsError("not-found", `Item ${itemId} not found.`);
+            const currentStock = itemDoc.data()?.stock || 0;
+            const quantityChanged = newQuantity - currentStock;
+            if (quantityChanged === 0) return;
+
+            transaction.set(movementRef, {
+                itemId, type: "adjustment", quantityChanged, reason, previousStock: currentStock, newStock: newQuantity,
+                date: admin.firestore.FieldValue.serverTimestamp(), adminId: request.auth?.uid,
+                itemName: itemDoc.data()?.name || "N/A", itemSku: itemDoc.data()?.sku || "N/A",
+            });
+            transaction.update(inventoryItemRef, { stock: newQuantity });
+        });
+        return { success: true, message: "Inventory adjusted." };
+    } catch (error) {
+        logger.error(`[Inventory] Stock adjustment failed for item ${itemId}:`, error);
+        throw new HttpsError("internal", "Failed to adjust inventory.");
+    }
+});

@@ -4,7 +4,7 @@ import {
   onSnapshot,
   doc,
   getDoc,
-  writeBatch, // Importar writeBatch
+  writeBatch,
   query,
   where,
   getDocs,
@@ -13,10 +13,12 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, User } from '@/types';
-import { cleanObjectForFirestore } from '../forms';
+import type { ServiceRecord, Vehicle, InventoryItem, User } from '@/types';
+import { cleanObjectForFirestore, parseDate } from '../forms';
 import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
+import { nanoid } from 'nanoid';
+
 
 const toNumber = (v: any): number =>
   typeof v === 'number'
@@ -44,69 +46,89 @@ const buildVehicleIdentifier = (v: any | null | undefined) => {
   return out || undefined;
 };
 
-async function denormalizeService(base: any): Promise<any> {
+// --- DENORMALIZATION: Central function to enrich service data ---
+async function denormalizeService(
+  base: any, 
+  allVehicles: Vehicle[], 
+  allUsers: User[]
+): Promise<any> {
   const serviceData = { ...base };
 
+  // 1. Vehicle Denormalization
   let vehicle = serviceData.vehicle || null;
   if (!vehicle && serviceData.vehicleId) {
-    try {
-      const vehicles = await inventoryService.onVehiclesUpdatePromise();
-      vehicle = vehicles.find((v: any) => v.id === serviceData.vehicleId) || null;
-    } catch { /* noop */ }
+    vehicle = allVehicles.find((v: any) => v.id === serviceData.vehicleId) || null;
   }
   if (vehicle) {
     serviceData.vehicleIdentifier = buildVehicleIdentifier(vehicle);
     serviceData.customerName = vehicle.ownerName || serviceData.customerName;
+    serviceData.customerPhone = vehicle.ownerPhone || serviceData.customerPhone; // Denormalize phone
   }
 
-  try {
-    const users = await adminService.onUsersUpdatePromise();
-    const byId = (uid: any) => users.find((u: any) => String(u.id) === String(uid));
-    const norm = (s?: string) => (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, " ").trim();
-    const byName = (name?: string) => users.find((u: any) => norm(u.name) === norm(name));
+  // 2. User (Advisor/Technician) Denormalization
+  const byId = (uid: any) => allUsers.find((u: any) => String(u.id) === String(uid));
+  const norm = (s?: string) => (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, " ").trim();
+  const byName = (name?: string) => allUsers.find((u: any) => norm(u.name) === norm(name));
 
-    let advisor = serviceData.serviceAdvisorId ? byId(serviceData.serviceAdvisorId) : null;
-    if (!advisor && serviceData.serviceAdvisorName) {
-      advisor = byName(serviceData.serviceAdvisorName);
-      if (advisor) serviceData.serviceAdvisorId = advisor.id;
-    }
+  // Advisor
+  let advisor = serviceData.serviceAdvisorId ? byId(serviceData.serviceAdvisorId) : null;
+  if (!advisor && serviceData.serviceAdvisorName) {
+    advisor = byName(serviceData.serviceAdvisorName);
+    if (advisor) serviceData.serviceAdvisorId = advisor.id;
+  }
+  if (advisor) {
+    serviceData.serviceAdvisorName = advisor.name || serviceData.serviceAdvisorName || null;
+    serviceData.serviceAdvisorSignatureDataUrl = advisor.signatureDataUrl || serviceData.serviceAdvisorSignatureDataUrl || null;
+  }
 
-    if (advisor) {
-      serviceData.serviceAdvisorName = advisor.name || serviceData.serviceAdvisorName || null;
-      serviceData.serviceAdvisorSignatureDataUrl = advisor.signatureDataUrl || serviceData.serviceAdvisorSignatureDataUrl || null;
-    }
-  } catch { /* noop */ }
+  // Technician
+  let technician = serviceData.technicianId ? byId(serviceData.technicianId) : null;
+  if (!technician && serviceData.technicianName) {
+    technician = byName(serviceData.technicianName);
+    if (technician) serviceData.technicianId = technician.id;
+  }
+  if (technician) {
+    serviceData.technicianName = technician.name || serviceData.technicianName || null;
+    // Note: Technician signature is usually not denormalized automatically
+  }
 
+  // 3. Financial Denormalization
   serviceData.total = pickTotal(serviceData);
   
   return serviceData;
 }
 
+
+// --- PUBLIC DATA: Structure for the public-facing document ---
 function buildPublicData(svc: any) {
     return {
+      serviceId: svc.id, // Reference to the main service document
       folio: svc.folio || null,
       status: svc.status || null,
       subStatus: svc.subStatus ?? null,
       customerName: svc.customerName || null,
       serviceAdvisorName: svc.serviceAdvisorName || null,
-      serviceAdvisorSignatureDataUrl: svc.serviceAdvisorSignatureDataUrl || null,
       vehicleId: svc.vehicleId || null,
       vehicleIdentifier: svc.vehicleIdentifier || null,
       receptionDateTime: svc.receptionDateTime || null,
       deliveryDateTime: svc.deliveryDateTime || null,
-      serviceItems: Array.isArray(svc.serviceItems) ? svc.serviceItems : [],
+      appointmentDateTime: svc.appointmentDateTime || null,
+      appointmentStatus: svc.appointmentStatus || null,
+      serviceItems: Array.isArray(svc.serviceItems) ? svc.serviceItems.map((item: any) => ({ name: item.name, sellingPrice: item.sellingPrice })) : [],
       total: toNumber(svc.total),
       recommendations: svc.recommendations || null,
       customerSignatureReception: svc.customerSignatureReception || null,
+      customerSignatureDelivery: svc.customerSignatureDelivery || null,
       isPublic: true,
       updatedAt: serverTimestamp(),
       createdAt: svc.createdAt || serverTimestamp(),
     };
 }
 
+
 const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
   if (!db) return () => {};
-  const q = query(collection(db, 'serviceRecords'));
+  const q = query(collection(db, 'serviceRecords'), orderBy("serviceDate", "desc"));
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceRecord)));
   });
@@ -150,22 +172,35 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
     const isNew = !data.id;
     const serviceId = isNew ? doc(collection(db, 'serviceRecords')).id : (data.id as string);
   
+    // Fetch dependencies for denormalization
+    const [allVehicles, allUsers] = await Promise.all([
+      inventoryService.onVehiclesUpdatePromise(),
+      adminService.onUsersUpdatePromise()
+    ]);
+
     const serviceData: any = {
       ...data,
       id: serviceId,
+      publicId: data.publicId || nanoid(10), // Ensure publicId exists
       updatedAt: serverTimestamp(),
       createdAt: (data as any).createdAt?.toDate ? (data as any).createdAt : (data as any).createdAt || serverTimestamp(),
     };
     
-    const denormalizedData = await denormalizeService(serviceData);
+    const denormalizedData = await denormalizeService(serviceData, allVehicles, allUsers);
   
     const serviceRef = doc(db, 'serviceRecords', serviceId);
-    const publicId = data.publicId || serviceId;
-    const publicRef = doc(db, 'publicServices', publicId);
+    const publicRef = doc(db, 'publicServices', denormalizedData.publicId);
   
-    const batch = writeBatch(db); // Sintaxis correcta para el cliente
+    const batch = writeBatch(db);
     batch.set(serviceRef, cleanObjectForFirestore(denormalizedData), { merge: true });
     batch.set(publicRef, cleanObjectForFirestore(buildPublicData(denormalizedData)), { merge: true });
+    
+    // If status is 'Entregado', update lastServiceDate on the vehicle
+    if (denormalizedData.status === 'Entregado' && denormalizedData.vehicleId) {
+      const vehicleRef = doc(db, 'vehicles', denormalizedData.vehicleId);
+      batch.update(vehicleRef, { lastServiceDate: denormalizedData.deliveryDateTime || new Date().toISOString() });
+    }
+
     await batch.commit();
   
     const saved = await getDoc(serviceRef);
@@ -175,71 +210,93 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
 
 const updateService = async (id: string, data: Partial<ServiceRecord>) => {
     if (!db) throw new Error('Database not initialized.');
+    
     const serviceRef = doc(db, 'serviceRecords', id);
+    const serviceSnap = await getDoc(serviceRef);
+    if (!serviceSnap.exists()) throw new Error("Service to update not found.");
+
     const batch = writeBatch(db);
     batch.update(serviceRef, data);
+    
+    // Also update the public document if it exists
+    const publicId = serviceSnap.data().publicId || id;
+    if (publicId) {
+      const publicRef = doc(db, 'publicServices', publicId);
+      batch.update(publicRef, data);
+    }
+    
     await batch.commit();
 };
 
-const completeService = async (service: ServiceRecord, paymentDetails: any) => {
-    if (!db) throw new Error("Database not initialized");
+const completeService = async (service: ServiceRecord, paymentDetails: any, batch?: WriteBatch) => {
+    const manageBatch = !batch;
+    const workBatch = batch || writeBatch(db);
 
-    return runTransaction(db, async (transaction) => {
-        const serviceRef = doc(db, 'serviceRecords', service.id);
-        const publicServiceRef = doc(db, 'publicServices', service.publicId || service.id);
-        
-        // --- 1. ALL READS FIRST ---
-        const suppliesToDiscount = (service.serviceItems || [])
-            .flatMap(item => item.suppliesUsed || [])
-            .filter(supply => !supply.isService && supply.supplyId && supply.quantity > 0);
+    const serviceRef = doc(db, 'serviceRecords', service.id);
+    const publicServiceRef = doc(db, 'publicServices', (service as any).publicId || service.id);
+    
+    const suppliesToDiscount = (service.serviceItems || [])
+        .flatMap((item: any) => item.suppliesUsed || [])
+        .filter((supply: any) => !supply.isService && supply.supplyId && supply.quantity > 0);
 
-        const itemRefs = suppliesToDiscount.map(item => doc(db, 'inventory', item.supplyId));
-        const itemDocs = await Promise.all(itemRefs.map(ref => transaction.get(ref)));
+    const itemRefs = suppliesToDiscount.map((item: any) => doc(db, 'inventory', item.supplyId));
+    
+    // Fetch docs outside the batch write loop if we're not in a transaction
+    if (manageBatch) {
+      const itemDocs = await Promise.all(itemRefs.map(ref => getDoc(ref)));
+      itemDocs.forEach((itemDoc, index) => {
+          if (itemDoc.exists()) {
+              const currentStock = itemDoc.data().quantity || 0;
+              const newStock = currentStock - suppliesToDiscount[index].quantity;
+              workBatch.update(itemDoc.ref, { quantity: newStock });
+          }
+      });
+    }
 
-        // --- 2. ALL WRITES AFTER ---
-        const cleanedNextServiceInfo = cleanObjectForFirestore(paymentDetails.nextServiceInfo);
-        const updateData = {
-            status: 'Entregado' as const,
-            payments: paymentDetails.payments,
-            deliveryDateTime: new Date().toISOString(),
-            updatedAt: serverTimestamp(),
-            nextServiceInfo: cleanedNextServiceInfo,
-        };
-        
-        transaction.update(serviceRef, updateData);
-        transaction.update(publicServiceRef, {
-            status: 'Entregado',
-            deliveryDateTime: updateData.deliveryDateTime,
-            payments: paymentDetails.payments,
-            updatedAt: serverTimestamp(),
-        });
+    const cleanedNextServiceInfo = cleanObjectForFirestore(paymentDetails.nextServiceInfo);
+    const deliveryTime = new Date().toISOString();
 
-        // Discount supplies from inventory
-        itemDocs.forEach((itemDoc, index) => {
-            if (itemDoc.exists()) {
-                const currentStock = itemDoc.data().quantity || 0;
-                const newStock = currentStock - suppliesToDiscount[index].quantity;
-                transaction.update(itemDoc.ref, { quantity: newStock });
-            }
-        });
-        
-        // Add cash payments to cash drawer
-        for (const payment of paymentDetails.payments) {
-            if (payment.method === 'Efectivo' && payment.amount > 0) {
-                const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
-                transaction.set(cashTransactionRef, {
-                    date: new Date().toISOString(),
-                    type: 'Entrada',
-                    amount: payment.amount,
-                    concept: `Pago de servicio #${service.folio || service.id.slice(-6)}`,
-                    userId: service.serviceAdvisorId,
-                    userName: service.serviceAdvisorName,
-                    relatedType: 'Servicio',
-                    relatedId: service.id,
-                });
-            }
-        }
+    const updateData = {
+        status: 'Entregado' as const,
+        payments: paymentDetails.payments,
+        deliveryDateTime: deliveryTime,
+        updatedAt: serverTimestamp(),
+        nextServiceInfo: cleanedNextServiceInfo,
+    };
+    
+    workBatch.update(serviceRef, updateData);
+    workBatch.update(publicServiceRef, {
+        status: 'Entregado',
+        deliveryDateTime: deliveryTime,
+        payments: paymentDetails.payments,
+        updatedAt: serverTimestamp(),
     });
+
+    // Update last service date on vehicle
+    if (service.vehicleId) {
+        const vehicleRef = doc(db, 'vehicles', service.vehicleId);
+        workBatch.update(vehicleRef, { lastServiceDate: deliveryTime });
+    }
+    
+    for (const payment of paymentDetails.payments) {
+        if (payment.method === 'Efectivo' && payment.amount > 0) {
+            const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
+            workBatch.set(cashTransactionRef, {
+                date: deliveryTime,
+                type: 'Entrada',
+                amount: payment.amount,
+                concept: `Pago de servicio #${(service as any).folio || service.id.slice(-6)}`,
+                userId: service.serviceAdvisorId,
+                userName: service.serviceAdvisorName,
+                relatedType: 'Servicio',
+                relatedId: service.id,
+            });
+        }
+    }
+    
+    if (manageBatch) {
+        await workBatch.commit();
+    }
 };
 
 const deleteService = async (id: string): Promise<void> => {
@@ -252,6 +309,35 @@ const deleteService = async (id: string): Promise<void> => {
   await batch.commit();
 }
 
+const saveMigratedServices = async (services: ServiceRecord[], vehicles: Vehicle[]): Promise<void> => {
+    if (!db) throw new Error('Database not initialized.');
+
+    const batch = writeBatch(db);
+    const allUsers = await adminService.onUsersUpdatePromise();
+
+    for (const vehicle of vehicles) {
+        const vehicleRef = doc(db, 'vehicles', vehicle.id);
+        batch.set(vehicleRef, cleanObjectForFirestore(vehicle));
+    }
+
+    for (const service of services) {
+        const serviceRef = doc(db, 'serviceRecords', service.id);
+        const denormalizedData = await denormalizeService(service, vehicles, allUsers);
+        batch.set(serviceRef, cleanObjectForFirestore(denormalizedData));
+        
+        const publicId = (service as any).publicId || service.id;
+        const publicRef = doc(db, 'publicServices', publicId);
+        batch.set(publicRef, cleanObjectForFirestore(buildPublicData(denormalizedData)));
+    }
+
+    await batch.commit();
+};
+
+const cancelService = async (serviceId: string, reason: string): Promise<void> => {
+    const data = { status: 'Cancelado', cancellationReason: reason, cancellationTimestamp: new Date().toISOString() };
+    await updateService(serviceId, data);
+};
+
 
 export const serviceService = {
   onServicesUpdate,
@@ -262,4 +348,6 @@ export const serviceService = {
   updateService,
   completeService,
   deleteService,
+  saveMigratedServices,
+  cancelService,
 };

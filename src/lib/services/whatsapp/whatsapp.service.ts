@@ -60,3 +60,46 @@ export const sendConfirmationMessage = async (service: ServiceRecord): Promise<A
     return { status: 'error', message };
   }
 };
+
+export const sendTestMessage = async (to: string): Promise<ApiResponse> => {
+    const workshopInfo = await getWorkshopInfo();
+
+    if (!workshopInfo?.facturaComApiKey) {
+        return { status: 'error', message: 'API Key for WhatsApp is not configured.' };
+    }
+
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    myHeaders.append('F-API-KEY', workshopInfo.facturaComApiKey);
+    myHeaders.append('F-SECRET-KEY', workshopInfo.facturaComApiSecret || '');
+
+    const raw = JSON.stringify({
+        to: to,
+        body: [
+            { name: 'customer_name', value: 'Cliente de Prueba' },
+            { name: 'service_date', value: new Date().toLocaleDateString('es-MX') },
+            { name: 'workshop_name', value: workshopInfo.name },
+        ],
+    });
+
+    const requestOptions: RequestInit = {
+        method: 'POST',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow',
+    };
+
+    try {
+        const response = await fetch('https://apis.facturacom.co/v3/whatsapp/send-template/appointment_confirmation', requestOptions);
+        const result = await response.json();
+
+        if (!response.ok) {
+            return { status: 'error', message: result.message || 'An unknown error occurred.' };
+        }
+
+        return { status: 'success', message: 'Test message sent successfully.' };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+        return { status: 'error', message };
+    }
+};
