@@ -5,19 +5,23 @@ interface Aceite {
     grado: string | null;
     litros: number | null;
     costoUnitario: number;
+    lastUpdated?: string;
 }
 interface Filtro {
     sku: string | null;
     costoUnitario: number;
+    lastUpdated?: string;
 }
 interface BalataInfo {
+    id: string; // ID único para el array, ej: nanoid()
     modelo: string | null;
     tipo: 'metalicas' | 'semimetalicas' | 'ceramica' | 'organica' | null;
     costoJuego: number;
 }
 interface Balatas {
-    delanteras: BalataInfo;
-    traseras: BalataInfo;
+    delanteras: BalataInfo[];
+    traseras: BalataInfo[];
+    lastUpdated?: string;
 }
 interface BujiaModelos {
     cobre: string | null;
@@ -33,6 +37,7 @@ interface Bujias {
     cantidad: number | null;
     modelos: BujiaModelos;
     costoUnitario: BujiaCostos;
+    lastUpdated?: string;
 }
 interface Inyector {
     tipo: 'Normal' | 'Piezoelectrico' | 'GDI' | null;

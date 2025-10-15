@@ -12,14 +12,17 @@ const aceiteSchema = z.object({
   grado: z.string().nullable().optional(),
   litros: numberCoercion,
   costoUnitario: numberCoercion,
+  lastUpdated: z.string().optional(),
 });
 
 const filtroSchema = z.object({
   sku: z.string().nullable().optional(),
   costoUnitario: numberCoercion,
+  lastUpdated: z.string().optional(),
 });
 
 const balataInfoSchema = z.object({
+  id: z.string(), // ID para react-hook-form
   modelo: z.string().nullable().optional(),
   tipo: z
     .enum(["metalicas", "semimetalicas", "ceramica", "organica"])
@@ -43,6 +46,7 @@ const bujiasSchema = z.object({
     platino: numberCoercion,
     iridio: numberCoercion,
   }),
+  lastUpdated: z.string().optional(),
 });
 
 const inyectorSchema = z.object({
@@ -71,8 +75,9 @@ export const engineDataSchema = z.object({
     filtroAceite: filtroSchema,
     filtroAire: filtroSchema,
     balatas: z.object({
-      delanteras: balataInfoSchema,
-      traseras: balataInfoSchema,
+      delanteras: z.array(balataInfoSchema).optional(),
+      traseras: z.array(balataInfoSchema).optional(),
+      lastUpdated: z.string().optional(),
     }),
     bujias: bujiasSchema,
     inyector: inyectorSchema,
