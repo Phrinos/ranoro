@@ -4,8 +4,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { VehicleModelAccordion } from './VehicleModelAccordion';
-import { EngineData } from '@/lib/data/vehicle-database-types';
-import { db } from '@/lib/firebase';
+import type { EngineData } from '@/lib/data/vehicle-database-types';
+import { db } from '@/lib/firebaseClient';
 import { doc, getDoc } from 'firebase/firestore';
 
 interface VehicleMakeAccordionProps {
@@ -30,7 +30,7 @@ export function VehicleMakeAccordion({ make, onEngineDataSave }: VehicleMakeAcco
     const fetchMakeData = async () => {
       setLoading(true);
       try {
-        const docRef = doc(db, 'vehicleData', make);
+        const docRef = doc(db, 'vehiclePriceLists', make);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setMakeData(docSnap.data() as MakeData);
@@ -67,7 +67,7 @@ export function VehicleMakeAccordion({ make, onEngineDataSave }: VehicleMakeAcco
                     <VehicleModelAccordion
                         key={model.name}
                         makeName={make}
-                        model={model}
+                        model={model as any}
                         onEngineDataSave={onEngineDataSave}
                     />
                 ))}
