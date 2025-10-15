@@ -1,8 +1,9 @@
-
+// src/app/(app)/servicios/components/service-calendar.tsx
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { Calendar } from "@/components/ui/calendar";
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { ServiceRecord, Vehicle, Technician, User } from '@/types';
@@ -51,13 +52,11 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
         return compareAsc(dateA, dateB);
     });
   }, [selectedDate, eventsByDate]);
-
-  const eventDays = useMemo(() => {
-      return Array.from(eventsByDate.keys()).map(dateStr => new Date(dateStr.replace(/-/g, '/')));
-  }, [eventsByDate]);
-
-  const modifiers = {
-    hasEvent: eventDays,
+  
+  const handleDateChange = (value: any) => {
+      if (value instanceof Date) {
+          setSelectedDate(value);
+      }
   };
 
   const getStatusVariant = (status: ServiceRecord['status'], subStatus?: ServiceRecord['subStatus']): "default" | "secondary" | "outline" | "destructive" | "success" => {
@@ -65,19 +64,26 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
     if (status === 'Agendado' && subStatus === 'Sin Confirmar') return 'secondary';
     return 'default';
   };
+  
+  const tileClassName = ({ date, view }: { date: Date; view: string }) => {
+    if (view === 'month') {
+      const dateKey = format(date, 'yyyy-MM-dd');
+      if (eventsByDate.has(dateKey)) {
+        return 'has-event';
+      }
+    }
+    return null;
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-1">
         <Card className="sticky top-4 flex justify-center p-8">
             <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              locale={es}
-              modifiers={modifiers}
-              modifiersClassNames={{ hasEvent: 'has-event' }}
-              className="p-0"
+              onChange={handleDateChange}
+              value={selectedDate}
+              locale="es-MX"
+              tileClassName={tileClassName}
             />
         </Card>
       </div>
