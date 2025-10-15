@@ -20,7 +20,7 @@ import type { Vehicle } from '@/types';
 interface EngineGeneration {
   startYear: number;
   endYear: number;
-  engines: { name: string;[key: string]: any }[];
+  engines: { name: string;[key: string]: any }[]; // Engine is an object with a name property
 }
 
 interface VehicleModel {
@@ -35,7 +35,7 @@ interface VehicleMake {
 
 export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data: VehicleFormValues, id?: string) => Promise<void> }) {
   const { toast } = useToast();
-  const [vehicleData, setVehicleData] = useState<VehicleMake[]>([]);
+  const [vehicleDb, setVehicleDb] = useState<VehicleMake[]>([]);
   const [selectedMake, setSelectedMake] = useState<string>('');
   const [newModelName, setNewModelName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -64,8 +64,8 @@ export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data:
     fetchVehicleData();
   }, [toast]);
   
-  const makes = useMemo(() => vehicleData.map(d => d.make).sort(), [vehicleData]);
-  const selectedMakeData = useMemo(() => vehicleData.find(d => d.make === selectedMake), [vehicleData, selectedMake]);
+  const makes = useMemo(() => vehicleDb.map(d => d.make).sort(), [vehicleDb]);
+  const selectedMakeData = useMemo(() => vehicleDb.find(d => d.make === selectedMake), [vehicleData, selectedMake]);
 
   const handleOpenVehicleDialog = (vehicle: Partial<Vehicle> | null = null) => {
     setEditingVehicle(vehicle ? { ...vehicle, make: selectedMake } : { make: selectedMake });
@@ -131,18 +131,18 @@ export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data:
                 
                 <Accordion type="single" collapsible className="w-full">
                   {selectedMakeData?.models.map(model => (
-                    <AccordionItem value={model.name} key={model.name} className="group">
+                    <AccordionItem value={model.name} key={model.name}>
                       <div className="flex items-center justify-between w-full pr-4 hover:bg-muted/50 rounded-md">
                         <AccordionTrigger className="hover:no-underline flex-1 py-3 px-4">
                           <span>{model.name}</span>
                         </AccordionTrigger>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleOpenVehicleDialog(model as any); }}>
+                        <div className="flex items-center gap-1">
+                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenVehicleDialog(model as any)}>
                                 <Edit className="h-4 w-4" />
                            </Button>
                            <ConfirmDialog
                                 triggerButton={
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7">
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                 }

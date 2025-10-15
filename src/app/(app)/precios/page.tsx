@@ -1,4 +1,3 @@
-
 // src/app/(app)/precios/page.tsx
 "use client";
 
