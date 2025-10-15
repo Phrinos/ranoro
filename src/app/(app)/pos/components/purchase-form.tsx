@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { NewCalendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { InventoryItem, InventorySearchDialog } from "@/components/shared/InventorySearchDialog";
@@ -135,7 +135,7 @@ export function PurchaseForm({ onSuccess }: PurchaseFormProps) {
         <form className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField control={form.control} name="supplierName" render={({ field }) => ( <FormItem><FormLabel>Proveedor</FormLabel><FormControl><Input placeholder="Ej. Autopartes Wolf" {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="date" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Compra</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={isSubmitting}>{field.value ? format(field.value, "PPP") : <span>Elige una fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => field.onChange(date)} /></PopoverContent></Popover><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="date" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Compra</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={isSubmitting}>{field.value ? format(field.value, "PPP") : <span>Elige una fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><NewCalendar mode="single" selected={field.value} onSelect={(date) => field.onChange(date)} /></PopoverContent></Popover><FormMessage /></FormItem> )} />
           </div>
 
           <div className="space-y-2">
