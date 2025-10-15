@@ -14,6 +14,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { VEHICLE_COLLECTION } from '@/lib/vehicle-constants';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+import { VehicleCatalogEditor } from './components/VehicleCatalogEditor';
 
 const PriceListManagementContent = lazy(() => import('./components/price-list-management-content'));
 const VencimientosContent = lazy(() => import('./components/VencimientosContent'));
@@ -91,6 +92,9 @@ function PreciosPageComponent() {
                 onEngineDataSave={handleEngineDataSave} 
             /> 
         },
+        { value: 'editor', label: 'Editor de Catálogo', content: 
+            <VehicleCatalogEditor make="" />
+        }
     ];
     
     return (
@@ -106,6 +110,13 @@ function PreciosPageComponent() {
 
 
 export default function PreciosPageWrapper() {
+  const searchParams = useSearchParams();
+  const make = searchParams.get('make');
+  
+  if (make) {
+    return <VehicleCatalogEditor make={make} />;
+  }
+
   return (
     <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
       <PreciosPageComponent />

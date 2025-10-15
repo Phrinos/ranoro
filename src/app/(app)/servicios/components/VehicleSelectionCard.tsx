@@ -210,7 +210,10 @@ export function VehicleSelectionCard({
                 )}
               />
               
-              <VehiclePricingCard engineData={vehicleEngineData} />
+              <VehiclePricingCard 
+                engineData={vehicleEngineData}
+                make={selectedVehicle.make}
+              />
 
             </div>
           ) : (

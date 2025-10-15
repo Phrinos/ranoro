@@ -4,12 +4,15 @@
 import React from 'react';
 import type { EngineData } from '@/lib/data/vehicle-database-types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { DollarSign, Droplet, Wind, CircuitBoard, DiscAlbum } from 'lucide-react';
+import { DollarSign, Droplet, Wind, CircuitBoard, DiscAlbum, Edit } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface VehiclePricingCardProps {
   engineData: EngineData | null;
+  make?: string;
 }
 
 const DetailRow = ({ label, value }: { label: string; value?: string | number | null }) => (
@@ -26,7 +29,7 @@ const ServiceRow = ({ label, price }: { label: string; price?: number | null }) 
     </div>
 );
 
-export function VehiclePricingCard({ engineData }: VehiclePricingCardProps) {
+export function VehiclePricingCard({ engineData, make }: VehiclePricingCardProps) {
   if (!engineData) {
     return (
       <Card>
@@ -37,6 +40,16 @@ export function VehiclePricingCard({ engineData }: VehiclePricingCardProps) {
           <p className="text-sm text-muted-foreground text-center py-4">
             No hay datos de precios para el motor seleccionado.
           </p>
+           {make && (
+              <div className="mt-4 text-center">
+                 <Button asChild variant="secondary" size="sm">
+                   <Link href={`/precios?make=${encodeURIComponent(make)}`}>
+                      <Edit className="h-4 w-4 mr-2"/>
+                      Gestionar Precios para {make}
+                   </Link>
+                </Button>
+              </div>
+           )}
         </CardContent>
       </Card>
     );
@@ -49,8 +62,20 @@ export function VehiclePricingCard({ engineData }: VehiclePricingCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Precios y Costos</CardTitle>
-        <CardDescription>Referencia rápida de costos para el motor <span className="font-semibold">{engineData.name}</span>.</CardDescription>
+         <div className="flex justify-between items-start">
+             <div>
+                <CardTitle>Precios y Costos</CardTitle>
+                <CardDescription>Referencia para el motor <span className="font-semibold">{engineData.name}</span>.</CardDescription>
+             </div>
+             {make && (
+                <Button asChild variant="outline" size="sm">
+                   <Link href={`/precios?make=${encodeURIComponent(make)}`}>
+                      <Edit className="h-4 w-4 mr-2"/>
+                      Editar
+                   </Link>
+                </Button>
+             )}
+         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>

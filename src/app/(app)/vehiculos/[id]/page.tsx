@@ -203,7 +203,7 @@ export default function VehicleDetailPage() {
         </div>
         <div className="lg:col-span-1 space-y-6">
             <MaintenanceCard vehicle={vehicle} />
-            <VehiclePricingCard engineData={vehicleEngineData} />
+            <VehiclePricingCard engineData={vehicleEngineData as EngineData | null} make={vehicle.make} />
         </div>
       </div>
 
