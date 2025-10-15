@@ -32,6 +32,7 @@ import { ServiceMobileBar } from '../components/ServiceMobileBar';
 import { ActiveServicesSheet } from '../components/ActiveServicesSheet';
 import { PhotoReportModal } from '../components/PhotoReportModal';
 import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
+import { formatCurrency } from '@/lib/utils';
 
 // --- NORMALIZATION HELPERS ---
 
@@ -315,6 +316,10 @@ export default function ServicioPage() {
   const handleSaveService = async (values: ServiceFormValues) => {
     setIsSubmitting(true);
     try {
+      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      const currentUser = authUserString ? JSON.parse(authUserString) : null;
+      if (!currentUser) throw new Error("No se pudo identificar al usuario.");
+
       toast({ title: isEditMode ? "Guardando cambios…" : "Creando cotización…" });
 
       const cleanedValues = { ...values };
@@ -328,6 +333,14 @@ export default function ServicioPage() {
       const payload = normalizeForForm(cleanedValues, users) as ServiceRecord;
 
       const saved = await serviceService.saveService(payload);
+      
+      const logDescription = `${isEditMode ? 'Actualizó' : 'Creó'} el servicio #${saved.folio || saved.id.slice(-6)} para ${saved.vehicleIdentifier} con un total de ${formatCurrency(saved.totalCost)}.`;
+      adminService.logAudit(isEditMode ? 'Editar' : 'Crear', logDescription, {
+        entityType: 'Servicio',
+        entityId: saved.id,
+        userId: currentUser.id,
+        userName: currentUser.name,
+      });
       
       if (isEditMode) {
         toast({ title: "Cambios Guardados Exitosamente" });

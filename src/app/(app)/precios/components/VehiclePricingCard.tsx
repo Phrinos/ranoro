@@ -69,7 +69,7 @@ export function VehiclePricingCard({ engineData, make, onEdit }: VehiclePricingC
                 <CardDescription>Referencia para el motor <span className="font-semibold">{engineData.name}</span>.</CardDescription>
              </div>
              {onEdit && (
-                <Button variant="outline" size="sm" onClick={onEdit}>
+                <Button type="button" variant="outline" size="sm" onClick={onEdit}>
                    <Edit className="h-4 w-4 mr-2"/>
                    Editar
                 </Button>
