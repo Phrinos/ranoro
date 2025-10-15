@@ -50,7 +50,7 @@ export function VehicleMakeAccordion({ make, onEngineDataSave }: VehicleMakeAcco
   }, [make]);
 
   const models = useMemo(() => {
-    if (!makeData) return [];
+    if (!makeData || !Array.isArray(makeData.models)) return [];
     return [...makeData.models].sort((a, b) => a.name.localeCompare(b.name));
   }, [makeData]);
 
