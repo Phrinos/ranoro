@@ -329,7 +329,13 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
                                       <Input
                                         className="h-8 flex-1 bg-white"
                                         value={e?.name ?? ""}
-                                        onChange={(ev) => setValue(`models.${mi}.generations.${gi}.engines.${ei}.name`,ev.target.value, { shouldDirty: true })}
+                                        onChange={(ev) =>
+                                          setValue(
+                                            `models.${mi}.generations.${gi}.engines.${ei}.name`,
+                                            ev.target.value,
+                                            { shouldDirty: true }
+                                          )
+                                        }
                                       />
                                       <Button type="button" variant="secondary" size="sm" onClick={() => openEngineDialog(mi, gi, ei)}>
                                         <Settings className="mr-2 h-4 w-4" />
@@ -372,13 +378,6 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
             )}
           </div>
         </ScrollArea>
-
-        <div className="flex items-center justify-end gap-2">
-          <Button type="submit">
-            <Save className="mr-2 h-4 w-4" />
-            Guardar cambios
-          </Button>
-        </div>
       </form>
 
       <EditEngineDataDialog
