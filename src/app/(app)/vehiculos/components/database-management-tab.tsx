@@ -130,27 +130,27 @@ export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data:
                 
                 <Accordion type="single" collapsible className="w-full">
                   {selectedMakeData?.models.map(model => (
-                    <AccordionItem value={model.name} key={model.name}>
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center justify-between w-full pr-4">
-                            <span>{model.name}</span>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleOpenVehicleDialog(model as any); }}>
-                                    <Edit className="h-4 w-4" />
-                               </Button>
-                               <ConfirmDialog
-                                    triggerButton={
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    }
-                                    title={`¿Eliminar modelo "${model.name}"?`}
-                                    description="Esta acción es permanente y eliminará todas sus generaciones y motores asociados."
-                                    onConfirm={() => handleDeleteModel(model.name)}
-                                />
-                            </div>
+                    <AccordionItem value={model.name} key={model.name} className="group">
+                      <div className="flex items-center justify-between w-full pr-4 hover:bg-muted/50 rounded-md">
+                        <AccordionTrigger className="hover:no-underline flex-1 py-3 px-4">
+                          <span>{model.name}</span>
+                        </AccordionTrigger>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleOpenVehicleDialog(model as any); }}>
+                                <Edit className="h-4 w-4" />
+                           </Button>
+                           <ConfirmDialog
+                                triggerButton={
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                }
+                                title={`¿Eliminar modelo "${model.name}"?`}
+                                description="Esta acción es permanente y eliminará todas sus generaciones y motores asociados."
+                                onConfirm={() => handleDeleteModel(model.name)}
+                            />
                         </div>
-                      </AccordionTrigger>
+                      </div>
                       <AccordionContent className="space-y-2">
                          {model.generations.map((gen, genIndex) => (
                            <div key={genIndex} className="pl-4 border-l-2 ml-2">
