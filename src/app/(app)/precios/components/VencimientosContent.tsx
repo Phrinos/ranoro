@@ -41,15 +41,14 @@ const getOutdatedEngines = (priceLists: VehiclePriceList[]) => {
             model.generations.forEach((gen, genIndex) => {
                 const outdatedEnginesInGen: any[] = [];
                 gen.engines.forEach((engine: EngineData, engineIndex: any) => {
-                    const insumos = engine.insumos;
                     
-                    // Comprueba si CUALQUIERA de los insumos está vencido
+                    // Comprueba si CUALQUIERA de los insumos está vencido, usando optional chaining para evitar errores si 'insumos' o una de sus propiedades no existe.
                     const isAnyOutdated = 
-                        isOutdated(insumos.aceite.lastUpdated) ||
-                        isOutdated(insumos.filtroAceite.lastUpdated) ||
-                        isOutdated(insumos.filtroAire.lastUpdated) ||
-                        isOutdated(insumos.balatas.lastUpdated) ||
-                        isOutdated(insumos.bujias.lastUpdated);
+                        isOutdated(engine.insumos?.aceite?.lastUpdated) ||
+                        isOutdated(engine.insumos?.filtroAceite?.lastUpdated) ||
+                        isOutdated(engine.insumos?.filtroAire?.lastUpdated) ||
+                        isOutdated(engine.insumos?.balatas?.lastUpdated) ||
+                        isOutdated(engine.insumos?.bujias?.lastUpdated);
                     
                     if (isAnyOutdated) {
                         outdatedEnginesInGen.push({ ...engine, originalEngineIndex: engineIndex });

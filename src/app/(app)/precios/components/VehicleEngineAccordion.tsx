@@ -42,6 +42,14 @@ export function VehicleEngineAccordion({ engine, onSave, isComplete }: VehicleEn
     onSave(updatedData);
     setIsEditDialogOpen(false);
   };
+  
+  // Normaliza los datos de las balatas para asegurar que siempre sea un array.
+  const balatasDelanteras = insumos?.balatas?.delanteras;
+  const balatasTraseras = insumos?.balatas?.traseras;
+
+  const delanterasArray = balatasDelanteras ? (Array.isArray(balatasDelanteras) ? balatasDelanteras : [balatasDelanteras]) : [];
+  const traserasArray = balatasTraseras ? (Array.isArray(balatasTraseras) ? balatasTraseras : [balatasTraseras]) : [];
+
 
   return (
     <>
@@ -59,25 +67,25 @@ export function VehicleEngineAccordion({ engine, onSave, isComplete }: VehicleEn
                     <CardContent className="p-3 space-y-2">
                         <h4 className="font-bold text-sm mb-2">Insumos</h4>
                         <Separator />
-                        <DetailItem label="Aceite" value={`${insumos.aceite?.grado || ''} (${insumos.aceite?.litros || ''}L)`} />
-                        <DetailItem label="Filtro de Aceite SKU" value={insumos.filtroAceite?.sku} />
-                        <DetailItem label="Filtro de Aire SKU" value={insumos.filtroAire?.sku} />
+                        <DetailItem label="Aceite" value={`${insumos?.aceite?.grado || ''} (${insumos?.aceite?.litros || ''}L)`} />
+                        <DetailItem label="Filtro de Aceite SKU" value={insumos?.filtroAceite?.sku} />
+                        <DetailItem label="Filtro de Aire SKU" value={insumos?.filtroAire?.sku} />
                         <Separator />
                         <h5 className="font-semibold text-xs text-muted-foreground pt-1">Balatas</h5>
-                        {insumos.balatas.delanteras.map((balata, i) => (
-                          <DetailItem key={i} label={`Delantera ${i + 1}`} value={`${balata.modelo || 'N/A'} (${balata.tipo || 'N/A'})`} />
+                        {delanterasArray.map((balata, i) => (
+                          <DetailItem key={i} label={`Delantera ${delanterasArray.length > 1 ? i + 1 : ''}`.trim()} value={`${balata.modelo || 'N/A'} (${balata.tipo || 'N/A'})`} />
                         ))}
-                        {insumos.balatas.traseras.map((balata, i) => (
-                           <DetailItem key={i} label={`Trasera ${i + 1}`} value={`${balata.modelo || 'N/A'} (${balata.tipo || 'N/A'})`} />
+                        {traserasArray.map((balata, i) => (
+                           <DetailItem key={i} label={`Trasera ${traserasArray.length > 1 ? i + 1 : ''}`.trim()} value={`${balata.modelo || 'N/A'} (${balata.tipo || 'N/A'})`} />
                         ))}
                          <Separator />
                         <h5 className="font-semibold text-xs text-muted-foreground pt-1">Bujías</h5>
-                        <DetailItem label="Cantidad" value={insumos.bujias.cantidad} />
-                        <DetailItem label="Cobre" value={insumos.bujias.modelos.cobre} />
-                        <DetailItem label="Platino" value={insumos.bujias.modelos.platino} />
-                        <DetailItem label="Iridio" value={insumos.bujias.modelos.iridio} />
+                        <DetailItem label="Cantidad" value={insumos?.bujias?.cantidad} />
+                        <DetailItem label="Cobre" value={insumos?.bujias?.modelos?.cobre} />
+                        <DetailItem label="Platino" value={insumos?.bujias?.modelos?.platino} />
+                        <DetailItem label="Iridio" value={insumos?.bujias?.modelos?.iridio} />
                          <Separator />
-                        <DetailItem label="Tipo de Inyector" value={insumos.inyector.tipo} />
+                        <DetailItem label="Tipo de Inyector" value={insumos?.inyector?.tipo} />
                     </CardContent>
                 </Card>
 
@@ -86,8 +94,8 @@ export function VehicleEngineAccordion({ engine, onSave, isComplete }: VehicleEn
                     <CardContent className="p-3 space-y-2">
                         <h4 className="font-bold text-sm mb-2">Servicios</h4>
                         <Separator />
-                        <ServiceItem label="Afinación Integral" cost={servicios.afinacionIntegral.costoInsumos} price={servicios.afinacionIntegral.precioPublico} />
-                        {servicios.afinacionIntegral.upgrades && (
+                        {servicios?.afinacionIntegral && <ServiceItem label="Afinación Integral" cost={servicios.afinacionIntegral.costoInsumos} price={servicios.afinacionIntegral.precioPublico} />}
+                        {servicios?.afinacionIntegral?.upgrades && (
                             <div className="pl-4 text-xs space-y-1">
                                 <DetailItem label="+ Aceite Sintético" value={formatCurrency(servicios.afinacionIntegral.upgrades.conAceiteSintetico)} />
                                 <DetailItem label="+ Aceite Mobil" value={formatCurrency(servicios.afinacionIntegral.upgrades.conAceiteMobil)} />
@@ -95,9 +103,9 @@ export function VehicleEngineAccordion({ engine, onSave, isComplete }: VehicleEn
                                 <DetailItem label="+ Bujías Iridio" value={formatCurrency(servicios.afinacionIntegral.upgrades.conBujiasIridio)} />
                             </div>
                         )}
-                        <ServiceItem label="Cambio de Aceite" cost={servicios.cambioAceite.costoInsumos} price={servicios.cambioAceite.precioPublico} />
-                        <ServiceItem label="Balatas Delanteras" cost={servicios.balatasDelanteras.costoInsumos} price={servicios.balatasDelanteras.precioPublico} />
-                        <ServiceItem label="Balatas Traseras" cost={servicios.balatasTraseras.costoInsumos} price={servicios.balatasTraseras.precioPublico} />
+                        {servicios?.cambioAceite && <ServiceItem label="Cambio de Aceite" cost={servicios.cambioAceite.costoInsumos} price={servicios.cambioAceite.precioPublico} />}
+                        {servicios?.balatasDelanteras && <ServiceItem label="Balatas Delanteras" cost={servicios.balatasDelanteras.costoInsumos} price={servicios.balatasDelanteras.precioPublico} />}
+                        {servicios?.balatasTraseras && <ServiceItem label="Balatas Traseras" cost={servicios.balatasTraseras.costoInsumos} price={servicios.balatasTraseras.precioPublico} />}
                     </CardContent>
                 </Card>
             </div>

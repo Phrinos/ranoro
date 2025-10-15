@@ -1,67 +1,67 @@
 // src/app/(app)/vehiculos/components/database-management-tab.tsx
 "use client";
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Save, Trash2, Loader2, Edit } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { db } from '@/lib/firebaseClient';
-import { collection, getDocs, doc, writeBatch, deleteField } from 'firebase/firestore';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { collection, getDocs } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { VEHICLE_COLLECTION } from '@/lib/vehicle-constants';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
+import { Edit, Trash2 } from 'lucide-react';
 import { VehicleDialog } from './vehicle-dialog';
-import type { VehicleFormValues } from './vehicle-form';
 import type { Vehicle } from '@/types';
+import type { VehicleFormValues } from './vehicle-form';
 
-// Definimos los tipos para la base de datos de vehículos
-interface EngineGeneration {
-  startYear: number;
-  endYear: number;
-  engines: { name: string;[key: string]: any }[]; // Engine is an object with a name property
-}
 
-interface VehicleModel {
-  name: string;
-  generations: EngineGeneration[];
-}
-
-interface VehicleMake {
-  make: string;
-  models: VehicleModel[];
-}
-
-export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data: VehicleFormValues, id?: string) => Promise<void> }) {
+export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data: VehicleFormValues, id?:string) => void }) {
   const { toast } = useToast();
-  const [vehicleDb, setVehicleDb] = useState<VehicleMake[]>([]);
+  const [vehicleDb, setVehicleDb] = useState<any[]>([]);
   const [selectedMake, setSelectedMake] = useState<string>('');
-  const [newModelName, setNewModelName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(true);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
 
   useEffect(() => {
-    const fetchVehicleData = async () => {
+    const fetchMakes = async () => {
       setIsLoading(true);
       try {
-        if (!db) return;
-        const querySnapshot = await getDocs(collection(db, "vehicleData"));
-        const data: VehicleMake[] = querySnapshot.docs.map(doc => ({ make: doc.id, ...doc.data() } as VehicleMake));
+        if (!db) {
+            console.warn("Firestore client not available");
+            return;
+        };
+        const querySnapshot = await getDocs(collection(db, VEHICLE_COLLECTION));
+        const data = querySnapshot.docs
+            .map((doc) => ({ make: doc.id, ...doc.data() }))
+            .sort((a,b) => a.make.localeCompare(b.make));
         setVehicleDb(data);
       } catch (error) {
-        console.error("Error fetching vehicle data:", error);
-        toast({ title: 'Error', description: 'No se pudieron cargar los datos de vehículos.', variant: 'destructive' });
+        console.error("Error fetching vehicle makes:", error);
+        toast({
+          title: 'Error',
+          description: 'No se pudieron cargar las marcas de vehículos.',
+          variant: 'destructive',
+        });
       } finally {
         setIsLoading(false);
-        setIsDataLoaded(true);
       }
     };
 
-    fetchVehicleData();
+    fetchMakes();
   }, [toast]);
   
   const makes = useMemo(() => vehicleDb.map(d => d.make).sort(), [vehicleDb]);
@@ -72,117 +72,91 @@ export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data:
     setIsVehicleDialogOpen(true);
   };
   
-  const handleDeleteModel = async (modelName: string) => {
-    if (!selectedMakeData) return;
-    setIsLoading(true);
-    try {
-        const updatedModels = selectedMakeData.models.filter(m => m.name !== modelName);
-        const makeRef = doc(db, "vehicleData", selectedMakeData.make);
-        
-        await writeBatch(db).update(makeRef, { models: updatedModels }).commit();
-
-        setVehicleDb(prevData => prevData.map(make => 
-            make.make === selectedMake ? { ...make, models: updatedModels } : make
-        ));
-
-        toast({ title: 'Modelo Eliminado', description: `El modelo "${modelName}" fue eliminado.` });
-    } catch (error) {
-        console.error("Error deleting model:", error);
-        toast({ title: 'Error', description: 'No se pudo eliminar el modelo.', variant: 'destructive' });
-    } finally {
-        setIsLoading(false);
-    }
-  };
-
-
-  const handleSaveChanges = async () => {
-    // This function might be deprecated if we save on model edit.
-    // Kept for now in case of batch updates in the future.
-    toast({ title: 'Funcionalidad en desarrollo', description: 'Guardado se realiza al editar cada modelo.' });
+  const handleSaveVehicle = async (data: VehicleFormValues) => {
+    await onVehicleSave(data, editingVehicle?.id);
+    setIsVehicleDialogOpen(false);
   };
 
   return (
-    <>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Gestionar Base de Datos de Vehículos</CardTitle>
-            <CardDescription>Añade o edita modelos, años y motores para las marcas existentes.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Marca</label>
-              {isDataLoaded ? (
-                <Select value={selectedMake} onValueChange={setSelectedMake}>
-                  <SelectTrigger className="bg-white"><SelectValue placeholder="Seleccione una marca para editar..." /></SelectTrigger>
-                  <SelectContent>{makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}</SelectContent>
-                </Select>
-              ) : <p>Cargando marcas...</p>}
-            </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Gestionar Base de Datos de Vehículos</CardTitle>
+          <CardDescription>
+            Selecciona una marca para añadir o editar sus modelos, generaciones y motores.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="max-w-sm space-y-2">
+            <label htmlFor="make-select" className="text-sm font-medium">Marca</label>
+            <Select
+              value={selectedMake}
+              onValueChange={setSelectedMake}
+              disabled={isLoading}
+            >
+              <SelectTrigger id="make-select" className="bg-white">
+                <SelectValue placeholder={isLoading ? "Cargando marcas..." : "Seleccione una marca..."} />
+              </SelectTrigger>
+              <SelectContent>
+                {makes.map((make) => (
+                  <SelectItem key={make} value={make}>
+                    {make}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            {selectedMake && (
-              <div className="space-y-4 pt-4 border-t">
-                <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-lg">Modelos de {selectedMake}</h3>
-                    <Button onClick={() => handleOpenVehicleDialog()}>
-                        <PlusCircle className="mr-2 h-4 w-4" />Añadir Modelo
-                    </Button>
-                </div>
-                
-                <Accordion type="single" collapsible className="w-full">
-                  {selectedMakeData?.models.map(model => (
-                    <AccordionItem value={model.name} key={model.name}>
-                      <div className="flex items-center justify-between w-full pr-4 hover:bg-muted/50 rounded-md">
-                        <AccordionTrigger className="hover:no-underline flex-1 py-3 px-4">
-                          <span>{model.name}</span>
-                        </AccordionTrigger>
-                        <div className="flex items-center gap-1">
-                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenVehicleDialog(model as any)}>
-                                <Edit className="h-4 w-4" />
-                           </Button>
-                           <ConfirmDialog
-                                triggerButton={
-                                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                }
-                                title={`¿Eliminar modelo "${model.name}"?`}
-                                description="Esta acción es permanente y eliminará todas sus generaciones y motores asociados."
-                                onConfirm={() => handleDeleteModel(model.name)}
-                            />
-                        </div>
+          {selectedMake && (
+            <div className="pt-4 border-t">
+              <Accordion type="multiple" className="w-full space-y-2">
+                {selectedMakeData?.models.map((model: any) => (
+                  <AccordionItem key={model.name} value={model.name} className="border rounded-md px-4 bg-card">
+                    <div className="flex items-center justify-between w-full">
+                      <AccordionTrigger className="hover:no-underline font-semibold flex-1">
+                        {model.name}
+                      </AccordionTrigger>
+                      <div className="flex items-center gap-1 pl-4">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenVehicleDialog(model)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <AccordionContent className="space-y-2">
-                         {model.generations.map((gen, genIndex) => (
-                           <div key={genIndex} className="pl-4 border-l-2 ml-2">
-                              <p className="font-semibold text-sm">{gen.startYear} - {gen.endYear}</p>
-                              <ul className="list-disc pl-5 mt-1 text-sm text-muted-foreground">
-                                  {gen.engines.map((engine, engineIndex) => (
-                                      <li key={engine.name + engineIndex}>{engine.name}</li>
-                                  ))}
-                              </ul>
-                           </div>
-                         ))}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-
+                    </div>
+                    <AccordionContent className="pt-2">
+                      <div className="pl-4 border-l ml-2 space-y-1">
+                        {model.generations.map((gen: any, genIndex: number) => (
+                          <div key={genIndex}>
+                            <p className="font-semibold text-xs text-muted-foreground my-2">{gen.startYear} - {gen.endYear}</p>
+                            <div className="pl-4 border-l ml-2 space-y-1">
+                              {gen.engines.map((engine: any, engineIndex: number) => (
+                                <div key={engineIndex} className="text-sm">
+                                  - {engine.name}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+              <div className="mt-4">
+                <Button onClick={() => handleOpenVehicleDialog()}>Añadir Modelo a {selectedMake}</Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       <VehicleDialog
         open={isVehicleDialogOpen}
         onOpenChange={setIsVehicleDialogOpen}
+        onSave={handleSaveVehicle}
         vehicle={editingVehicle}
-        onSave={(data) => {
-            // Placeholder save logic, actual logic is within onVehicleSave prop
-            onVehicleSave(data, editingVehicle?.id);
-            setIsVehicleDialogOpen(false);
-        }}
       />
-    </>
+    </div>
   );
 }
