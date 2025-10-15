@@ -71,7 +71,6 @@ function VehiculosPage() {
   }, [allVehicles]);
 
   const handleSaveVehicle = async (data: VehicleFormValues, id?: string) => {
-    console.log("Guardando vehículo:", { data, id });
     try {
       await inventoryService.saveVehicle(data, id);
       toast({ title: `Vehículo ${id ? 'Actualizado' : 'Creado'}` });
@@ -151,9 +150,7 @@ function VehiculosPage() {
               <CardContent className="pt-6">
                 <VehiclesTable
                   vehicles={allVehicles}
-                  onSave={(data, id) => {
-                      handleOpenVehicleDialog(id ? { ...data, id } : data);
-                  }}
+                  onSave={handleSaveVehicle}
                   onDelete={handleDeleteVehicle}
                 />
               </CardContent>

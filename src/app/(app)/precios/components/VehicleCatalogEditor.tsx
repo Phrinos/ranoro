@@ -13,6 +13,7 @@ import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -48,6 +49,7 @@ const makeDocFormSchema = z.object({
 
 type MakeDocForm = z.infer<typeof makeDocFormSchema>;
 type ModelForm = MakeDocForm["models"][number];
+type GenerationForm = ModelForm["generations"][number];
 
 export interface VehicleCatalogEditorProps {
   make: string; // id del doc en vehicleData
@@ -73,12 +75,12 @@ function toFormDoc(make: string, data: any | null): MakeDocForm {
   const rawModels = Array.isArray(data?.models) ? data!.models : [];
   const models: ModelForm[] = rawModels.map((m: any) => {
     const gensRaw = Array.isArray(m?.generations) ? m.generations : [];
-    const gens = (
+    const gens: GenerationForm[] = (
       gensRaw.length ? gensRaw : (Array.isArray(m?.engines) ? [{ engines: m.engines }] : [])
     ).map((g: any) => ({
       id: g?.id ?? nanoid(),
-      startYear: g?.startYear,
-      endYear: g?.endYear,
+      startYear: Number.isFinite(+g?.startYear) ? +g.startYear : undefined,
+      endYear: Number.isFinite(+g?.endYear) ? +g.endYear : undefined,
       engines: Array.isArray(g?.engines) ? g.engines.map((e: any) => ({ name: e?.name ?? "", ...e })) : [],
     }));
     return { id: m?.id ?? nanoid(), name: m?.name ?? m?.model ?? "Modelo", generations: gens };
@@ -102,6 +104,60 @@ function toFirestoreDoc(form: MakeDocForm) {
 /* ============================
    Subcomponentes
    ============================ */
+
+// Componente para un solo modelo en el acordeón
+function ModelAccordionItem({
+  model,
+  modelIdx,
+  removeModel,
+  openEngineDialog,
+}: {
+  model: ModelForm;
+  modelIdx: number;
+  removeModel: (index: number) => void;
+  openEngineDialog: (modelIdx: number, genIdx: number, engIdx: number) => void;
+}) {
+    const { control, watch, setValue } = useFormContext<MakeDocForm>();
+    const { fields, append, remove } = useFieldArray({ control, name: `models.${modelIdx}.generations` });
+    const modelName = watch(`models.${modelIdx}.name`);
+
+    return (
+        <AccordionItem key={model.id} value={model.id} className="border-b-0 rounded-lg bg-card overflow-hidden">
+        <AccordionTrigger className="text-lg font-semibold px-4 py-3 hover:no-underline">
+            <div className="flex items-center gap-3 w-full">
+            <Input
+                value={modelName ?? ""}
+                onChange={(e) => setValue(`models.${modelIdx}.name`, e.target.value, { shouldDirty: true })}
+                className="h-8 w-full max-w-xs bg-white"
+                onClick={(e) => e.stopPropagation()}
+            />
+            <Badge variant="outline">{fields.length} gen.</Badge>
+            </div>
+        </AccordionTrigger>
+        <AccordionContent className="p-4 pt-2">
+            <div className="space-y-4">
+            {fields.map((generation, genIdx) => (
+                <GenerationBlock
+                key={generation.id}
+                modelIdx={modelIdx}
+                genIdx={genIdx}
+                removeGeneration={remove}
+                openEngineDialog={openEngineDialog}
+                />
+            ))}
+            <div className="flex items-center gap-2 pt-4 mt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => append({ id: nanoid(), engines: [] })}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Añadir Rango de Años
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => removeModel(modelIdx)}>
+                <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Eliminar Modelo
+                </Button>
+            </div>
+            </div>
+        </AccordionContent>
+        </AccordionItem>
+    );
+}
 
 // Generación (rango de años)
 function GenerationBlock({
@@ -193,68 +249,14 @@ function GenerationBlock({
   );
 }
 
-// Modelo (un ítem del acordeón)
-function ModelAccordionItem({
-  model,
-  modelIdx,
-  removeModel,
-  openEngineDialog,
-}: {
-  model: ModelForm;
-  modelIdx: number;
-  removeModel: (index: number) => void;
-  openEngineDialog: (modelIdx: number, genIdx: number, engIdx: number) => void;
-}) {
-  const { control, watch, setValue } = useFormContext<MakeDocForm>();
-  const { fields, append, remove } = useFieldArray({ control, name: `models.${modelIdx}.generations` });
-  const modelName = watch(`models.${modelIdx}.name`);
-
-  return (
-    <AccordionItem key={model.id} value={model.id} className="border-b-0 rounded-lg bg-card overflow-hidden">
-      <AccordionTrigger className="text-lg font-semibold px-4 py-3 hover:no-underline">
-        <div className="flex items-center gap-3 w-full">
-          <Input
-            value={modelName ?? ""}
-            onChange={(e) => setValue(`models.${modelIdx}.name`, e.target.value, { shouldDirty: true })}
-            className="h-8 w-full max-w-xs bg-white"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <Badge variant="outline">{fields.length} gen.</Badge>
-        </div>
-      </AccordionTrigger>
-      <AccordionContent className="p-4 pt-2">
-        <div className="space-y-4">
-          {fields.map((generation, genIdx) => (
-            <GenerationBlock
-              key={generation.id}
-              modelIdx={modelIdx}
-              genIdx={genIdx}
-              removeGeneration={remove}
-              openEngineDialog={openEngineDialog}
-            />
-          ))}
-          <div className="flex items-center gap-2 pt-4 mt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => append({ id: nanoid(), engines: [] })}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Añadir Rango de Años
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => removeModel(modelIdx)}>
-              <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Eliminar Modelo
-            </Button>
-          </div>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-  );
-}
-
 /* ============================
    Editor principal
    ============================ */
 export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
   const { toast } = useToast();
   const methods = useForm<MakeDocForm>({
-    resolver: zodResolver(makeDocFormSchema),
     defaultValues: { make, models: [] },
+    mode: "onBlur",
   });
 
   const { control, reset, handleSubmit, getValues, setValue } = methods;

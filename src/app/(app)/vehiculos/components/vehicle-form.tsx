@@ -136,7 +136,6 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
     }, [watchedMake, watchedModel, watchedYear, vehicleDb]);
 
   const handleFormSubmit = (values: VehicleFormValues) => {
-    console.log("Vehicle form submitted with values:", values);
     onSubmit(values);
   };
 

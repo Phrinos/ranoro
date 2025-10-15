@@ -241,17 +241,18 @@ const getVehicleById = async (id: string): Promise<Vehicle | undefined> => {
 };
 
 const saveVehicle = async (data: Partial<Vehicle>, id?: string): Promise<Vehicle> => {
-    console.log("[inventoryService.saveVehicle] Received:", { data, id });
     if (!db) throw new Error("Database not initialized.");
     if(id) {
-      console.log(`[inventoryService.saveVehicle] Updating document with id: ${id}`);
       const vehicleRef = doc(db, 'vehicles', id);
       await updateDoc(vehicleRef, cleanObjectForFirestore(data));
-      return { id, ...data } as Vehicle;
+      const updatedDoc = await getDoc(vehicleRef);
+      if (!updatedDoc.exists()) throw new Error("Failed to retrieve updated vehicle");
+      return { id, ...updatedDoc.data() } as Vehicle;
     }
-    console.log("[inventoryService.saveVehicle] Creating new document.");
     const docRef = await addDoc(collection(db, 'vehicles'), cleanObjectForFirestore(data));
-    return { id: docRef.id, ...data } as Vehicle;
+    const newDoc = await getDoc(docRef);
+    if (!newDoc.exists()) throw new Error("Failed to create or retrieve new vehicle");
+    return { id: docRef.id, ...newDoc.data() } as Vehicle;
 };
 
 const addVehicle = async (data: Partial<Vehicle>): Promise<Vehicle> => {
