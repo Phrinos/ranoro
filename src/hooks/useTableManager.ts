@@ -3,9 +3,14 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import type { DateRange } from 'react-day-picker';
 import { isWithinInterval, isValid, startOfDay, endOfDay, compareAsc, compareDesc, startOfMonth, endOfMonth as dfnsEndOdMonth } from 'date-fns';
 import { parseDate } from '@/lib/forms';
+
+
+interface DateRange {
+    from: Date | undefined;
+    to?: Date | undefined;
+  }
 
 type FilterFn<T> = (item: T) => Date | null;
 

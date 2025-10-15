@@ -17,9 +17,13 @@ import {
 import { es } from 'date-fns/locale';
 import { ShoppingCart, DollarSign, TrendingUp, BarChart2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import type { DateRange } from "react-day-picker";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
+
+interface DateRange {
+  from: Date | undefined;
+  to?: Date | undefined;
+}
 
 interface InformePosContentProps {
   allSales: SaleReceipt[];

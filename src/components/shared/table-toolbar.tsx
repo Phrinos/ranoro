@@ -4,9 +4,14 @@
 import { ReactNode, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { DateRange } from "react-day-picker";
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { Search } from "lucide-react";
+
+
+interface DateRange {
+    from: Date | undefined;
+    to?: Date | undefined;
+  }
 
 type Option = { value: string; label: string };
 

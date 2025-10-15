@@ -5,13 +5,17 @@ import * as React from "react"
 import { CalendarIcon } from "@radix-ui/react-icons"
 import { format, startOfWeek, endOfWeek, subDays, startOfMonth, endOfMonth } from "date-fns"
 import { es } from "date-fns/locale"
-import type { DateRange } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "./separator"
+
+interface DateRange {
+  from: Date | undefined
+  to?: Date | undefined
+}
 
 interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> {
   date: DateRange | undefined
