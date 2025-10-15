@@ -84,7 +84,7 @@ export function VehicleEngineAccordion({ engine, onSave }: VehicleEngineAccordio
                 </Card>
             </div>
              <div className="flex justify-end mt-4">
-                <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)} className="bg-white">
                     <Edit className="h-3 w-3 mr-2" />
                     Editar Datos del Motor
                 </Button>
