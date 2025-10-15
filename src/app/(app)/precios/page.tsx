@@ -7,27 +7,31 @@ import { Loader2 } from 'lucide-react';
 import { inventoryService } from '@/lib/services';
 import type { VehiclePriceList } from '@/types';
 import { PriceListManagementContent } from './components/price-list-management-content';
-import initialVehicleDatabase from '@/lib/data/vehicle-database.json';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';
 import type { EngineData } from '@/lib/data/vehicle-database-types';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
 
 function PreciosPageComponent() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [dbState, setDbState] = useState(JSON.parse(JSON.stringify(initialVehicleDatabase)));
+    const [dbState, setDbState] = useState<any[]>([]);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         setIsLoading(true);
-        const unsubscribe = inventoryService.onPriceListsUpdate((data) => {
-            setPriceLists(data);
-            setIsLoading(false);
-        });
-        return () => unsubscribe();
+        const unsubs = [
+            inventoryService.onPriceListsUpdate(setPriceLists),
+            inventoryService.onVehicleDataUpdate((data) => {
+                setDbState(data);
+                setIsLoading(false);
+            })
+        ];
+        return () => unsubs.forEach(unsub => unsub());
     }, []);
 
     const allMakes = useMemo(() => {
@@ -60,17 +64,29 @@ function PreciosPageComponent() {
 
     const handleSaveToDatabase = async () => {
         setIsSaving(true);
+        if (!db) {
+            toast({ title: "Error de conexión", description: "No se pudo conectar a la base de datos.", variant: "destructive" });
+            setIsSaving(false);
+            return;
+        }
+
         try {
-            // NOTE: In a real scenario, this would be an API call to a secure backend endpoint
-            // to write the file. Client-side file writing is not possible for security reasons.
-            console.log(JSON.stringify(dbState, null, 2));
+            const batch = db.batch(); // Assuming 'db' is your Firestore instance
+            dbState.forEach(makeData => {
+                const { make, ...data } = makeData;
+                const docRef = doc(db, 'vehicleData', make);
+                batch.set(docRef, data);
+            });
+            await batch.commit();
+            
             toast({
-                title: "Simulación de Guardado",
-                description: "Los datos actualizados se han impreso en la consola. La escritura de archivos en el servidor no está permitida en este entorno.",
-                duration: 7000,
+                title: "Guardado en Base de Datos",
+                description: "La base de datos de vehículos ha sido actualizada en Firestore.",
+                duration: 5000,
             });
         } catch (error) {
-            toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive'});
+            console.error("Error saving to Firestore:", error);
+            toast({ title: 'Error', description: 'No se pudieron guardar los cambios en la base de datos.', variant: 'destructive'});
         } finally {
             setIsSaving(false);
         }

@@ -361,6 +361,15 @@ const deletePriceList = async (id: string): Promise<void> => {
     await deleteDoc(doc(db, "vehiclePriceLists", id));
 };
 
+// --- Vehicle Database (for precotizaciones) ---
+const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
+  if (!db) return () => {};
+  const q = query(collection(db, "vehicleData"));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ make: doc.id, ...doc.data() })));
+  });
+};
+
 
 export const inventoryService = {
   getDocById,
@@ -399,4 +408,5 @@ export const inventoryService = {
   onPriceListsUpdate,
   savePriceList,
   deletePriceList,
+  onVehicleDataUpdate,
 };

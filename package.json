@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "find:services": "tsx --require dotenv/config scripts/find-services-by-plate.ts"
+    "find:services": "tsx --require dotenv/config scripts/find-services-by-plate.ts",
+    "migrate:db": "tsx --require dotenv/config scripts/migrate-vehicle-db.ts"
   },
   "dependencies": {
     "@genkit-ai/googleai": "1.21.0",
