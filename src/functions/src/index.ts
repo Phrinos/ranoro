@@ -6,6 +6,7 @@ import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/fire
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { startOfDay, endOfDay } from 'date-fns';
 import { toZonedTime, zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
+import { onStockExit, onPurchaseCreated, onPurchaseUpdated, adjustStock } from './inventory';
 
 // Initialize Firebase Admin SDK - THIS SHOULD BE DONE ONLY ONCE
 if (admin.apps.length === 0) {
@@ -84,113 +85,5 @@ export const generateDailyRentalCharges = onSchedule(
   }
 );
 
-
 // --- Inventory Functions ---
-
-const isAdmin = async (uid: string): Promise<boolean> => {
-    try {
-      const user = await admin.auth().getUser(uid);
-      return user.customClaims?.role === "admin";
-    } catch (error) {
-      logger.error(`[Auth] Error checking admin status for UID: ${uid}`, error);
-      return false;
-    }
-};
-
-export const onStockExit = onDocumentUpdated("serviceRecords/{serviceId}", async (event) => {
-    const serviceId = event.params.serviceId;
-    const dataBefore = event.data?.before.data();
-    const dataAfter = event.data?.after.data();
-
-    if (!dataBefore || !dataAfter || dataAfter.status !== "entregado" || dataBefore.status === "entregado") return;
-
-    const items = dataAfter.items;
-    if (!items || items.length === 0) return;
-
-    logger.info(`[Inventory] Processing stock exit for service ${serviceId}.`);
-    try {
-        await db.runTransaction(async (transaction) => {
-            for (const item of items) {
-                if (!item.id || !item.quantity || item.quantity <= 0) continue;
-
-                const inventoryItemRef = db.collection("inventoryItems").doc(item.id);
-                const movementRef = db.collection("inventoryMovements").doc();
-                transaction.set(movementRef, {
-                    itemId: item.id, serviceId: serviceId, folio: dataAfter.folio || null, type: "sale",
-                    quantityChanged: -item.quantity, date: admin.firestore.FieldValue.serverTimestamp(),
-                    itemName: item.name || "N/A", itemSku: item.sku || "N/A",
-                });
-                transaction.update(inventoryItemRef, { stock: admin.firestore.FieldValue.increment(-item.quantity) });
-            }
-        });
-        logger.info(`[Inventory] Stock exit for service ${serviceId} processed successfully.`);
-    } catch (error) {
-        logger.error(`[Inventory] Transaction failed for service ${serviceId}:`, error);
-    }
-});
-
-const processStockEntry = async (purchaseSnap: FirebaseFirestore.DocumentSnapshot, purchaseId: string) => {
-    const purchaseData = purchaseSnap.data();
-    if (!purchaseData?.items || purchaseData.items.length === 0) return;
-
-    logger.info(`[Inventory] Processing stock entry for purchase ${purchaseId}.`);
-    try {
-        await db.runTransaction(async (transaction) => {
-            for (const item of purchaseData.items) {
-                if (!item.id || !item.quantity || item.quantity <= 0) continue;
-                const inventoryItemRef = db.collection("inventoryItems").doc(item.id);
-                const movementRef = db.collection("inventoryMovements").doc();
-                transaction.set(movementRef, {
-                    itemId: item.id, purchaseId: purchaseId, type: "purchase", quantityChanged: item.quantity,
-                    date: admin.firestore.FieldValue.serverTimestamp(), itemName: item.name || "N/A", itemSku: item.sku || "N/A",
-                });
-                transaction.update(inventoryItemRef, { stock: admin.firestore.FieldValue.increment(item.quantity) });
-            }
-        });
-        logger.info(`[Inventory] Stock entry for purchase ${purchaseId} processed successfully.`);
-    } catch (error) {
-        logger.error(`[Inventory] Transaction failed for purchase ${purchaseId}:`, error);
-    }
-};
-
-export const onPurchaseCreated = onDocumentCreated("purchases/{purchaseId}", async (event) => {
-    if (event.data?.data()?.status === 'completado') {
-        await processStockEntry(event.data, event.params.purchaseId);
-    }
-});
-
-export const onPurchaseUpdated = onDocumentUpdated("purchases/{purchaseId}", async (event) => {
-    if (event.data?.after.data()?.status === 'completado' && event.data?.before.data()?.status !== 'completado') {
-        await processStockEntry(event.data.after, event.params.purchaseId);
-    }
-});
-
-export const adjustStock = onCall(async (request) => {
-    if (!request.auth || !(await isAdmin(request.auth.uid))) throw new HttpsError("permission-denied", "Admin permission required.");
-    const { itemId, newQuantity, reason } = request.data;
-    if (!itemId || typeof newQuantity !== 'number' || newQuantity < 0 || !reason) throw new HttpsError("invalid-argument", "Missing parameters.");
-
-    const inventoryItemRef = db.collection("inventoryItems").doc(itemId);
-    const movementRef = db.collection("inventoryMovements").doc();
-
-    try {
-        await db.runTransaction(async (transaction) => {
-            const itemDoc = await transaction.get(inventoryItemRef);
-            if (!itemDoc.exists) throw new HttpsError("not-found", `Item ${itemId} not found.`);
-            const currentStock = itemDoc.data()?.stock || 0;
-            const quantityChanged = newQuantity - currentStock;
-            if (quantityChanged === 0) return;
-
-            transaction.set(movementRef, {
-                itemId, type: "adjustment", quantityChanged, reason, previousStock: currentStock, newStock: newQuantity,
-                date: admin.firestore.FieldValue.serverTimestamp(), adminId: request.auth?.uid,
-                itemName: itemDoc.data()?.name || "N/A", itemSku: itemDoc.data()?.sku || "N/A",
-            });
-            transaction.update(inventoryItemRef, { stock: newQuantity });
-        });
-        return { success: true, message: "Inventory adjusted." };
-    } catch (error) {
-        logger.error(`[Inventory] Stock adjustment failed for item ${itemId}:`, error);
-        throw new HttpsError("internal", "Failed to adjust inventory.");
-    }
-});
+export { onStockExit, onPurchaseCreated, onPurchaseUpdated, adjustStock };
