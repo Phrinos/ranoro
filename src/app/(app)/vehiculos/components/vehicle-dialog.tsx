@@ -21,7 +21,7 @@ interface VehicleDialogProps {
 const buildDefaults = (v?: Partial<Vehicle> | null): VehicleFormValues => ({
   make: v?.make ?? "",
   model: v?.model ?? "",
-  year: v?.year ?? new Date().getFullYear(),
+  year: v?.year,
   engine: (v as any)?.engine ?? "",
   licensePlate: v?.licensePlate ?? "",
   vin: v?.vin ?? "",

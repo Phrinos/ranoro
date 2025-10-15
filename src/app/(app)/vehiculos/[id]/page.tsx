@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { VehicleDialog } from "../components/vehicle-dialog";
 import type { VehicleFormValues } from "../components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +38,7 @@ import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog
 import { formatNumber, formatCurrency } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { VehicleInfoCard } from "../components/VehicleInfoCard";
 
 export default function VehicleDetailPage() {
   const params = useParams();
@@ -71,10 +72,10 @@ export default function VehicleDetailPage() {
     return () => unsubscribe();
   }, [vehicleId]);
 
-  const handleOpenEditDialog = () => {
+  const handleOpenEditDialog = useCallback(() => {
     setEditingVehicle(vehicle); // Carga el vehículo actual para editar
     setIsEditDialogOpen(true);
-  };
+  }, [vehicle]);
 
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
     if (!editingVehicle) return;
@@ -82,8 +83,8 @@ export default function VehicleDetailPage() {
       await inventoryService.saveVehicle(formData, editingVehicle.id);
       // Actualización optimista del estado local
       setVehicle((prev) => prev ? { ...prev, ...formData, id: prev.id } as Vehicle : prev);
-      toast({ title: "Vehículo actualizado" });
       setIsEditDialogOpen(false);
+      toast({ title: "Vehículo actualizado" });
     } catch (e) {
       console.error(e);
       toast({
@@ -201,64 +202,7 @@ export default function VehicleDetailPage() {
         <TabsContent value="details">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Datos del Vehículo y Propietario</CardTitle>
-                  <div className="flex items-center gap-1">
-                      <ConfirmDialog
-                        triggerButton={
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        }
-                        title="¿Eliminar Vehículo?"
-                        description={
-                          services.length > 0
-                            ? "Este vehículo tiene servicios registrados. El borrado no elimina el historial. ¿Deseas continuar?"
-                            : "Esta acción es permanente y no se puede deshacer. ¿Seguro que quieres eliminar este vehículo?"
-                        }
-                        onConfirm={handleDeleteVehicle}
-                        confirmText="Sí, eliminar"
-                      />
-                      <Button variant="outline" size="icon" onClick={handleOpenEditDialog}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="font-bold text-xl">{vehicle.licensePlate}</p>
-                  <p className="text-muted-foreground">
-                    {vehicle.make} {vehicle.model} ({vehicle.year})
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Color: {vehicle.color || "N/A"} | VIN: {vehicle.vin || "N/A"}
-                  </p>
-
-                  <Separator className="my-4" />
-
-                  <p className="font-semibold">{vehicle.ownerName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {vehicle.ownerPhone || "N/A"} | {(vehicle as any).ownerEmail || "N/A"}
-                  </p>
-
-                  {vehicle.notes && (
-                    <>
-                      <Separator className="my-4" />
-                      <div className="space-y-1">
-                        <p className="font-medium text-muted-foreground">Notas</p>
-                        <p className="text-sm text-foreground whitespace-pre-wrap">
-                          {vehicle.notes}
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+              <VehicleInfoCard vehicle={vehicle} onEdit={handleOpenEditDialog} />
             </div>
 
             <div className="lg:col-span-1">
