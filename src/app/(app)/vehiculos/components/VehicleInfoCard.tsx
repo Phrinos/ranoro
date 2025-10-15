@@ -37,7 +37,7 @@ export function VehicleInfoCard({ vehicle, onEdit }: VehicleInfoCardProps) {
           <Edit className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="grid md:grid-cols-2 gap-x-8 gap-y-6">
         <div>
           <h4 className="font-semibold text-sm mb-2">Detalles del Vehículo</h4>
           <div className="space-y-2">
@@ -52,25 +52,27 @@ export function VehicleInfoCard({ vehicle, onEdit }: VehicleInfoCardProps) {
             ))}
           </div>
         </div>
-        <div>
-          <h4 className="font-semibold text-sm mb-2">Propietario</h4>
-          <div className="space-y-2">
-            {ownerInfo.map(item => (
-              <div key={item.label} className="flex items-center justify-between text-sm">
-                 <div className="flex items-center gap-2 text-muted-foreground">
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                </div>
-                <span className="font-medium">{item.value || 'N/A'}</span>
+        <div className="space-y-6">
+            <div>
+              <h4 className="font-semibold text-sm mb-2">Propietario</h4>
+              <div className="space-y-2">
+                {ownerInfo.map(item => (
+                  <div key={item.label} className="flex items-center justify-between text-sm">
+                     <div className="flex items-center gap-2 text-muted-foreground">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                    </div>
+                    <span className="font-medium">{item.value || 'N/A'}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex-grow">
-          <h4 className="font-semibold text-sm mb-2">Notas</h4>
-          <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[60px] whitespace-pre-wrap break-words">
-            {vehicle.notes || 'No hay notas adicionales.'}
-          </div>
+            </div>
+            <div className="flex-grow">
+              <h4 className="font-semibold text-sm mb-2">Notas</h4>
+              <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[60px] whitespace-pre-wrap break-words">
+                {vehicle.notes || 'No hay notas adicionales.'}
+              </div>
+            </div>
         </div>
       </CardContent>
     </Card>

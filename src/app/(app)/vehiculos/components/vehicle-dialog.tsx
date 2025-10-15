@@ -48,12 +48,11 @@ export function VehicleDialog({
   open: controlledOpen,
   onOpenChange: setControlledOpen,
 }: VehicleDialogProps) {
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
-  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const open = isControlled ? controlledOpen : false;
   
   const methods = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
@@ -72,7 +71,6 @@ export function VehicleDialog({
 
   const handleOpenChange = (isOpen: boolean) => {
     if (isControlled) setControlledOpen(isOpen);
-    else setUncontrolledOpen(isOpen);
   };
 
   const handleSubmitForm = async (values: VehicleFormValues) => {
