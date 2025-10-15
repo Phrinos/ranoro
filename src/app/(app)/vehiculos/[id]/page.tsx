@@ -1,3 +1,4 @@
+
 // src/app/(app)/vehiculos/[id]/page.tsx
 "use client";
 
@@ -49,6 +50,7 @@ export default function VehicleDetailPage() {
   const [services, setServices] = useState<ServiceRecord[]>([]);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
 
   // Vista previa de servicio
   const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
@@ -70,20 +72,17 @@ export default function VehicleDetailPage() {
     return () => unsubscribe();
   }, [vehicleId]);
 
+  const handleOpenEditDialog = () => {
+    setEditingVehicle(vehicle); // Carga el vehículo actual para editar
+    setIsEditDialogOpen(true);
+  };
+
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
-    if (!vehicle) return;
+    if (!editingVehicle) return;
     try {
-      // Armamos el payload con el id actual
-      const payload = { ...vehicle, ...formData, id: vehicle.id } as Vehicle;
-
-      // Si tu servicio acepta (data, id)
-      const saved = await inventoryService.saveVehicle(payload, vehicle.id);
-
-      // Refleja en UI lo que quedó en DB (cae al payload si el servicio no devuelve el doc)
-      setVehicle(saved ?? payload);
-
-      setIsEditDialogOpen(false);
+      await inventoryService.saveVehicle(formData, editingVehicle.id);
       toast({ title: "Vehículo actualizado" });
+      setIsEditDialogOpen(false);
     } catch (e) {
       console.error(e);
       toast({
@@ -96,24 +95,9 @@ export default function VehicleDetailPage() {
 
   const handleDeleteVehicle = async () => {
     if (!vehicle) return;
-
-    // Si NO quieres permitir borrar con historial, descomenta este guard:
-    // if (services.length > 0) {
-    //   toast({
-    //     title: "No se puede eliminar",
-    //     description: "Este vehículo tiene servicios relacionados.",
-    //     variant: "destructive",
-    //   });
-    //   return;
-    // }
-
     try {
       await inventoryService.deleteVehicle(vehicle.id);
       toast({ title: "Vehículo eliminado", variant: "destructive" });
-
-      // Evita que queden listeners activos a un doc que ya no existe
-      setVehicle(null);
-      setServices([]);
       router.push("/vehiculos");
     } catch (e) {
       console.error(e);
@@ -149,7 +133,6 @@ export default function VehicleDetailPage() {
     );
   }
 
-  // Si tu Badge NO tiene variante "success", ajusta los retornos a "secondary" o "default".
   const getStatusVariant = (
     status: ServiceRecord["status"]
   ):
@@ -241,7 +224,7 @@ export default function VehicleDetailPage() {
                         onConfirm={handleDeleteVehicle}
                         confirmText="Sí, eliminar"
                       />
-                      <Button variant="outline" size="icon" onClick={() => setIsEditDialogOpen(true)}>
+                      <Button variant="outline" size="icon" onClick={handleOpenEditDialog}>
                         <Edit className="h-4 w-4" />
                       </Button>
                   </div>
@@ -401,14 +384,12 @@ export default function VehicleDetailPage() {
         </TabsContent>
       </Tabs>
 
-      {vehicle && (
-        <VehicleDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          vehicle={vehicle}
-          onSave={handleSaveEditedVehicle}
-        />
-      )}
+      <VehicleDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        vehicle={editingVehicle}
+        onSave={handleSaveEditedVehicle}
+      />
 
       {selectedService && vehicle && (
         <UnifiedPreviewDialog
