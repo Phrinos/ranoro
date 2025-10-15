@@ -13,7 +13,6 @@ import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,12 +24,9 @@ import type { EngineData } from "@/lib/data/vehicle-database-types";
 import { EditEngineDataDialog } from "./EditEngineDataDialog";
 
 /* ============================
-   Tipos y Schema del formulario
+   Schemas
    ============================ */
-
-const engineMiniSchema = z.object({
-  name: z.string().min(1, "Requerido"),
-}).passthrough();
+const engineMiniSchema = z.object({ name: z.string().min(1, "Requerido") }).passthrough();
 
 const generationSchema = z.object({
   id: z.string(),
@@ -55,7 +51,7 @@ type ModelForm = MakeDocForm["models"][number];
 type GenerationForm = ModelForm["generations"][number];
 
 export interface VehicleCatalogEditorProps {
-  make: string; 
+  make: string;
 }
 
 /* ============================
@@ -107,7 +103,6 @@ function toFirestoreDoc(form: MakeDocForm) {
 /* ============================
    Subcomponentes
    ============================ */
-
 function ModelAccordionItem({
   model,
   modelIdx,
@@ -119,7 +114,7 @@ function ModelAccordionItem({
   removeModel: (index: number) => void;
   openEngineDialog: (modelIdx: number, genIdx: number, engIdx: number) => void;
 }) {
-  const { control, watch } = useFormContext<MakeDocForm>();
+  const { control, watch, setValue } = useFormContext<MakeDocForm>();
   const { fields, append, remove } = useFieldArray({ control, name: `models.${modelIdx}.generations` });
   const modelName = watch(`models.${modelIdx}.name`);
 
@@ -129,7 +124,7 @@ function ModelAccordionItem({
         <div className="flex items-center gap-3 w-full">
           <Input
             value={modelName ?? ""}
-            onChange={(e) => control.setValue(`models.${modelIdx}.name`, e.target.value, { shouldDirty: true })}
+            onChange={(e) => setValue(`models.${modelIdx}.name`, e.target.value, { shouldDirty: true })}
             className="h-8 w-full max-w-xs bg-white"
             onClick={(e) => e.stopPropagation()}
           />
@@ -281,13 +276,16 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
     return () => unsub();
   }, [make, reset]);
 
-  const handleSave = async () => {
+  const onSaveAll = async () => {
     const formValues = getValues();
     console.log("[onSaveAll] Form data:", formValues);
     try {
-      const payload = stripUndefinedDeep(toFirestoreDoc(formValues));
+      const payload = toFirestoreDoc(formValues);
       console.log("[onSaveAll] Payload to send:", payload);
-      await setDoc(doc(db, VEHICLE_COLLECTION, make), payload, { merge: true });
+      await setDoc(doc(db, VEHICLE_COLLECTION, make), stripUndefinedDeep(payload), {
+        merge: true,
+      });
+      console.log("[onSaveAll] Save successful!");
       toast({ description: "Catálogo actualizado correctamente." });
     } catch (e) {
       console.error("Error saving catalog:", e);
@@ -310,7 +308,8 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4">
+      {/* El form tag ahora solo envuelve el contenido, y el botón de submit está fuera pero asociado por el `form` id */}
+      <form id="vehicle-catalog-form" onSubmit={(e) => { e.preventDefault(); onSaveAll(); }} className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Modelos de {make}</h2>
           <div className="flex items-center gap-2">
