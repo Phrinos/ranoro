@@ -48,6 +48,7 @@ export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data:
     const fetchVehicleData = async () => {
       setIsLoading(true);
       try {
+        if (!db) return;
         const querySnapshot = await getDocs(collection(db, "vehicleData"));
         const data: VehicleMake[] = querySnapshot.docs.map(doc => ({ make: doc.id, ...doc.data() } as VehicleMake));
         setVehicleData(data);
@@ -157,7 +158,7 @@ export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data:
                               <p className="font-semibold text-sm">{gen.startYear} - {gen.endYear}</p>
                               <ul className="list-disc pl-5 mt-1 text-sm text-muted-foreground">
                                   {gen.engines.map((engine, engineIndex) => (
-                                      <li key={engineIndex}>{engine.name}</li>
+                                      <li key={engine.name + engineIndex}>{engine.name}</li>
                                   ))}
                               </ul>
                            </div>
