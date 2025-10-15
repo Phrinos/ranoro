@@ -1,35 +1,42 @@
 // src/schemas/engine-data-form-schema.ts
-import { z } from 'zod';
+import { z } from "zod";
 
-const numberCoercion = z.preprocess(v => {
-    if (v === "" || v === null || v === undefined) return undefined;
-    const n = Number(String(v).replace(/[^0-9.-]/g, ''));
-    return isNaN(n) ? undefined : n;
-}, z.coerce.number().positive({ message: "Debe ser un número positivo" }).optional());
+// Permite 0 (no negativo) y valores opcionales
+const numberCoercion = z.preprocess((v) => {
+  if (v === "" || v === null || v === undefined) return undefined;
+  const n = Number(String(v).replace(/[^0-9.-]/g, ""));
+  return isNaN(n) ? undefined : n;
+}, z.coerce.number().nonnegative({ message: "Debe ser un número >= 0" }).optional());
 
 const aceiteSchema = z.object({
-  grado: z.string().nullable(),
+  grado: z.string().nullable().optional(),
   litros: numberCoercion,
   costoUnitario: numberCoercion,
 });
 
 const filtroSchema = z.object({
-  sku: z.string().nullable(),
+  sku: z.string().nullable().optional(),
   costoUnitario: numberCoercion,
 });
 
 const balataInfoSchema = z.object({
-  modelo: z.string().nullable(),
-  tipo: z.enum(['metalicas', 'semimetalicas', 'ceramica', 'organica']).nullable(),
+  modelo: z.string().nullable().optional(),
+  tipo: z
+    .enum(["metalicas", "semimetalicas", "ceramica", "organica"])
+    .nullable()
+    .optional(),
   costoJuego: numberCoercion,
 });
 
 const bujiasSchema = z.object({
-  cantidad: z.preprocess(v => (v === "" || v === null ? undefined : v), z.coerce.number().int().positive().optional()),
+  cantidad: z.preprocess(
+    (v) => (v === "" || v === null ? undefined : v),
+    z.coerce.number().int().nonnegative().optional()
+  ),
   modelos: z.object({
-    cobre: z.string().nullable(),
-    platino: z.string().nullable(),
-    iridio: z.string().nullable(),
+    cobre: z.string().nullable().optional(),
+    platino: z.string().nullable().optional(),
+    iridio: z.string().nullable().optional(),
   }),
   costoUnitario: z.object({
     cobre: numberCoercion,
@@ -39,7 +46,7 @@ const bujiasSchema = z.object({
 });
 
 const inyectorSchema = z.object({
-  tipo: z.enum(['Normal', 'Piezoelectrico', 'GDI']).nullable(),
+  tipo: z.enum(["Normal", "Piezoelectrico", "GDI"]).nullable().optional(),
 });
 
 const servicioCostoSchema = z.object({
