@@ -13,14 +13,15 @@ interface VehicleMakeAccordionProps {
   onEngineDataSave: (make: string, model: string, generationIndex: number, engineIndex: number, data: EngineData) => void;
 }
 
+interface MakeData {
+    models: Model[];
+}
+
 interface Model {
     name: string;
     // other properties
 }
 
-interface MakeData {
-    models: Model[];
-}
 
 export function VehicleMakeAccordion({ make, onEngineDataSave }: VehicleMakeAccordionProps) {
   const [makeData, setMakeData] = useState<MakeData | null>(null);
