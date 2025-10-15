@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/RegisterPaymentDialog.tsx
 "use client";
 
@@ -31,8 +32,7 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { RentalPayment } from "@/types";
-import Calendar from "react-calendar";
-import 'react-calendar/dist/Calendar.css';
+import { NewCalendar } from "@/components/ui/calendar";
 
 const paymentSchema = z.object({
   paymentDate: z.date({ required_error: "La fecha es obligatoria." }),
@@ -140,7 +140,7 @@ export function RegisterPaymentDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
+                      <NewCalendar
                         onChange={(d: any) => {
                             if(d) {
                                 field.onChange(d);
@@ -230,3 +230,5 @@ export function RegisterPaymentDialog({
     </Dialog>
   );
 }
+
+    

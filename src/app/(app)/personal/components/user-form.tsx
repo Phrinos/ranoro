@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,8 +28,7 @@ import { parseDate } from "@/lib/forms";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { userFormSchema, type UserFormValues } from "@/schemas/user-form-schema";
-import Calendar from "react-calendar";
-import 'react-calendar/dist/Calendar.css';
+import { NewCalendar } from "@/components/ui/calendar";
 
 
 interface UserFormProps {
@@ -146,7 +146,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
+                  <NewCalendar
                     locale="es-MX"
                     onChange={(date: any) => {
                       if (date) {
@@ -175,3 +175,5 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
     </Form>
   );
 }
+
+    

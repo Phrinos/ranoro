@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/EditFinancialInfoDialog.tsx
 "use client";
 
@@ -29,8 +30,7 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import Calendar from "react-calendar";
-import 'react-calendar/dist/Calendar.css';
+import { NewCalendar } from "@/components/ui/calendar";
 
 const financialInfoSchema = z.object({
   contractDate: z.date().optional(),
@@ -114,7 +114,7 @@ export function EditFinancialInfoDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
+                      <NewCalendar
                         onChange={(d: any) => {
                             if(d) {
                                 field.onChange(d);
@@ -184,3 +184,5 @@ export function EditFinancialInfoDialog({
     </Dialog>
   );
 }
+
+    

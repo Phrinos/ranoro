@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/GlobalTransactionDialog.tsx
 "use client";
 
@@ -24,8 +25,7 @@ import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList
 } from '@/components/ui/command';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+import { NewCalendar } from "@/components/ui/calendar";
 
 
 const transactionSchema = z.object({
@@ -204,7 +204,7 @@ export function GlobalTransactionDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="p-0 w-auto" align="start">
-                        <Calendar
+                        <NewCalendar
                             onChange={(d: any) => {
                                 if (d) {
                                     field.onChange(d);
@@ -288,3 +288,5 @@ export function GlobalTransactionDialog({
     </Dialog>
   );
 }
+
+    

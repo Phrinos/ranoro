@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/AddManualChargeDialog.tsx
 "use client";
 
@@ -25,8 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import Calendar from "react-calendar";
-import 'react-calendar/dist/Calendar.css';
+import { NewCalendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
 
@@ -138,7 +138,7 @@ export function AddManualChargeDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
+                      <NewCalendar
                         onChange={(d: any) => {
                             if (d) {
                                 field.onChange(d);
@@ -206,3 +206,5 @@ export function AddManualChargeDialog({
     </Dialog>
   );
 }
+
+    
