@@ -176,10 +176,23 @@ export default function VehicleDetailPage() {
         title={`${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}`}
         description={`ID Vehículo: ${vehicle.id}`}
         actions={
-            <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver
-            </Button>
+            <div className="flex items-center gap-2">
+                 <ConfirmDialog
+                    triggerButton={
+                        <Button variant="destructive" size="sm">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar Vehículo
+                        </Button>
+                    }
+                    title="¿Eliminar este vehículo?"
+                    description="Esta acción es permanente y no se puede deshacer. Se eliminará el vehículo y todo su historial de servicios."
+                    onConfirm={handleDeleteVehicle}
+                />
+                <Button variant="outline" onClick={() => router.back()}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Volver
+                </Button>
+            </div>
         }
       />
 
