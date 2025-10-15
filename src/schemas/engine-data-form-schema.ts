@@ -1,15 +1,14 @@
 
 // src/schemas/engine-data-form-schema.ts
 import { z } from "zod";
-import { nanoid } from 'nanoid';
+import { nanoid } from "nanoid";
 
-// Permite string vacío, y si no es un número válido, lo convierte a 0.
+// Devuelve undefined si viene vacío o inválido; de lo contrario, número >= 0
 const numberCoercion = z.preprocess((v) => {
-  if (v === "" || v === null || v === undefined) return 0;
-  const n = Number(String(v).replace(/[^0-9.]/g, ""));
-  return isNaN(n) ? 0 : n;
-}, z.coerce.number().nonnegative({ message: "Debe ser un número >= 0" }));
-
+  if (v === "" || v === null || v === undefined) return undefined;
+  const n = Number(String(v).replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+}, z.coerce.number().nonnegative({ message: "Debe ser un número >= 0" }).optional());
 
 const aceiteSchema = z.object({
   grado: z.string().nullable().optional(),
@@ -27,16 +26,13 @@ const filtroSchema = z.object({
 const balataInfoSchema = z.object({
   id: z.string().default(() => nanoid()),
   modelo: z.string().nullable().optional(),
-  tipo: z
-    .enum(["metalicas", "semimetalicas", "ceramica", "organica"])
-    .nullable()
-    .optional(),
+  tipo: z.enum(["metalicas", "semimetalicas", "ceramica", "organica"]).nullable().optional(),
   costoJuego: numberCoercion,
 });
 
 const bujiasSchema = z.object({
   cantidad: z.preprocess(
-    (v) => (v === "" || v === null || v === undefined ? 0 : v),
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
     z.coerce.number().int().nonnegative().optional()
   ),
   modelos: z.object({
@@ -57,11 +53,11 @@ const inyectorSchema = z.object({
 });
 
 const afinacionUpgradesSchema = z.object({
-    conAceiteSintetico: numberCoercion,
-    conAceiteMobil: numberCoercion,
-    conBujiasPlatino: numberCoercion,
-    conBujiasIridio: numberCoercion,
-});
+  conAceiteSintetico: numberCoercion,
+  conAceiteMobil: numberCoercion,
+  conBujiasPlatino: numberCoercion,
+  conBujiasIridio: numberCoercion,
+}).optional();
 
 const servicioCostoSchema = z.object({
   costoInsumos: numberCoercion,
@@ -69,9 +65,8 @@ const servicioCostoSchema = z.object({
 });
 
 const afinacionIntegralSchema = servicioCostoSchema.extend({
-  upgrades: afinacionUpgradesSchema.optional(),
+  upgrades: afinacionUpgradesSchema,
 });
-
 
 export const engineDataSchema = z.object({
   name: z.string(),
