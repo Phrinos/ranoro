@@ -51,7 +51,7 @@ export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data:
         if (!db) return;
         const querySnapshot = await getDocs(collection(db, "vehicleData"));
         const data: VehicleMake[] = querySnapshot.docs.map(doc => ({ make: doc.id, ...doc.data() } as VehicleMake));
-        setVehicleData(data);
+        setVehicleDb(data);
       } catch (error) {
         console.error("Error fetching vehicle data:", error);
         toast({ title: 'Error', description: 'No se pudieron cargar los datos de vehículos.', variant: 'destructive' });
@@ -65,7 +65,7 @@ export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data:
   }, [toast]);
   
   const makes = useMemo(() => vehicleDb.map(d => d.make).sort(), [vehicleDb]);
-  const selectedMakeData = useMemo(() => vehicleDb.find(d => d.make === selectedMake), [vehicleData, selectedMake]);
+  const selectedMakeData = useMemo(() => vehicleDb.find(d => d.make === selectedMake), [vehicleDb, selectedMake]);
 
   const handleOpenVehicleDialog = (vehicle: Partial<Vehicle> | null = null) => {
     setEditingVehicle(vehicle ? { ...vehicle, make: selectedMake } : { make: selectedMake });
@@ -81,7 +81,7 @@ export function DatabaseManagementTab({ onVehicleSave }: { onVehicleSave: (data:
         
         await writeBatch(db).update(makeRef, { models: updatedModels }).commit();
 
-        setVehicleData(prevData => prevData.map(make => 
+        setVehicleDb(prevData => prevData.map(make => 
             make.make === selectedMake ? { ...make, models: updatedModels } : make
         ));
 
