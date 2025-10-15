@@ -160,7 +160,7 @@ function VehiculosPage() {
           </div>
         </TabsContent>
         <TabsContent value="database" className="mt-6">
-            <DatabaseManagementTab />
+            <DatabaseManagementTab onVehicleSave={handleSaveVehicle} />
         </TabsContent>
       </Tabs>
       
