@@ -1,7 +1,7 @@
 // src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useFormContext } from "react-hook-form";
 import {
   Card,
@@ -18,10 +18,13 @@ import {
   Edit,
 } from "lucide-react";
 import { VehicleSelectionDialog } from "./VehicleSelectionDialog";
-import type { Vehicle, ServiceRecord } from "@/types";
+import type { Vehicle, ServiceRecord, VehiclePriceList } from "@/types";
 import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { inventoryService } from "@/lib/services";
+import { VehiclePricingCard } from "../../vehiculos/components/VehiclePricingCard";
+import type { EngineData } from "@/lib/data/vehicle-database-types";
 
 interface VehicleSelectionCardProps {
   vehicles: Vehicle[]; // puede llegar vacío; internamente hacemos fallback
@@ -39,8 +42,19 @@ export function VehicleSelectionCard({
   const { control, watch, setValue } = useFormContext();
 
   const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
+  const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
+  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
 
   const selectedVehicleId = watch("vehicleId") as string | undefined;
+
+  useEffect(() => {
+    setIsLoadingPrices(true);
+    const unsubscribe = inventoryService.onVehicleDataUpdate((data) => {
+        setPriceLists(data);
+        setIsLoadingPrices(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const safeVehicles = useMemo(() => Array.isArray(vehicles) ? vehicles : [], [vehicles]);
 
@@ -48,6 +62,21 @@ export function VehicleSelectionCard({
     () => safeVehicles.find((v) => v.id === selectedVehicleId),
     [safeVehicles, selectedVehicleId]
   );
+  
+  const vehicleEngineData = useMemo(() => {
+    if (!selectedVehicle || !selectedVehicle.engine || priceLists.length === 0) return null;
+    
+    const makeData = priceLists.find(pl => pl.make === selectedVehicle.make);
+    if (!makeData) return null;
+    
+    const modelData = makeData.models.find(m => m.name === selectedVehicle.model);
+    if (!modelData) return null;
+    
+    const generationData = modelData.generations.find(g => selectedVehicle.year >= g.startYear && selectedVehicle.year <= g.endYear);
+    if (!generationData) return null;
+    
+    return generationData.engines.find(e => e.name === selectedVehicle.engine) || null;
+  }, [selectedVehicle, priceLists]);
 
   // Autoselección si viene initialVehicleId
   useEffect(() => {
@@ -180,6 +209,9 @@ export function VehicleSelectionCard({
                   </FormItem>
                 )}
               />
+              
+              <VehiclePricingCard engineData={vehicleEngineData} />
+
             </div>
           ) : (
             <Button
