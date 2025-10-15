@@ -25,7 +25,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar } from "@/components/ui/calendar";
+import Calendar from "react-calendar";
+import 'react-calendar/dist/Calendar.css';
 import { cn } from "@/lib/utils";
 
 
@@ -138,13 +139,13 @@ export function AddManualChargeDialog({
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
-                        value={field.value}
                         onChange={(d: any) => {
                             if (d) {
                                 field.onChange(d);
                                 setIsCalendarOpen(false);
                             }
                         }}
+                        value={field.value}
                         locale="es-MX"
                       />
                     </PopoverContent>

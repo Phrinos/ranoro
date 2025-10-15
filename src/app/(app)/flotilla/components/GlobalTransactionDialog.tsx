@@ -24,7 +24,9 @@ import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList
 } from '@/components/ui/command';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { NewCalendar } from '@/components/ui/calendar';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+
 
 const transactionSchema = z.object({
   driverId: z.string({ required_error: "Debe seleccionar un conductor." }),
@@ -202,14 +204,14 @@ export function GlobalTransactionDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="p-0 w-auto" align="start">
-                        <NewCalendar
-                            value={field.value}
+                        <Calendar
                             onChange={(d: any) => {
                                 if (d) {
                                     field.onChange(d);
                                     setIsCalendarOpen(false);
                                 }
                             }}
+                            value={field.value}
                             locale="es-MX"
                         />
                     </PopoverContent>
