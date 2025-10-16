@@ -65,18 +65,18 @@ const sampleSale: SaleReceipt = {
   saleDate: new Date().toISOString(),
   items: [
     {
-      inventoryItemId: "X1",
+      itemId: "X1",
       itemName: "Artículo demo 1",
       quantity: 2,
       unitPrice: 116,
-      totalPrice: 232,
+      total: 232,
     },
     {
-      inventoryItemId: "X2",
+      itemId: "X2",
       itemName: "Artículo demo 2",
       quantity: 1,
       unitPrice: 58,
-      totalPrice: 58,
+      total: 58,
     },
   ],
   subTotal: 232 / 1.16 + 58 / 1.16,

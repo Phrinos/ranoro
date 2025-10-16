@@ -75,11 +75,9 @@ export function ViewSaleDialog({
 
   const isCancelled = sale.status === 'Cancelado';
   const saleDate = typeof sale.saleDate === 'string' ? parseISO(sale.saleDate) : sale.saleDate;
-  const formattedDate = format(saleDate, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
+  const formattedDate = saleDate ? format(saleDate, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es }) : '';
   
   const handleOpenValidateDialog = (index: number) => {
-    // This is a placeholder, actual validation logic should be implemented
-    // perhaps in a separate dialog as it was before.
     console.log("Validation requested for payment index:", index);
   };
   
@@ -89,7 +87,7 @@ export function ViewSaleDialog({
         return;
     }
     onCancelSale(sale.id, cancellationReason);
-    setCancellationReason(""); // Reset after use
+    setCancellationReason("");
   };
 
   return (
@@ -109,7 +107,7 @@ export function ViewSaleDialog({
               inventoryItems={inventory}
               categories={categories}
               suppliers={suppliers}
-              onSaleComplete={() => {}} // onSubmit is handled by the footer button
+              onSaleComplete={() => {}}
               initialData={sale}
               onOpenValidateDialog={handleOpenValidateDialog}
               validatedFolios={validatedFolios}

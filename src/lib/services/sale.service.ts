@@ -64,12 +64,12 @@ const registerSale = async (
     const tax = totalAmount - subTotal;
 
     const newSale: Omit<SaleReceipt, 'id'> = {
-        saleDate: new Date(),
+        saleDate: new Date().toISOString(),
         items: saleData.items.map(it => ({
-            itemId: it.inventoryItemId ?? crypto.randomUUID(),
-            itemName: it.itemName,
-            quantity: it.quantity,
-            total: it.totalPrice ?? (it.unitPrice ?? 0) * it.quantity,
+          itemId: it.inventoryItemId ?? crypto.randomUUID(),
+          itemName: it.itemName,
+          quantity: it.quantity,
+          total: it.totalPrice ?? (it.unitPrice ?? 0) * it.quantity,
         })),
         subTotal,
         tax,
@@ -89,7 +89,7 @@ const registerSale = async (
 
     const inventoryUpdateItems = saleData.items
         .filter(item => !item.isService)
-        .map(item => ({ id: item.inventoryItemId, quantity: item.quantity }));
+        .map(item => ({ id: item.inventoryItemId!, quantity: item.quantity }));
 
     if (inventoryUpdateItems.length > 0) {
         await inventoryService.updateInventoryStock(workBatch, inventoryUpdateItems, 'subtract');
@@ -143,7 +143,7 @@ const cancelSale = async (saleId: string, reason: string, currentUser: User | nu
     });
 
     await batch.commit();
-    await adminService.logAudit('Cancelar', `Canceló la venta #${saleId.slice(-6)} por: ${reason}`, { entityType: 'Venta', entityId: saleId, userId: currentUser?.id || 'system', userName: currentUser?.name || 'Sistema' });
+    await adminService.logAudit('Cancelar', `Canceló la venta #${saleId.slice(-6)} por: ${reason}`, { entityType: 'Venta', entityId: saleId, userId: currentUser?.id, userName: currentUser?.name });
 };
 
 
@@ -178,8 +178,8 @@ const deleteSale = async (saleId: string, currentUser: User | null): Promise<voi
     await adminService.logAudit('Eliminar', `Eliminó permanentemente la venta #${saleId.slice(-6)}.`, {
       entityType: 'Venta',
       entityId: saleId,
-      userId: currentUser?.id || 'system',
-      userName: currentUser?.name || 'Sistema',
+      userId: currentUser?.id,
+      userName: currentUser?.name,
     });
 };
 

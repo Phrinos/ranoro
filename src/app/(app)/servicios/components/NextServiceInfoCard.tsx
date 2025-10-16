@@ -1,5 +1,3 @@
-// src/app/(app)/servicios/components/NextServiceInfoCard.tsx
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -29,15 +27,15 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
   const [mileage, setMileage] = useState<number | ''>('');
 
   useEffect(() => {
-    // Sincroniza el estado local cuando las props cambian
-    setDate(nextServiceInfo?.date ? parseDate(nextServiceInfo.date) : undefined);
+    const parsed = nextServiceInfo?.date ? parseDate(nextServiceInfo.date) : null;
+    setDate(parsed ?? undefined);
     setMileage(nextServiceInfo?.mileage || '');
   }, [nextServiceInfo]);
   
   const handleUpdate = () => {
     onUpdate({
-      date: date ? date.toISOString() : '',
-      mileage: Number(mileage) || 0,
+      date: date ? date.toISOString() : null,
+      mileage: Number(mileage) || null,
     });
   };
 
@@ -51,7 +49,7 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
     setMileage(current + km);
   };
   
-  const onCalendarChange = (newDate: Date | Date[] | null) => {
+  const onCalendarChange = (newDate: any) => {
     if (newDate && !Array.isArray(newDate)) {
       setDate(newDate);
       setIsCalendarOpen(false);
@@ -70,10 +68,7 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
+                  className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {date ? format(date, "PPP", { locale: es }) : <span>Fecha</span>}

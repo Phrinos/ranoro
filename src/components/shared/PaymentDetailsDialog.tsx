@@ -148,7 +148,7 @@ export function PaymentDetailsDialog({
                 {recordType === 'service' && isCompletionFlow && (
                   <NextServiceInfoCard
                     nextServiceInfo={methods.watch('nextServiceInfo') as any}
-                    onUpdate={(info) => {
+                    onUpdate={(info: any) => {
                       methods.setValue(
                         "nextServiceInfo",
                         {

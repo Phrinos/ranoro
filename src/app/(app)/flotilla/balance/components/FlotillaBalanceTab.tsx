@@ -59,7 +59,6 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
       };
     });
 
-    // Sorting logic
     balances.sort((a, b) => {
         const valA = a[sortConfig.key];
         const valB = b[sortConfig.key];
@@ -88,12 +87,13 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
 
   }, [drivers, dailyCharges, payments, manualDebts, sortConfig]);
   
-  const requestSort = (key: SortKey) => {
+  const requestSort = (key: string) => {
+    const sortKey = key as SortKey;
     let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+    if (sortConfig.key === sortKey && sortConfig.direction === 'ascending') {
         direction = 'descending';
     }
-    setSortConfig({ key, direction });
+    setSortConfig({ key: sortKey, direction });
   };
 
   const handleRowClick = (driverId: string) => {

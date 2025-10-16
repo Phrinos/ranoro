@@ -22,6 +22,7 @@ import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { capitalizeWords } from "@/lib/utils";
 import { DollarSign } from "lucide-react";
 import { inventoryItemFormSchema } from '@/schemas/inventory-item-form-schema';
+
 export type InventoryItemFormValues = z.infer<typeof inventoryItemFormSchema>;
 
 interface InventoryItemFormProps {
@@ -45,7 +46,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
       unitPrice: initialData?.unitPrice ?? 0,
       sellingPrice: initialData?.sellingPrice ?? 0,
       lowStockThreshold: initialData?.lowStockThreshold ?? 5,
-      unitType: initialData?.unitType as any || 'units',
+      unitType: (initialData as any)?.unitType || 'units',
       category: initialData?.category || (categories.length > 0 ? categories[0].name : ""),
       supplier: initialData?.supplier || (suppliers.length > 0 ? suppliers[0].name : ""),
       rendimiento: (initialData as any)?.rendimiento ?? undefined,

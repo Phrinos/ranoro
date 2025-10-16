@@ -3,46 +3,42 @@
 
 import React, { useMemo } from 'react';
 import { Accordion } from "@/components/ui/accordion";
-import type { VehiclePriceList, EngineData } from '@/types';
+import type { EngineData } from '@/types';
 import { VehicleMakeAccordion } from './VehicleMakeAccordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { isBefore, subDays, parseISO, isValid } from 'date-fns';
 import { AlertTriangle } from 'lucide-react';
 
 interface VencimientosContentProps {
-  priceLists: VehiclePriceList[];
+  priceLists: any[];
   onEngineDataSave: (make: string, model: string, generationIndex: number, engineIndex: number, data: any) => void;
 }
 
 const isOutdated = (dateString?: string) => {
-    // Si NO hay fecha, NO está desactualizado porque nunca se ha establecido.
     if (!dateString) return false; 
     
     const ninetyDaysAgo = subDays(new Date(), 90);
     try {
         const date = parseISO(dateString);
-        // Debe ser una fecha válida Y anterior a 90 días.
         return isValid(date) && isBefore(date, ninetyDaysAgo);
     } catch {
-        // Si hay un error al parsear, no se puede considerar vencido.
         return false;
     }
 };
 
-const getOutdatedEngines = (priceLists: VehiclePriceList[]) => {
+const getOutdatedEngines = (priceLists: any[]) => {
     const outdatedMakes: any[] = [];
 
     priceLists.forEach(make => {
         const outdatedModels: any[] = [];
         if (!make.models) return;
 
-        make.models.forEach(model => {
+        make.models.forEach((model: any) => {
             const outdatedGenerations: any[] = [];
-            model.generations.forEach((gen, genIndex) => {
+            model.generations.forEach((gen: any, genIndex: number) => {
                 const outdatedEnginesInGen: any[] = [];
                 gen.engines.forEach((engine: EngineData, engineIndex: any) => {
                     
-                    // Comprueba si CUALQUIERA de los insumos está vencido, usando optional chaining para evitar errores si 'insumos' o una de sus propiedades no existe.
                     const isAnyOutdated = 
                         isOutdated(engine.insumos?.aceite?.lastUpdated) ||
                         isOutdated(engine.insumos?.filtroAceite?.lastUpdated) ||
@@ -96,7 +92,6 @@ export default function VencimientosContent({ priceLists, onEngineDataSave }: Ve
                 make={makeData.make}
                 initialData={makeData}
                 onEngineDataSave={(make, model, genIndex, engineIndex, data) => {
-                    // We need to find the original indexes
                     const modelData = makeData.models.find((m:any) => m.name === model);
                     const genData = modelData?.generations.find((g:any) => g.originalGenIndex === genIndex);
                     const engineData = genData?.engines.find((e:any) => e.originalEngineIndex === engineIndex);

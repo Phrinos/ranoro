@@ -48,6 +48,8 @@ const methodIcon: Record<PaymentMethod, React.ElementType> = {
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
+  "Efectivo+Transferencia": Wallet,
+  "Tarjeta+Transferencia": CreditCard,
 };
 
 // helpers

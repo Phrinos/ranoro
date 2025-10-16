@@ -36,7 +36,6 @@ const numOrUndef = (value: any): number | undefined => {
   return Number.isFinite(n) ? n : undefined;
 };
 
-// Elimina TODAS las claves con undefined (profundo) para Firestore
 const stripUndefinedDeep = (v: any): any => {
   if (Array.isArray(v)) {
     return v.map(stripUndefinedDeep).filter((x) => x !== undefined);
@@ -52,7 +51,6 @@ const stripUndefinedDeep = (v: any): any => {
   return v === undefined ? undefined : v;
 };
 
-// Defaults sin ceros: números en undefined para que los inputs queden vacíos
 const buildDefaults = (e?: EngineData | null): EngineDataFormValues => {
   const d = e ?? ({} as EngineData);
   const arr = (x: any) => (Array.isArray(x) ? x : []);
@@ -169,7 +167,6 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
     const original = buildDefaults(engineData);
     setUpdatedIfChanged(original, data);
 
-    // 🔑 Sanitiza para Firestore (elimina undefined profundo)
     const clean = stripUndefinedDeep(data);
     onSave(clean as EngineData);
   };
@@ -195,11 +192,9 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
             <form id="edit-engine-form" onSubmit={handleSubmit(processSubmit)}>
               <ScrollArea className="h-[70vh] md:h-[72vh] px-6 py-5">
                 <Accordion type="multiple" defaultValue={["insumos", "servicios"]} className="w-full space-y-3">
-                  {/* INSUMOS */}
                   <AccordionItem value="insumos" className="border rounded-md px-4 bg-card">
                     <AccordionTrigger className="hover:no-underline font-semibold text-sm md:text-base">Insumos</AccordionTrigger>
                     <AccordionContent className="space-y-5 pt-3">
-                      {/* Aceite */}
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <h4 className="font-semibold text-sm">Aceite</h4>{last(watch("insumos.aceite.lastUpdated"))}
@@ -235,7 +230,6 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
 
                       <Separator />
 
-                      {/* Filtros */}
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <h4 className="font-semibold text-sm">Filtros</h4>{last(watch("insumos.filtroAceite.lastUpdated"))}
@@ -274,7 +268,6 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
 
                       <Separator />
 
-                      {/* Balatas */}
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <h4 className="font-semibold text-sm">Balatas</h4>{last(watch("insumos.balatas.lastUpdated"))}
@@ -346,7 +339,6 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
 
                       <Separator />
 
-                      {/* Bujías */}
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <h4 className="font-semibold text-sm">Bujías</h4>{last(watch("insumos.bujias.lastUpdated"))}
@@ -408,7 +400,6 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
 
                       <Separator />
 
-                      {/* Inyector */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <FormField control={control} name="insumos.inyector.tipo" render={({ field }) => (
                           <FormItem className="space-y-1">
@@ -426,7 +417,6 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                     </AccordionContent>
                   </AccordionItem>
 
-                  {/* SERVICIOS */}
                   <AccordionItem value="servicios" className="border rounded-md px-4 bg-card">
                     <AccordionTrigger className="hover:no-underline font-semibold text-sm md:text-base">Servicios</AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-3">
@@ -489,17 +479,17 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                       ].map((service) => (
                         <div key={service.name} className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-b pb-3 last:border-b-0 last:pb-0">
                           <div className="sm:col-span-2"><h4 className="font-semibold text-sm">{service.label}</h4></div>
-                          <FormField control={control} name={`servicios.${service.name}.costoInsumos` as const} render={({ field }) => (
+                          <FormField control={control} name={`servicios.${service.name}.costoInsumos` as any} render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Costo Insumos</FormLabel>
-                              <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="0.00" /></FormControl>
+                              <FormControl><Input type="number" value={field.value as any} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="0.00" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name={`servicios.${service.name}.precioPublico` as const} render={({ field }) => (
+                          <FormField control={control} name={`servicios.${service.name}.precioPublico` as any} render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Precio Público</FormLabel>
-                              <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="0.00" /></FormControl>
+                              <FormControl><Input type="number" value={field.value as any} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="0.00" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>

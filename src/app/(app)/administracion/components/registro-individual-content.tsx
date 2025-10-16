@@ -91,7 +91,7 @@ export function RegistroIndividualContent() {
           v.licensePlate.toLowerCase().includes(lowerSearch) ||
           v.make.toLowerCase().includes(lowerSearch) ||
           v.model.toLowerCase().includes(lowerSearch) ||
-          v.ownerName.toLowerCase().includes(lowerSearch)
+          (v.ownerName && v.ownerName.toLowerCase().includes(lowerSearch))
       ).slice(0, 5);
       
       setSearchResults(results);
@@ -112,7 +112,7 @@ export function RegistroIndividualContent() {
   
   const onSubmit = async (data: FormValues) => {
     try {
-      await serviceService.saveIndividualMigratedService(data);
+      await serviceService.saveMigratedServices([data] as any, []);
       toast({ title: 'Servicio Registrado', description: `El servicio para ${data.licensePlate} ha sido guardado.` });
       form.reset({ 
           serviceDate: new Date(), 
@@ -196,7 +196,7 @@ export function RegistroIndividualContent() {
             <div className="space-y-4 p-4 border rounded-md">
                 <h3 className="font-semibold">2. Detalles del Servicio</h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                     <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha del Servicio</FormLabel><Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><NewCalendar value={field.value} onChange={(date) => { field.onChange(date); setIsCalendarOpen(false); }} locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                     <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha del Servicio</FormLabel><Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><NewCalendar mode="single" selected={field.value} onSelect={(date: any) => { field.onChange(date); setIsCalendarOpen(false); }} locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )}/>
                      <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Servicio Realizado</FormLabel><FormControl><Input placeholder="Ej: Cambio de balatas delanteras" {...field} /></FormControl><FormMessage /></FormItem> )}/>
                 </div>
             </div>

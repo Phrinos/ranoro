@@ -3,12 +3,11 @@
 
 import React from 'react';
 import { Accordion } from "@/components/ui/accordion";
-import type { VehiclePriceList } from '@/types';
 import { VehicleMakeAccordion } from './VehicleMakeAccordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 interface PriceListManagementContentProps {
-  priceLists: VehiclePriceList[];
+  priceLists: any[];
   allMakes: string[];
   onEngineDataSave: (make: string, model: string, generationIndex: number, engineIndex: number, data: any) => void;
 }

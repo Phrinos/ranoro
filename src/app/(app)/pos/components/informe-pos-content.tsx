@@ -40,16 +40,13 @@ export function InformePosContent({ allSales, allServices, allInventory }: Infor
   });
 
   const summaryData = useMemo(() => {
-    if (!dateRange?.from) {
-      return { salesCount: 0, serviceCount: 0, totalRevenue: 0, totalProfit: 0, mostSoldItem: null };
-    }
-    const from = startOfDay(dateRange.from);
-    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
+    const from = startOfDay(dateRange?.from || new Date());
+    const to = dateRange?.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
     const salesInRange = allSales.filter(s => {
         const saleDate = typeof s.saleDate === 'string' ? parseISO(s.saleDate) : s.saleDate;
-        return s.status !== 'Cancelado' && isValid(saleDate) && isWithinInterval(saleDate, interval)
+        return s.status !== 'Cancelado' && saleDate && isValid(saleDate) && isWithinInterval(saleDate, interval)
     });
     const servicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), interval));
     

@@ -9,6 +9,7 @@ import type {
   InventoryItem,
   Payment,
   CashDrawerTransaction,
+  PaymentMethod,
 } from "@/types";
 import { useTableManager } from "@/hooks/useTableManager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,11 +66,13 @@ const sortOptions = [
   { value: "total_asc", label: "Monto (Menor a Mayor)" },
 ];
 
-const paymentMethodIcons: Record<NonNullable<Payment["method"]>, React.ElementType> = {
+const paymentMethodIcons: Record<NonNullable<PaymentMethod>, React.ElementType> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
+  "Efectivo+Transferencia": Wallet,
+  "Tarjeta+Transferencia": CreditCard,
 };
 
 // === Helpers ===

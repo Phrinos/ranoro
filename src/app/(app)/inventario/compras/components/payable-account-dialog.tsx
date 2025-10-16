@@ -37,7 +37,7 @@ export function PayableAccountDialog({ open, onOpenChange, onSave, account }: Pa
       open={open}
       onOpenChange={onOpenChange}
       title={`Registrar Pago a Factura`}
-      description={`Folio: ${account.invoiceId} - Saldo: ${account.totalAmount - account.paidAmount}`}
+      description={`Folio: ${account.invoiceId} - Saldo: ${account.totalAmount - (account.paidAmount || 0)}`}
       formId="payable-account-form"
       isSubmitting={isSubmitting}
       submitButtonText="Registrar Pago"

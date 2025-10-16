@@ -24,9 +24,6 @@ import { PlusCircle, Save, Trash2, Settings } from "lucide-react";
 import type { EngineData } from "@/lib/data/vehicle-database-types";
 import { EditEngineDataDialog } from "./EditEngineDataDialog";
 
-/* ============================
-   Schemas
-   ============================ */
 const engineMiniSchema = z.object({ name: z.string().min(1, "Requerido") }).passthrough();
 
 const generationSchema = z.object({
@@ -52,12 +49,9 @@ type ModelForm = MakeDocForm["models"][number];
 type GenerationForm = ModelForm["generations"][number];
 
 export interface VehicleCatalogEditorProps {
-  make: string; // id del doc en vehicleData
+  make: string;
 }
 
-/* ============================
-   Utils
-   ============================ */
 const stripUndefinedDeep = (v: any): any => {
   if (Array.isArray(v)) return v.map(stripUndefinedDeep).filter((x) => x !== undefined);
   if (v && typeof v === "object") {
@@ -101,11 +95,6 @@ function toFirestoreDoc(form: MakeDocForm) {
   };
 }
 
-/* ============================
-   Subcomponentes
-   ============================ */
-
-// Componente para un solo modelo en el acordeón
 function ModelAccordionItem({
   model,
   modelIdx,
@@ -159,7 +148,6 @@ function ModelAccordionItem({
     );
 }
 
-// Generación (rango de años)
 function GenerationBlock({
   modelIdx,
   genIdx,
@@ -249,9 +237,6 @@ function GenerationBlock({
   );
 }
 
-/* ============================
-   Editor principal
-   ============================ */
 export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
   const { toast } = useToast();
   const methods = useForm<MakeDocForm>({
@@ -270,7 +255,6 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
     data?: EngineData;
   }>({ open: false });
 
-  // Live data
   useEffect(() => {
     const ref = doc(db, VEHICLE_COLLECTION, make);
     const unsub = onSnapshot(
@@ -293,14 +277,14 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
   };
 
   const openEngineDialog = (modelIdx: number, genIdx: number, engIdx: number) => {
-    const data = (getValues(`models.${modelIdx}.generations.${genIdx}.engines.${engIdx}`) || {}) as EngineData;
+    const data = (getValues(`models.${modelIdx}.generations.${genIdx}.engines.${engIdx}`) as any) || {};
     setEngineEditor({ open: true, modelIdx, genIdx, engIdx, data });
   };
 
   const handleEngineDialogSave = (updated: EngineData) => {
     const { modelIdx, genIdx, engIdx } = engineEditor;
     if (modelIdx != null && genIdx != null && engIdx != null) {
-      setValue(`models.${modelIdx}.generations.${genIdx}.engines.${engIdx}`, updated, { shouldDirty: true });
+      setValue(`models.${modelIdx}.generations.${genIdx}.engines.${engIdx}`, updated as any, { shouldDirty: true });
     }
     setEngineEditor({ open: false });
   };
@@ -356,7 +340,6 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
         </ScrollArea>
       </form>
 
-      {/* Modal de edición de motor */}
       <EditEngineDataDialog
         open={engineEditor.open}
         onOpenChange={(open) => setEngineEditor((s) => ({ ...s, open }))}

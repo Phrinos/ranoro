@@ -1,5 +1,4 @@
-
-
+// src/app/(app)/inventario/proveedores/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -35,7 +34,9 @@ export default function SupplierDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<PayableAccount | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<PayableAccount | null>(
+    null
+  );
 
   useEffect(() => {
     if (!supplierId || !db) return;
@@ -75,7 +76,7 @@ export default function SupplierDetailPage() {
     }
   };
 
-  const handleRegisterPayment = async (accountId: string, amount: number, paymentMethod: string, note?: string) => {
+  const handleRegisterPayment = async (accountId: string, amount: number, paymentMethod: any, note?: string) => {
     try {
         const userString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
         const user: User | null = userString ? JSON.parse(userString) : null;
@@ -124,7 +125,7 @@ export default function SupplierDetailPage() {
           <p><strong>Régimen Fiscal:</strong> {supplier.taxRegime || 'N/A'}</p>
           <div className="p-4 bg-red-50 dark:bg-red-900/50 border border-red-200 rounded-lg text-center">
             <p className="text-sm font-medium text-red-600 dark:text-red-300">DEUDA TOTAL</p>
-            <p className="text-3xl font-bold text-red-700 dark:text-red-200">{formatCurrency(supplier.debtAmount)}</p>
+            <p className="text-3xl font-bold text-red-700 dark:text-red-200">{formatCurrency(supplier.debtAmount || 0)}</p>
           </div>
         </CardContent>
       </Card>
@@ -153,11 +154,11 @@ export default function SupplierDetailPage() {
                       {accountsPayable.length > 0 ? accountsPayable.map(acc => (
                         <TableRow key={acc.id}>
                             <TableCell>{acc.invoiceId}</TableCell>
-                            <TableCell>{format(parseISO(acc.invoiceDate), 'dd/MM/yyyy')}</TableCell>
-                            <TableCell>{format(parseISO(acc.dueDate), 'dd/MM/yyyy')}</TableCell>
+                            <TableCell>{acc.invoiceDate ? format(parseISO(acc.invoiceDate), 'dd/MM/yyyy') : '—'}</TableCell>
+                            <TableCell>{acc.dueDate ? format(parseISO(acc.dueDate), 'dd/MM/yyyy') : '—'}</TableCell>
                             <TableCell className="text-right">{formatCurrency(acc.totalAmount)}</TableCell>
-                            <TableCell className="text-right text-green-600">{formatCurrency(acc.paidAmount)}</TableCell>
-                            <TableCell className="text-right font-bold">{formatCurrency(acc.totalAmount - acc.paidAmount)}</TableCell>
+                            <TableCell className="text-right text-green-600">{formatCurrency(acc.paidAmount || 0)}</TableCell>
+                            <TableCell className="text-right font-bold">{formatCurrency(acc.totalAmount - (acc.paidAmount || 0))}</TableCell>
                             <TableCell className="text-center"><Badge variant={acc.status === 'Pagado' ? 'success' : acc.status === 'Pagado Parcialmente' ? 'secondary' : 'destructive'}>{acc.status}</Badge></TableCell>
                             <TableCell className="text-right">
                                 {acc.status !== 'Pagado' && (

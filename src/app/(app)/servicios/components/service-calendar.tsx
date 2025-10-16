@@ -26,10 +26,9 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
   const eventsByDate = useMemo(() => {
     const map = new Map<string, ServiceRecord[]>();
     services.forEach(service => {
-      // Prioritize appointmentDateTime for scheduled services, fallback to serviceDate
       const eventDate = parseDate(service.appointmentDateTime || service.serviceDate);
       
-      if (isValid(eventDate)) {
+      if (eventDate && isValid(eventDate)) {
         const dateKey = format(eventDate, 'yyyy-MM-dd');
         if (!map.has(dateKey)) {
           map.set(dateKey, []);
@@ -45,7 +44,6 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
     const unsortedServices = eventsByDate.get(dateKey) || [];
     
-    // Sort services by time for the selected day
     return unsortedServices.sort((a, b) => {
         const dateA = parseDate(a.appointmentDateTime || a.serviceDate) || new Date(0);
         const dateB = parseDate(b.appointmentDateTime || b.serviceDate) || new Date(0);

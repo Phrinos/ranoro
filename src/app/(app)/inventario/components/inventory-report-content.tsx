@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
-import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from '@/types'; 
+import type { InventoryItem, InventoryCategory, Supplier, Vehicle } from '@/types'; 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -52,9 +52,9 @@ export default function InventoryReportContent({ items }: InventoryReportContent
                                 <TableRow key={item.id}>
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell>{item.sku || 'N/A'}</TableCell>
-                                    <TableCell className="text-right">{item.quantity}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
-                                    <TableCell className="text-right font-semibold">{formatCurrency(item.quantity * item.unitPrice)}</TableCell>
+                                    <TableCell className="text-right">{item.quantity || 0}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(item.unitPrice || 0)}</TableCell>
+                                    <TableCell className="text-right font-semibold">{formatCurrency((item.quantity || 0) * (item.unitPrice || 0))}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

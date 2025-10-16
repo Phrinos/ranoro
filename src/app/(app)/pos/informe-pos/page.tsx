@@ -36,10 +36,4 @@ function PageInner() {
   return <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory} />;
 }
 
-export default function Page(){
-    return (
-        <withSuspense>
-            <PageInner />
-        </withSuspense>
-    )
-}
+export default withSuspense(PageInner);

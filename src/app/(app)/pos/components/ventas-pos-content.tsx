@@ -5,7 +5,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { PlusCircle, ChevronLeft, ChevronRight, ShoppingCart, Wallet, CreditCard, Send, TrendingUp, Edit, Printer, Trash2, Repeat, User as UserIcon, Landmark } from "lucide-react";
-import type { SaleReceipt, InventoryItem, Payment, User } from "@/types";
+import type { SaleReceipt, InventoryItem, Payment, User, PaymentMethod } from "@/types";
 import Link from "next/link";
 import { useTableManager } from '@/hooks/useTableManager';
 import { Receipt } from 'lucide-react';
@@ -26,19 +26,23 @@ const sortOptions = [
     { value: 'date_asc', label: 'Más Antiguo' },
 ];
 
-const paymentMethodOptions: { value: Payment['method'] | 'all', label: string }[] = [
+const paymentMethodOptions: { value: PaymentMethod | 'all', label: string }[] = [
     { value: 'all', label: 'Todos' },
     { value: 'Efectivo', label: 'Efectivo' },
     { value: 'Tarjeta', label: 'Tarjeta' },
     { value: 'Tarjeta MSI', label: 'Tarjeta MSI' },
     { value: 'Transferencia', label: 'Transferencia' },
+    { value: 'Efectivo+Transferencia', label: 'Efectivo+Transferencia' },
+    { value: 'Tarjeta+Transferencia', label: 'Tarjeta+Transferencia' },
 ];
 
-const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
+const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Efectivo": Wallet,
   "Tarjeta": CreditCard,
   "Tarjeta MSI": CreditCard,
   "Transferencia": Landmark,
+  "Efectivo+Transferencia": Wallet,
+  "Tarjeta+Transferencia": CreditCard,
 };
 
 interface VentasPosContentProps {
@@ -80,7 +84,7 @@ export function VentasPosContent({
 
   const summaryData = useMemo(() => {
     const salesCount = paginatedData.length;
-    const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();
+    const paymentsSummary = new Map<PaymentMethod, { count: number; total: number }>();
     let totalProfit = 0;
 
     paginatedData.forEach(sale => {
@@ -92,10 +96,10 @@ export function VentasPosContent({
           current.total += p.amount || 0;
           paymentsSummary.set(p.method, current);
         });
-      } else if (sale.paymentMethod) { // Fallback for older records
-        const methods = sale.paymentMethod.split(/[+/]/).map(m => m.trim()) as Payment['method'][];
+      } else if (sale.paymentMethod) { 
+        const methods = sale.paymentMethod.split(/[+/]/).map(m => m.trim()) as PaymentMethod[];
         
-        const paymentBreakdown: { method: Payment['method']; amount: number }[] = [];
+        const paymentBreakdown: { method: PaymentMethod; amount: number }[] = [];
         const totalAmount = sale.totalAmount || 0;
         
         if (methods.length > 1 && ((sale as any).amountInCash !== undefined || (sale as any).amountInCard !== undefined || (sale as any).amountInTransfer !== undefined)) {
@@ -105,14 +109,13 @@ export function VentasPosContent({
         } else if (methods.length === 1) {
             paymentBreakdown.push({ method: methods[0], amount: totalAmount });
         } else {
-             // Fallback for cases like "Efectivo/Tarjeta" without specific amounts
-            const amountPerMethod = totalAmount / methods.length;
+             const amountPerMethod = totalAmount / methods.length;
             methods.forEach(method => paymentBreakdown.push({method, amount: amountPerMethod}));
         }
 
         paymentBreakdown.forEach(({ method, amount }) => {
             const current = paymentsSummary.get(method) || { count: 0, total: 0 };
-            current.count += 1; // This might double count, but it's a fallback
+            current.count += 1;
             current.total += amount;
             paymentsSummary.set(method, current);
         });
@@ -142,7 +145,7 @@ export function VentasPosContent({
                 {Array.from(summaryData.paymentsSummary.entries()).length > 0 ? (
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
-                      const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || Wallet;
+                      const Icon = paymentMethodIcons[method] || Wallet;
                       return (
                         <div key={method} className="flex items-center gap-2 text-sm">
                            <Icon className="h-4 w-4 text-muted-foreground" />
@@ -195,8 +198,8 @@ export function VentasPosContent({
                                 </Badge>
                               )
                             })
-                          : sale.paymentMethod // Fallback for older records
-                              ? [<Badge key={sale.paymentMethod} variant={getPaymentMethodVariant(sale.paymentMethod as any)} className="text-xs">{sale.paymentMethod}</Badge>]
+                          : sale.paymentMethod
+                              ? [<Badge key={sale.paymentMethod} variant={getPaymentMethodVariant(sale.paymentMethod)} className="text-xs">{sale.paymentMethod}</Badge>]
                               : [<Badge key="no-payment" variant="outline">Sin Pago</Badge>]
                   );
                   const sellerName = sale.registeredByName || allUsers.find(u => u.id === sale.registeredById)?.name || 'N/A';

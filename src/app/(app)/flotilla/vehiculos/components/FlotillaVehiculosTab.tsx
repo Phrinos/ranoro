@@ -41,6 +41,7 @@ export function FlotillaVehiculosTab({ vehicles, onAddVehicle }: FlotillaVehicul
     searchKeys: ['licensePlate', 'make', 'model', 'year', 'assignedDriverName'],
     initialSortOption: 'licensePlate_asc',
     itemsPerPage: 15,
+    dateFilterKey: 'lastServiceDate',
   });
 
   const handleSort = (key: string) => {
@@ -76,9 +77,9 @@ export function FlotillaVehiculosTab({ vehicles, onAddVehicle }: FlotillaVehicul
                 <TableHeader className="bg-black text-white">
                 <TableRow className="hover:bg-transparent">
                     <SortableTableHeader sortKey="licensePlate" label="Placa" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
-                    <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell text-white" />
-                    <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell text-white" />
-                    <SortableTableHeader sortKey="year" label="Año" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden lg:table-cell text-white" />
+                    <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell" />
+                    <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell" />
+                    <SortableTableHeader sortKey="year" label="Año" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden lg:table-cell" />
                     <SortableTableHeader sortKey="assignedDriverName" label="Conductor Asignado" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
                 </TableRow>
                 </TableHeader>

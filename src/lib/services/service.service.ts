@@ -12,6 +12,8 @@ import {
   serverTimestamp,
   runTransaction,
   type WriteBatch,
+  addDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, Vehicle, InventoryItem, User } from '@/types';

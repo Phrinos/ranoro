@@ -5,7 +5,6 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import { Loader2 } from 'lucide-react';
 import { inventoryService } from '@/lib/services';
-import type { VehiclePriceList } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';

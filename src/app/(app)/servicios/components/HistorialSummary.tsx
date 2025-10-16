@@ -7,16 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Wrench, DollarSign, TrendingUp, Wallet, CreditCard, Landmark } from 'lucide-react';
 import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
 import { calcEffectiveProfit } from '@/lib/money-helpers';
-import type { ServiceRecord, Payment } from '@/types';
+import type { ServiceRecord, Payment, PaymentMethod } from '@/types';
 
-// Helper local para convertir valores a número de forma segura
 const toNumber = (v: unknown): number => {
     if (typeof v === "number" && !Number.isNaN(v)) return v;
     const n = parseFloat(String(v ?? 0));
     return Number.isFinite(n) ? n : 0;
 };
 
-// Hook personalizado para encapsular la lógica de cálculo
 function useHistorialSummary(filteredServices: ServiceRecord[]) {
     return useMemo(() => {
         const deliveredServices = filteredServices.filter((s) => s.status === "Entregado");
@@ -30,7 +28,7 @@ function useHistorialSummary(filteredServices: ServiceRecord[]) {
         };
 
         let totalRevenue = 0;
-        const paymentsSummary = new Map<Payment['method'], { count: number; total: number }>();
+        const paymentsSummary = new Map<PaymentMethod, { count: number; total: number }>();
 
         deliveredServices.forEach((s) => {
             const revenue = getServiceRevenue(s);
@@ -38,7 +36,7 @@ function useHistorialSummary(filteredServices: ServiceRecord[]) {
 
             if (s.payments && s.payments.length > 0) {
                 s.payments.forEach((p) => {
-                    const key = p.method as Payment["method"];
+                    const key = p.method as PaymentMethod;
                     const amt = toNumber(p.amount);
                     const current = paymentsSummary.get(key) || { count: 0, total: 0 };
                     current.count += 1;
@@ -46,7 +44,7 @@ function useHistorialSummary(filteredServices: ServiceRecord[]) {
                     paymentsSummary.set(key, current);
                 });
             } else if ((s as any).paymentMethod) {
-                const key = (s as any).paymentMethod as Payment["method"];
+                const key = (s as any).paymentMethod as PaymentMethod;
                 const current = paymentsSummary.get(key) || { count: 0, total: 0 };
                 current.count += 1;
                 current.total += revenue;
@@ -60,11 +58,13 @@ function useHistorialSummary(filteredServices: ServiceRecord[]) {
     }, [filteredServices]);
 }
 
-const paymentMethodIcons: Record<Payment["method"], React.ElementType> = {
+const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
+  "Efectivo+Transferencia": Wallet,
+  "Tarjeta+Transferencia": CreditCard,
 };
 
 interface HistorialSummaryProps {
@@ -107,13 +107,13 @@ export function HistorialSummary({ filteredServices }: HistorialSummaryProps) {
           {Array.from(summaryData.paymentsSummary.entries()).length > 0 ? (
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
-                const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] || Wallet;
+                const Icon = paymentMethodIcons[method] || Wallet;
                 let variant: "lightGreen" | "lightPurple" | "blue" | "secondary" = "secondary";
                 if (method === "Efectivo") variant = "lightGreen";
                 if (method.includes("Tarjeta")) variant = "lightPurple";
                 if (method === "Transferencia") variant = "blue";
                 return (
-                  <Badge key={method} variant={variant} className="text-sm">
+                  <Badge key={method} variant={variant as any} className="text-sm">
                     <Icon className="h-3 w-3 mr-1" />
                     {method}: <span className="font-semibold ml-1">{formatCurrency(data.total)}</span>
                   </Badge>

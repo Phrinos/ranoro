@@ -68,7 +68,7 @@ export default function AsistenteComprasContent() {
         
             const input = {
                 scheduledServices: servicesForToday.map(s => ({ id: s.id, description: s.description || '' })),
-                inventoryItems: allInventory.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, supplier: i.supplier })),
+                inventoryItems: allInventory.map(i => ({ id: i.id, name: i.name, quantity: i.quantity || 0, supplier: i.supplier || '' })),
                 serviceHistory: allServices.map(s => ({
                     description: s.description || '',
                     suppliesUsed: (s.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(sup => ({ supplyName: sup.supplyName || allInventory.find(i => i.id === sup.supplyId)?.name || 'Unknown' }))

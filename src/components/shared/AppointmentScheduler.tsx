@@ -45,16 +45,16 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
     const newDate = Array.isArray(value) ? value[0] : value;
     if (newDate) {
       setSelectedDate(newDate);
-      setSelectedTime(null); // Reset time when date changes
+      setSelectedTime(null);
     }
   };
 
   const availableTimes = useMemo(() => {
     if (!selectedDate) return [];
-    const dayOfWeek = selectedDate.getDay(); // Sunday is 0, Saturday is 6
-    if (dayOfWeek === 0) return []; // Sunday
-    if (dayOfWeek === 6) return saturdayTimes; // Saturday
-    return weekdayTimes; // Weekdays
+    const dayOfWeek = selectedDate.getDay();
+    if (dayOfWeek === 0) return [];
+    if (dayOfWeek === 6) return saturdayTimes;
+    return weekdayTimes;
   }, [selectedDate]);
 
   const handleSubmit = async () => {
@@ -70,14 +70,12 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
       await onConfirm(finalDateTime);
       onOpenChange(false);
     } catch(e) {
-       // Error toast is handled by the parent component that calls onConfirm
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isDateDisabled = (date: Date) => {
-    // Disable past dates and Sundays
+  const isDateDisabled = ({ date }: { date: Date }) => {
     return date < today || date.getDay() === 0;
   };
 
@@ -96,7 +94,7 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
                     onChange={handleDateSelect}
                     value={selectedDate}
                     minDate={today}
-                    tileDisabled={({ date }) => isDateDisabled(date)}
+                    tileDisabled={isDateDisabled}
                     {...({} as any)}
                 />
             </div>

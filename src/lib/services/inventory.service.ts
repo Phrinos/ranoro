@@ -16,12 +16,11 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, VehiclePriceList, ServiceItem } from "@/types";
+import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, ServiceItem } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { nanoid } from 'nanoid';
 import { VEHICLE_COLLECTION } from '../vehicle-constants';
 
-// Generic function to get a document by ID from any collection
 const getDocById = async (collectionName: string, id: string): Promise<any> => {
     if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, collectionName, id);
@@ -33,9 +32,6 @@ export const deleteCollectionDoc = async (collectionName: string, id: string) =>
     if (!db) throw new Error("Database not initialized.");
     await fbDeleteDoc(doc(db, collectionName, id));
 }
-
-
-// --- Items ---
 
 const onItemsUpdate = (callback: (items: InventoryItem[]) => void): (() => void) => {
     if (!db) return () => {};
@@ -122,11 +118,9 @@ const getSuppliesCostForItem = (
     const inventoryMap = new Map(inventory.map(i => [i.id, i.unitPrice]));
     return serviceItem.suppliesUsed.reduce((totalCost, supply) => {
         const cost = inventoryMap.get((supply as any).supplyId) ?? supply.unitPrice ?? 0;
-        return totalCost + cost * (supply.quantity ?? 0);
+        return totalCost + (cost || 0) * (supply.quantity ?? 0);
     }, 0);
 };
-
-// --- Service Types ---
 
 const onServiceTypesUpdate = (callback: (types: ServiceTypeRecord[]) => void): (() => void) => {
     if (!db) return () => {};
@@ -159,8 +153,6 @@ const deleteServiceType = async (id: string): Promise<void> => {
 };
 
 
-// --- Categories ---
-
 const onCategoriesUpdate = (callback: (categories: InventoryCategory[]) => void): (() => void) => {
     if (!db) return () => {};
     const q = query(collection(db, "inventoryCategories"));
@@ -191,8 +183,6 @@ const deleteCategory = async (id: string): Promise<void> => {
   await fbDeleteDoc(doc(db, "inventoryCategories", id));
 };
 
-// --- Suppliers ---
-
 const onSuppliersUpdate = (callback: (suppliers: Supplier[]) => void): (() => void) => {
     if (!db) return () => {};
     const q = query(collection(db, "suppliers"));
@@ -222,8 +212,6 @@ const deleteSupplier = async (id: string): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
   await fbDeleteDoc(doc(db, "suppliers", id));
 };
-
-// --- Vehicles ---
 
 const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void) => {
     if (!db) return () => {};
@@ -277,8 +265,6 @@ const deleteVehicle = async (id: string): Promise<void> => {
     await fbDeleteDoc(doc(db, "vehicles", id));
 };
 
-// --- Paperwork and Fines (Sub-collections of Vehicle) ---
-
 const savePaperwork = async (vehicleId: string, paperwork: Omit<Paperwork, 'id'>, id?: string): Promise<void> => {
     const vehicleRef = doc(db, 'vehicles', vehicleId);
     const vehicleDoc = await getDoc(vehicleRef);
@@ -319,7 +305,6 @@ const saveFineCheck = async (vehicleId: string, fineCheck: Omit<FineCheck, 'id'>
     await updateDoc(vehicleRef, { fineChecks: existingFineChecks });
 };
 
-// --- Monthly Fixed Expenses ---
 const onFixedExpensesUpdate = (callback: (expenses: MonthlyFixedExpense[]) => void): (() => void) => {
     if (!db) return () => {};
     const q = query(collection(db, "fixedMonthlyExpenses"));
@@ -344,7 +329,6 @@ const deleteFixedExpense = async (id: string): Promise<void> => {
   await fbDeleteDoc(doc(db, "monthlyFixedExpenses", id));
 };
 
-// --- Vehicle Data (New structure) ---
 const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
     if (!db) return () => {};
     const q = query(collection(db, VEHICLE_COLLECTION));

@@ -47,16 +47,14 @@ const processFinancialChartData = (
     services.forEach(service => {
         if (service.status !== 'Entregado') return;
 
-        // Lógica de fecha robusta con fallbacks
         const completionDate =
-            parseDate(service.deliveryDateTime) ??
+            parseDate(service.deliveryDateTime || '') ??
             parseDate(service.serviceDate) ??
-            parseDate(service.receptionDateTime);
+            parseDate(service.receptionDateTime || '');
 
         if (completionDate && isValid(completionDate)) {
             const monthKey = format(completionDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
-                // Lógica de ingresos robusta: suma de pagos o totalCost
                 const grossRevenue =
                     (Array.isArray(service.payments) && service.payments.length > 0
                         ? service.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)
@@ -79,13 +77,12 @@ const processFinancialChartData = (
     sales.forEach(sale => {
         if (sale.status === 'Cancelado' || !sale.saleDate) return;
         const saleDate = parseDate(sale.saleDate);
-        if (isValid(saleDate)) {
+        if (saleDate && isValid(saleDate)) {
             const monthKey = format(saleDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
                 const income = sale.totalAmount;
                 const costOfGoods = sale.items.reduce((sum, item) => {
-                    const inventoryItem = inventoryMap.get(item.inventoryItemId);
-                    // FIX: Use only `unitPrice` which represents the cost for the workshop.
+                    const inventoryItem = inventoryMap.get(item.inventoryItemId || '');
                     const itemUnitCost = inventoryItem?.unitPrice ?? 0;
                     return sum + (itemUnitCost * item.quantity);
                 }, 0);
@@ -142,7 +139,7 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
 
     services.forEach(s => {
         if (s.status !== 'Entregado') return;
-        const opDate = parseDate(s.deliveryDateTime) ?? parseDate(s.serviceDate);
+        const opDate = parseDate(s.deliveryDateTime || '') ?? parseDate(s.serviceDate);
         if (opDate && isValid(opDate)) {
             const monthKey = format(opDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
@@ -156,7 +153,7 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
     sales.forEach(s => {
         if (s.status === 'Cancelado' || !s.saleDate) return;
         const opDate = parseDate(s.saleDate);
-        if (isValid(opDate)) {
+        if (opDate && isValid(opDate)) {
             const monthKey = format(opDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
                 const type = 'Ventas POS';
@@ -248,7 +245,6 @@ const OperationsVolumeChart = React.memo(({ data }: { data: any[] }) => (
 OperationsVolumeChart.displayName = 'OperationsVolumeChart';
 
 const ServiceDistributionChart = React.memo(({ data }: { data: any[] }) => {
-  // Opcional: si prefieres agrupar rebanadas pequeñas en "Otros", usa esta función:
   const grouped = React.useMemo(() => {
     if (!data?.length) return [];
     const total = data.reduce((s: number, d: any) => s + (d.value || 0), 0);
@@ -256,17 +252,16 @@ const ServiceDistributionChart = React.memo(({ data }: { data: any[] }) => {
     let others = 0;
     for (const d of data) {
       const pct = total ? d.value / total : 0;
-      if (pct < 0.04) others += d.value;          // umbral 4%
+      if (pct < 0.04) others += d.value;
       else shown.push(d);
     }
     if (others > 0) shown.push({ name: "Otros", value: others });
     return shown;
   }, [data]);
 
-  // Etiqueta personalizada: oculta si la rebanada < 5%
   const renderLabel = (props: any) => {
     const { name, percent, cx, cy, outerRadius, midAngle } = props;
-    if (!percent || percent < 0.05) return null;  // umbral 5%
+    if (!percent || percent < 0.05) return null;
     const RAD = Math.PI / 180;
     const r = outerRadius + 12;
     const x = cx + r * Math.cos(-midAngle * RAD);
@@ -302,12 +297,12 @@ const ServiceDistributionChart = React.memo(({ data }: { data: any[] }) => {
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={60}        // dona: ayuda a leer
+              innerRadius={60}
               outerRadius={100}
-              paddingAngle={2}        // separa rebanadas
-              minAngle={5}            // evita rebanadas “filo”
-              labelLine={false}       // líneas generan más empalme
-              label={renderLabel}     // solo >5% renderiza etiqueta
+              paddingAngle={2}
+              minAngle={5}
+              labelLine={false}
+              label={renderLabel}
               isAnimationActive={false}
             >
               {series.map((entry: any, idx: number) => (
@@ -352,7 +347,3 @@ export const DashboardCharts = React.memo(function DashboardCharts({ services, s
 });
 
 DashboardCharts.displayName = 'DashboardCharts';
-
-    
-    
-    

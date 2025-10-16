@@ -8,19 +8,21 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Wallet, CreditCard, Landmark, CheckCircle } from "lucide-react";
-import type { Payment } from "@/types";
+import type { Payment, PaymentMethod } from "@/types";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { DollarSign, PlusCircle, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
-const paymentMethods: Payment["method"][] = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia"];
+const paymentMethods: PaymentMethod[] = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"];
 
-const paymentMethodIcons: Record<Payment["method"], React.ElementType> = {
+const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
+  "Efectivo+Transferencia": Wallet,
+  "Tarjeta+Transferencia": CreditCard,
 };
 
 interface PaymentSectionProps {
@@ -204,7 +206,6 @@ export function PaymentSection({
               )}
 
               <FormMessage className="text-red-500">
-                {/* errores por campo si tu schema los define */}
               </FormMessage>
             </div>
           );

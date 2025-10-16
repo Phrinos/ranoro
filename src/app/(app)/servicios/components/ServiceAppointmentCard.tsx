@@ -3,7 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import type { ServiceRecord, Vehicle, User, Payment, ServiceSubStatus } from '@/types';
+import type { ServiceRecord, Vehicle, User, Payment, ServiceSubStatus, PaymentMethod } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { serviceService } from '@/lib/services';
@@ -34,11 +34,13 @@ const noop = () => {};
 
 const IVA_RATE = 0.16;
 
-const paymentMethodIcons: Record<Payment['method'], React.ElementType> = {
+const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Efectivo": Wallet,
   "Tarjeta": CreditCard,
   "Tarjeta MSI": CreditCard,
   "Transferencia": Landmark,
+  "Efectivo+Transferencia": Wallet,
+  "Tarjeta+Transferencia": CreditCard,
 };
 
 export function ServiceAppointmentCard({
@@ -81,7 +83,7 @@ export function ServiceAppointmentCard({
 
   const getServiceDescriptionText = (service: ServiceRecord) => {
     if (service.serviceItems && service.serviceItems.length > 0) {
-      return service.serviceItems.map(item => item.name).join(', ');
+      return service.serviceItems.map(item => item.itemName).join(', ');
     }
     return service.description || 'Servicio sin descripción';
   };
@@ -114,14 +116,12 @@ export function ServiceAppointmentCard({
     <Card className={cn("shadow-sm overflow-hidden", service.status === 'Cancelado' && "bg-muted/60 opacity-80")}>
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row text-sm">
-          {/* Col 1: Date & Folio */}
           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-card border-b md:border-b-0 md:border-r">
             <p className="text-muted-foreground text-sm">{parsedDate && isValid(parsedDate) ? format(parsedDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
             <p className="font-bold text-lg text-foreground">{parsedDate && isValid(parsedDate) ? format(parsedDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
             <p className="font-semibold text-primary text-sm mt-2">{service.folio || service.id}</p>
           </div>
 
-          {/* Col 2: Client & Vehicle */}
           <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-b md:border-b-0 md:border-r">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <UserIcon className="h-3 w-3" />
@@ -133,7 +133,6 @@ export function ServiceAppointmentCard({
             <p className="text-muted-foreground text-xs truncate" title={getServiceDescriptionText(service)}>{getServiceDescriptionText(service)}</p>
           </div>
 
-          {/* Col 3: Cost & Profit */}
           <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-40 flex-shrink-0 space-y-1 border-b md:border-b-0 md:border-r">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Costo Cliente</p>
@@ -146,14 +145,13 @@ export function ServiceAppointmentCard({
               </p>
             </div>
             {primaryPayment && (
-              <Badge variant={getPaymentMethodVariant(primaryPayment.method as any)} className="mt-1">
-                 {React.createElement(paymentMethodIcons[primaryPayment.method as any] || Wallet, { className: "h-3 w-3 mr-1" })}
+              <Badge variant={getPaymentMethodVariant(primaryPayment.method)} className="mt-1">
+                 {React.createElement(paymentMethodIcons[primaryPayment.method] || Wallet, { className: "h-3 w-3 mr-1" })}
                 {primaryPayment.method} {service.payments && service.payments.length > 1 ? `(+${service.payments.length - 1})` : ''}
               </Badge>
             )}
           </div>
 
-          {/* Col 4: Status & Actions */}
           <div className="p-4 flex flex-col justify-between items-center text-center w-full md:w-48 flex-shrink-0">
              <div>
                 <Badge variant={color as any} className="w-full justify-center">

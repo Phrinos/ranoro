@@ -1,4 +1,3 @@
-// src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 "use client";
 
 import React from "react";
@@ -11,6 +10,7 @@ import { Signature } from "lucide-react";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import type { User } from "@/types";
 import { cn } from "@/lib/utils";
+import type { VehicleFormValues } from "@/schemas/vehicle-form-schema";
 
 const statusOptions: { value: ServiceFormValues["status"]; label: string }[] = [
   { value: "Cotizacion", label: "Cotización" },
@@ -89,9 +89,9 @@ export function ServiceDetailsCard({
   ) => {
     const selectedUser = userList.find(u => u.id === id);
     if (selectedUser) {
-      setValue(idField, selectedUser.id, { shouldDirty: true });
-      setValue(nameField, selectedUser.name, { shouldDirty: true });
-      setValue(signatureField, selectedUser.signatureDataUrl || null, { shouldDirty: true });
+      (setValue as any)(idField, String(selectedUser.id), { shouldDirty: true });
+      (setValue as any)(nameField, selectedUser.name ?? "", { shouldDirty: true });
+      (setValue as any)(signatureField, selectedUser.signatureDataUrl ?? null, { shouldDirty: true });
     }
   };
 
@@ -104,7 +104,6 @@ export function ServiceDetailsCard({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Línea 1: Estado y Sub-estado */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <FormField
             control={control}
@@ -158,7 +157,6 @@ export function ServiceDetailsCard({
           )}
         </div>
         
-        {/* Línea 2: Asesor y Técnico */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <FormField
             control={control}
@@ -187,7 +185,7 @@ export function ServiceDetailsCard({
                     </FormControl>
                     <SelectContent>
                       {safeAdvisors.map((advisor) => (
-                        <SelectItem key={advisor.id} value={advisor.id}>
+                        <SelectItem key={advisor.id} value={advisor.id as any}>
                           {advisor.name}
                         </SelectItem>
                       ))}
@@ -230,7 +228,7 @@ export function ServiceDetailsCard({
                       </FormControl>
                       <SelectContent>
                         {safeTechnicians.map((technician) => (
-                          <SelectItem key={technician.id} value={technician.id}>
+                          <SelectItem key={technician.id} value={technician.id as any}>
                             {technician.name}
                           </SelectItem>
                         ))}

@@ -1,9 +1,9 @@
-
+// src/app/(app)/inventario/page.tsx
 "use client";
+
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from "react";
-import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button";
 import {
   PlusCircle,
@@ -25,7 +25,6 @@ import type {
   InventoryCategory,
   Supplier,
   Vehicle,
-  VehiclePriceList,
 } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -138,24 +137,14 @@ function PageInner() {
     setIsItemDialogOpen(true);
   }, []);
   
-  const handleNewItemFromSearch = useCallback((name: string) => {
-    setEditingItem({ name });
-    setIsItemDialogOpen(true);
-  }, []);
+  const handleItemUpdated = async (data: InventoryItemFormValues) => {
+    if (!editingItem || !('id' in editingItem)) return;
+    await inventoryService.saveItem(data, editingItem.id!);
+    toast({ title: "Producto Actualizado" });
+    setIsItemDialogOpen(false);
+  };
   
-  const handleSaveItem = useCallback(
-    async (itemData: InventoryItemFormValues) => {
-      const isEditing = !!editingItem?.id;
-      await inventoryService.saveItem(itemData, editingItem?.id);
-      toast({
-        title: `Ítem ${isEditing ? "Actualizado" : "Creado"}`,
-        description: `"${itemData.name}" ha sido ${isEditing ? 'actualizado' : 'agregado'}.`,
-      });
-      setIsItemDialogOpen(false);
-    },
-    [toast, editingItem]
-  );
-  
+
   const handleSavePurchase = useCallback(
     async (data: PurchaseFormValues) => {
       await purchaseService.registerPurchase(data);
@@ -168,6 +157,12 @@ function PageInner() {
     [toast]
   );
   
+  const handleSaveItem = useCallback(async (itemData: InventoryItemFormValues) => {
+    await inventoryService.addItem(itemData);
+    toast({ title: "Producto Creado", description: `"${itemData.name}" ha sido agregado al inventario.` });
+    setIsItemDialogOpen(false);
+  }, [toast]);
+  
   const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
       const newItem = await inventoryService.addItem(formData);
       toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
@@ -178,7 +173,7 @@ function PageInner() {
     async (name: string, id?: string) => {
       try {
         await inventoryService.saveCategory({ name }, id);
-        toast({ title: `Categoría ${id ? "Actualizada" : "Agregada"}` });
+        toast({ title: `Categoría ${id ? 'Actualizada' : 'Agregada'}` });
       } catch (error) {
         console.error("Error saving category:", error);
         toast({
@@ -231,12 +226,11 @@ function PageInner() {
         </p>
       </div>
       
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Valor del Inventario (Costo)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(inventorySummary.totalInventoryCost)}</div></CardContent></Card>
-          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Valor del Inventario (Venta)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(inventorySummary.totalInventorySellingPrice)}</div></CardContent></Card>
-          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Alertas de Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500"/></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{inventorySummary.lowStockItemsCount}</div></CardContent></Card>
-          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Totales</CardTitle><Package className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{inventorySummary.productsCount + inventorySummary.servicesCount}</div><p className="text-xs text-muted-foreground">{inventorySummary.productsCount} productos y {inventorySummary.servicesCount} servicios</p></CardContent></Card>
-      </div>
+      <DashboardCards 
+          summaryData={inventorySummary}
+          onNewItemClick={handleOpenItemDialog}
+          onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
+        />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
           <div className="w-full">
@@ -260,15 +254,23 @@ function PageInner() {
           </div>
           
           <TabsContent value="productos" className="mt-6">
-            <Suspense fallback={<Loader2 className="animate-spin" />}>
-                <div />
-            </Suspense>
-          </TabsContent>
-          <TabsContent value="categorias" className="mt-6">
-            <Suspense fallback={<Loader2 className="animate-spin" />}>
-               <div />
-            </Suspense>
-          </TabsContent>
+              <Suspense fallback={<Loader2 className="animate-spin" />}>
+                  <ProductosContent 
+                      inventoryItems={inventoryItems}
+                      onPrint={handlePrint}
+                  />
+              </Suspense>
+            </TabsContent>
+            <TabsContent value="categorias" className="mt-6">
+              <Suspense fallback={<Loader2 className="animate-spin" />}>
+                  <CategoriasContent 
+                      categories={categories} 
+                      inventoryItems={inventoryItems} 
+                      onSaveCategory={handleSaveCategory}
+                      onDeleteCategory={handleDeleteCategory}
+                  />
+              </Suspense>
+            </TabsContent>
       </Tabs>
       
       <Suspense fallback={null}>
@@ -287,7 +289,7 @@ function PageInner() {
           <InventoryItemDialog
             open={isItemDialogOpen}
             onOpenChange={setIsItemDialogOpen}
-            onSave={handleSaveItem}
+            onSave={editingItem && editingItem.id ? handleItemUpdated : handleSaveItem}
             item={editingItem}
             categories={categories}
             suppliers={suppliers}

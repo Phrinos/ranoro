@@ -1,6 +1,6 @@
-
-
+// src/app/(public)/facturar/page.tsx
 "use client";
+
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Loader2, Search, FileText, FileJson, CheckCircle, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from '@/hooks/use-toast';
 import { billingService } from '@/lib/services/billing.service';
 import type { SaleReceipt, ServiceRecord } from '@/types';
@@ -121,7 +121,7 @@ function PageInner() {
     if ('saleDate' in ticket) {
       dateField = ticket.saleDate;
     } else {
-      dateField = ticket.deliveryDateTime || ticket.serviceDate;
+      dateField = (ticket as any).deliveryDateTime || (ticket as any).serviceDate;
     }
     
     return parseDate(dateField);

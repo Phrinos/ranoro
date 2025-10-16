@@ -1,4 +1,4 @@
-// src/app/(app)/servicios/[id]/page.tsx
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -33,8 +33,6 @@ import { ActiveServicesSheet } from '../components/ActiveServicesSheet';
 import { PhotoReportModal } from '../components/PhotoReportModal';
 import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import { formatCurrency } from '@/lib/utils';
-
-// --- NORMALIZATION HELPERS ---
 
 function normalizeAdvisor(record: any, users: User[]) {
   const id =
@@ -268,7 +266,7 @@ export default function ServicioPage() {
             serviceAdvisorName: user.name,
             serviceAdvisorSignatureDataUrl: user.signatureDataUrl ?? null,
           };
-          setInitialData(draft as ServiceRecord);
+          setInitialData(draft as any);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -305,7 +303,7 @@ export default function ServicioPage() {
   };
   
   const onValidationErrors: SubmitErrorHandler<ServiceFormValues> = (errors) => {
-    const errorMessages = Object.values(errors).map(e => e.message).join('\n');
+    const errorMessages = Object.values(errors).map(e => e?.message).join('\n');
     toast({
       title: "Formulario Incompleto",
       description: errorMessages || "Por favor, revise todos los campos marcados.",
@@ -328,13 +326,13 @@ export default function ServicioPage() {
           ...item,
           suppliesUsed: (item.suppliesUsed || []).filter(supply => supply.supplyId && supply.quantity > 0)
         }))
-        .filter(item => item.name && item.name.trim() !== "");
+        .filter(item => (item.name || '').trim() !== "");
 
-      const payload = normalizeForForm(cleanedValues, users) as ServiceRecord;
+      const payload = normalizeForForm(cleanedValues, users) as any;
 
       const saved = await serviceService.saveService(payload);
       
-      const logDescription = `${isEditMode ? 'Actualizó' : 'Creó'} el servicio #${saved.folio || saved.id.slice(-6)} para ${saved.vehicleIdentifier} con un total de ${formatCurrency(saved.totalCost)}.`;
+      const logDescription = `${isEditMode ? 'Actualizó' : 'Creó'} el servicio #${saved.folio || saved.id.slice(-6)} para ${saved.vehicleIdentifier} con un total de ${formatCurrency(saved.totalCost || 0)}.`;
       adminService.logAudit(isEditMode ? 'Editar' : 'Crear', logDescription, {
         entityType: 'Servicio',
         entityId: saved.id,
@@ -382,7 +380,7 @@ export default function ServicioPage() {
   };
 
   const handleOpenNewVehicleDialog = (vehicle?: Partial<Vehicle> | null) => {
-    setEditingVehicle(vehicle);
+    setEditingVehicle(vehicle || null);
     setIsVehicleFormDialogOpen(true);
   };
   
@@ -433,7 +431,7 @@ export default function ServicioPage() {
   }
   
   if (notFound) {
-      return <div className="text-center py-10"><h1>Servicio no encontrado</h1><Button onClick={() => router.push('/servicios')}>Volver a Servicios</Button></div>
+      return <div className="text-center py-10"><h1>Servicio no encontrado</h1><Button onClick={() => router.push('/servicios')}>Volver</Button></div>
   }
 
   return (
@@ -451,9 +449,9 @@ export default function ServicioPage() {
         serviceHistory={serviceHistory}
         onSave={handleSaveService}
         onValidationErrors={onValidationErrors}
-        onComplete={() => methods.handleSubmit(() => handleOpenCompletionDialog(methods.getValues() as ServiceRecord), onValidationErrors)()}
+        onComplete={() => methods.handleSubmit(() => handleOpenCompletionDialog(methods.getValues() as any), onValidationErrors)()}
         onVehicleCreated={onVehicleCreated}
-        onCancel={formMode === 'quote' ? handleDeleteQuote : handleCancelService}
+        onCancel={formMode === 'quote' ? handleDeleteQuote : () => handleCancelService("Cancelled from form")}
         mode={formMode}
         activeTab={activeTab}
         onTabChange={setActiveTab}

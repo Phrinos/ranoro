@@ -1,4 +1,3 @@
-// src/app/(app)/servicios/components/ServiceItemsList.tsx
 "use client";
 
 import React, { useEffect, useMemo } from "react";
@@ -6,13 +5,7 @@ import { useFormContext, useFieldArray } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, ShoppingCart, BrainCircuit, Loader2 } from "lucide-react";
-import type {
-  InventoryItem,
-  InventoryCategory,
-  Supplier,
-  ServiceTypeRecord,
-  User,
-} from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier, ServiceTypeRecord, User } from "@/types";
 import { ServiceItemCard } from "./ServiceItemCard";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { nanoid } from "nanoid";
@@ -32,7 +25,6 @@ interface ServiceItemsListProps {
   handleEnhanceText?: (fieldName: any) => void;
 }
 
-// Limpia strings como "1,234.50" o "$100" -> number
 const toNumberLoose = (v: unknown): number => {
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
   if (typeof v === "string") {
@@ -56,7 +48,7 @@ export function ServiceItemsList({
 }: ServiceItemsListProps) {
   const { control, setValue, watch } = useFormContext<ServiceFormValues>();
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove } = useFieldArray<ServiceFormValues, 'serviceItems'>({
     control,
     name: "serviceItems",
   });
@@ -69,10 +61,9 @@ export function ServiceItemsList({
     let runningTotal = 0;
 
     stableItems.forEach((item: any, i) => {
-      // sellingPrice
       if (typeof item?.sellingPrice === "string") {
         const n = toNumberLoose(item.sellingPrice);
-        setValue(`serviceItems.${i}.sellingPrice`, n, { shouldDirty: true, shouldValidate: false });
+        (setValue as any)(`serviceItems.${i}.sellingPrice`, n, { shouldDirty: true, shouldValidate: false });
         mutated = true;
       }
       const price =
@@ -84,19 +75,18 @@ export function ServiceItemsList({
 
       runningTotal += price;
 
-      // suppliesUsed: unitCost y quantity
       const supplies = Array.isArray(item?.suppliesUsed) ? item.suppliesUsed : [];
       supplies.forEach((s: any, j: number) => {
         if (typeof s?.unitCost === "string") {
-          setValue(
+          (setValue as any)(
             `serviceItems.${i}.suppliesUsed.${j}.unitCost`,
-            toNumberLoose(s.unitCost),
+            toNumberLoose(s.unitCost as any),
             { shouldDirty: true, shouldValidate: false }
           );
           mutated = true;
         }
         if (typeof s?.quantity === "string") {
-          setValue(
+          (setValue as any)(
             `serviceItems.${i}.suppliesUsed.${j}.quantity`,
             toNumberLoose(s.quantity),
             { shouldDirty: true, shouldValidate: false }
@@ -106,10 +96,7 @@ export function ServiceItemsList({
       });
     });
 
-    // Sincroniza totales a nivel del documento (usados en resúmenes / enlace público)
-    setValue("total", runningTotal, { shouldDirty: mutated, shouldValidate: false });
-    // Algunos lugares consumen "Total" (T mayúscula); mantenlo también:
-    setValue("Total" as any, runningTotal as any, { shouldDirty: mutated, shouldValidate: false });
+    (setValue as any)("totalCost", runningTotal, { shouldDirty: mutated, shouldValidate: false });
   }, [stableItems, setValue]);
 
   return (
@@ -157,7 +144,7 @@ export function ServiceItemsList({
                   append({
                     id: `item_${nanoid(6)}`,
                     name: "",
-                    sellingPrice: undefined, // se convertirá a number en cuanto el usuario escriba
+                    sellingPrice: undefined,
                     suppliesUsed: [],
                   } as any)
                 }
@@ -197,7 +184,7 @@ export function ServiceItemsList({
                     {...field}
                     className="min-h-[100px] bg-card"
                     disabled={isReadOnly}
-                    value={field.value ?? ""}
+                    value={typeof field.value === 'string' ? field.value : ""}
                   />
                 </FormControl>
               </FormItem>

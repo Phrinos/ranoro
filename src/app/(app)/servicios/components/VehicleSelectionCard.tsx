@@ -1,4 +1,3 @@
-// src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
@@ -18,13 +17,13 @@ import {
   Edit,
 } from "lucide-react";
 import { VehicleSelectionDialog } from "./VehicleSelectionDialog";
-import type { Vehicle, ServiceRecord, VehiclePriceList } from "@/types";
+import type { Vehicle, ServiceRecord } from "@/types";
 import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { inventoryService } from "@/lib/services";
 import { VehiclePricingCard } from "../../vehiculos/components/VehiclePricingCard";
-import type { EngineData } from "@/lib/data/vehicle-database-types";
+import type { EngineData, VehiclePriceListMake } from "@/lib/data/vehicle-database-types";
 import { EditEngineDataDialog } from "@/app/(app)/precios/components/EditEngineDataDialog";
 import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc } from 'firebase/firestore';
@@ -33,8 +32,8 @@ import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
 
 
 interface VehicleSelectionCardProps {
-  vehicles: Vehicle[]; // puede llegar vacío; internamente hacemos fallback
-  serviceHistory: ServiceRecord[]; // (no usado aquí, pero se conserva por compatibilidad)
+  vehicles: Vehicle[];
+  serviceHistory: ServiceRecord[];
   onOpenNewVehicleDialog: (vehicle?: Partial<Vehicle> | null) => void;
   initialVehicleId?: string;
 }
@@ -49,7 +48,7 @@ export function VehicleSelectionCard({
   const { toast } = useToast();
 
   const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
-  const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
+  const [priceLists, setPriceLists] = useState<VehiclePriceListMake[]>([]);
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [isEngineEditDialogOpen, setIsEngineEditDialogOpen] = useState(false);
 
@@ -58,7 +57,7 @@ export function VehicleSelectionCard({
   useEffect(() => {
     setIsLoadingPrices(true);
     const unsubscribe = inventoryService.onVehicleDataUpdate((data) => {
-        setPriceLists(data);
+        setPriceLists(data as VehiclePriceListMake[]);
         setIsLoadingPrices(false);
     });
     return () => unsubscribe();
@@ -77,16 +76,15 @@ export function VehicleSelectionCard({
     const makeData = priceLists.find(pl => pl.make === selectedVehicle.make);
     if (!makeData) return null;
     
-    const modelData = makeData.models.find(m => m.name === selectedVehicle.model);
+    const modelData = makeData.models.find((m: any) => m.name === selectedVehicle.model);
     if (!modelData) return null;
     
-    const generationData = modelData.generations.find(g => selectedVehicle.year >= g.startYear && selectedVehicle.year <= g.endYear);
+    const generationData = modelData.generations.find((g: any) => selectedVehicle.year >= g.startYear && selectedVehicle.year <= g.endYear);
     if (!generationData) return null;
     
-    return generationData.engines.find(e => e.name === selectedVehicle.engine) || null;
+    return generationData.engines.find((e: any) => e.name === selectedVehicle.engine) || null;
   }, [selectedVehicle, priceLists]);
 
-  // Autoselección si viene initialVehicleId
   useEffect(() => {
     if (!initialVehicleId) return;
     if (selectedVehicleId) return;
@@ -125,13 +123,13 @@ export function VehicleSelectionCard({
         const makeData = priceLists.find(pl => pl.make === make);
         if (!makeData) throw new Error("Make data not found in price list.");
 
-        const modelIndex = makeData.models.findIndex(m => m.name === model);
+        const modelIndex = makeData.models.findIndex((m: any) => m.name === model);
         if (modelIndex === -1) throw new Error("Model data not found.");
 
-        const genIndex = makeData.models[modelIndex].generations.findIndex(g => year >= g.startYear && year <= g.endYear);
+        const genIndex = makeData.models[modelIndex].generations.findIndex((g: any) => year >= g.startYear && year <= g.endYear);
         if (genIndex === -1) throw new Error("Generation data not found.");
         
-        const engineIndex = makeData.models[modelIndex].generations[genIndex].engines.findIndex(e => e.name === vehicleEngineData?.name);
+        const engineIndex = makeData.models[modelIndex].generations[genIndex].engines.findIndex((e: any) => e.name === vehicleEngineData?.name);
         if (engineIndex === -1) throw new Error("Engine data not found.");
 
         const updatedModels = [...makeData.models];

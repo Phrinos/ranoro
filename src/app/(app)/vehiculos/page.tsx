@@ -7,7 +7,7 @@ import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'reac
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import type { Vehicle, VehiclePriceList, InventoryItem, InventoryCategory, Supplier } from "@/types";
+import type { Vehicle, InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +16,7 @@ import { inventoryService } from '@/lib/services';
 import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { VehicleDialog } from './components/vehicle-dialog';
-import { DatabaseManagementTab } from './components/database-management-tab'; // Importar el nuevo componente
+import { DatabaseManagementTab } from './components/database-management-tab';
 
 function PageInner() {
   const router = useRouter();

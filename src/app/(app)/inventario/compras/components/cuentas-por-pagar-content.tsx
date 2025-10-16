@@ -67,7 +67,6 @@ export function CuentasPorPagarContent({ accounts, onRegisterPayment }: CuentasP
         </div>
       <TableToolbar
         {...tableManager}
-        onSearchTermChange={tableManager.setSearchTerm}
         searchPlaceholder="Buscar por proveedor o folio..."
         sortOptions={sortOptions}
         filterOptions={[{ value: 'status', label: 'Estado', options: statusOptions }]}
@@ -95,11 +94,11 @@ export function CuentasPorPagarContent({ accounts, onRegisterPayment }: CuentasP
                     <TableRow key={account.id}>
                       <TableCell className="font-semibold">{account.supplierName}</TableCell>
                       <TableCell>{account.invoiceId}</TableCell>
-                      <TableCell>{format(parseISO(account.invoiceDate), 'dd/MM/yyyy')}</TableCell>
-                      <TableCell>{format(parseISO(account.dueDate), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{account.invoiceDate ? format(parseISO(account.invoiceDate), 'dd/MM/yyyy') : ''}</TableCell>
+                      <TableCell>{account.dueDate ? format(parseISO(account.dueDate), 'dd/MM/yyyy') : ''}</TableCell>
                       <TableCell className="text-right">{formatCurrency(account.totalAmount)}</TableCell>
-                      <TableCell className="text-right text-green-600">{formatCurrency(account.paidAmount)}</TableCell>
-                      <TableCell className="text-right font-bold">{formatCurrency(account.totalAmount - account.paidAmount)}</TableCell>
+                      <TableCell className="text-right text-green-600">{formatCurrency(account.paidAmount || 0)}</TableCell>
+                      <TableCell className="text-right font-bold">{formatCurrency(account.totalAmount - (account.paidAmount || 0))}</TableCell>
                       <TableCell className="text-center">
                         <Badge variant={getStatusVariant(account.status)}>{account.status}</Badge>
                       </TableCell>

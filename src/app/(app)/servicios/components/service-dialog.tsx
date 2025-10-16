@@ -1,4 +1,3 @@
-// src/app/(app)/servicios/components/service-dialog.tsx
 "use client";
 
 import React, { useMemo } from 'react';
@@ -10,6 +9,7 @@ import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types';
 import { cn } from '@/lib/utils';
 import type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
+import { useToast } from '@/hooks/use-toast';
 
 interface ServiceDialogProps {
   open: boolean;
@@ -30,7 +30,7 @@ interface ServiceDialogProps {
   onTabChange: (tab: string) => void;
   isChecklistWizardOpen: boolean;
   setIsChecklistWizardOpen: (isOpen: boolean) => void;
-  onOpenNewVehicleDialog: (plate?: string) => void;
+  onOpenNewVehicleDialog: (vehicle?: Partial<Vehicle> | null) => void;
 }
 
 export function ServiceDialog({
@@ -42,13 +42,13 @@ export function ServiceDialog({
   mode,
   ...rest
 }: ServiceDialogProps) {
+  const { toast } = useToast();
   
-  // Forzar valores por defecto para un nuevo servicio
   const defaultValues = useMemo(() => (initialData ? {
     ...initialData,
     status: initialData.status || 'Cotizacion',
   } : {
-    status: 'Cotizacion', // ¡Estado por defecto explícito!
+    status: 'Cotizacion',
     serviceDate: new Date().toISOString(),
     serviceItems: [],
     payments: [],
@@ -57,18 +57,26 @@ export function ServiceDialog({
   const methods = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: defaultValues as any,
-    mode: 'onBlur', // Validar solo cuando el usuario deja el campo
+    mode: 'onBlur',
     reValidateMode: 'onChange',
   });
   
   const { reset } = methods;
 
   React.useEffect(() => {
-    // Resetear el formulario con los valores correctos cada vez que se abre
     if (open) {
       reset(defaultValues as any);
     }
   }, [open, defaultValues, reset]);
+
+  const onValidationErrors = (errors: any) => {
+    console.error(errors);
+    toast({
+      title: 'Error de validación',
+      description: 'Por favor, revise los campos marcados en rojo.',
+      variant: 'destructive',
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -88,6 +96,8 @@ export function ServiceDialog({
             onSave={onSave}
             onSaveSuccess={onSaveSuccess}
             onCancel={() => onOpenChange(false)}
+            onValidationErrors={onValidationErrors}
+            isNewRecord={!initialData}
             mode={mode}
             {...rest}
           />

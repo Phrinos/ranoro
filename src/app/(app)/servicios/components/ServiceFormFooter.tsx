@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import type { ServiceFormValues } from '@/schemas/service-form';
 import type { ServiceRecord } from '@/types';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouter } from 'next/navigation';
 
 interface ServiceFormFooterProps {
   onCancel: (reason?: string) => void;
@@ -36,6 +37,7 @@ export const ServiceFormFooter = ({
 }: ServiceFormFooterProps) => {
   const { control } = useFormContext<ServiceFormValues>();
   const [cancellationReason, setCancellationReason] = useState("");
+  const router = useRouter();
 
   const [status, serviceItems = []] = useWatch({
     control,
@@ -94,7 +96,7 @@ export const ServiceFormFooter = ({
     <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm hidden md:block">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          {onCancel && (
+          {
             <ConfirmDialog
               triggerButton={
                 <Button variant="destructive" type="button" className="w-full sm:w-auto">
@@ -116,7 +118,7 @@ export const ServiceFormFooter = ({
                 />
               )}
             </ConfirmDialog>
-          )}
+          }
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -144,7 +146,7 @@ export const ServiceFormFooter = ({
           </Button>
 
           <Button
-            type="button" // Change from submit to button to prevent default form submission
+            type="button"
             onClick={onSaveClick}
             disabled={isSubmitting}
             className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"

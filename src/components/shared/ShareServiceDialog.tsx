@@ -66,10 +66,8 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
     return null;
   }
 
-  // CORRECCIÓN: Construye la URL pública usando el puerto correcto (6000) en desarrollo.
   const getCleanPublicUrl = () => {
     const hostname = window.location.hostname;
-    // Reemplaza cualquier número de puerto al inicio del hostname con '6000'
     const publicHostname = hostname.replace(/^\d+-/, '6000-');
     const protocol = window.location.protocol;
     return `${protocol}//${publicHostname}/s/${service.publicId || service.id}`;
@@ -167,7 +165,7 @@ export function ShareServiceDialog({ open, onOpenChange, service, vehicle }: Sha
                         </TabsContent>
                         <TabsContent value="ticket">
                              <div className="flex justify-center">
-                                <TicketContent ref={ticketRef} service={service} vehicle={vehicle} />
+                                <TicketContent ref={ticketRef} service={service} vehicle={vehicle || undefined} />
                             </div>
                         </TabsContent>
                     </div>

@@ -1,5 +1,3 @@
-
-// src/app/(app)/vehiculos/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -8,7 +6,7 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trash2, Loader2, Edit } from 'lucide-react';
 import { inventoryService, serviceService } from '@/lib/services';
-import type { Vehicle, ServiceRecord, VehiclePriceList } from '@/types';
+import type { Vehicle, ServiceRecord } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { VehicleInfoCard } from '../components/VehicleInfoCard';
@@ -28,7 +26,7 @@ import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 import { useTableManager } from '@/hooks/useTableManager';
 import { MaintenanceCard } from '../../vehiculos/components/MaintenanceCard';
 import { VehiclePricingCard } from '../components/VehiclePricingCard';
-import type { EngineData } from '@/types';
+import type { EngineData, VehiclePriceListMake } from '@/lib/data/vehicle-database-types';
 import { EditEngineDataDialog } from '@/app/(app)/precios/components/EditEngineDataDialog';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
@@ -42,7 +40,6 @@ const getServiceDescriptionText = (service: ServiceRecord) => {
     return service.description;
 };
 
-// Componente para la tabla de historial de servicios
 function ServiceHistoryTable({ services, onRowClick }: { services: ServiceRecord[], onRowClick: (service: ServiceRecord) => void }) {
     const { filteredData: sortedServices, sortOption, onSortOptionChange } = useTableManager<ServiceRecord>({
         initialData: services,
@@ -97,7 +94,6 @@ function ServiceHistoryTable({ services, onRowClick }: { services: ServiceRecord
     );
 }
 
-// Componente principal de la página
 export default function VehicleDetailPage() {
   const params = useParams();
   const vehicleId = params.id as string;
@@ -106,7 +102,7 @@ export default function VehicleDetailPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
-  const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
+  const [priceLists, setPriceLists] = useState<VehiclePriceListMake[]>([]);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
@@ -131,7 +127,7 @@ export default function VehicleDetailPage() {
     fetchVehicle();
 
     const unsubscribeServices = serviceService.onServicesForVehicleUpdate(vehicleId, setServices);
-    const unsubscribePriceLists = inventoryService.onVehicleDataUpdate(setPriceLists);
+    const unsubscribePriceLists = inventoryService.onVehicleDataUpdate((data) => setPriceLists(data as VehiclePriceListMake[]));
     
     return () => {
         unsubscribeServices();
@@ -145,13 +141,13 @@ export default function VehicleDetailPage() {
     const makeData = priceLists.find(pl => pl.make === vehicle.make);
     if (!makeData) return null;
     
-    const modelData = makeData.models.find(m => m.name === vehicle.model);
+    const modelData = makeData.models.find((m: any) => m.name === vehicle.model);
     if (!modelData) return null;
     
-    const generationData = modelData.generations.find(g => vehicle.year >= g.startYear && vehicle.year <= g.endYear);
+    const generationData = modelData.generations.find((g: any) => vehicle.year >= g.startYear && vehicle.year <= g.endYear);
     if (!generationData) return null;
     
-    return generationData.engines.find(e => e.name === vehicle.engine) || null;
+    return generationData.engines.find((e: any) => e.name === vehicle.engine) || null;
   }, [vehicle, priceLists]);
 
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
@@ -185,13 +181,13 @@ export default function VehicleDetailPage() {
         const makeData = priceLists.find(pl => pl.make === make);
         if (!makeData) throw new Error("Make data not found in price list.");
 
-        const modelIndex = makeData.models.findIndex(m => m.name === model);
+        const modelIndex = makeData.models.findIndex((m: any) => m.name === model);
         if (modelIndex === -1) throw new Error("Model data not found.");
 
-        const genIndex = makeData.models[modelIndex].generations.findIndex(g => year >= g.startYear && year <= g.endYear);
+        const genIndex = makeData.models[modelIndex].generations.findIndex((g: any) => year >= g.startYear && year <= g.endYear);
         if (genIndex === -1) throw new Error("Generation data not found.");
         
-        const engineIndex = makeData.models[modelIndex].generations[genIndex].engines.findIndex(e => e.name === vehicleEngineData?.name);
+        const engineIndex = makeData.models[modelIndex].generations[genIndex].engines.findIndex((e: any) => e.name === vehicleEngineData?.name);
         if (engineIndex === -1) throw new Error("Engine data not found.");
 
         const updatedModels = [...makeData.models];

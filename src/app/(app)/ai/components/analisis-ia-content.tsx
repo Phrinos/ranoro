@@ -8,7 +8,6 @@ import { Loader2, CheckCircle, AlertTriangle, PackageCheck, ShoppingCart, BrainC
 import type { InventoryItem, ServiceRecord } from '@/types';
 import { analyzeInventory, type InventoryRecommendation } from '@/ai/flows/inventory-analysis-flow';
 import { useToast } from "@/hooks/use-toast";
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AnalisisIaContentProps {
   inventoryItems: InventoryItem[];
@@ -26,7 +25,12 @@ export function AnalisisIaContent({ inventoryItems, serviceRecords }: AnalisisIa
     setAnalysisError(null); 
     setAnalysisResult(null);
     try {
-      const inventoryForAI = inventoryItems.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, lowStockThreshold: item.lowStockThreshold }));
+      const inventoryForAI = inventoryItems.map(item => ({ 
+        id: item.id, 
+        name: item.name, 
+        quantity: item.quantity || 0, 
+        lowStockThreshold: item.lowStockThreshold || 0 
+      }));
       
       const result = await analyzeInventory({ inventoryItems: inventoryForAI });
       setAnalysisResult(result.recommendations);

@@ -23,7 +23,7 @@ import { inventoryService, saleService } from "@/lib/services";
 import { Loader2, Copy, Printer, Share2 } from "lucide-react";
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { db } from "@/lib/firebaseClient";
-import { writeBatch } from "firebase/firestore";
+import { writeBatch, doc, collection } from "firebase/firestore";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 import { TicketContent } from "@/components/ticket-content";
 import { Button } from "@/components/ui/button";
@@ -51,7 +51,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// Dialog buscador de artículos
 import {
   Dialog,
   DialogContent,
@@ -68,11 +67,9 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
-/** Normaliza strings para búsqueda */
 const normalize = (s?: string) =>
   (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 
-/** Mapea un InventoryItem a una fila válida del POS. */
 const createPOSItemFromInventory = (item: InventoryItem) => {
   const unitPrice =
     (item as any).sellingPrice ??
@@ -336,16 +333,15 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
 
       const newSaleReceipt: SaleReceipt = {
         id: saleId,
-        saleDate: new Date(),
-        items: values.items.map((it) => ({
+        saleDate: new Date().toISOString(),
+        items: values.items.map(it => ({
           itemId: it.inventoryItemId ?? crypto.randomUUID(),
           itemName: it.itemName,
           quantity: it.quantity,
-          total:
-            it.totalPrice ?? (it.unitPrice ?? 0) * (it.quantity ?? 0),
+          total: it.totalPrice ?? (it.unitPrice ?? 0) * it.quantity,
         })),
         customerName: values.customerName,
-        payments: (values.payments ?? []).map((p) => ({
+        payments: (values.payments ?? []).map(p => ({
           method: p.method,
           amount: p.amount ?? 0,
           folio: p.folio,
@@ -412,7 +408,7 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         const blob = await new Promise<Blob | null>((resolve) =>
           canvas.toBlob(resolve, "image/png")
         );
-        if (!blob) throw new Error("No se pudo generar la imagen del ticket.");
+        if (!blob) throw new Error("No se pudo crear la imagen del ticket.");
 
         if (isForSharing) {
           return new File([blob], `ticket_${saleForTicket.id}.png`, {
@@ -420,11 +416,9 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           });
         }
 
-        const _ClipboardItem =
-          (window as any).ClipboardItem ?? (globalThis as any).ClipboardItem;
-        if (_ClipboardItem && navigator.clipboard && (navigator.clipboard as any).write) {
-          await (navigator.clipboard as any).write([
-            new _ClipboardItem({ "image/png": blob }),
+        if (ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob }),
           ]);
           toast({
             title: "Copiado",

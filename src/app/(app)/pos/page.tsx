@@ -1,3 +1,4 @@
+// src/app/(app)/pos/page.tsx
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
@@ -15,12 +16,16 @@ import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog
 import { TicketContent } from "@/components/ticket-content";
 import { formatCurrency } from "@/lib/utils";
 import html2canvas from "html2canvas";
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipProvider,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const InformePosContent = lazy(() => import("./components/informe-pos-content").then(m => ({ default: m.InformePosContent })));
 const VentasPosContent = lazy(() => import("./components/ventas-pos-content").then(m => ({ default: m.VentasPosContent })));
 const PaymentDetailsDialog = lazy(() => import("@/components/shared/PaymentDetailsDialog").then(m => ({ default: m.PaymentDetailsDialog })));
-// ✅ Faltaba este import (estaba en el JSX):
 const ViewSaleDialog = lazy(() => import("./components/view-sale-dialog").then(m => ({ default: m.ViewSaleDialog })));
 
 function PageInner() {
@@ -127,7 +132,7 @@ function PageInner() {
         if (isForSharing) {
           return new File([blob], `ticket_venta_${saleForReprint.id}.png`, { type: "image/png" });
         } else {
-          // @ts-expect-error: ClipboardItem puede no estar tipado
+          
           await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
           toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
           return null;
@@ -225,6 +230,7 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
             open={isReprintDialogOpen}
             onOpenChange={setIsReprintDialogOpen}
             title={`Ticket Venta #${saleForReprint.id.slice(-6)}`}
+            sale={saleForReprint}
             footerContent={
               <div className="flex w-full justify-end gap-2">
                 <TooltipProvider>
@@ -261,7 +267,6 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
                 </TooltipProvider>
               </div>
             }
-            sale={saleForReprint}
           >
             <TicketContent ref={ticketContentRef} sale={saleForReprint} previewWorkshopInfo={workshopInfo || undefined} />
           </UnifiedPreviewDialog>

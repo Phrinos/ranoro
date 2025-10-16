@@ -1,8 +1,8 @@
 
 "use client";
 
-import Calendar from "react-calendar";
+import React from 'react';
+import Calendar, { type CalendarProps } from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 
-// Re-exporta el componente Calendar como NewCalendar si quieres mantener el nombre
-export const NewCalendar = (props: any) => <Calendar {...props} />;
+export const NewCalendar = (props: CalendarProps) => <Calendar {...props} />;

@@ -14,8 +14,7 @@ import { inventoryService, serviceService } from '@/lib/services';
 import { formatCurrency } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
-import type { Vehicle, InventoryItem } from '@/types';
-// import * as XLSX from 'xlsx'; // Comentado para eliminar la dependencia
+import type { Vehicle, InventoryItem, ServiceRecord } from '@/types';
 
 type MigrationType = 'operaciones' | 'productos';
 type AnalysisResult = MigrateDataOutput & { products?: ExtractedProduct[] } & { type: MigrationType };
@@ -90,13 +89,11 @@ export function MigracionPageContent() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // --- INICIO: Lógica de XLSX deshabilitada ---
         if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
             toast({ title: "Funcionalidad no disponible", description: "La importación desde archivos Excel está temporalmente deshabilitada.", variant: "default" });
             e.target.value = '';
             return;
         }
-        // --- FIN: Lógica de XLSX deshabilitada ---
 
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -143,7 +140,7 @@ export function MigracionPageContent() {
         
         try {
             if (analysisResult.type === 'operaciones' && (analysisResult.services.length > 0 || analysisResult.vehicles.length > 0)) {
-                await serviceService.saveMigratedServices(analysisResult.services, analysisResult.vehicles);
+                await serviceService.saveMigratedServices(analysisResult.services as any, analysisResult.vehicles as any);
                 itemsAdded = (analysisResult.vehicles?.length || 0) + (analysisResult.services?.length || 0);
             } else if (analysisResult.type === 'productos' && analysisResult.products) {
                 if (analysisResult.products.length > 0) {
@@ -177,7 +174,7 @@ export function MigracionPageContent() {
                 const parsed = parse(dateString, fmt, new Date());
                 if(isValid(parsed)) return format(parsed, 'dd MMM, yyyy');
             }
-            return dateString; // fallback
+            return dateString;
         }
         
         const hasVehicles = analysisResult.vehicles && analysisResult.vehicles.length > 0;
@@ -204,13 +201,13 @@ export function MigracionPageContent() {
                          <div className="mb-4">
                             <h3 className="font-semibold mb-2">Servicios Detectados</h3>
                             <div className="rounded-md border h-48 overflow-auto">
-                               <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>Placa</TableHead><TableHead>Fecha</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader><TableBody>{analysisResult.services.map((s, i) => ( <TableRow key={i}><TableCell>{s.vehicleLicensePlate}</TableCell><TableCell>{renderDate(s.serviceDate)}</TableCell><TableCell>{s.description}</TableCell><TableCell className="text-right">{formatCurrency(s.totalCost)}</TableCell></TableRow> ))}</TableBody></Table>
+                               <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>Placa</TableHead><TableHead>Fecha</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader><TableBody>{analysisResult.services.map((s, i) => ( <TableRow key={i}><TableCell>{s.vehicleLicensePlate}</TableCell><TableCell>{renderDate(s.serviceDate)}</TableCell><TableCell>{s.description}</TableCell><TableCell className="text-right">{formatCurrency(s.totalCost || 0)}</TableCell></TableRow> ))}</TableBody></Table>
                             </div>
                         </div>
                     )}
-                     {hasProducts && (
+                     {hasProducts && analysisResult.products && (
                         <div className="rounded-md border h-64 overflow-auto">
-                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Marca</TableHead><TableHead>Categoría</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.brand}</TableCell><TableCell>{p.category}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice)}</TableCell><TableCell>{formatCurrency(p.sellingPrice)}</TableCell></TableRow> ))}</TableBody></Table>
+                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Marca</TableHead><TableHead>Categoría</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.brand}</TableCell><TableCell>{p.category}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice || 0)}</TableCell><TableCell>{formatCurrency(p.sellingPrice || 0)}</TableCell></TableRow> ))}</TableBody></Table>
                         </div>
                     )}
                     {hasDataToSave ? (

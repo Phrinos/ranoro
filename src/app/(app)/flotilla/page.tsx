@@ -160,14 +160,7 @@ function PageInner() {
                 onTabChange={handleTabChange}
                 tabs={tabs}
                 actions={pageActions}
-            >
-                <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-                    {activeTab === 'balance' && <FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} />}
-                    {activeTab === 'conductores' && <FlotillaConductoresTab drivers={drivers} onAddDriver={() => setIsDriverDialogOpen(true)} />}
-                    {activeTab === 'vehiculos' && <FlotillaVehiculosTab vehicles={vehicles} onAddVehicle={() => setIsVehicleSelectionDialogOpen(true)} />}
-                    {activeTab === 'caja' && <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allDailyCharges={dailyCharges} allManualDebts={manualDebts} handleShowTicket={handleShowTicket} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} />}
-                </Suspense>
-            </TabbedPageLayout>
+            />
             
             <GlobalTransactionDialog open={isTransactionDialogOpen} onOpenChange={setIsTransactionDialogOpen} onSave={handleSaveTransaction} transactionType={transactionType} drivers={drivers.filter(d => !d.isArchived)} />
             <OwnerWithdrawalDialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen} vehicles={vehicles} onSave={handleSaveWithdrawal} />

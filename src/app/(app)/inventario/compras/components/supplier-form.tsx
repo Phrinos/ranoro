@@ -77,7 +77,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Descripción (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Ej: Especialistas en partes de suspensión, entrega a domicilio..." {...field} value={field.value ?? ''} className="bg-card" />
+                <Textarea placeholder="Ej: Especialistas en partes de suspensión, entrega a domicilio..." {...field} value={String(field.value ?? '')} className="bg-card" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -131,7 +131,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
             <FormItem>
               <FormLabel>Dirección (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Ej: Calle Falsa 123, Ciudad, Provincia" {...field} value={field.value ?? ''} className="bg-card" />
+                <Textarea placeholder="Ej: Calle Falsa 123, Ciudad, Provincia" {...field} value={String(field.value ?? '')} className="bg-card" />
               </FormControl>
               <FormMessage />
             </FormItem>

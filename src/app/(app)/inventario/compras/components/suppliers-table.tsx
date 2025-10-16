@@ -58,28 +58,28 @@ export const SuppliersTable = React.memo(function SuppliersTable({
             <SortableTableHeader
               sortKey="name"
               label="Nombre"
-              onSort={handleSort as any}
+              onSort={handleSort}
               currentSort={sortOption}
               textClassName="text-white"
             />
             <SortableTableHeader
               sortKey="contactPerson"
               label="Contacto"
-              onSort={handleSort as any}
+              onSort={handleSort}
               currentSort={sortOption}
               textClassName="text-white"
             />
             <SortableTableHeader
               sortKey="phone"
               label="Teléfono"
-              onSort={handleSort as any}
+              onSort={handleSort}
               currentSort={sortOption}
               textClassName="text-white"
             />
             <SortableTableHeader
               sortKey="debtAmount"
               label="Deuda"
-              onSort={handleSort as any}
+              onSort={handleSort}
               currentSort={sortOption}
               textClassName="text-white"
               className="text-right"

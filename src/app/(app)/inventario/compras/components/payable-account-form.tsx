@@ -1,4 +1,4 @@
-
+// src/app/(app)/inventario/compras/components/payable-account-form.tsx
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,9 +21,9 @@ interface PayableAccountFormProps {
 
 export function PayableAccountForm({ id, onSubmit, account }: PayableAccountFormProps) {
   const form = useForm<PayableAccountFormValues, any, PayableAccountFormValues>({
-    resolver: zodResolver(payableAccountFormSchema(account.totalAmount - account.paidAmount)) as Resolver<PayableAccountFormValues, any, PayableAccountFormValues>,
+    resolver: zodResolver(payableAccountFormSchema((account.totalAmount ?? 0) - (account.paidAmount || 0))) as Resolver<PayableAccountFormValues, any, PayableAccountFormValues>,
     defaultValues: {
-      amount: account.totalAmount - account.paidAmount,
+      amount: (account.totalAmount ?? 0) - (account.paidAmount || 0),
       note: "",
       paymentMethod: 'Efectivo',
     },
@@ -33,7 +33,7 @@ export function PayableAccountForm({ id, onSubmit, account }: PayableAccountForm
     <Form {...form}>
       <form id={id} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
-          control={form.control as any}
+          control={form.control}
           name="amount"
           render={({ field }) => (
             <FormItem>
@@ -48,9 +48,9 @@ export function PayableAccountForm({ id, onSubmit, account }: PayableAccountForm
             </FormItem>
           )}
         />
-        <FormField control={form.control as any} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+        <FormField control={form.control} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
         <FormField
-          control={form.control as any}
+          control={form.control}
           name="note"
           render={({ field }) => (
             <FormItem>

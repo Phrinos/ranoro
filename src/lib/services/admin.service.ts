@@ -1,4 +1,4 @@
-
+// src/lib/services/admin.service.ts
 
 import {
   collection,
@@ -12,11 +12,11 @@ import {
   orderBy,
   Timestamp,
   getDocs,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { User, AppRole, AuditLog, AuditLogAction } from "@/types";
 import { cleanObjectForFirestore, parseDate } from '../forms';
-import { serverTimestamp } from 'firebase/firestore';
 
 /**
  * Logs an audit trail entry for significant actions.
@@ -115,18 +115,18 @@ const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => 
         let userId = user.id;
         if (isEditing) {
             if(!userId) throw new Error("User ID is missing for an update operation.");
-            await updateDoc(doc(db, 'users', userId), cleanedData);
+            await updateDoc(doc(db, 'users', String(userId)), cleanedData);
         } else {
             const newUserRef = await addDoc(collection(db, 'users'), { ...cleanedData, createdAt: serverTimestamp() });
             userId = newUserRef.id;
         }
 
         const description = `${isEditing ? 'Actualizó' : 'Creó'} al usuario "${user.name}" (Email: ${user.email}).`;
-        await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: userId, userId: adminUser.id, userName: adminUser.name });
+        await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: String(userId), userId: adminUser.id, userName: adminUser.name });
 
-        const savedUserDoc = await getDoc(doc(db, 'users', userId));
+        const savedUserDoc = await getDoc(doc(db, 'users', String(userId)));
         if (!savedUserDoc.exists()) throw new Error("Failed to retrieve saved user.");
-        return { id: userId, ...savedUserDoc.data() } as User;
+        return { id: String(userId), ...savedUserDoc.data() } as User;
     } catch (error) {
         console.error(`Error saving user ${user.email}:`, error instanceof Error ? error.message : String(error));
         throw new Error(`Failed to save user. ${error instanceof Error ? error.message : ''}`);
@@ -215,10 +215,10 @@ const deleteRole = async (roleId: string, adminUser: User): Promise<void> => {
  * @param user - A partial user object containing the fields to update. Must include the user's ID.
  * @returns The updated user object.
  */
-const updateUserProfile = async (user: Partial<User> & { id: string }): Promise<User> => {
+const updateUserProfile = async (user: Partial<User> & { id: string | number }): Promise<User> => {
     if (!db) throw new Error("Database not initialized.");
     const { id, ...userData } = user;
-    const userRef = doc(db, 'users', id);
+    const userRef = doc(db, 'users', String(id));
 
     try {
         await updateDoc(userRef, cleanObjectForFirestore(userData));
@@ -231,7 +231,7 @@ const updateUserProfile = async (user: Partial<User> & { id: string }): Promise<
     }
 };
 
-const getDocById = async (collectionName: string, id: string) => {
+const getDocById = async (collectionName: string, id: string): Promise<any> => {
     if (!db) return null;
     const snap = await getDoc(doc(db, collectionName, id));
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;

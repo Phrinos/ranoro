@@ -225,7 +225,9 @@ export function FixedExpensesDialog({
                               }
                               title={`¿Eliminar gasto "${expense.name}"?`}
                               description="Esta acción es permanente y afectará los cálculos financieros."
-                              onConfirm={async () => await handleDeleteExpense(expense.id)}
+                              onConfirm={async () => {
+                                await handleDeleteExpense(expense.id)
+                              }}
                             />
                           </TableCell>
                         </TableRow>

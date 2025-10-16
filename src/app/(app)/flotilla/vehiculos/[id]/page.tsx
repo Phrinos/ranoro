@@ -23,7 +23,7 @@ import { FineCheckCard } from '../../components/FineCheckCard';
 import { EditVehicleInfoDialog, type VehicleInfoFormValues } from '../../components/EditVehicleInfoDialog';
 import { EditRentalSystemDialog, type RentalSystemFormValues } from '../../components/EditRentalSystemDialog';
 import { PaperworkDialog, type PaperworkFormValues } from '../../components/PaperworkDialog';
-import { FineCheckDialog } from '../../components/FineCheckDialog'; // Assuming FineCheckDialog has FineCheckFormValues
+import { FineCheckDialog } from '../../components/FineCheckDialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 
@@ -38,7 +38,6 @@ export default function FlotillaVehiculoProfilePage() {
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Dialog states
   const [isVehicleInfoDialogOpen, setIsVehicleInfoDialogOpen] = useState(false);
   const [isRentalSystemDialogOpen, setIsRentalSystemDialogOpen] = useState(false);
   const [isPaperworkDialogOpen, setIsPaperworkDialogOpen] = useState(false);
@@ -122,8 +121,6 @@ export default function FlotillaVehiculoProfilePage() {
   };
 
   const handleAssignmentChange = useCallback(() => {
-    // This function is now stable and won't cause re-renders.
-    // If you need to refresh data after assignment, you can add logic here.
   }, []);
   
   const handleRemoveFromFleet = async () => {
@@ -183,13 +180,11 @@ export default function FlotillaVehiculoProfilePage() {
         }
       />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left Column */}
         <div className="space-y-6">
           <VehicleInfoCard vehicle={vehicle} onEdit={() => setIsVehicleInfoDialogOpen(true)} />
           <MaintenanceCard vehicle={vehicle} serviceHistory={serviceHistory} />
         </div>
 
-        {/* Right Column */}
         <div className="space-y-6">
           <AssignDriverCard vehicle={vehicle} allDrivers={allDrivers} onAssignmentChange={handleAssignmentChange} />
           <RentalSystemCard vehicle={vehicle} onEdit={() => setIsRentalSystemDialogOpen(true)} />
@@ -207,11 +202,10 @@ export default function FlotillaVehiculoProfilePage() {
         </div>
       </div>
 
-      {/* Dialogs */}
       <EditVehicleInfoDialog open={isVehicleInfoDialogOpen} onOpenChange={setIsVehicleInfoDialogOpen} vehicle={vehicle} onSave={handleSaveVehicleInfo} />
       <EditRentalSystemDialog open={isRentalSystemDialogOpen} onOpenChange={setIsRentalSystemDialogOpen} vehicle={vehicle} onSave={handleSaveRentalSystem} />
       <PaperworkDialog open={isPaperworkDialogOpen} onOpenChange={setIsPaperworkDialogOpen} paperwork={editingPaperwork} onSave={handleSavePaperwork} />
-      <FineCheckDialog open={isFineCheckDialogOpen} onOpenChange={setIsFineCheckDialogOpen} fineCheck={viewingFineCheck} onSave={handleSaveFineCheck} />
+      <FineCheckDialog open={isFineCheckDialogOpen} onOpenChange={setIsFineCheckDialogOpen} fines={viewingFineCheck?.fines as any} onSave={(fines) => handleSaveFineCheck({ ...viewingFineCheck, fines })} />
     </>
   );
 }

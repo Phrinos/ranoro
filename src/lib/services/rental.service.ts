@@ -90,8 +90,8 @@ const addRentalPayment = async (
         amount,
         daysCovered: dailyRate > 0 ? amount / dailyRate : 0,
         note: note || `Abono de Renta`,
-        registeredByName: currentUser?.name || 'Sistema',
         paymentMethod: paymentMethod,
+        registeredByName: currentUser?.name || 'Sistema',
     };
     
     if (paymentId) {

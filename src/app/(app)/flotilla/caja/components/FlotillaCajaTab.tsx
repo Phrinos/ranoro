@@ -16,9 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 type CashBoxTransaction =
-    | (RentalPayment & { transactionType: 'income' })
-    | (OwnerWithdrawal & { transactionType: 'withdrawal' })
-    | (VehicleExpense & { transactionType: 'expense' });
+    | (RentalPayment & { transactionType: 'income', date: string })
+    | (OwnerWithdrawal & { transactionType: 'withdrawal', date: string })
+    | (VehicleExpense & { transactionType: 'expense', date: string });
 
 interface FlotillaCajaTabProps {
   payments: RentalPayment[];
@@ -38,6 +38,8 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Tarjeta": CreditCard,
   "Tarjeta MSI": CreditCard,
   "Transferencia": Landmark,
+  "Efectivo+Transferencia": Wallet,
+  "Tarjeta+Transferencia": CreditCard,
 };
 
 const generateMonthOptions = () => {

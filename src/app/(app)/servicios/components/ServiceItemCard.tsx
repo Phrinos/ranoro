@@ -8,9 +8,6 @@ import type {
   InventoryItem,
   ServiceTypeRecord,
   User,
-  Vehicle,
-  VehiclePriceList,
-  PricedService,
 } from "@/types";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
@@ -115,7 +112,7 @@ export function ServiceItemCard({
 
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField control={control} name={`serviceItems.${serviceIndex}.serviceType`} render={({ field }) => (
+            <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => (
                 <FormItem><FormLabel>Tipo de Servicio</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
                         <FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione un tipo..." /></SelectTrigger></FormControl>
@@ -125,7 +122,7 @@ export function ServiceItemCard({
             )}/>
             <FormField
                 control={control}
-                name={`serviceItems.${serviceIndex}.name`}
+                name={`serviceItems.${serviceIndex}.itemName`}
                 render={({ field }) => (
                 <FormItem>
                     <FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>
@@ -199,7 +196,7 @@ export function ServiceItemCard({
         </div>
         <div className="flex justify-between items-center font-semibold text-base pt-1 border-t">
           <span>Total Trabajo:</span>
-          <span className="font-bold">{formatCurrency(sellingPrice)}</span>
+          <span className="font-bold">{formatCurrency(sellingPrice as any)}</span>
         </div>
         {canViewCosts && (
           <div className="flex justify-between items-center">

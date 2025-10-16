@@ -11,7 +11,7 @@ export type AppRole = {
 };
 
 export type User = {
-  id: string | number;
+  id: string;
   name: string;
   email: string;
   role: string;
@@ -46,11 +46,10 @@ export type Supplier = {
   phone?: string;
   email?: string;
   address?: string;
-  // Campos usados en UI:
   description?: string;
   rfc?: string;
   taxRegime?: string;
-  debtAmount?: number; // calculado/denormalizado
+  debtAmount?: number;
 };
 
 export type InventoryItem = {
@@ -59,13 +58,13 @@ export type InventoryItem = {
   name: string;
   description?: string;
   brand?: string;
-  category?: string;         // id de categoría
-  supplier?: string;         // id de proveedor
-  quantity?: number;
-  unitPrice?: number;        // costo taller
-  sellingPrice?: number;     // precio público
+  category?: string;
+  supplier?: string;
+  quantity: number;
+  unitPrice?: number;
+  sellingPrice?: number;
   lowStockThreshold?: number;
-  isService?: boolean;       // true si es servicio, false si es refacción
+  isService?: boolean;
   unitType?: 'units'|'ml'|'liters'|'kg'|'service';
 };
 
@@ -80,6 +79,8 @@ export type PaymentMethod =
   | 'Efectivo+Transferencia'
   | 'Tarjeta+Transferencia';
 
+export const PAYMENT_METHODS = ['Efectivo','Tarjeta','Tarjeta MSI','Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia'] as const;
+
 export type Payment = {
   method: PaymentMethod;
   amount: number;
@@ -90,52 +91,60 @@ export type Payment = {
 };
 
 export type SaleItem = {
-  // Lo que requiere calculateSaleProfit y tus tablas:
-  itemId: string;          // requerido
-  itemName: string;        // requerido
-  quantity: number;        // requerido
-  total: number;           // requerido (precio * qty)
-  // plus (opcional) para buscar costos:
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  total: number;
   inventoryItemId?: string;
-  unitPrice?: number;      // costo taller (si viene)
+  unitPrice?: number;
   totalPrice?: number;
 };
 
 export type SaleReceipt = {
   id: string;
-  saleDate?: string | Date;
+  saleDate?: string; // ISO String
   status?: 'Completado' | 'Cancelado' | 'Pendiente';
-  customerName?: string;         // usado en UI
-  items: SaleItem[];             // requerido
-  totalAmount: number;           // requerido
-  subTotal?: number;             // usado en Ticket/Config
-  tax?: number;                  // usado en Ticket/Config
+  customerName?: string;
+  items: SaleItem[];
+  totalAmount: number;
+  subTotal?: number;
+  tax?: number;
   payments?: Payment[];
+  paymentMethod?: PaymentMethod; // For summary views
   registeredById?: string;
   registeredByName?: string;
+  profit?: number;
 };
 
 // =====================
 // SERVICIOS DE TALLER
 // =====================
 export type ServiceItemSupply = {
+  supplyId: string;
+  supplyName?: string;
   name?: string;
-  quantity?: number;
+  quantity: number;
   unitPrice?: number;
+  sellingPrice?: number;
+  unitType?: 'units'|'ml'|'liters'|'kg'|'service';
+  isService?: boolean;
 };
 
+
 export type ServiceItem = {
-  id: string;
+  id?: string;
   itemId: string;
   itemName: string;
   quantity: number;
   total: number;
-  // usados en rendimiento y listas:
   technicianId?: string;
   technicianCommission?: number;
   suppliesUsed?: ServiceItemSupply[];
   sellingPrice?: number;
   name?: string;
+  price?: number;
+  unitPrice?: number;
+  inventoryItemId?: string;
 };
 
 export type ServiceStatus =
@@ -147,28 +156,33 @@ export type ServiceStatus =
   | "Completado"
   | "Proveedor Externo";
 
+export type ServiceSubStatus =
+  | 'Ingresado'
+  | 'En Espera de Refacciones'
+  | 'Reparando'
+  | 'Completado'
+  | 'Confirmada'
+  | 'Cancelada';
+
 export type ServiceRecord = {
   id: string;
   status: ServiceStatus;
   folio?: string;
   description?: string;
-  serviceDate?: string;        // ISO
+  serviceDate: string;        // ISO
   deliveryDateTime?: string;   // ISO
   receptionDateTime?: string;  // ISO
   customerName?: string;
-  serviceItems?: ServiceItem[];
+  serviceItems: ServiceItem[];
   payments?: Payment[];
-  total?: number;
   totalCost?: number;
   serviceProfit?: number;
-  serviceAdvisorCommission?: number;
-  vehicleId?: string;
-  assignedToName?: string;
-  advisorName?: string;
+  vehicleId: string;
+  serviceAdvisorId?: string;
+  serviceAdvisorName?: string;
+  technicianId?: string;
   technicianName?: string;
-  deliveredByName?: string;
   serviceAdvisorSignatureDataUrl?: string | null;
-  technicianSignatureDataUrl?: string | null;
   customerSignatureReception?: string;
   customerSignatureDelivery?: string;
   publicId?: string;
@@ -177,16 +191,12 @@ export type ServiceRecord = {
   customerPhone?: string;
   vehicle?: Vehicle;
   customerSignatureDataUrl?: string;
-  mechanicId?: string;
-  mechanicName?: string;
-  serviceAdvisorId?: string;
   vehicleIdentifier?: string;
   appointmentDateTime?: string;
   nextServiceInfo?: NextServiceInfo;
   paymentMethod?: string;
   cardCommission?: number;
   cancellationReason?: string;
-  workshopInfo?: WorkshopInfo;
   safetyInspection?: SafetyInspection;
   photoReports?: { title?: string; photos: string[] }[];
   originalQuoteItems?: ServiceItem[];
@@ -196,6 +206,8 @@ export type ServiceRecord = {
   customerItems?: string;
   mileage?: number | null;
   serviceType?: string;
+  total?: number;
+  serviceAdvisorCommission?: number;
 };
 
 // =====================
@@ -204,12 +216,12 @@ export type ServiceRecord = {
 export type PayableAccount = {
   id: string;
   supplierId: string;
-  supplierName?: string;   // denormalizado (usado en logs/ledger)
+  supplierName?: string;
   invoiceId?: string;
   invoiceDate?: string;    // ISO
   dueDate?: string;        // ISO
-  totalAmount: number;     // requerido en UI
-  paidAmount?: number;     // usado para saldo
+  totalAmount: number;
+  paidAmount?: number;
   status?: 'Pendiente' | 'Pagado' | 'Pagado Parcialmente';
   notes?: string;
 };
@@ -221,29 +233,28 @@ export type CashDrawerTransaction = {
   id: string;
   type: 'Entrada' | 'Salida';
   amount: number;
-  concept?: string;
+  concept: string;
   description?: string;
-  fullDescription?: string;
-  user?: string;
-  userName?: string;
-  relatedType?: 'Venta' | 'Servicio' | 'Manual';
+  userId: string;
+  userName: string;
+  relatedType?: 'Venta' | 'Servicio' | 'Manual' | 'Flotilla';
   relatedId?: string;
-  date?: string;       // ISO
-  createdAt?: string;  // ISO
+  date: string;       // ISO
 };
 
 export type AuditLogAction = 'Crear' | 'Editar' | 'Eliminar' | 'Archivar' | 'Restaurar' | 'Registrar' | 'Pagar' | 'Cancelar';
+export type AuditLogEntity = "user" | "vehicle" | "inventory" | "service" | "sale" | "role" | "purchase" | "payment" | "Flotilla";
 
 export type AuditLog = {
   id: string;
-  date: string; // ISO
-  userName?: string;
   actionType: AuditLogAction;
-  description?: string;
-  createdAt?: any;
-  entityType?: string;
-  entityId?: string;
-  userId?: string;
+  description: string;
+  entityType: string;
+  entityId: string;
+  userId: string;
+  userName: string;
+  createdAt?: any; // Timestamp/FieldValue
+  date: string; // ISO
 };
 
 
@@ -274,8 +285,15 @@ export type Vehicle = {
   assignedDriverName?: string | null;
   paperwork?: Paperwork[];
   fineChecks?: FineCheck[];
-  lastServiceDate?: Date | string | null;
+  lastServiceDate?: string | null; // ISO
 };
+
+export type PricedService = {
+  costoInsumos?: number;
+  precioPublico?: number;
+  upgrades?: { [key: string]: number };
+};
+
 
 // =====================
 // GASTOS FIJOS
@@ -286,11 +304,11 @@ export type MonthlyFixedExpense = {
   amount: number;
   category?: 'Renta' | 'Servicios' | 'Otros' | string;
   notes?: string;
-  createdAt?: string;
+  createdAt?: string; //ISO
 };
 
 // =====================
-// RENTAS / FLOTA (si lo usas)
+// RENTAS / FLOTA
 // =====================
 export type Driver = {
   id: string;
@@ -300,15 +318,21 @@ export type Driver = {
   phone?: string;
   address?: string;
   emergencyPhone?: string;
-  contractDate?: string;
+  contractDate?: string; // ISO
   depositAmount?: number;
   requiredDepositAmount?: number;
   assignedVehicleLicensePlate?: string;
+  documents?: {
+    ineFrontUrl?: string;
+    ineBackUrl?: string;
+    licenseUrl?: string;
+    proofOfAddressUrl?: string;
+    promissoryNoteUrl?: string;
+  };
 };
 
-// ... otros tipos de flotilla ...
 export type DailyRentalCharge = { id: string; driverId: string; vehicleId: string; date: string; amount: number; vehicleLicensePlate: string };
-export type RentalPayment = { id: string; driverId: string; driverName: string; vehicleLicensePlate: string; paymentDate: string; amount: number; daysCovered: number; note?: string };
+export type RentalPayment = { id: string; driverId: string; driverName: string; vehicleLicensePlate: string; paymentDate: string; amount: number; daysCovered: number; note?: string; paymentMethod?: PaymentMethod, registeredByName?: string, };
 export type OwnerWithdrawal = { id: string; ownerName: string; date: string; amount: number; note?: string };
 export type VehicleExpense = { id: string; vehicleId: string; vehicleLicensePlate: string; date: string; amount: number; description: string };
 export type ManualDebtEntry = { id: string; driverId: string; date: string; amount: number; note: string };
@@ -318,31 +342,39 @@ export type ManualDebtEntry = { id: string; driverId: string; date: string; amou
 // TIPOS RE-USABLES Y DE UI
 // =====================
 
+export type Area = string;
 export type SafetyCheckStatus = "ok" | "atencion" | "inmediata" | "na";
 export type SafetyCheckValue = { status: SafetyCheckStatus; notes: string; photos: string[] };
 export type SafetyInspection = Record<string, SafetyCheckValue>;
-export type NextServiceInfo = { date: string | Date | null; mileage: number | null };
-export type ServiceTypeRecord = { id: string; name: string; estimatedHours: number };
-export type Paperwork = { id: string; name: string; dueDate: string };
-export type Fine = { id: string; date: string; type: string; amount: number };
-export type FineCheck = { id: string; checkDate: string; hasFines: boolean; fines?: Fine[] };
+export type NextServiceInfo = { date: string | null; mileage: number | null }; // ISO Date
+export type ServiceTypeRecord = { id: string; name: string; estimatedHours: number; description?: string };
+export type Paperwork = { id: string; name: string; dueDate: string }; // ISO Date
+export type Fine = { id: string; date: string; type: string; amount: number }; // ISO Date
+export type FineCheck = { id: string; checkDate: string; hasFines: boolean; fines?: Fine[] }; // ISO Date
 export type NavigationEntry = { label: string; path: string; icon: ElementType; groupTag: string; isActive: boolean; permissions?: string[] };
 export type Permission = { id: string; name: string; description: string };
-export type InitialCashBalance = { balance: number; date: string; setByUserId: string; setByUserName: string };
-
+export type InitialCashBalance = { balance: number; date: string; setByUserId: string; setByUserName: string }; // ISO Date
+export type QuoteRecord = { id: string; items: ServiceItem[]; total?: number };
+export type CapacityAnalysisOutput = {
+  totalRequiredHours: number;
+  totalAvailableHours: number;
+  capacityPercentage: number;
+  recommendation: string;
+};
+export type FinancialSummary = {
+  totalTechnicianSalaries: number;
+  totalAdministrativeSalaries: number;
+  totalFixedExpenses: number;
+  totalVariableCommissions: number;
+  totalBaseExpenses: number;
+};
 // =====================
 // ALIAS Y RE-EXPORTS
 // =====================
-
-/** @deprecated Usa el tipo local TicketBranding en su lugar. */
-export type WorkshopInfo = Record<string, unknown>;
-
 export type {
   EngineData,
-  VehicleMake as VehiclePriceListMake,
   VehicleModel,
   EngineGeneration,
   InsumosData,
   ServiciosData,
 } from '@/lib/data/vehicle-database-types';
-export type VehiclePriceList = VehiclePriceListMake;
