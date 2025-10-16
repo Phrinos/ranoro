@@ -1,4 +1,5 @@
 
+
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -55,7 +56,7 @@ function PageInner() {
             
         const updatedModels = [...makeDocData.models];
         const updatedGenerations = [...updatedModels[modelIndex].generations];
-        const updatedEngines = [...updatedGenerations[genIndex].engines];
+        const updatedEngines = [...updatedGenerations[generationIndex].engines];
             
         updatedEngines[engineIndex] = updatedEngineData;
         updatedGenerations[generationIndex] = { ...updatedGenerations[generationIndex], engines: updatedEngines };
