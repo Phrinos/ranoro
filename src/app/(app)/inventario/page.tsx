@@ -433,7 +433,7 @@ function PageInner() {
         
         <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={() => handleOpenItemDialog()}
+          onNewItemClick={handleOpenItemDialog}
           onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
         
@@ -504,6 +504,12 @@ function PageInner() {
 
       <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
         <DialogContent className="max-w-4xl p-0 no-print">
+           <DialogHeader className="p-6 pb-2">
+              <DialogTitle>Imprimir Reporte de Inventario</DialogTitle>
+              <DialogDescription>
+                Se generará una vista de impresión con los productos seleccionados.
+              </DialogDescription>
+            </DialogHeader>
           <div className="printable-content bg-white">
               <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
                   <InventoryReportContent items={itemsToPrint} />
