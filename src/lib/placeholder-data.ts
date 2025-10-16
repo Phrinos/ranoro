@@ -1,6 +1,5 @@
 
 
-
 import type {
   User,
   AppRole,
@@ -17,7 +16,7 @@ export const defaultSuperAdmin: User = {
   id: "superadmin",
   name: "Super Admin",
   email: "admin@example.com",
-  role: "Superadministrador",
+  role: "superadmin",
   isArchived: false,
 };
 

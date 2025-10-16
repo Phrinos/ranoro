@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { cn, capitalizeWords, formatCurrency } from "@/lib/utils";
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { useTableManager } from '@/hooks/useTableManager';
 import { Badge } from '@/components/ui/badge';
@@ -28,12 +28,12 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
 
-const DashboardCards = () => null;
-const ProductosContent = () => null;
-const CategoriasContent = () => null;
-const RegisterPurchaseDialog = () => null;
-const InventoryItemDialog = () => null;
-const InventoryReportContent = (_: any) => null;
+const DashboardCards: React.FC<any> = () => null;
+const ProductosContent: React.FC<any> = () => null;
+const CategoriasContent: React.FC<any> = () => null;
+const RegisterPurchaseDialog: React.FC<any> = () => null;
+const InventoryItemDialog: React.FC<any> = () => null;
+const InventoryReportContent: React.FC<any> = () => null;
 
 
 function PrintTicketDialogInner(props: any) {

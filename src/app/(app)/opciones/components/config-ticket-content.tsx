@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Save, Printer } from 'lucide-react';
-import type { SaleReceipt } from '@/types';
+import type { SaleReceipt, WorkshopInfo } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { storage } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';

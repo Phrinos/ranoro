@@ -97,6 +97,7 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
                     value={selectedDate}
                     minDate={today}
                     tileDisabled={({ date }) => isDateDisabled(date)}
+                    {...({} as any)}
                 />
             </div>
 

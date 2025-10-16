@@ -1,5 +1,4 @@
-
-
+// src/lib/services/personnel.service.ts
 
 import {
   collection,
@@ -41,8 +40,8 @@ const savePersonnel = async (data: UserFormValues, id?: string): Promise<User> =
     const dataToSave: Partial<User> = { 
         ...data, 
         hireDate: data.hireDate ? new Date(data.hireDate).toISOString() : undefined,
-        functions: data.functions ?? [], // Asegurarnos que functions se guarda
-        isArchived: (data as any).isArchived ?? false,
+        functions: data.functions ?? [],
+        isArchived: data.isArchived ?? false,
     };
     if (id) {
         await updateDoc(doc(db, 'users', id), cleanObjectForFirestore(dataToSave));
@@ -62,7 +61,7 @@ const archivePersonnel = async (id: string, isArchived: boolean): Promise<void> 
 const onAreasUpdate = (callback: (areas: Area[]) => void): (() => void) => {
     if (!db) return () => {};
     const unsub = onSnapshot(collection(db, "workAreas"), (snapshot) => {
-        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Area)));
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
     });
     return unsub;
 };
@@ -70,11 +69,11 @@ const onAreasUpdate = (callback: (areas: Area[]) => void): (() => void) => {
 const saveArea = async (data: Omit<Area, 'id'>, id?: string): Promise<Area> => {
     if (!db) throw new Error("Database not initialized.");
     if (id) {
-        await updateDoc(doc(db, 'workAreas', id), data);
-        return { id, ...data };
+        await updateDoc(doc(db, 'workAreas', id), data as any);
+        return { id, ...data } as any;
     }
-    const docRef = await addDoc(collection(db, 'workAreas'), data);
-    return { id: docRef.id, ...data };
+    const docRef = await addDoc(collection(db, 'workAreas'), data as any);
+    return { id: docRef.id, ...data } as any;
 };
 
 const deleteArea = async (id: string): Promise<void> => {

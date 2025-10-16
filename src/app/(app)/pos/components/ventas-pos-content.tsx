@@ -99,10 +99,10 @@ export function VentasPosContent({
         const paymentBreakdown: { method: Payment['method']; amount: number }[] = [];
         const totalAmount = sale.totalAmount || 0;
         
-        if (methods.length > 1 && (sale.amountInCash !== undefined || sale.amountInCard !== undefined || sale.amountInTransfer !== undefined)) {
-            if (sale.amountInCash) paymentBreakdown.push({ method: 'Efectivo', amount: sale.amountInCash });
-            if (sale.amountInCard) paymentBreakdown.push({ method: 'Tarjeta', amount: sale.amountInCard });
-            if (sale.amountInTransfer) paymentBreakdown.push({ method: 'Transferencia', amount: sale.amountInTransfer });
+        if (methods.length > 1 && ((sale as any).amountInCash !== undefined || (sale as any).amountInCard !== undefined || (sale as any).amountInTransfer !== undefined)) {
+            if ((sale as any).amountInCash) paymentBreakdown.push({ method: 'Efectivo', amount: (sale as any).amountInCash });
+            if ((sale as any).amountInCard) paymentBreakdown.push({ method: 'Tarjeta', amount: (sale as any).amountInCard });
+            if ((sale as any).amountInTransfer) paymentBreakdown.push({ method: 'Transferencia', amount: (sale as any).amountInTransfer });
         } else if (methods.length === 1) {
             paymentBreakdown.push({ method: methods[0], amount: totalAmount });
         } else {

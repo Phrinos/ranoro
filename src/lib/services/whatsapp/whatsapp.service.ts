@@ -10,25 +10,25 @@ interface ApiResponse {
 }
 
 // Function to fetch workshop information from Firestore
-const getWorkshopInfo = async (): Promise<any | null> => {
+const getWorkshopInfo = async (): Promise<Partial<WorkshopInfo> | null> => {
   if (!db) return null;
   const workshopConfigRef = doc(db, 'workshopConfig', 'main');
   const docSnap = await getDoc(workshopConfigRef);
-  return docSnap.exists() ? (docSnap.data() as any) : null;
+  return docSnap.exists() ? (docSnap.data() as Partial<WorkshopInfo>) : null;
 };
 
 // Main function to send a confirmation message
 export const sendConfirmationMessage = async (service: ServiceRecord): Promise<ApiResponse> => {
   const workshopInfo = await getWorkshopInfo();
 
-  if (!workshopInfo?.facturaComApiKey) {
+  if (!(workshopInfo as any)?.facturaComApiKey) {
     return { status: 'error', message: 'API Key for WhatsApp is not configured.' };
   }
 
   const myHeaders = new Headers();
   myHeaders.append('Content-Type', 'application/json');
-  myHeaders.append('F-API-KEY', workshopInfo.facturaComApiKey);
-  myHeaders.append('F-SECRET-KEY', workshopInfo.facturaComApiSecret || '');
+  myHeaders.append('F-API-KEY', (workshopInfo as any).facturaComApiKey);
+  myHeaders.append('F-SECRET-KEY', (workshopInfo as any).facturaComApiSecret || '');
 
   const raw = JSON.stringify({
     to: (service as any).customer.phone,

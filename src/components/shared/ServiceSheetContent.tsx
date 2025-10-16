@@ -1,5 +1,4 @@
 // src/components/ServiceSheetContent.tsx
-
 "use client";
 
 import type { WorkshopInfo, Vehicle, ServiceRecord, SafetyInspection, SafetyCheckValue } from '@/types';
@@ -289,7 +288,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       <div ref={ref} className="space-y-6">
         {showSignatureAction && <SignatureActionCard onSignClick={() => onSignClick(signatureActionType)} />}
         <SheetHeader service={service} workshopInfo={effectiveWorkshopInfo} />
-        <ClientInfo service={service} vehicle={vehicle} />
+        <ClientInfo service={service} vehicle={vehicle ?? undefined} />
         <StatusCard service={service} isConfirming={isConfirming} onConfirmClick={onConfirmClick} onCancelAppointment={handleCancelAppointment}/>
         {status === 'cotizacion' && onScheduleClick && <div className="text-center"><Button onClick={onScheduleClick} size="lg"><CalendarDays className="mr-2 h-5 w-5"/>Agendar Cita</Button></div>}
         

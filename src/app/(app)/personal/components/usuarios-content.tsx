@@ -1,4 +1,3 @@
-
 // src/app/(app)/personal/components/usuarios-content.tsx
 
 "use client";
@@ -8,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from '@/hooks/use-toast';
-import type { User, AppRole } from "@/types";
+import type { User as AppUser, AppRole } from "@/types";
 import { PlusCircle, Search, Users, Eye, EyeOff } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { adminService } from '@/lib/services/admin.service';
@@ -22,18 +21,18 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { Badge } from '@/components/ui/badge';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
-export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: User | null, initialUsers: User[], initialRoles: AppRole[] }) {
+export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: AppUser | null, initialUsers: AppUser[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
   const users = initialUsers;
   const availableRoles = initialRoles;
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   
   const {
     filteredData,
     ...tableManager
-  } = useTableManager<User>({
+  } = useTableManager<AppUser>({
     initialData: users,
     searchKeys: ['name', 'email', 'role'],
     dateFilterKey: 'hireDate',
@@ -45,7 +44,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
   }, [filteredData, showArchived]);
 
 
-  const canEditOrDelete = (user: User): boolean => {
+  const canEditOrDelete = (user: AppUser): boolean => {
     if (!currentUser) return false;
     if (currentUser.role === 'Superadministrador') return user.id !== currentUser.id;
     if (currentUser.role === 'Admin') return user.role !== 'Superadministrador' && user.id !== currentUser.id;
@@ -58,7 +57,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     return [];
   }, [currentUser, availableRoles]);
 
-  const handleOpenForm = useCallback((userToEdit?: User) => {
+  const handleOpenForm = useCallback((userToEdit?: AppUser) => {
     if (userToEdit) {
       setEditingUser(userToEdit);
     } else {
@@ -67,13 +66,21 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     setIsFormOpen(true);
   }, []);
 
-  const onSubmit = async (data: UserFormValues) => {
+  const onSubmit = async (values: UserFormValues) => {
     if (!currentUser) return;
     const isEditing = !!editingUser;
     
-    const userData: Partial<User> = {
-        id: editingUser?.id, // Pass ID for update, will be undefined for create
-        ...data,
+    const userData: Partial<AppUser> = {
+        id: editingUser?.id,
+        role: values.role,
+        name: values.name,
+        email: values.email,
+        phone: values.phone,
+        isArchived: values.isArchived ?? false,
+        functions: values.functions ?? [],
+        monthlySalary: values.monthlySalary,
+        commissionRate: values.commissionRate,
+        hireDate: values.hireDate ? values.hireDate.toISOString() : undefined,
     };
     
     try {

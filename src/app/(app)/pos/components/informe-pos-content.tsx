@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   calculateSaleProfit,
-} from "@/lib/placeholder-data";
+} from "@/lib/money-helpers";
 import type { InventoryItem, SaleReceipt, ServiceRecord } from "@/types";
 import {
   format,

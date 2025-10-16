@@ -27,7 +27,7 @@ import { serverTimestamp } from 'firebase/firestore';
 export const logAudit = async (
   actionType: AuditLog['actionType'],
   description: string,
-  details: AuditLog["details"] = {}
+  details: Partial<Omit<AuditLog, 'id' | 'createdAt' | 'actionType' | 'description'>> = {}
 ): Promise<void> => {
   if (!db) {
     console.error("Audit log failed: Database not initialized.");

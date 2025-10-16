@@ -1,4 +1,3 @@
-
 // src/lib/services/rental.service.ts
 
 import {
@@ -91,6 +90,7 @@ const addRentalPayment = async (
         amount,
         daysCovered: dailyRate > 0 ? amount / dailyRate : 0,
         note: note || `Abono de Renta`,
+        paymentMethod,
         registeredByName: currentUser?.name || 'Sistema',
     };
     

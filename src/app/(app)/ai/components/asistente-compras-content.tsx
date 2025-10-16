@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { ServiceRecord, PurchaseRecommendation, InventoryItem } from '@/types';
+import type { ServiceRecord, PurchaseRecommendation, InventoryItem, WorkshopInfo } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShoppingCart, AlertTriangle, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';

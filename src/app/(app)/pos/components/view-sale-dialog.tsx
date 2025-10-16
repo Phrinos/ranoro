@@ -1,4 +1,3 @@
-
 // src/app/(app)/pos/components/view-sale-dialog.tsx
 
 "use client";
@@ -63,7 +62,7 @@ export function ViewSaleDialog({
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
-    defaultValues: sale,
+    defaultValues: sale as any,
   });
 
   useEffect(() => {

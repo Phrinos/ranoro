@@ -1,5 +1,4 @@
-
-
+// src/lib/services/sale.service.ts
 
 import {
   collection,

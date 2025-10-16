@@ -1,4 +1,3 @@
-
 // src/lib/money-helpers.ts
 import type { ServiceRecord, Payment, InventoryItem } from "@/types";
 

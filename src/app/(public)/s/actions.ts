@@ -2,15 +2,13 @@
 // src/app/(public)/s/actions.ts
 "use server";
 
-import { getAdminDb } from "@/lib/firebaseAdmin";
-import admin from 'firebase-admin';
+import { getAdminDb, serverTimestamp } from "@/lib/firebaseAdmin";
 import type { ServiceRecord } from "@/types";
 
 type DataResult<T> = { data: T | null; error: string | null };
 type ActionResult = { success: boolean; error?: string };
 
 const db = getAdminDb();
-const serverTimestamp = () => admin.firestore.FieldValue.serverTimestamp();
 
 export async function getPublicServiceData(publicId: string): Promise<DataResult<ServiceRecord>> {
   try {

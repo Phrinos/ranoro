@@ -1,4 +1,3 @@
-
 // src/app/(app)/pos/nuevo/page.tsx
 "use client";
 

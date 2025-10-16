@@ -1,6 +1,3 @@
-
-
-
 // src/lib/firebaseAdmin.ts
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore, FieldValue } from 'firebase-admin/firestore';

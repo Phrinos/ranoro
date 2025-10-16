@@ -1,4 +1,3 @@
-
 // src/app/(app)/pos/components/pos-form.tsx
 
 "use client";

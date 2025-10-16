@@ -1,4 +1,3 @@
-
 export function useNavigation() {
   return {
     navigation: [] as any[],
