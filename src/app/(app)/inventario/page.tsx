@@ -116,16 +116,21 @@ const ProductosContent: React.FC<{
     <Card>
       <CardContent className="pt-6">
          <div className="flex flex-col sm:flex-row items-center gap-2">
-            <TableToolbar
-                searchTerm={tableManager.searchTerm}
-                onSearchTermChange={tableManager.onSearchTermChange}
-                searchPlaceholder="Buscar por nombre, SKU, marca..."
-                dateRange={tableManager.dateRange}
-                onDateRangeChange={tableManager.onDateRangeChange}
-            />
-            <Button onClick={() => onPrint(fullFilteredData)} variant="outline" className="bg-white w-full sm:w-auto flex-shrink-0">
-                <Printer className="mr-2 h-4 w-4" /> Exportar / Imprimir
-            </Button>
+            <div className="relative w-full flex-grow">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                  placeholder="Buscar por nombre, SKU, marca..."
+                  value={tableManager.searchTerm}
+                  onChange={(e) => tableManager.onSearchTermChange(e.target.value)}
+                  className="w-full rounded-lg bg-card pl-8 h-10"
+              />
+            </div>
+            <div className="flex w-full sm:w-auto gap-2">
+              <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
+              <Button onClick={() => onPrint(fullFilteredData)} variant="outline" size="icon" className="bg-white h-10 w-10 flex-shrink-0">
+                  <Printer className="h-4 w-4" />
+              </Button>
+            </div>
         </div>
         <div className="rounded-md border mt-4">
           <Table>
