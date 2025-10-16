@@ -55,7 +55,7 @@ function PageInner() {
             
         const updatedModels = [...makeDocData.models];
         const updatedGenerations = [...updatedModels[modelIndex].generations];
-        const updatedEngines = [...updatedGenerations[generationIndex].engines];
+        const updatedEngines = [...updatedGenerations[genIndex].engines];
             
         updatedEngines[engineIndex] = updatedEngineData;
         updatedGenerations[generationIndex] = { ...updatedGenerations[generationIndex], engines: updatedEngines };
@@ -69,6 +69,8 @@ function PageInner() {
         toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
     }
   };
+
+  const makeQueryParam = searchParams.get('make');
 
   if (isLoading) {
     return (
@@ -93,15 +95,10 @@ function PageInner() {
         /> 
     },
     { value: 'editor', label: 'Editor de Catálogo', content: 
-        <VehicleCatalogEditor make="" />
+        makeQueryParam ? <VehicleCatalogEditor make={makeQueryParam} /> : <div>Seleccione una marca en la pestaña de Lista de Precios para editar.</div>
     }
   ];
     
-  const makeQueryParam = searchParams.get('make');
-  if (activeTab === 'editor' && makeQueryParam) {
-    return <VehicleCatalogEditor make={makeQueryParam} />;
-  }
-
   return (
     <TabbedPageLayout
         title="Precotizaciones"
