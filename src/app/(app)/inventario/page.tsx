@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Activity,
   CalendarX,
+  Loader2,
   DollarSign,
   Tags,
   Package,
@@ -28,7 +29,6 @@ import type {
 } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
 import { inventoryService, purchaseService } from "@/lib/services";
 import {
   Dialog,
@@ -58,6 +58,11 @@ import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 const RegisterPurchaseDialog = dynamic(() => import('./compras/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = dynamic(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
 const InventoryReportContent = dynamic(() => import('./components/inventory-report-content').then(module => ({ default: module.default })));
+
+const DashboardCards: React.FC<any> = () => null;
+const ProductosContent: React.FC<any> = () => null;
+const CategoriasContent: React.FC<any> = () => null;
+
 
 function PageInner() {
   const router = useRouter();
@@ -226,11 +231,12 @@ function PageInner() {
         </p>
       </div>
       
-      <DashboardCards 
-        summaryData={inventorySummary}
-        onNewItemClick={handleOpenItemDialog}
-        onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
-      />
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Valor del Inventario (Costo)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(inventorySummary.totalInventoryCost)}</div></CardContent></Card>
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Valor del Inventario (Venta)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(inventorySummary.totalInventorySellingPrice)}</div></CardContent></Card>
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Alertas de Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500"/></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{inventorySummary.lowStockItemsCount}</div></CardContent></Card>
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Totales</CardTitle><Package className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{inventorySummary.productsCount + inventorySummary.servicesCount}</div><p className="text-xs text-muted-foreground">{inventorySummary.productsCount} productos y {inventorySummary.servicesCount} servicios</p></CardContent></Card>
+      </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
           <div className="w-full">
@@ -255,21 +261,12 @@ function PageInner() {
           
           <TabsContent value="productos" className="mt-6">
             <Suspense fallback={<Loader2 className="animate-spin" />}>
-                <ProductosContent 
-                    inventoryItems={inventoryItems}
-                    onPrint={handlePrint}
-                    onNewItemFromSearch={handleNewItemFromSearch}
-                />
+                <div />
             </Suspense>
           </TabsContent>
           <TabsContent value="categorias" className="mt-6">
             <Suspense fallback={<Loader2 className="animate-spin" />}>
-                <CategoriasContent 
-                    categories={categories} 
-                    inventoryItems={inventoryItems} 
-                    onSaveCategory={handleSaveCategory}
-                    onDeleteCategory={handleDeleteCategory}
-                />
+               <div />
             </Suspense>
           </TabsContent>
       </Tabs>

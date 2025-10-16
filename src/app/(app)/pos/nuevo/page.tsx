@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/nuevo/page.tsx
 "use client";
 
@@ -10,7 +11,6 @@ import type {
   InventoryItem,
   InventoryCategory,
   Supplier,
-  WorkshopInfo,
   User,
 } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -220,7 +220,7 @@ export default function NuevaVentaPage() {
 
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [saleForTicket, setSaleForTicket] = useState<SaleReceipt | null>(null);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<any | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
 
   const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
@@ -356,7 +356,6 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         status: 'Completado',
         registeredById: currentUser.id,
         registeredByName: currentUser.name,
-        cardCommission: (values as any).cardCommission,
       };
 
       toast({

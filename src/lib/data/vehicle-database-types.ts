@@ -1,57 +1,58 @@
+
 // src/lib/data/vehicle-database-types.ts
 
 // --- Tipos para Insumos ---
-interface Aceite {
+export interface Aceite {
     grado: string | null;
     litros: number | null;
     costoUnitario: number;
     lastUpdated?: string;
 }
-interface Filtro {
+export interface Filtro {
     sku: string | null;
     costoUnitario: number;
     lastUpdated?: string;
 }
-interface BalataInfo {
+export interface BalataInfo {
     id: string; // ID único para el array, ej: nanoid()
     modelo: string | null;
     tipo: 'metalicas' | 'semimetalicas' | 'ceramica' | 'organica' | null;
     costoJuego: number;
 }
-interface Balatas {
+export interface Balatas {
     delanteras: BalataInfo[];
     traseras: BalataInfo[];
     lastUpdated?: string;
 }
-interface BujiaModelos {
+export interface BujiaModelos {
     cobre: string | null;
     platino: string | null;
     iridio: string | null;
 }
-interface BujiaCostos {
+export interface BujiaCostos {
     cobre: number;
     platino: number;
     iridio: number;
 }
-interface Bujias {
+export interface Bujias {
     cantidad: number | null;
     modelos: BujiaModelos;
     costoUnitario: BujiaCostos;
     lastUpdated?: string;
 }
-interface Inyector {
+export interface Inyector {
     tipo: 'Normal' | 'Piezoelectrico' | 'GDI' | null;
 }
 
 // --- Tipos para Servicios Estandarizados ---
-interface AfinacionUpgrades {
+export interface AfinacionUpgrades {
     conAceiteSintetico: number;
     conAceiteMobil: number;
     conBujiasPlatino: number;
     conBujiasIridio: number;
 }
 
-interface ServicioCosto {
+export interface ServicioCosto {
     costoInsumos: number;
     precioPublico: number;
     upgrades?: Partial<AfinacionUpgrades>;
