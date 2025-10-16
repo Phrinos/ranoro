@@ -5,7 +5,7 @@ import * as admin from 'firebase-admin';
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { startOfDay, endOfDay } from 'date-fns';
-import { toZonedTime, zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import { onStockExit, onPurchaseCreated, onPurchaseUpdated, adjustStock } from './inventory';
 
 // Initialize Firebase Admin SDK - THIS SHOULD BE DONE ONLY ONCE
@@ -27,8 +27,8 @@ export const generateDailyRentalCharges = onSchedule(
 
     const nowUtc = new Date();
     const nowZoned = toZonedTime(nowUtc, TZ);
-    const dayStartUtc = zonedTimeToUtc(startOfDay(nowZoned), TZ);
-    const dayEndUtc = zonedTimeToUtc(endOfDay(nowZoned), TZ);
+    const dayStartUtc = toZonedTime(startOfDay(nowZoned), TZ);
+    const dayEndUtc = toZonedTime(endOfDay(nowZoned), TZ);
     const dateKey = formatInTimeZone(nowUtc, TZ, 'yyyy-MM-dd');
 
     const activeDriversSnap = await db

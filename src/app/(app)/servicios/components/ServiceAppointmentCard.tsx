@@ -27,7 +27,6 @@ export type ServiceAppointmentCardProps = {
   onDelete?: () => void;
   onConfirm?: () => Promise<void>;
   onShowTicket?: () => void; // <- opcional
-  onCancel?: () => void;
 };
 
 const noop = () => {};

@@ -1,4 +1,3 @@
-
 // src/app/(app)/vehiculos/components/vehicle-form.tsx
 "use client";
 
@@ -17,7 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Vehicle } from "@/types";
-import { vehicleFormSchema, type VehicleFormValues } from '@/schemas/vehicle-form-schema';
+import { vehicleFormSchema } from '@/schemas/vehicle-form-schema';
+export type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
 import { capitalizeWords } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -175,4 +175,3 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
     
   );
 }
-

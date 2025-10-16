@@ -9,20 +9,21 @@ import type { ServiceRecord, Vehicle, User } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AgendaListContent = lazy(() => import('./agenda-list-content'));
-const ServiceCalendar = lazy(() => import('./service-calendar'));
+const ServiceCalendar = lazy(() => import('./service-calendar').then(m => ({ default: m.ServiceCalendar })));
+
 
 interface AgendaTabContentProps {
   services: ServiceRecord[];
   vehicles: Vehicle[];
   personnel: User[];
-  onShowShareDialog: (service: ServiceRecord) => void;
+  onShowPreview?: (service: ServiceRecord) => void;
 }
 
 export default function AgendaTabContent({
   services,
   vehicles,
   personnel,
-  onShowShareDialog,
+  onShowPreview,
 }: AgendaTabContentProps) {
   const router = useRouter();
   const [activeView, setActiveView] = useState('lista');
@@ -44,7 +45,7 @@ export default function AgendaTabContent({
             services={agendaServices} 
             vehicles={vehicles}
             personnel={personnel}
-            onShowPreview={onShowShareDialog}
+            onShowPreview={onShowPreview}
           />
         </Suspense>
       </TabsContent>
@@ -54,7 +55,7 @@ export default function AgendaTabContent({
             services={agendaServices} 
             vehicles={vehicles}
             technicians={personnel}
-            onServiceClick={(s) => router.push(`/servicios/${s.id}`)} 
+            onServiceClick={(s: ServiceRecord) => router.push(`/servicios/${s.id}`)} 
           />
         </Suspense>
       </TabsContent>

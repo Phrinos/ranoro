@@ -12,7 +12,7 @@ import { useNavigation } from '@/hooks/use-navigation';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { signOut, onAuthStateChanged } from 'firebase/auth';
+import { signOut, onAuthStateChanged, type Auth } from 'firebase/auth';
 import { auth, db } from '@/lib/firebaseClient.js';
 import { useEffect, useState } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -31,7 +31,7 @@ function AppHeaderInner() {
   const [ranoroUser, setRanoroUser] = useState<RanoroUser | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth as Auth, async (user) => {
       if (user) {
         setCurrentUser(user);
         if (db) {
@@ -50,10 +50,10 @@ function AppHeaderInner() {
   }, [router]);
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await signOut(auth as Auth);
   };
   
-  const mainNavItems = navigation.map(item => (
+  const mainNavItems = navigation.map((item: any) => (
     <Button
       key={item.href}
       variant={pathname === item.href ? 'secondary' : 'ghost'}
@@ -67,7 +67,7 @@ function AppHeaderInner() {
     </Button>
   ));
 
-  const adminNavItems = adminNavigation.map(item => (
+  const adminNavItems = adminNavigation.map((item: any) => (
      <Button
         key={item.href}
         variant={pathname === item.href ? 'secondary' : 'ghost'}
@@ -165,8 +165,8 @@ function AppHeaderInner() {
                   </DropdownMenuItem>
                 <DropdownMenuSeparator />
                  <DropdownMenuItem onClick={handleLogout}>
-                   <LogOut className="mr-2 h-4 w-4" />
-                   Cerrar Sesión
+                   <LogOut className="mr-2 h-4 w-4 text-destructive" />
+                   <span className="text-destructive">Salir</span>
                  </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

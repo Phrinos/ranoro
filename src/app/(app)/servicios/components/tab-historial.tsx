@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/tab-historial.tsx
 "use client";
 
@@ -192,8 +191,9 @@ export default function HistorialTabContent({
       const insumosSubtotalVenta = supplies.map(
         (i: any) => toNumber(i.sellingPrice) * (i.quantity ?? 1)
       );
-      const insumosCostoTotal = insumosSubtotalCosto.reduce((a, b) => a + b, 0);
-      const insumosVentaTotal = insumosSubtotalVenta.reduce((a, b) => a + b, 0);
+      const insumosCostoTotal = insumosSubtotalCosto.reduce((a: number, b: number) => a + b, 0);
+      const insumosVentaTotal = insumosSubtotalVenta.reduce((a: number, b: number) => a + b, 0);
+
 
       return {
         id: (s as any).id,

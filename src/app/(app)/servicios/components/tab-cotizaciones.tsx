@@ -76,7 +76,7 @@ function CotizacionesTabContent({
             { value: 'serviceDate_desc', label: 'Más Reciente' },
             { value: 'serviceDate_asc', label: 'Más Antiguo' },
             { value: 'totalCost_desc', label: 'Monto (Mayor a Menor)' },
-            { value: 'totalCost_asc', label: 'Monto (Menor a Menor)' },
+            { value: 'totalCost_asc', label: 'Monto (Menor a Mayor)' },
         ]}
       />
       

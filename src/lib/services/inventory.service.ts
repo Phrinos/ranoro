@@ -348,6 +348,10 @@ const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
     });
 };
 
+const deleteDoc = async (collectionName: string, id: string) => {
+  if (!db) throw new Error("Database not initialized.");
+  await deleteDoc(doc(db, collectionName, id));
+};
 
 export const inventoryService = {
   getDocById,
@@ -384,4 +388,5 @@ export const inventoryService = {
   saveFixedExpense,
   deleteFixedExpense,
   onVehicleDataUpdate,
+  deleteDoc,
 };

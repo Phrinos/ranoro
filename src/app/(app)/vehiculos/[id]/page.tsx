@@ -207,7 +207,7 @@ export default function VehicleDetailPage() {
         setIsEngineEditDialogOpen(false);
     } catch (error) {
         console.error("Error saving engine data:", error);
-        toast({ title: 'Error', description: 'No se pudieron guardar los cambios en la base de datos de precios.', variant: 'destructive' });
+        toast({ title: "Error", description: "No se pudieron guardar los cambios en la base de datos de precios.", variant: "destructive" });
     }
   };
 
@@ -243,7 +243,7 @@ export default function VehicleDetailPage() {
             <ServiceHistoryTable services={services} onRowClick={openServicePreview} />
         </div>
         <div className="lg:col-span-1 space-y-6">
-            <MaintenanceCard vehicle={vehicle} />
+            <MaintenanceCard vehicle={vehicle} serviceHistory={[]} />
             <VehiclePricingCard 
                 engineData={vehicleEngineData as EngineData | null} 
                 make={vehicle.make}
@@ -274,7 +274,6 @@ export default function VehicleDetailPage() {
           onOpenChange={setIsViewServiceDialogOpen}
           title="Vista Previa del Servicio"
           service={selectedService}
-          vehicle={vehicle}
         />
       )}
     </div>

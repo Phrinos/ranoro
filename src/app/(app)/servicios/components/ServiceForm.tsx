@@ -35,7 +35,7 @@ import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle
 export function ServiceForm({
   initialData, vehicles, users, inventoryItems, serviceTypes, categories, suppliers, serviceHistory,
   onSave, onComplete, onVehicleCreated, onCancel, onValidationErrors, mode, activeTab, onTabChange,
-  isChecklistWizardOpen, setIsChecklistWizardOpen, onOpenNewVehicleDialog, isNewRecord,
+  isChecklistWizardOpen, setIsChecklistWizardOpen, onOpenNewVehicleDialog, isNewRecord, onSaveSuccess
 }: {
   initialData: ServiceRecord | null;
   vehicles: Vehicle[];
@@ -47,6 +47,7 @@ export function ServiceForm({
   serviceHistory: ServiceRecord[];
   onSave: (values: ServiceFormValues) => Promise<ServiceRecord | void>;
   onComplete?: (values: ServiceFormValues) => void; 
+  onSaveSuccess?: (s: ServiceRecord) => void;
   onValidationErrors: (errors: FieldErrors<ServiceFormValues>) => void;
   onVehicleCreated?: (data: VehicleFormValues) => Promise<Vehicle>;
   onCancel: () => void;

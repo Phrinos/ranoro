@@ -15,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PaymentDetailsDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (isOpen: boolean) => void;
   record: ServiceRecord | SaleReceipt | null;
   onConfirm: (recordId: string, values: PaymentDetailsFormValues) => void;
   recordType: 'service' | 'sale';
@@ -64,7 +64,7 @@ export function PaymentDetailsDialog({
     resolver: zodResolver(paymentDetailsSchema),
     defaultValues: {
       payments: [],
-      nextServiceInfo: { nextServiceDate: null, nextServiceMileage: null },
+      nextServiceInfo: { date: null, mileage: null },
     },
     mode: 'onChange'
   });
@@ -84,19 +84,23 @@ export function PaymentDetailsDialog({
           method: p.method,
           amount: p.amount,
           folio: p.folio || '',
-          date: p.date ? new Date(p.date) : new Date(),
         }));
       } else if (legacyPaymentMethod) {
         // Usar método de pago legacy si existe
-        initialPayments = [{ method: legacyPaymentMethod, amount: totalAmount, date: new Date() }];
+        initialPayments = [{ method: legacyPaymentMethod, amount: totalAmount }];
       } else {
         // Valor por defecto si no hay nada
-        initialPayments = [{ method: 'Efectivo', amount: totalAmount, date: new Date() }];
+        initialPayments = [{ method: 'Efectivo', amount: totalAmount }];
       }
 
       reset({
         payments: initialPayments,
-        nextServiceInfo: 'nextServiceInfo' in record ? (record as ServiceRecord).nextServiceInfo : { nextServiceDate: null, nextServiceMileage: null },
+        nextServiceInfo: 'nextServiceInfo' in record 
+          ? { 
+              date: record.nextServiceInfo?.date ? new Date(record.nextServiceInfo.date as any) : null,
+              mileage: record.nextServiceInfo?.mileage ?? null
+            }
+          : { date: null, mileage: null },
       });
     }
   }, [record, totalAmount, open, reset]);
@@ -107,7 +111,6 @@ export function PaymentDetailsDialog({
       payments: (values.payments || []).map(p => ({
         ...p,
         amount: toNumber(p.amount),
-        date: p.date ? new Date(p.date) : new Date(),
       })),
     };
 

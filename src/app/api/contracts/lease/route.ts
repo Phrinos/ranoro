@@ -2,8 +2,10 @@
 import React from "react";
 import { NextRequest, NextResponse } from "next/server";
 import { pdf } from "@react-pdf/renderer";
-import { LeasePdf } from "@/lib/contracts/LeasePdf"; // 👈 usa named import (consistente con tu otro file)
+import { LeasePdf } from "@/lib/contracts/LeasePdf";
 import type { LeaseContractInput } from "@/lib/contracts/types";
+import type { DocumentProps } from "@react-pdf/renderer";
+
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,10 +68,10 @@ export async function POST(req: NextRequest) {
     const raw = await req.json().catch(() => ({}));
     const data = coerce(raw);
 
-    const element = React.createElement(LeasePdf, { data });
+    const element = React.createElement(LeasePdf, { data }) as unknown as React.ReactElement<DocumentProps>;
     const buffer = await pdf(element).toBuffer();
 
-    return new Response(buffer, {
+    return new Response(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="contrato-${data?.contractId ?? "lease"}.pdf"`,

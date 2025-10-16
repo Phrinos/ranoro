@@ -17,8 +17,12 @@ export async function createInvoiceAction(
   try {
     const response = await createInvoice({
       customer: {
-        ...customerData,
-        paymentForm: '01', 
+        address: { zip: customerData.address.zip },
+        name: customerData.name,
+        email: customerData.email,
+        rfc: customerData.rfc,
+        taxSystem: customerData.taxSystem,
+        cfdiUse: customerData.cfdiUse,
       },
       ticket: ticketData,
     });

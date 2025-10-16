@@ -107,7 +107,7 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
                     </div>
                     <div className="flex flex-col items-end gap-2 text-sm shrink-0">
                       <Badge variant={getStatusVariant(service.status, service.subStatus)}>{service.subStatus || service.status}</Badge>
-                      <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {isValid(serviceDateObj) ? format(serviceDateObj, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</span>
+                      <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {isValid(serviceDateObj ?? new Date()) ? format(serviceDateObj as Date, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</span>
                       <span className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5" /> {technician?.name || 'N/A'}</span>
                     </div>
                   </CardContent>

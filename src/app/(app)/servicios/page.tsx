@@ -1,4 +1,4 @@
-
+// src/app/(app)/servicios/page.tsx
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -50,7 +50,7 @@ function PageInner() {
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [serviceForTicket, setServiceForTicket] = useState<ServiceRecord | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo> | null>(null);
 
 
   useEffect(() => {

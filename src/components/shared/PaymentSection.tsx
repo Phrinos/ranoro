@@ -67,7 +67,7 @@ export function PaymentSection({
     if (totalAmount <= 0) return;
 
     const v = watchedPayments[0]?.amount;
-    const isEmpty = v === undefined || v === null || v === "" || toNumber(v) === 0;
+    const isEmpty = v === undefined || v === null || (typeof v === "string" && v === "") || toNumber(v as any) === 0;
 
     if (watchedPayments.length === 1 && isEmpty) {
       setValue(`payments.0.amount`, totalAmount, { shouldValidate: true, shouldDirty: true });

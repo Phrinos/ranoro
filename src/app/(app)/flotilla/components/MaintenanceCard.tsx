@@ -13,17 +13,17 @@ import Link from 'next/link';
 
 interface MaintenanceCardProps {
   vehicle: Vehicle;
-  serviceHistory: ServiceRecord[];
+  serviceHistory?: ServiceRecord[];
 }
 
-export function MaintenanceCard({ vehicle, serviceHistory }: MaintenanceCardProps) {
+export function MaintenanceCard({ vehicle, serviceHistory = [] }: MaintenanceCardProps) {
   
   const lastService = serviceHistory
     .filter(s => s.status === 'Entregado')
     .sort((a, b) => new Date(b.deliveryDateTime!).getTime() - new Date(a.deliveryDateTime!).getTime())[0];
 
   const recentServices = serviceHistory
-    .sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime())
+    .sort((a, b) => new Date(b.serviceDate as string).getTime() - new Date(a.serviceDate as string).getTime())
     .slice(0, 5);
 
   return (

@@ -139,9 +139,11 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
         <div className="font-semibold text-center my-1" style={{ fontSize: `${bodyFontSize}px` }}>DETALLE</div>
         
         <div className="py-0.5 space-y-1" style={{ fontSize: `${itemsFontSize}px` }}>
-          {items.filter(item => item.inventoryItemId !== 'COMMISSION_FEE').map((item, idx) => {
-              const unitPrice = 'unitPrice' in item ? (item.unitPrice || 0) : 0;
-              const totalPrice = ('totalPrice' in item && item.totalPrice) ? item.totalPrice : (unitPrice * item.quantity);
+          {(items as any[])
+            .filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE')
+            .map((item: any, idx: number) => {
+              const unitPrice = 'unitPrice' in item ? item.unitPrice : (('total' in item && 'quantity' in item) ? item.total / item.quantity : 0);
+              const totalPrice = 'totalPrice' in item ? item.totalPrice : ('total' in item ? item.total : unitPrice * item.quantity);
               const itemName = 'itemName' in item ? item.itemName : ('supplyName' in item ? item.supplyName : 'Artículo desconocido');
               return (
                   <div key={`sale-${idx}`}>

@@ -13,10 +13,11 @@ export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 // ===    DEFAULT SUPERADMIN CONFIG    ===
 // =======================================
 export const defaultSuperAdmin: User = {
-  id: 'H0XVkuViOFM7zt729AyAK531iIj2',
-  name: 'Arturo Valdelamar',
-  email: 'arturo@ranoro.mx',
-  role: 'Superadministrador',
+  id: "superadmin",
+  name: "Super Admin",
+  email: "admin@example.com",
+  role: "Superadministrador",
+  isArchived: false,
 };
 
 // =======================================

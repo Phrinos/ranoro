@@ -65,11 +65,16 @@ const registerSale = async (
 
     const newSale: Omit<SaleReceipt, 'id'> = {
         saleDate: new Date(),
-        items: saleData.items,
+        items: saleData.items.map(it => ({
+            itemId: it.inventoryItemId ?? crypto.randomUUID(),
+            itemName: it.itemName ?? "Artículo",
+            quantity: it.quantity,
+            total: it.totalPrice ?? (it.unitPrice ?? 0) * it.quantity,
+        })),
         subTotal,
         tax,
         totalAmount,
-        payments: saleData.payments,
+        payments: saleData.payments?.map(p => ({ method: p.method, amount: p.amount ?? 0, folio: p.folio })) ?? [],
         customerName: saleData.customerName || 'Cliente Mostrador',
         registeredById: currentUser.id,
         registeredByName: currentUser.name,

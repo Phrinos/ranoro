@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/service-dialog.tsx
 "use client";
 
@@ -9,9 +8,8 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { serviceFormSchema, ServiceFormValues } from '@/schemas/service-form';
 import { ServiceRecord, Vehicle, User, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from '@/types';
-import { useSidebar } from '@/hooks/use-sidebar';
 import { cn } from '@/lib/utils';
-import { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
+import type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
 
 interface ServiceDialogProps {
   open: boolean;
@@ -25,7 +23,7 @@ interface ServiceDialogProps {
   suppliers: Supplier[];
   serviceHistory: ServiceRecord[];
   onSave: (data: ServiceFormValues) => Promise<ServiceRecord | void>;
-  onSaveSuccess: (service: ServiceRecord) => void;
+  onSaveSuccess?: (service: ServiceRecord) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
   mode: 'service' | 'quote';
   activeTab: string;
@@ -44,7 +42,6 @@ export function ServiceDialog({
   mode,
   ...rest
 }: ServiceDialogProps) {
-  const { isExpanded } = useSidebar();
   
   // Forzar valores por defecto para un nuevo servicio
   const defaultValues = useMemo(() => (initialData ? {
@@ -78,7 +75,7 @@ export function ServiceDialog({
       <DialogContent 
         className={cn(
             "max-w-4xl h-full flex flex-col transition-all duration-300", 
-            isExpanded ? 'lg:max-w-6xl' : 'lg:max-w-4xl'
+            'lg:max-w-6xl'
         )}
         onInteractOutside={(e) => e.preventDefault()}
       >

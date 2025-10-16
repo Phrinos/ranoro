@@ -15,6 +15,7 @@ import {
 import { db } from '../firebaseClient';
 import type { User, AppRole, AuditLog } from "@/types";
 import { cleanObjectForFirestore, parseDate } from '../forms';
+import { serverTimestamp } from 'firebase/firestore';
 
 /**
  * Logs an audit trail entry for significant actions.
@@ -40,7 +41,7 @@ export const logAudit = async (
     ...details,
     actionType,
     description,
-    date: Timestamp.now(),
+    createdAt: serverTimestamp(),
   };
   try {
     await addDoc(collection(db, 'auditLogs'), newLog);
@@ -94,7 +95,7 @@ const onRolesUpdate = (callback: (roles: AppRole[]) => void): (() => void) => {
  */
 const onAuditLogsUpdate = (callback: (logs: AuditLog[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, 'auditLogs'), orderBy("date", "desc"));
+    const q = query(collection(db, 'auditLogs'), orderBy("createdAt", "desc"));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog)));
     }, (error) => console.error("Error listening to audit logs:", error instanceof Error ? error.message : String(error)));
@@ -110,7 +111,7 @@ const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => 
     if (!db) throw new Error("Database not initialized.");
     
     const isEditing = !!user.id;
-    const { password, ...userData } = user;
+    const { password, ...userData } = user as any;
     const cleanedData = cleanObjectForFirestore(userData);
 
     try {
@@ -119,7 +120,7 @@ const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => 
             if(!userId) throw new Error("User ID is missing for an update operation.");
             await updateDoc(doc(db, 'users', userId), cleanedData);
         } else {
-            const newUserRef = await addDoc(collection(db, 'users'), { ...cleanedData, createdAt: Timestamp.now() });
+            const newUserRef = await addDoc(collection(db, 'users'), { ...cleanedData, createdAt: serverTimestamp() });
             userId = newUserRef.id;
         }
 
@@ -233,6 +234,13 @@ const updateUserProfile = async (user: Partial<User> & { id: string }): Promise<
     }
 };
 
+const getDocById = async (collectionName: string, id: string): Promise<any> => {
+    if (!db) throw new Error("Database not initialized.");
+    const docRef = doc(db, collectionName, id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+};
+
 export const adminService = {
     onUsersUpdate,
     onUsersUpdatePromise,
@@ -244,4 +252,5 @@ export const adminService = {
     deleteRole,
     updateUserProfile,
     logAudit,
+    getDocById,
 };

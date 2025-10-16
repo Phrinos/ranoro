@@ -30,11 +30,15 @@ export interface AdministrativeStaff extends User {
 
 /** Utilizado por varios componentes de hoja/impresiones */
 export type WorkshopInfo = {
-  name?: string;
-  rfc?: string;
-  address?: string;
+  name: string;
   phone?: string;
   email?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  logoUrl?: string;
+  footerLine1?: string;
+  footerLine2?: string;
+  googleMapsUrl?: string;
 };
 
 export type InventoryItem = {
@@ -240,6 +244,7 @@ export type ServiceRecord = {
   vehicleId: string;
   serviceDate: Date | string;
   status: 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado' | 'Cotizacion';
+  serviceType?: string; // para tablero
   /** Muchos componentes leen esto (opcional) */
   subStatus?: string;
   /** La UI muestra y muta este estado */
@@ -390,7 +395,16 @@ export type PricedService = {
 /** Extras que importan otros servicios */
 export type Area = string;
 export type PayableAccount = { id: string; supplierId: string; totalAmount: number; paidAmount: number; status: 'Pendiente'|'Pagado Parcialmente'|'Pagado'|string; invoiceId?: string; invoiceDate: string; dueDate: string; supplierName?: string; };
-export type AuditLog = 'CREATE'|'UPDATE'|'DELETE'|'LOGIN'|'EXPORT'|string;
+export type AuditLog = {
+  id: string;
+  actionType: "create" | "update" | "delete" | "login" | string;
+  entityType?: "user" | "vehicle" | "inventory" | string;
+  description: string;
+  details?: any;
+  createdAt?: any;
+  userId?: string;
+};
+
 
 /** Reutilizable para cotizaciones */
 export type QuoteRecord = { id: string; items: ServiceItem[]; total?: number };

@@ -21,6 +21,10 @@ import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { z } from "zod";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 
 const searchSchema = z.object({
   folio: z.string().min(5, "El folio debe tener al menos 5 caracteres.").trim(),

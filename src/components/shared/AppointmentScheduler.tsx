@@ -91,7 +91,6 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
         <div className="px-6 space-y-4">
             <div className="flex justify-center">
                 <NewCalendar 
-                    mode="single"
                     selected={selectedDate}
                     onSelect={handleDateSelect}
                     disabled={isDateDisabled}

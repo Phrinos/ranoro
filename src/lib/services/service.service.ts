@@ -11,6 +11,7 @@ import {
   orderBy,
   serverTimestamp,
   runTransaction,
+  type WriteBatch,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, Vehicle, InventoryItem, User } from '@/types';
@@ -327,7 +328,7 @@ const saveMigratedServices = async (services: ServiceRecord[], vehicles: Vehicle
 };
 
 const cancelService = async (serviceId: string, reason: string): Promise<void> => {
-    const data = { status: 'Cancelado', cancellationReason: reason, cancellationTimestamp: new Date().toISOString() };
+    const data = { status: 'Cancelado', cancellationReason: reason, cancellationTimestamp: new Date().toISOString() } as Partial<ServiceRecord>;
     await updateService(serviceId, data);
 };
 
