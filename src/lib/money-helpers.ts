@@ -24,9 +24,17 @@ export function calcCardCommission(total: number, payments?: Payment[], fallback
 }
 
 /** Ganancia efectiva: (total de la venta) - (costo de insumos) - (comisión de tarjeta) */
-export function calcEffectiveProfit(s: ServiceRecord): number {
+export function calcEffectiveProfit(s: ServiceRecord, allInventory: InventoryItem[] = []): number {
   const total    = calcTotalFromItems(s.serviceItems);
-  const supplies = calcSuppliesCostFromItems(s.serviceItems);
+  
+  const supplies = (s.serviceItems ?? []).reduce((acc, item) => {
+    return acc + (item.suppliesUsed ?? []).reduce((itemSum, supply) => {
+        const inventoryItem = allInventory.find(i => i.id === (supply as any).supplyId);
+        const unitCost = inventoryItem?.unitPrice ?? supply.unitPrice ?? 0;
+        return itemSum + (unitCost * supply.quantity);
+    }, 0);
+  }, 0);
+
 
   const hasCardSignals =
     (s.payments?.some(p => p.method === 'Tarjeta' || p.method === 'Tarjeta MSI') ?? false) ||

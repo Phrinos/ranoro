@@ -1,5 +1,4 @@
 
-
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -20,6 +19,7 @@ interface DateRange {
 
 const MovimientosContent = lazy(() => import('./components/movimientos-content'));
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
+const CajaContent = lazy(() => import('./components/caja-content'));
 
 function PageInner() {
   const router = useRouter();
@@ -28,7 +28,7 @@ function PageInner() {
   const tab = searchParams.get('tab');
     
   const { toast } = useToast();
-  const defaultTab = tab || 'movimientos';
+  const defaultTab = tab || 'caja';
   const [activeTab, setActiveTab] = useState(defaultTab);
     
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
@@ -101,7 +101,7 @@ function PageInner() {
     });
   
     const totalVariableCommissions = deliveredServices.reduce((sum, s) => {
-      const profit = calcEffectiveProfit(s);
+      const profit = calcEffectiveProfit(s, inventoryItems);
       if (profit <= 0) return sum;
   
       let commission = 0;
@@ -135,6 +135,7 @@ function PageInner() {
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
     
   const tabs = [
+    { value: "caja", label: "Caja", content: <Suspense fallback={<Loader2 className="animate-spin" />}><CajaContent /></Suspense> },
     { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosContent allServices={allServices} allSales={allSales} allExpenses={allExpenses} allInventory={inventoryItems} dateRange={dateRange} onDateRangeChange={handleDateRangeChange} /></Suspense> },
     { value: "egresos", label: "Egresos", content: (
       <Suspense fallback={<Loader2 className="animate-spin" />}>
