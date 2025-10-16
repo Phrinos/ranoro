@@ -1,13 +1,16 @@
 
 "use client";
-
-import React, { useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { withSuspense } from "@/lib/withSuspense";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import React,
+{ 
+    useState, 
+    Suspense 
+} from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useFlotillaData } from './useFlotillaData'; // <-- CORREGIDO
 import type { Vehicle, Driver, PaymentMethod } from '@/types';
 import { personnelService, rentalService, inventoryService } from '@/lib/services';
-
 import { Loader2, MinusCircle, PlusCircle } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Button } from '@/components/ui/button';
@@ -26,15 +29,17 @@ const FlotillaVehiculosTab = React.lazy(() => import('./vehiculos/components/Flo
 const FlotillaCajaTab = React.lazy(() => import('./caja/components/FlotillaCajaTab').then(m => ({ default: m.FlotillaCajaTab })));
 
 
-function FlotillaPageComponent() {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const { toast } = useToast();
+// 1) Componente interno con los hooks:
+function PageInner() {
+  const router = useRouter();
+  const pathname = typeof usePathname === "function" ? usePathname() : "/";
+  const sp = useSearchParams();
+  const { toast } = useToast();
     
     // El hook useFlotillaData ahora viene del contexto centralizado
     const { vehicles, drivers, dailyCharges, payments, manualDebts, withdrawals, expenses, handleShowTicket, isLoading } = useFlotillaData();
 
-    const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'balance');
+    const [activeTab, setActiveTab] = useState(() => sp.get('tab') || 'balance');
     const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
     const [transactionType, setTransactionType] = useState<'payment' | 'charge'>('payment');
     const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
@@ -187,10 +192,5 @@ function FlotillaPageComponent() {
     )
 }
 
-export default function FlotillaPage() {
-    return (
-        <Suspense fallback={<div className="flex h-full w-full items-center justify-center py-24"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-            <FlotillaPageComponent />
-        </Suspense>
-    );
-}
+// 2) Exporta la página envuelta en Suspense:
+export default withSuspense(PageInner, null);

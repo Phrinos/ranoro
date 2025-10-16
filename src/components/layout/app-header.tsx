@@ -1,13 +1,12 @@
 
-
 "use client";
-
+import { usePathname, useRouter } from "next/navigation";
+import { withSuspense } from "@/lib/withSuspense";
 import Link from 'next/link';
 import Image from "next/image";
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, UserCircle, Settings, LifeBuoy, LogOut } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigation } from '@/hooks/use-navigation';
 import { Separator } from '@/components/ui/separator';
@@ -21,12 +20,12 @@ import type { User as RanoroUser } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 
 
-export function AppHeader() {
+function AppHeaderInner() {
+  const router = useRouter();
   const pathname = usePathname();
   const isMobile = useIsMobile();
   const { navigation, adminNavigation } = useNavigation();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const router = useRouter();
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [ranoroUser, setRanoroUser] = useState<RanoroUser | null>(null);
@@ -176,3 +175,7 @@ export function AppHeader() {
     </header>
   );
 }
+
+// Exporta envuelto en Suspense
+export const AppHeader = withSuspense(AppHeaderInner, null);
+export default AppHeader;

@@ -1,6 +1,7 @@
 
 "use client";
-
+import { withSuspense } from "@/lib/withSuspense";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { PropsWithChildren } from "react";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,7 +12,6 @@ import { SidebarProvider } from "@/hooks/use-sidebar";
 import { SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import React, { useEffect } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 
 const AppSidebar = dynamic(
@@ -20,7 +20,7 @@ const AppSidebar = dynamic(
   { ssr: false, loading: () => null }
 );
 
-export default function AppClientLayout({ children }: PropsWithChildren) {
+function AppClientLayoutInner({ children }: PropsWithChildren) {
   const { currentUser, isLoading, handleLogout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -74,3 +74,6 @@ export default function AppClientLayout({ children }: PropsWithChildren) {
     </ThemeProvider>
   );
 }
+
+const AppClientLayout = withSuspense(AppClientLayoutInner, null);
+export default AppClientLayout;

@@ -1,33 +1,22 @@
-// src/app/(app)/ai/page.tsx
 
 "use client";
-
+import { withSuspense } from "@/lib/withSuspense";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
-import { Loader2, PlusCircle, Printer, Copy, Share2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import type { SaleReceipt, InventoryItem, User, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance } from '@/types';
-import { useToast } from '@/hooks/use-toast';
-import { inventoryService, saleService, serviceService, adminService, cashService } from '@/lib/services';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import { TicketContent } from '@/components/ticket-content';
-import { formatCurrency } from '@/lib/utils';
-import html2canvas from 'html2canvas';
-import ReactDOMServer from 'react-dom/server';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
+import { Loader2 } from 'lucide-react';
+import type { InventoryItem, ServiceRecord } from '@/types';
+import { inventoryService, serviceService } from '@/lib/services';
 
 const AnalisisIaContent = lazy(() => import('@/app/(app)/ai/components/analisis-ia-content').then(module => ({ default: module.AnalisisIaContent })));
 const AsistenteComprasContent = lazy(() => import('@/app/(app)/ai/components/asistente-compras-content'));
 
-
-function AiPageComponent() {
-  const searchParams = useSearchParams();
+function PageInner() {
   const router = useRouter();
-  const defaultTab = searchParams.get('tab') || 'analisis';
+  const pathname = usePathname();
+  const sp = useSearchParams();
+
+  const defaultTab = sp.get('tab') || 'analisis';
   
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +38,9 @@ function AiPageComponent() {
   
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    router.push(`/ai?tab=${tab}`);
+    const newParams = new URLSearchParams(sp.toString());
+    newParams.set('tab', tab);
+    router.push(`${pathname}?${newParams.toString()}`);
   };
 
   const tabs = [
@@ -62,22 +53,14 @@ function AiPageComponent() {
   ];
 
   return (
-    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <TabbedPageLayout
-        title="Asistentes de I.A."
-        description="Herramientas inteligentes para optimizar las operaciones de tu taller."
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        tabs={tabs}
-      />
-    </Suspense>
+    <TabbedPageLayout
+      title="Asistentes de I.A."
+      description="Herramientas inteligentes para optimizar las operaciones de tu taller."
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      tabs={tabs}
+    />
   );
 }
 
-export default function AiPageWrapper() {
-    return (
-        <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-            <AiPageComponent />
-        </Suspense>
-    )
-}
+export default withSuspense(PageInner, null);

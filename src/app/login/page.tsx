@@ -1,9 +1,8 @@
-
 // src/app/login/page.tsx
 "use client";
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,6 +57,7 @@ export default function LoginPage() {
   const [passwordLogin, setPasswordLogin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   const handleLogin = async (event: React.FormEvent) => {
@@ -81,11 +81,12 @@ export default function LoginPage() {
       // Muestra un toast de bienvenida simple
       toast({ title: 'Inicio de Sesión Exitoso', description: `¡Bienvenido de nuevo!` });
 
-      // Redirige INMEDIATAMENTE
-      router.push('/dashboard');
+      const nextUrl = searchParams.get('next') || '/dashboard';
+      router.push(nextUrl);
 
       // Llama a la función que se encarga de los datos de sesión en segundo plano
-      await handleUserSession(userCredential.user);
+      // sin bloquear la navegación.
+      handleUserSession(userCredential.user);
       
     } catch (error: any) {
       console.error("Error en inicio de sesión:", error);

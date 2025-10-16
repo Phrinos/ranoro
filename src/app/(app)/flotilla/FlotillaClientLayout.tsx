@@ -1,8 +1,8 @@
 
 "use client";
-
+import { withSuspense } from "@/lib/withSuspense";
+import { useSearchParams } from "next/navigation";
 import React, { useState, useEffect, Suspense, useRef, useCallback, PropsWithChildren } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { inventoryService, personnelService, rentalService } from '@/lib/services';
 import type { Vehicle, Driver, DailyRentalCharge, RentalPayment, ManualDebtEntry, OwnerWithdrawal, VehicleExpense, PaymentMethod, WorkshopInfo } from '@/types';
 import { Loader2, MinusCircle, PlusCircle } from 'lucide-react';
@@ -213,13 +213,14 @@ function PageTicket({ isOpen, onOpenChange, payment, driverBalance }: { isOpen: 
         </UnifiedPreviewDialog>
     );
 }
-
-export default function FlotillaClientLayout({ children }: PropsWithChildren) {
-    const searchParams = useSearchParams();
-    
-    return (
+function FlotillaClientLayoutInner({ children }: { children: React.ReactNode }) {
+  const sp = useSearchParams();
+  return (
         <FlotillaLayout>
             {children}
         </FlotillaLayout>
     );
 }
+
+const FlotillaClientLayout = withSuspense(FlotillaClientLayoutInner, null);
+export default FlotillaClientLayout;

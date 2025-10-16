@@ -1,10 +1,10 @@
-// src/app/(public)/cotizar/page.tsx
-"use client";
 
+"use client";
+import { withSuspense } from "@/lib/withSuspense";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,13 +14,14 @@ import { formatCurrency } from '@/lib/utils';
 import { AnimatedDiv } from '../landing/AnimatedDiv';
 import type { VehicleMake, EngineData } from '@/lib/data/vehicle-database-types';
 
-// Normaliza y capitaliza un string para consistencia.
 const normalizeString = (str?: string): string => {
     if (!str) return '';
     return str.trim().toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 };
 
-function CotizadorPageComponent() {
+function PageInner() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const serviceQuery = searchParams.get('service');
   
@@ -84,7 +85,6 @@ function CotizadorPageComponent() {
     ];
   }, [selectedEngine]);
   
-  // Handlers para resetear selecciones dependientes
   const handleMakeChange = (make: string) => {
       setSelectedMake(make);
       setSelectedModel('');
@@ -223,10 +223,4 @@ function CotizadorPageComponent() {
   );
 }
 
-export default function CotizadorPage() {
-    return (
-        <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
-            <CotizadorPageComponent />
-        </Suspense>
-    );
-}
+export default withSuspense(PageInner, null);

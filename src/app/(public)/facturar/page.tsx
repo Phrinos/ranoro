@@ -1,15 +1,13 @@
-// src/app/(public)/facturar/page.tsx
 
 "use client";
-
+import { withSuspense } from "@/lib/withSuspense";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,16 +43,18 @@ const LoadingOverlay = ({ message }: { message: string }) => (
     </div>
 );
 
-function FacturarPageComponent() {
-  const { toast } = useToast();
+function PageInner() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchResult, setSearchResult] = useState<TicketType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>({});
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
-
 
   useEffect(() => {
     const stored = localStorage.getItem('workshopTicketInfo');
@@ -263,10 +263,4 @@ function FacturarPageComponent() {
   );
 }
 
-export default function FacturarPage() {
-  return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
-      <FacturarPageComponent />
-    </Suspense>
-  );
-}
+export default withSuspense(PageInner, null);

@@ -1,9 +1,8 @@
-// src/app/(app)/pos/page.tsx
 
 "use client";
-
+import { withSuspense } from "@/lib/withSuspense";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Loader2, PlusCircle, Printer, Copy, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,11 +24,13 @@ const InformePosContent = lazy(() => import('./components/informe-pos-content').
 const VentasPosContent = lazy(() => import('./components/ventas-pos-content').then(module => ({ default: module.VentasPosContent })));
 
 
-function PosPageComponent({ tab }: { tab?: string }) {
-  const defaultTab = tab || 'resumen';
-  const { toast } = useToast();
+// 1) Componente interno con los hooks:
+function PageInner() {
   const router = useRouter();
+  const pathname = typeof usePathname === "function" ? usePathname() : "/";
   const searchParams = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'resumen';
+  const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [isLoading, setIsLoading] = useState(true);
@@ -253,10 +254,5 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
   );
 }
 
-export default function POSPageWrapper() {
-  return (
-    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <PosPageComponent />
-    </Suspense>
-  );
-}
+// 2) Exporta la página envuelta en Suspense:
+export default withSuspense(PageInner, null);

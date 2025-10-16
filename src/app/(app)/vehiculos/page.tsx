@@ -1,8 +1,8 @@
-// src/app/(app)/vehiculos/page.tsx
-"use client";
 
+"use client";
+import { withSuspense } from "@/lib/withSuspense";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,7 +17,9 @@ import { parseDate } from '@/lib/forms';
 import { VehicleDialog } from './components/vehicle-dialog';
 import { DatabaseManagementTab } from './components/database-management-tab'; // Importar el nuevo componente
 
-function VehiculosPage() {
+function PageInner() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'vehiculos';
   const { toast } = useToast();
@@ -172,10 +174,4 @@ function VehiculosPage() {
   );
 }
 
-export default function VehiculosPageWrapper() {
-  return (
-    <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <VehiculosPage />
-    </Suspense>
-  );
-}
+export default withSuspense(PageInner, null);

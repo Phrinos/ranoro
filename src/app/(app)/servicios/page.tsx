@@ -1,7 +1,8 @@
-// src/app/(app)/servicios/page.tsx
+
 "use client";
+import { withSuspense } from "@/lib/withSuspense";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useEffect, useCallback, Suspense, lazy, useRef } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Loader2, PlusCircle, Printer, Copy, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,9 +27,10 @@ const CotizacionesTabContent = lazy(() => import('./components/tab-cotizaciones'
 const PaymentDetailsDialog = lazy(() => import('@/components/shared/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 
 
-function ServiciosPage() {
+// 1) Componente interno con los hooks:
+function PageInner() {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = typeof usePathname === "function" ? usePathname() : "/";
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
@@ -259,10 +261,5 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
   );
 }
 
-export default function ServiciosPageWrapper() {
-  return (
-    <Suspense fallback={<div className="flex justify-center items-center h-64"><p>Cargando...</p></div>}>
-      <ServiciosPage />
-    </Suspense>
-  );
-}
+// 2) Exporta la página envuelta en Suspense:
+export default withSuspense(PageInner, null);

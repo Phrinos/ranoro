@@ -10,7 +10,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Calendar } from '@/components/ui/calendar'; // Changed import
+import { NewCalendar } from '@/components/ui/calendar'; // Changed import
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { isWeekend, setHours, setMinutes, format } from 'date-fns';
@@ -90,7 +90,7 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
         </DialogHeader>
         <div className="px-6 space-y-4">
             <div className="flex justify-center">
-                <Calendar 
+                <NewCalendar 
                     mode="single"
                     selected={selectedDate}
                     onSelect={handleDateSelect}

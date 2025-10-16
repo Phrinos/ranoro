@@ -1,9 +1,8 @@
 
-
 "use client";
-
+import { withSuspense } from "@/lib/withSuspense";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Suspense, lazy, useState, useEffect, useMemo, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Loader2, BookOpen, Settings, UserCircle, Building, Shapes, Wrench } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { User, AppRole, ServiceTypeRecord } from '@/types';
@@ -22,7 +21,9 @@ const ConfiguracionTicketPageContent = lazy(() => import('./components/config-ti
 const TiposDeServicioPageContent = lazy(() => import('./components/service-types-content').then(module => ({ default: module.TiposDeServicioPageContent })));
 const ManualUsuarioPageContent = lazy(() => import('./components/manual-content').then(module => ({ default: module.ManualUsuarioPageContent })));
 
-function OpcionesPage() {
+function PageInner() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tab || 'perfil');
@@ -187,10 +188,4 @@ function OpcionesPage() {
   );
 }
 
-export default function OpcionesPageWrapper() {
-  return (
-    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <OpcionesPage />
-    </Suspense>
-  )
-}
+export default withSuspense(PageInner, null);

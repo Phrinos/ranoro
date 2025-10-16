@@ -1,7 +1,8 @@
 
-// src/components/layout/app-sidebar.tsx
 "use client";
-
+import { usePathname, useRouter } from "next/navigation";
+import { withSuspense } from "@/lib/withSuspense";
+import { useMemo } from "react";
 import Link from "next/link";
 import React from "react";
 import Image from "next/image";
@@ -34,7 +35,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { usePathname, useRouter } from "next/navigation";
 import type { User, AppRole, NavigationEntry } from "@/types";
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
 import { adminService } from '@/lib/services';
@@ -149,17 +149,17 @@ const useNavigation = (): NavigationEntry[] => {
   return sortedGroupEntries;
 };
 
-
-
-export function AppSidebar({
+function AppSidebarInner({
   currentUser,
   onLogout,
 }: {
   currentUser: User | null;
   onLogout: () => void;
 }) {
-  const navItems = useNavigation();
   const router = useRouter();
+  const pathname = usePathname();
+
+  const navItems = useNavigation();
   const { isMobile, setOpenMobile } = useSidebar();
 
   const handleLogout = async () => {
@@ -292,3 +292,6 @@ export function AppSidebar({
     </Sidebar>
   );
 }
+
+export const AppSidebar = withSuspense(AppSidebarInner, <div className="w-64 p-4">Cargando menú…</div>);
+export default AppSidebar;

@@ -1,20 +1,13 @@
 
 "use client";
-
-import { useEffect, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { withSuspense } from "@/lib/withSuspense";
+import { Suspense, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuditoriaPageContent } from "./auditoria-content";
 import { MigracionPageContent } from "./migracion-content";
 import { RegistroIndividualContent } from "./registro-individual-content";
 import { BookOpen, DatabaseZap, Loader2 } from "lucide-react";
-import type { AuditLog } from "@/types";
-
-type TabKey = "auditoria" | "migracion";
-
-interface AdministracionTabsProps {
-  initialLogs: AuditLog[];
-  defaultTab?: TabKey;
-}
 
 const Fallback = (
   <div className="flex h-64 w-full items-center justify-center">
@@ -22,21 +15,20 @@ const Fallback = (
   </div>
 );
 
-export function AdministracionTabs({ initialLogs, defaultTab = "auditoria" }: AdministracionTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>(
-    defaultTab === "migracion" ? "migracion" : "auditoria"
-  );
+function AdministracionTabsInner() {
+  const router = useRouter();
+  const sp = useSearchParams();
 
-  // Mantener ?tab=... sin hooks de next/navigation
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", activeTab);
-    window.history.replaceState(null, "", url.toString());
-  }, [activeTab]);
+  const activeTab = sp.get("tab") ?? "auditoria";
+
+  const handleTabChange = (tab: string) => {
+    const newParams = new URLSearchParams(sp.toString());
+    newParams.set('tab', tab);
+    router.replace(`?${newParams.toString()}`);
+  };
 
   return (
-    <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabKey)} className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <div className="w-full">
         <TabsList className="h-auto flex flex-wrap w-full gap-2 sm:gap-4 p-0 bg-transparent">
           <TabsTrigger
@@ -58,7 +50,7 @@ export function AdministracionTabs({ initialLogs, defaultTab = "auditoria" }: Ad
 
       <TabsContent value="auditoria" className="mt-6">
         <Suspense fallback={Fallback}>
-          <AuditoriaPageContent initialLogs={initialLogs} />
+          <AuditoriaPageContent initialLogs={[]} />
         </Suspense>
       </TabsContent>
 
@@ -79,3 +71,6 @@ export function AdministracionTabs({ initialLogs, defaultTab = "auditoria" }: Ad
     </Tabs>
   );
 }
+
+export const AdministracionTabs = withSuspense(AdministracionTabsInner, null);
+export default AdministracionTabs;

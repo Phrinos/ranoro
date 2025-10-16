@@ -1,9 +1,8 @@
-// src/app/(app)/inventario/page.tsx
 
 "use client";
-
+import { useRouter, useSearchParams } from "next/navigation";
+import { withSuspense } from "@/lib/withSuspense";
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2 } from "lucide-react";
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from '@/types'; 
@@ -26,213 +25,15 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { PurchaseFormValues } from './components/register-purchase-dialog';
-
-// Lazy load dialogs that are not immediately visible
-const RegisterPurchaseDialog = lazy(() => import('./components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
-const InventoryItemDialog = lazy(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
-const InventoryReportContent = lazy(() => import('./components/inventory-report-content').then(module => ({ default: module.InventoryReportContent })));
+import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
 
 
-// --- DashboardCards Component Logic (Integrated) ---
-const DashboardCards = ({ summaryData, onNewItemClick, onNewPurchaseClick }: { summaryData: any, onNewItemClick: () => void, onNewPurchaseClick: () => void }) => {
-  return (
-    <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Costo Total del Inventario</CardTitle><DollarSign className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalInventoryCost)}</div><p className="text-xs text-muted-foreground">Valor de venta: {formatCurrency(summaryData.totalInventorySellingPrice)}</p></CardContent></Card>
-        <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
-        <Card className="xl:col-span-1"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.productsCount + summaryData.servicesCount}</div><p className="text-xs text-muted-foreground">{summaryData.productsCount} Productos y {summaryData.servicesCount} Servicios.</p></CardContent></Card>
-        <div className="lg:col-span-2 xl:col-span-2 flex flex-col sm:flex-row gap-2">
-            <Button className="w-full flex-1" onClick={onNewItemClick}>
-                <PlusCircle className="mr-2 h-5 w-5" /> Registrar Ítem
-            </Button>
-            <Button className="w-full flex-1" variant="outline" onClick={onNewPurchaseClick}>
-                <PlusCircle className="mr-2 h-5 w-5" /> Registrar Compra
-            </Button>
-        </div>
-    </div>
-  );
-};
-
-
-// --- ProductosContent Component Logic (Integrated) ---
-const itemSortOptions = [
-    { value: 'default_order', label: 'Orden Personalizado' },
-    { value: 'name_asc', label: 'Nombre (A-Z)' },
-    { value: 'name_desc', label: 'Nombre (Z-A)' },
-    { value: 'quantity_asc', label: 'Stock (Menor a Mayor)' },
-    { value: 'quantity_desc', label: 'Stock (Mayor a Menor)' },
-    { value: 'sellingPrice_desc', label: 'Precio Venta (Mayor a Menor)' },
-];
-
-const getSortPriority = (item: InventoryItem) => {
-    if (item.isService) return 3;
-    if (item.quantity <= item.lowStockThreshold) return 1;
-    return 2;
-};
-
-const ProductosContent = ({ inventoryItems, onPrint }: { inventoryItems: InventoryItem[], onPrint: (items: InventoryItem[]) => void }) => {
+function PrintTicketDialogInner(props: any) {
   const router = useRouter();
+  const sp = useSearchParams();
 
-  const { filteredData, ...tableManager } = useTableManager<InventoryItem>({
-      initialData: inventoryItems,
-      searchKeys: ['name', 'sku', 'brand', 'category'],
-      dateFilterKey: '', // No date filter needed for inventory items
-      initialSortOption: 'default_order',
-      itemsPerPage: 100
-  });
-
-  const customSortedItems = React.useMemo(() => {
-    const items = [...tableManager.fullFilteredData];
-    if (tableManager.sortOption === 'default_order') {
-        return items.sort((a, b) => {
-            const priorityA = getSortPriority(a);
-            const priorityB = getSortPriority(b);
-            if (priorityA !== priorityB) {
-                return priorityA - priorityB;
-            }
-            return a.name.localeCompare(b.name);
-        });
-    }
-    return items;
-  }, [tableManager.fullFilteredData, tableManager.sortOption]);
-
-
-  return (
-    <div className="space-y-4">
-      <TableToolbar
-          {...tableManager}
-          sortOptions={itemSortOptions}
-          searchPlaceholder="Buscar por nombre, SKU, marca..."
-          actions={<Button onClick={() => onPrint(customSortedItems)} variant="outline" size="sm"><Printer className="mr-2 h-4 w-4" />Imprimir Lista</Button>}
-      />
-
-      <Card>
-        <CardContent className="pt-6">
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader className="bg-black text-white">
-                <TableRow>
-                    <TableHead className="text-white">Nombre</TableHead>
-                    <TableHead className="text-white hidden md:table-cell">Categoría</TableHead>
-                    <TableHead className="text-white hidden lg:table-cell">Proveedor</TableHead>
-                    <TableHead className="text-white">Tipo</TableHead>
-                    <TableHead className="text-right text-white">Stock</TableHead>
-                    <TableHead className="text-right text-white">Precio de Venta</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customSortedItems.map(item => {
-                    const isLowStock = !item.isService && item.quantity <= item.lowStockThreshold;
-                    return (
-                        <TableRow key={item.id} onClick={() => router.push(`/inventario/${item.id}`)} className="cursor-pointer hover:bg-muted/50">
-                            <TableCell className="font-medium">
-                                <p className={cn(isLowStock && "text-orange-600 font-bold")}>{item.name}</p>
-                                <p className="text-xs text-muted-foreground">{item.brand} ({item.sku || 'N/A'})</p>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">{item.category}</TableCell>
-                            <TableCell className="hidden lg:table-cell">{item.supplier}</TableCell>
-                            <TableCell><Badge variant={item.isService ? "outline" : "secondary"}>{item.isService ? 'Servicio' : 'Producto'}</Badge></TableCell>
-                            <TableCell className={cn("text-right font-semibold", isLowStock && "text-orange-600")}>{item.isService ? 'N/A' : item.quantity}</TableCell>
-                            <TableCell className="text-right font-bold text-primary">{formatCurrency(item.sellingPrice)}</TableCell>
-                        </TableRow>
-                    )
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-
-// --- CategoriasContent Component Logic (Integrated) ---
-const CategoriasContent = ({ categories, inventoryItems, onSaveCategory, onDeleteCategory }: { categories: InventoryCategory[], inventoryItems: InventoryItem[], onSaveCategory: (name: string, id?: string) => void, onDeleteCategory: (id: string) => void }) => {
-  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<InventoryCategory | null>(null);
-  const [currentCategoryName, setCurrentCategoryName] = useState('');
-  const { toast } = useToast();
-
-  const itemsPerCategory = useMemo(() => {
-    return categories.reduce((acc, category) => {
-        acc[category.name] = inventoryItems.filter(item => item.category === category.name).length;
-        return acc;
-    }, {} as Record<string, number>);
-  }, [categories, inventoryItems]);
-
-  const handleOpenDialog = (category: InventoryCategory | null = null) => {
-    setEditingCategory(category);
-    setCurrentCategoryName(category ? category.name : '');
-    setIsCategoryDialogOpen(true);
-  };
-  
-  const handleSave = () => {
-    const trimmedName = currentCategoryName.trim();
-    if (!trimmedName) {
-      toast({ title: "Nombre inválido", variant: "destructive" });
-      return;
-    }
-    onSaveCategory(trimmedName, editingCategory?.id);
-    setIsCategoryDialogOpen(false);
-  };
-  
-  return (
-    <div className="space-y-4">
-        <div className="flex justify-end">
-            <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nueva Categoría</Button>
-        </div>
-        <Card>
-            <CardContent className="pt-6">
-                <div className="rounded-md border">
-                    <Table>
-                        <TableHeader><TableRow><TableHead>Nombre de Categoría</TableHead><TableHead className="text-right"># de Productos</TableHead><TableHead className="text-right w-[100px]">Acciones</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            {categories.map(cat => (
-                                <TableRow key={cat.id}>
-                                    <TableCell className="font-medium">{cat.name}</TableCell>
-                                    <TableCell className="text-right">{itemsPerCategory[cat.name] || 0}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(cat)}><Edit className="h-4 w-4"/></Button>
-                                        <ConfirmDialog
-                                            triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
-                                            title={`¿Eliminar categoría "${cat.name}"?`}
-                                            description="Esta acción no se puede deshacer. Los productos de esta categoría no serán eliminados pero quedarán sin categoría."
-                                            onConfirm={() => onDeleteCategory(cat.id)}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>{editingCategory ? 'Editar' : 'Nueva'} Categoría</DialogTitle>
-                    <DialogDescription>Gestiona las categorías para organizar tu inventario.</DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-2">
-                    <Label htmlFor="category-name">Nombre de la Categoría</Label>
-                    <Input id="category-name" value={currentCategoryName} onChange={e => setCurrentCategoryName(capitalizeWords(e.target.value))} />
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleSave}>Guardar Categoría</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    </div>
-  );
-};
-
-
-// Main Page Component
-export default function InventarioPage() {
-  const searchParams = useSearchParams();
-  const tab = searchParams.get('tab');
+  const ticketId = sp.get("ticketId") ?? null;
+  const tab = sp.get('tab');
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState(tab || 'productos');
   
@@ -446,3 +247,6 @@ export default function InventarioPage() {
     </Suspense>
   );
 }
+
+export const PrintTicketDialog = withSuspense(PrintTicketDialogInner, null);
+export default PrintTicketDialog;

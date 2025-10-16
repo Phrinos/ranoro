@@ -61,14 +61,14 @@ export function ServiceItemsList({
     name: "serviceItems",
   });
 
-  const items = watch("serviceItems") || [];
-  const itemsSource = useMemo(() => items ?? [], [items]);
+  const items = watch("serviceItems");
+  const stableItems = useMemo(() => items ?? [], [items]);
 
   useEffect(() => {
     let mutated = false;
     let runningTotal = 0;
 
-    itemsSource.forEach((item: any, i) => {
+    stableItems.forEach((item: any, i) => {
       // sellingPrice
       if (typeof item?.sellingPrice === "string") {
         const n = toNumberLoose(item.sellingPrice);
@@ -110,7 +110,7 @@ export function ServiceItemsList({
     setValue("total", runningTotal, { shouldDirty: mutated, shouldValidate: false });
     // Algunos lugares consumen "Total" (T mayúscula); mantenlo también:
     setValue("Total" as any, runningTotal as any, { shouldDirty: mutated, shouldValidate: false });
-  }, [itemsSource, setValue]);
+  }, [stableItems, setValue]);
 
   return (
     <Card className="h-full flex flex-col">
