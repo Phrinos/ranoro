@@ -4,7 +4,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { startOfDay, endOfDay } from 'date-fns';
-import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { toZonedTime, formatInTimeZone, zonedTimeToUtc } from 'date-fns-tz';
 
 admin.initializeApp();
 
@@ -19,18 +19,22 @@ export const generateDailyRentalCharges = onSchedule(
   },
   async () => {
     logger.info('Starting daily rental charge generation...');
+    
+    // Obtiene la fecha y hora actual directamente en la zona horaria de México.
+    // Esto es crucial para asegurar que el día es el correcto (ej. 16 de Oct a las 3am es 16 de Oct).
+    const nowInMexico = toZonedTime(new Date(), TZ);
+    
+    // Calcula el inicio y fin del DÍA ACTUAL en la zona horaria de México.
+    const startOfTodayInMexico = startOfDay(nowInMexico);
+    const endOfTodayInMexico = endOfDay(nowInMexico);
 
-    const nowUtc = new Date();
-    const nowZoned = toZonedTime(nowUtc, TZ);
-
-    const dayStartZoned = startOfDay(nowZoned);
-    const dayEndZoned = endOfDay(nowZoned);
-
-    // Convert ZonedTime back to a UTC Date object for Firestore
-    const dayStartUtc = new Date(dayStartZoned.getTime());
-    const dayEndUtc = new Date(dayEndZoned.getTime());
-
-    const dateKey = formatInTimeZone(nowUtc, TZ, 'yyyy-MM-dd');
+    // Convierte estas fechas a objetos Date de UTC para consistencia en Firestore.
+    // Esta es la corrección clave para evitar el desfase.
+    const startOfTodayUtc = zonedTimeToUtc(startOfTodayInMexico, TZ);
+    const endOfTodayUtc = zonedTimeToUtc(endOfTodayInMexico, TZ);
+    
+    // El dateKey se formatea a partir de la fecha correcta en México.
+    const dateKey = formatInTimeZone(nowInMexico, TZ, 'yyyy-MM-dd');
 
     const activeDriversSnap = await db
       .collection('drivers')
@@ -68,10 +72,11 @@ export const generateDailyRentalCharges = onSchedule(
           vehicleId,
           amount: dailyRentalCost,
           vehicleLicensePlate: vehicle?.licensePlate || '',
-          date: admin.firestore.Timestamp.fromDate(nowUtc),
+          // El Timestamp se crea a partir de la fecha correcta de inicio del día en UTC.
+          date: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
           dateKey,
-          dayStartUtc: admin.firestore.Timestamp.fromDate(dayStartUtc),
-          dayEndUtc: admin.firestore.Timestamp.fromDate(dayEndUtc),
+          dayStartUtc: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
+          dayEndUtc: admin.firestore.Timestamp.fromDate(endOfTodayUtc),
         });
         logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
       } catch (err: any) {
