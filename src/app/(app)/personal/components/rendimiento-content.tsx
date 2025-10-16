@@ -3,16 +3,16 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { ServiceRecord, User } from '@/types';
-import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval, isValid, isSameDay } from "date-fns";
+import type { ServiceRecord, User, InventoryItem } from '@/types';
+import { format, startOfMonth, endOfMonth, isWithinInterval, isValid } from "date-fns";
 import { es } from 'date-fns/locale';
 import { cn, formatCurrency } from "@/lib/utils";
-import { serviceService, adminService } from '@/lib/services';
+import { serviceService, adminService, inventoryService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from "@/components/ui/badge";
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
-
+import { calcEffectiveProfit } from '@/lib/money-helpers';
 
 interface DateRange {
   from: Date | undefined;
@@ -33,6 +33,7 @@ const getRoleBadgeVariant = (role: string): "white" | "lightGray" | "outline" | 
 export function RendimientoPersonalContent() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
@@ -44,6 +45,7 @@ export function RendimientoPersonalContent() {
     setIsLoading(true);
     const unsubs: (() => void)[] = [
       adminService.onUsersUpdate(setAllUsers),
+      inventoryService.onItemsUpdate(setInventoryItems),
       serviceService.onServicesUpdate((services) => {
         setAllServices(services);
         setIsLoading(false);
@@ -68,27 +70,45 @@ export function RendimientoPersonalContent() {
     
     return activeUsers.map(user => {
         let generatedRevenue = 0;
-        let commission = 0;
+        let totalCommission = 0;
+        const commissionRate = user.commissionRate || 0;
 
+        // Iterar sobre los servicios completados para calcular ingresos y comisiones
         for (const service of completedServicesInRange) {
-            
-            // 1. Sumar comisión como ASESOR (si fue guardada)
+            // Verificar si el usuario fue el asesor de este servicio
             if (service.serviceAdvisorId === user.id) {
-                generatedRevenue += service.total || 0;
-                commission += service.serviceAdvisorCommission || 0;
-            }
+                const serviceTotal = (service.totalCost || 0);
+                generatedRevenue += serviceTotal;
+                
+                // La comisión del asesor se calcula sobre la ganancia total del servicio
+                if (commissionRate > 0) {
+                    const serviceProfit = calcEffectiveProfit(service, inventoryItems);
+                    if (serviceProfit > 0) {
+                        totalCommission += serviceProfit * (commissionRate / 100);
+                    }
+                }
+            } else {
+                // Si no es el asesor, verificar si fue técnico de algún item
+                for (const item of service.serviceItems || []) {
+                    if (item.technicianId === user.id) {
+                        const itemPrice = item.sellingPrice || 0;
+                        generatedRevenue += itemPrice;
 
-            // 2. Sumar comisión como TÉCNICO (si fue guardada)
-            for (const item of service.serviceItems || []) {
-                if (item.technicianId === user.id) {
-                    generatedRevenue += item.sellingPrice || 0;
-                    commission += item.technicianCommission || 0;
+                        // La comisión del técnico se calcula sobre la ganancia del item específico
+                        if (commissionRate > 0) {
+                             const suppliesCost = inventoryService.getSuppliesCostForItem(item, inventoryItems);
+                             const itemProfit = itemPrice - suppliesCost;
+                             if (itemProfit > 0) {
+                                totalCommission += itemProfit * (commissionRate / 100);
+                             }
+                        }
+                    }
                 }
             }
         }
         
         const baseSalary = user.monthlySalary || 0;
-        const totalSalary = baseSalary + commission;
+        const totalSalary = baseSalary + totalCommission;
 
         return {
           id: user.id,
@@ -96,12 +116,12 @@ export function RendimientoPersonalContent() {
           role: user.role,
           baseSalary,
           generatedRevenue,
-          commission,
+          commission: totalCommission,
           totalSalary
         };
       })
       .sort((a,b) => b.totalSalary - a.totalSalary);
-  }, [dateRange, allUsers, allServices]);
+  }, [dateRange, allUsers, allServices, inventoryItems]);
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
   

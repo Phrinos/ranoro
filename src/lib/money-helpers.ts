@@ -1,5 +1,7 @@
+
 // src/lib/money-helpers.ts
 import type { ServiceRecord, Payment, InventoryItem, SaleReceipt } from "@/types";
+import { inventoryService } from './services/inventory.service';
 
 export const CARD_RATE = 0.041;  // 4.1%
 export const MSI_RATE  = 0.12;   // 12%
@@ -25,14 +27,10 @@ export function calcCardCommission(total: number, payments?: Payment[], fallback
 
 /** Ganancia efectiva: (total de la venta) - (costo de insumos) - (comisión de tarjeta) */
 export function calcEffectiveProfit(s: ServiceRecord, allInventory: InventoryItem[] = []): number {
-  const total    = calcTotalFromItems(s.serviceItems);
+  const total = calcTotalFromItems(s.serviceItems);
   
   const supplies = (s.serviceItems ?? []).reduce((acc, item) => {
-    return acc + (item.suppliesUsed ?? []).reduce((itemSum, supply) => {
-        const inventoryItem = allInventory.find(i => i.id === (supply as any).supplyId);
-        const unitCost = inventoryItem?.unitPrice ?? supply.unitPrice ?? 0;
-        return itemSum + (unitCost * supply.quantity);
-    }, 0);
+    return acc + inventoryService.getSuppliesCostForItem(item, allInventory);
   }, 0);
 
 
