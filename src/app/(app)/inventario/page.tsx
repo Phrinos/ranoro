@@ -59,8 +59,6 @@ import { es } from 'date-fns/locale';
 import type { PurchaseFormValues } from './compras/components/register-purchase-dialog';
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
-
 
 const RegisterPurchaseDialog = dynamic(() => import('./compras/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = dynamic(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
@@ -128,7 +126,6 @@ const ProductosContent: React.FC<{
               />
             </div>
             <div className="flex w-full sm:w-auto gap-2">
-              <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
               <Button onClick={() => onPrint(fullFilteredData)} variant="outline" size="icon" className="bg-white h-10 w-10 flex-shrink-0">
                   <Printer className="h-4 w-4" />
               </Button>
@@ -147,7 +144,7 @@ const ProductosContent: React.FC<{
             </TableHeader>
             <TableBody>
               {paginatedData.map(item => (
-                <TableRow key={item.id} onClick={() => onEditItem(item)} className="cursor-pointer">
+                <TableRow key={item.id} onClick={() => router.push(`/inventario/${item.id}`)} className="cursor-pointer">
                   <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell>
                     {item.isService ? (
@@ -341,8 +338,8 @@ function PageInner() {
   }, []);
 
 
-  const handleOpenItemDialog = useCallback((item: InventoryItem | null = null) => {
-    setEditingItem(item);
+  const handleOpenItemDialog = useCallback((item?: Partial<InventoryItem> | null) => {
+    setEditingItem(item || null);
     setIsItemDialogOpen(true);
   }, []);
   
@@ -441,7 +438,7 @@ function PageInner() {
         
         <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={handleOpenItemDialog}
+          onNewItemClick={() => handleOpenItemDialog()}
           onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
         
@@ -504,7 +501,7 @@ function PageInner() {
             open={isItemDialogOpen}
             onOpenChange={setIsItemDialogOpen}
             onSave={editingItem ? handleItemUpdated : handleSaveItem}
-            onDelete={editingItem ? () => handleDeleteItem(editingItem.id!) : undefined}
+            onDelete={editingItem?.id ? () => handleDeleteItem(editingItem!.id!) : undefined}
             item={editingItem}
             categories={categories}
             suppliers={suppliers}
