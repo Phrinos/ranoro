@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { ServiceRecord, User, InventoryItem } from '@/types';
-import { format, startOfMonth, endOfMonth, isWithinInterval, isValid } from "date-fns";
+import { format, startOfMonth, endOfMonth, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { cn, formatCurrency } from "@/lib/utils";
 import { serviceService, adminService, inventoryService } from '@/lib/services';
@@ -90,8 +90,8 @@ export function RendimientoPersonalContent() {
             } else {
                 // Si no es el asesor, verificar si fue técnico de algún item
                 for (const item of service.serviceItems || []) {
-                    if (item.technicianId === user.id) {
-                        const itemPrice = item.sellingPrice || 0;
+                    if ((item as any).technicianId === user.id) {
+                        const itemPrice = (item as any).sellingPrice || 0;
                         generatedRevenue += itemPrice;
 
                         // La comisión del técnico se calcula sobre la ganancia del item específico
