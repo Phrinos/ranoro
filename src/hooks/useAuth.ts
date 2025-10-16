@@ -16,7 +16,9 @@ export function useAuth() {
     // Limpia inmediatamente el estado local para una respuesta de UI rápida
     setCurrentUser(null);
     localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
-    await signOut(auth as Auth);
+    if (auth) {
+        await signOut(auth);
+    }
     // Redirigir al login ya lo hace el useEffect de AppClientLayout
     // No es necesario hacerlo aquí.
   }, []);
@@ -36,7 +38,11 @@ export function useAuth() {
     }
     
     // El listener de Firebase Auth es la fuente de verdad definitiva.
-    const unsubscribeAuth = onAuthStateChanged(auth as Auth, (firebaseUser) => {
+    if (!auth) {
+        setIsLoading(false);
+        return;
+    }
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         // Usuario autenticado. Escucha su documento en Firestore.
         const userDocRef = doc(db, 'users', firebaseUser.uid);

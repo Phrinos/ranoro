@@ -12,7 +12,7 @@ import {
   query,
   getDocs,
   where,
-  WriteBatch,
+  type WriteBatch,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';

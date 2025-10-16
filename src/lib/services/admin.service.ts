@@ -14,7 +14,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { User, AppRole, AuditLog } from "@/types";
+import type { User, AppRole, AuditLog, AuditLogAction } from "@/types";
 import { cleanObjectForFirestore, parseDate } from '../forms';
 import { serverTimestamp } from 'firebase/firestore';
 
@@ -25,7 +25,7 @@ import { serverTimestamp } from 'firebase/firestore';
  * @param details - Contextual details about the action.
  */
 export const logAudit = async (
-  actionType: AuditLog['actionType'],
+  actionType: AuditLogAction,
   description: string,
   details: Partial<Omit<AuditLog, 'id' | 'createdAt' | 'actionType' | 'description'>> = {}
 ): Promise<void> => {
@@ -35,10 +35,10 @@ export const logAudit = async (
   }
   const newLog: Omit<AuditLog, "id"> = {
     ...details,
-    actionType,
+    action: actionType,
     description,
     createdAt: serverTimestamp(),
-  };
+  } as Omit<AuditLog, 'id'>;
   try {
     await addDoc(collection(db, 'auditLogs'), newLog as any);
   } catch (error) {
@@ -232,6 +232,7 @@ const updateUserProfile = async (user: Partial<User> & { id: string }): Promise<
 };
 
 const getDocById = async (col: string, id: string) => {
+    if (!db) return null;
     const snap = await getDoc(doc(db, col, id));
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };

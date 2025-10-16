@@ -17,8 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Vehicle } from "@/types";
-import { vehicleFormSchema } from '@/schemas/vehicle-form-schema';
-export type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
+import { vehicleFormSchema, type VehicleFormValues } from '@/schemas/vehicle-form-schema';
 import { capitalizeWords } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,8 +42,6 @@ interface VehicleFormProps {
   id?: string;
   onSubmit: (values: VehicleFormValues) => Promise<void>;
 }
-
-type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
 
 export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
   const [vehicleDb, setVehicleDb] = useState<VehicleMake[]>([]);

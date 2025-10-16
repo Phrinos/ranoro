@@ -10,7 +10,6 @@ import { Loader2 } from 'lucide-react';
 import { inventoryService, saleService, serviceService, cashService } from '@/lib/services';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { InformePosContent } from '../components/informe-pos-content';
-import { CorteDeCajaContent } from '../components/corte-de-caja-content';
 import { Button } from "@/components/ui/button";
 
 function PageInner() {
@@ -68,7 +67,6 @@ function PageInner() {
     
   const tabs = [
     { value: "resumen", label: "Resumen de Ventas", content: <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory} /> },
-    { value: "corte", label: "Corte de Caja", content: <CorteDeCajaContent allSales={allSales} cashTransactions={cashTransactions} initialBalance={initialBalance} onUpdateBalance={handleUpdateBalance} /> },
   ];
 
   return (
@@ -82,4 +80,6 @@ function PageInner() {
   );
 }
 
-export default withSuspense(PageInner, null);
+export default function Page(){
+    return <PageInner />
+}

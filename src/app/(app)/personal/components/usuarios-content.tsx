@@ -23,7 +23,7 @@ import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
 export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: AppUser | null, initialUsers: AppUser[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
-  const users = initialUsers;
+  const users: AppUser[] = initialUsers;
   const availableRoles = initialRoles;
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -84,7 +84,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     };
     
     try {
-        await adminService.saveUser(userData, currentUser);
+        await adminService.saveUser(userData as any, currentUser);
         
         toast({ title: `Usuario ${isEditing ? 'actualizado' : 'creado'}` });
         setIsFormOpen(false);

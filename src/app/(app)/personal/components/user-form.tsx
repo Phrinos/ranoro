@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFormContext, Controller } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -27,7 +27,7 @@ import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { userFormSchema, type UserFormValues } from "@/schemas/user-form-schema";
 import { NewCalendar } from "@/components/ui/calendar";
-
+import type { CalendarProps } from "react-calendar";
 
 interface UserFormProps {
   id?: string;
@@ -101,9 +101,11 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                                                 <Checkbox
                                                     checked={field.value?.includes(item.id)}
                                                     onCheckedChange={(checked) => {
-                                                        return checked
-                                                        ? field.onChange([...(field.value || []), item.id])
-                                                        : field.onChange(field.value?.filter((value) => value !== item.id))
+                                                        const currentValue = Array.isArray(field.value) ? field.value : [];
+                                                        const newValue = checked
+                                                            ? [...currentValue, item.id]
+                                                            : currentValue.filter((v: string) => v !== item.id);
+                                                        field.onChange(newValue);
                                                     }}
                                                 />
                                             </FormControl>
@@ -121,45 +123,46 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
          <FormField<UserFormValues>
           control={form.control}
           name="hireDate"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Fecha de Contratación</FormLabel>
-              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal bg-card text-foreground",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP", { locale: es })
-                      ) : (
-                        <span>Seleccione una fecha</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <NewCalendar
-                    locale="es-MX"
-                    onChange={(date: any) => {
-                      if (date) {
-                        field.onChange(date);
-                      }
-                      setIsCalendarOpen(false);
-                    }}
-                    value={field.value}
-                    maxDate={new Date()}
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const valueAsDate = field.value instanceof Date ? field.value : field.value ? new Date(field.value as any) : null;
+            const onCalendarChange: CalendarProps['onChange'] = (value) => {
+              const picked = Array.isArray(value) ? (value[0] as Date | null) : (value as Date | null);
+              field.onChange(picked ?? null);
+            };
+            return (
+              <FormItem className="flex flex-col">
+                <FormLabel>Fecha de Contratación</FormLabel>
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal bg-card text-foreground",
+                          !valueAsDate && "text-muted-foreground"
+                        )}
+                      >
+                        {valueAsDate ? format(valueAsDate, "PPP", { locale: es }) : <span>Seleccione una fecha</span>}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <NewCalendar
+                      onChange={(v: any) => {
+                        onCalendarChange(v);
+                        setIsCalendarOpen(false);
+                      }}
+                      value={valueAsDate as any}
+                      locale="es-MX"
+                      maxDate={new Date()}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
         <div className="grid grid-cols-2 gap-4">
             <FormField<UserFormValues> control={form.control} name="monthlySalary" render={({ field }) => (

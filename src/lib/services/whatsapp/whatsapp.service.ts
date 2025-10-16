@@ -35,7 +35,7 @@ export const sendConfirmationMessage = async (service: ServiceRecord): Promise<A
     body: [
       { name: 'customer_name', value: (service as any).customer.name },
       { name: 'service_date', value: new Date(service.serviceDate).toLocaleDateString('es-MX') },
-      { name: 'workshop_name', value: workshopInfo.name },
+      { name: 'workshop_name', value: workshopInfo?.name ?? '' },
     ],
   });
 

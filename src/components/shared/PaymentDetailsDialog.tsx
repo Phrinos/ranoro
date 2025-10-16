@@ -12,6 +12,7 @@ import { paymentDetailsSchema, PaymentDetailsFormValues } from "@/schemas/paymen
 import { useToast } from "@/hooks/use-toast";
 import { NextServiceInfoCard } from '@/app/(app)/servicios/components/NextServiceInfoCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { parseISO } from 'date-fns';
 
 interface PaymentDetailsDialogProps {
   open: boolean;
@@ -69,7 +70,7 @@ export function PaymentDetailsDialog({
     mode: 'onChange'
   });
 
-  const { handleSubmit, formState: { isSubmitting }, reset } = methods;
+  const { handleSubmit, formState: { isSubmitting }, reset, setValue } = methods;
 
   useEffect(() => {
     if (open && record) {
@@ -147,7 +148,16 @@ export function PaymentDetailsDialog({
                 {recordType === 'service' && isCompletionFlow && (
                   <NextServiceInfoCard
                     nextServiceInfo={methods.watch('nextServiceInfo') as any}
-                    onUpdate={(info) => methods.setValue('nextServiceInfo', info, { shouldDirty: true })}
+                    onUpdate={(info) => {
+                      methods.setValue(
+                        "nextServiceInfo",
+                        {
+                          date: typeof info.date === "string" ? parseISO(info.date) : info.date ?? null,
+                          mileage: info.mileage ?? null,
+                        } as any,
+                        { shouldDirty: true }
+                      );
+                    }}
                     isSubmitting={isSubmitting}
                     currentMileage={vehicle?.currentMileage} 
                   />

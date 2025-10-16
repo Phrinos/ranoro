@@ -82,7 +82,7 @@ const addRentalPayment = async (
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
     const currentUser = authUserString ? JSON.parse(authUserString) : null;
     
-    const paymentData: Omit<RentalPayment, 'id'> = {
+    const paymentData = {
         driverId: driver.id,
         driverName: driver.name,
         vehicleLicensePlate: vehicle.licensePlate,
