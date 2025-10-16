@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/page.tsx
 "use client";
 
@@ -60,7 +61,9 @@ function PageInner() {
       if (authUserString) setCurrentUser(JSON.parse(authUserString));
       const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
       if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-    } catch {}
+    } catch (e) {
+      // Ignore parsing errors
+    }
 
     const unsubs = [
       saleService.onSalesUpdate(setAllSales),

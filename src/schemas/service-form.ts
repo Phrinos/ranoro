@@ -20,6 +20,18 @@ export const serviceItemSchema = z.object({
   technicianCommission: z.coerce.number().optional(),
 });
 
+/** Nuevo: esquema para reportes fotográficos */
+export const photoReportSchema = z.object({
+  title: z.string().default(""),
+  description: z.string().optional(),
+  /** URLs (Firebase Storage) de las fotos de este bloque */
+  photos: z.array(z.string()).default([]),
+});
+export type PhotoReport = z.infer<typeof photoReportSchema>;
+
+/** Opcional pero útil: inspección/seguridad por claves con listas de fotos */
+export const safetyInspectionSchema = z.record(z.array(z.string())).default({});
+
 export const serviceFormSchema = z.object({
   id: z.string().optional(),
   publicId: z.string().optional(),
@@ -34,6 +46,10 @@ export const serviceFormSchema = z.object({
   deliveryDateTime: z.date().nullable().optional(),
 
   serviceItems: z.array(serviceItemSchema).default([]),
+
+  /** Nuevos campos para tu tab de fotos */
+  photoReports: z.array(photoReportSchema).default([]),
+  safetyInspection: safetyInspectionSchema,
 
   serviceAdvisorId: z.string().optional().default(""),
   serviceAdvisorName: z.string().optional().default(""),

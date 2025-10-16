@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, ShoppingCart, BrainCircuit, Loader2 } from "lucide-react";
 import type { InventoryItem, InventoryCategory, Supplier, ServiceTypeRecord, User } from "@/types";
 import { ServiceItemCard } from "./ServiceItemCard";
-import type { ServiceFormValues } from "@/schemas/service-form";
+import type { ServiceFormValues, ServiceItem } from "@/schemas/service-form";
 import { nanoid } from "nanoid";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,10 +49,9 @@ export function ServiceItemsList({
 }: ServiceItemsListProps) {
   const { control, setValue, watch } = useFormContext<ServiceFormValues>();
 
-  // TIPADO CORRECTO PARA EVITAR 'never'
-  const { fields, append, remove } = useFieldArray<ServiceFormValues, "serviceItems">({
+  const { fields, append, remove } = useFieldArray<ServiceFormValues, 'serviceItems'>({
     control,
-    name: "serviceItems",
+    name: 'serviceItems',
   });
 
   const items = watch("serviceItems");
@@ -62,7 +61,7 @@ export function ServiceItemsList({
     let mutated = false;
     let runningTotal = 0;
 
-    stableItems.forEach((item: any, i: number) => {
+    stableItems.forEach((item: any, i) => {
       if (typeof item?.sellingPrice === "string") {
         const n = toNumberLoose(item.sellingPrice);
         (setValue as any)(`serviceItems.${i}.sellingPrice`, n, { shouldDirty: true, shouldValidate: false });
@@ -80,17 +79,19 @@ export function ServiceItemsList({
       const supplies = Array.isArray(item?.suppliesUsed) ? item.suppliesUsed : [];
       supplies.forEach((s: any, j: number) => {
         if (typeof s?.unitCost === "string") {
-          (setValue as any)(`serviceItems.${i}.suppliesUsed.${j}.unitCost`, toNumberLoose(s.unitCost), {
-            shouldDirty: true,
-            shouldValidate: false,
-          });
+          (setValue as any)(
+            `serviceItems.${i}.suppliesUsed.${j}.unitCost`,
+            toNumberLoose(s.unitCost as any),
+            { shouldDirty: true, shouldValidate: false }
+          );
           mutated = true;
         }
         if (typeof s?.quantity === "string") {
-          (setValue as any)(`serviceItems.${i}.suppliesUsed.${j}.quantity`, toNumberLoose(s.quantity), {
-            shouldDirty: true,
-            shouldValidate: false,
-          });
+          (setValue as any)(
+            `serviceItems.${i}.suppliesUsed.${j}.quantity`,
+            toNumberLoose(s.quantity),
+            { shouldDirty: true, shouldValidate: false }
+          );
           mutated = true;
         }
       });
@@ -146,7 +147,7 @@ export function ServiceItemsList({
                     name: "",
                     sellingPrice: undefined,
                     suppliesUsed: [],
-                  } as any)
+                  } as ServiceItem)
                 }
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -184,7 +185,7 @@ export function ServiceItemsList({
                     {...field}
                     className="min-h-[100px] bg-card"
                     disabled={isReadOnly}
-                    value={typeof field.value === "string" ? field.value : ""}
+                    value={typeof field.value === 'string' ? field.value : ""}
                   />
                 </FormControl>
               </FormItem>

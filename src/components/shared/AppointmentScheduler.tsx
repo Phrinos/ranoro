@@ -70,6 +70,7 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
       await onConfirm(finalDateTime);
       onOpenChange(false);
     } catch(e) {
+      // Errors are handled by the caller
     } finally {
       setIsSubmitting(false);
     }

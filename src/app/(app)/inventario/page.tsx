@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
@@ -31,8 +30,7 @@ import type {
   Supplier,
 } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { inventoryService } from "@/lib/services";
+import { inventoryService, purchaseService } from "@/lib/services";
 import {
   Dialog,
   DialogContent,
@@ -50,14 +48,12 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import type { PurchaseFormValues } from './compras/components/register-purchase-dialog';
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+import type { TabConfig } from "@/components/layout/tabbed-page-layout";
 
 const RegisterPurchaseDialog = dynamic(() => import('./compras/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = dynamic(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
@@ -105,6 +101,7 @@ const ProductosContent: React.FC<{
     initialData: inventoryItems,
     searchKeys: ['name', 'sku', 'brand', 'category'],
     initialSortOption: 'name_asc',
+    dateFilterKey: 'createdAt',
   });
 
   const handleSort = (key: string) => {
@@ -353,7 +350,7 @@ function PageInner() {
   const handleDeleteItem = async (id: string) => {
     await inventoryService.deleteItem(id);
     toast({ title: "Producto Eliminado", variant: "destructive" });
-    setIsItemDialogOpen(false); // Cierra el diálogo después de eliminar
+    setIsItemDialogOpen(false);
   };
 
   const handleSavePurchase = useCallback(
@@ -428,9 +425,9 @@ function PageInner() {
     );
   }
 
-  const tabsConfig = [
-    { value: "productos", label: "Productos y Servicios" },
-    { value: "categorias", label: "Categorías" },
+  const tabsConfig: TabConfig[] = [
+    { value: "productos", label: "Productos y Servicios", content: <ProductosContent inventoryItems={inventoryItems} onPrint={handlePrint} onEditItem={handleOpenItemDialog} onDeleteItem={handleDeleteItem} /> },
+    { value: "categorias", label: "Categorías", content: <CategoriasContent categories={categories} inventoryItems={inventoryItems} onSaveCategory={handleSaveCategory} onDeleteCategory={handleDeleteCategory} /> },
   ];
 
   return (
@@ -446,31 +443,7 @@ function PageInner() {
               <Button onClick={() => setIsRegisterPurchaseOpen(true)}>Registrar Compra</Button>
             </div>
           }
-        >
-        </TabbedPageLayout>
-
-        <DashboardCards 
-          summaryData={inventorySummary}
-          onNewItemClick={handleOpenItemDialog}
-          onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
-        
-        {activeTab === 'productos' && (
-          <ProductosContent 
-              inventoryItems={inventoryItems}
-              onPrint={handlePrint}
-              onEditItem={handleOpenItemDialog}
-              onDeleteItem={handleDeleteItem}
-          />
-        )}
-        {activeTab === 'categorias' && (
-          <CategoriasContent 
-              categories={categories} 
-              inventoryItems={inventoryItems} 
-              onSaveCategory={handleSaveCategory}
-              onDeleteCategory={handleDeleteCategory}
-          />
-        )}
       
       <Suspense fallback={null}>
           {isRegisterPurchaseOpen && (
@@ -523,4 +496,3 @@ function PageInner() {
 }
 
 export default withSuspense(PageInner, null);
-

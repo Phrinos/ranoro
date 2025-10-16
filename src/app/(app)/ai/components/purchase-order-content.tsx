@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { PurchaseRecommendationOutput } from "@/ai/flows/purchase-recommendation-flow";
@@ -25,7 +26,9 @@ export const PurchaseOrderContent = React.forwardRef<HTMLDivElement, PurchaseOrd
       try {
         const stored = localStorage.getItem("workshopTicketInfo");
         if (stored) setWorkshopInfo({ ...initialWorkshopInfo, ...JSON.parse(stored) });
-      } catch {}
+      } catch (e) {
+        // Ignore parsing errors
+      }
     }, []);
 
     const now = new Date();

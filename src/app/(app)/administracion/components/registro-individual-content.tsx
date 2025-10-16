@@ -231,10 +231,9 @@ export function RegistroIndividualContent() {
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          {/* Quitar props no soportados: sin 'mode' ni 'locale' */}
                           <NewCalendar
-                            selected={field.value}
-                            onSelect={(date: any) => {
+                            value={field.value}
+                            onChange={(date: any) => {
                               field.onChange(date);
                               setIsCalendarOpen(false);
                             }}

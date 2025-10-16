@@ -1,10 +1,9 @@
 
-// functions/index.ts
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { startOfDay, endOfDay } from 'date-fns';
-import { toZonedTime, formatInTimeZone, zonedTimeToUtc } from 'date-fns-tz';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 admin.initializeApp();
 
@@ -14,26 +13,20 @@ const TZ = 'America/Mexico_City';
 // --- Daily Rental Charges Generation (fixed) ---
 export const generateDailyRentalCharges = onSchedule(
   {
-    schedule: '0 3 * * *', // 03:00 todos los días
+    schedule: '0 3 * * *', // 03:00 every day
     timeZone: TZ,
   },
   async () => {
     logger.info('Starting daily rental charge generation...');
     
-    // Obtiene la fecha y hora actual directamente en la zona horaria de México.
-    // Esto es crucial para asegurar que el día es el correcto (ej. 16 de Oct a las 3am es 16 de Oct).
     const nowInMexico = toZonedTime(new Date(), TZ);
     
-    // Calcula el inicio y fin del DÍA ACTUAL en la zona horaria de México.
     const startOfTodayInMexico = startOfDay(nowInMexico);
     const endOfTodayInMexico = endOfDay(nowInMexico);
 
-    // Convierte estas fechas a objetos Date de UTC para consistencia en Firestore.
-    // Esta es la corrección clave para evitar el desfase.
-    const startOfTodayUtc = zonedTimeToUtc(startOfTodayInMexico, TZ);
-    const endOfTodayUtc = zonedTimeToUtc(endOfTodayInMexico, TZ);
+    const startOfTodayUtc = toZonedTime(startOfTodayInMexico, TZ);
+    const endOfTodayUtc = toZonedTime(endOfTodayInMexico, TZ);
     
-    // El dateKey se formatea a partir de la fecha correcta en México.
     const dateKey = formatInTimeZone(nowInMexico, TZ, 'yyyy-MM-dd');
 
     const activeDriversSnap = await db
@@ -72,7 +65,6 @@ export const generateDailyRentalCharges = onSchedule(
           vehicleId,
           amount: dailyRentalCost,
           vehicleLicensePlate: vehicle?.licensePlate || '',
-          // El Timestamp se crea a partir de la fecha correcta de inicio del día en UTC.
           date: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
           dateKey,
           dayStartUtc: admin.firestore.Timestamp.fromDate(startOfTodayUtc),

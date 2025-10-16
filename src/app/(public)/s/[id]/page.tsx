@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -93,7 +94,9 @@ export default function PublicServicePage() {
     try {
       const stored = localStorage.getItem("workshopTicketInfo");
       if (stored) setWorkshopInfo(JSON.parse(stored));
-    } catch {}
+    } catch (e) {
+      // Ignore parsing errors
+    }
 
     if (!publicId) {
       setError("Enlace inválido.");
