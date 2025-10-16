@@ -1,11 +1,11 @@
 // src/app/(app)/servicios/components/PaymentDetailsDialog.tsx
 "use client";
 
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PaymentSection } from "./PaymentSection";
-import type { ServiceRecord, SaleReceipt, Payment } from "@/types";
+import type { ServiceRecord, SaleReceipt } from "@/types";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { paymentDetailsSchema, PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
@@ -145,7 +145,10 @@ export function PaymentDetailsDialog({
               <div className="space-y-6 p-4">
                 <PaymentSection totalAmount={toNumber(totalAmount)} />
                 {recordType === 'service' && isCompletionFlow && (
-                  <NextServiceInfoCard 
+                  <NextServiceInfoCard
+                    nextServiceInfo={methods.watch('nextServiceInfo') as any}
+                    onUpdate={(info) => methods.setValue('nextServiceInfo', info, { shouldDirty: true })}
+                    isSubmitting={isSubmitting}
                     currentMileage={vehicle?.currentMileage} 
                   />
                 )}

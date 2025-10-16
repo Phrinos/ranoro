@@ -21,7 +21,7 @@ interface SignatureDialogProps {
 }
 
 export function SignatureDialog({ open, onOpenChange, onSave }: SignatureDialogProps) {
-  const sigCanvas = useRef<SignatureCanvas>(null);
+  const sigCanvas = useRef<any>(null);
 
   const clear = () => {
     sigCanvas.current?.clear();
@@ -53,8 +53,7 @@ export function SignatureDialog({ open, onOpenChange, onSave }: SignatureDialogP
             penColor='black'
             canvasProps={{ 
               className: 'w-full h-full',
-              willreadfrequently: "true"
-            } as any}
+            }}
           />
         </div>
         <DialogFooter className="gap-2 sm:gap-0">

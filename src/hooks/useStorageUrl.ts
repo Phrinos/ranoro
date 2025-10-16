@@ -22,7 +22,7 @@ export function useStorageUrl(gsPath: string | null | undefined): string | null 
 
     async function fetchUrl() {
       try {
-        const storageRef = ref(storage, gsPath);
+        const storageRef = ref(storage, gsPath as string);
         const downloadUrl = await getDownloadURL(storageRef);
         if (isMounted) {
           setUrl(downloadUrl);

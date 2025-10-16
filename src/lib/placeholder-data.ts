@@ -35,7 +35,7 @@ export const placeholderAppRoles: AppRole[] = [
     permissions: [
       'dashboard:view',
       'services:create', 'services:edit', 'services:view_history',
-      'inventory:manage', 'inventory:view',
+      'inventory:manage', 'inventory:view_public_info',
       'pos:create_sale', 'pos:view_sales',
       'fleet:manage', 'rentals:view', 'rentals:manage',
       'finances:view_report',
@@ -55,7 +55,7 @@ export const placeholderAppRoles: AppRole[] = [
       "dashboard:view",
       "services:edit",
       "services:view_history",
-      "inventory:view",
+      "inventory:view_public_info",
     ],
   },
   {
@@ -65,7 +65,7 @@ export const placeholderAppRoles: AppRole[] = [
       "dashboard:view",
       "services:create",
       "services:view_history",
-      "inventory:view",
+      "inventory:view_public_info",
       "pos:create_sale",
       "pos:view_sales",
       "vehicles:manage"

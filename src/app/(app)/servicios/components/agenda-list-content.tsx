@@ -2,13 +2,13 @@
 
 "use client";
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import { ServiceAppointmentCard } from './ServiceAppointmentCard';
 import type { ServiceRecord, Vehicle, User } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { serviceService } from '@/lib/services';
-import { isToday, isTomorrow, isAfter, isBefore, addDays, format, startOfDay, isSameDay, compareDesc } from 'date-fns';
+import { isToday, isTomorrow, isAfter, isBefore, addDays, format, startOfDay, isSameDay, compareDesc, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { capitalizeWords } from '@/lib/utils';

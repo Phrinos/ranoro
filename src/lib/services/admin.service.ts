@@ -26,12 +26,7 @@ import { serverTimestamp } from 'firebase/firestore';
 export const logAudit = async (
   actionType: AuditLog['actionType'],
   description: string,
-  details: { 
-    entityType?: AuditLog['entityType']; 
-    entityId?: string; 
-    userId: string; 
-    userName: string; 
-  }
+  details: any = {}
 ): Promise<void> => {
   if (!db) {
     console.error("Audit log failed: Database not initialized.");
@@ -97,7 +92,7 @@ const onAuditLogsUpdate = (callback: (logs: AuditLog[]) => void): (() => void) =
     if (!db) return () => {};
     const q = query(collection(db, 'auditLogs'), orderBy("createdAt", "desc"));
     return onSnapshot(q, (snapshot) => {
-        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog)));
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), date: (doc.data().createdAt as Timestamp)?.toDate().toISOString() ?? new Date().toISOString() } as AuditLog)));
     }, (error) => console.error("Error listening to audit logs:", error instanceof Error ? error.message : String(error)));
 };
 

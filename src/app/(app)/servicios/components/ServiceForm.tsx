@@ -46,7 +46,7 @@ export function ServiceForm({
   suppliers: Supplier[];
   serviceHistory: ServiceRecord[];
   onSave: (values: ServiceFormValues) => Promise<ServiceRecord | void>;
-  onComplete?: (values: ServiceFormValues) => void; 
+  onComplete?: () => void; 
   onSaveSuccess?: (s: ServiceRecord) => void;
   onValidationErrors: (errors: FieldErrors<ServiceFormValues>) => void;
   onVehicleCreated?: (data: VehicleFormValues) => Promise<Vehicle>;
@@ -109,7 +109,7 @@ export function ServiceForm({
     if (signatureType === 'delivery') fieldName = 'customerSignatureDelivery';
     if (signatureType === 'advisor') fieldName = 'serviceAdvisorSignatureDataUrl';
     if (signatureType === 'technician') fieldName = 'technicianSignatureDataUrl';
-    if (fieldName) setValue(fieldName, dataUrl, { shouldDirty: true, shouldValidate: true });
+    if (fieldName) setValue(fieldName as any, dataUrl, { shouldDirty: true, shouldValidate: true });
     setIsSignatureDialogOpen(false);
   };
 
@@ -134,8 +134,8 @@ export function ServiceForm({
 
           {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
             <NextServiceInfoCard
-              nextServiceInfo={watch('nextServiceInfo') || {}}
-              onUpdate={(info) => setValue('nextServiceInfo', info, { shouldDirty: true })}
+              nextServiceInfo={(watch('nextServiceInfo') as NextServiceInfo) || {}}
+              onUpdate={(info: NextServiceInfo) => setValue('nextServiceInfo', info, { shouldDirty: true })}
               isSubmitting={isSubmitting}
               currentMileage={watch('vehicle.currentMileage')}
             />

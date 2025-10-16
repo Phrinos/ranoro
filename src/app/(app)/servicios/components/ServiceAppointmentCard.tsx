@@ -1,9 +1,9 @@
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 "use client";
 
-import React, { useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { ServiceRecord, Vehicle, User, Payment } from '@/types';
+import React, { useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import type { ServiceRecord, Vehicle, User, Payment, ServiceSubStatus } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { serviceService } from '@/lib/services';
@@ -25,8 +25,9 @@ export type ServiceAppointmentCardProps = {
   onEdit: () => void;
   onView: () => void;
   onDelete?: () => void;
+  onCancel?: () => void;
   onConfirm?: () => Promise<void>;
-  onShowTicket?: () => void; // <- opcional
+  onShowTicket?: () => void;
 };
 
 const noop = () => {};
@@ -53,8 +54,7 @@ export function ServiceAppointmentCard({
   onShowTicket,
 }: ServiceAppointmentCardProps) {
   const { toast } = useToast();
-  // CORRECCIÓN: Usar 'default' como fallback si service.status es undefined.
-  const { color, icon: Icon, label } = getStatusInfo(service.status as any || 'default', service.subStatus);
+  const { color, icon: Icon, label } = getStatusInfo(service.status as any, service.subStatus as ServiceSubStatus);
 
   const technician = useMemo(() => personnel.find(u => u.id === service.technicianId), [personnel, service.technicianId]);
   const advisor = useMemo(() => personnel.find(u => u.id === service.serviceAdvisorId), [personnel, service.serviceAdvisorId]);

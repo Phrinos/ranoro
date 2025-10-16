@@ -155,13 +155,13 @@ function AppHeaderInner() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/perfil"><UserCircle className="mr-2 h-4 w-4" /> Perfil</Link>
+                    <Link href="/opciones?tab=perfil"><UserCircle className="mr-2 h-4 w-4" /> Mi Perfil</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                     <Link href="/admin/configuracion-ticket"><Settings className="mr-2 h-4 w-4" /> Configuración</Link>
+                     <Link href="/opciones"><Settings className="mr-2 h-4 w-4" /> Opciones</Link>
                   </DropdownMenuItem>
                    <DropdownMenuItem asChild>
-                     <Link href="/manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual de Uso</Link>
+                     <Link href="/opciones?tab=manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual de Uso</Link>
                   </DropdownMenuItem>
                 <DropdownMenuSeparator />
                  <DropdownMenuItem onClick={handleLogout}>

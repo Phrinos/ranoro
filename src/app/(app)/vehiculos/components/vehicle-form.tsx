@@ -43,6 +43,8 @@ interface VehicleFormProps {
   onSubmit: (values: VehicleFormValues) => Promise<void>;
 }
 
+type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
+
 export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
   const [vehicleDb, setVehicleDb] = useState<VehicleMake[]>([]);
   const [isLoadingDb, setIsLoadingDb] = useState(true);

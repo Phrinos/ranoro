@@ -69,9 +69,8 @@ export async function POST(req: NextRequest) {
     const data = coerce(raw);
 
     const element = React.createElement(LeasePdf, { data }) as unknown as React.ReactElement<DocumentProps>;
-    const buffer = await pdf(element).toBuffer();
-
-    return new Response(new Uint8Array(buffer), {
+    const stream = await pdf(element).toStream();
+    return new Response(stream as unknown as ReadableStream, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="contrato-${data?.contractId ?? "lease"}.pdf"`,

@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { VehicleInfoCard } from '../components/VehicleInfoCard';
 import { VehicleDialog } from '../components/vehicle-dialog';
-import type { VehicleFormValues } from '../components/vehicle-form';
+import type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
@@ -243,7 +243,7 @@ export default function VehicleDetailPage() {
             <ServiceHistoryTable services={services} onRowClick={openServicePreview} />
         </div>
         <div className="lg:col-span-1 space-y-6">
-            <MaintenanceCard vehicle={vehicle} serviceHistory={[]} />
+            <MaintenanceCard vehicle={vehicle} />
             <VehiclePricingCard 
                 engineData={vehicleEngineData as EngineData | null} 
                 make={vehicle.make}
@@ -269,12 +269,14 @@ export default function VehicleDetailPage() {
       )}
 
       {selectedService && (
-        <UnifiedPreviewDialog
+        <UnifiedPreviewDialog 
           open={isViewServiceDialogOpen}
           onOpenChange={setIsViewServiceDialogOpen}
           title="Vista Previa del Servicio"
           service={selectedService}
-        />
+        >
+          <div className="hidden" />
+        </UnifiedPreviewDialog>
       )}
     </div>
   );

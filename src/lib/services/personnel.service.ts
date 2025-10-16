@@ -37,16 +37,17 @@ const onPersonnelUpdatePromise = async (): Promise<Personnel[]> => {
 
 const savePersonnel = async (data: UserFormValues, id?: string): Promise<User> => {
     if (!db) throw new Error("Database not initialized.");
-    const dataToSave = { 
+    const dataToSave: Partial<User> = { 
         ...data, 
         hireDate: data.hireDate ? new Date(data.hireDate).toISOString() : undefined,
         functions: data.functions || [], // Asegurarnos que functions se guarda
+        isArchived: data.isArchived ?? false,
     };
     if (id) {
         await updateDoc(doc(db, 'users', id), cleanObjectForFirestore(dataToSave));
         return { id, ...dataToSave } as User;
     }
-    const fullData = { ...cleanObjectForFirestore(dataToSave), isArchived: false, createdAt: new Date().toISOString() };
+    const fullData = { ...cleanObjectForFirestore(dataToSave), createdAt: new Date().toISOString() };
     const docRef = await addDoc(collection(db, 'users'), fullData);
     return { id: docRef.id, ...fullData } as User;
 };

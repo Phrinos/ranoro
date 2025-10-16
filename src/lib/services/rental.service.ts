@@ -39,7 +39,7 @@ const onDailyChargesUpdate = (callback: (charges: DailyRentalCharge[]) => void, 
     });
 };
 
-const saveDailyCharge = async (id: string, data: { date: string; amount: number }): Promise<void> => {
+const saveDailyCharge = async (id: string, data: { date: string; amount: number; note: string }): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, 'dailyRentalCharges', id);
     await updateDoc(docRef, data);
@@ -91,6 +91,7 @@ const addRentalPayment = async (
         daysCovered: dailyRate > 0 ? amount / dailyRate : 0,
         note: note || `Abono de Renta`,
         registeredByName: currentUser?.name || 'Sistema',
+        paymentMethod: paymentMethod,
     };
     
     if (paymentId) {

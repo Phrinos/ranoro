@@ -166,8 +166,8 @@ export const optimizeImage = (file: File | string, maxWidthOrHeight: number, qua
     if (isFile) {
       reader.readAsDataURL(file);
     } else {
-      const img = new Image();
-      img.src = file;
+        const img = new Image();
+        img.src = file;
     }
   });
 };

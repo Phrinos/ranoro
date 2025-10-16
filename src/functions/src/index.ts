@@ -2,8 +2,6 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as logger from 'firebase-functions/logger';
 import * as admin from 'firebase-admin';
-import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { startOfDay, endOfDay } from 'date-fns';
 import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import { onStockExit, onPurchaseCreated, onPurchaseUpdated, adjustStock } from './inventory';
