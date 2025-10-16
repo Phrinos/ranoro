@@ -1,11 +1,11 @@
 
-
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useIsMobile } from '@/hooks/use-mobile'; // Import the hook
 
 interface TabConfig {
   value: string;
@@ -20,7 +20,6 @@ interface TabbedPageLayoutProps {
   activeTab: string;
   onTabChange: (value: string) => void;
   actions?: React.ReactNode;
-  isMobile?: boolean; // Make isMobile optional
 }
 
 export function TabbedPageLayout({
@@ -30,8 +29,19 @@ export function TabbedPageLayout({
   activeTab,
   onTabChange,
   actions,
-  isMobile,
 }: TabbedPageLayoutProps) {
+  const isMobile = useIsMobile(); // Use the hook to detect mobile
+  const [hasMounted, setHasMounted] = useState(false);
+  
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // Render nothing or a placeholder on the server and during hydration to avoid mismatch
+  if (!hasMounted) {
+    return null; 
+  }
+
   return (
     <>
       {title && description && (

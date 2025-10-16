@@ -68,22 +68,34 @@ export function TableToolbar({
   );
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      {/* Search Input on the left */}
-      {onSearchTermChange && (
-        <div className="relative w-full flex-grow">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={searchPlaceholder}
-            value={searchTerm ?? ''}
-            onChange={(e) => onSearchTermChange(e.target.value)}
-            className="h-10 w-full pl-8 bg-card"
-          />
-        </div>
-      )}
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col sm:flex-row items-center gap-2">
+        {/* Search Input */}
+        {onSearchTermChange && (
+          <div className="relative w-full flex-grow">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={searchPlaceholder}
+              value={searchTerm ?? ''}
+              onChange={(e) => onSearchTermChange(e.target.value)}
+              className="h-10 w-full pl-8 bg-card"
+            />
+          </div>
+        )}
+        {actions && (
+          <div className="w-full sm:w-auto flex-shrink-0">
+            {actions}
+          </div>
+        )}
+      </div>
 
-      {/* Filters and Actions on the right */}
-      <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto flex-shrink-0">
+      {/* Filters and Sorters */}
+      <div className="flex flex-col sm:flex-row items-center gap-2 flex-wrap">
+        {/* Date Range Picker */}
+        {onDateRangeChange && (
+          <DatePickerWithRange date={dateRange} onDateChange={onDateRangeChange} />
+        )}
+
         {/* Other select filters */}
         {filterOptions?.map((block) => {
           const current = (otherFilters?.[block.value] ?? "all") as string;
@@ -93,7 +105,7 @@ export function TableToolbar({
               defaultValue={current}
               onValueChange={(val) => handleFilterChange(block.value, val)}
             >
-              <SelectTrigger className="h-10 min-w-[10rem] w-full sm:w-auto bg-card">
+              <SelectTrigger className="h-10 w-full sm:w-auto bg-card">
                 <SelectValue placeholder={block.label} />
               </SelectTrigger>
               <SelectContent>
@@ -106,11 +118,6 @@ export function TableToolbar({
             </Select>
           );
         })}
-
-        {/* Date Range Picker */}
-        {onDateRangeChange && (
-          <DatePickerWithRange date={dateRange} onDateChange={onDateRangeChange} />
-        )}
 
         {/* Sort Options */}
         {sortOptions && onSortOptionChange && (
@@ -127,10 +134,8 @@ export function TableToolbar({
             </SelectContent>
           </Select>
         )}
-
-        {/* Custom Actions */}
-        {actions}
       </div>
     </div>
   );
 }
+

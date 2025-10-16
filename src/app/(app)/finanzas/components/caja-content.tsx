@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/caja-content.tsx
 "use client";
 
@@ -185,7 +184,7 @@ export default function CajaContent() {
       .map((t) => {
       const d = parseDate((t as any).date || (t as any).createdAt) || null;
       const user = (t as any).userName || (t as any).user || 'Sistema';
-      const desc = (t as any).fullDescription || t.description || (t as any).concept || '';
+      const desc = (t as any).fullDescription || t.concept || 'N/A';
       return {
         id: t.id,
         date: d,
@@ -212,7 +211,7 @@ export default function CajaContent() {
       .map((t) => {
         const d = parseDate((t as any).date || (t as any).createdAt) || null;
         const user = (t as any).userName || (t as any).user || 'Sistema';
-        const desc = (t as any).fullDescription || t.concept || t.description || '';
+        const desc = (t as any).fullDescription || t.concept || (t as any).description || '';
         return {
           id: t.id, date: d, type: t.type, source: 'Libro',
           relatedType: (t as any).relatedType || 'Manual', refId: (t as any).relatedId,
@@ -348,10 +347,13 @@ export default function CajaContent() {
       {/* Tabla ÚNICA: Flujo de Caja */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Flujo de Caja (Efectivo)</CardTitle>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle>Flujo de Caja (Efectivo)</CardTitle>
+              <CardDescription>Pagos en efectivo de Ventas/Servicios y movimientos del Libro del periodo.</CardDescription>
+            </div>
             {/* Acciones rápidas */}
-            <div className="flex justify-end gap-2">
+            <div className="flex w-full sm:w-auto justify-end gap-2">
               <Button onClick={() => handleOpenDialog('Entrada')} variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700 bg-card">
                 <ArrowUp className="mr-2 h-4 w-4" /> Registrar Entrada
               </Button>
@@ -360,7 +362,6 @@ export default function CajaContent() {
               </Button>
             </div>
           </div>
-          <CardDescription>Pagos en efectivo de Ventas/Servicios y movimientos del Libro del periodo.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto rounded-md border">

@@ -7,7 +7,7 @@ import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from
 import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense, Personnel, AppRole, FinancialSummary, InventoryItem } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
-import { adminService, inventoryService, serviceService, saleService } from "@/lib/services";
+import { adminService, inventoryService, serviceService, saleService } from '@/lib/services';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { startOfMonth, endOfMonth, isWithinInterval, isValid, getDaysInMonth, differenceInDays } from 'date-fns';
 import { parseDate } from '@/lib/forms';
@@ -127,6 +127,11 @@ function PageInner() {
     };
   }, [dateRange, allServices, allUsers, allExpenses, inventoryItems]);
 
+  const onTabChange = (tab: string) => {
+    setActiveTab(tab);
+    router.push(`/finanzas?tab=${tab}`);
+  };
+
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
     
   const tabs = [
@@ -148,7 +153,7 @@ function PageInner() {
       title="Finanzas"
       description="Analiza los movimientos de ingresos, egresos y el estado de caja de tu taller."
       activeTab={activeTab}
-      onTabChange={setActiveTab}
+      onTabChange={onTabChange}
       tabs={tabs}
     />
   );

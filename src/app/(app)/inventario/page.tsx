@@ -4,7 +4,7 @@
 
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from "react";
+import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef } from "react";
 import dynamic from 'next/dynamic'
 
 import { Button } from "@/components/ui/button";
@@ -29,11 +29,10 @@ import type {
   InventoryItem,
   InventoryCategory,
   Supplier,
-  Vehicle,
 } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { inventoryService, purchaseService } from "@/lib/services";
+import { inventoryService } from "@/lib/services";
 import {
   Dialog,
   DialogContent,
@@ -46,7 +45,6 @@ import { cn, capitalizeWords, formatCurrency } from "@/lib/utils";
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TableToolbar } from '@/components/shared/table-toolbar';
 import { useTableManager } from '@/hooks/useTableManager';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -59,6 +57,7 @@ import { es } from 'date-fns/locale';
 import type { PurchaseFormValues } from './compras/components/register-purchase-dialog';
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
 const RegisterPurchaseDialog = dynamic(() => import('./compras/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = dynamic(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
@@ -98,7 +97,8 @@ const ProductosContent: React.FC<{
   inventoryItems: InventoryItem[];
   onPrint: (items: InventoryItem[]) => void;
   onEditItem: (item: InventoryItem) => void;
-}> = ({ inventoryItems, onPrint, onEditItem }) => {
+  onDeleteItem: (id: string) => void;
+}> = ({ inventoryItems, onPrint, onEditItem, onDeleteItem }) => {
   const router = useRouter();
 
   const { paginatedData, fullFilteredData, ...tableManager } = useTableManager<InventoryItem>({
@@ -220,7 +220,7 @@ const CategoriasContent: React.FC<{
               <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4"/>Nueva Categoría</Button>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
+             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                     <TableRow>
@@ -414,6 +414,11 @@ function PageInner() {
     [toast]
   );
 
+  const onTabChange = (tab: string) => {
+    setActiveTab(tab);
+    router.push(`/inventario?tab=${tab}`);
+  };
+
 
   if (isLoading) {
     return (
@@ -430,59 +435,42 @@ function PageInner() {
 
   return (
     <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-        <>
-        <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-            <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
-            <p className="text-primary-foreground/80 mt-1">Gestiona productos, proveedores, categorías y obtén análisis inteligentes.</p>
-        </div>
-        
+        <TabbedPageLayout
+          title="Mi Inventario"
+          description="Gestiona productos, proveedores, categorías y obtén análisis inteligentes."
+          tabs={tabsConfig}
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setIsRegisterPurchaseOpen(true)}>Registrar Compra</Button>
+            </div>
+          }
+        >
+        </TabbedPageLayout>
+
         <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={() => handleOpenItemDialog()}
+          onNewItemClick={handleOpenItemDialog}
           onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
-            <div className="w-full">
-                <div className="flex flex-wrap w-full gap-2 sm:gap-4">
-                {tabsConfig.map(tabInfo => (
-                    <button
-                    key={tabInfo.value}
-                    onClick={() => setActiveTab(tabInfo.value)}
-                    className={cn(
-                        'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
-                        'break-words whitespace-normal leading-snug',
-                        activeTab === tabInfo.value
-                        ? 'bg-primary text-primary-foreground shadow'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    )}
-                    >
-                    {tabInfo.label}
-                    </button>
-                ))}
-                </div>
-            </div>
-            
-            <TabsContent value="productos" className="mt-6">
-              <Suspense fallback={<Loader2 className="animate-spin" />}>
-                  <ProductosContent 
-                      inventoryItems={inventoryItems}
-                      onPrint={handlePrint}
-                      onEditItem={handleOpenItemDialog}
-                  />
-              </Suspense>
-            </TabsContent>
-            <TabsContent value="categorias" className="mt-6">
-              <Suspense fallback={<Loader2 className="animate-spin" />}>
-                  <CategoriasContent 
-                      categories={categories} 
-                      inventoryItems={inventoryItems} 
-                      onSaveCategory={handleSaveCategory}
-                      onDeleteCategory={handleDeleteCategory}
-                  />
-              </Suspense>
-            </TabsContent>
-      </Tabs>
+        {activeTab === 'productos' && (
+          <ProductosContent 
+              inventoryItems={inventoryItems}
+              onPrint={handlePrint}
+              onEditItem={handleOpenItemDialog}
+              onDeleteItem={handleDeleteItem}
+          />
+        )}
+        {activeTab === 'categorias' && (
+          <CategoriasContent 
+              categories={categories} 
+              inventoryItems={inventoryItems} 
+              onSaveCategory={handleSaveCategory}
+              onDeleteCategory={handleDeleteCategory}
+          />
+        )}
       
       <Suspense fallback={null}>
           {isRegisterPurchaseOpen && (
@@ -530,9 +518,9 @@ function PageInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-        </>
     </Suspense>
   );
 }
 
 export default withSuspense(PageInner, null);
+
