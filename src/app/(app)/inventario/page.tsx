@@ -59,6 +59,8 @@ import { es } from 'date-fns/locale';
 import type { PurchaseFormValues } from './compras/components/register-purchase-dialog';
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
+
 
 const RegisterPurchaseDialog = dynamic(() => import('./compras/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = dynamic(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
@@ -351,6 +353,11 @@ function PageInner() {
     setIsItemDialogOpen(false);
   };
   
+  const handleDeleteItem = async (id: string) => {
+    await inventoryService.deleteItem(id);
+    toast({ title: "Producto Eliminado", variant: "destructive" });
+    setIsItemDialogOpen(false); // Cierra el diálogo después de eliminar
+  };
 
   const handleSavePurchase = useCallback(
     async (data: PurchaseFormValues) => {
@@ -497,6 +504,7 @@ function PageInner() {
             open={isItemDialogOpen}
             onOpenChange={setIsItemDialogOpen}
             onSave={editingItem ? handleItemUpdated : handleSaveItem}
+            onDelete={editingItem ? () => handleDeleteItem(editingItem.id!) : undefined}
             item={editingItem}
             categories={categories}
             suppliers={suppliers}
