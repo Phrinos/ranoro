@@ -22,6 +22,8 @@ import {
   Edit,
   Trash2,
   Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type {
   InventoryItem,
@@ -65,7 +67,8 @@ const InventoryReportContent = dynamic(() => import('./components/inventory-repo
 const DashboardCards: React.FC<{
   summaryData: any;
   onNewItemClick: () => void;
-}> = ({ summaryData, onNewItemClick }) => (
+  onNewPurchaseClick: () => void;
+}> = ({ summaryData, onNewItemClick, onNewPurchaseClick }) => (
   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Valor del Inventario (Costo)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
