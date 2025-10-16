@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/caja-content.tsx
 "use client";
 

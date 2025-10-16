@@ -1,3 +1,4 @@
+
 "use client";
 import { pdf } from "@react-pdf/renderer";
 import { LeasePdf } from "./LeasePdf";

@@ -1,3 +1,4 @@
+
 // src/app/(app)/personal/components/usuarios-content.tsx
 
 "use client";
@@ -12,7 +13,7 @@ import { PlusCircle, Search, Users, Eye, EyeOff } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { adminService } from '@/lib/services/admin.service';
 import { UserDialog } from './user-dialog';
-import type { UserFormValues } from './user-form';
+import type { UserFormValues } from '@/schemas/user-form-schema';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -156,8 +157,8 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                             </TableCell>
                             <TableCell><span className={`px-2 py-1 text-xs rounded-full font-medium ${ user.role === 'Superadministrador' ? 'bg-red-100 text-red-700' : user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }`}>{user.role}</span></TableCell>
                             <TableCell>{hireDate ? format(hireDate, "dd MMM, yyyy", { locale: es }) : 'N/A'}</TableCell>
-                            <TableCell>{formatCurrency(user.monthlySalary)}</TableCell>
-                            <TableCell>{user.commissionRate || 0}%</TableCell>
+                            <TableCell>{formatCurrency(user.monthlySalary ?? 0)}</TableCell>
+                            <TableCell>{user.commissionRate ?? 0}%</TableCell>
                           </TableRow>
                         )
                       })}

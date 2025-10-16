@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/components/pos-form.tsx
 
 "use client";
@@ -20,7 +21,7 @@ interface POSFormProps {
   onInventoryItemCreated?: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
   initialData?: SaleReceipt | null;
   onOpenValidateDialog: (index: number) => void;
-  onOpenAddItemDialog: () => void;
+  onOpenAddItemDialog?: () => void;
   validatedFolios: Record<number, boolean>;
 }
 
@@ -39,6 +40,7 @@ export function PosForm({
 }: POSFormProps) {
   const methods = useFormContext();
   const { control, getValues, setValue, reset } = methods;
+  const openAddItem = onOpenAddItemDialog ?? (() => {});
   
   useEffect(() => {
     if (initialData?.id) {
@@ -59,7 +61,7 @@ export function PosForm({
                 <PosItemsTable />
 
                 <div className="flex justify-end">
-                  <Button type="button" variant="outline" onClick={onOpenAddItemDialog} className="bg-white hover:bg-gray-100">
+                  <Button type="button" variant="outline" onClick={openAddItem} className="bg-white hover:bg-gray-100">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Añadir Artículo/Servicio
                   </Button>

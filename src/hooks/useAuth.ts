@@ -1,4 +1,5 @@
 
+
 // src/hooks/useAuth.ts
 import { useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, signOut, type Auth } from 'firebase/auth';

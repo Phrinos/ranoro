@@ -1,6 +1,7 @@
+
 // src/app/api/services/[id]/confirm/route.ts
 import { NextResponse, type NextRequest } from "next/server";
-import { getAdminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb, serverTimestamp } from "@/lib/firebaseAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,7 +52,7 @@ export async function POST(
       );
     }
 
-    const updateData = { appointmentStatus: "Confirmada" as const };
+    const updateData = { appointmentStatus: "Confirmada" as const, updatedAt: serverTimestamp() };
 
     // Batch Admin SDK
     const batch = db.batch();

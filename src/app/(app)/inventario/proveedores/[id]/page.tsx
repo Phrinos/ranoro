@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -68,7 +69,7 @@ export default function SupplierDetailPage() {
     try {
         await inventoryService.deleteSupplier(supplier.id);
         toast({ title: "Proveedor Eliminado", description: `${supplier.name} ha sido eliminado.` });
-        router.push('/proveedores');
+        router.push('/inventario/compras?tab=proveedores');
     } catch (e) {
         toast({ title: "Error", description: "No se pudo eliminar el proveedor.", variant: "destructive" });
     }
@@ -100,7 +101,7 @@ export default function SupplierDetailPage() {
         <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4"/>Volver</Button>
         <div className="flex gap-2">
             <ConfirmDialog
-                triggerButton={<Button variant="destructive"><Trash2 className="mr-2 h-4 w-4"/>Eliminar Proveedor</Button>}
+                triggerButton={<Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Eliminar Proveedor</Button>}
                 title={`¿Estás seguro de eliminar a "${supplier.name}"?`}
                 description="Esta acción eliminará permanentemente al proveedor y todo su historial de cuentas. No se puede deshacer."
                 onConfirm={handleDeleteSupplier}
@@ -121,7 +122,7 @@ export default function SupplierDetailPage() {
           <p className="md:col-span-2 lg:col-span-3"><strong>Dirección:</strong> {supplier.address || 'N/A'}</p>
           <p><strong>RFC:</strong> {supplier.rfc || 'N/A'}</p>
           <p><strong>Régimen Fiscal:</strong> {supplier.taxRegime || 'N/A'}</p>
-          <div className="p-4 bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 rounded-lg text-center">
+          <div className="p-4 bg-red-50 dark:bg-red-900/50 border border-red-200 rounded-lg text-center">
             <p className="text-sm font-medium text-red-600 dark:text-red-300">DEUDA TOTAL</p>
             <p className="text-3xl font-bold text-red-700 dark:text-red-200">{formatCurrency(supplier.debtAmount)}</p>
           </div>

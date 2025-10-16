@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/components/ventas-pos-content.tsx
 "use client";
 
@@ -13,7 +14,7 @@ import { startOfMonth, endOfMonth, parseISO, isValid, format as formatLocale } f
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getPaymentMethodVariant, cn } from '@/lib/utils';
-import { calculateSaleProfit } from '@/lib/placeholder-data';
+import { calculateSaleProfit } from '@/lib/money-helpers';
 import { Badge } from '@/components/ui/badge';
 import { parseDate } from '@/lib/forms';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -189,7 +190,7 @@ export function VentasPosContent({
                   const isCancelled = sale.status === 'Cancelado';
                   const profit = calculateSaleProfit(sale, allInventory);
                   const itemsDescription = sale.items
-                      .filter(item => item.inventoryItemId !== 'COMMISSION_FEE')
+                      .filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE' && item.itemId !== 'COMMISSION_FEE')
                       .map(item => `${item.quantity}x ${item.itemName}`)
                       .join(', ');
                   const paymentBadges = (isCancelled

@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/MaintenanceCard.tsx
 "use client";
 
@@ -12,6 +13,7 @@ import { parseDate } from '@/lib/forms';
 
 interface MaintenanceCardProps {
   vehicle: Vehicle;
+  serviceHistory?: ServiceRecord[];
 }
 
 const NextServiceDisplay = ({ nextServiceInfo }: { nextServiceInfo?: NextServiceInfo | null }) => {

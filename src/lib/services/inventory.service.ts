@@ -1,3 +1,4 @@
+
 // src/lib/services/inventory.service.ts
 
 import {
@@ -7,7 +8,7 @@ import {
   getDoc,
   addDoc,
   updateDoc,
-  deleteDoc,
+  deleteDoc as fbDeleteDoc,
   writeBatch,
   query,
   getDocs,
@@ -28,6 +29,9 @@ const getDocById = async (collectionName: string, id: string): Promise<any> => {
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
 };
+
+export const deleteCollectionDoc = async (collectionName: string, id: string) =>
+  fbDeleteDoc(doc(db, collectionName, id));
 
 
 // --- Items ---
@@ -72,7 +76,7 @@ const addItem = async (data: Partial<InventoryItem>): Promise<InventoryItem> => 
 
 const deleteItem = async (id: string): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
-  await deleteDoc(doc(db, "inventory", id));
+  await fbDeleteDoc(doc(db, "inventory", id));
 };
 
 const updateInventoryStock = async (
@@ -150,7 +154,7 @@ const saveServiceType = async (data: Omit<ServiceTypeRecord, 'id'>, id?: string)
 
 const deleteServiceType = async (id: string): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
-  await deleteDoc(doc(db, "serviceTypes", id));
+  await fbDeleteDoc(doc(db, "serviceTypes", id));
 };
 
 
@@ -183,7 +187,7 @@ const saveCategory = async (data: Omit<InventoryCategory, 'id'>, id?: string): P
 
 const deleteCategory = async (id: string): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
-  await deleteDoc(doc(db, "inventoryCategories", id));
+  await fbDeleteDoc(doc(db, "inventoryCategories", id));
 };
 
 // --- Suppliers ---
@@ -215,7 +219,7 @@ const saveSupplier = async (data: Omit<Supplier, 'id'>, id?: string): Promise<Su
 
 const deleteSupplier = async (id: string): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
-  await deleteDoc(doc(db, "suppliers", id));
+  await fbDeleteDoc(doc(db, "suppliers", id));
 };
 
 // --- Vehicles ---
@@ -269,7 +273,7 @@ const getVehicleDocRef = (id: string) => {
 
 const deleteVehicle = async (id: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
-    await deleteDoc(doc(db, "vehicles", id));
+    await fbDeleteDoc(doc(db, "vehicles", id));
 };
 
 // --- Paperwork and Fines (Sub-collections of Vehicle) ---
@@ -336,7 +340,7 @@ const saveFixedExpense = async (data: Omit<MonthlyFixedExpense, 'id'>, id?: stri
 
 const deleteFixedExpense = async (id: string): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
-  await deleteDoc(doc(db, "monthlyFixedExpenses", id));
+  await fbDeleteDoc(doc(db, "monthlyFixedExpenses", id));
 };
 
 // --- Vehicle Data (New structure) ---
@@ -384,5 +388,5 @@ export const inventoryService = {
   saveFixedExpense,
   deleteFixedExpense,
   onVehicleDataUpdate,
-  deleteDoc,
+  deleteCollectionDoc,
 };

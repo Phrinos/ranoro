@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/nuevo/page.tsx
 "use client";
 
@@ -338,9 +339,18 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
       const newSaleReceipt: SaleReceipt = {
         id: saleId,
         saleDate: new Date(),
-        items: values.items,
+        items: values.items.map(it => ({
+            itemId: it.inventoryItemId ?? crypto.randomUUID(),
+            itemName: it.itemName,
+            quantity: it.quantity,
+            total: it.totalPrice ?? (it.unitPrice ?? 0) * it.quantity,
+        })),
         customerName: values.customerName,
-        payments: values.payments,
+        payments: (values.payments ?? []).map(p => ({
+            method: p.method,
+            amount: p.amount ?? 0,
+            folio: p.folio,
+        })),
         subTotal,
         tax,
         totalAmount,

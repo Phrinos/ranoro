@@ -1,3 +1,4 @@
+
 // src/app/(app)/vehiculos/components/vehicle-dialog.tsx
 "use client";
 
@@ -21,7 +22,7 @@ interface VehicleDialogProps {
 const buildDefaults = (v?: Partial<Vehicle> | null): VehicleFormValues => ({
   make: v?.make ?? "",
   model: v?.model ?? "",
-  year: v?.year,
+  year: Number(v?.year ?? new Date().getFullYear()),
   engine: (v as any)?.engine ?? "",
   licensePlate: v?.licensePlate ?? "",
   vin: v?.vin ?? "",

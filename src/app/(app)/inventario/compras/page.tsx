@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/compras/page.tsx
 "use client";
 

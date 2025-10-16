@@ -1,4 +1,5 @@
 
+
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { Vehicle, VehiclePriceList, InventoryItem, InventoryCategory, Supplier } from "@/types";
-import type { VehicleFormValues } from "./components/vehicle-form";
+import { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VehiclesTable } from './components/vehicles-table';
@@ -89,7 +90,7 @@ function PageInner() {
 
   const handleDeleteVehicle = async (id: string) => {
     try {
-      await inventoryService.deleteDoc('vehicles', id);
+      await inventoryService.deleteCollectionDoc('vehicles', id);
       toast({ title: "Vehículo eliminado", variant: "destructive" });
     } catch (e) {
       toast({ title: "Error", description: "No se pudo eliminar el vehículo.", variant: "destructive" });

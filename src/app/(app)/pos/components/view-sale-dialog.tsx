@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/components/view-sale-dialog.tsx
 
 "use client";
@@ -16,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SaleReceipt, InventoryItem, User, InventoryCategory, Supplier, Payment } from "@/types";
-import { format, parseISO } from "date-fns";
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Ban, Save, Trash2, MessageSquare, Repeat } from "lucide-react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -67,14 +68,14 @@ export function ViewSaleDialog({
 
   useEffect(() => {
       if (sale?.id) {
-          methods.reset(sale);
+          methods.reset(sale as any);
       }
   }, [sale, methods]);
 
   if (!sale) return null;
 
   const isCancelled = sale.status === 'Cancelado';
-  const saleDate = parseISO(sale.saleDate);
+  const saleDate = typeof sale.saleDate === 'string' ? parseISO(sale.saleDate) : sale.saleDate;
   const formattedDate = format(saleDate, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
   
   const handleOpenValidateDialog = (index: number) => {

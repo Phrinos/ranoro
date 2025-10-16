@@ -1,5 +1,6 @@
 
 
+
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -7,7 +8,7 @@ import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from
 import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense, Personnel, AppRole, FinancialSummary, InventoryItem } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
-import { adminService, inventoryService, serviceService, saleService } from '@/lib/services';
+import { adminService, inventoryService, serviceService, saleService } from "@/lib/services";
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { startOfMonth, endOfMonth, isWithinInterval, isValid, getDaysInMonth, differenceInDays } from 'date-fns';
 import { parseDate } from '@/lib/forms';

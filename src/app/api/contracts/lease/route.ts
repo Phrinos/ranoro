@@ -1,3 +1,4 @@
+
 // src/app/api/contracts/lease/route.ts
 import React from "react";
 import { NextRequest, NextResponse } from "next/server";
@@ -68,14 +69,14 @@ export async function POST(req: NextRequest) {
     const raw = await req.json().catch(() => ({}));
     const data = coerce(raw);
 
-    const element = React.createElement(LeasePdf, { data }) as unknown as React.ReactElement<DocumentProps>;
-    const stream = await pdf(element).toStream();
-    return new Response(stream as unknown as ReadableStream, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="contrato-${data?.contractId ?? "lease"}.pdf"`,
-        "Cache-Control": "no-store",
-      },
+    const element = React.createElement(LeasePdf, { data });
+    const buffer = await (pdf(element) as any).toBuffer(); // forzamos tipo Buffer
+    return new Response(buffer as any, {
+        headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="contrato-${data?.contractId ?? 'lease'}.pdf"`,
+            'Cache-Control': 'no-store',
+        },
     });
   } catch (err: any) {
     console.error("Lease PDF error:", err);

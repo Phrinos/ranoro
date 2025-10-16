@@ -1,4 +1,5 @@
 
+
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { withSuspense } from "@/lib/withSuspense";
@@ -25,7 +26,14 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
+import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
+
+const DashboardCards = () => null;
+const ProductosContent = () => null;
+const CategoriasContent = () => null;
+const RegisterPurchaseDialog = () => null;
+const InventoryItemDialog = () => null;
+const InventoryReportContent = (_: any) => null;
 
 
 function PrintTicketDialogInner(props: any) {

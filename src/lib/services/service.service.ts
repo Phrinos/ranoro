@@ -1,3 +1,4 @@
+
 // src/lib/services/service.service.ts
 import {
   collection,
@@ -123,6 +124,9 @@ function buildPublicData(svc: any) {
       isPublic: true,
       updatedAt: serverTimestamp(),
       createdAt: svc.createdAt || serverTimestamp(),
+      workshopInfo: svc.workshopInfo,
+      nextServiceInfo: svc.nextServiceInfo,
+      mileage: svc.mileage,
     };
 }
 

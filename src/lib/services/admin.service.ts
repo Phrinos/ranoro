@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -26,20 +27,20 @@ import { serverTimestamp } from 'firebase/firestore';
 export const logAudit = async (
   actionType: AuditLog['actionType'],
   description: string,
-  details: any = {}
+  details: AuditLog["details"] = {}
 ): Promise<void> => {
   if (!db) {
     console.error("Audit log failed: Database not initialized.");
     return;
   }
-  const newLog: Omit<AuditLog, 'id'> = {
+  const newLog: Omit<AuditLog, "id"> = {
     ...details,
     actionType,
     description,
     createdAt: serverTimestamp(),
   };
   try {
-    await addDoc(collection(db, 'auditLogs'), newLog);
+    await addDoc(collection(db, 'auditLogs'), newLog as any);
   } catch (error) {
     console.error("Failed to write audit log:", error instanceof Error ? error.message : String(error));
   }
@@ -92,7 +93,8 @@ const onAuditLogsUpdate = (callback: (logs: AuditLog[]) => void): (() => void) =
     if (!db) return () => {};
     const q = query(collection(db, 'auditLogs'), orderBy("createdAt", "desc"));
     return onSnapshot(q, (snapshot) => {
-        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), date: (doc.data().createdAt as Timestamp)?.toDate().toISOString() ?? new Date().toISOString() } as AuditLog)));
+        const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as AuditLog));
+        callback(items);
     }, (error) => console.error("Error listening to audit logs:", error instanceof Error ? error.message : String(error)));
 };
 
@@ -229,11 +231,9 @@ const updateUserProfile = async (user: Partial<User> & { id: string }): Promise<
     }
 };
 
-const getDocById = async (collectionName: string, id: string): Promise<any> => {
-    if (!db) throw new Error("Database not initialized.");
-    const docRef = doc(db, collectionName, id);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+const getDocById = async (col: string, id: string) => {
+    const snap = await getDoc(doc(db, col, id));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };
 
 export const adminService = {

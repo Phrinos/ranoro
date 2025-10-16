@@ -1,5 +1,6 @@
 
 
+
 import type {
   User,
   AppRole,
@@ -77,36 +78,41 @@ export const placeholderAppRoles: AppRole[] = [
 // ===           UTILITIES           ===
 // =======================================
 
-export const calculateSaleProfit = (
-  sale: { items: { inventoryItemId: string; unitPrice: number; quantity: number; isService?: boolean; }[], totalAmount: number, cardCommission?: number },
-  inventory: { id: string; isService?: boolean; unitPrice: number; }[]
-): number => {
-  if (!sale?.items?.length) return 0;
+import type { InventoryItem } from '@/types';
 
-  const inventoryMap = new Map<string, { id: string; isService?: boolean; unitPrice: number; }>(
-    inventory.map((i) => [i.id, i])
-  );
-
-  const totalRevenue = sale.totalAmount || 0;
-  const commissionCost = sale.cardCommission || 0;
-  
-  let totalCostOfGoods = 0;
-  for (const saleItem of sale.items) {
-    const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
-    const isService = saleItem.isService || (inventoryItem && inventoryItem.isService);
-    
-    if (!isService && inventoryItem) {
-      totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
-    } 
-    else if (isService && inventoryItem) {
-      totalCostOfGoods += (inventoryItem.unitPrice || 0) * saleItem.quantity;
-    }
-    else if (!inventoryItem) { 
-       totalCostOfGoods += (saleItem.unitPrice || 0) * saleItem.quantity;
-    }
-  }
-
-  const finalProfit = totalRevenue - totalCostOfGoods - commissionCost;
-
-  return isFinite(finalProfit) ? finalProfit : 0;
+type LegacySale = {
+  items: { inventoryItemId: string; unitPrice: number; quantity: number; isService?: boolean }[];
+  totalAmount: number;
+  cardCommission?: number;
 };
+
+type SimplifiedSale = {
+  items: { itemId: string; itemName: string; quantity: number; total: number }[];
+  totalAmount: number;
+  payments?: { method: any; amount: number }[];
+};
+
+export function calculateSaleProfit(
+  sale: LegacySale | SimplifiedSale,
+  allInventory: InventoryItem[]
+) {
+  // Si es el formato nuevo, aproximamos costo usando inventario por itemId (si coincide)
+  const isSimplified = !('items' in sale && 'unitPrice' in (sale.items[0] ?? {}));
+  if (isSimplified) {
+    const items = (sale as SimplifiedSale).items;
+    const cost = items.reduce((sum, it: any) => {
+      const inv = allInventory.find(x => x.id === it.itemId);
+      const unitCost = inv?.unitPrice ?? 0;
+      return sum + unitCost * (it.quantity ?? 1);
+    }, 0);
+    return (sale as SimplifiedSale).totalAmount - cost;
+  }
+  // Formato legacy original
+  const legacy = sale as LegacySale;
+  const cost = legacy.items.reduce((sum, it) => {
+    const inv = allInventory.find(x => x.id === it.inventoryItemId);
+    const unitCost = inv?.unitPrice ?? 0;
+    return sum + unitCost * it.quantity;
+  }, 0);
+  return legacy.totalAmount - cost - (legacy.cardCommission ?? 0);
+}

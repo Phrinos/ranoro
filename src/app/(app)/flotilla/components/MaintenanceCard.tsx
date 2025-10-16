@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/MaintenanceCard.tsx
 "use client";
 
@@ -41,7 +42,7 @@ const NextServiceDisplay = ({ nextServiceInfo }: { nextServiceInfo?: NextService
 
 export function MaintenanceCard({ vehicle, serviceHistory = [] }: MaintenanceCardProps) {
   
-  const lastService = serviceHistory
+  const lastService = (serviceHistory ?? [])
     .filter(s => s.status === 'Entregado')
     .sort((a, b) => new Date(b.deliveryDateTime!).getTime() - new Date(a.deliveryDateTime!).getTime())[0];
 

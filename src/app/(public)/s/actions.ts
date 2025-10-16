@@ -1,3 +1,4 @@
+
 // src/app/(public)/s/actions.ts
 "use server";
 
@@ -9,7 +10,7 @@ type DataResult<T> = { data: T | null; error: string | null };
 type ActionResult = { success: boolean; error?: string };
 
 const db = getAdminDb();
-const serverTimestamp = admin.firestore.FieldValue.serverTimestamp;
+const serverTimestamp = () => admin.firestore.FieldValue.serverTimestamp();
 
 export async function getPublicServiceData(publicId: string): Promise<DataResult<ServiceRecord>> {
   try {

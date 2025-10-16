@@ -1,4 +1,5 @@
 
+
 // src/hooks/useStorageUrl.ts
 import { useState, useEffect } from 'react';
 import { ref, getDownloadURL } from 'firebase/storage';
@@ -22,6 +23,7 @@ export function useStorageUrl(gsPath: string | null | undefined): string | null 
 
     async function fetchUrl() {
       try {
+        if (!gsPath) return; // o maneja estado vacío
         const storageRef = ref(storage, gsPath as string);
         const downloadUrl = await getDownloadURL(storageRef);
         if (isMounted) {

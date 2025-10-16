@@ -1,5 +1,6 @@
 
 
+
 import {
   collection,
   onSnapshot,
@@ -40,8 +41,8 @@ const savePersonnel = async (data: UserFormValues, id?: string): Promise<User> =
     const dataToSave: Partial<User> = { 
         ...data, 
         hireDate: data.hireDate ? new Date(data.hireDate).toISOString() : undefined,
-        functions: data.functions || [], // Asegurarnos que functions se guarda
-        isArchived: data.isArchived ?? false,
+        functions: data.functions ?? [], // Asegurarnos que functions se guarda
+        isArchived: (data as any).isArchived ?? false,
     };
     if (id) {
         await updateDoc(doc(db, 'users', id), cleanObjectForFirestore(dataToSave));

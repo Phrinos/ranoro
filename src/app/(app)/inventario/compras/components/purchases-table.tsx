@@ -68,10 +68,10 @@ export function PurchasesTable() {
         <Table>
           <TableHeader>
             <TableRow>
-              <SortableTableHeader sortKey="supplierName" label="Proveedor" onSort={handleSort} currentSort={sortOption} />
-              <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={sortOption} />
-              <SortableTableHeader sortKey="status" label="Estado" onSort={handleSort} currentSort={sortOption} />
-              <SortableTableHeader sortKey="totalAmount" label="Monto Total" onSort={handleSort} currentSort={sortOption} className="text-right" />
+              <TableHead>Proveedor</TableHead>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Monto Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -1,6 +1,7 @@
+
 import { db } from '@/lib/firebaseClient';
 import { doc, getDoc } from 'firebase/firestore';
-import type { ServiceRecord } from '@/types';
+import type { ServiceRecord, WorkshopInfo } from '@/types';
 
 // Define the structure for the API response
 interface ApiResponse {

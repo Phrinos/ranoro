@@ -1,5 +1,6 @@
+
 // src/lib/money-helpers.ts
-import type { ServiceRecord, Payment } from "@/types";
+import type { ServiceRecord, Payment, InventoryItem } from "@/types";
 
 export const CARD_RATE = 0.041;  // 4.1%
 export const MSI_RATE  = 0.12;   // 12%
@@ -43,4 +44,41 @@ export function calcEffectiveProfit(s: ServiceRecord): number {
   const profit = total - supplies - commission;
   
   return isFinite(profit) ? profit : 0;
+}
+
+type LegacySale = {
+  items: { inventoryItemId: string; unitPrice: number; quantity: number; isService?: boolean }[];
+  totalAmount: number;
+  cardCommission?: number;
+};
+
+type SimplifiedSale = {
+  items: { itemId: string; itemName: string; quantity: number; total: number }[];
+  totalAmount: number;
+  payments?: { method: any; amount: number }[];
+};
+
+export function calculateSaleProfit(
+  sale: LegacySale | SimplifiedSale,
+  allInventory: InventoryItem[]
+) {
+  // Si es el formato nuevo, aproximamos costo usando inventario por itemId (si coincide)
+  const isSimplified = !('items' in sale && 'unitPrice' in (sale.items[0] ?? {}));
+  if (isSimplified) {
+    const items = (sale as SimplifiedSale).items;
+    const cost = items.reduce((sum, it: any) => {
+      const inv = allInventory.find(x => x.id === it.itemId);
+      const unitCost = inv?.unitPrice ?? 0;
+      return sum + unitCost * (it.quantity ?? 1);
+    }, 0);
+    return (sale as SimplifiedSale).totalAmount - cost;
+  }
+  // Formato legacy original
+  const legacy = sale as LegacySale;
+  const cost = legacy.items.reduce((sum, it) => {
+    const inv = allInventory.find(x => x.id === it.inventoryItemId);
+    const unitCost = inv?.unitPrice ?? 0;
+    return sum + unitCost * it.quantity;
+  }, 0);
+  return legacy.totalAmount - cost - (legacy.cardCommission ?? 0);
 }

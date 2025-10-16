@@ -1,5 +1,6 @@
 
 
+
 import {
   collection,
   onSnapshot,
@@ -74,11 +75,11 @@ const registerSale = async (
         subTotal,
         tax,
         totalAmount,
-        payments: saleData.payments?.map(p => ({
+        payments: (saleData.payments ?? []).map(p => ({
             method: p.method,
             amount: p.amount ?? 0,
             folio: p.folio,
-        })) ?? [],
+        })),
         customerName: saleData.customerName || 'Cliente Mostrador',
         registeredById: currentUser.id,
         registeredByName: currentUser.name,

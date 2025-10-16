@@ -1,8 +1,10 @@
 
 
+
 // src/lib/firebaseAdmin.ts
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore, FieldValue } from 'firebase-admin/firestore';
+import admin from 'firebase-admin';
 
 let app: App | null = null;
 let db: Firestore | null = null;
@@ -48,4 +50,4 @@ export function getAdminDb(): Firestore {
   return db;
 }
 
-export const serverTimestamp = FieldValue.serverTimestamp;
+export const serverTimestamp = () => admin.firestore.FieldValue.serverTimestamp();

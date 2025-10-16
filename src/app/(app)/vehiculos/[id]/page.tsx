@@ -1,3 +1,4 @@
+
 // src/app/(app)/vehiculos/[id]/page.tsx
 "use client";
 
@@ -25,9 +26,9 @@ import { formatNumber, formatCurrency, getStatusInfo } from '@/lib/utils';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 import { useTableManager } from '@/hooks/useTableManager';
-import { MaintenanceCard } from '../../flotilla/components/MaintenanceCard';
+import { MaintenanceCard } from '../../vehiculos/components/MaintenanceCard';
 import { VehiclePricingCard } from '../components/VehiclePricingCard';
-import type { EngineData } from '@/lib/data/vehicle-database-types';
+import type { EngineData } from '@/types';
 import { EditEngineDataDialog } from '@/app/(app)/precios/components/EditEngineDataDialog';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
@@ -243,7 +244,7 @@ export default function VehicleDetailPage() {
             <ServiceHistoryTable services={services} onRowClick={openServicePreview} />
         </div>
         <div className="lg:col-span-1 space-y-6">
-            <MaintenanceCard vehicle={vehicle} />
+            <MaintenanceCard vehicle={vehicle} serviceHistory={services} />
             <VehiclePricingCard 
                 engineData={vehicleEngineData as EngineData | null} 
                 make={vehicle.make}
