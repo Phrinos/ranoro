@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -26,7 +27,7 @@ import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 import { useTableManager } from '@/hooks/useTableManager';
 import { MaintenanceCard } from '../../vehiculos/components/MaintenanceCard';
 import { VehiclePricingCard } from '../components/VehiclePricingCard';
-import type { EngineData, VehiclePriceListMake } from '@/lib/data/vehicle-database-types';
+import type { EngineData } from '@/lib/data/vehicle-database-types';
 import { EditEngineDataDialog } from '@/app/(app)/precios/components/EditEngineDataDialog';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
@@ -102,7 +103,7 @@ export default function VehicleDetailPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
-  const [priceLists, setPriceLists] = useState<VehiclePriceListMake[]>([]);
+  const [priceLists, setPriceLists] = useState<any[]>([]);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
@@ -127,7 +128,7 @@ export default function VehicleDetailPage() {
     fetchVehicle();
 
     const unsubscribeServices = serviceService.onServicesForVehicleUpdate(vehicleId, setServices);
-    const unsubscribePriceLists = inventoryService.onVehicleDataUpdate((data) => setPriceLists(data as VehiclePriceListMake[]));
+    const unsubscribePriceLists = inventoryService.onVehicleDataUpdate((data) => setPriceLists(data as any[]));
     
     return () => {
         unsubscribeServices();
@@ -176,6 +177,15 @@ export default function VehicleDetailPage() {
   const handleEngineDataSave = async (updatedEngineData: EngineData) => {
     if (!vehicle || !db) return;
     const { make, model, year } = vehicle;
+
+    if (!make) {
+        toast({
+            title: "Error de Datos",
+            description: "La marca del vehículo (make) no está definida. No se puede guardar.",
+            variant: "destructive",
+        });
+        return;
+    }
 
     try {
         const makeData = priceLists.find(pl => pl.make === make);

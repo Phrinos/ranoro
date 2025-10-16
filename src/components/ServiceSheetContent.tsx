@@ -1,3 +1,4 @@
+
 "use client";
 
 import type {
@@ -562,16 +563,18 @@ export const ServiceSheetContent = React.forwardRef<
     ref
   ) => {
     const { toast } = useToast();
-    const [, setIsCancelling] = useState(false); // no leemos el valor
+    const [, setIsCancelling] = useState(false);
     const [currentActiveTab, setActiveTab] = useState("order");
+
+    // TIPO EXPLÍCITO PARA EVITAR 'prev' implícito any
     const [localWorkshopInfo, setLocalWorkshopInfo] =
-      useState(initialWorkshopInfo);
+      useState<typeof initialWorkshopInfo>(initialWorkshopInfo);
 
     useEffect(() => {
       const storedInfo = localStorage.getItem("workshopTicketInfo");
       if (storedInfo) {
         try {
-          setLocalWorkshopInfo((prev) => ({
+          setLocalWorkshopInfo((prev: typeof initialWorkshopInfo) => ({
             ...prev,
             ...JSON.parse(storedInfo),
           }));
@@ -810,9 +813,7 @@ function ServiceOrderTab({
             )}
             <Button asChild variant="outline">
               <Link
-                href={`/facturar?folio=${service.folio || service.id}&total=${
-                  service.totalCost
-                }`}
+                href={`/facturar?folio=${service.folio || service.id}&total=${service.totalCost}`}
                 target="_blank"
               >
                 <FileJson className="mr-2 h-4 w-4" />
@@ -891,9 +892,7 @@ function ReceptionDetails({ service }: { service: ServiceRecord }) {
     "7/8": 87.5,
     Lleno: 100,
   };
-  const fuelPercentage = service.fuelLevel
-    ? fuelLevelMap[service.fuelLevel] ?? 0
-    : 0;
+  const fuelPercentage = service.fuelLevel ? fuelLevelMap[service.fuelLevel] ?? 0 : 0;
   const fuelColor =
     fuelPercentage <= 25
       ? "bg-red-500"
@@ -921,10 +920,7 @@ function ReceptionDetails({ service }: { service: ServiceRecord }) {
       <div>
         <h4 className="font-semibold">Nivel de Combustible</h4>
         <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300 mt-2">
-          <div
-            className={cn("h-full transition-all", fuelColor)}
-            style={{ width: `${fuelPercentage}%` }}
-          />
+          <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
         </div>
         <p className="text-center text-xs mt-1">{service.fuelLevel || "N/A"}</p>
       </div>
@@ -1041,32 +1037,18 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
     },
   ];
 
-  const StatusIndicator = ({
-    status,
-  }: {
-    status?: SafetyCheckValue["status"];
-  }) => {
+  const StatusIndicator = ({ status }: { status?: SafetyCheckValue["status"] }) => {
     const statusInfo = {
       ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
-      atencion: {
-        label: "Atención",
-        color: "bg-yellow-400",
-        textColor: "text-yellow-700",
-      },
-      inmediata: {
-        label: "Inmediata",
-        color: "bg-red-500",
-        textColor: "text-red-700",
-      },
+      atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
+      inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" },
       na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" },
     };
     const currentStatus = statusInfo[status || "na"];
     return (
       <div className="flex items-center gap-2">
         <div className={`h-3 w-3 rounded-full ${currentStatus.color}`} />
-        <span className={cn("text-xs font-semibold", currentStatus.textColor)}>
-          {currentStatus.label}
-        </span>
+        <span className={cn("text-xs font-semibold", currentStatus.textColor)}>{currentStatus.label}</span>
       </div>
     );
   };
@@ -1085,16 +1067,10 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
               </h4>
               <div className="space-y-1">
                 {group.items.map((item) => {
-                  const keyName = item.name as keyof Omit<
-                    SafetyInspection,
-                    "inspectionNotes" | "technicianSignature"
-                  >;
+                  const keyName = item.name as keyof Omit<SafetyInspection, "inspectionNotes" | "technicianSignature">;
                   const checkItem = (inspectionRecord as any)[keyName];
                   return (
-                    <div
-                      key={item.name}
-                      className="py-2 border-b border-dashed last:border-none"
-                    >
+                    <div key={item.name} className="py-2 border-b border-dashed last:border-none">
                       <div className="flex justify-between items-center text-sm">
                         <span className="pr-4">{item.label}</span>
                         <StatusIndicator status={checkItem?.status} />
@@ -1107,16 +1083,8 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
                       {checkItem?.photos && checkItem.photos.length > 0 && (
                         <div className="mt-2 flex gap-2 flex-wrap">
                           {checkItem.photos.map((p: string, i: number) => (
-                            <div
-                              key={i}
-                              className="relative w-16 h-16 rounded border bg-slate-100"
-                            >
-                              <Image
-                                src={p}
-                                alt={`Foto ${i}`}
-                                fill
-                                style={{ objectFit: "cover" }}
-                              />
+                            <div key={i} className="relative w-16 h-16 rounded border bg-slate-100">
+                              <Image src={p} alt={`Foto ${i}`} fill style={{ objectFit: "cover" }} />
                             </div>
                           ))}
                         </div>
@@ -1167,16 +1135,8 @@ function PhotoReportContent({ photoReports }: { photoReports: any[] }) {
             <p className="font-semibold">{report.description}</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
               {report.photos.map((photo: string, i: number) => (
-                <div
-                  key={i}
-                  className="relative aspect-square bg-muted rounded"
-                >
-                  <Image
-                    src={photo}
-                    alt="Foto de servicio"
-                    fill
-                    style={{ objectFit: "cover" }}
-                  />
+                <div key={i} className="relative aspect-square bg-muted rounded">
+                  <Image src={photo} alt="Foto de servicio" fill style={{ objectFit: "cover" }} />
                 </div>
               ))}
             </div>
@@ -1197,10 +1157,7 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
       <CardContent>
         <div className="space-y-2">
           {items.map((item, index) => (
-            <div
-              key={index}
-              className="flex justify-between items-center text-sm p-2 bg-background rounded"
-            >
+            <div key={index} className="flex justify-between items-center text-sm p-2 bg-background rounded">
               <span>{item.name}</span>
               <span className="font-semibold">{formatCurrency(item.price)}</span>
             </div>
@@ -1215,3 +1172,4 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
     </Card>
   );
 }
+

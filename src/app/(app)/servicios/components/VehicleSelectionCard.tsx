@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
@@ -23,7 +24,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { inventoryService } from "@/lib/services";
 import { VehiclePricingCard } from "../../vehiculos/components/VehiclePricingCard";
-import type { EngineData, VehiclePriceListMake } from "@/lib/data/vehicle-database-types";
+import type { EngineData } from "@/lib/data/vehicle-database-types";
 import { EditEngineDataDialog } from "@/app/(app)/precios/components/EditEngineDataDialog";
 import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc } from 'firebase/firestore';
@@ -48,7 +49,7 @@ export function VehicleSelectionCard({
   const { toast } = useToast();
 
   const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
-  const [priceLists, setPriceLists] = useState<VehiclePriceListMake[]>([]);
+  const [priceLists, setPriceLists] = useState<any[]>([]);
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [isEngineEditDialogOpen, setIsEngineEditDialogOpen] = useState(false);
 
@@ -57,7 +58,7 @@ export function VehicleSelectionCard({
   useEffect(() => {
     setIsLoadingPrices(true);
     const unsubscribe = inventoryService.onVehicleDataUpdate((data) => {
-        setPriceLists(data as VehiclePriceListMake[]);
+        setPriceLists(data as any[]);
         setIsLoadingPrices(false);
     });
     return () => unsubscribe();
@@ -118,6 +119,15 @@ export function VehicleSelectionCard({
   const handleEngineDataSave = async (updatedEngineData: EngineData) => {
     if (!selectedVehicle || !db) return;
     const { make, model, year } = selectedVehicle;
+
+    if (!make) {
+        toast({
+            title: "Error de Datos",
+            description: "La marca del vehículo (make) no está definida. No se puede guardar.",
+            variant: "destructive",
+        });
+        return;
+    }
 
     try {
         const makeData = priceLists.find(pl => pl.make === make);

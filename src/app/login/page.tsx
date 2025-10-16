@@ -11,46 +11,8 @@ import { Loader2 } from 'lucide-react';
 import Image from "next/image";
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { auth, db } from '@/lib/firebaseClient.js';
-import { 
-  signInWithEmailAndPassword, 
-  type User as FirebaseUser
-} from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import type { User } from '@/types';
-
-// Función separada para manejar la sesión en segundo plano.
-const handleUserSession = async (firebaseUser: FirebaseUser) => {
-  if (!db) throw new Error("Firestore is not initialized.");
-  
-  const userDocRef = doc(db, 'users', firebaseUser.uid);
-  const userDoc = await getDoc(userDocRef);
-  
-  let userData: User;
-  if (userDoc.exists()) {
-    userData = { id: firebaseUser.uid, ...userDoc.data() } as User;
-  } else {
-    // Si el usuario no existe en Firestore, créalo (comportamiento de fallback)
-    userData = {
-      id: firebaseUser.uid,
-      name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Nuevo Usuario',
-      email: firebaseUser.email!,
-      role: 'Admin', // Rol por defecto para nuevos usuarios
-      isArchived: false,
-    };
-    await setDoc(userDocRef, { 
-      name: userData.name,
-      email: userData.email,
-      role: userData.role,
-      createdAt: serverTimestamp() 
-    });
-  }
-  
-  // Actualiza el localStorage en segundo plano.
-  localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
-};
-
+import { auth } from '@/lib/firebaseClient.js';
+import { signInWithEmailAndPassword, type User as FirebaseUser } from 'firebase/auth';
 
 export default function LoginPage() {
   const [emailLogin, setEmailLogin] = useState('');
@@ -76,17 +38,12 @@ export default function LoginPage() {
 
     try {
       if (!auth) throw new Error("Firebase Auth no está inicializado.");
-      const userCredential = await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
+      await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
       
-      // Muestra un toast de bienvenida simple
       toast({ title: 'Inicio de Sesión Exitoso', description: `¡Bienvenido de nuevo!` });
 
       const nextUrl = searchParams.get('next') || '/dashboard';
       router.push(nextUrl);
-
-      // Llama a la función que se encarga de los datos de sesión en segundo plano
-      // sin bloquear la navegación.
-      handleUserSession(userCredential.user);
       
     } catch (error: any) {
       console.error("Error en inicio de sesión:", error);
@@ -94,9 +51,8 @@ export default function LoginPage() {
           ? 'Las credenciales son incorrectas. Verifique su correo y contraseña.'
           : 'Ocurrió un error inesperado al intentar iniciar sesión.';
       toast({ title: 'Error al Iniciar Sesión', description: errorMessage, variant: 'destructive' });
-      setIsLoading(false); // Solo se detiene si hay un error
+      setIsLoading(false);
     } 
-    // No se llama a setIsLoading(false) en caso de éxito, ya que la página va a cambiar.
   };
   
   return (

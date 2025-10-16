@@ -1,4 +1,4 @@
-// src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -20,7 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, PackagePlus, DollarSign, PlusCircle, Trash2, CalendarIcon } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn } from "@/lib/utils";
-import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
+import { InventoryItemDialog } from "./inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NewCalendar } from "@/components/ui/calendar";
@@ -90,7 +90,6 @@ export function RegisterPurchaseDialog({
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
 
-  // recalcula total
   useEffect(() => {
     const total = watchedItems.reduce(
       (sum, i) => sum + Number(i.quantity || 0) * Number(i.purchasePrice || 0),
@@ -311,10 +310,9 @@ export function RegisterPurchaseDialog({
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-0" align="start">
                                 <NewCalendar
-                                  mode="single"
-                                  onSelect={field.onChange}
-                                  initialFocus
-                                  locale={es}
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  locale="es"
                                 />
                               </PopoverContent>
                             </Popover>
@@ -365,7 +363,6 @@ export function RegisterPurchaseDialog({
   );
 }
 
-// --- Subcomponente buscador ---
 interface SearchItemDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;

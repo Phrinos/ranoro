@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NewCalendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Car, User, Search, AlertCircle, Save, CalendarIcon, DollarSign } from 'lucide-react';
+import { Loader2, Car, User, AlertCircle, Save, CalendarIcon, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { serviceService, inventoryService } from '@/lib/services';
 import type { Vehicle, PaymentMethod } from '@/types';
@@ -57,7 +57,7 @@ export function RegistroIndividualContent() {
     },
   });
 
-  const { watch, setValue, getValues } = form;
+  const { watch, setValue } = form;
   const totalCost = watch('totalCost');
   const suppliesCost = watch('suppliesCost');
   const licensePlateSearch = watch('licensePlate');
@@ -66,7 +66,6 @@ export function RegistroIndividualContent() {
       const sc = suppliesCost || 0;
       return tc > 0 ? tc - sc : 0;
   }, [totalCost, suppliesCost]);
-
 
   useEffect(() => {
     const unsubscribe = inventoryService.onVehiclesUpdate((data) => {
@@ -77,37 +76,33 @@ export function RegistroIndividualContent() {
   }, []);
   
   useEffect(() => {
-      if (!licensePlateSearch || licensePlateSearch.length < 2) {
-          setSearchResults([]);
-          return;
-      }
-       if (searchedVehicle && searchedVehicle.licensePlate === licensePlateSearch) {
-          setSearchResults([]);
-          return;
-      }
-      
-      const lowerSearch = licensePlateSearch.toLowerCase();
-      const results = vehicles.filter(v => 
-          v.licensePlate.toLowerCase().includes(lowerSearch) ||
-          v.make.toLowerCase().includes(lowerSearch) ||
-          v.model.toLowerCase().includes(lowerSearch) ||
-          (v.ownerName && v.ownerName.toLowerCase().includes(lowerSearch))
-      ).slice(0, 5);
-      
-      setSearchResults(results);
-      if (results.length === 0) {
-          setVehicleNotFound(true);
-      }
-
+    if (!licensePlateSearch || licensePlateSearch.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    if (searchedVehicle && searchedVehicle.licensePlate === licensePlateSearch) {
+      setSearchResults([]);
+      return;
+    }
+    
+    const lowerSearch = licensePlateSearch.toLowerCase();
+    const results = vehicles.filter(v => 
+      v.licensePlate.toLowerCase().includes(lowerSearch) ||
+      v.make.toLowerCase().includes(lowerSearch) ||
+      v.model.toLowerCase().includes(lowerSearch) ||
+      (v.ownerName && v.ownerName.toLowerCase().includes(lowerSearch))
+    ).slice(0, 5);
+    
+    setSearchResults(results);
+    if (results.length === 0) setVehicleNotFound(true);
   }, [licensePlateSearch, vehicles, searchedVehicle]);
-
 
   const handleSelectVehicle = useCallback((vehicle: Vehicle) => {
     setSearchedVehicle(vehicle);
     setValue('vehicleId', vehicle.id, { shouldValidate: true });
-    setValue('licensePlate', vehicle.licensePlate); // Update the input field as well
+    setValue('licensePlate', vehicle.licensePlate);
     setVehicleNotFound(false);
-    setSearchResults([]); // Hide results after selection
+    setSearchResults([]);
   }, [setValue]);
   
   const onSubmit = async (data: FormValues) => {
@@ -115,13 +110,13 @@ export function RegistroIndividualContent() {
       await serviceService.saveMigratedServices([data] as any, []);
       toast({ title: 'Servicio Registrado', description: `El servicio para ${data.licensePlate} ha sido guardado.` });
       form.reset({ 
-          serviceDate: new Date(), 
-          paymentMethod: 'Efectivo', 
-          licensePlate: '', 
-          vehicleId: '', 
-          description: '', 
-          totalCost: 0, 
-          suppliesCost: 0 
+        serviceDate: new Date(), 
+        paymentMethod: 'Efectivo', 
+        licensePlate: '', 
+        vehicleId: '', 
+        description: '', 
+        totalCost: 0, 
+        suppliesCost: 0 
       });
       setSearchedVehicle(null);
     } catch (e) {
@@ -140,82 +135,201 @@ export function RegistroIndividualContent() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4 p-4 border rounded-md">
-                <h3 className="font-semibold">1. Buscar Vehículo</h3>
+              <h3 className="font-semibold">1. Buscar Vehículo</h3>
+              <FormField
+                control={form.control}
+                name="licensePlate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Buscar Vehículo (Placa, Marca, Modelo, Propietario)</FormLabel>
+                    <div className="relative">
+                      <FormControl>
+                        <Input
+                          placeholder="Ej: ABC-123"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e.target.value.toUpperCase());
+                            setSearchedVehicle(null);
+                            setVehicleNotFound(false);
+                            setValue('vehicleId', '');
+                          }}
+                        />
+                      </FormControl>
+                      {searchResults.length > 0 && (
+                        <div className="absolute top-full mt-1 w-full z-10">
+                          <ScrollArea className="h-auto max-h-[150px] rounded-md border bg-background shadow-lg">
+                            <div className="p-2">
+                              {searchResults.map(v => (
+                                <button
+                                  type="button"
+                                  key={v.id}
+                                  onClick={() => handleSelectVehicle(v)}
+                                  className="w-full text-left p-2 rounded-md hover:bg-muted"
+                                >
+                                  <p className="font-semibold">{v.licensePlate}</p>
+                                  <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
+                                </button>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        </div>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {isLoadingVehicles && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando vehículos...
+                </div>
+              )}
+              {vehicleNotFound && !searchedVehicle && (
+                <div className="flex items-center text-sm text-destructive">
+                  <AlertCircle className="mr-2 h-4 w-4" /> Vehículo no encontrado. Verifique los datos.
+                </div>
+              )}
+              {searchedVehicle && (
+                <Card className="bg-muted/50">
+                  <CardHeader className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Car className="h-5 w-5"/> {searchedVehicle.make} {searchedVehicle.model} ({searchedVehicle.year})
+                      </CardTitle>
+                      <CardDescription>Placa: {searchedVehicle.licensePlate}</CardDescription>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <p className="text-sm font-semibold flex items-center gap-2">
+                        <User className="h-4 w-4"/> {searchedVehicle.ownerName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{searchedVehicle.ownerPhone}</p>
+                    </div>
+                  </CardHeader>
+                </Card>
+              )}
+            </div>
+            
+            <div className="space-y-4 p-4 border rounded-md">
+              <h3 className="font-semibold">2. Detalles del Servicio</h3>
+              <div className="grid md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="licensePlate"
+                  name="serviceDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Fecha del Servicio</FormLabel>
+                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                              {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          {/* Quitar props no soportados: sin 'mode' ni 'locale' */}
+                          <NewCalendar
+                            selected={field.value}
+                            onSelect={(date: any) => {
+                              field.onChange(date);
+                              setIsCalendarOpen(false);
+                            }}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Buscar Vehículo (Placa, Marca, Modelo, Propietario)</FormLabel>
+                      <FormLabel>Servicio Realizado</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ej: Cambio de balatas delanteras" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 p-4 border rounded-md">
+              <h3 className="font-semibold">3. Costos y Pago</h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <FormField
+                  control={form.control}
+                  name="totalCost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Costo Total (Cliente)</FormLabel>
                       <div className="relative">
-                          <FormControl>
-                            <Input placeholder="Ej: ABC-123" {...field} onChange={(e) => {
-                                field.onChange(e.target.value.toUpperCase());
-                                setSearchedVehicle(null);
-                                setVehicleNotFound(false);
-                                setValue('vehicleId', '');
-                            }} />
-                          </FormControl>
-                         {searchResults.length > 0 && (
-                            <div className="absolute top-full mt-1 w-full z-10">
-                                <ScrollArea className="h-auto max-h-[150px] rounded-md border bg-background shadow-lg">
-                                    <div className="p-2">
-                                        {searchResults.map(v => (
-                                            <button type="button" key={v.id} onClick={() => handleSelectVehicle(v)} className="w-full text-left p-2 rounded-md hover:bg-muted">
-                                                <p className="font-semibold">{v.licensePlate}</p>
-                                                <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </ScrollArea>
-                            </div>
-                         )}
+                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="1200.00" {...field} value={field.value ?? ''} className="pl-8"/>
+                        </FormControl>
                       </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                {isLoadingVehicles && <div className="flex items-center text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando vehículos...</div>}
-                {vehicleNotFound && !searchedVehicle && <div className="flex items-center text-sm text-destructive"><AlertCircle className="mr-2 h-4 w-4" /> Vehículo no encontrado. Verifique los datos.</div>}
-                {searchedVehicle && (
-                    <Card className="bg-muted/50">
-                        <CardHeader className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                            <div>
-                                <CardTitle className="text-base flex items-center gap-2"><Car className="h-5 w-5"/> {searchedVehicle.make} {searchedVehicle.model} ({searchedVehicle.year})</CardTitle>
-                                <CardDescription>Placa: {searchedVehicle.licensePlate}</CardDescription>
-                            </div>
-                            <div className="text-left sm:text-right">
-                                <p className="text-sm font-semibold flex items-center gap-2"><User className="h-4 w-4"/> {searchedVehicle.ownerName}</p>
-                                <p className="text-xs text-muted-foreground">{searchedVehicle.ownerPhone}</p>
-                            </div>
-                        </CardHeader>
-                    </Card>
-                )}
-            </div>
-            
-            <div className="space-y-4 p-4 border rounded-md">
-                <h3 className="font-semibold">2. Detalles del Servicio</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                     <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha del Servicio</FormLabel><Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><NewCalendar mode="single" selected={field.value} onSelect={(date: any) => { field.onChange(date); setIsCalendarOpen(false); }} locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )}/>
-                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Servicio Realizado</FormLabel><FormControl><Input placeholder="Ej: Cambio de balatas delanteras" {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                <FormField
+                  control={form.control}
+                  name="suppliesCost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Costo Insumos (Taller)</FormLabel>
+                      <div className="relative">
+                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="750.00" {...field} value={field.value ?? ''} className="pl-8"/>
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div>
+                  <FormLabel>Ganancia</FormLabel>
+                  <div className="h-10 flex items-center p-2 border rounded-md bg-muted/50 font-semibold">
+                    {formatCurrency(serviceProfit)}
+                  </div>
                 </div>
-            </div>
-
-            <div className="space-y-4 p-4 border rounded-md">
-                <h3 className="font-semibold">3. Costos y Pago</h3>
-                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                     <FormField control={form.control} name="totalCost" render={({ field }) => ( <FormItem><FormLabel>Costo Total (Cliente)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="1200.00" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
-                     <FormField control={form.control} name="suppliesCost" render={({ field }) => ( <FormItem><FormLabel>Costo Insumos (Taller)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="750.00" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
-                     <div><FormLabel>Ganancia</FormLabel><div className="h-10 flex items-center p-2 border rounded-md bg-muted/50 font-semibold">{formatCurrency(serviceProfit)}</div></div>
-                      <FormField control={form.control} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione método"/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-                 </div>
+                <FormField
+                  control={form.control}
+                  name="paymentMethod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Método de Pago</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione método" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
             
             <div className="flex justify-end">
-                <Button type="submit" disabled={form.formState.isSubmitting || !searchedVehicle}>
-                    <Save className="mr-2 h-4 w-4" />
-                    {form.formState.isSubmitting ? "Guardando..." : "Guardar Servicio Histórico"}
-                </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting || !searchedVehicle}>
+                <Save className="mr-2 h-4 w-4" />
+                {form.formState.isSubmitting ? "Guardando..." : "Guardar Servicio Histórico"}
+              </Button>
             </div>
           </form>
         </Form>

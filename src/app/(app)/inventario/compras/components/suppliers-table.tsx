@@ -1,4 +1,4 @@
-// src/app/(app)/inventario/compras/components/suppliers-table.tsx
+
 "use client";
 
 import React from "react";
@@ -33,7 +33,7 @@ export const SuppliersTable = React.memo(function SuppliersTable({
   sortOption,
   onSortOptionChange,
 }: SuppliersTableProps) {
-  const handleSort = (key: SortKey) => {
+  const handleSort = (key: string) => {
     const isAsc = sortOption === `${key}_asc`;
     onSortOptionChange(isAsc ? `${key}_desc` : `${key}_asc`);
   };

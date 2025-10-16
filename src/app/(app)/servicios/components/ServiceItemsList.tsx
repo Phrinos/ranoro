@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useMemo } from "react";
@@ -48,7 +49,8 @@ export function ServiceItemsList({
 }: ServiceItemsListProps) {
   const { control, setValue, watch } = useFormContext<ServiceFormValues>();
 
-  const { fields, append, remove } = useFieldArray<ServiceFormValues, 'serviceItems'>({
+  // TIPADO CORRECTO PARA EVITAR 'never'
+  const { fields, append, remove } = useFieldArray<ServiceFormValues, "serviceItems">({
     control,
     name: "serviceItems",
   });
@@ -60,7 +62,7 @@ export function ServiceItemsList({
     let mutated = false;
     let runningTotal = 0;
 
-    stableItems.forEach((item: any, i) => {
+    stableItems.forEach((item: any, i: number) => {
       if (typeof item?.sellingPrice === "string") {
         const n = toNumberLoose(item.sellingPrice);
         (setValue as any)(`serviceItems.${i}.sellingPrice`, n, { shouldDirty: true, shouldValidate: false });
@@ -78,19 +80,17 @@ export function ServiceItemsList({
       const supplies = Array.isArray(item?.suppliesUsed) ? item.suppliesUsed : [];
       supplies.forEach((s: any, j: number) => {
         if (typeof s?.unitCost === "string") {
-          (setValue as any)(
-            `serviceItems.${i}.suppliesUsed.${j}.unitCost`,
-            toNumberLoose(s.unitCost as any),
-            { shouldDirty: true, shouldValidate: false }
-          );
+          (setValue as any)(`serviceItems.${i}.suppliesUsed.${j}.unitCost`, toNumberLoose(s.unitCost), {
+            shouldDirty: true,
+            shouldValidate: false,
+          });
           mutated = true;
         }
         if (typeof s?.quantity === "string") {
-          (setValue as any)(
-            `serviceItems.${i}.suppliesUsed.${j}.quantity`,
-            toNumberLoose(s.quantity),
-            { shouldDirty: true, shouldValidate: false }
-          );
+          (setValue as any)(`serviceItems.${i}.suppliesUsed.${j}.quantity`, toNumberLoose(s.quantity), {
+            shouldDirty: true,
+            shouldValidate: false,
+          });
           mutated = true;
         }
       });
@@ -184,7 +184,7 @@ export function ServiceItemsList({
                     {...field}
                     className="min-h-[100px] bg-card"
                     disabled={isReadOnly}
-                    value={typeof field.value === 'string' ? field.value : ""}
+                    value={typeof field.value === "string" ? field.value : ""}
                   />
                 </FormControl>
               </FormItem>

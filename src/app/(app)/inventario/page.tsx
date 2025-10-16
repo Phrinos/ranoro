@@ -1,9 +1,11 @@
-// src/app/(app)/inventario/page.tsx
+
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from "react";
+import dynamic from 'next/dynamic'
+
 import { Button } from "@/components/ui/button";
 import {
   PlusCircle,

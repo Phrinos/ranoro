@@ -1,4 +1,4 @@
-// src/app/(app)/flotilla/components/FineCheckDialog.tsx
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -78,9 +78,8 @@ export function FineCheckDialog({ open, onOpenChange, fines, onSave }: FineCheck
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <NewCalendar
-                      mode="single"
-                      selected={parsed}
-                      onSelect={(date: any) => {
+                      value={parsed}
+                      onChange={(date: any) => {
                         if (date && !Array.isArray(date)) {
                           handleFineChange(index, "date", date.toISOString());
                         }
