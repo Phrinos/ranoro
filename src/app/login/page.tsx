@@ -1,3 +1,4 @@
+
 // src/app/login/page.tsx
 "use client";
 
@@ -12,7 +13,7 @@ import Image from "next/image";
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { auth } from '@/lib/firebaseClient.js';
-import { signInWithEmailAndPassword, type User as FirebaseUser } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const [emailLogin, setEmailLogin] = useState('');
@@ -38,7 +39,16 @@ export default function LoginPage() {
 
     try {
       if (!auth) throw new Error("Firebase Auth no está inicializado.");
-      await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
+      
+      const userCredential = await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
+      const idToken = await userCredential.user.getIdToken();
+
+      // Envía el token al servidor para crear la cookie de sesión
+      await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: idToken }),
+      });
       
       toast({ title: 'Inicio de Sesión Exitoso', description: `¡Bienvenido de nuevo!` });
 
@@ -51,6 +61,7 @@ export default function LoginPage() {
           ? 'Las credenciales son incorrectas. Verifique su correo y contraseña.'
           : 'Ocurrió un error inesperado al intentar iniciar sesión.';
       toast({ title: 'Error al Iniciar Sesión', description: errorMessage, variant: 'destructive' });
+    } finally {
       setIsLoading(false);
     } 
   };

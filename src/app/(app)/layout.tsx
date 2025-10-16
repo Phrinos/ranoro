@@ -2,14 +2,24 @@
 import React, { Suspense } from 'react';
 import AppClientLayout from './AppClientLayout';
 import { Loader2 } from 'lucide-react';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-// Este es ahora un Componente de Servidor.
-// No usa "use client", ni hooks como useState, useEffect, etc.
+// This is now a Server Component.
+// It doesn't use "use client", useState, useEffect, etc.
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const authCookie = cookies().get('AuthToken');
+
+  if (!authCookie) {
+    // If there's no auth cookie, redirect to login immediately on the server.
+    // This is much faster than a client-side check.
+    redirect('/login');
+  }
+  
   return (
     <Suspense
-      // Este fallback se mostrará mientras se carga el AppClientLayout
+      // This fallback is shown while the AppClientLayout and its children are loading
       fallback={
         <div className="flex h-screen w-screen items-center justify-center bg-background">
           <div className="flex items-center">

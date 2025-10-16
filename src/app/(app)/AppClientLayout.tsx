@@ -1,17 +1,16 @@
 
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { PropsWithChildren } from "react";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { SidebarProvider } from "@/hooks/use-sidebar";
 import { SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import React, { useEffect } from "react";
+import React from "react";
 
 
 const AppSidebar = dynamic(
@@ -21,30 +20,13 @@ const AppSidebar = dynamic(
 );
 
 function AppClientLayoutInner({ children }: PropsWithChildren) {
-  const { currentUser, isLoading, handleLogout } = useAuth();
+  const { currentUser, handleLogout } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
-  const search = useSearchParams();
 
-  useEffect(() => {
-    if (!isLoading && !currentUser) {
-      const next = `${pathname}${search?.toString() ? `?${search.toString()}` : ""}`;
-      router.replace(`/login?next=${encodeURIComponent(next)}`);
-    }
-  }, [isLoading, currentUser, router, pathname, search]);
-
-
-  if (isLoading || !currentUser) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <div className="flex items-center">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span className="ml-3 text-lg text-muted-foreground">
-            Verificando sesión...
-          </span>
-        </div>
-      </div>
-    );
+  if (!currentUser) {
+    // This case should ideally not be hit if the parent server layout handles redirection.
+    // However, it's a good fallback.
+    return null;
   }
 
   return (
