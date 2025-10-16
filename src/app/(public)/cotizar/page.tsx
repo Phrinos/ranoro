@@ -152,9 +152,6 @@ function PageInner() {
                     data-ai-hint="ranoro logo"
                     />
                 </Link>
-                <Button asChild variant="ghost">
-                    <Link href="/login">¿Eres un taller?</Link>
-                </Button>
             </div>
         </header>
         <main className="flex-1 py-8 md:py-12 lg:py-16">
