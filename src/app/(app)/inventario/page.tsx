@@ -58,6 +58,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { PurchaseFormValues } from './compras/components/register-purchase-dialog';
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const RegisterPurchaseDialog = dynamic(() => import('./compras/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = dynamic(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
@@ -114,32 +115,27 @@ const ProductosContent: React.FC<{
   return (
     <Card>
       <CardContent className="pt-6">
-        <TableToolbar
-          {...tableManager}
-          searchPlaceholder="Buscar por nombre, SKU, marca..."
-          sortOptions={[
-            { value: 'name_asc', label: 'Nombre (A-Z)' },
-            { value: 'name_desc', label: 'Nombre (Z-A)' },
-            { value: 'quantity_desc', label: 'Stock (Mayor a Menor)' },
-            { value: 'quantity_asc', label: 'Stock (Menor a Mayor)' },
-            { value: 'sellingPrice_desc', label: 'Precio (Mayor a Menor)' },
-            { value: 'sellingPrice_asc', label: 'Precio (Menor a Mayor)' },
-          ]}
-          actions={
-            <Button onClick={() => onPrint(fullFilteredData)} variant="outline" className="bg-white">
-              <Printer className="mr-2 h-4 w-4" /> Exportar / Imprimir
+         <div className="flex flex-col sm:flex-row items-center gap-2">
+            <TableToolbar
+                searchTerm={tableManager.searchTerm}
+                onSearchTermChange={tableManager.onSearchTermChange}
+                searchPlaceholder="Buscar por nombre, SKU, marca..."
+                dateRange={tableManager.dateRange}
+                onDateRangeChange={tableManager.onDateRangeChange}
+            />
+            <Button onClick={() => onPrint(fullFilteredData)} variant="outline" className="bg-white w-full sm:w-auto flex-shrink-0">
+                <Printer className="mr-2 h-4 w-4" /> Exportar / Imprimir
             </Button>
-          }
-        />
+        </div>
         <div className="rounded-md border mt-4">
           <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={tableManager.sortOption} />
-                <SortableTableHeader sortKey="quantity" label="Stock" onSort={handleSort} currentSort={tableManager.sortOption} />
-                <SortableTableHeader sortKey="unitPrice" label="Costo" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right" />
-                <SortableTableHeader sortKey="sellingPrice" label="Precio Venta" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right" />
-                <SortableTableHeader sortKey="category" label="Categoría" onSort={handleSort} currentSort={tableManager.sortOption} />
+            <TableHeader className="bg-black">
+              <TableRow className="hover:bg-transparent">
+                <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                <SortableTableHeader sortKey="quantity" label="Stock" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
+                <SortableTableHeader sortKey="unitPrice" label="Costo" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right" textClassName="text-white" />
+                <SortableTableHeader sortKey="sellingPrice" label="Precio Venta" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right" textClassName="text-white" />
+                <SortableTableHeader sortKey="category" label="Categoría" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -226,7 +222,7 @@ const CategoriasContent: React.FC<{
                     <TableRow>
                         <TableHead>Nombre</TableHead>
                         <TableHead>Productos/Servicios</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
+                        <TableHead className="text-right w-[100px]">Acciones</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -503,18 +499,20 @@ function PageInner() {
       </Suspense>
 
       <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-        <DialogContent className="max-w-4xl p-0 no-print">
-           <DialogHeader className="p-6 pb-2">
+        <DialogContent className="max-w-4xl p-0 no-print flex flex-col h-[90vh]">
+           <DialogHeader className="p-6 pb-2 border-b">
               <DialogTitle>Imprimir Reporte de Inventario</DialogTitle>
               <DialogDescription>
                 Se generará una vista de impresión con los productos seleccionados.
               </DialogDescription>
             </DialogHeader>
-          <div className="printable-content bg-white">
-              <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
-                  <InventoryReportContent items={itemsToPrint} />
-              </Suspense>
-          </div>
+            <ScrollArea className="flex-grow">
+              <div className="p-6 printable-content bg-white">
+                  <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
+                      <InventoryReportContent items={itemsToPrint} />
+                  </Suspense>
+              </div>
+            </ScrollArea>
           <DialogFooter className="p-4 border-t bg-background sm:justify-end no-print">
               <Button onClick={() => window.print()}>
                   <Printer className="mr-2 h-4 w-4" /> Imprimir
