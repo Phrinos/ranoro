@@ -1,10 +1,9 @@
-
 // src/app/(app)/inventario/compras/components/supplier-form.tsx
 
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,8 +40,8 @@ interface SupplierFormProps {
 }
 
 export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
-  const form = useForm<SupplierFormValues>({
-    resolver: zodResolver(supplierFormSchema),
+  const form = useForm<SupplierFormValues, any, SupplierFormValues>({
+    resolver: zodResolver(supplierFormSchema) as Resolver<SupplierFormValues, any, SupplierFormValues>,
     defaultValues: initialData || {
       name: "",
       description: "",

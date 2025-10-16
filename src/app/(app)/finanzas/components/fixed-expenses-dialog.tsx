@@ -199,9 +199,9 @@ export function FixedExpensesDialog({
                             <Badge variant="outline" className="mt-1">
                               {expense.category || 'Otros'}
                             </Badge>
-                            {expense.notes && (
+                            {(expense as any).notes && (
                               <p className="text-xs text-muted-foreground mt-1">
-                                {expense.notes}
+                                {(expense as any).notes}
                               </p>
                             )}
                           </TableCell>
@@ -225,7 +225,7 @@ export function FixedExpensesDialog({
                               }
                               title={`¿Eliminar gasto "${expense.name}"?`}
                               description="Esta acción es permanente y afectará los cálculos financieros."
-                              onConfirm={() => handleDeleteExpense(expense.id)}
+                              onConfirm={async () => await handleDeleteExpense(expense.id)}
                             />
                           </TableCell>
                         </TableRow>
@@ -241,7 +241,7 @@ export function FixedExpensesDialog({
 
               <p className="text-xs text-muted-foreground">
                 Tip: al crear un gasto nuevo se registra <code>createdAt</code> con la fecha actual.
-                El Estado de Resultados sólo considera gastos con <code>createdAt</code> ≤ fin del
+                El Estado de Resultados sólo considera gastos activos hasta la fecha final del
                 periodo.
               </p>
             </div>

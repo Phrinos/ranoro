@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { NewCalendar } from "@/components/ui/calendar";
 import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
-import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
+import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import type { CalendarProps } from "react-calendar";
 
 const purchaseItemSchema = z.object({
@@ -207,6 +207,7 @@ export function RegisterPurchaseDialog({
                                     min="0.01"
                                     className="h-8 w-20 text-right bg-white"
                                     {...field}
+                                    value={field.value || ''}
                                   />
                                 )}
                               />
@@ -222,6 +223,7 @@ export function RegisterPurchaseDialog({
                                       min="0"
                                       className="h-8 w-28 pl-8 text-right bg-white"
                                       {...field}
+                                      value={field.value || ''}
                                     />
                                   </div>
                                 )}
@@ -314,7 +316,7 @@ export function RegisterPurchaseDialog({
                                 <NewCalendar
                                    onChange={field.onChange as CalendarProps['onChange']}
                                    value={field.value}
-                                   locale={es as any}
+                                   locale={"es"}
                                 />
                               </PopoverContent>
                             </Popover>

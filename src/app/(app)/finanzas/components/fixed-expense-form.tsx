@@ -3,7 +3,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,8 +65,8 @@ export function FixedExpenseForm({
   onSubmit,
   onClose,
 }: FixedExpenseFormProps) {
-  const form = useForm<FixedExpenseFormValues>({
-    resolver: zodResolver(fixedExpenseFormSchema),
+  const form = useForm<FixedExpenseFormValues, any, FixedExpenseFormValues>({
+    resolver: zodResolver(fixedExpenseFormSchema) as Resolver<FixedExpenseFormValues, any, FixedExpenseFormValues>,
     defaultValues: initialData
       ? {
           name: initialData.name ?? "",
@@ -80,7 +80,7 @@ export function FixedExpenseForm({
             const cat = (initialData as any)?.category;
             return expenseCategories.includes(cat) ? cat : "Otros";
           })(),
-          notes: initialData.notes ?? "",
+          notes: (initialData as any).notes ?? "",
         }
       : {
           name: "",

@@ -9,7 +9,7 @@ import { SaleSummary } from './sale-summary';
 import { PosItemsTable } from "./pos-items-table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
-import { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
+import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 
 
 interface POSFormProps {

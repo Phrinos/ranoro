@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SaleReceipt, InventoryItem, User, InventoryCategory, Supplier, Payment } from "@/types";
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Ban, Save, Trash2, MessageSquare, Repeat } from "lucide-react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";

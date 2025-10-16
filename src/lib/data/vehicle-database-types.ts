@@ -1,8 +1,7 @@
-
 // src/lib/data/vehicle-database-types.ts
 
 // --- Tipos para Insumos ---
-export interface Aceite {
+export interface OilInfo {
     grado: string | null;
     litros: number | null;
     costoUnitario: number;
@@ -61,7 +60,7 @@ export interface ServicioCosto {
 
 // --- Estructura principal ---
 export interface InsumosData {
-    aceite: Aceite;
+    aceite: OilInfo;
     filtroAceite: Filtro;
     filtroAire: Filtro;
     balatas: Balatas;

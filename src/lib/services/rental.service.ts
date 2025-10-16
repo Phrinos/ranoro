@@ -90,8 +90,8 @@ const addRentalPayment = async (
         amount,
         daysCovered: dailyRate > 0 ? amount / dailyRate : 0,
         note: note || `Abono de Renta`,
-        paymentMethod: paymentMethod || 'Efectivo',
         registeredByName: currentUser?.name || 'Sistema',
+        paymentMethod: paymentMethod,
     };
     
     if (paymentId) {

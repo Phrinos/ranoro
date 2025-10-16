@@ -58,18 +58,27 @@ type SimplifiedSale = {
 };
 
 export function calculateSaleProfit(
-  sale: SaleReceipt,
+  sale: LegacySale | SimplifiedSale,
   allInventory: InventoryItem[]
-) {
-    const cost = sale.items.reduce((sum, item: any) => {
-        // Use inventoryItemId for legacy or itemId for new format
-        const inventoryItemId = item.inventoryItemId || item.itemId;
-        const inventoryItem = allInventory.find(invItem => invItem.id === inventoryItemId);
-        const unitCost = inventoryItem?.unitPrice ?? 0;
-        return sum + (unitCost * item.quantity);
+): number {
+  // Si es el formato nuevo, aproximamos costo usando inventario por itemId (si coincide)
+  const isSimplified = !('unitPrice' in (sale.items[0] ?? {}));
+  if (isSimplified) {
+    const items = (sale as SimplifiedSale).items;
+    const cost = items.reduce((sum, it: any) => {
+      const inv = allInventory.find(x => x.id === it.itemId);
+      const unitCost = inv?.unitPrice ?? 0;
+      return sum + unitCost * (it.quantity ?? 1);
     }, 0);
-
-    const commission = sale.cardCommission ?? 0;
-
-    return sale.totalAmount - cost - commission;
+    return (sale as SimplifiedSale).totalAmount - cost;
+  }
+  // Formato legacy original
+  const legacy = sale as LegacySale;
+  const cost = legacy.items.reduce((sum, it) => {
+    const inv = allInventory.find(x => x.id === it.inventoryItemId);
+    const unitCost = inv?.unitPrice ?? 0;
+    return sum + unitCost * it.quantity;
+  }, 0);
+  const cardCommission = 'cardCommission' in legacy ? legacy.cardCommission ?? 0 : 0;
+  return legacy.totalAmount - cost - cardCommission;
 }

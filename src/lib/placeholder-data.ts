@@ -94,9 +94,8 @@ type SimplifiedSale = {
 export function calculateSaleProfit(
   sale: LegacySale | SimplifiedSale,
   allInventory: InventoryItem[]
-) {
-  // Si es el formato nuevo, aproximamos costo usando inventario por itemId (si coincide)
-  const isSimplified = !('items' in sale && 'unitPrice' in (sale.items[0] ?? {}));
+): number {
+  const isSimplified = !('unitPrice' in (sale.items[0] ?? {}));
   if (isSimplified) {
     const items = (sale as SimplifiedSale).items;
     const cost = items.reduce((sum, it: any) => {
@@ -113,5 +112,6 @@ export function calculateSaleProfit(
     const unitCost = inv?.unitPrice ?? 0;
     return sum + unitCost * it.quantity;
   }, 0);
-  return legacy.totalAmount - cost - (legacy.cardCommission ?? 0);
+  const cardCommission = 'cardCommission' in legacy ? legacy.cardCommission ?? 0 : 0;
+  return legacy.totalAmount - cost - cardCommission;
 }

@@ -22,8 +22,7 @@ import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { capitalizeWords } from "@/lib/utils";
 import { DollarSign } from "lucide-react";
 import { inventoryItemFormSchema } from '@/schemas/inventory-item-form-schema';
-
-export type InventoryItemFormValues = z.infer<typeof inventoryItemFormSchema>;
+import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 
 interface InventoryItemFormProps {
   id: string; // Form ID
@@ -34,8 +33,8 @@ interface InventoryItemFormProps {
 }
 
 export function InventoryItemForm({ id, initialData, onSubmit, categories, suppliers }: InventoryItemFormProps) {
-  const form = useForm<InventoryItemFormValues>({
-    resolver: zodResolver(inventoryItemFormSchema) as Resolver<InventoryItemFormValues>,
+  const form = useForm<InventoryItemFormValues, any, InventoryItemFormValues>({
+    resolver: zodResolver(inventoryItemFormSchema) as Resolver<InventoryItemFormValues, any, InventoryItemFormValues>,
     defaultValues: {
       name: initialData?.name || "",
       brand: (initialData as any)?.brand || "",

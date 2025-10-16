@@ -31,6 +31,9 @@ export interface AdministrativeStaff extends User {
   department: string;
 }
 
+/** Utilizado por varios componentes de hoja/impresiones */
+export type WorkshopInfo = Record<string, unknown>;
+
 export type InventoryItem = {
   id: string;
   name: string;
@@ -45,7 +48,9 @@ export type InventoryItem = {
   sku?: string;
   updatedAt?: any; // Firestore Timestamp
   unitPrice: number;
+  /** La UI lee este campo en muchos lados */
   sellingPrice?: number;
+  /** Algunas vistas leen unidad */
   unitType?: 'units'|'ml'|'liters'|'kg'|'service';
 };
 
@@ -61,14 +66,10 @@ export type InventoryCategory = { id: string; name: string };
 export type Supplier = {
   id: string;
   name: string;
-  description?: string;
   contactPerson?: string;
   phone?: string;
   email?: string;
   address?: string;
-  debtAmount?: number;
-  rfc?: string;
-  taxRegime?: string;
 };
 
 export type Paperwork = { id: string; name: string; dueDate: string };
@@ -91,7 +92,7 @@ export type Vehicle = {
   licensePlate: string;
   vin?: string;
   color?: string;
-  ownerName: string;
+  ownerName?: string;
   ownerPhone?: string;
   chatMetaLink?: string;
   isFleetVehicle?: boolean;
@@ -106,6 +107,7 @@ export type Vehicle = {
   assignedDriverName?: string | null;
   paperwork?: Paperwork[];
   fineChecks?: FineCheck[];
+  /** Varias tablas usan esto */
   lastServiceDate?: Date | string | null;
 };
 
@@ -148,8 +150,6 @@ export type RentalPayment = {
   amount: number;
   daysCovered: number;
   note?: string;
-  registeredByName?: string;
-  paymentMethod?: PaymentMethod;
 };
 
 export type OwnerWithdrawal = {
@@ -177,11 +177,15 @@ export type ManualDebtEntry = {
   note: string;
 };
 
+/** Línea de servicio “superset” (cubre ambos formatos que usa la UI) */
 export type ServiceItem = {
+  // Forma “simple” original
   itemId: string;
   itemName: string;
   quantity: number;
   total: number;
+
+  // Campos enriquecidos usados por otros componentes (opcionales)
   id?: string;
   name?: string;
   price?: number;
@@ -190,8 +194,6 @@ export type ServiceItem = {
   unitType?: 'units'|'ml'|'liters'|'kg'|'service';
   unitPrice?: number;
   inventoryItemId?: string;
-  technicianId?: string;
-  technicianCommission?: number;
   suppliesUsed?: Array<{
     quantity: number;
     supplyId: string;
@@ -218,7 +220,7 @@ export type Payment = {
 };
 
 export type NextServiceInfo = {
-  date: string | Date | null;
+  date: string | null;
   mileage: number | null;
 };
 
@@ -237,20 +239,32 @@ export type ServiceRecord = {
   vehicleId: string;
   serviceDate: Date | string;
   status: ServiceStatus;
+  /** Muchos componentes leen esto (opcional) */
   subStatus?: string;
-  serviceType?: string;
+  /** La UI muestra y muta este estado */
   appointmentStatus?: 'Sin Confirmar'|'Confirmada'|'Cancelada'|string;
+
+  /** Campos esperados por vistas de compartir/impresión */
   publicId?: string;
   folio?: string;
+
+  /** Datos de cliente */
   customerName?: string;
   customerPhone?: string;
+
+  /** Vehículo opcional embebido en algunas vistas */
   vehicle?: Vehicle;
+
+  /** Ítems de servicio en formato superset */
   serviceItems: ServiceItem[];
+
+  /** Firmas y recepción/entrega */
   customerSignatureDataUrl?: string;
   serviceAdvisorSignatureDataUrl?: string;
   customerSignatureReception?: string;
   customerSignatureDelivery?: string;
-  cancellationReason?: string;
+
+  /** Info adicional */
   description?: string;
   mechanicId?: string;
   mechanicName?: string;
@@ -268,15 +282,23 @@ export type ServiceRecord = {
   payments?: Payment[];
   paymentMethod?: string;
   cardCommission?: number;
-  serviceAdvisorCommission?: number;
+  cancellationReason?: string;
+
+  /** Usado por hojas e inspecciones */
+  workshopInfo?: WorkshopInfo;
   safetyInspection?: SafetyInspection;
   photoReports?: { title?: string; photos: string[] }[];
   originalQuoteItems?: ServiceItem[];
   notes?: string;
+
+  /** Condiciones del vehículo */
   fuelLevel?: 'Empty'|'1/4'|'1/2'|'3/4'|'Full'|string;
   vehicleConditions?: string;
   customerItems?: string;
+
+  /** Otros */
   mileage?: number | null;
+  serviceType?: string;
 };
 
 export type SaleReceipt = {
@@ -290,17 +312,9 @@ export type SaleReceipt = {
   profit?: number;
   registeredById?: string;
   registeredByName?: string;
-  cardCommission?: number;
-  amountInCash?: number;
-  amountInCard?: number;
-  amountInTransfer?: number;
-  subTotal?: number;
-  tax?: number;
-  customerName?: string;
-  notes?: string;
 };
 
-export type MonthlyFixedExpense = { id: string; name: string; amount: number; category: string, createdAt: string };
+export type MonthlyFixedExpense = { id: string; name: string; amount: number; category: string };
 
 export type CashMovement = {
   id: string;
@@ -351,38 +365,23 @@ export type CashDrawerTransaction = {
   relatedId?: string;
 };
 
-export type VehiclePriceList = {
-  make: string;
-  models: {
-    name: string;
-    generations: { startYear: number; endYear: number; engines: EngineData[] }[];
-  }[];
-};
-
 export type PricedService = {
   costoInsumos?: number;
   precioPublico?: number;
   upgrades?: { [key: string]: number };
 };
 
+export type { EngineData } from '@/lib/data/vehicle-database-types';
+export type { VehicleMake as VehiclePriceListMake, VehicleModel, EngineGeneration, InsumosData, ServiciosData } from '@/lib/data/vehicle-database-types';
+
+/** Extras que importan otros servicios */
 export type Area = string;
-export type PayableAccount = { 
-  id: string; 
-  supplierId: string; 
-  totalAmount: number; 
-  paidAmount: number; 
-  status: 'Pendiente'|'Pagado Parcialmente'|'Pagado'|string; 
-  invoiceId?: string; 
-  invoiceDate: string; 
-  dueDate: string; 
-  supplierName?: string; 
-};
-export type AuditLogAction = "Crear" | "Editar" | "Eliminar" | "Archivar" | "Restaurar" | "Registrar" | "Pagar" | "Cancelar" | 'create' | 'update' | 'delete' | 'login' | 'export';
+export type PayableAccount = { id: string; supplierId: string; amount: number; status: 'open'|'paid'|'partial'|string };
+export type AuditLogAction = "Crear" | "Editar" | "Eliminar" | "Archivar" | "Restaurar" | "Registrar" | "Pagar" | "Cancelar";
 export type AuditLogEntity = "user" | "vehicle" | "inventory" | "service" | "sale" | "role" | "purchase" | "payment";
 export type AuditLog = {
   id: string;
-  date: string;
-  action: AuditLogAction;
+  actionType: AuditLogAction;
   description: string;
   entityType: string;
   entityId: string;
@@ -392,22 +391,3 @@ export type AuditLog = {
 };
 
 export type QuoteRecord = { id: string; items: ServiceItem[]; total?: number };
-
-export type OilInfo = { grado?: string | null; litros?: number | null; costoUnitario?: number; lastUpdated?: string };
-export type EngineSupply = { sku?: string | null; costoUnitario?: number; lastUpdated?: string };
-
-export type EngineData = {
-  name: string;
-  insumos: {
-    aceite: OilInfo;
-    filtroAceite?: EngineSupply;
-    filtroAire?: EngineSupply;
-    filtroGasolina?: EngineSupply;
-    bujia?: EngineSupply;
-    refrigerante?: { litros?: number; costoUnitario?: number; lastUpdated?: string };
-    frenos?: { costoUnitario?: number; lastUpdated?: string };
-    inyector?: { costoUnitario?: number; lastUpdated?: string };
-    [k: string]: any;
-  };
-  servicios: Record<string, PricedService>;
-};

@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { DollarSign } from "lucide-react";
@@ -20,8 +20,8 @@ interface PayableAccountFormProps {
 }
 
 export function PayableAccountForm({ id, onSubmit, account }: PayableAccountFormProps) {
-  const form = useForm<PayableAccountFormValues>({
-    resolver: zodResolver(payableAccountFormSchema(account.totalAmount - account.paidAmount)),
+  const form = useForm<PayableAccountFormValues, any, PayableAccountFormValues>({
+    resolver: zodResolver(payableAccountFormSchema(account.totalAmount - account.paidAmount)) as Resolver<PayableAccountFormValues, any, PayableAccountFormValues>,
     defaultValues: {
       amount: account.totalAmount - account.paidAmount,
       note: "",

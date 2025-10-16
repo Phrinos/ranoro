@@ -6,7 +6,7 @@ import { withSuspense } from "@/lib/withSuspense";
 import React, { useState, useMemo, useEffect, useCallback, Suspense, useRef, lazy } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, Car, AlertTriangle, Activity, CalendarX, DollarSign, Tags, Package, Edit, Trash2 } from "lucide-react";
-import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from '@/types'; 
+import type { InventoryItem, InventoryCategory, Supplier, Vehicle } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from 'lucide-react';
@@ -33,7 +33,7 @@ const ProductosContent: React.FC<any> = () => null;
 const CategoriasContent: React.FC<any> = () => null;
 const RegisterPurchaseDialog: React.FC<any> = () => null;
 const InventoryItemDialog: React.FC<any> = () => null;
-const InventoryReportContent: React.FC<any> = () => null;
+const InventoryReportContent: React.FC<any> = (_: any) => null;
 
 
 function PrintTicketDialogInner(props: any) {
@@ -69,7 +69,7 @@ function PrintTicketDialogInner(props: any) {
       setIsLoading(false); 
     }));
 
-    return () => unsubs.forEach(unsub => unsub());
+    return () => unsubs.forEach((unsub) => unsub());
   }, []);
 
   const inventorySummary = useMemo(() => {

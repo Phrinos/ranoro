@@ -83,7 +83,6 @@ const registerSale = async (
         registeredById: currentUser.id,
         registeredByName: currentUser.name,
         status: 'Completado',
-        cardCommission: saleData.cardCommission || 0,
     };
 
     workBatch.set(saleRef, cleanObjectForFirestore(newSale));

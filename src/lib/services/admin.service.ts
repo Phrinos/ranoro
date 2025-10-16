@@ -35,10 +35,10 @@ export const logAudit = async (
   }
   const newLog: Omit<AuditLog, "id"> = {
     ...details,
-    action: actionType,
+    actionType: actionType,
     description,
     createdAt: serverTimestamp(),
-  } as Omit<AuditLog, 'id'>;
+  } as any;
   try {
     await addDoc(collection(db, 'auditLogs'), newLog as any);
   } catch (error) {
@@ -231,9 +231,9 @@ const updateUserProfile = async (user: Partial<User> & { id: string }): Promise<
     }
 };
 
-const getDocById = async (col: string, id: string) => {
+const getDocById = async (collectionName: string, id: string) => {
     if (!db) return null;
-    const snap = await getDoc(doc(db, col, id));
+    const snap = await getDoc(doc(db, collectionName, id));
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };
 
