@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
@@ -60,9 +61,209 @@ const RegisterPurchaseDialog = dynamic(() => import('./compras/components/regist
 const InventoryItemDialog = dynamic(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
 const InventoryReportContent = dynamic(() => import('./components/inventory-report-content').then(module => ({ default: module.default })));
 
-const DashboardCards: React.FC<any> = () => null;
-const ProductosContent: React.FC<any> = () => null;
-const CategoriasContent: React.FC<any> = () => null;
+// ----- Sub-componente para Resumen -----
+const DashboardCards: React.FC<{
+  summaryData: any;
+  onNewItemClick: () => void;
+}> = ({ summaryData, onNewItemClick }) => (
+  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Valor del Inventario (Costo)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+      <CardContent><div className="text-2xl font-bold">{formatCurrency(summaryData.totalInventoryCost)}</div></CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos / Servicios</CardTitle><Package className="h-4 w-4 text-muted-foreground"/></CardHeader>
+      <CardContent><div className="text-2xl font-bold">{summaryData.productsCount} / {summaryData.servicesCount}</div></CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Alertas de Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500"/></CardHeader>
+      <CardContent><div className="text-2xl font-bold text-orange-600">{summaryData.lowStockItemsCount}</div></CardContent>
+    </Card>
+    <Card>
+        <CardContent className="pt-6">
+            <Button onClick={onNewItemClick} className="w-full">
+                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Producto/Servicio
+            </Button>
+        </CardContent>
+    </Card>
+  </div>
+);
+
+// ----- Sub-componente para Tabla de Productos -----
+const ProductosContent: React.FC<{
+  inventoryItems: InventoryItem[];
+  onPrint: (items: InventoryItem[]) => void;
+  onEditItem: (item: InventoryItem) => void;
+}> = ({ inventoryItems, onPrint, onEditItem }) => {
+  const router = useRouter();
+
+  const { paginatedData, fullFilteredData, ...tableManager } = useTableManager<InventoryItem>({
+    initialData: inventoryItems,
+    searchKeys: ['name', 'sku', 'brand', 'category'],
+    initialSortOption: 'name_asc',
+  });
+
+  const handleSort = (key: string) => {
+    const isAsc = tableManager.sortOption === `${key}_asc`;
+    tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <TableToolbar
+          {...tableManager}
+          searchPlaceholder="Buscar por nombre, SKU, marca..."
+          sortOptions={[
+            { value: 'name_asc', label: 'Nombre (A-Z)' },
+            { value: 'name_desc', label: 'Nombre (Z-A)' },
+            { value: 'quantity_desc', label: 'Stock (Mayor a Menor)' },
+            { value: 'quantity_asc', label: 'Stock (Menor a Mayor)' },
+            { value: 'sellingPrice_desc', label: 'Precio (Mayor a Menor)' },
+            { value: 'sellingPrice_asc', label: 'Precio (Menor a Mayor)' },
+          ]}
+          actions={
+            <Button onClick={() => onPrint(fullFilteredData)} variant="outline" className="bg-white">
+              <Printer className="mr-2 h-4 w-4" /> Exportar / Imprimir
+            </Button>
+          }
+        />
+        <div className="rounded-md border mt-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortableTableHeader sortKey="name" label="Nombre" onSort={handleSort} currentSort={tableManager.sortOption} />
+                <SortableTableHeader sortKey="quantity" label="Stock" onSort={handleSort} currentSort={tableManager.sortOption} />
+                <SortableTableHeader sortKey="unitPrice" label="Costo" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right" />
+                <SortableTableHeader sortKey="sellingPrice" label="Precio Venta" onSort={handleSort} currentSort={tableManager.sortOption} className="text-right" />
+                <SortableTableHeader sortKey="category" label="Categoría" onSort={handleSort} currentSort={tableManager.sortOption} />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedData.map(item => (
+                <TableRow key={item.id} onClick={() => onEditItem(item)} className="cursor-pointer">
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell>
+                    {item.isService ? (
+                      <Badge variant="secondary">Servicio</Badge>
+                    ) : (
+                      <span className={cn(
+                        (item.quantity || 0) <= (item.lowStockThreshold || 0) && "text-destructive font-bold"
+                      )}>
+                        {item.quantity}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(item.sellingPrice)}</TableCell>
+                  <TableCell>{item.category}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-between pt-4">
+            <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
+            <div className="flex items-center space-x-2">
+                <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
+                    <ChevronLeft className="h-4 w-4" /> Anterior
+                </Button>
+                <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
+                    Siguiente <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// ----- Sub-componente para Categorías -----
+const CategoriasContent: React.FC<{ 
+  categories: InventoryCategory[], 
+  inventoryItems: InventoryItem[],
+  onSaveCategory: (name: string, id?: string) => Promise<void>,
+  onDeleteCategory: (id: string) => Promise<void>,
+}> = ({ categories, inventoryItems, onSaveCategory, onDeleteCategory }) => {
+    const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<InventoryCategory | null>(null);
+    const [categoryName, setCategoryName] = useState('');
+
+    const itemsPerCategory = useMemo(() => {
+        return categories.map(cat => ({
+            ...cat,
+            count: inventoryItems.filter(item => item.category === cat.name).length
+        }));
+    }, [categories, inventoryItems]);
+
+    const handleOpenDialog = (category: InventoryCategory | null = null) => {
+        setEditingCategory(category);
+        setCategoryName(category ? category.name : '');
+        setIsCategoryDialogOpen(true);
+    };
+
+    const handleSave = async () => {
+        await onSaveCategory(categoryName, editingCategory?.id);
+        setIsCategoryDialogOpen(false);
+    };
+
+    return (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+              <div className="space-y-1.5">
+                 <CardTitle>Categorías de Inventario</CardTitle>
+                 <CardDescription>Organiza tus productos y servicios en categorías.</CardDescription>
+              </div>
+              <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4"/>Nueva Categoría</Button>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Productos/Servicios</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {itemsPerCategory.map(cat => (
+                        <TableRow key={cat.id}>
+                            <TableCell className="font-medium">{cat.name}</TableCell>
+                            <TableCell>{cat.count}</TableCell>
+                            <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(cat)}><Edit className="h-4 w-4"/></Button>
+                                <ConfirmDialog
+                                    triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                                    title={`¿Eliminar categoría "${cat.name}"?`}
+                                    description="Esta acción no se puede deshacer."
+                                    onConfirm={() => onDeleteCategory(cat.id)}
+                                />
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+          <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingCategory ? 'Editar' : 'Nueva'} Categoría</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                  <Label htmlFor="category-name">Nombre</Label>
+                  <Input id="category-name" value={categoryName} onChange={e => setCategoryName(capitalizeWords(e.target.value))} />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={handleSave}>Guardar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </Card>
+    );
+};
 
 
 function PageInner() {
@@ -134,8 +335,8 @@ function PageInner() {
   }, []);
 
 
-  const handleOpenItemDialog = useCallback(() => {
-    setEditingItem(null);
+  const handleOpenItemDialog = useCallback((item: InventoryItem | null = null) => {
+    setEditingItem(item);
     setIsItemDialogOpen(true);
   }, []);
   
@@ -220,46 +421,46 @@ function PageInner() {
   ];
 
   return (
-    <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
-        <p className="text-primary-foreground/80 mt-1">
-          Gestiona productos, proveedores, categorías y obtén análisis inteligentes.
-        </p>
-      </div>
-      
-      <DashboardCards 
+    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+        <>
+        <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+            <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
+            <p className="text-primary-foreground/80 mt-1">Gestiona productos, proveedores, categorías y obtén análisis inteligentes.</p>
+        </div>
+        
+        <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={handleOpenItemDialog}
+          onNewItemClick={() => handleOpenItemDialog()}
           onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
-          <div className="w-full">
-              <div className="flex flex-wrap w-full gap-2 sm:gap-4">
-              {tabsConfig.map(tabInfo => (
-                  <button
-                  key={tabInfo.value}
-                  onClick={() => setActiveTab(tabInfo.value)}
-                  className={cn(
-                      'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
-                      'break-words whitespace-normal leading-snug',
-                      activeTab === tabInfo.value
-                      ? 'bg-primary text-primary-foreground shadow'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  )}
-                  >
-                  {tabInfo.label}
-                  </button>
-              ))}
-              </div>
-          </div>
-          
-          <TabsContent value="productos" className="mt-6">
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
+            <div className="w-full">
+                <div className="flex flex-wrap w-full gap-2 sm:gap-4">
+                {tabsConfig.map(tabInfo => (
+                    <button
+                    key={tabInfo.value}
+                    onClick={() => setActiveTab(tabInfo.value)}
+                    className={cn(
+                        'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
+                        'break-words whitespace-normal leading-snug',
+                        activeTab === tabInfo.value
+                        ? 'bg-primary text-primary-foreground shadow'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    )}
+                    >
+                    {tabInfo.label}
+                    </button>
+                ))}
+                </div>
+            </div>
+            
+            <TabsContent value="productos" className="mt-6">
               <Suspense fallback={<Loader2 className="animate-spin" />}>
                   <ProductosContent 
                       inventoryItems={inventoryItems}
                       onPrint={handlePrint}
+                      onEditItem={handleOpenItemDialog}
                   />
               </Suspense>
             </TabsContent>
@@ -291,7 +492,7 @@ function PageInner() {
           <InventoryItemDialog
             open={isItemDialogOpen}
             onOpenChange={setIsItemDialogOpen}
-            onSave={editingItem && editingItem.id ? handleItemUpdated : handleSaveItem}
+            onSave={editingItem ? handleItemUpdated : handleSaveItem}
             item={editingItem}
             categories={categories}
             suppliers={suppliers}
@@ -312,7 +513,8 @@ function PageInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+        </>
+    </Suspense>
   );
 }
 
