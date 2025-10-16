@@ -72,7 +72,7 @@ const addRentalPayment = async (
   amount: number,
   note?: string,
   paymentDate: Date = new Date(),
-  paymentMethod: PaymentMethod = 'Efectivo',
+  paymentMethod?: PaymentMethod,
   paymentId?: string,
 ): Promise<RentalPayment> => {
     if (!db) throw new Error("Database not initialized.");
@@ -90,7 +90,7 @@ const addRentalPayment = async (
         amount,
         daysCovered: dailyRate > 0 ? amount / dailyRate : 0,
         note: note || `Abono de Renta`,
-        paymentMethod,
+        paymentMethod: paymentMethod || 'Efectivo',
         registeredByName: currentUser?.name || 'Sistema',
     };
     

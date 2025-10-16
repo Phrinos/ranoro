@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/compras/components/suppliers-table.tsx
 "use client";
 
@@ -59,28 +58,28 @@ export const SuppliersTable = React.memo(function SuppliersTable({
             <SortableTableHeader
               sortKey="name"
               label="Nombre"
-              onSort={handleSort}
+              onSort={handleSort as any}
               currentSort={sortOption}
               textClassName="text-white"
             />
             <SortableTableHeader
               sortKey="contactPerson"
               label="Contacto"
-              onSort={handleSort}
+              onSort={handleSort as any}
               currentSort={sortOption}
               textClassName="text-white"
             />
             <SortableTableHeader
               sortKey="phone"
               label="Teléfono"
-              onSort={handleSort}
+              onSort={handleSort as any}
               currentSort={sortOption}
               textClassName="text-white"
             />
             <SortableTableHeader
               sortKey="debtAmount"
               label="Deuda"
-              onSort={handleSort}
+              onSort={handleSort as any}
               currentSort={sortOption}
               textClassName="text-white"
               className="text-right"

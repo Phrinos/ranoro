@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -21,7 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, PackagePlus, DollarSign, PlusCircle, Trash2, CalendarIcon } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn } from "@/lib/utils";
-import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
+import { InventoryItemDialog } from "../../../inventario/components/inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NewCalendar } from "@/components/ui/calendar";
@@ -144,7 +143,7 @@ export function RegisterPurchaseDialog({
               <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-4">
                 <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-4 bg-muted/50">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <FormField<PurchaseFormValues>
+                    <FormField
                       control={control}
                       name="supplierId"
                       render={({ field }) => (
@@ -170,7 +169,7 @@ export function RegisterPurchaseDialog({
                         </FormItem>
                       )}
                     />
-                    <FormField<PurchaseFormValues>
+                    <FormField
                       control={control}
                       name="invoiceId"
                       render={({ field }) => (
@@ -261,7 +260,7 @@ export function RegisterPurchaseDialog({
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <FormField<PurchaseFormValues>
+                    <FormField
                       control={control}
                       name="paymentMethod"
                       render={({ field }) => (
@@ -286,7 +285,7 @@ export function RegisterPurchaseDialog({
                     />
 
                     {paymentMethod === "Crédito" && (
-                      <FormField<PurchaseFormValues>
+                      <FormField
                         control={control}
                         name="dueDate"
                         render={({ field }) => (

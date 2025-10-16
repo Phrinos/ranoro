@@ -6,6 +6,7 @@ import type { ServiceRecord } from '@/types';
 interface ApiResponse {
   status: 'success' | 'error';
   message: string;
+  success?: boolean;
 }
 
 // Function to fetch workshop information from Firestore
@@ -92,13 +93,13 @@ export const sendTestMessage = async (apiKey: string, fromPhoneNumberId: string,
         if (!response.ok) {
             console.error('WhatsApp API Error:', result);
             const errorMessage = result.error?.message || 'Ocurrió un error desconocido con la API de WhatsApp.';
-            return { status: 'error', message: errorMessage };
+            return { status: 'error', message: errorMessage, success: false };
         }
 
-        return { status: 'success', message: 'Mensaje de prueba enviado exitosamente.' };
+        return { status: 'success', message: 'Mensaje de prueba enviado exitosamente.', success: true };
     } catch (error) {
         console.error('Fetch Error:', error);
         const message = error instanceof Error ? error.message : 'Ocurrió un error desconocido.';
-        return { status: 'error', message };
+        return { status: 'error', message, success: false };
     }
 };
