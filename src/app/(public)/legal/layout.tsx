@@ -23,9 +23,6 @@ export default function LegalLayout({
               data-ai-hint="ranoro logo"
             />
           </Link>
-          <Button asChild>
-            <Link href="/login">Regresar al sitio</Link>
-          </Button>
         </div>
       </header>
       <main className="flex-1 py-8 md:py-12 lg:py-16">
