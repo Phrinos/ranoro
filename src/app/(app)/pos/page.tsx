@@ -23,11 +23,9 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/comp
 const InformePosContent = lazy(() => import('./components/informe-pos-content').then(module => ({ default: module.InformePosContent })));
 const VentasPosContent = lazy(() => import('./components/ventas-pos-content').then(module => ({ default: module.VentasPosContent })));
 
-
-// 1) Componente interno con los hooks:
 function PageInner() {
   const router = useRouter();
-  const pathname = typeof usePathname === "function" ? usePathname() : "/";
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'resumen';
   const { toast } = useToast();
@@ -36,13 +34,11 @@ function PageInner() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Data states
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
 
-  // Dialog states
   const [isReprintDialogOpen, setIsReprintDialogOpen] = useState(false);
   const [saleForReprint, setSaleForReprint] = useState<SaleReceipt | null>(null);
   const [isViewSaleDialogOpen, setIsViewSaleDialogOpen] = useState(false);
@@ -51,7 +47,6 @@ function PageInner() {
   
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
-
 
   useEffect(() => {
     setIsLoading(true);
@@ -79,12 +74,10 @@ function PageInner() {
         const sale = allSales.find(s => s.id === saleIdToShow);
         if (sale) {
             handleViewSale(sale);
-            // Optional: remove the query param from URL after showing
             router.replace('/pos?tab=ventas', { scroll: false });
         }
     }
   }, [searchParams, allSales, router]);
-
 
   const handleReprintTicket = (sale: SaleReceipt) => {
     setSaleForReprint(sale);
@@ -254,5 +247,4 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
   );
 }
 
-// 2) Exporta la página envuelta en Suspense:
 export default withSuspense(PageInner, null);

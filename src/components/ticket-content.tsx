@@ -1,17 +1,16 @@
-
 // src/components/ticket-content.tsx
 "use client";
 
-import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem, WorkshopInfo } from '@/types';
+import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
-import { cn, formatCurrency, formatNumber } from "@/lib/utils";
+import { cn, formatCurrency, formatNumber, normalizeDataUrl } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
 import Image from 'next/image';
 
 
-const initialWorkshopInfo: WorkshopInfo = {
+const initialWorkshopInfo: any = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
@@ -36,7 +35,7 @@ interface TicketContentProps {
   service?: ServiceRecord;
   vehicle?: Vehicle; 
   technician?: Technician; 
-  previewWorkshopInfo?: Partial<WorkshopInfo>;
+  previewWorkshopInfo?: Partial<any>;
 }
 
 const IVA_RATE = 0.16;

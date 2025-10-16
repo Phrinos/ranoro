@@ -1,10 +1,9 @@
-
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams } from "next/navigation";
 import React, { useState, useEffect, Suspense, useRef, useCallback, PropsWithChildren } from 'react';
 import { inventoryService, personnelService, rentalService } from '@/lib/services';
-import type { Vehicle, Driver, DailyRentalCharge, RentalPayment, ManualDebtEntry, OwnerWithdrawal, VehicleExpense, PaymentMethod, WorkshopInfo } from '@/types';
+import type { Vehicle, Driver, DailyRentalCharge, RentalPayment, ManualDebtEntry, OwnerWithdrawal, VehicleExpense, PaymentMethod } from '@/types';
 import { Loader2, MinusCircle, PlusCircle } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { FlotillaVehiculosTab } from './vehiculos/components/FlotillaVehiculosTab';
@@ -122,22 +121,12 @@ function FlotillaLayout({ children }: PropsWithChildren) {
 function PageTicket({ isOpen, onOpenChange, payment, driverBalance }: { isOpen: boolean, onOpenChange: (open: boolean) => void, payment: RentalPayment, driverBalance: number }) {
     const { toast } = useToast();
     const ticketContentRef = useRef<HTMLDivElement>(null);
-    const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
     const [cashierName, setCashierName] = useState<string | null>(null);
     const { drivers, vehicles } = React.useContext(FlotillaContext);
 
     useEffect(() => {
         const auth = getAuth();
         onAuthStateChanged(auth, (user) => user && setCashierName(user.displayName));
-
-        const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
-        if (storedWorkshopInfo) {
-            try {
-                setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-            } catch (e) {
-                console.error("Failed to parse workshop info from localStorage", e);
-            }
-        }
     }, []);
 
     const handleCopyTicketAsImage = useCallback(async (isForSharing: boolean = false) => {
@@ -208,7 +197,6 @@ function PageTicket({ isOpen, onOpenChange, payment, driverBalance }: { isOpen: 
                 driver={drivers.find(d => d.id === payment.driverId)}
                 vehicle={vehicles.find(v => v.id === drivers.find(d => d.id === payment.driverId)?.assignedVehicleId)}
                 driverBalance={driverBalance}
-                previewWorkshopInfo={workshopInfo || undefined}
             />
         </UnifiedPreviewDialog>
     );

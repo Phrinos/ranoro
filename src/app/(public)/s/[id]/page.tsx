@@ -46,12 +46,14 @@ type PublicServiceDoc = {
   total?: number;
   payments?: any;
   vehicle?: any | null;
-  workshopInfo?: any | null;
   customerSignatureReception?: string | null;
   customerSignatureDelivery?: string | null;
   isPublic?: boolean;
   createdAt?: any;
   updatedAt?: any;
+  workshopInfo?: any;
+  nextServiceInfo?: any;
+  mileage?: number;
 };
 
 // Helpers para fechas

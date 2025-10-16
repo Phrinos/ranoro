@@ -1,6 +1,6 @@
-
-import { NextResponse } from 'next/server';
+// src/app/api/config/route.ts
+import { NextResponse } from "next/server";
 
 export async function GET() {
-  return NextResponse.json({ message: 'This is the config route' });
+  return NextResponse.json({ message: "This is the config route" });
 }

@@ -14,10 +14,9 @@ const RendimientoPersonalContent = lazy(() => import('./components/rendimiento-c
 const UsuariosPageContent = lazy(() => import('./components/usuarios-content').then(m => ({ default: m.UsuariosPageContent })));
 const RolesPageContent = lazy(() => import('./components/roles-content').then(m => ({ default: m.RolesPageContent })));
 
-// 1) Componente interno con los hooks:
 function PageInner() {
   const router = useRouter();
-  const pathname = typeof usePathname === "function" ? usePathname() : "/";
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab');
     
@@ -70,5 +69,4 @@ function PageInner() {
   );
 }
 
-// 2) Exporta la página envuelta en Suspense:
 export default withSuspense(PageInner, null);

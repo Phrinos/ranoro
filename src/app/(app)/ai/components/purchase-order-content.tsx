@@ -1,7 +1,6 @@
-
 'use client';
 
-import type { PurchaseRecommendation, WorkshopInfo } from '@/types';
+import type { PurchaseRecommendation } from '@/types';
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -9,10 +8,9 @@ import Image from "next/image";
 
 interface PurchaseOrderContentProps {
   recommendations: PurchaseRecommendation[];
-  workshopInfo: WorkshopInfo;
 }
 
-const initialWorkshopInfo: WorkshopInfo = {
+const initialWorkshopInfo: any = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
@@ -21,8 +19,20 @@ const initialWorkshopInfo: WorkshopInfo = {
 
 
 export const PurchaseOrderContent = React.forwardRef<HTMLDivElement, PurchaseOrderContentProps>(
-  ({ recommendations, workshopInfo: customWorkshopInfo }, ref) => {
-    const workshopInfo = { ...initialWorkshopInfo, ...customWorkshopInfo };
+  ({ recommendations }, ref) => {
+    const [workshopInfo, setWorkshopInfo] = useState<any>(initialWorkshopInfo);
+
+    useEffect(() => {
+        const stored = localStorage.getItem('workshopTicketInfo');
+        if (stored) {
+            try {
+                setWorkshopInfo({ ...initialWorkshopInfo, ...JSON.parse(stored) });
+            } catch (e) {
+                console.error("Failed to parse workshop info", e);
+            }
+        }
+    }, []);
+
     const now = new Date();
     const formattedDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
 

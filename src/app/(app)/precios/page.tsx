@@ -19,11 +19,9 @@ import { VehicleCatalogEditor } from './components/VehicleCatalogEditor';
 const PriceListManagementContent = lazy(() => import('./components/price-list-management-content'));
 const VencimientosContent = lazy(() => import('./components/VencimientosContent'));
 
-
-// 1) Componente interno con los hooks:
 function PageInner() {
   const router = useRouter();
-  const pathname = typeof usePathname === "function" ? usePathname() : "/";
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [priceLists, setPriceLists] = useState<any[]>([]);
@@ -100,8 +98,6 @@ function PageInner() {
     }
   ];
     
-  // Si se pasa 'make' como query param y la pestaña activa es 'editor',
-  // renderiza directamente el editor para esa marca.
   const makeQueryParam = searchParams.get('make');
   if (activeTab === 'editor' && makeQueryParam) {
     return <VehicleCatalogEditor make={makeQueryParam} />;
@@ -118,5 +114,4 @@ function PageInner() {
   );
 }
 
-// 2) Exporta la página envuelta en Suspense:
 export default withSuspense(PageInner, null);

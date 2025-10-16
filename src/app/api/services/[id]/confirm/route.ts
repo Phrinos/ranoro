@@ -1,71 +1,77 @@
-
 // src/app/api/services/[id]/confirm/route.ts
-import { NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebaseAdmin';
+import { NextResponse, type NextRequest } from "next/server";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
-export const runtime = 'nodejs';         // Admin SDK => Node runtime
-export const dynamic = 'force-dynamic';  // opcional: evita cacheos
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const db = getAdminDb();
 
-type RouteCtx = { params: { id: string } };
-
-export async function POST(req: Request, { params }: RouteCtx) {
+export async function POST(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const publicId = params?.id?.trim();
+    const { id } = await params;                  // 👈 Next 15: await params
+    const publicId = (id ?? "").trim();
     if (!publicId) {
       return NextResponse.json(
-        { success: false, error: 'Falta el ID del servicio.' },
+        { success: false, error: "Falta el ID del servicio." },
         { status: 400 }
       );
     }
 
-    // 1) Carga del servicio
-    const serviceDocRef = doc(db, 'serviceRecords', publicId);
+    // Admin SDK (no uses `doc` del cliente aquí)
+    const serviceDocRef = db.collection("serviceRecords").doc(publicId);
     const serviceSnap = await serviceDocRef.get();
 
-    if (!serviceSnap.exists) {
+    if (!serviceSnap.exists) {                     // 👈 propiedad, no método
       return NextResponse.json(
-        { success: false, error: 'El servicio no fue encontrado.' },
+        { success: false, error: "El servicio no fue encontrado." },
         { status: 404 }
       );
     }
 
-    const serviceData = serviceSnap.data()!;
+    const serviceData = serviceSnap.data() as {
+      status?: string;
+      appointmentStatus?: string;
+    };
 
-    // 2) Validación de estado
+    // Validación de estado
     if (
-      serviceData.status !== 'Agendado' ||
-      serviceData.appointmentStatus !== 'Sin Confirmar'
+      serviceData?.status !== "Agendado" ||
+      serviceData?.appointmentStatus !== "Sin Confirmar"
     ) {
       return NextResponse.json(
-        { success: false, error: 'Esta cita no se puede confirmar o ya fue confirmada.' },
+        {
+          success: false,
+          error: "Esta cita no se puede confirmar o ya fue confirmada.",
+        },
         { status: 409 }
       );
     }
 
-    const updateData = { appointmentStatus: 'Confirmada' as const };
+    const updateData = { appointmentStatus: "Confirmada" as const };
 
-    // 3) Escritura atómica
+    // Batch Admin SDK
     const batch = db.batch();
     batch.update(serviceDocRef, updateData);
 
-    // Si el doc público no existe, update fallaría -> usamos set con merge
-    const publicDocRef = doc(db, 'publicServices', publicId);
+    const publicDocRef = db.collection("publicServices").doc(publicId);
     batch.set(publicDocRef, updateData, { merge: true });
 
     await batch.commit();
 
     return NextResponse.json({
       success: true,
-      message: 'Cita confirmada correctamente.',
+      message: "Cita confirmada correctamente.",
     });
   } catch (error) {
-    console.error('Error al confirmar la cita:', error);
+    console.error("Error al confirmar la cita:", error);
     const msg =
       error instanceof Error
         ? error.message
-        : 'Ocurrió un error desconocido en el servidor.';
+        : "Ocurrió un error desconocido en el servidor.";
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }

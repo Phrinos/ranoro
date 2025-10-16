@@ -1,14 +1,14 @@
 // src/app/(app)/flotilla/caja/components/RentalPaymentTicket.tsx
 "use client";
 
-import type { RentalPayment, Driver, Vehicle, WorkshopInfo } from '@/types';
+import type { RentalPayment, Driver, Vehicle } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn, formatCurrency } from "@/lib/utils";
 import Image from 'next/image';
 
-const initialWorkshopInfo: WorkshopInfo = {
+const initialWorkshopInfo: any = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
@@ -20,12 +20,23 @@ interface RentalPaymentTicketProps {
   driver?: Driver;
   vehicle?: Vehicle;
   driverBalance: number;
-  previewWorkshopInfo?: Partial<WorkshopInfo>;
 }
 
 export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymentTicketProps>(
-  ({ payment, driver, vehicle, driverBalance, previewWorkshopInfo }, ref) => {
-    const workshopInfo = { ...initialWorkshopInfo, ...previewWorkshopInfo };
+  ({ payment, driver, vehicle, driverBalance }, ref) => {
+    
+    const [workshopInfo, setWorkshopInfo] = useState<any>(initialWorkshopInfo);
+
+    useEffect(() => {
+        const stored = localStorage.getItem('workshopTicketInfo');
+        if (stored) {
+            try {
+                setWorkshopInfo({ ...initialWorkshopInfo, ...JSON.parse(stored) });
+            } catch (e) {
+                console.error("Failed to parse workshop info", e);
+            }
+        }
+    }, []);
 
     const formattedDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
     const paymentDate = payment.paymentDate ? parseISO(payment.paymentDate) : new Date();

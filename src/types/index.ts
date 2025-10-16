@@ -1,4 +1,3 @@
-
 // src/types/index.ts
 export type AppRole = {
   id: string;
@@ -42,6 +41,7 @@ export type InventoryItem = {
   isService: boolean;
   sku?: string;
   updatedAt?: any; // To store Firestore Timestamp
+  unitPrice: number; // Added to match usage
 };
 
 export type ServiceTypeRecord = {
@@ -201,6 +201,10 @@ export type ServiceRecord = {
   serviceProfit?: number;
   receptionDateTime?: string;
   appointmentDateTime?: string;
+  nextServiceInfo?: NextServiceInfo;
+  payments?: Payment[];
+  paymentMethod?: string;
+  cardCommission?: number;
 };
 
 export type SaleReceipt = {
@@ -252,4 +256,71 @@ export type CapacityAnalysisOutput = {
   totalAvailableHours: number;
   capacityPercentage: number;
   recommendation: string;
+};
+
+export type SafetyCheckStatus = "ok" | "atencion" | "inmediata" | "na";
+export type SafetyCheckValue = {
+  status: SafetyCheckStatus;
+  notes: string;
+  photos: string[];
+};
+export type SafetyInspection = {
+  [key: string]: SafetyCheckValue;
+};
+
+export type Payment = {
+  method: PaymentMethod;
+  amount: number;
+  folio?: string;
+  date?: string;
+};
+
+export type NextServiceInfo = {
+  date: string | null;
+  mileage: number | null;
+};
+
+export type FinancialSummary = {
+  totalTechnicianSalaries: number;
+  totalAdministrativeSalaries: number;
+  totalFixedExpenses: number;
+  totalVariableCommissions: number;
+  totalBaseExpenses: number;
+};
+
+export type InitialCashBalance = {
+  balance: number;
+  date: string;
+  setByUserId: string;
+  setByUserName: string;
+};
+
+export type CashDrawerTransaction = {
+  id: string;
+  date: string;
+  type: 'Entrada' | 'Salida';
+  amount: number;
+  concept: string;
+  userId: string;
+  userName: string;
+  relatedType: 'Venta' | 'Servicio' | 'Manual' | 'Flotilla';
+  relatedId?: string;
+};
+
+export type VehiclePriceList = {
+  make: string;
+  models: {
+    name: string;
+    generations: {
+      startYear: number;
+      endYear: number;
+      engines: any[]; // Debería ser EngineData[]
+    }[];
+  }[];
+};
+
+export type PricedService = {
+  costoInsumos?: number;
+  precioPublico?: number;
+  upgrades?: { [key: string]: number };
 };

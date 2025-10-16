@@ -2,13 +2,9 @@
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import React,
-{ 
-    useState, 
-    Suspense 
-} from 'react';
+import React, { useState, Suspense } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useFlotillaData } from './useFlotillaData'; // <-- CORREGIDO
+import { useFlotillaData } from './useFlotillaData'; 
 import type { Vehicle, Driver, PaymentMethod } from '@/types';
 import { personnelService, rentalService, inventoryService } from '@/lib/services';
 import { Loader2, MinusCircle, PlusCircle } from 'lucide-react';
@@ -22,21 +18,17 @@ import { VehicleSelectionDialog } from '@/app/(app)/servicios/components/Vehicle
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 
-// Importar los componentes de las pestañas de forma dinámica (lazy loading)
 const FlotillaBalanceTab = React.lazy(() => import('./balance/components/FlotillaBalanceTab').then(m => ({ default: m.FlotillaBalanceTab })));
 const FlotillaConductoresTab = React.lazy(() => import('./conductores/components/FlotillaConductoresTab').then(m => ({ default: m.FlotillaConductoresTab })));
 const FlotillaVehiculosTab = React.lazy(() => import('./vehiculos/components/FlotillaVehiculosTab').then(m => ({ default: m.FlotillaVehiculosTab })));
 const FlotillaCajaTab = React.lazy(() => import('./caja/components/FlotillaCajaTab').then(m => ({ default: m.FlotillaCajaTab })));
 
-
-// 1) Componente interno con los hooks:
 function PageInner() {
   const router = useRouter();
-  const pathname = typeof usePathname === "function" ? usePathname() : "/";
+  const pathname = usePathname();
   const sp = useSearchParams();
   const { toast } = useToast();
     
-    // El hook useFlotillaData ahora viene del contexto centralizado
     const { vehicles, drivers, dailyCharges, payments, manualDebts, withdrawals, expenses, handleShowTicket, isLoading } = useFlotillaData();
 
     const [activeTab, setActiveTab] = useState(() => sp.get('tab') || 'balance');
@@ -53,8 +45,6 @@ function PageInner() {
         setActiveTab(tab);
         router.push(`/flotilla?tab=${tab}`);
     };
-
-    // --- Lógica de Handlers (guardar, abrir diálogos, etc.) ---
     
     const handleOpenTransactionDialog = (type: 'payment' | 'charge') => {
         setTransactionType(type);
@@ -143,8 +133,6 @@ function PageInner() {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
     
-    // --- Renderizado ---
-
     const pageActions = (
         <div className="flex flex-row gap-2">
             <Button onClick={() => handleOpenTransactionDialog('charge')} variant="outline" className="flex-1 sm:flex-initial sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50">
@@ -181,7 +169,6 @@ function PageInner() {
                 </Suspense>
             </TabbedPageLayout>
             
-            {/* --- Dialogos --- */}
             <GlobalTransactionDialog open={isTransactionDialogOpen} onOpenChange={setIsTransactionDialogOpen} onSave={handleSaveTransaction} transactionType={transactionType} drivers={drivers.filter(d => !d.isArchived)} />
             <OwnerWithdrawalDialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen} vehicles={vehicles} onSave={handleSaveWithdrawal} />
             <VehicleExpenseDialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen} vehicles={vehicles} onSave={handleSaveExpense} />
@@ -192,5 +179,4 @@ function PageInner() {
     )
 }
 
-// 2) Exporta la página envuelta en Suspense:
 export default withSuspense(PageInner, null);

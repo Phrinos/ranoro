@@ -2,7 +2,7 @@
 'use server';
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
+import type { SaleReceipt, ServiceRecord } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient.js';
 // import Facturapi from 'facturapi'; // Comentado para eliminar la dependencia
@@ -40,7 +40,7 @@ const getFacturaComInstance = async () => {
   const configSnap = await getDoc(doc(db, 'workshopConfig', 'main'));
   if (!configSnap.exists()) return null;
   
-  const workshopInfo = configSnap.data() as WorkshopInfo;
+  const workshopInfo = configSnap.data() as any;
   
   const apiKey = (workshopInfo.facturaComApiKey || '').trim();
   if (!apiKey) return null;

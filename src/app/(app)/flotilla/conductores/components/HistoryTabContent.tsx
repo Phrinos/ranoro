@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/conductores/components/HistoryTabContent.tsx
 "use client";
 
@@ -8,7 +9,6 @@ import type {
   DailyRentalCharge,
   RentalPayment,
   ManualDebtEntry,
-  WorkshopInfo
 } from '@/types';
 import { rentalService } from '@/lib/services/rental.service';
 import { personnelService } from '@/lib/services';
@@ -59,7 +59,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   const [isTicketOpen, setIsTicketOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<RentalPayment | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<any | null>(null);
 
   useEffect(() => {
     const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');

@@ -23,7 +23,7 @@ import { GARANTIA_CONDICIONES_TEXT, INGRESO_CONDICIONES_TEXT } from '@/lib/const
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
-const initialWorkshopInfo: WorkshopInfo = {
+const initialWorkshopInfo: Partial<WorkshopInfo> = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
@@ -237,15 +237,16 @@ interface ServiceSheetContentProps {
   isSigning?: boolean;
   activeTab?: string;
   vehicle?: Vehicle | null; // Optional vehicle prop
+  workshopInfo?: Partial<WorkshopInfo>;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick, vehicle, onCancelAppointment }, ref) => {
+  ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick, vehicle, onCancelAppointment, workshopInfo }, ref) => {
     const { toast } = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
     const [currentActiveTab, setActiveTab] = useState('order');
     
-    const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...service.workshopInfo };
+    const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...service.workshopInfo, ...workshopInfo };
     
     const status = (service.status || '').toLowerCase();
     

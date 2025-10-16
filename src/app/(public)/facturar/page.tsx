@@ -3,9 +3,6 @@
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +13,7 @@ import { Loader2, Search, FileText, FileJson, CheckCircle, AlertTriangle } from 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { billingService } from '@/lib/services/billing.service';
-import type { SaleReceipt, ServiceRecord, WorkshopInfo } from '@/types';
+import type { SaleReceipt, ServiceRecord } from '@/types';
 import { BillingForm } from './components/billing-form';
 import { billingFormSchema, type BillingFormValues } from './components/billing-schema';
 import { createInvoiceAction } from './actions';
@@ -53,7 +50,7 @@ function PageInner() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchResult, setSearchResult] = useState<TicketType | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>({});
+  const [workshopInfo, setWorkshopInfo] = useState<Partial<any>>({});
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { ServiceRecord, PurchaseRecommendation, WorkshopInfo, InventoryItem } from '@/types';
+import type { ServiceRecord, PurchaseRecommendation, InventoryItem } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShoppingCart, AlertTriangle, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,7 @@ export default function AsistenteComprasContent() {
     const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
     const [purchaseError, setPurchaseError] = useState<string | null>(null);
     const [isPurchaseOrderDialogOpen, setIsPurchaseOrderDialogOpen] = useState(false);
-    const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+    
     const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
     const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
@@ -114,7 +114,7 @@ export default function AsistenteComprasContent() {
                     </CardContent>
                 )}
             </Card>
-            {purchaseRecommendations && workshopInfo && (
+            {purchaseRecommendations && (
                 <UnifiedPreviewDialog
                     open={isPurchaseOrderDialogOpen}
                     onOpenChange={setIsPurchaseOrderDialogOpen}
@@ -122,7 +122,6 @@ export default function AsistenteComprasContent() {
                 >
                     <PurchaseOrderContent
                         recommendations={purchaseRecommendations}
-                        workshopInfo={workshopInfo}
                     />
                 </UnifiedPreviewDialog>
             )}

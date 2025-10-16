@@ -26,11 +26,9 @@ const AgendaTabContent = lazy(() => import('./components/tab-agenda'));
 const CotizacionesTabContent = lazy(() => import('./components/tab-cotizaciones'));
 const PaymentDetailsDialog = lazy(() => import('@/components/shared/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 
-
-// 1) Componente interno con los hooks:
 function PageInner() {
   const router = useRouter();
-  const pathname = typeof usePathname === "function" ? usePathname() : "/";
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
@@ -261,5 +259,4 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
   );
 }
 
-// 2) Exporta la página envuelta en Suspense:
 export default withSuspense(PageInner, null);

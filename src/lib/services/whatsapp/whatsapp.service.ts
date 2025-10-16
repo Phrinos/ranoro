@@ -1,7 +1,6 @@
-
 import { db } from '@/lib/firebaseClient';
 import { doc, getDoc } from 'firebase/firestore';
-import type { ServiceRecord, WorkshopInfo } from '@/types';
+import type { ServiceRecord } from '@/types';
 
 // Define the structure for the API response
 interface ApiResponse {
@@ -10,11 +9,11 @@ interface ApiResponse {
 }
 
 // Function to fetch workshop information from Firestore
-const getWorkshopInfo = async (): Promise<WorkshopInfo | null> => {
+const getWorkshopInfo = async (): Promise<any | null> => {
   if (!db) return null;
   const workshopConfigRef = doc(db, 'workshopConfig', 'main');
   const docSnap = await getDoc(workshopConfigRef);
-  return docSnap.exists() ? (docSnap.data() as WorkshopInfo) : null;
+  return docSnap.exists() ? (docSnap.data() as any) : null;
 };
 
 // Main function to send a confirmation message
@@ -31,9 +30,9 @@ export const sendConfirmationMessage = async (service: ServiceRecord): Promise<A
   myHeaders.append('F-SECRET-KEY', workshopInfo.facturaComApiSecret || '');
 
   const raw = JSON.stringify({
-    to: service.customer.phone,
+    to: (service as any).customer.phone,
     body: [
-      { name: 'customer_name', value: service.customer.name },
+      { name: 'customer_name', value: (service as any).customer.name },
       { name: 'service_date', value: new Date(service.serviceDate).toLocaleDateString('es-MX') },
       { name: 'workshop_name', value: workshopInfo.name },
     ],
@@ -61,45 +60,45 @@ export const sendConfirmationMessage = async (service: ServiceRecord): Promise<A
   }
 };
 
-export const sendTestMessage = async (to: string): Promise<ApiResponse> => {
-    const workshopInfo = await getWorkshopInfo();
-
-    if (!workshopInfo?.facturaComApiKey) {
-        return { status: 'error', message: 'API Key for WhatsApp is not configured.' };
-    }
-
+export const sendTestMessage = async (apiKey: string, fromPhoneNumberId: string, to: string): Promise<ApiResponse> => {
+    
     const myHeaders = new Headers();
+    myHeaders.append('Authorization', `Bearer ${apiKey}`);
     myHeaders.append('Content-Type', 'application/json');
-    myHeaders.append('F-API-KEY', workshopInfo.facturaComApiKey);
-    myHeaders.append('F-SECRET-KEY', workshopInfo.facturaComApiSecret || '');
 
     const raw = JSON.stringify({
+        messaging_product: 'whatsapp',
         to: to,
-        body: [
-            { name: 'customer_name', value: 'Cliente de Prueba' },
-            { name: 'service_date', value: new Date().toLocaleDateString('es-MX') },
-            { name: 'workshop_name', value: workshopInfo.name },
-        ],
+        type: 'template',
+        template: {
+            name: 'hello_world',
+            language: {
+                code: 'en_US'
+            }
+        }
     });
 
     const requestOptions: RequestInit = {
         method: 'POST',
         headers: myHeaders,
         body: raw,
-        redirect: 'follow',
+        redirect: 'follow'
     };
 
     try {
-        const response = await fetch('https://apis.facturacom.co/v3/whatsapp/send-template/appointment_confirmation', requestOptions);
+        const response = await fetch(`https://graph.facebook.com/v19.0/${fromPhoneNumberId}/messages`, requestOptions);
         const result = await response.json();
 
         if (!response.ok) {
-            return { status: 'error', message: result.message || 'An unknown error occurred.' };
+            console.error('WhatsApp API Error:', result);
+            const errorMessage = result.error?.message || 'Ocurrió un error desconocido con la API de WhatsApp.';
+            return { status: 'error', message: errorMessage };
         }
 
-        return { status: 'success', message: 'Test message sent successfully.' };
+        return { status: 'success', message: 'Mensaje de prueba enviado exitosamente.' };
     } catch (error) {
-        const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+        console.error('Fetch Error:', error);
+        const message = error instanceof Error ? error.message : 'Ocurrió un error desconocido.';
         return { status: 'error', message };
     }
 };

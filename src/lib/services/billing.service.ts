@@ -1,5 +1,3 @@
-
-
 import type { SaleReceipt, ServiceRecord } from "@/types";
 import { doc, getDoc, DocumentData } from 'firebase/firestore';
 import { db } from '../firebaseClient';

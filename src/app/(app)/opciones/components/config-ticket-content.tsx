@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Save, Printer } from 'lucide-react';
-import type { SaleReceipt, WorkshopInfo } from '@/types';
+import type { SaleReceipt } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { storage } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
@@ -61,7 +61,7 @@ const sampleSale: SaleReceipt = {
   customerName: "Cliente Demo",
 };
 
-const defaultWorkshopInfo: WorkshopInfo = {
+const defaultWorkshopInfo: any = {
   name: "RANORO", nameBold: true,
   phone: "4491425323", phoneBold: false,
   addressLine1: "Av. de la Convencion de 1914 No. 1421", addressLine1Bold: false,
@@ -151,7 +151,7 @@ export function ConfiguracionTicketPageContent() {
       toast({ title: '¡Logo actualizado!', description: 'La nueva imagen se ha cargado correctamente.' });
     } catch (error) {
       console.error("Upload error:", error);
-      toast({ title: 'Error al subir', variant: 'destructive' });
+      toast({ title: 'Error al subir', variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
@@ -199,7 +199,7 @@ export function ConfiguracionTicketPageContent() {
                 </CardHeader>
                 <CardContent className="bg-gray-200 dark:bg-gray-800 p-4 sm:p-8 flex justify-center overflow-auto">
                     <div className="ticket-preview-content">
-                        <TicketContent sale={sampleSale} previewWorkshopInfo={watchedValues as WorkshopInfo} />
+                        <TicketContent sale={sampleSale} previewWorkshopInfo={watchedValues as any} />
                     </div>
                 </CardContent>
             </Card>

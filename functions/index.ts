@@ -1,9 +1,10 @@
+
 // functions/index.ts
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { startOfDay, endOfDay } from 'date-fns';
-import { toZonedTime, zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 admin.initializeApp();
 
@@ -19,15 +20,16 @@ export const generateDailyRentalCharges = onSchedule(
   async () => {
     logger.info('Starting daily rental charge generation...');
 
-    // 1) Ahora en UTC y representado en la zona horaria local para cálculos de "día"
-    const nowUtc = new Date();                 // instante actual (UTC)
-    const nowZoned = toZonedTime(nowUtc, TZ);  // “reloj” en CDMX
+    const nowUtc = new Date();
+    const nowZoned = toZonedTime(nowUtc, TZ);
 
-    // 2) Inicio/fin del día de CDMX convertidos a UTC para consultar en Firestore
-    const dayStartUtc = zonedTimeToUtc(startOfDay(nowZoned), TZ);
-    const dayEndUtc   = zonedTimeToUtc(endOfDay(nowZoned), TZ);
+    const dayStartZoned = startOfDay(nowZoned);
+    const dayEndZoned = endOfDay(nowZoned);
 
-    // 3) Clave de día estable en CDMX (idempotencia y agrupación)
+    // Convert ZonedTime back to a UTC Date object for Firestore
+    const dayStartUtc = new Date(dayStartZoned.getTime());
+    const dayEndUtc = new Date(dayEndZoned.getTime());
+
     const dateKey = formatInTimeZone(nowUtc, TZ, 'yyyy-MM-dd');
 
     const activeDriversSnap = await db
@@ -57,7 +59,6 @@ export const generateDailyRentalCharges = onSchedule(
         return;
       }
 
-      // 4) Idempotente: un cargo por driver/día local => ID determinista
       const chargeId = `${driverDoc.id}_${dateKey}`;
       const chargeRef = db.collection('dailyRentalCharges').doc(chargeId);
 
@@ -67,16 +68,13 @@ export const generateDailyRentalCharges = onSchedule(
           vehicleId,
           amount: dailyRentalCost,
           vehicleLicensePlate: vehicle?.licensePlate || '',
-          // guarda siempre en UTC; la presentación se hace con la zona que quieras
           date: admin.firestore.Timestamp.fromDate(nowUtc),
-          // metacampos útiles:
-          dateKey, // 'yyyy-MM-dd' en CDMX
+          dateKey,
           dayStartUtc: admin.firestore.Timestamp.fromDate(dayStartUtc),
           dayEndUtc: admin.firestore.Timestamp.fromDate(dayEndUtc),
         });
         logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
       } catch (err: any) {
-        // Ya existe -> ok (pasa en reintentos del job)
         if (err?.code === 6 || err?.code === 'ALREADY_EXISTS') {
           logger.info(`Charge already exists for ${driver.name} (${dateKey}).`);
         } else {
