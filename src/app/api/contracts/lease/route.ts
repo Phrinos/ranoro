@@ -69,13 +69,14 @@ export async function POST(req: NextRequest) {
     const data = coerce(raw);
 
     const element = React.createElement(LeasePdf, { data });
-    const stream = await pdf(element as any).toStream();
-    return new Response(stream as unknown as ReadableStream, {
-        headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="contrato-${data?.contractId ?? 'lease'}.pdf"`,
-            'Cache-Control': 'no-store',
-        },
+    const buffer = await (pdf(element as any) as any).toBuffer();
+
+    return new Response(buffer as any, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="contrato-${data?.contractId ?? 'lease'}.pdf"`,
+        'Cache-Control': 'no-store',
+      },
     });
   } catch (err: any) {
     console.error("Lease PDF error:", err);

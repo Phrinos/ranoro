@@ -100,13 +100,13 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                                             <FormControl>
                                                 <Checkbox
                                                     checked={field.value?.includes(item.id)}
-                                                    onCheckedChange={(checked) => {
-                                                        const currentValue = Array.isArray(field.value) ? field.value : [];
-                                                        const newValue = checked
-                                                            ? [...currentValue, item.id]
-                                                            : currentValue.filter((v: string) => v !== item.id);
-                                                        field.onChange(newValue);
-                                                    }}
+                                                    onCheckedChange={(checked) =>
+                                                      checked
+                                                        ? field.onChange([...(Array.isArray(field.value) ? (field.value as string[]) : []), item.id])
+                                                        : field.onChange(
+                                                            (Array.isArray(field.value) ? (field.value as string[]) : []).filter((v: string) => v !== item.id)
+                                                          )
+                                                    }
                                                 />
                                             </FormControl>
                                             <FormLabel className="font-normal">{item.label}</FormLabel>
@@ -126,8 +126,12 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
           render={({ field }) => {
             const valueAsDate = field.value instanceof Date ? field.value : field.value ? new Date(field.value as any) : null;
             const onCalendarChange: CalendarProps['onChange'] = (value) => {
-              const picked = Array.isArray(value) ? (value[0] as Date | null) : (value as Date | null);
-              field.onChange(picked ?? null);
+                const picked = Array.isArray(value) ? (value[0] as Date | null) : (value as Date | null);
+                field.onChange(picked ?? null);
+            };
+            const handleCalendarChange = (value: any, event: React.MouseEvent<HTMLButtonElement>) => {
+              onCalendarChange(value, event);
+              setIsCalendarOpen(false);
             };
             return (
               <FormItem className="flex flex-col">
@@ -149,11 +153,8 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <NewCalendar
-                      onChange={(v: any) => {
-                        onCalendarChange(v);
-                        setIsCalendarOpen(false);
-                      }}
-                      value={valueAsDate as any}
+                      onChange={handleCalendarChange}
+                      value={valueAsDate}
                       locale="es-MX"
                       maxDate={new Date()}
                     />
@@ -165,11 +166,33 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
           }}
         />
         <div className="grid grid-cols-2 gap-4">
-            <FormField<UserFormValues> control={form.control} name="monthlySalary" render={({ field }) => (
-                <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
+            <FormField
+                control={form.control as any}
+                name="monthlySalary"
+                render={({ field }) => (
+                <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl>
+                    <Input
+                        type="number"
+                        value={typeof field.value === 'number' || typeof field.value === 'string' ? field.value : ''}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                        className="bg-card text-foreground"
+                        placeholder="0.00"
+                    />
+                </FormControl><FormMessage /></FormItem>
             )}/>
-            <FormField<UserFormValues> control={form.control} name="commissionRate" render={({ field }) => (
-                <FormItem><FormLabel>% Comisión</FormLabel><FormControl><Input type="number" placeholder="Ej: 5 para 5%" {...field} value={field.value ?? ''} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
+            <FormField
+                control={form.control as any}
+                name="commissionRate"
+                render={({ field }) => (
+                <FormItem><FormLabel>% Comisión</FormLabel><FormControl>
+                    <Input
+                        type="number"
+                        value={typeof field.value === 'number' || typeof field.value === 'string' ? field.value : ''}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                        className="bg-card text-foreground"
+                        placeholder="Ej: 5 para 5%"
+                    />
+                </FormControl><FormMessage /></FormItem>
             )}/>
         </div>
       </form>
