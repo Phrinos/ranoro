@@ -16,6 +16,9 @@ export type User = {
   address?: string;
   standardHoursPerDay?: number;
   signatureDataUrl?: string;
+  functions?: string[];
+  monthlySalary?: number;
+  commissionRate?: number;
 };
 
 export type Personnel = User | Technician | AdministrativeStaff;
@@ -27,20 +30,6 @@ export interface Technician extends User {
 export interface AdministrativeStaff extends User {
   department: string;
 }
-
-/** Utilizado por varios componentes de hoja/impresiones */
-export type WorkshopInfo = {
-  name?: string;
-  rfc?: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  cityState?: string;
-  logoUrl?: string;
-  footerLine1?: string;
-  footerLine2?: string;
-  googleMapsUrl?: string;
-};
 
 export type InventoryItem = {
   id: string;
@@ -56,9 +45,7 @@ export type InventoryItem = {
   sku?: string;
   updatedAt?: any; // Firestore Timestamp
   unitPrice: number;
-  /** La UI lee este campo en muchos lados */
   sellingPrice?: number;
-  /** Algunas vistas leen unidad */
   unitType?: 'units'|'ml'|'liters'|'kg'|'service';
 };
 
@@ -74,6 +61,7 @@ export type InventoryCategory = { id: string; name: string };
 export type Supplier = {
   id: string;
   name: string;
+  description?: string;
   contactPerson?: string;
   phone?: string;
   email?: string;
@@ -118,7 +106,6 @@ export type Vehicle = {
   assignedDriverName?: string | null;
   paperwork?: Paperwork[];
   fineChecks?: FineCheck[];
-  /** Varias tablas usan esto */
   lastServiceDate?: Date | string | null;
 };
 
@@ -190,15 +177,11 @@ export type ManualDebtEntry = {
   note: string;
 };
 
-/** Línea de servicio “superset” (cubre ambos formatos que usa la UI) */
 export type ServiceItem = {
-  // Forma “simple” original
-  itemId?: string;
-  itemName?: string;
-  quantity?: number;
-  total?: number;
-
-  // Campos enriquecidos usados por otros componentes (opcionales)
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  total: number;
   id?: string;
   name?: string;
   price?: number;
@@ -239,6 +222,8 @@ export type NextServiceInfo = {
   mileage: number | null;
 };
 
+export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado' | 'Completado' | 'Proveedor Externo';
+
 export type ServiceSubStatus =
   | 'Ingresado'
   | 'En Espera de Refacciones'
@@ -251,35 +236,21 @@ export type ServiceRecord = {
   id: string;
   vehicleId: string;
   serviceDate: Date | string;
-  status: 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado' | 'Cotizacion';
-  serviceType?: string; // para tablero
-  /** Muchos componentes leen esto (opcional) */
+  status: ServiceStatus;
   subStatus?: string;
-  /** La UI muestra y muta este estado */
+  serviceType?: string;
   appointmentStatus?: 'Sin Confirmar'|'Confirmada'|'Cancelada'|string;
-
-  /** Campos esperados por vistas de compartir/impresión */
   publicId?: string;
   folio?: string;
-
-  /** Datos de cliente */
   customerName?: string;
   customerPhone?: string;
-
-  /** Vehículo opcional embebido en algunas vistas */
   vehicle?: Vehicle;
-
-  /** Ítems de servicio en formato superset */
   serviceItems: ServiceItem[];
-
-  /** Firmas y recepción/entrega */
   customerSignatureDataUrl?: string;
   serviceAdvisorSignatureDataUrl?: string;
   customerSignatureReception?: string;
   customerSignatureDelivery?: string;
   cancellationReason?: string;
-
-  /** Info adicional */
   description?: string;
   mechanicId?: string;
   mechanicName?: string;
@@ -298,26 +269,19 @@ export type ServiceRecord = {
   paymentMethod?: string;
   cardCommission?: number;
   serviceAdvisorCommission?: number;
-
-  /** Usado por hojas e inspecciones */
-  workshopInfo?: WorkshopInfo;
   safetyInspection?: SafetyInspection;
   photoReports?: { title?: string; photos: string[] }[];
   originalQuoteItems?: ServiceItem[];
   notes?: string;
-
-  /** Condiciones del vehículo */
   fuelLevel?: 'Empty'|'1/4'|'1/2'|'3/4'|'Full'|string;
   vehicleConditions?: string;
   customerItems?: string;
-
-  /** Otros */
   mileage?: number | null;
 };
 
 export type SaleReceipt = {
   id: string;
-  saleDate: Date | string;
+  saleDate: string | Date;
   items: { itemId: string; itemName: string; quantity: number; total: number }[];
   totalAmount: number;
   paymentMethod?: PaymentMethod;
@@ -330,8 +294,6 @@ export type SaleReceipt = {
   amountInCash?: number;
   amountInCard?: number;
   amountInTransfer?: number;
-
-  /** Campos que tu UI consulta */
   subTotal?: number;
   tax?: number;
   customerName?: string;
@@ -403,7 +365,6 @@ export type PricedService = {
   upgrades?: { [key: string]: number };
 };
 
-/** Extras que importan otros servicios */
 export type Area = string;
 export type PayableAccount = { 
   id: string; 
@@ -416,26 +377,24 @@ export type PayableAccount = {
   dueDate: string; 
   supplierName?: string; 
 };
-export type AuditLogAction = "create" | "update" | "delete" | "login" | "export";
+export type AuditLogAction = "Crear" | "Editar" | "Eliminar" | "Archivar" | "Restaurar" | "Registrar" | "Pagar" | "Cancelar" | 'create' | 'update' | 'delete' | 'login' | 'export';
 export type AuditLogEntity = "user" | "vehicle" | "inventory" | "service" | "sale" | "role" | "purchase" | "payment";
 export type AuditLog = {
   id: string;
   date: string;
-  actionType: AuditLogAction;
-  entityType?: AuditLogEntity;
-  entityId?: string;
+  action: AuditLogAction;
   description: string;
+  entityType: string;
+  entityId: string;
   userId: string;
   userName: string;
-  details?: Record<string, any>;
+  createdAt?: any; // Timestamp/FieldValue
 };
 
-
-/** Reutilizable para cotizaciones */
 export type QuoteRecord = { id: string; items: ServiceItem[]; total?: number };
 
+export type OilInfo = { grado?: string | null; litros?: number | null; costoUnitario?: number; lastUpdated?: string };
 export type EngineSupply = { sku?: string | null; costoUnitario?: number; lastUpdated?: string };
-export type OilInfo = { grado?: string | null; litros?: number; costoUnitario?: number; lastUpdated?: string };
 
 export type EngineData = {
   name: string;

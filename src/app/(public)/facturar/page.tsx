@@ -55,15 +55,7 @@ function PageInner() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchResult, setSearchResult] = useState<TicketType | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [workshopInfo, setWorkshopInfo] = useState<Partial<any>>({});
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('workshopTicketInfo');
-    if (stored) {
-        try { setWorkshopInfo(JSON.parse(stored)); } catch { /* noop */ }
-    }
-  }, []);
 
   const searchForm = useForm<SearchFormValues>({
     resolver: zodResolver(searchSchema),

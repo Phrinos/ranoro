@@ -40,12 +40,12 @@ const getFacturaComInstance = async () => {
   const configSnap = await getDoc(doc(db, 'workshopConfig', 'main'));
   if (!configSnap.exists()) return null;
   
-  const workshopInfo = configSnap.data() as any;
+  const workshopConfig = configSnap.data() as any;
   
-  const apiKey = (workshopInfo.facturaComApiKey || '').trim();
+  const apiKey = (workshopConfig.facturaComApiKey || '').trim();
   if (!apiKey) return null;
 
-  const isLiveMode = workshopInfo.facturaComBillingMode === 'live';
+  const isLiveMode = workshopConfig.facturaComBillingMode === 'live';
   
   return { apiKey, isLiveMode };
 };

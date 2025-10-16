@@ -1,16 +1,16 @@
 'use client';
 
-import type { PurchaseRecommendation, WorkshopInfo } from '@/types';
+import type { PurchaseRecommendationOutput } from '@/ai/flows/purchase-recommendation-flow';
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from "next/image";
 
 interface PurchaseOrderContentProps {
-  recommendations: PurchaseRecommendation[];
+  recommendations: PurchaseRecommendationOutput['recommendations'];
 }
 
-const initialWorkshopInfo: Partial<WorkshopInfo> = {
+const initialWorkshopInfo: Partial<any> = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
@@ -20,7 +20,7 @@ const initialWorkshopInfo: Partial<WorkshopInfo> = {
 
 export const PurchaseOrderContent = React.forwardRef<HTMLDivElement, PurchaseOrderContentProps>(
   ({ recommendations }, ref) => {
-    const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>(initialWorkshopInfo);
+    const [workshopInfo, setWorkshopInfo] = useState<Partial<any>>(initialWorkshopInfo);
 
     useEffect(() => {
         const stored = localStorage.getItem('workshopTicketInfo');

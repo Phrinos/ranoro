@@ -1,7 +1,6 @@
-
 import { db } from '@/lib/firebaseClient';
 import { doc, getDoc } from 'firebase/firestore';
-import type { ServiceRecord, WorkshopInfo } from '@/types';
+import type { ServiceRecord } from '@/types';
 
 // Define the structure for the API response
 interface ApiResponse {
@@ -10,11 +9,11 @@ interface ApiResponse {
 }
 
 // Function to fetch workshop information from Firestore
-const getWorkshopInfo = async (): Promise<Partial<WorkshopInfo> | null> => {
+const getWorkshopInfo = async (): Promise<Partial<any> | null> => {
   if (!db) return null;
   const workshopConfigRef = doc(db, 'workshopConfig', 'main');
   const docSnap = await getDoc(workshopConfigRef);
-  return docSnap.exists() ? (docSnap.data() as Partial<WorkshopInfo>) : null;
+  return docSnap.exists() ? (docSnap.data() as Partial<any>) : null;
 };
 
 // Main function to send a confirmation message
@@ -35,7 +34,7 @@ export const sendConfirmationMessage = async (service: ServiceRecord): Promise<A
     body: [
       { name: 'customer_name', value: (service as any).customer.name },
       { name: 'service_date', value: new Date(service.serviceDate).toLocaleDateString('es-MX') },
-      { name: 'workshop_name', value: workshopInfo?.name ?? '' },
+      { name: 'workshop_name', value: workshopInfo?.name ?? "" },
     ],
   });
 

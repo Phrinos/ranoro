@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { ServiceRecord, PurchaseRecommendation, InventoryItem, WorkshopInfo } from '@/types';
+import type { ServiceRecord, InventoryItem } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShoppingCart, AlertTriangle, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
+import { getPurchaseRecommendations, type PurchaseRecommendationOutput } from '@/ai/flows/purchase-recommendation-flow';
 import { serviceService, inventoryService } from '@/lib/services';
 import { isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -28,7 +28,7 @@ const handleAiError = (error: any, toast: any, context: string): string => {
 
 export default function AsistenteComprasContent() {
     const { toast } = useToast();
-    const [purchaseRecommendations, setPurchaseRecommendations] = useState<PurchaseRecommendation[] | null>(null);
+    const [purchaseRecommendations, setPurchaseRecommendations] = useState<PurchaseRecommendationOutput['recommendations'] | null>(null);
     const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
     const [purchaseError, setPurchaseError] = useState<string | null>(null);
     const [isPurchaseOrderDialogOpen, setIsPurchaseOrderDialogOpen] = useState(false);
