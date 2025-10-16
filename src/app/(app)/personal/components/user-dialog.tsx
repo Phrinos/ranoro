@@ -4,7 +4,8 @@
 
 import React, { useState } from 'react';
 import { FormDialog } from '@/components/shared/form-dialog';
-import { UserForm, type UserFormValues } from "./user-form";
+import { UserForm } from "./user-form";
+import type { UserFormValues } from '@/schemas/user-form-schema';
 import type { User, AppRole } from "@/types";
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';

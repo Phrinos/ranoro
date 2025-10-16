@@ -161,13 +161,12 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         />
         <div className="grid grid-cols-2 gap-4">
             <FormField
-                control={form.control}
+                control={form.control as any}
                 name="monthlySalary"
                 render={({ field }) => (
                 <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl>
                     <Input
                         type="number"
-                        {...field}
                         value={typeof field.value === 'number' || typeof field.value === 'string' ? field.value : ''}
                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                         className="bg-card text-foreground"
@@ -176,13 +175,12 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 </FormControl><FormMessage /></FormItem>
             )}/>
             <FormField
-                control={form.control}
+                control={form.control as any}
                 name="commissionRate"
                 render={({ field }) => (
                 <FormItem><FormLabel>% Comisión</FormLabel><FormControl>
                     <Input
                         type="number"
-                        {...field}
                         value={typeof field.value === 'number' || typeof field.value === 'string' ? field.value : ''}
                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                         className="bg-card text-foreground"

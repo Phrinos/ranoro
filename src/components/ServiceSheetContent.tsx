@@ -1,10 +1,10 @@
 // src/components/ServiceSheetContent.tsx
 "use client";
 
-import type { QuoteRecord, WorkshopInfo, Vehicle, ServiceRecord, SafetyInspection, SafetyCheckValue } from '@/types';
+import type { Vehicle, ServiceRecord, SafetyInspection, SafetyCheckValue } from '@/types';
 import { format, isValid, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { cn, formatCurrency, capitalizeWords, formatNumber, normalizeDataUrl } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -22,7 +22,7 @@ import { GARANTIA_CONDICIONES_TEXT, INGRESO_CONDICIONES_TEXT } from '@/lib/const
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
-const initialWorkshopInfo: WorkshopInfo = {
+const initialWorkshopInfo: any = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
@@ -56,7 +56,7 @@ const coerceDate = (v: unknown): Date | null => {
 };
 
 // --- Sub-components for better structure ---
-const SheetHeader = React.memo(({ service, workshopInfo }: { service: ServiceRecord, workshopInfo: Partial<WorkshopInfo> }) => {
+const SheetHeader = React.memo(({ service, workshopInfo }: { service: ServiceRecord, workshopInfo: any }) => {
   const creationDate = coerceDate(service.serviceDate) || new Date();
   const formattedCreationDate = isValid(creationDate) ? format(creationDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
@@ -76,9 +76,9 @@ const SheetHeader = React.memo(({ service, workshopInfo }: { service: ServiceRec
 });
 SheetHeader.displayName = 'SheetHeader';
 
-const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle }) => {
+const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
   const customerName = capitalizeWords(service.customerName || vehicle?.ownerName || '');
-  const customerPhone = vehicle?.ownerPhone || 'Teléfono no disponible';
+  const customerPhone = vehicle?.ownerPhone || service.customerPhone || 'Teléfono no disponible';
   const vehicleMake = vehicle?.make || '';
   const vehicleModel = vehicle?.model || '';
   const vehicleYear = vehicle?.year || 'N/A';
@@ -167,7 +167,7 @@ const StatusCard = React.memo(({ service, isConfirming, onConfirmClick, onCancel
 });
 StatusCard.displayName = 'StatusCard';
 
-const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }: { workshopInfo: Partial<WorkshopInfo>, advisorName?: string, advisorSignature?: string }) => (
+const SheetFooter = React.memo(({ workshopInfo, advisorName, advisorSignature }: { workshopInfo: any, advisorName?: string | null, advisorSignature?: string | null }) => (
     <div className="space-y-4">
         <Card>
             <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
@@ -244,8 +244,18 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const { toast } = useToast();
     const [isCancelling, setIsCancelling] = useState(false);
     const [currentActiveTab, setActiveTab] = useState('order');
-    
-    const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...service.workshopInfo };
+    const [localWorkshopInfo, setLocalWorkshopInfo] = useState(initialWorkshopInfo);
+
+    useEffect(() => {
+        const storedInfo = localStorage.getItem('workshopTicketInfo');
+        if (storedInfo) {
+            try {
+                setLocalWorkshopInfo(prev => ({...prev, ...JSON.parse(storedInfo)}));
+            } catch (e) {
+                console.error("Could not parse workshop info from storage", e);
+            }
+        }
+    }, []);
     
     const status = (service.status || '').toLowerCase();
     
@@ -287,8 +297,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     return (
       <div ref={ref} className="space-y-6">
         {showSignatureAction && <SignatureActionCard onSignClick={() => onSignClick(signatureActionType)} />}
-        <SheetHeader service={service} workshopInfo={effectiveWorkshopInfo} />
-        <ClientInfo service={service} vehicle={vehicle} />
+        <SheetHeader service={service} workshopInfo={localWorkshopInfo} />
+        <ClientInfo service={service} vehicle={vehicle ?? undefined} />
         <StatusCard service={service} isConfirming={isConfirming} onConfirmClick={onConfirmClick} onCancelAppointment={handleCancelAppointment}/>
         {status === 'cotizacion' && onScheduleClick && <div className="text-center"><Button onClick={onScheduleClick} size="lg"><CalendarDays className="mr-2 h-5 w-5"/>Agendar Cita</Button></div>}
         
@@ -305,7 +315,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </Tabs>
         </div>
 
-        <SheetFooter workshopInfo={effectiveWorkshopInfo} advisorName={service.serviceAdvisorName} advisorSignature={service.serviceAdvisorSignatureDataUrl}/>
+        <SheetFooter workshopInfo={localWorkshopInfo} advisorName={service.serviceAdvisorName} advisorSignature={service.serviceAdvisorSignatureDataUrl}/>
       </div>
     );
   }
@@ -324,7 +334,7 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicke
         return { subTotal: sub, taxAmount: tax, totalCost: total };
     }, [items]);
 
-    const showReceptionCard = service.status === 'En Taller' || service.status === 'Entregado' || service.status === 'Completado';
+    const showReceptionCard = service.status === 'En Taller' || service.status === 'Entregado' || (service as any).status === 'Completado';
 
     return (
         <div className="space-y-6">
@@ -337,7 +347,7 @@ function ServiceOrderTab({ service, vehicle, onSignClick, isSigning, onShowTicke
                                 <div className="flex justify-between items-start">
                                     <div className="flex-1"><p className="font-semibold">{item.name}</p>
                                     {item.suppliesUsed && item.suppliesUsed.length > 0 && (<p className="text-xs text-muted-foreground mt-1">Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}</p>)}</div>
-                                    <p className="font-bold text-lg">{formatCurrency(item.sellingPrice)}</p>
+                                    <p className="font-bold text-lg">{formatCurrency(item.sellingPrice ?? 0)}</p>
                                 </div>
                             </div>
                         )) : <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>}
@@ -428,7 +438,14 @@ function SignatureDisplay({ type, signatureUrl, onSignClick, isSigning }: { type
 }
 
 
+type SafetyInspectionRecord = SafetyInspection & {
+    inspectionNotes?: string;
+    technicianSignature?: string;
+};
+
 function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }) {
+  const inspectionRecord = (inspection ?? {}) as SafetyInspectionRecord;
+
   const inspectionGroups = [
       { title: "LUCES", items: [ { name: "luces_altas_bajas_niebla", label: "ALTAS, BAJAS Y NIEBLA" }, { name: "luces_cuartos", label: "CUARTOS" }, { name: "luces_direccionales", label: "DIRECCIONALES" }, { name: "luces_frenos_reversa", label: "FRENOS Y REVERSA" }, { name: "luces_interiores", label: "INTERIORES" } ] },
       { title: "NIVELES Y FUGAS", items: [ { name: "fugas_refrigerante", label: "REFRIGERANTE" }, { name: "fugas_limpiaparabrisas", label: "LIMPIAPARABRISAS" }, { name: "fugas_frenos_embrague", label: "FRENOS Y EMBRAGUE" }, { name: "fugas_transmision", label: "TRANSMISIÓN" }, { name: "fugas_direccion_hidraulica", label: "DIRECCIÓN HIDRÁULICA" } ] },
@@ -453,7 +470,7 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
                   {inspectionGroups.map(group => (
                       <div key={group.title}><h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4><div className="space-y-1">
                           {group.items.map(item => {
-                              const checkItem = inspection[item.name.replace('safetyInspection.', '') as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
+                              const checkItem = inspectionRecord[item.name.replace('safetyInspection.', '') as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
                               return (
                                   <div key={item.name} className="py-2 border-b border-dashed last:border-none">
                                       <div className="flex justify-between items-center text-sm"><span className="pr-4">{item.label}</span><StatusIndicator status={checkItem?.status} /></div>
@@ -464,8 +481,17 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
                       </div></div>
                   ))}
               </div>
-              <div><h4 className="font-semibold">Observaciones Generales</h4><p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{inspection.inspectionNotes || 'Sin observaciones.'}</p></div>
-              <div><h4 className="font-semibold">Firma del Técnico</h4><div className="mt-1 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{inspection.technicianSignature ? <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma Técnico" width={200} height={80} style={{objectFit: "contain"}}/> : <span className="text-xs text-muted-foreground">Sin firma</span>}</div></div>
+              <div>
+                <h4 className="font-semibold">Observaciones Generales</h4>
+                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                    {String(inspectionRecord.inspectionNotes ?? 'Sin observaciones.')}
+                </p>
+              </div>
+              <div><h4 className="font-semibold">Firma del Técnico</h4>
+                <div className="mt-1 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">
+                    {inspectionRecord.technicianSignature ? <Image src={normalizeDataUrl(String(inspectionRecord.technicianSignature))} alt="Firma Técnico" width={200} height={80} style={{objectFit: "contain"}}/> : <span className="text-xs text-muted-foreground">Sin firma</span>}
+                </div>
+              </div>
           </CardContent>
       </Card>
   );

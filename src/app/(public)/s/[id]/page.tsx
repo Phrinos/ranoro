@@ -51,7 +51,6 @@ type PublicServiceDoc = {
   isPublic?: boolean;
   createdAt?: any;
   updatedAt?: any;
-  workshopInfo?: any;
   nextServiceInfo?: any;
   mileage?: number;
 };
@@ -93,8 +92,18 @@ export default function PublicServicePage() {
 
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<any | null>(null);
 
   useEffect(() => {
+    const storedInfo = localStorage.getItem('workshopTicketInfo');
+    if (storedInfo) {
+      try {
+        setWorkshopInfo(JSON.parse(storedInfo));
+      } catch (e) {
+        console.error("Failed to parse workshop info from storage", e);
+      }
+    }
+
     if (!publicId) {
       setError("Enlace inválido.");
       setService(null);
@@ -274,7 +283,7 @@ export default function PublicServicePage() {
           ref={ticketContentRef}
           service={service as any}
           vehicle={vehicle as any}
-          previewWorkshopInfo={service.workshopInfo}
+          previewWorkshopInfo={workshopInfo}
         />
       </UnifiedPreviewDialog>
     </>

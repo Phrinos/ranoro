@@ -59,13 +59,13 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
   const [isTicketOpen, setIsTicketOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<RentalPayment | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
-  const [workshopInfo, setWorkshopInfo] = useState<any | null>(null);
+  const [brandingInfo, setBrandingInfo] = useState<any | null>(null);
 
   useEffect(() => {
-    const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
-    if (storedWorkshopInfo) {
+    const storedBrandingInfo = localStorage.getItem('workshopTicketInfo');
+    if (storedBrandingInfo) {
       try {
-        setWorkshopInfo(JSON.parse(storedWorkshopInfo));
+        setBrandingInfo(JSON.parse(storedBrandingInfo));
       } catch (e) {
         console.error("Failed to parse workshop info from localStorage", e);
       }
@@ -157,7 +157,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
     if (!driver) return;
     await personnelService.saveManualDebt(
       driver.id,
-      { ...data, date: data.date.toISOString() },
+      { ...data, date: data.date.toISOString(), note: data.note || '' },
       editingDebt?.id
     );
     toast({ title: `Adeudo ${editingDebt ? 'actualizado' : 'registrado'}` });
@@ -169,7 +169,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
     if (!editingCharge) return;
     await rentalService.saveDailyCharge(
       editingCharge.id,
-      { ...data, date: data.date.toISOString(), note: data.note }
+      { ...data, date: data.date.toISOString(), note: data.note || '' }
     );
     toast({ title: "Cargo Actualizado" });
     setIsEditDialogOpen(false);
@@ -199,7 +199,6 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
       } else {
         // Guard contra navegadores sin ClipboardItem
         if (typeof window !== 'undefined' && 'ClipboardItem' in window) {
-          // @ts-expect-error: Safari puede no tipar ClipboardItem
           await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': blob })]);
           toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
         } else {
@@ -225,7 +224,6 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
     const imageFile = await handleCopyTicketAsImage(true);
     if (imageFile && typeof navigator !== 'undefined' && 'share' in navigator) {
       try {
-        // @ts-expect-error: tipos de Web Share de archivos varían por runtime
         await navigator.share({
           files: [imageFile],
           title: 'Ticket de Pago',
@@ -377,6 +375,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
                                 </Button>
                               }
                               title={`¿Eliminar ${t.type === 'payment' ? 'Pago' : 'Cargo'}?`}
+                              description="Esta acción es permanente y afectará el balance del conductor."
                               onConfirm={() => {
                                 if (t.type === 'debt') personnelService.deleteManualDebt(t.id);
                                 if (t.type === 'payment') rentalService.deleteRentalPayment(t.id);
@@ -475,9 +474,9 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
             ref={ticketContentRef}
             payment={selectedPayment}
             driver={driver}
-            vehicle={vehicle}
+            vehicle={vehicle ?? undefined}
             driverBalance={totalBalance}
-            previewWorkshopInfo={workshopInfo || undefined}
+            previewBranding={brandingInfo || undefined}
           />
         </UnifiedPreviewDialog>
       )}

@@ -1,4 +1,4 @@
-
+// src/app/(app)/pos/components/informe-pos-content.tsx
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -47,7 +47,10 @@ export function InformePosContent({ allSales, allServices, allInventory }: Infor
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate as unknown as string)) && isWithinInterval(parseISO(s.saleDate as unknown as string), interval));
+    const salesInRange = allSales.filter(s => {
+        const saleDate = typeof s.saleDate === 'string' ? parseISO(s.saleDate) : s.saleDate;
+        return s.status !== 'Cancelado' && isValid(saleDate) && isWithinInterval(saleDate, interval)
+    });
     const servicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), interval));
     
     const salesRevenue = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);

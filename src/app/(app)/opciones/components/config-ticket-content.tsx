@@ -9,19 +9,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Save, Printer } from 'lucide-react';
-import type { SaleReceipt, WorkshopInfo } from '@/types';
+import type { SaleReceipt } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { storage } from '@/lib/firebaseClient.js';
+import { storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { optimizeImage } from '@/lib/utils';
-import { TicketContent } from "@/components/ticket-content";
-import { useDebouncedCallback } from 'use-debounce';
+import Image from 'next/image';
+import ReactCrop, { centerCrop, makeAspectCrop, type Crop as ReactCropType } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 import { HeaderLogoCard } from './config-ticket/header-logo-card';
 import { InformacionNegocioCard } from './config-ticket/informacion-negocio-card';
 import { EstiloTextoTicketCard } from './config-ticket/estilo-texto-ticket-card';
 import { MensajesPiePaginaCard } from './config-ticket/mensajes-pie-pagina-card';
 import { PieTicketEspaciadoCard } from './config-ticket/pie-ticket-espaciado-card';
+import { TicketContent } from '@/components/ticket-content';
+import { useDebouncedCallback } from 'use-debounce';
 
 const LOCALSTORAGE_KEY = "workshopTicketInfo";
 

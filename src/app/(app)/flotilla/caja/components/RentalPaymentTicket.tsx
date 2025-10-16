@@ -1,14 +1,31 @@
 // src/app/(app)/flotilla/caja/components/RentalPaymentTicket.tsx
 "use client";
 
-import type { RentalPayment, Driver, Vehicle, WorkshopInfo } from '@/types';
+import type { RentalPayment, Driver, Vehicle } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import { cn, formatCurrency } from "@/lib/utils";
 import Image from 'next/image';
 
-const initialWorkshopInfo: Partial<WorkshopInfo> = {
+type TicketBranding = {
+  name?: string;
+  phone?: string;
+  addressLine1?: string;
+  logoUrl?: string;
+  // ajustes opcionales que ya usas en estilo:
+  headerFontSize?: number;
+  bodyFontSize?: number;
+  itemsFontSize?: number;
+  totalsFontSize?: number;
+  footerFontSize?: number;
+  logoWidth?: number;
+  nameBold?: boolean;
+  footerLine1Bold?: boolean;
+  footerLine1?: string;
+};
+
+const initialBranding: TicketBranding = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
@@ -20,28 +37,28 @@ interface RentalPaymentTicketProps {
   driver?: Driver;
   vehicle?: Vehicle;
   driverBalance: number;
-  previewWorkshopInfo?: Partial<WorkshopInfo>;
+  previewBranding?: TicketBranding;
 }
 
 export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymentTicketProps>(
-  ({ payment, driver, vehicle, driverBalance, previewWorkshopInfo }, ref) => {
+  ({ payment, driver, vehicle, driverBalance, previewBranding }, ref) => {
     
-    const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>(initialWorkshopInfo);
+    const [branding, setBranding] = useState<TicketBranding>(initialBranding);
 
     useEffect(() => {
-        const baseInfo = previewWorkshopInfo ?? initialWorkshopInfo;
+        const baseInfo = previewBranding ?? initialBranding;
         const stored = localStorage.getItem('workshopTicketInfo');
         if (stored) {
             try {
-                setWorkshopInfo({ ...baseInfo, ...JSON.parse(stored) });
+                setBranding({ ...baseInfo, ...JSON.parse(stored) });
             } catch (e) {
                 console.error("Failed to parse workshop info", e);
-                setWorkshopInfo(baseInfo);
+                setBranding(baseInfo);
             }
         } else {
-            setWorkshopInfo(baseInfo);
+            setBranding(baseInfo);
         }
-    }, [previewWorkshopInfo]);
+    }, [previewBranding]);
 
     const formattedDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
     const paymentDate = payment.paymentDate ? parseISO(payment.paymentDate) : new Date();
@@ -54,10 +71,10 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
         className="font-mono bg-white text-black p-4 max-w-[300px] mx-auto print-format-receipt"
       >
         <div className="text-center mb-1 space-y-0 leading-tight">
-          {workshopInfo.logoUrl && (
-            <div className="mx-auto mb-1 relative" style={{ width: `${(workshopInfo as any).logoWidth || 120}px`, height: `${((workshopInfo as any).logoWidth || 120) / 3}px` }}>
+          {branding.logoUrl && (
+            <div className="mx-auto mb-1 relative" style={{ width: `${branding.logoWidth || 120}px`, height: `${((branding.logoWidth || 120) / 3)}px` }}>
                 <Image 
-                  src={workshopInfo.logoUrl} 
+                  src={branding.logoUrl!} 
                   alt="Logo" 
                   fill
                   style={{ objectFit: 'contain' }}
@@ -66,25 +83,25 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
                 />
             </div>
           )}
-          <div style={{ fontSize: `${(workshopInfo as any).headerFontSize || 10}px` }}>
-              <p className={cn({"font-bold": (workshopInfo as any).nameBold})}>{workshopInfo.name}</p>
-              <p>Tel: {workshopInfo.phone}</p>
+          <div style={{ fontSize: `${branding.headerFontSize || 10}px` }}>
+              <p className={cn({"font-bold": branding.nameBold})}>{branding.name}</p>
+              <p>Tel: {branding.phone}</p>
           </div>
         </div>
 
         <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
         
-        <div style={{ fontSize: `${(workshopInfo as any).bodyFontSize || 10}px` }}>
+        <div style={{ fontSize: `${branding.bodyFontSize || 10}px` }}>
             <div>Fecha Emisión: {formattedDateTime}</div>
             <div>Folio de Pago: {payment.id}</div>
             {payment.registeredByName && <div>Recibió: {payment.registeredByName}</div>}
         </div>
         
         <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
-        <div className="font-semibold text-center my-1" style={{ fontSize: `${(workshopInfo as any).bodyFontSize || 10}px` }}>RECIBO DE PAGO</div>
+        <div className="font-semibold text-center my-1" style={{ fontSize: `${branding.bodyFontSize || 10}px` }}>RECIBO DE PAGO</div>
         <div className="border-t border-dashed border-neutral-400 mt-1 mb-2"></div>
 
-        <table className="w-full text-left" style={{ fontSize: `${(workshopInfo as any).itemsFontSize || 10}px` }}>
+        <table className="w-full text-left" style={{ fontSize: `${branding.itemsFontSize || 10}px` }}>
             <tbody>
                 <tr><td className="pr-2"><span className="font-semibold">Recibimos de:</span></td><td>{driver?.name || payment.driverName}</td></tr>
                 <tr><td className="pr-2"><span className="font-semibold">Vehículo:</span></td><td>{vehicle?.make} {vehicle?.model} ({payment.vehicleLicensePlate})</td></tr>
@@ -97,7 +114,7 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
         </table>
 
 
-        <table className="w-full mt-2" style={{ fontSize: `${(workshopInfo as any).totalsFontSize || 12}px` }}>
+        <table className="w-full mt-2" style={{ fontSize: `${branding.totalsFontSize || 12}px` }}>
             <tbody>
                 <tr className="font-bold text-lg">
                     <td className="text-left">Total Pagado:</td>
@@ -112,8 +129,8 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
         
         <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
 
-        <div className="text-center mt-2" style={{ fontSize: `${(workshopInfo as any).footerFontSize || 10}px` }}>
-            <p className={cn({ "font-bold": (workshopInfo as any).footerLine1Bold })}>{(workshopInfo as any).footerLine1}</p>
+        <div className="text-center mt-2" style={{ fontSize: `${branding.footerFontSize || 10}px` }}>
+            <p className={cn({ "font-bold": branding.footerLine1Bold })}>{branding.footerLine1}</p>
         </div>
       </div>
     );

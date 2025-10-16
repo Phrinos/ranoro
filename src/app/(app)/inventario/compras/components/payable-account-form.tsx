@@ -33,7 +33,7 @@ export function PayableAccountForm({ id, onSubmit, account }: PayableAccountForm
     <Form {...form}>
       <form id={id} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
-          control={form.control}
+          control={form.control as any}
           name="amount"
           render={({ field }) => (
             <FormItem>
@@ -48,9 +48,9 @@ export function PayableAccountForm({ id, onSubmit, account }: PayableAccountForm
             </FormItem>
           )}
         />
-        <FormField control={form.control} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+        <FormField control={form.control as any} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
         <FormField
-          control={form.control}
+          control={form.control as any}
           name="note"
           render={({ field }) => (
             <FormItem>

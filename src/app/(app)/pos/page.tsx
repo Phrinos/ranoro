@@ -7,21 +7,19 @@ import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Loader2, PlusCircle, Printer, Copy, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import type { SaleReceipt, InventoryItem, User, WorkshopInfo, ServiceRecord, CashDrawerTransaction, InitialCashBalance } from '@/types';
+import type { SaleReceipt, InventoryItem, User, ServiceRecord, CashDrawerTransaction, InitialCashBalance } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { inventoryService, saleService, serviceService, adminService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { ViewSaleDialog } from './components/view-sale-dialog';
-import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import { formatCurrency } from '@/lib/utils';
 import html2canvas from 'html2canvas';
-import ReactDOMServer from 'react-dom/server';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const InformePosContent = lazy(() => import('./components/informe-pos-content').then(module => ({ default: module.InformePosContent })));
 const VentasPosContent = lazy(() => import('./components/ventas-pos-content').then(module => ({ default: module.VentasPosContent })));
+const PaymentDetailsDialog = lazy(() => import('@/components/shared/PaymentDetailsDialog').then(module => ({ default: module.PaymentDetailsDialog })));
 
 function PageInner() {
   const router = useRouter();
@@ -45,8 +43,9 @@ function PageInner() {
   const [viewingSale, setViewingSale] = useState<SaleReceipt | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<any | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     setIsLoading(true);
@@ -173,7 +172,7 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
   };
 
   const pageActions = (
-    <Button asChild>
+    <Button asChild className="w-full sm:w-auto">
       <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
     </Button>
   );
@@ -189,60 +188,61 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
 
   return (
     <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <TabbedPageLayout
-        title="Punto de Venta"
-        description="Gestiona ventas de mostrador, revisa el historial y realiza tu corte de caja."
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        tabs={tabs}
-        actions={pageActions}
-      />
-
-       {saleForReprint && (
-        <UnifiedPreviewDialog
-          open={isReprintDialogOpen}
-          onOpenChange={setIsReprintDialogOpen}
-          title={`Ticket Venta #${saleForReprint.id.slice(-6)}`}
-          footerContent={
-             <div className="flex w-full justify-end gap-2">
-                <TooltipProvider>
-                    <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyTicketAsImage(false)}><Copy className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
-                    <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareTicket}><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
-                    <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrintTicket}><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
-                </TooltipProvider>
-              </div>
-          }
-          sale={saleForReprint}
-        >
-          <TicketContent ref={ticketContentRef} sale={saleForReprint} previewWorkshopInfo={workshopInfo || undefined} />
-        </UnifiedPreviewDialog>
-      )}
-
-      {viewingSale && (
-        <ViewSaleDialog
-          open={isViewSaleDialogOpen}
-          onOpenChange={setIsViewSaleDialogOpen}
-          sale={viewingSale}
-          inventory={allInventory}
-          users={allUsers}
-          categories={[]}
-          suppliers={[]}
-          onCancelSale={handleCancelSale}
-          onDeleteSale={handleDeleteSale}
-          onPaymentUpdate={handlePaymentUpdate}
-          onSendWhatsapp={() => handleSendWhatsapp(viewingSale)}
+        <TabbedPageLayout
+            title="Punto de Venta"
+            description="Gestiona ventas de mostrador, revisa el historial y realiza tu corte de caja."
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={tabs}
+            actions={pageActions}
         />
-      )}
-      
-      {viewingSale && isPaymentDialogOpen && (
-        <PaymentDetailsDialog
-          open={isPaymentDialogOpen}
-          onOpenChange={setIsPaymentDialogOpen}
-          record={viewingSale}
-          onConfirm={handlePaymentUpdate as any}
-          recordType="sale"
-        />
-      )}
+        <Suspense fallback={null}>
+            {saleForReprint && (
+            <UnifiedPreviewDialog
+                open={isReprintDialogOpen}
+                onOpenChange={setIsReprintDialogOpen}
+                title={`Ticket Venta #${saleForReprint.id.slice(-6)}`}
+                footerContent={
+                 <div className="flex w-full justify-end gap-2">
+                    <TooltipProvider>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" onClick={() => handleCopyTicketAsImage(false)}><Copy className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Copiar Imagen</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-green-100 text-green-700 border-green-200 hover:bg-green-200" onClick={handleShareTicket}><Share2 className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Compartir</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-12 w-12 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" onClick={handlePrintTicket}><Printer className="h-6 w-6"/></Button></TooltipTrigger><TooltipContent><p>Imprimir</p></TooltipContent></Tooltip>
+                    </TooltipProvider>
+                  </div>
+                }
+                sale={saleForReprint}
+            >
+                <TicketContent ref={ticketContentRef} sale={saleForReprint} previewWorkshopInfo={workshopInfo || undefined} />
+            </UnifiedPreviewDialog>
+            )}
+
+            {viewingSale && (
+                <ViewSaleDialog
+                open={isViewSaleDialogOpen}
+                onOpenChange={setIsViewSaleDialogOpen}
+                sale={viewingSale}
+                inventory={allInventory}
+                users={allUsers}
+                categories={[]}
+                suppliers={[]}
+                onCancelSale={handleCancelSale}
+                onDeleteSale={handleDeleteSale}
+                onPaymentUpdate={handlePaymentUpdate}
+                onSendWhatsapp={() => handleSendWhatsapp(viewingSale)}
+                />
+            )}
+            
+            {viewingSale && isPaymentDialogOpen && (
+                <PaymentDetailsDialog
+                open={isPaymentDialogOpen}
+                onOpenChange={setIsPaymentDialogOpen}
+                record={viewingSale}
+                onConfirm={handlePaymentUpdate as any}
+                recordType="sale"
+                />
+            )}
+        </Suspense>
     </Suspense>
   );
 }

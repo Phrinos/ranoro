@@ -3,7 +3,8 @@
 
 import React, { useState } from 'react';
 import { FormDialog } from '@/components/shared/form-dialog';
-import { PayableAccountForm, type PayableAccountFormValues } from "./payable-account-form";
+import { PayableAccountForm } from "./payable-account-form";
+import type { PayableAccountFormValues } from '@/schemas/payable-account-form-schema';
 import type { PayableAccount } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 

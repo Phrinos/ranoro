@@ -80,5 +80,5 @@ export function calculateSaleProfit(
     return sum + unitCost * it.quantity;
   }, 0);
   const cardCommission = 'cardCommission' in legacy ? legacy.cardCommission ?? 0 : 0;
-  return legacy.totalAmount - cost - cardCommission;
+  return legacy.totalAmount - cost - (cardCommission ?? 0);
 }
