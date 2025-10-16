@@ -1,4 +1,5 @@
 
+
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
@@ -74,8 +75,8 @@ function PageInner() {
     const periodFactor = periodDays / daysInMonth;
   
     const activePersonnel = allUsers.filter(p => {
-      if (p.isArchived) return false;
-      const hireDate = p.hireDate ? parseDate(p.hireDate) : null;
+      if ((p as any).isArchived) return false;
+      const hireDate = (p as any).hireDate ? parseDate((p as any).hireDate) : null;
       return !hireDate || (hireDate && isValid(hireDate) && hireDate <= to);
     });
   
@@ -85,12 +86,12 @@ function PageInner() {
     });
   
     const totalTechnicianSalaries = activePersonnel
-      .filter(p => (p.functions?.includes('tecnico') || p.role.toLowerCase().includes('tecnico')))
-      .reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
+      .filter(p => (p as any).functions?.includes('tecnico') || (p as any).role.toLowerCase().includes('tecnico'))
+      .reduce((sum, p) => sum + ((p as any).monthlySalary || 0), 0);
   
     const totalAdministrativeSalaries = activePersonnel
-      .filter(p => !(p.functions?.includes('tecnico') || p.role.toLowerCase().includes('tecnico')))
-      .reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
+      .filter(p => !((p as any).functions?.includes('tecnico') || (p as any).role.toLowerCase().includes('tecnico')))
+      .reduce((sum, p) => sum + ((p as any).monthlySalary || 0), 0);
   
     const totalFixedExpenses = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
   
@@ -105,13 +106,13 @@ function PageInner() {
   
       let commission = 0;
       const advisor = activePersonnel.find(p => p.id === s.serviceAdvisorId);
-      if (advisor?.commissionRate) commission += profit * (advisor.commissionRate / 100);
+      if ((advisor as any)?.commissionRate) commission += profit * ((advisor as any).commissionRate / 100);
         
       s.serviceItems.forEach(item => {
         const tech = activePersonnel.find(p => p.id === (item as any).technicianId);
-        if (tech?.commissionRate) {
+        if ((tech as any)?.commissionRate) {
           const itemProfit = (item.sellingPrice || 0) - (inventoryService.getSuppliesCostForItem(item, inventoryItems) || 0);
-          if (itemProfit > 0) commission += itemProfit * (tech.commissionRate / 100);
+          if (itemProfit > 0) commission += itemProfit * ((tech as any).commissionRate / 100);
         }
       });
       return sum + commission;

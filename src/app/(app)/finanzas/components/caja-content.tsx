@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment } from '@/types';
+import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment, PaymentMethod } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +42,7 @@ type EnhancedCashDrawerTransaction = CashDrawerTransaction & {
   fullDescription?: string;
 };
 
-const methodIcon: Record<NonNullable<Payment["method"]>, React.ElementType> = {
+const methodIcon: Record<PaymentMethod, React.ElementType> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
@@ -75,7 +75,7 @@ type FlowRow = {
   refId?: string;         // para navegar si aplica
   user: string;           // asesor/cliente/usuario
   description: string;
-  amount: number;         // positivo para UI
+  amount: number;         // siempre en positivo para UI
   method?: Payment['method']; // solo pagos
 };
 
@@ -155,7 +155,7 @@ export default function CajaContent() {
       const client = s.customerName || 'Cliente Mostrador';
       pays.forEach((p, idx) => {
         if (p?.method !== 'Efectivo' || typeof p.amount !== 'number') return;
-        const d = getPaymentDate(p) || parseDate(s.saleDate);
+        const d = getPaymentDate(p) || parseDate(s.saleDate as any);
         const amt = Number(p.amount) || 0;
         rows.push({
           id: `${s.id}-sale-cash-${idx}`,
@@ -209,7 +209,7 @@ export default function CajaContent() {
       .map((t) => {
         const d = parseDate((t as any).date || (t as any).createdAt) || null;
         const user = (t as any).userName || (t as any).user || 'Sistema';
-        const desc = (t as any).fullDescription || t.description || (t as any).concept || '';
+        const desc = (t as any).fullDescription || t.concept || t.description || '';
         return {
           id: t.id, date: d, type: t.type, source: 'Libro',
           relatedType: (t as any).relatedType || 'Manual', refId: (t as any).relatedId,
@@ -282,7 +282,7 @@ export default function CajaContent() {
       await cashService.addCashTransaction({
         type: dialogType,
         amount: values.amount,
-        description: values.description,
+        concept: values.description,
         userId: currentUser?.id || 'system',
         userName: currentUser?.name || 'Sistema',
         relatedType: 'Manual',

@@ -69,6 +69,7 @@ export function useAuth() {
       }
     }, (error) => {
         console.error("Auth state listener error:", error);
+        handleLogout(); // Cierra sesión si hay un error en el listener principal
         setIsLoading(false); // Termina la carga si hay un error en el listener.
     });
 

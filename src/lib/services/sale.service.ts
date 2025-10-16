@@ -64,7 +64,7 @@ const registerSale = async (
     const tax = totalAmount - subTotal;
 
     const newSale: Omit<SaleReceipt, 'id'> = {
-        saleDate: new Date().toISOString(),
+        saleDate: new Date(),
         items: saleData.items,
         subTotal,
         tax,
@@ -121,8 +121,8 @@ const cancelSale = async (saleId: string, reason: string, currentUser: User | nu
     batch.update(saleRef, { status: 'Cancelado', cancellationReason: reason });
     
     const inventoryUpdateItems = saleData.items
-        .filter(item => !item.isService)
-        .map(item => ({ id: item.inventoryItemId, quantity: item.quantity }));
+        .filter(item => !(item as any).isService)
+        .map(item => ({ id: (item as any).inventoryItemId, quantity: item.quantity }));
 
     if (inventoryUpdateItems.length > 0) {
         await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'add');
@@ -150,8 +150,8 @@ const deleteSale = async (saleId: string, currentUser: User | null): Promise<voi
 
     if (saleData.status !== 'Cancelado') {
         const inventoryUpdateItems = saleData.items
-            .filter(item => !item.isService)
-            .map(item => ({ id: item.inventoryItemId, quantity: item.quantity }));
+            .filter(item => !(item as any).isService)
+            .map(item => ({ id: (item as any).inventoryItemId, quantity: item.quantity }));
         
         if (inventoryUpdateItems.length > 0) {
             await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'add');

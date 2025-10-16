@@ -1,4 +1,3 @@
-
 // src/lib/services/purchase.service.ts
 
 import {
@@ -14,7 +13,7 @@ import {
   runTransaction, // Importar runTransaction
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { PurchaseFormValues } from '@/app/(app)/inventario/components/register-purchase-dialog';
+import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
 import type { User, PayableAccount, PaymentMethod } from '@/types';
 import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
@@ -68,7 +67,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
      // 3. Update the supplier's debt amount
     const supplierRef = doc(db, 'suppliers', data.supplierId);
     if(supplierDoc){
-        const currentDebt = supplierDoc.debtAmount || 0;
+        const currentDebt = (supplierDoc as any).debtAmount || 0;
         batch.update(supplierRef, { debtAmount: currentDebt + data.invoiceTotal });
     }
 
@@ -105,7 +104,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
 const registerPayableAccountPayment = async (
     accountId: string, 
     amount: number, 
-    paymentMethod: PaymentMethod, 
+    paymentMethod: PaymentMethod | string, 
     note: string | undefined, 
     user: User | null
 ): Promise<void> => {
@@ -137,7 +136,7 @@ const registerPayableAccountPayment = async (
 
         // Update supplier's debt
         if (supplierSnap.exists()) {
-            const currentDebt = supplierSnap.data().debtAmount || 0;
+            const currentDebt = (supplierSnap.data() as any).debtAmount || 0;
             transaction.update(supplierRef, { debtAmount: currentDebt - amount });
         }
 

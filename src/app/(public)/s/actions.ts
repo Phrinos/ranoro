@@ -1,160 +1,132 @@
-
+// src/app/(public)/s/actions.ts
 "use server";
 
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { getAdminDb } from '@/lib/firebaseAdmin'; // Usar la DB de Admin para escribir
+import { getAdminDb } from "@/lib/firebaseAdmin";
+import { serverTimestamp } from 'firebase-admin/firestore';
 import type { ServiceRecord } from "@/types";
 
 type DataResult<T> = { data: T | null; error: string | null };
 type ActionResult = { success: boolean; error?: string };
 
-const db = getAdminDb(); // Usar la instancia de Admin DB
+const db = getAdminDb();
 
-/** Cargar la info pública del servicio */
-export async function getPublicServiceData(
-  publicId: string
-): Promise<DataResult<ServiceRecord>> {
+export async function getPublicServiceData(publicId: string): Promise<DataResult<ServiceRecord>> {
   try {
-    const serviceDocRef = doc(db, "publicServices", publicId);
-    const snap = await getDoc(serviceDocRef);
-
-    if (!snap.exists()) {
-      return {
-        data: null,
-        error: "El servicio no fue encontrado o el enlace es incorrecto.",
-      };
+    const ref = db.collection("publicServices").doc(publicId);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      return { data: null, error: "El servicio no fue encontrado o el enlace es incorrecto." };
     }
-
     const service = snap.data() as ServiceRecord;
     return { data: { ...service, id: snap.id }, error: null };
   } catch (e) {
     console.error("getPublicServiceData error:", e);
-    return {
-      data: null,
-      error: "Ocurrió un error al cargar la información del servicio.",
-    };
+    return { data: null, error: "Ocurrió un error al cargar la información del servicio." };
   }
 }
 
-/** Agendar una cita */
-export async function scheduleAppointmentAction(
-  publicId: string,
-  scheduledDate: string
-): Promise<ActionResult> {
-  console.log("[SERVER] scheduleAppointmentAction called with:", { publicId, scheduledDate });
+export async function scheduleAppointmentAction(publicId: string, scheduledDate: string): Promise<ActionResult> {
   try {
-    const publicServiceRef = doc(db, "publicServices", publicId);
-    const serviceSnap = await getDoc(publicServiceRef);
-    if (!serviceSnap.exists()) {
-        throw new Error("El documento público del servicio no existe.");
-    }
-    const serviceId = serviceSnap.data()?.serviceId || publicId;
+    const publicRef = db.collection("publicServices").doc(publicId);
+    const publicSnap = await publicRef.get();
+    if (!publicSnap.exists) throw new Error("El documento público del servicio no existe.");
 
-    const mainServiceRef = doc(db, "serviceRecords", serviceId);
+    const serviceId = (publicSnap.data() as any)?.serviceId || publicId;
+    const mainRef = db.collection("serviceRecords").doc(serviceId);
 
-    // Update both documents in a transaction for consistency
-    await db.runTransaction(async (transaction) => {
-        const updateData = {
-            status: "Agendado",
-            appointmentDateTime: scheduledDate,
-            appointmentStatus: "Sin Confirmar",
-            updatedAt: serverTimestamp(),
-        };
-        transaction.update(mainServiceRef, updateData);
-        transaction.update(publicServiceRef, updateData);
+    const updateData = {
+      status: "Agendado",
+      appointmentDateTime: scheduledDate,
+      appointmentStatus: "Sin Confirmar",
+      updatedAt: serverTimestamp(),
+    };
+
+    await db.runTransaction(async (trx) => {
+      trx.update(mainRef, updateData);
+      trx.update(publicRef, updateData);
     });
 
-    console.log("[SERVER] Firestore update successful for", publicId);
     return { success: true };
   } catch (e: any) {
     console.error("[SERVER] scheduleAppointmentAction error:", e);
-    const errorMessage = e instanceof Error ? e.message : "Error desconocido al agendar";
-    return { success: false, error: errorMessage };
+    return { success: false, error: e?.message ?? "Error desconocido al agendar" };
   }
 }
 
-
-/** Confirmar la cita por el cliente */
-export async function confirmAppointmentAction(
-  publicId: string
-): Promise<ActionResult> {
+export async function confirmAppointmentAction(publicId: string): Promise<ActionResult> {
   try {
-    const publicServiceRef = doc(db, "publicServices", publicId);
-    const serviceSnap = await getDoc(publicServiceRef);
-    if (!serviceSnap.exists()) throw new Error("Documento no encontrado.");
-    const serviceId = serviceSnap.data()?.serviceId || publicId;
-    const mainServiceRef = doc(db, "serviceRecords", serviceId);
+    const publicRef = db.collection("publicServices").doc(publicId);
+    const publicSnap = await publicRef.get();
+    if (!publicSnap.exists) throw new Error("Documento no encontrado.");
+
+    const serviceId = (publicSnap.data() as any)?.serviceId || publicId;
+    const mainRef = db.collection("serviceRecords").doc(serviceId);
 
     const updateData = { appointmentStatus: "Confirmada", updatedAt: serverTimestamp() };
 
-    await db.runTransaction(async (transaction) => {
-        transaction.update(mainServiceRef, updateData);
-        transaction.update(publicServiceRef, updateData);
+    await db.runTransaction(async (trx) => {
+      trx.update(mainRef, updateData);
+      trx.update(publicRef, updateData);
     });
 
     return { success: true };
   } catch (e: any) {
     console.error("confirmAppointmentAction error:", e);
-    const errorMessage = e instanceof Error ? e.message : "Error desconocido";
-    return { success: false, error: errorMessage };
+    return { success: false, error: e?.message ?? "Error desconocido" };
   }
 }
 
-/** Cancelar la cita */
-export async function cancelAppointmentAction(
-  publicId: string
-): Promise<ActionResult> {
+export async function cancelAppointmentAction(publicId: string): Promise<ActionResult> {
   try {
-    const publicServiceRef = doc(db, "publicServices", publicId);
-    const serviceSnap = await getDoc(publicServiceRef);
-    if (!serviceSnap.exists()) throw new Error("Documento no encontrado.");
-    const serviceId = serviceSnap.data()?.serviceId || publicId;
-    const mainServiceRef = doc(db, "serviceRecords", serviceId);
-    
+    const publicRef = db.collection("publicServices").doc(publicId);
+    const publicSnap = await publicRef.get();
+    if (!publicSnap.exists) throw new Error("Documento no encontrado.");
+
+    const serviceId = (publicSnap.data() as any)?.serviceId || publicId;
+    const mainRef = db.collection("serviceRecords").doc(serviceId);
+
     const updateData = { status: "Cancelado", appointmentStatus: "Cancelada", updatedAt: serverTimestamp() };
-    
-    await db.runTransaction(async (transaction) => {
-        transaction.update(mainServiceRef, updateData);
-        transaction.update(publicServiceRef, updateData);
+
+    await db.runTransaction(async (trx) => {
+      trx.update(mainRef, updateData);
+      trx.update(publicRef, updateData);
     });
 
     return { success: true };
   } catch (e: any) {
     console.error("cancelAppointmentAction error:", e);
-    const errorMessage = e instanceof Error ? e.message : "Error desconocido";
-    return { success: false, error: errorMessage };
+    return { success: false, error: e?.message ?? "Error desconocido" };
   }
 }
 
-/** Guardar firma (recepción o entrega) */
 export async function saveSignatureAction(
   publicId: string,
   signature: string,
   type: "reception" | "delivery"
 ): Promise<ActionResult> {
   try {
-    const publicServiceRef = doc(db, "publicServices", publicId);
-    const serviceSnap = await getDoc(publicServiceRef);
-    if (!serviceSnap.exists()) throw new Error("Documento no encontrado.");
-    const serviceId = serviceSnap.data()?.serviceId || publicId;
-    const mainServiceRef = doc(db, "serviceRecords", serviceId);
+    const publicRef = db.collection("publicServices").doc(publicId);
+    const publicSnap = await publicRef.get();
+    if (!publicSnap.exists) throw new Error("Documento no encontrado.");
+
+    const serviceId = (publicSnap.data() as any)?.serviceId || publicId;
+    const mainRef = db.collection("serviceRecords").doc(serviceId);
 
     const field =
       type === "reception"
         ? { customerSignatureReception: signature }
         : { customerSignatureDelivery: signature };
-    
+
     const updateData = { ...field, updatedAt: serverTimestamp() };
-    
-    await db.runTransaction(async (transaction) => {
-        transaction.update(mainServiceRef, updateData);
-        transaction.update(publicServiceRef, updateData);
+
+    await db.runTransaction(async (trx) => {
+      trx.update(mainRef, updateData);
+      trx.update(publicRef, updateData);
     });
 
     return { success: true };
   } catch (e: any) {
     console.error("saveSignatureAction error:", e);
-    const errorMessage = e instanceof Error ? e.message : "Error desconocido";
-    return { success: false, error: errorMessage };
+    return { success: false, error: e?.message ?? "Error desconocido" };
   }
 }
