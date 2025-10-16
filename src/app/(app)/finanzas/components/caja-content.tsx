@@ -73,7 +73,7 @@ type FlowRow = {
   date: Date | null;
   type: 'Entrada' | 'Salida';
   source: 'Venta' | 'Servicio' | 'Libro';
-  relatedType?: 'Venta' | 'Servicio' | 'Manual';
+  relatedType?: 'Venta' | 'Servicio' | 'Manual' | 'Compra' | 'Gasto Flotilla';
   refId?: string;         // para navegar si aplica
   user: string;           // asesor/cliente/usuario
   description: string;
@@ -120,7 +120,6 @@ export default function CajaContent() {
     return { from, to };
   }, [dateRange]);
 
-  // Pagos en EFECTIVO (ventas/servicios)
   const cashPayments = useMemo(() => {
     const rows: FlowRow[] = [];
 
@@ -177,41 +176,17 @@ export default function CajaContent() {
     return rows;
   }, [allSales, allServices]);
 
-  // Libro (entradas/salidas) - SOLO MANUALES
-  const ledgerRows = useMemo((): FlowRow[] => {
-    return (cashTransactions || [])
-      .filter(t => t.relatedType === 'Manual')
-      .map((t) => {
-      const d = parseDate((t as any).date || (t as any).createdAt) || null;
-      const user = (t as any).userName || (t as any).user || 'Sistema';
-      const desc = (t as any).fullDescription || t.concept || 'N/A';
-      return {
-        id: t.id,
-        date: d,
-        type: t.type === 'Entrada' ? 'Entrada' : 'Salida',
-        source: 'Libro',
-        relatedType: (t as any).relatedType || 'Manual',
-        refId: (t as any).relatedId,
-        user,
-        description: desc,
-        amount: Math.abs(Number(t.amount) || 0),
-      };
-    });
-  }, [cashTransactions]);
-
-  // Filtrado por rango + combinación
   const flowRows = useMemo(() => {
     if (!range) return [];
     const inRange = (d: Date | null) => d && isValid(d) && isWithinInterval(d, { start: range.from, end: range.to });
     
-    // CORRECCIÓN: Filtra cashTransactions para no incluir los que ya están representados por cashPayments
     const filteredCashTransactions = cashTransactions.filter(t => t.relatedType !== 'Venta' && t.relatedType !== 'Servicio');
 
     const ledgerRows: FlowRow[] = filteredCashTransactions
       .map((t) => {
         const d = parseDate((t as any).date || (t as any).createdAt) || null;
         const user = (t as any).userName || (t as any).user || 'Sistema';
-        const desc = (t as any).fullDescription || t.concept || (t as any).description || '';
+        const desc = (t as any).description || t.concept || (t as any).description || '';
         return {
           id: t.id, date: d, type: t.type, source: 'Libro',
           relatedType: (t as any).relatedType || 'Manual', refId: (t as any).relatedId,
@@ -236,24 +211,30 @@ export default function CajaContent() {
       return direction === 'asc' ? cmp : -cmp;
     });
   }, [cashPayments, cashTransactions, range, sortOption]);
+  
+  const { periodKPIs, currentBalance } = useMemo(() => {
+    // Cálculo para el período seleccionado
+    const incomeInPeriod = flowRows.filter(r => r.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
+    const outcomeInPeriod = flowRows.filter(r => r.type === 'Salida').reduce((s, r) => s + r.amount, 0);
+    
+    // Cálculo para el balance total actual
+    const allCashIncome = cashPayments.filter(r => r.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
+    const allManualEntries = cashTransactions
+      .filter(t => t.relatedType !== 'Venta' && t.relatedType !== 'Servicio');
+    const allManualIncome = allManualEntries.filter(t => t.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
+    const allManualOutcome = allManualEntries.filter(t => t.type === 'Salida').reduce((s, r) => s + r.amount, 0);
+    const currentTotalBalance = (allCashIncome + allManualIncome) - allManualOutcome;
 
-  // KPI superiores y Conciliación corregida
-  const kpis = useMemo(() => {
-    // Detectadas por pagos en efectivo
-    const detectedIn = flowRows.filter(r => r.source !== 'Libro' && r.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
-    const detectedOut = flowRows.filter(r => r.source !== 'Libro' && r.type === 'Salida').reduce((s, r) => s + r.amount, 0);
+    return {
+      periodKPIs: {
+        income: incomeInPeriod,
+        outcome: outcomeInPeriod,
+        net: incomeInPeriod - outcomeInPeriod,
+      },
+      currentBalance: currentTotalBalance,
+    };
+  }, [flowRows, cashPayments, cashTransactions]);
 
-    // Libro
-    const ledgerIn = flowRows.filter(r => r.source === 'Libro' && r.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
-    const ledgerOut = flowRows.filter(r => r.source === 'Libro' && r.type === 'Salida').reduce((s, r) => s + r.amount, 0);
-
-    // Tarjetas superiores: Ingresos = pagos efectivo detectados + entradas libro; Egresos = salidas libro
-    const topIncome = detectedIn + ledgerIn;
-    const topOutcome = detectedOut + ledgerOut;
-    const topNet = topIncome - topOutcome;
-
-    return { topIncome, topOutcome, topNet };
-  }, [flowRows]);
 
   // abrir ref
   const openRef = (row: FlowRow) => {
@@ -320,27 +301,38 @@ export default function CajaContent() {
       </div>
 
       {/* KPI superiores */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-600">Entradas Totales (Efectivo)</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-600">Entradas del Periodo</CardTitle>
             <ArrowUp className="h-4 w-4 text-green-500" />
           </CardHeader>
-          <CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(kpis.topIncome)}</div></CardContent>
+          <CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(periodKPIs.income)}</div></CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-600">Salidas Totales (Libro)</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-600">Salidas del Periodo</CardTitle>
             <ArrowDown className="h-4 w-4 text-red-500" />
           </CardHeader>
-          <CardContent><div className="text-2xl font-bold text-red-600">{formatCurrency(kpis.topOutcome)}</div></CardContent>
+          <CardContent><div className="text-2xl font-bold text-red-600">{formatCurrency(periodKPIs.outcome)}</div></CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Balance del Periodo</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent><div className="text-2xl font-bold">{formatCurrency(kpis.topNet)}</div></CardContent>
+          <CardContent><div className="text-2xl font-bold">{formatCurrency(periodKPIs.net)}</div></CardContent>
+        </Card>
+         <Card className="shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Balance de Caja (Actual)</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground"/>
+          </CardHeader>
+          <CardContent>
+              <div className={cn("text-2xl font-bold", currentBalance >= 0 ? 'text-blue-600' : 'text-destructive')}>
+                  {formatCurrency(currentBalance)}
+              </div>
+          </CardContent>
         </Card>
       </div>
 
