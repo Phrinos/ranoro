@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/agenda-list-content.tsx
 
 "use client";
@@ -19,7 +18,7 @@ interface AgendaListContentProps {
     services: ServiceRecord[];
     vehicles: Vehicle[];
     personnel: User[];
-    onShowPreview: (service: ServiceRecord) => void;
+    onShowPreview?: (service: ServiceRecord) => void;
 }
 
 interface GroupedServices {
@@ -112,8 +111,9 @@ export default function AgendaListContent({ services, vehicles, personnel, onSho
                                         vehicle={vehicles.find(v => v.id === service.vehicleId)}
                                         personnel={personnel}
                                         onEdit={() => handleEditService(service.id)}
-                                        onView={() => onShowPreview(service)}
+                                        onView={() => onShowPreview && onShowPreview(service)}
                                         onConfirm={() => handleConfirmAppointment(service)}
+                                        onShowTicket={() => {}}
                                     />
                                 ))}
                             </div>

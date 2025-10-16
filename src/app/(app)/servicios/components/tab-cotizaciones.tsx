@@ -58,6 +58,7 @@ function CotizacionesTabContent({
         onEdit={() => handleEditQuote(quote.id)}
         onView={() => onShowShareDialog(quote)}
         onDelete={() => onDelete(quote.id)}
+        onShowTicket={() => {}}
       />
     ),
     [vehicles, personnel, currentUser, onShowShareDialog, handleEditQuote, onDelete]

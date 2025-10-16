@@ -17,18 +17,20 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { calcEffectiveProfit } from '@/lib/money-helpers';
 
-interface ServiceAppointmentCardProps {
+export type ServiceAppointmentCardProps = {
   service: ServiceRecord;
   vehicle?: Vehicle;
-  personnel?: User[];
+  personnel: User[];
   currentUser?: User | null;
-  onView: () => void;
   onEdit: () => void;
+  onView: () => void;
   onDelete?: () => void;
+  onConfirm?: () => Promise<void>;
+  onShowTicket?: () => void; // <- opcional
   onCancel?: () => void;
-  onConfirm?: () => void;
-  onShowTicket: () => void;
-}
+};
+
+const noop = () => {};
 
 const IVA_RATE = 0.16;
 
@@ -105,6 +107,8 @@ export function ServiceAppointmentCard({
         onCancel();
     }
   };
+  
+  const handleShowTicket = onShowTicket ?? noop;
 
 
   return (
@@ -181,7 +185,7 @@ export function ServiceAppointmentCard({
                         ) : null}
                     </>
                 )}
-                <Button variant="ghost" size="icon" title="Imprimir Ticket" onClick={onShowTicket}>
+                <Button variant="ghost" size="icon" title="Imprimir Ticket" onClick={handleShowTicket}>
                     <Printer className="h-4 w-4" />
                 </Button>
                 {onDelete && (
