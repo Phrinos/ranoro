@@ -22,7 +22,7 @@ import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { capitalizeWords } from "@/lib/utils";
 import { DollarSign } from "lucide-react";
 import { inventoryItemFormSchema } from '@/schemas/inventory-item-form-schema';
-import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
+export type InventoryItemFormValues = z.infer<typeof inventoryItemFormSchema>;
 
 interface InventoryItemFormProps {
   id: string; // Form ID
@@ -45,7 +45,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
       unitPrice: initialData?.unitPrice ?? 0,
       sellingPrice: initialData?.sellingPrice ?? 0,
       lowStockThreshold: initialData?.lowStockThreshold ?? 5,
-      unitType: initialData?.unitType || 'units',
+      unitType: initialData?.unitType as any || 'units',
       category: initialData?.category || (categories.length > 0 ? categories[0].name : ""),
       supplier: initialData?.supplier || (suppliers.length > 0 ? suppliers[0].name : ""),
       rendimiento: (initialData as any)?.rendimiento ?? undefined,
@@ -60,12 +60,12 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
       form.unregister(["quantity", "lowStockThreshold", "unitType", "rendimiento"]);
       form.setValue("quantity", undefined, { shouldValidate: false, shouldDirty: true });
       form.setValue("lowStockThreshold", undefined, { shouldValidate: false, shouldDirty: true });
-      form.setValue("unitType", "units", { shouldValidate: false, shouldDirty: true });
+      form.setValue("unitType", "units" as any, { shouldValidate: false, shouldDirty: true });
       form.setValue("rendimiento", undefined, { shouldValidate: false, shouldDirty: true });
     } else {
       if (form.getValues("quantity") == null) form.setValue("quantity", 0, { shouldValidate: false });
       if (form.getValues("lowStockThreshold") == null) form.setValue("lowStockThreshold", 5, { shouldValidate: false });
-      if (!form.getValues("unitType")) form.setValue("unitType", "units", { shouldValidate: false });
+      if (!form.getValues("unitType")) form.setValue("unitType", "units" as any, { shouldValidate: false });
     }
   }, [isService, form]);
 
@@ -114,7 +114,7 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <FormField control={form.control} name="quantity" render={({ field }) => ( <FormItem><FormLabel>Cantidad Actual</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
                   <FormField control={form.control} name="lowStockThreshold" render={({ field }) => ( <FormItem><FormLabel>Alerta Stock Bajo</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
-                  <FormField control={form.control} name="unitType" render={({ field }) => ( <FormItem><FormLabel>Unidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-card"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="units">Unidades</SelectItem><SelectItem value="ml">Mililitros</SelectItem><SelectItem value="liters">Litros</SelectItem><SelectItem value="kg">Kilogramos</SelectItem><SelectItem value="service">Servicio</SelectItem></SelectContent></Select><FormMessage /></FormItem> )}/>
+                  <FormField control={form.control} name="unitType" render={({ field }) => ( <FormItem><FormLabel>Unidad</FormLabel><Select onValueChange={field.onChange} value={field.value as any}><FormControl><SelectTrigger className="bg-card"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="units">Unidades</SelectItem><SelectItem value="ml">Mililitros</SelectItem><SelectItem value="liters">Litros</SelectItem><SelectItem value="kg">Kilogramos</SelectItem><SelectItem value="service">Servicio</SelectItem></SelectContent></Select><FormMessage /></FormItem> )}/>
               </div>
                {unitType === 'liters' && (
                 <FormField

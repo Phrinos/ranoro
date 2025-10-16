@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import type { PurchaseRecommendationOutput } from '@/ai/flows/purchase-recommendation-flow';
-import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import type { PurchaseRecommendationOutput } from "@/ai/flows/purchase-recommendation-flow";
+import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import Image from "next/image";
 
 interface PurchaseOrderContentProps {
-  recommendations: PurchaseRecommendationOutput['recommendations'];
+  recommendations: PurchaseRecommendationOutput["recommendations"];
 }
 
 const initialWorkshopInfo: Partial<any> = {
@@ -17,46 +17,37 @@ const initialWorkshopInfo: Partial<any> = {
   logoUrl: "/ranoro-logo.png",
 };
 
-
 export const PurchaseOrderContent = React.forwardRef<HTMLDivElement, PurchaseOrderContentProps>(
   ({ recommendations }, ref) => {
     const [workshopInfo, setWorkshopInfo] = useState<Partial<any>>(initialWorkshopInfo);
 
     useEffect(() => {
-        const stored = localStorage.getItem('workshopTicketInfo');
-        if (stored) {
-            try {
-                setWorkshopInfo({ ...initialWorkshopInfo, ...JSON.parse(stored) });
-            } catch (e) {
-                console.error("Failed to parse workshop info", e);
-            }
-        }
+      try {
+        const stored = localStorage.getItem("workshopTicketInfo");
+        if (stored) setWorkshopInfo({ ...initialWorkshopInfo, ...JSON.parse(stored) });
+      } catch {}
     }, []);
 
     const now = new Date();
     const formattedDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
 
     return (
-      <div 
-        ref={ref}
-        className="font-sans bg-white text-black text-sm p-8"
-      >
+      <div ref={ref} className="font-sans bg-white text-black text-sm p-8">
         <header className="mb-8 border-b-2 border-black pb-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             {workshopInfo?.logoUrl && (
               <div className="relative w-[150px] h-[50px]">
-                <Image 
-                    src={workshopInfo.logoUrl} 
-                    alt={`${workshopInfo.name} Logo`} 
-                    fill
-                    style={{ objectFit: 'contain' }}
-                    data-ai-hint="workshop logo"
-                    sizes="150px"
-                    crossOrigin="anonymous"
+                <Image
+                  src={workshopInfo.logoUrl}
+                  alt={`${workshopInfo.name} Logo`}
+                  fill
+                  style={{ objectFit: "contain" }}
+                  sizes="150px"
+                  crossOrigin="anonymous"
                 />
               </div>
             )}
-             <div className="text-left sm:text-right">
+            <div className="text-left sm:text-right">
               <h2 className="text-2xl font-semibold">Orden de Compra</h2>
               <p className="text-xs text-gray-500">Generada el: {formattedDate}</p>
             </div>

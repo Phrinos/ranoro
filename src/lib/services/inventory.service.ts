@@ -29,8 +29,10 @@ const getDocById = async (collectionName: string, id: string): Promise<any> => {
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
 };
 
-export const deleteCollectionDoc = async (collectionName: string, id: string) =>
-  fbDeleteDoc(doc(db, collectionName, id));
+export const deleteCollectionDoc = async (collectionName: string, id: string) => {
+    if (!db) throw new Error("Database not initialized.");
+    await fbDeleteDoc(doc(db, collectionName, id));
+}
 
 
 // --- Items ---
@@ -119,8 +121,8 @@ const getSuppliesCostForItem = (
     }
     const inventoryMap = new Map(inventory.map(i => [i.id, i.unitPrice]));
     return serviceItem.suppliesUsed.reduce((totalCost, supply) => {
-        const cost = inventoryMap.get(supply.supplyId) ?? supply.unitPrice ?? 0;
-        return totalCost + cost * supply.quantity;
+        const cost = inventoryMap.get((supply as any).supplyId) ?? supply.unitPrice ?? 0;
+        return totalCost + cost * (supply.quantity ?? 0);
     }, 0);
 };
 
@@ -282,7 +284,7 @@ const savePaperwork = async (vehicleId: string, paperwork: Omit<Paperwork, 'id'>
     const vehicleDoc = await getDoc(vehicleRef);
     if (!vehicleDoc.exists()) throw new Error("Vehicle not found.");
     
-    const existingPaperwork: Paperwork[] = vehicleDoc.data().paperwork || [];
+    const existingPaperwork: Paperwork[] = (vehicleDoc.data() as any).paperwork || [];
     if (id) {
         const index = existingPaperwork.findIndex(p => p.id === id);
         existingPaperwork[index] = { ...paperwork, id };
@@ -297,7 +299,7 @@ const deletePaperwork = async (vehicleId: string, paperworkId: string): Promise<
     const vehicleDoc = await getDoc(vehicleRef);
     if (!vehicleDoc.exists()) throw new Error("Vehicle not found.");
     
-    const existingPaperwork: Paperwork[] = vehicleDoc.data().paperwork || [];
+    const existingPaperwork: Paperwork[] = (vehicleDoc.data() as any).paperwork || [];
     const updatedPaperwork = existingPaperwork.filter(p => p.id !== paperworkId);
     await updateDoc(vehicleRef, { paperwork: updatedPaperwork });
 };
@@ -307,7 +309,7 @@ const saveFineCheck = async (vehicleId: string, fineCheck: Omit<FineCheck, 'id'>
     const vehicleDoc = await getDoc(vehicleRef);
     if (!vehicleDoc.exists()) throw new Error("Vehicle not found.");
     
-    const existingFineChecks: FineCheck[] = vehicleDoc.data().fineChecks || [];
+    const existingFineChecks: FineCheck[] = (vehicleDoc.data() as any).fineChecks || [];
     if (id) {
         const index = existingFineChecks.findIndex(f => f.id === id);
         existingFineChecks[index] = { ...fineCheck, id };

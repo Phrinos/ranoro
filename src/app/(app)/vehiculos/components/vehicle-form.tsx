@@ -1,8 +1,6 @@
-
 // src/app/(app)/vehiculos/components/vehicle-form.tsx
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState, useMemo } from "react";
 import { useForm, useFormContext, Controller } from "react-hook-form";
 import {
@@ -17,13 +15,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Vehicle } from "@/types";
-import { vehicleFormSchema, type VehicleFormValues } from '@/schemas/vehicle-form-schema';
+import { vehicleFormSchema } from '@/schemas/vehicle-form-schema';
 import { capitalizeWords } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { db } from "@/lib/firebaseClient";
 import { collection, getDocs } from 'firebase/firestore';
 import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
+import type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
+
+export type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
 
 // Tipos para la data que viene de Firestore
 interface VehicleMake {

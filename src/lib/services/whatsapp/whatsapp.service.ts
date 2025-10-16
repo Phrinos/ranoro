@@ -1,105 +1,107 @@
-import { db } from '@/lib/firebaseClient';
-import { doc, getDoc } from 'firebase/firestore';
-import type { ServiceRecord } from '@/types';
+import { db } from "@/lib/firebaseClient";
+import { doc, getDoc } from "firebase/firestore";
+import type { ServiceRecord } from "@/types";
 
-// Define the structure for the API response
-interface ApiResponse {
-  status: 'success' | 'error';
+// ——— Tipos auxiliares ———
+interface WorkshopConfig {
+  facturaComApiKey?: string;
+  facturaComApiSecret?: string;
+  name?: string;
+}
+
+export interface ApiResponse {
+  status: "success" | "error";
   message: string;
   success?: boolean;
 }
 
-// Function to fetch workshop information from Firestore
-const getWorkshopInfo = async (): Promise<Partial<any> | null> => {
+const onlyDigits = (s?: string) => (s ?? "").replace(/\D/g, "");
+
+// Carga config del taller (id fijo: "main")
+const getWorkshopInfo = async (): Promise<WorkshopConfig | null> => {
   if (!db) return null;
-  const workshopConfigRef = doc(db, 'workshopConfig', 'main');
-  const docSnap = await getDoc(workshopConfigRef);
-  return docSnap.exists() ? (docSnap.data() as Partial<any>) : null;
+  const ref = doc(db, "workshopConfig", "main");
+  const snap = await getDoc(ref);
+  return snap.exists() ? (snap.data() as WorkshopConfig) : null;
 };
 
-// Main function to send a confirmation message
-export const sendConfirmationMessage = async (service: ServiceRecord): Promise<ApiResponse> => {
-  const workshopInfo = await getWorkshopInfo();
+// Enviar confirmación (Factura.com)
+export const sendConfirmationMessage = async (
+  service: ServiceRecord
+): Promise<ApiResponse> => {
+  const workshop = await getWorkshopInfo();
 
-  if (!(workshopInfo as any)?.facturaComApiKey) {
-    return { status: 'error', message: 'API Key for WhatsApp is not configured.' };
+  if (!workshop?.facturaComApiKey) {
+    return { status: "error", message: "API Key de WhatsApp (Factura.com) no configurada." };
   }
 
-  const myHeaders = new Headers();
-  myHeaders.append('Content-Type', 'application/json');
-  myHeaders.append('F-API-KEY', (workshopInfo as any).facturaComApiKey);
-  myHeaders.append('F-SECRET-KEY', (workshopInfo as any).facturaComApiSecret || '');
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    "F-API-KEY": String(workshop.facturaComApiKey),
+    "F-SECRET-KEY": String(workshop.facturaComApiSecret ?? ""),
+  });
 
   const raw = JSON.stringify({
-    to: (service as any).customer.phone,
+    to: onlyDigits((service as any)?.customer?.phone ?? (service as any)?.customerPhone),
     body: [
-      { name: 'customer_name', value: (service as any).customer.name },
-      { name: 'service_date', value: new Date(service.serviceDate).toLocaleDateString('es-MX') },
-      { name: 'workshop_name', value: workshopInfo?.name ?? "" },
+      { name: "customer_name", value: (service as any)?.customer?.name ?? service.customerName ?? "Cliente" },
+      { name: "service_date", value: new Date(service.serviceDate ?? Date.now()).toLocaleDateString("es-MX") },
+      { name: "workshop_name", value: workshop?.name ?? "" },
     ],
   });
 
-  const requestOptions: RequestInit = {
-    method: 'POST',
-    headers: myHeaders,
-    body: raw,
-    redirect: 'follow',
-  };
-
   try {
-    const response = await fetch('https://apis.facturacom.co/v3/whatsapp/send-template/appointment_confirmation', requestOptions);
-    const result = await response.json();
+    const res = await fetch(
+      "https://apis.facturacom.co/v3/whatsapp/send-template/appointment_confirmation",
+      { method: "POST", headers, body: raw }
+    );
+    const result = await res.json().catch(() => ({}));
 
-    if (!response.ok) {
-      return { status: 'error', message: result.message || 'An unknown error occurred.' };
+    if (!res.ok) {
+      const msg = (result?.message as string) || "Ocurrió un error con Factura.com";
+      return { status: "error", message: msg };
     }
 
-    return { status: 'success', message: 'Confirmation message sent successfully.' };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
-    return { status: 'error', message };
+    return { status: "success", message: "Mensaje de confirmación enviado." };
+  } catch (e: any) {
+    return { status: "error", message: e?.message ?? "Error desconocido." };
   }
 };
 
-export const sendTestMessage = async (apiKey: string, fromPhoneNumberId: string, to: string): Promise<ApiResponse> => {
-    
-    const myHeaders = new Headers();
-    myHeaders.append('Authorization', `Bearer ${apiKey}`);
-    myHeaders.append('Content-Type', 'application/json');
+// Enviar prueba (WhatsApp Cloud / Graph API)
+export const sendTestMessage = async (
+  apiKey: string,
+  fromPhoneNumberId: string,
+  to: string
+): Promise<ApiResponse> => {
+  const headers = new Headers({
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  });
 
-    const raw = JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: to,
-        type: 'template',
-        template: {
-            name: 'hello_world',
-            language: {
-                code: 'en_US'
-            }
-        }
-    });
+  const raw = JSON.stringify({
+    messaging_product: "whatsapp",
+    to: onlyDigits(to),
+    type: "template",
+    template: { name: "hello_world", language: { code: "en_US" } },
+  });
 
-    const requestOptions: RequestInit = {
-        method: 'POST',
-        headers: myHeaders,
-        body: raw,
-        redirect: 'follow'
-    };
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v19.0/${fromPhoneNumberId}/messages`,
+      { method: "POST", headers, body: raw }
+    );
+    const result = await res.json().catch(() => ({}));
 
-    try {
-        const response = await fetch(`https://graph.facebook.com/v19.0/${fromPhoneNumberId}/messages`, requestOptions);
-        const result = await response.json();
-
-        if (!response.ok) {
-            console.error('WhatsApp API Error:', result);
-            const errorMessage = result.error?.message || 'Ocurrió un error desconocido con la API de WhatsApp.';
-            return { status: 'error', message: errorMessage, success: false };
-        }
-
-        return { status: 'success', message: 'Mensaje de prueba enviado exitosamente.', success: true };
-    } catch (error) {
-        console.error('Fetch Error:', error);
-        const message = error instanceof Error ? error.message : 'Ocurrió un error desconocido.';
-        return { status: 'error', message, success: false };
+    if (!res.ok) {
+      const errorMessage = result?.error?.message || "Error desconocido en la API de WhatsApp.";
+      console.error("WhatsApp API Error:", result);
+      return { status: "error", message: errorMessage, success: false };
     }
+
+    return { status: "success", message: "Mensaje de prueba enviado.", success: true };
+  } catch (error: any) {
+    console.error("Fetch Error:", error);
+    return { status: "error", message: error?.message ?? "Ocurrió un error.", success: false };
+  }
 };

@@ -1,44 +1,41 @@
-// src/app/(public)/s/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, ShieldAlert, Printer } from "lucide-react";
-import {
-  doc,
-  getDoc,
-  onSnapshot,
-  updateDoc,
-  serverTimestamp,
-  Timestamp,
-} from "firebase/firestore";
+import { doc, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebasePublic";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ServiceSheetContent } from "@/components/shared/ServiceSheetContent";
+import { ServiceSheetContent } from "@/components/ServiceSheetContent";
 import { SignatureDialog } from "@/app/(app)/servicios/components/signature-dialog";
 import { AppointmentScheduler } from "@/components/shared/AppointmentScheduler";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 import { TicketContent } from "@/components/ticket-content";
 import { Button } from "@/components/ui/button";
-import { scheduleAppointmentAction, confirmAppointmentAction, cancelAppointmentAction, saveSignatureAction } from "../actions";
-import { isValid, parseISO } from 'date-fns';
+import {
+  scheduleAppointmentAction,
+  confirmAppointmentAction,
+  cancelAppointmentAction,
+  saveSignatureAction,
+} from "../actions";
+import { isValid, parseISO } from "date-fns";
 
-// Define un tipo para el doc público (subconjunto del ServiceRecord)
+// ——— Tipado público mínimo ———
 type PublicServiceDoc = {
   id?: string;
   serviceId?: string;
   publicId?: string;
   folio?: string;
-  status?: "Cotizacion" | "En Taller" | "Agendado" | "Entregado" | "Cancelado" | string;
+  status?: string;
   subStatus?: string | null;
   customerName?: string;
-  customerPhone?: string; // Incluir para la vista
+  customerPhone?: string;
   vehicleIdentifier?: string;
   receptionDateTime?: string | Date | Timestamp | null;
   deliveryDateTime?: string | Date | Timestamp | null;
   appointmentDateTime?: string | Date | Timestamp | null;
-  appointmentStatus?: "scheduled" | "Confirmed" | "Canceled" | string | null;
+  appointmentStatus?: string | null;
   serviceAdvisorName?: string | null;
   serviceItems?: any[];
   customerComplaints?: any;
@@ -55,19 +52,19 @@ type PublicServiceDoc = {
   mileage?: number;
 };
 
-// Helpers para fechas
+// ——— Helpers fecha robustos ———
 const toDate = (v: string | Date | Timestamp | null | undefined): Date | null => {
   if (!v) return null;
   if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
-  if (typeof (v as any)?.toDate === 'function') {
+  if (typeof (v as any)?.toDate === "function") {
     const d = (v as any).toDate();
     return isValid(d) ? d : null;
   }
-  if (typeof v === 'number') {
+  if (typeof v === "number") {
     const d = new Date(v > 1e12 ? v : v * 1000);
     return isValid(d) ? d : null;
   }
-  if (typeof v === 'string') {
+  if (typeof v === "string") {
     const isoTry = parseISO(v);
     if (isValid(isoTry)) return isoTry;
     const generic = new Date(v);
@@ -78,37 +75,38 @@ const toDate = (v: string | Date | Timestamp | null | undefined): Date | null =>
 
 export default function PublicServicePage() {
   const params = useParams();
-  const publicId = decodeURIComponent(params.id as string || "");
+  const publicId = decodeURIComponent((params?.id as string) ?? "");
   const { toast } = useToast();
 
   const [service, setService] = useState<PublicServiceDoc | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
-
   const [isSigning, setIsSigning] = useState(false);
   const [signatureType, setSignatureType] = useState<"reception" | "delivery" | null>(null);
-
   const [isScheduling, setIsScheduling] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
-
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
   const [workshopInfo, setWorkshopInfo] = useState<any | null>(null);
 
   useEffect(() => {
-    const storedInfo = localStorage.getItem('workshopTicketInfo');
-    if (storedInfo) {
-      try {
-        setWorkshopInfo(JSON.parse(storedInfo));
-      } catch (e) {
-        console.error("Failed to parse workshop info from storage", e);
-      }
-    }
+    // Carga info del ticket para el preview (localStorage solo en cliente)
+    try {
+      const stored = localStorage.getItem("workshopTicketInfo");
+      if (stored) setWorkshopInfo(JSON.parse(stored));
+    } catch {}
 
     if (!publicId) {
       setError("Enlace inválido.");
       setService(null);
       return;
     }
+
+    if (!db) {
+      setError("No hay conexión a la base de datos pública.");
+      setService(null);
+      return;
+    }
+
     const ref = doc(db, "publicServices", publicId);
     const unsub = onSnapshot(
       ref,
@@ -134,16 +132,10 @@ export default function PublicServicePage() {
     setIsSigning(true);
     try {
       const result = await saveSignatureAction(publicId, signatureDataUrl, signatureType);
-      if (!result.success) throw new Error(result.error);
-      toast({
-        title: signatureType === "reception" ? "Firma de Recepción Guardada" : "Firma de Conformidad Guardada",
-      });
+      if (!result?.success) throw new Error(result?.error);
+      toast({ title: signatureType === "reception" ? "Firma de Recepción Guardada" : "Firma de Conformidad Guardada" });
     } catch (e: any) {
-      toast({
-        title: "Error al Guardar Firma",
-        description: e?.message ?? "No se pudo guardar la firma.",
-        variant: "destructive",
-      });
+      toast({ title: "Error al Guardar Firma", description: e?.message ?? "No se pudo guardar la firma.", variant: "destructive" });
     } finally {
       setIsSigning(false);
       setSignatureType(null);
@@ -155,14 +147,10 @@ export default function PublicServicePage() {
     setIsConfirming(true);
     try {
       const result = await confirmAppointmentAction(publicId);
-      if (!result.success) throw new Error(result.error);
+      if (!result?.success) throw new Error(result?.error);
       toast({ title: "Cita Confirmada", description: "¡Gracias! Hemos confirmado tu cita." });
     } catch (e: any) {
-      toast({
-        title: "Error al Confirmar",
-        description: e?.message ?? "No se pudo confirmar la cita.",
-        variant: "destructive",
-      });
+      toast({ title: "Error al Confirmar", description: e?.message ?? "No se pudo confirmar la cita.", variant: "destructive" });
     } finally {
       setIsConfirming(false);
     }
@@ -172,32 +160,23 @@ export default function PublicServicePage() {
     if (!service) return;
     try {
       const result = await cancelAppointmentAction(publicId);
-      if (!result.success) throw new Error(result.error);
+      if (!result?.success) throw new Error(result?.error);
       toast({ title: "Cita Cancelada", description: "Tu cita ha sido cancelada exitosamente." });
     } catch (e: any) {
-      toast({
-        title: "Error",
-        description: e?.message ?? "No se pudo cancelar la cita.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: e?.message ?? "No se pudo cancelar la cita.", variant: "destructive" });
     }
   };
 
   const handleScheduleAppointment = async (selectedDateTime: Date) => {
     if (!service) return;
-    console.log("[CLIENT] Scheduling appointment for:", { publicId, selectedDateTime: selectedDateTime.toISOString() });
     try {
       const result = await scheduleAppointmentAction(publicId, selectedDateTime.toISOString());
-      if (!result.success) throw new Error(result.error);
+      if (!result?.success) throw new Error(result?.error);
       toast({ title: "Cita Agendada", description: "Tu cita ha sido registrada." });
       setIsScheduling(false);
     } catch (e: any) {
       console.error("[CLIENT] Error in handleScheduleAppointment:", e);
-      toast({
-        title: "Error al Agendar",
-        description: e?.message ?? "No se pudo agendar la cita.",
-        variant: "destructive",
-      });
+      toast({ title: "Error al Agendar", description: e?.message ?? "No se pudo agendar la cita.", variant: "destructive" });
     }
   };
 
@@ -208,12 +187,7 @@ export default function PublicServicePage() {
 
   const vehicle = service?.vehicle || null;
   const displayPlate = vehicle?.licensePlate || service?.vehicleIdentifier || vehicle?.plates || null;
-
-  // Parchea el objeto que se envía al componente
-  const patchedService = displayPlate
-    ? { ...service, vehicleIdentifier: displayPlate }
-    : service;
-
+  const patchedService = displayPlate ? { ...service, vehicleIdentifier: displayPlate } : service;
 
   if (service === undefined) {
     return (

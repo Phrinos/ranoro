@@ -1,7 +1,12 @@
-// src/app/(app)/pos/nuevo/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PosForm } from "../components/pos-form";
@@ -15,10 +20,10 @@ import type {
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { inventoryService, saleService } from "@/lib/services";
-import { Loader2, Copy, Printer, Share2, Search } from "lucide-react";
+import { Loader2, Copy, Printer, Share2 } from "lucide-react";
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { db } from "@/lib/firebaseClient";
-import { writeBatch, doc, collection } from "firebase/firestore";
+import { writeBatch } from "firebase/firestore";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 import { TicketContent } from "@/components/ticket-content";
 import { Button } from "@/components/ui/button";
@@ -46,7 +51,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// NUEVO: Dialog buscador de artículos
+// Dialog buscador de artículos
 import {
   Dialog,
   DialogContent,
@@ -62,18 +67,13 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { PackagePlus } from "lucide-react";
 
-
-/** Utilidad: normaliza strings para búsqueda */
+/** Normaliza strings para búsqueda */
 const normalize = (s?: string) =>
   (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 
-/** Mapea un InventoryItem a una fila válida del POS.
- *  Ajusta aquí si tu schema usa otros nombres.
- */
+/** Mapea un InventoryItem a una fila válida del POS. */
 const createPOSItemFromInventory = (item: InventoryItem) => {
-  // Intenta usar price de venta; si no, fallback a price/cost 0
   const unitPrice =
     (item as any).sellingPrice ??
     (item as any).price ??
@@ -87,39 +87,34 @@ const createPOSItemFromInventory = (item: InventoryItem) => {
     (item as any).sku ??
     "Artículo";
 
-  const id = (item as any).id ?? (item as any).sku ?? String(unitPrice) + Math.random();
+  const id =
+    (item as any).id ?? (item as any).sku ?? String(unitPrice) + Math.random();
 
-  // Campos comunes y conservadores para la mayoría de schemas:
   return {
-    id, // id del renglón; si tu schema pide otro (p. ej. inventoryItemId), duplícalo
+    id,
     inventoryItemId: (item as any).id ?? null,
     itemName: name,
     quantity: 1,
-    unitPrice: unitPrice,
+    unitPrice,
     discount: 0,
-    totalPrice: unitPrice * 1,
+    totalPrice: unitPrice,
   };
-}
+};
 
-/** Dialog de "Añadir artículo": buscador + listado */
 function QuickAddItemDialog({
   open,
   onOpenChange,
   inventoryItems,
   onSelectItem,
-  isAdding,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   inventoryItems: InventoryItem[];
   onSelectItem: (item: InventoryItem) => void;
-  isAdding?: boolean;
 }) {
   const [q, setQ] = React.useState("");
 
   const filtered = React.useMemo(() => {
-    const normalize = (s?: string) =>
-      (s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const n = normalize(q);
     if (!n) return inventoryItems.slice(0, 200);
     return inventoryItems.filter((it) => {
@@ -142,7 +137,8 @@ function QuickAddItemDialog({
         <DialogHeader>
           <DialogTitle>Buscar y añadir artículo</DialogTitle>
           <DialogDescription>
-            Escribe para filtrar por nombre, SKU o descripción, y selecciona para agregar al ticket.
+            Escribe para filtrar por nombre, SKU o descripción, y selecciona
+            para agregar al ticket.
           </DialogDescription>
         </DialogHeader>
 
@@ -161,13 +157,15 @@ function QuickAddItemDialog({
                   (it as any).price ??
                   (it as any).unitPrice ??
                   0;
-                const key = (it as any).id ?? (it as any).sku ?? String(price) + Math.random();
+                const key =
+                  (it as any).id ??
+                  (it as any).sku ??
+                  String(price) + Math.random();
                 const label = (it as any).name ?? (it as any).sku ?? "Artículo";
                 return (
                   <CommandItem
                     key={key}
                     value={label}
-                    disabled={false}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -182,7 +180,8 @@ function QuickAddItemDialog({
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate font-medium">{label}</span>
                       <span className="text-xs text-muted-foreground truncate">
-                        {(it as any).sku ?? "Sin SKU"} · {(it as any).description ?? "—"}
+                        {(it as any).sku ?? "Sin SKU"} ·{" "}
+                        {(it as any).description ?? "—"}
                       </span>
                     </div>
                     <span className="shrink-0 text-sm tabular-nums">
@@ -196,7 +195,11 @@ function QuickAddItemDialog({
         </Command>
 
         <div className="mt-3 flex justify-end">
-          <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={() => onOpenChange(false)}
+          >
             Cerrar
           </Button>
         </div>
@@ -204,7 +207,6 @@ function QuickAddItemDialog({
     </Dialog>
   );
 }
-
 
 export default function NuevaVentaPage() {
   const { toast } = useToast();
@@ -225,11 +227,10 @@ export default function NuevaVentaPage() {
   const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
   const [validationIndex, setValidationIndex] = useState<number | null>(null);
   const [validationFolio, setValidationFolio] = useState("");
-  const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>(
-    {}
-  );
+  const [validatedFolios, setValidatedFolios] = useState<
+    Record<number, boolean>
+  >({});
 
-  // NUEVO: control del buscador de artículos
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
 
@@ -286,7 +287,6 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         });
       })
       .catch(() => {
-        // fallback: nada crítico, solo informa
         toast({
           title: "No se pudo copiar",
           description: "Copia el texto manualmente desde el ticket.",
@@ -337,22 +337,23 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
       const newSaleReceipt: SaleReceipt = {
         id: saleId,
         saleDate: new Date(),
-        items: values.items.map(it => ({
-            itemId: it.inventoryItemId ?? crypto.randomUUID(),
-            itemName: it.itemName,
-            quantity: it.quantity,
-            total: it.totalPrice ?? (it.unitPrice ?? 0) * it.quantity,
+        items: values.items.map((it) => ({
+          itemId: it.inventoryItemId ?? crypto.randomUUID(),
+          itemName: it.itemName,
+          quantity: it.quantity,
+          total:
+            it.totalPrice ?? (it.unitPrice ?? 0) * (it.quantity ?? 0),
         })),
         customerName: values.customerName,
-        payments: (values.payments ?? []).map(p => ({
-            method: p.method,
-            amount: p.amount ?? 0,
-            folio: p.folio,
+        payments: (values.payments ?? []).map((p) => ({
+          method: p.method,
+          amount: p.amount ?? 0,
+          folio: p.folio,
         })),
         subTotal,
         tax,
         totalAmount,
-        status: 'Completado',
+        status: "Completado",
         registeredById: currentUser.id,
         registeredByName: currentUser.name,
       };
@@ -408,7 +409,6 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           backgroundColor: null,
         });
 
-        // Intento 1: compartir como archivo si se solicitó compartir
         const blob = await new Promise<Blob | null>((resolve) =>
           canvas.toBlob(resolve, "image/png")
         );
@@ -420,17 +420,17 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           });
         }
 
-        // Intento 2: copiar al portapapeles como imagen
-        // Comprobación defensiva por políticas del navegador
-        const _ClipboardItem = (window as any).ClipboardItem ?? (globalThis as any).ClipboardItem;
+        const _ClipboardItem =
+          (window as any).ClipboardItem ?? (globalThis as any).ClipboardItem;
         if (_ClipboardItem && navigator.clipboard && (navigator.clipboard as any).write) {
-          await (navigator.clipboard as any).write([new _ClipboardItem({ "image/png": blob })]);
+          await (navigator.clipboard as any).write([
+            new _ClipboardItem({ "image/png": blob }),
+          ]);
           toast({
             title: "Copiado",
             description: "La imagen del ticket ha sido copiada.",
           });
         } else {
-          // Fallback: descargar PNG
           await downloadCanvasPng(canvas, `ticket_${saleForTicket.id}`);
           toast({
             title: "Descargado",
@@ -466,14 +466,12 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         if (!String(error).includes("AbortError")) {
           toast({
             title: "No se pudo compartir",
-            description:
-              "Copiando texto para WhatsApp como alternativa.",
+            description: "Copiando texto para WhatsApp como alternativa.",
           });
           handleCopySaleForWhatsapp();
         }
       }
     } else {
-      // Fallback para escritorios o navegadores sin Web Share con archivos
       handleCopySaleForWhatsapp();
     }
   };
@@ -513,10 +511,8 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     setIsValidationDialogOpen(false);
   };
 
-  // Abre el buscador de artículos (se invoca desde PosForm)
   const handleOpenAddItemDialog = () => setIsAddItemDialogOpen(true);
 
-  // Añadir artículo seleccionado al formulario (incrementa si ya existe)
   const handleSelectInventoryItem = (inv: InventoryItem) => {
     setIsAddingItem(true);
     try {
@@ -524,13 +520,11 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
       const current = (getValues("items") as any[]) ?? [];
       const idx = current.findIndex(
         (r) =>
-          // intenta matchear por inventoryItemId (preferible) o por id de item
           (r?.inventoryItemId && r.inventoryItemId === (inv as any).id) ||
           r?.id === (inv as any).id
       );
 
       if (idx >= 0) {
-        // incrementa cantidad y total
         const updated = [...current];
         const row = { ...updated[idx] };
         const qty = Number(row.quantity ?? 1) + 1;
@@ -538,14 +532,20 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         row.quantity = qty;
         row.totalPrice = unitPrice * qty;
         updated[idx] = row;
-        setValue("items", updated as any, { shouldDirty: true, shouldTouch: true });
+        setValue("items", updated as any, {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
         toast({
           title: "Cantidad actualizada",
           description: `Se incrementó la cantidad de "${row.itemName}".`,
         });
       } else {
         const updated = [...current, newRow];
-        setValue("items", updated as any, { shouldDirty: true, shouldTouch: true });
+        setValue("items", updated as any, {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
         toast({
           title: "Artículo añadido",
           description: `"${newRow.itemName}" agregado al ticket.`,
@@ -590,17 +590,15 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           onInventoryItemCreated={handleNewInventoryItemCreated}
           onOpenValidateDialog={handleOpenValidateDialog}
           validatedFolios={validatedFolios}
-          onOpenAddItemDialog={handleOpenAddItemDialog} // ← ahora sí abre el diálogo
+          onOpenAddItemDialog={handleOpenAddItemDialog}
         />
       </FormProvider>
 
-      {/* NUEVO: Diálogo de búsqueda/selección de artículo */}
       <QuickAddItemDialog
         open={isAddItemDialogOpen}
         onOpenChange={setIsAddItemDialogOpen}
         inventoryItems={currentInventoryItems}
         onSelectItem={handleSelectInventoryItem}
-        isAdding={isAddingItem}
       />
 
       {saleForTicket && (
