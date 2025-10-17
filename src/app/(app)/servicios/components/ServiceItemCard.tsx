@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceItemCard.tsx
 "use client";
 
@@ -28,7 +27,7 @@ const IVA_RATE = 0.16;
 const toNumber = (v: unknown): number => {
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
   if (typeof v === "string") {
-    const n = Number(v.replace(/[^\\d.-]/g, ""));
+    const n = Number(String(v).replace(/[^\\d.-]/g, ''));
     return Number.isFinite(n) ? n : 0;
   }
   return 0;
@@ -72,7 +71,7 @@ export function ServiceItemCard({
     const price = toNumber(sellingPrice);
     const supplies = Array.isArray(suppliesUsed) ? suppliesUsed : [];
     const suppliesCost = supplies.reduce((sum, s) => {
-      const unit = toNumber((s as any)?.unitCost ?? (s as any)?.unitPrice);
+      const unit = toNumber((s as any)?.unitPrice); // Ajuste aquí, el costo del insumo ya está en `unitPrice`
       const qty = toNumber((s as any)?.quantity);
       return sum + unit * qty;
     }, 0);
@@ -123,11 +122,11 @@ export function ServiceItemCard({
             )}/>
             <FormField
                 control={control}
-                name={`serviceItems.${serviceIndex}.itemName` as any}
+                name={`serviceItems.${serviceIndex}.itemName`}
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>
-                    Nombre del Servicio (Opcional)
+                    <FormLabel className={cn(serviceItemErrors?.itemName && "text-destructive")}>
+                    Nombre del Servicio
                     </FormLabel>
                     <FormControl>
                     <Input
@@ -135,7 +134,7 @@ export function ServiceItemCard({
                         {...field}
                         disabled={isReadOnly}
                         onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
-                        className={cn("bg-white", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
+                        className={cn("bg-white", serviceItemErrors?.itemName && "border-destructive focus-visible:ring-destructive")}
                     />
                     </FormControl>
                 </FormItem>
@@ -158,8 +157,8 @@ export function ServiceItemCard({
                         disabled={isReadOnly}
                         value={field.value ?? ""}
                         onChange={(e) => {
-                        const raw = e.target.value;
-                        field.onChange(raw === "" ? "" : toNumber(raw));
+                          const raw = e.target.value;
+                          field.onChange(raw === "" ? null : parseFloat(raw));
                         }}
                         onBlur={field.onBlur}
                         className="bg-white"

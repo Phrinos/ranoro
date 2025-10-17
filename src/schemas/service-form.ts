@@ -1,19 +1,24 @@
 
 import { z } from 'zod';
 
+const supplySchema = z.object({
+  supplyId: z.string(),
+  supplyName: z.string(),
+  quantity: z.number(),
+  unitPrice: z.number(), // Costo para el taller
+  unitType: z.string().optional(),
+  isService: z.boolean().optional(),
+  sellingPrice: z.number().optional(), // Precio de venta del insumo (si se vende por separado)
+}).passthrough();
+
+
 const serviceItemSchema = z.object({
   id: z.string().optional(),
-  name: z.string().optional(), // opcional
-  itemName: z.string().optional(), // nombre personalizado
+  name: z.string().optional(), // El 'Tipo de Servicio' (ej: Afinación, Frenos)
+  itemName: z.string().min(1, "El nombre del trabajo es obligatorio."), // La descripción específica (ej: Cambio de balatas traseras)
   sellingPrice: z.coerce.number().min(0, 'El precio debe ser un número positivo.'),
   isNew: z.boolean().optional(),
-  suppliesUsed: z.array(z.object({
-    supplyId: z.string(),
-    supplyName: z.string(),
-    quantity: z.number(),
-    unitCost: z.number(),
-    unitType: z.string().optional(),
-  })).optional(),
+  suppliesUsed: z.array(supplySchema).optional(),
 }).passthrough(); // Allow extra fields
 
 const photoReportSchema = z.object({
@@ -38,7 +43,7 @@ export const serviceFormSchema = z.object({
   mileage: z.coerce.number().optional(),
   customerComplaints: z.string().optional(),
   recommendations: z.string().optional(),
-  serviceItems: z.array(serviceItemSchema).default([]),
+  serviceItems: z.array(serviceItemSchema).min(1, 'Debe añadir al menos un trabajo o servicio.'),
   notes: z.string().optional(),
   totalCost: z.coerce.number().optional(),
   customerSignatureReception: z.string().optional(),
