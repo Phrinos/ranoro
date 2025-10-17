@@ -41,7 +41,20 @@ export const serviceFormSchema = z.object({
   totalCost: z.coerce.number().optional(),
   customerSignatureReception: z.string().optional(),
   photoReports: z.array(photoReportSchema).optional(),
-}).passthrough();
+}).passthrough().superRefine((data, ctx) => {
+    if (data.status === 'Entregado') {
+      const totalPaid = (data.payments ?? []).reduce((sum, p) => sum + (p.amount ?? 0), 0);
+      const totalCost = data.totalCost || (data.serviceItems ?? []).reduce((sum, item) => sum + (item.sellingPrice ?? 0), 0);
+      if (Math.abs(totalPaid - totalCost) > 0.01) {
+          ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "El monto pagado no coincide con el total. Registre los pagos antes de completar.",
+              path: ["payments"],
+          });
+      }
+    }
+});
+
 
 type _ServiceFormValuesRaw = z.infer<typeof serviceFormSchema>;
 

@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceItemCard.tsx
 "use client";
 
@@ -135,7 +134,7 @@ export function ServiceItemCard({
                         {...field}
                         disabled={isReadOnly}
                         onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
-                        className={cn("bg-card", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
+                        className={cn("bg-white", serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
                     />
                     </FormControl>
                 </FormItem>
@@ -162,7 +161,7 @@ export function ServiceItemCard({
                         field.onChange(raw === "" ? "" : toNumber(raw));
                         }}
                         onBlur={field.onBlur}
-                        className="bg-card"
+                        className="bg-white"
                     />
                     </FormControl>
                 </FormItem>
