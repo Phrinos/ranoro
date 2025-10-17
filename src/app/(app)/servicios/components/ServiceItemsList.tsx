@@ -49,9 +49,9 @@ export function ServiceItemsList({
 }: ServiceItemsListProps) {
   const { control, setValue, watch } = useFormContext<ServiceFormValues>();
 
-  const { fields, append, remove } = useFieldArray<ServiceFormValues, 'serviceItems'>({
+  const { fields, append, remove } = useFieldArray({
     control,
-    name: 'serviceItems',
+    name: "serviceItems" as const,
   });
 
   const items = watch("serviceItems");

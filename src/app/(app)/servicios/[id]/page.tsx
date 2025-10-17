@@ -15,7 +15,6 @@ import type {
   ServiceTypeRecord,
   InventoryCategory,
   Supplier,
-  NextServiceInfo
 } from '@/types';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
@@ -34,107 +33,49 @@ import { PhotoReportModal } from '../components/PhotoReportModal';
 import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import { formatCurrency } from '@/lib/utils';
 
-function normalizeAdvisor(record: any, users: User[]) {
-  const id =
-    record?.serviceAdvisorId ??
-    record?.serviceAdvisor_id ??
-    record?.serviceAdvisorID ??
-    record?.advisorId ??
-    record?.advisor_id ??
-    record?.advisorID ??
-    record?.assignedAdvisorId ??
-    record?.service_advisor_id ??
-    record?.serviceAdvisor?.id ??
-    record?.advisor?.id ??
-    "";
-
-  const byName = (name?: string) => users.find(u =>
-    (u.name ?? "").trim().toLowerCase() === (name ?? "").trim().toLowerCase());
-
-  const uById = users.find(x => x.id === id);
-  const name =
-    record?.serviceAdvisorName ??
-    record?.serviceAdvisor?.name ??
-    record?.advisor?.name ??
-    uById?.name ??
-    "";
-
-  const u = uById ?? byName(name);
-
+function normalizeAdvisor(record: any, users: User[]): Partial<ServiceFormValues> {
+  const id = record?.serviceAdvisorId || "";
+  const user = users.find(u => u.id === id);
   return {
-    ...record,
-    serviceAdvisorId: (u?.id || id || ""),
-    serviceAdvisorName: name || u?.name || "",
-    serviceAdvisorSignatureDataUrl:
-      record?.serviceAdvisorSignatureDataUrl ??
-      record?.serviceAdvisor?.signatureDataUrl ??
-      record?.advisor?.signatureDataUrl ??
-      u?.signatureDataUrl ??
-      null,
+    serviceAdvisorId: id,
+    serviceAdvisorName: record?.serviceAdvisorName || user?.name || "",
+    serviceAdvisorSignatureDataUrl: record?.serviceAdvisorSignatureDataUrl || user?.signatureDataUrl || null,
   };
 }
 
-function normalizeTechnician(record: any, users: User[]) {
-  const id =
-    record?.technicianId ??
-    record?.technician_id ??
-    record?.technician?.id ??
-    "";
-
-  const u = users.find(x => x.id === id);
-  return {
-    ...record,
-    technicianId: id || "",
-    technicianName:
-      record?.technicianName ??
-      record?.technician?.name ??
-      u?.name ??
-      "",
-    technicianSignatureDataUrl:
-      record?.technicianSignatureDataUrl ??
-      record?.technician?.signatureDataUrl ??
-      u?.signatureDataUrl ??
-      null,
-  };
+function normalizeTechnician(record: any, users: User[]): Partial<ServiceFormValues> {
+    const id = record?.technicianId || "";
+    const user = users.find(u => u.id === id);
+    return {
+        technicianId: id,
+        technicianName: record?.technicianName || user?.name || "",
+        technicianSignatureDataUrl: record?.technicianSignatureDataUrl || user?.signatureDataUrl || null,
+    };
 }
 
-function normalizeDates(record: any) {
-  return {
-    ...record,
-    serviceDate: record?.serviceDate ? new Date(record.serviceDate) : new Date(),
-    appointmentDateTime: record?.appointmentDateTime ? new Date(record.appointmentDateTime) : undefined,
-    receptionDateTime: record?.receptionDateTime ? new Date(record.receptionDateTime) : undefined,
-    deliveryDateTime: record?.deliveryDateTime ? new Date(record.deliveryDateTime) : undefined,
-  };
+function normalizeDates(record: any): Partial<ServiceFormValues> {
+    return {
+        serviceDate: record?.serviceDate ? new Date(record.serviceDate) : new Date(),
+        appointmentDateTime: record?.appointmentDateTime ? new Date(record.appointmentDateTime) : undefined,
+        receptionDateTime: record?.receptionDateTime ? new Date(record.receptionDateTime) : undefined,
+        deliveryDateTime: record?.deliveryDateTime ? new Date(record.deliveryDateTime) : undefined,
+    } as Partial<ServiceFormValues>;
 }
 
 function normalizeForForm(record: any, users: User[]): ServiceFormValues {
-  const a = normalizeAdvisor(record, users);
-  const t = normalizeTechnician(a, users);
-  const d = normalizeDates(t);
-
-  const serviceItems = (Array.isArray(d.serviceItems) ? d.serviceItems : []).map((item: any) => ({
+  const serviceItems = (Array.isArray(record.serviceItems) ? record.serviceItems : []).map((item: any) => ({
     ...item,
     suppliesUsed: (item.suppliesUsed ?? []).map((s: any) => ({ ...s, unitType: s?.unitType ?? undefined })),
   }));
 
   return {
-    ...d,
+    ...record,
+    ...normalizeAdvisor(record, users),
+    ...normalizeTechnician(record, users),
+    ...normalizeDates(record),
     serviceItems,
-    status: d.status ?? "Cotizacion",
-    vehicleId: d.vehicleId ?? "",
-    serviceDate: d.serviceDate,
-    appointmentDateTime: d.appointmentDateTime,
-    receptionDateTime: d.receptionDateTime,
-    deliveryDateTime: d.deliveryDateTime,
-
-    serviceAdvisorId: d.serviceAdvisorId ? String(d.serviceAdvisorId) : "",
-    serviceAdvisorName: d.serviceAdvisorName ?? "",
-    serviceAdvisorSignatureDataUrl: d.serviceAdvisorSignatureDataUrl ?? null,
-
-    technicianId: d.technicianId ? String(d.technicianId) : "",
-    technicianName: d.technicianName ?? "",
-    technicianSignatureDataUrl: d.technicianSignatureDataUrl ?? null,
+    status: record.status ?? "Cotizacion",
+    vehicleId: record.vehicleId ?? "",
   } as ServiceFormValues;
 }
 
@@ -181,27 +122,17 @@ export default function ServicioPage() {
       status: 'Cotizacion',
       vehicleId: '',
       serviceAdvisorId: '',
-      serviceAdvisorName: '',
       technicianId: '',
-      technicianName: '',
       serviceItems: [],
       serviceDate: new Date(),
+      photoReports: [],
     }
   });
 
   useEffect(() => {
-    if (!initialData?.id || !users.length) return;
-    if (hydratedRef.current === initialData.id) return;
+    if (!initialData?.id || !users.length || hydratedRef.current === initialData.id) return;
   
     const norm = normalizeForForm(initialData, users);
-  
-    const currentAdvisorId = methods.getValues("serviceAdvisorId");
-    if (!norm.serviceAdvisorId && currentAdvisorId) {
-      norm.serviceAdvisorId = currentAdvisorId;
-      norm.serviceAdvisorName = methods.getValues("serviceAdvisorName") ?? "";
-      norm.serviceAdvisorSignatureDataUrl = methods.getValues("serviceAdvisorSignatureDataUrl") ?? null;
-    }
-  
     methods.reset(norm);
     hydratedRef.current = initialData.id;
   }, [initialData, users, methods]);
@@ -209,13 +140,11 @@ export default function ServicioPage() {
   const advisorId = methods.watch("serviceAdvisorId");
   useEffect(() => {
     if (!users.length || !advisorId) return;
-    const currentName = methods.getValues("serviceAdvisorName");
-    if (!currentName) {
-      const u = users.find(x => x.id === advisorId);
-      if (u) {
-        methods.setValue("serviceAdvisorName", u.name ?? "", { shouldDirty: false });
-        methods.setValue("serviceAdvisorSignatureDataUrl", u.signatureDataUrl ?? null, { shouldDirty: false });
-      }
+
+    const u = users.find(x => x.id === advisorId);
+    if (u) {
+      methods.setValue("serviceAdvisorName", u.name ?? "", { shouldDirty: false });
+      methods.setValue("serviceAdvisorSignatureDataUrl", u.signatureDataUrl ?? null, { shouldDirty: false });
     }
   }, [advisorId, users, methods]);
   
@@ -265,6 +194,7 @@ export default function ServicioPage() {
             serviceAdvisorId: user.id,
             serviceAdvisorName: user.name,
             serviceAdvisorSignatureDataUrl: user.signatureDataUrl ?? null,
+            photoReports: [],
           };
           setInitialData(draft as any);
         }
@@ -328,9 +258,9 @@ export default function ServicioPage() {
         }))
         .filter(item => (item.name || '').trim() !== "");
 
-      const payload = normalizeForForm(cleanedValues, users) as any;
+      const payload = normalizeForForm(cleanedValues, users);
 
-      const saved = await serviceService.saveService(payload);
+      const saved = await serviceService.saveService(payload as unknown as ServiceRecord);
       
       const logDescription = `${isEditMode ? 'Actualizó' : 'Creó'} el servicio #${saved.folio || saved.id.slice(-6)} para ${saved.vehicleIdentifier} con un total de ${formatCurrency(saved.totalCost || 0)}.`;
       adminService.logAudit(isEditMode ? 'Editar' : 'Crear', logDescription, {
@@ -500,7 +430,7 @@ export default function ServicioPage() {
             open={isPaymentDialogOpen}
             onOpenChange={setIsPaymentDialogOpen}
             record={serviceToComplete}
-            onConfirm={(id, details) => handleConfirmCompletion(serviceToComplete, details, methods.getValues('nextServiceInfo'))}
+            onConfirm={(id, details) => handleConfirmCompletion(serviceToComplete, details, methods.getValues('nextServiceInfo' as any))}
             recordType="service"
             isCompletionFlow={true}
         />

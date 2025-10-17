@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -15,18 +16,19 @@ export default function PhotoReportTab() {
   const { control, watch, setValue } = useFormContext<ServiceFormValues>();
   const serviceId = watch('id');
 
-  // 🔧 No genéricos + 'as const' para evitar el 'never'
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'photoReports' as const,
   });
 
   const handleAddReport = () => {
-    // 👇 Alineado con el schema: title/description y photos: string[]
-    append({ title: 'Fotografías del vehículo', description: '', photos: [] });
+    append({
+      photos: [],
+      title: 'Fotografías del vehículo',
+      description: '',
+    });
   };
 
-  // ⛏️ Ajustado: solo push de URL (string)
   const onPhotoUploaded = (reportIndex: number, url: string) => {
     const current = (watch(`photoReports.${reportIndex}.photos`) ?? []) as string[];
     setValue(`photoReports.${reportIndex}.photos`, [...current, url], { shouldDirty: true, shouldValidate: true });
