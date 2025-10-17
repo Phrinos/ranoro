@@ -18,19 +18,15 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       rightIcon,
       size = "md",
       id,
-      "aria-describedby": ariaDesc,
       ...props
     },
     ref
   ) => {
-    const invalid = Boolean(error) || (props as any)["aria-invalid"] === true;
+    const invalid = Boolean(error);
 
-    // Si te pasan `value`, lo conservamos; si no, dejamos el input no-controlado.
-    const hasValueProp = Object.prototype.hasOwnProperty.call(props, "value");
-    const valueProp = hasValueProp ? { value: (props as any).value ?? "" } : {};
-
-    const describedBy =
-      ariaDesc ?? (invalid && id ? `${id}-error` : undefined);
+    // Mantener no-controlado si no pasan `value`
+    const hasValue = Object.prototype.hasOwnProperty.call(props, "value");
+    const valueProp = hasValue ? { value: (props as any).value ?? "" } : {};
 
     const sizeClasses =
       size === "sm"
@@ -54,22 +50,21 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {...props}
           {...valueProp}
           aria-invalid={invalid || undefined}
-          aria-describedby={describedBy}
           className={cn(
             // Base
-            "block w-full rounded-md border text-foreground outline-none transition",
-            // Fondo
-            "bg-white placeholder-shown:bg-muted/30 focus:bg-white placeholder:text-muted-foreground",
-            // Normal focus (sin “doble” borde)
-            "border-input focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
+            "block w-full rounded-md border bg-white text-foreground placeholder:text-muted-foreground outline-none transition",
+            // Focus sin “doble borde”
+            "border-input focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 ring-offset-1 focus-visible:ring-offset-1",
             // Deshabilitado
             "disabled:cursor-not-allowed disabled:opacity-60",
-            // Estado de error: solo cambiamos border + ring sutil
+            // Error
             invalid &&
               "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/40",
-            // Padding si hay iconos
+            // Icon paddings
             leftIcon && "pl-10",
             rightIcon && "pr-10",
+            // Evitar fondo de autofill también por clase utilitaria
+            "[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#fff] [&:-webkit-autofill]:[-webkit-text-fill-color:inherit]",
             sizeClasses
           )}
         />
@@ -79,11 +74,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {rightIcon}
           </span>
         )}
-
         {typeof error === "string" && (
-          <p id={id ? `${id}-error` : undefined} className="mt-1 text-xs text-destructive">
-            {error}
-          </p>
+          <p className="mt-1 text-xs text-destructive">{error}</p>
         )}
       </div>
     );

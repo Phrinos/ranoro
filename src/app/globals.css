@@ -5,24 +5,24 @@
 @layer base {
   :root {
     --background: 0 0% 96%; /* #F5F5F5 */
-    --foreground: 240 10% 3.9%; /* Darker text for better contrast on light gray */
+    --foreground: 240 10% 3.9%;
 
-    --card: 0 0% 100%; /* White cards */
+    --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
     --primary: 3 70% 37%; /* #a2231d */
-    --primary-foreground: 0 0% 100%; /* White text */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4.8% 92%; /* Lighter gray for secondary elements */
+    --secondary: 240 4.8% 92%;
     --secondary-foreground: 240 5.9% 10%;
 
     --muted: 240 4.8% 92%;
     --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 240 4.8% 92%; /* Light gray accent */
+    --accent: 240 4.8% 92%;
     --accent-foreground: 240 5.9% 10%;
 
     --destructive: 0 84.2% 60.2%;
@@ -32,14 +32,14 @@
     --input: 240 5.9% 88%;
     --ring: 3 70% 37%;
 
-    --chart-1: 210 70% 75%; /* Light Blue */
-    --chart-2: 130 60% 70%; /* Light Green */
+    --chart-1: 210 70% 75%;
+    --chart-2: 130 60% 70%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
 
-    /* Sidebar specific colors */
+    /* Sidebar */
     --sidebar-background: 0 0% 8%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 3 70% 45%;
@@ -49,6 +49,7 @@
     --sidebar-border: 0 0% 18%;
     --sidebar-ring: 3 70% 45%;
   }
+
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
@@ -81,7 +82,6 @@
     --chart-1: 210 60% 35%;
     --chart-2: 130 50% 30%;
 
-    /* Sidebar (dark) */
     --sidebar-background: 0 0% 8%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 3 70% 50%;
@@ -99,99 +99,84 @@
 }
 
 @layer utilities {
-  .text-shadow {
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
-  }
-
+  .text-shadow { text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4); }
   .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
   @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
   .animate-scroll { animation: scroll 30s linear infinite; }
   @keyframes scroll {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
 
-  /* =========================================
-     Simplified Print Rules
-   ========================================= */
+  /* ======= Impresión simple ======= */
   @media print {
     body * { visibility: hidden; }
     .printable-content, .printable-content * { visibility: visible; }
-    .printable-content {
-      position: absolute; left: 0; top: 0; width: 100%;
-    }
+    .printable-content { position: absolute; left: 0; top: 0; width: 100%; }
     .no-print { display: none; }
   }
 
-  /* =========================================
-     REGLAS DE IMPRESIÓN PARA DOCUMENTO CARTA
-   ========================================= */
+  /* Carta */
   @media print {
-    .print-format-letter {
-      @page { size: letter portrait; margin: 0; }
-    }
+    .print-format-letter { @page { size: letter portrait; margin: 0; } }
   }
 
-  /* =========================================
-     REGLAS DE IMPRESIÓN PARA TICKET 80mm
-   ========================================= */
+  /* Ticket 80mm */
   @media print {
     .print-format-receipt {
       @page { size: 80mm auto; margin: 0; }
-      width: 100% !important;
-      max-width: none !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      box-shadow: none !important;
-      background-color: white !important;
-      color: black !important;
-      font-size: 9pt !important;
-      line-height: 1.2 !important;
+      width: 100%!important; max-width: none!important;
+      margin: 0!important; padding: 0!important;
+      box-shadow: none!important; background-color: white!important;
+      color: black!important; font-size: 9pt!important; line-height: 1.2!important;
     }
     .print-format-receipt * {
-      background-color: transparent !important;
-      color: black !important;
-      box-shadow: none !important;
-      text-shadow: none !important;
+      background-color: transparent!important; color: black!important;
+      box-shadow: none!important; text-shadow: none!important;
     }
   }
 
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Custom styles for react-calendar */
-  .react-calendar {
-    @apply border-none bg-popover text-popover-foreground;
-  }
-  .react-calendar__navigation button {
-    @apply font-bold hover:bg-accent;
-  }
-  .react-calendar__month-view__weekdays__weekday {
-    @apply text-muted-foreground;
-  }
-  .react-calendar__tile {
-    @apply rounded-md hover:bg-accent;
-  }
-  .react-calendar__tile--now {
-    @apply bg-accent text-accent-foreground;
-  }
-  .react-calendar__tile--active {
-    @apply bg-primary text-primary-foreground;
-  }
-  .react-calendar__tile--rangeStart, .react-calendar__tile--rangeEnd {
-    @apply bg-primary text-primary-foreground;
-  }
+  /* react-calendar */
+  .react-calendar { @apply border-none bg-popover text-popover-foreground; }
+  .react-calendar__navigation button { @apply font-bold hover:bg-accent; }
+  .react-calendar__month-view__weekdays__weekday { @apply text-muted-foreground; }
+  .react-calendar__tile { @apply rounded-md hover:bg-accent; }
+  .react-calendar__tile--now { @apply bg-accent text-accent-foreground; }
+  .react-calendar__tile--active,
+  .react-calendar__tile--rangeStart,
+  .react-calendar__tile--rangeEnd { @apply bg-primary text-primary-foreground; }
 }
 
 /* Hide number input arrows */
 input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-/* Quita las flechas de los number inputs (Firefox) */
+input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
+
+/* ================================
+   FIX AUTOFILL (Chrome/Safari)
+   Quita el fondo gris/azulado
+================================ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: hsl(var(--foreground)) !important;
+  /* Pintamos el fondo del input con el color deseado */
+  -webkit-box-shadow: 0 0 0px 1000px hsl(var(--card)) inset !important;
+          box-shadow: 0 0 0px 1000px hsl(var(--card)) inset !important;
+  transition: background-color 9999s ease-in-out 0s !important;
+}
+.dark input:-webkit-autofill,
+.dark textarea:-webkit-autofill,
+.dark select:-webkit-autofill {
+  -webkit-text-fill-color: hsl(var(--foreground)) !important;
+  -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset !important;
+          box-shadow: 0 0 0px 1000px hsl(var(--background)) inset !important;
+}
