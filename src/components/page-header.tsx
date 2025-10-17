@@ -1,3 +1,4 @@
+
 // src/components/page-header.tsx
 import React from 'react';
 import { cn } from '@/lib/utils';
@@ -20,7 +21,7 @@ export function PageHeader({ title, description, actions, className, ...props }:
           )}
           {description && (
             typeof description === 'string' ? (
-              <p className="text-sm text-muted-foreground">{description}</p>
+              <p className="text-sm text-primary-foreground/80">{description}</p>
             ) : (
               description
             )

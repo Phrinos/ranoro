@@ -12,7 +12,7 @@ export type TabConfig = {
 
 type TabbedPageLayoutProps = {
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   tabs: TabConfig[];
   activeTab: string;
   onTabChange: (v: string) => void;

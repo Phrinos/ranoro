@@ -1,4 +1,6 @@
 
+// src/app/(app)/servicios/page.tsx
+
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
@@ -377,7 +379,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
     >
       <TabbedPageLayout
         title="Gestión de Servicios"
-        description="Planifica, gestiona y consulta todo el ciclo de vida de los servicios."
+        description={<span className="text-primary-foreground/80">Planifica, gestiona y consulta todo el ciclo de vida de los servicios.</span>}
         activeTab={activeTab}
         onTabChange={handleTabChange}
         tabs={tabs}
