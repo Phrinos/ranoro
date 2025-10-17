@@ -233,6 +233,7 @@ export default function ServicioPage() {
   };
   
   const onValidationErrors: SubmitErrorHandler<ServiceFormValues> = (errors) => {
+    console.log("Validation Errors:", errors);
     const errorMessages = Object.values(errors).map(e => e?.message).join('\n');
     toast({
       title: "Formulario Incompleto",
