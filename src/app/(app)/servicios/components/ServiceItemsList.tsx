@@ -145,6 +145,7 @@ export function ServiceItemsList({
                   append({
                     id: `item_${nanoid(6)}`,
                     name: "",
+                    itemName: "",
                     sellingPrice: 0,
                     suppliesUsed: [],
                   } as ServiceItem)

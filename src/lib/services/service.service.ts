@@ -1,3 +1,4 @@
+
 // src/lib/services/service.service.ts
 import {
   collection,
@@ -333,8 +334,54 @@ const saveMigratedServices = async (services: ServiceRecord[], vehicles: Vehicle
 };
 
 const cancelService = async (serviceId: string, reason: string): Promise<void> => {
-    const data = { status: 'Cancelado', cancellationReason: reason, cancellationTimestamp: new Date().toISOString() } as Partial<ServiceRecord>;
-    await updateService(serviceId, data);
+    if (!db) throw new Error("Database not initialized.");
+  
+    const serviceRef = doc(db, "serviceRecords", serviceId);
+    const serviceDoc = await getDoc(serviceRef);
+  
+    if (!serviceDoc.exists()) {
+      throw new Error("Service not found.");
+    }
+  
+    const service = serviceDoc.data() as ServiceRecord;
+    const batch = writeBatch(db);
+  
+    // Return stock for all used supplies
+    const suppliesToReturn = (service.serviceItems || [])
+      .flatMap((item: any) => item.suppliesUsed || [])
+      .filter((supply: any) => !supply.isService && supply.supplyId && supply.quantity > 0);
+  
+    if (suppliesToReturn.length > 0) {
+        const itemRefs = suppliesToReturn.map((item: any) => doc(db, 'inventory', item.supplyId));
+        const itemDocs = await Promise.all(itemRefs.map(ref => getDoc(ref)));
+
+        itemDocs.forEach((itemDoc, index) => {
+            if (itemDoc.exists()) {
+                const currentStock = itemDoc.data().quantity || 0;
+                const newStock = currentStock + suppliesToReturn[index].quantity;
+                batch.update(itemDoc.ref, { quantity: newStock });
+            }
+        });
+    }
+  
+    // Update service status
+    const updateData = {
+      status: 'Cancelado' as const,
+      cancellationReason: reason,
+      cancellationTimestamp: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
+    };
+    batch.update(serviceRef, updateData);
+  
+    // Update public document
+    const publicId = service.publicId || serviceId;
+    const publicRef = doc(db, 'publicServices', publicId);
+    batch.update(publicRef, {
+      status: 'Cancelado',
+      updatedAt: serverTimestamp(),
+    });
+  
+    await batch.commit();
 };
 
 
