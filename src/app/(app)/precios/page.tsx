@@ -95,9 +95,6 @@ function PageInner() {
             onEngineDataSave={handleEngineDataSave} 
         /> 
     },
-    { value: 'editor', label: 'Editor de Catálogo', content: 
-        makeQueryParam ? <VehicleCatalogEditor make={makeQueryParam} /> : <div>Seleccione una marca en la pestaña de Lista de Precios para editar.</div>
-    }
   ];
     
   return (
