@@ -54,6 +54,7 @@ import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import type { TabConfig } from "@/components/layout/tabbed-page-layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const RegisterPurchaseDialog = dynamic(() => import('./compras/components/register-purchase-dialog').then(module => ({ default: module.RegisterPurchaseDialog })));
 const InventoryItemDialog = dynamic(() => import('./components/inventory-item-dialog').then(module => ({ default: module.InventoryItemDialog })));
