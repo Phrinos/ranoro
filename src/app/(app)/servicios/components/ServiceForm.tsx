@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -95,7 +96,7 @@ export function ServiceForm({
   }, [serviceItems]);
 
   useEffect(() => {
-    setValue("total", totalCost, { shouldDirty: true, shouldValidate: false });
+    setValue("totalCost", totalCost, { shouldDirty: true, shouldValidate: false });
   }, [totalCost, setValue]);
 
   const handleOpenSignatureDialog = (type: 'reception' | 'delivery' | 'advisor' | 'technician') => {
@@ -106,7 +107,7 @@ export function ServiceForm({
   const handleSaveSignature = (dataUrl: string) => {
     let fieldName: keyof ServiceFormValues | undefined;
     if (signatureType === 'reception') fieldName = 'customerSignatureReception';
-    if (signatureType === 'delivery') fieldName = 'customerSignatureDelivery';
+    if (signatureType === 'delivery') fieldName = 'customerSignatureDelivery' as any;
     if (signatureType === 'advisor') fieldName = 'serviceAdvisorSignatureDataUrl';
     if (signatureType === 'technician') fieldName = 'technicianSignatureDataUrl';
     if (fieldName) setValue(fieldName as any, dataUrl, { shouldDirty: true, shouldValidate: true });
@@ -134,10 +135,10 @@ export function ServiceForm({
 
           {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
             <NextServiceInfoCard
-              nextServiceInfo={(watch('nextServiceInfo') as NextServiceInfo) || {}}
-              onUpdate={(info: NextServiceInfo) => setValue('nextServiceInfo', info, { shouldDirty: true })}
+              nextServiceInfo={(watch('nextServiceInfo' as any) as NextServiceInfo) || {}}
+              onUpdate={(info: NextServiceInfo) => setValue('nextServiceInfo' as any, info, { shouldDirty: true })}
               isSubmitting={isSubmitting}
-              currentMileage={watch('vehicle.currentMileage')}
+              currentMileage={watch('vehicle.currentMileage' as any)}
             />
           )}
 

@@ -102,7 +102,7 @@ export default function PhotoReportTab() {
                 <PhotoUploader
                   reportIndex={index}
                   serviceId={serviceId || ''}
-                  onUploadComplete={onPhotoUploaded}
+                  onUploadComplete={onPhotoUploaded as any}
                   photosLength={photos.length}
                   maxPhotos={10}
                 />

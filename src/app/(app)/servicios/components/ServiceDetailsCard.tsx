@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -71,11 +72,11 @@ export function ServiceDetailsCard({
   }, [technicians, technicianId, technicianName]);
 
   const handleStatusChange = (newStatus: ServiceFormValues["status"]) => {
-    if (newStatus === "En Taller" && !watch("receptionDateTime")) {
-      setValue("receptionDateTime", new Date(), { shouldDirty: true });
+    if (newStatus === "En Taller" && !watch("receptionDateTime" as any)) {
+      setValue("receptionDateTime" as any, new Date(), { shouldDirty: true });
     }
-    if (newStatus === "Agendado" && !watch("appointmentDateTime")) {
-      setValue("appointmentDateTime", new Date(), { shouldDirty: true });
+    if (newStatus === "Agendado" && !watch("appointmentDateTime" as any)) {
+      setValue("appointmentDateTime" as any, new Date(), { shouldDirty: true });
     }
     setValue("status", newStatus, { shouldValidate: true, shouldDirty: true });
   };
@@ -139,7 +140,7 @@ export function ServiceDetailsCard({
           {watchedStatus === 'En Taller' && (
             <FormField
               control={control}
-              name="subStatus"
+              name={"subStatus" as any}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Sub-estado</FormLabel>

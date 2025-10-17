@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceItemCard.tsx
 "use client";
 
@@ -122,7 +123,7 @@ export function ServiceItemCard({
             )}/>
             <FormField
                 control={control}
-                name={`serviceItems.${serviceIndex}.itemName`}
+                name={`serviceItems.${serviceIndex}.itemName` as any}
                 render={({ field }) => (
                 <FormItem>
                     <FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>

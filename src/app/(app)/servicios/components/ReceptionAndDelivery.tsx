@@ -65,7 +65,7 @@ export const ReceptionAndDelivery = ({
   const [isEditingDate, setIsEditingDate] = useState(false);
   
   if (part === 'reception') {
-    const receptionDateTime = watch("receptionDateTime");
+    const receptionDateTime = watch("receptionDateTime" as any);
     const formattedReceptionDate = receptionDateTime && isValid(receptionDateTime)
       ? format(receptionDateTime, "dd MMM yyyy, HH:mm 'hrs'", { locale: es })
       : null;
@@ -92,7 +92,7 @@ export const ReceptionAndDelivery = ({
                {isEditingDate && !isReadOnly ? (
                   <FormField
                     control={control}
-                    name="receptionDateTime"
+                    name={"receptionDateTime" as any}
                     render={({ field }) => (
                       <FormControl>
                          <Input
@@ -112,7 +112,7 @@ export const ReceptionAndDelivery = ({
           </div>
           <FormField
               control={control}
-              name="fuelLevel"
+              name={"fuelLevel" as any}
               render={({ field }) => (
               <FormItem>
                   <FormLabel>Nivel de Combustible</FormLabel>
@@ -127,12 +127,12 @@ export const ReceptionAndDelivery = ({
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={control}
-                name="vehicleConditions"
+                name={"vehicleConditions" as any}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex justify-between items-center w-full">
                       <span>Condiciones del Vehículo</span>
-                       {!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}><BrainCircuit className="h-4 w-4" /></Button>)}
+                       {!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions" as any)}><BrainCircuit className="h-4 w-4" /></Button>)}
                     </FormLabel>
                     <FormControl><Textarea placeholder="Ej: Rayón en puerta trasera derecha..." {...field} value={field.value as any} className="min-h-[100px] bg-card" disabled={isReadOnly} /></FormControl>
                   </FormItem>
@@ -140,12 +140,12 @@ export const ReceptionAndDelivery = ({
               />
               <FormField
                 control={control}
-                name="customerItems"
+                name={"customerItems" as any}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex justify-between items-center w-full">
                       <span>Pertenencias del Cliente</span>
-                       {!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}><BrainCircuit className="h-4 w-4" /></Button>)}
+                       {!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems" as any)}><BrainCircuit className="h-4 w-4" /></Button>)}
                     </FormLabel>
                     <FormControl><Textarea placeholder="Ej: Gato, llanta de refacción..." {...field} value={field.value as any} className="min-h-[100px] bg-card" disabled={isReadOnly} /></FormControl>
                   </FormItem>
@@ -167,11 +167,11 @@ export const ReceptionAndDelivery = ({
   }
 
   if (part === 'delivery') {
-    const deliveryDateTime = watch("deliveryDateTime");
+    const deliveryDateTime = watch("deliveryDateTime" as any);
     const formattedDeliveryDate = deliveryDateTime && isValid(deliveryDateTime)
       ? format(deliveryDateTime, "dd MMM yyyy, HH:mm 'hrs'", { locale: es })
       : null;
-    const customerSignatureDelivery = watch("customerSignatureDelivery");
+    const customerSignatureDelivery = watch("customerSignatureDelivery" as any);
 
     return (
       <Card>
@@ -192,7 +192,7 @@ export const ReceptionAndDelivery = ({
                  {isEditingDate && !isReadOnly ? (
                     <FormField
                       control={control}
-                      name="deliveryDateTime"
+                      name={"deliveryDateTime" as any}
                       render={({ field }) => (
                         <FormControl>
                            <Input type="datetime-local" value={field.value ? format(new Date(field.value), "yyyy-MM-dd'T'HH:mm") : ''} onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)} className="bg-card" />

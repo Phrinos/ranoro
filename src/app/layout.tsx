@@ -93,10 +93,6 @@ export const metadata: Metadata = {
     email: false,
   },
   manifest: "/site.webmanifest", // ⚠️ asegura que exista
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0b0b" },
-  ],
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

@@ -1,7 +1,7 @@
-// src/app/login/page.tsx
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { auth } from '@/lib/firebaseClient.js';
 import { signInWithEmailAndPassword, type User as FirebaseUser } from 'firebase/auth';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [emailLogin, setEmailLogin] = useState('');
   const [passwordLogin, setPasswordLogin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -92,5 +92,13 @@ export default function LoginPage() {
           </CardContent>
         </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
