@@ -279,7 +279,7 @@ function AppSidebarInner({
               <Link href="/opciones?tab=perfil"><Users className="mr-2 h-4 w-4" /> Mi Perfil</Link>
             </DropdownMenuItem>
              <DropdownMenuItem asChild>
-               <Link href="/opciones"><Shield className="mr-2 h-4 w-4" /> Opciones</Link>
+               <Link href="/opciones?tab=manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual de Uso</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
                  <DropdownMenuItem onClick={handleLogout}>
