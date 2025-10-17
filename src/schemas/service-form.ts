@@ -27,6 +27,10 @@ const photoReportSchema = z.object({
   photos: z.array(z.string()),
 });
 
+const paymentSchema = z.object({
+    amount: z.number().optional(),
+}).passthrough();
+
 export const serviceFormSchema = z.object({
   id: z.string().optional(),
   publicId: z.string().optional(),
@@ -48,6 +52,7 @@ export const serviceFormSchema = z.object({
   totalCost: z.coerce.number().optional(),
   customerSignatureReception: z.string().optional(),
   photoReports: z.array(photoReportSchema).optional(),
+  payments: z.array(paymentSchema).optional(),
 }).passthrough().superRefine((data, ctx) => {
     if (data.status === 'Entregado') {
       const totalPaid = (data.payments ?? []).reduce((sum, p) => sum + (p.amount ?? 0), 0);
