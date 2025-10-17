@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
@@ -155,7 +156,7 @@ function MovimientosTabContent({
         return pays
           .filter((p) => typeof p?.amount === "number" && !Number.isNaN(p.amount))
           .map((p, idx) => {
-            const d = getPaymentDate(p) || parseDate(s.saleDate);
+            const d = getPaymentDate(p) || parseDate(s.saleDate as any);
             const amt = Number(p.amount) || 0;
             const isRefund = amt < 0;
             const folio = s.id.slice(-6);
@@ -296,35 +297,31 @@ function MovimientosTabContent({
         <CardContent className="p-0">
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader className="bg-black">
+              <TableHeader className="bg-background">
                 <TableRow className="hover:bg-transparent">
                   <SortableTableHeader
                     sortKey="date"
                     label="Fecha"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
-                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="type"
                     label="Tipo"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
-                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="client"
                     label="Cliente/Usuario"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
-                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="description"
                     label="Descripción"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
-                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="total"
@@ -332,7 +329,6 @@ function MovimientosTabContent({
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
                     className="text-right"
-                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="method"
@@ -340,7 +336,6 @@ function MovimientosTabContent({
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
                     className="text-right"
-                    textClassName="text-white"
                   />
                 </TableRow>
               </TableHeader>

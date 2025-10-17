@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -30,19 +31,21 @@ export function TabbedPageLayout({
 
   return (
     <div>
-      <PageHeader title={title} description={description} actions={actions} />
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+        <PageHeader title={title} description={description} actions={actions} />
+      </div>
+
       <div className="mt-4">
-        <div className="flex flex-wrap w-full gap-2 sm:gap-4 border-b">
+        <div className="flex flex-wrap w-full gap-2 sm:gap-4">
           {tabs.map(tab => (
             <button
               key={tab.value}
               onClick={() => onTabChange(tab.value)}
               className={cn(
-                'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-t-md transition-colors duration-200 text-sm sm:text-base font-medium',
-                'break-words whitespace-normal leading-snug border-b-2',
+                'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
                 activeTab === tab.value
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground shadow'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
               )}
             >
               {tab.label}
