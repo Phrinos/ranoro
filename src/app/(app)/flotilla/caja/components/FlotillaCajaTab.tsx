@@ -150,18 +150,15 @@ export function FlotillaCajaTab({
         <Button onClick={onAddExpense} variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50"><Wrench className="mr-2 h-4 w-4 text-red-500" /> Gasto</Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="shadow-lg"><CardHeader><CardTitle>Total de Ingresos (Mensual)</CardTitle><CardDescription>Suma de todos los ingresos del mes seleccionado.</CardDescription></CardHeader><CardContent><div className="text-4xl font-bold text-center text-black">{formatCurrency(summary.totalIncome)}</div></CardContent></Card>
-          <Card className="shadow-lg"><CardHeader><CardTitle>Balance de Caja (Mensual)</CardTitle><CardDescription>Balance de efectivo del mes seleccionado.</CardDescription></CardHeader><CardContent><div className={cn("text-4xl font-bold text-center", summary.totalBalance >= 0 ? 'text-green-600' : 'text-destructive')}>{formatCurrency(summary.totalBalance)}</div></CardContent></Card>
-          <Card className="shadow-lg"><CardHeader><CardTitle>Balance de Caja (Actual)</CardTitle><CardDescription>Dinero total disponible en caja.</CardDescription></CardHeader><CardContent><div className={cn("text-4xl font-bold text-center", currentCashBalance >= 0 ? 'text-blue-600' : 'text-destructive')}>{formatCurrency(currentCashBalance)}</div></CardContent></Card>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Wallet className="h-4 w-4 text-green-600"/>Ingresos Efectivo</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(summary.totalCash)}</div></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Landmark className="h-4 w-4 text-blue-600"/>Ingresos Transferencia</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-blue-600">{formatCurrency(summary.totalTransfers)}</div></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><TrendingDownIcon className="h-4 w-4 text-red-500"/>Total Retiros</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-red-500">{formatCurrency(summary.totalWithdrawals)}</div></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Wrench className="h-4 w-4 text-orange-500"/>Total Gastos</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-orange-500">{formatCurrency(summary.totalExpenses)}</div></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Balance Caja (Mes)</CardTitle></CardHeader><CardContent><div className={cn("text-2xl font-bold", summary.totalBalance >= 0 ? 'text-foreground' : 'text-destructive')}>{formatCurrency(summary.totalBalance)}</div></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Balance Caja (Actual)</CardTitle></CardHeader><CardContent><div className={cn("text-2xl font-bold", currentCashBalance >= 0 ? 'text-foreground' : 'text-destructive')}>{formatCurrency(currentCashBalance)}</div></CardContent></Card>
       </div>
+
       <Card>
         <CardHeader><CardTitle>Movimientos de Caja</CardTitle><CardDescription>Historial de todos los ingresos y salidas de dinero del mes seleccionado.</CardDescription></CardHeader>
         <CardContent>
