@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceItemCard.tsx
 "use client";
 
@@ -27,7 +28,7 @@ const IVA_RATE = 0.16;
 const toNumber = (v: unknown): number => {
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
   if (typeof v === "string") {
-    const n = Number(v.replace(/[^\d.-]/g, ""));
+    const n = Number(v.replace(/[^\\d.-]/g, ""));
     return Number.isFinite(n) ? n : 0;
   }
   return 0;
@@ -126,11 +127,11 @@ export function ServiceItemCard({
                 render={({ field }) => (
                 <FormItem>
                     <FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>
-                    Nombre del Servicio
+                    Nombre del Servicio (Opcional)
                     </FormLabel>
                     <FormControl>
                     <Input
-                        placeholder="Afinación Mayor"
+                        placeholder="Descripción específica del trabajo..."
                         {...field}
                         disabled={isReadOnly}
                         onChange={(e) => field.onChange(capitalizeWords(e.target.value))}

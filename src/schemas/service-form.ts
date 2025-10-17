@@ -1,8 +1,10 @@
+
 import { z } from 'zod';
 
 const serviceItemSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1, 'El nombre del trabajo es obligatorio.'),
+  name: z.string().optional(), // opcional
+  itemName: z.string().optional(), // nombre personalizado
   sellingPrice: z.coerce.number().min(0, 'El precio debe ser un número positivo.'),
   isNew: z.boolean().optional(),
   suppliesUsed: z.array(z.object({
@@ -12,7 +14,7 @@ const serviceItemSchema = z.object({
     unitCost: z.number(),
     unitType: z.string().optional(),
   })).optional(),
-});
+}).passthrough(); // Allow extra fields
 
 const photoReportSchema = z.object({
   title: z.string(),
