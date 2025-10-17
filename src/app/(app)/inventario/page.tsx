@@ -232,13 +232,21 @@ const CategoriasContent: React.FC<{
                             <TableCell className="font-medium">{cat.name}</TableCell>
                             <TableCell>{cat.count}</TableCell>
                             <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(cat)}><Edit className="h-4 w-4"/></Button>
-                                <ConfirmDialog
-                                    triggerButton={<Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive"/></Button>}
-                                    title={`¿Eliminar categoría "${cat.name}"?`}
-                                    description="Esta acción no se puede deshacer."
-                                    onConfirm={() => onDeleteCategory(cat.id)}
-                                />
+                                <div className="flex items-center justify-end gap-1">
+                                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(cat)} aria-label={`Editar ${cat.name}`}>
+                                        <Edit className="h-4 w-4"/>
+                                    </Button>
+                                    <ConfirmDialog
+                                        triggerButton={
+                                            <Button variant="ghost" size="icon" aria-label={`Eliminar ${cat.name}`}>
+                                                <Trash2 className="h-4 w-4 text-destructive"/>
+                                            </Button>
+                                        }
+                                        title={`¿Eliminar categoría "${cat.name}"?`}
+                                        description="Esta acción no se puede deshacer. Los servicios existentes que usen este tipo no serán afectados, pero no podrá ser seleccionado para nuevos servicios."
+                                        onConfirm={() => onDeleteCategory(cat.id)}
+                                    />
+                                </div>
                             </TableCell>
                         </TableRow>
                     ))}
@@ -432,65 +440,108 @@ function PageInner() {
 
   return (
     <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-        <TabbedPageLayout
-          title="Mi Inventario"
-          description="Gestiona productos, proveedores, categorías y obtén análisis inteligentes."
-          tabs={tabsConfig}
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-          actions={
-            <div className="flex items-center gap-2">
-              <Button onClick={() => setIsRegisterPurchaseOpen(true)}>Registrar Compra</Button>
-            </div>
-          }
+        <>
+        <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+            <h1 className="text-3xl font-bold tracking-tight">Mi Inventario</h1>
+            <p className="text-primary-foreground/80 mt-1">Gestiona productos, proveedores, categorías y obtén análisis inteligentes.</p>
+        </div>
+        
+        <DashboardCards 
+          summaryData={inventorySummary}
+          onNewItemClick={handleOpenItemDialog}
+          onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
-      
-      <Suspense fallback={null}>
-          {isRegisterPurchaseOpen && (
-            <RegisterPurchaseDialog
-              open={isRegisterPurchaseOpen}
-              onOpenChange={setIsRegisterPurchaseOpen}
-              suppliers={sortedSuppliers}
-              inventoryItems={inventoryItems}
-              onSave={handleSavePurchase}
-              onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
+            <div className="w-full">
+                <div className="flex flex-wrap w-full gap-2 sm:gap-4">
+                {tabsConfig.map(tabInfo => (
+                    <button
+                    key={tabInfo.value}
+                    onClick={() => setActiveTab(tabInfo.value)}
+                    className={cn(
+                        'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
+                        'break-words whitespace-normal leading-snug',
+                        activeTab === tabInfo.value
+                        ? 'bg-primary text-primary-foreground shadow'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    )}
+                    >
+                    {tabInfo.label}
+                    </button>
+                ))}
+                </div>
+            </div>
+            
+            <TabsContent value="productos" className="mt-6">
+              <Suspense fallback={<Loader2 className="animate-spin" />}>
+                  <ProductosContent 
+                      inventoryItems={inventoryItems}
+                      onPrint={handlePrint}
+                      onEditItem={() => {}}
+                      onDeleteItem={() => {}}
+                  />
+              </Suspense>
+            </TabsContent>
+            <TabsContent value="categorias" className="mt-6">
+              <Suspense fallback={<Loader2 className="animate-spin" />}>
+                  <CategoriasContent 
+                      categories={categories} 
+                      inventoryItems={inventoryItems} 
+                      onSaveCategory={handleSaveCategory}
+                      onDeleteCategory={handleDeleteCategory}
+                  />
+              </Suspense>
+            </TabsContent>
+        </Tabs>
+        
+        <Suspense fallback={null}>
+            {isRegisterPurchaseOpen && (
+              <RegisterPurchaseDialog
+                open={isRegisterPurchaseOpen}
+                onOpenChange={setIsRegisterPurchaseOpen}
+                suppliers={sortedSuppliers}
+                inventoryItems={inventoryItems}
+                onSave={handleSavePurchase}
+                onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
+                categories={categories}
+              />
+            )}
+
+            <InventoryItemDialog
+              open={isItemDialogOpen}
+              onOpenChange={setIsItemDialogOpen}
+              onSave={editingItem ? handleItemUpdated : handleSaveItem}
+              onDelete={editingItem?.id ? () => handleDeleteItem(editingItem!.id!) : undefined}
+              item={editingItem}
               categories={categories}
+              suppliers={suppliers}
             />
-          )}
+        </Suspense>
 
-          <InventoryItemDialog
-            open={isItemDialogOpen}
-            onOpenChange={setIsItemDialogOpen}
-            onSave={editingItem ? handleItemUpdated : handleSaveItem}
-            onDelete={editingItem?.id ? () => handleDeleteItem(editingItem!.id!) : undefined}
-            item={editingItem}
-            categories={categories}
-            suppliers={suppliers}
-          />
-      </Suspense>
-
-      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-        <DialogContent className="max-w-4xl p-0 no-print flex flex-col h-[90vh]">
-           <DialogHeader className="p-6 pb-2 border-b">
-              <DialogTitle>Imprimir Reporte de Inventario</DialogTitle>
-              <DialogDescription>
-                Se generará una vista de impresión con los productos seleccionados.
-              </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="flex-grow">
-              <div className="p-6 printable-content bg-white">
-                  <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
-                      <InventoryReportContent items={itemsToPrint} />
-                  </Suspense>
-              </div>
-            </ScrollArea>
-          <DialogFooter className="p-4 border-t bg-background sm:justify-end no-print">
-              <Button onClick={() => window.print()}>
-                  <Printer className="mr-2 h-4 w-4" /> Imprimir
-              </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+          <DialogContent className="max-w-4xl p-0 no-print flex flex-col h-[90vh]">
+             <DialogHeader className="p-6 pb-2 border-b">
+                <DialogTitle>Imprimir Reporte de Inventario</DialogTitle>
+                <DialogDescription>
+                  Se generará una vista de impresión con los productos seleccionados.
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="flex-grow">
+                <div className="p-6 printable-content bg-white">
+                    <Suspense fallback={<div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin"/></div>}>
+                        <InventoryReportContent items={itemsToPrint} />
+                    </Suspense>
+                </div>
+              </ScrollArea>
+            <DialogFooter className="p-4 border-t bg-background sm:justify-end no-print">
+                <Button onClick={() => window.print()}>
+                    <Printer className="mr-2 h-4 w-4" /> Imprimir
+                </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        </>
     </Suspense>
   );
 }
