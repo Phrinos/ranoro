@@ -375,9 +375,15 @@ function PageInner() {
   );
   
   const handleSaveItem = useCallback(async (itemData: InventoryItemFormValues) => {
-    await inventoryService.addItem(itemData);
-    toast({ title: "Producto Creado", description: `"${itemData.name}" ha sido agregado al inventario.` });
-    setIsItemDialogOpen(false);
+    try {
+        await inventoryService.addItem(itemData);
+        toast({ title: "Producto Creado", description: `"${itemData.name}" ha sido agregado al inventario.` });
+        setIsItemDialogOpen(false);
+    } catch (e) {
+        console.error("Error al guardar item:", e);
+        console.log("Datos enviados:", itemData);
+        toast({ title: "Error al guardar", description: `No se pudo crear el producto. Revisa la consola para más detalles.`, variant: 'destructive' });
+    }
   }, [toast]);
   
   const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
@@ -449,7 +455,7 @@ function PageInner() {
         
         <DashboardCards 
           summaryData={inventorySummary}
-          onNewItemClick={handleOpenItemDialog}
+          onNewItemClick={() => handleOpenItemDialog()}
           onNewPurchaseClick={() => setIsRegisterPurchaseOpen(true)}
         />
         
