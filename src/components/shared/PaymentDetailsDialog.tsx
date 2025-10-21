@@ -48,17 +48,8 @@ export function PaymentDetailsDialog({
       return toNumber((record as SaleReceipt).totalAmount);
     }
     const svc = record as ServiceRecord;
-    const fromTotal = toNumber((svc as any).total);
-    if (fromTotal > 0) return fromTotal;
-    const derived = Array.isArray(svc?.serviceItems)
-      ? svc.serviceItems.reduce((acc, it: any) => {
-          const qty = toNumber(it?.quantity ?? 1);
-          const price = toNumber(it?.sellingPrice);
-          const discount = toNumber(it?.discount);
-          return acc + Math.max(price * (qty || 1) - discount, 0);
-        }, 0)
-      : 0;
-    return derived;
+    // For services, always prefer the explicit totalCost if it exists.
+    return toNumber(svc.totalCost ?? 0);
   }, [record, recordType]);
 
   const methods = useForm<PaymentDetailsFormValues>({
