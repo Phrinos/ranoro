@@ -107,8 +107,30 @@ export function InventoryItemForm({ id, initialData, onSubmit, categories, suppl
           <FormField control={form.control} name="sku" render={({ field }) => ( <FormItem><FormLabel>SKU / Código</FormLabel><FormControl><Input placeholder="Ej: G-123" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value.toUpperCase())} className="bg-card"/></FormControl><FormMessage /></FormItem> )}/>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-            <FormField control={form.control} name="unitPrice" render={({ field }) => ( <FormItem><FormLabel>Costo (Taller)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input type="number" placeholder="100.00" {...field} value={field.value ?? ''} className="pl-8 bg-card"/></FormControl></div><FormMessage /></FormItem> )}/>
-            <FormField control={form.control} name="sellingPrice" render={({ field }) => ( <FormItem><FormLabel>Precio (Público)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input type="number" placeholder="150.00" {...field} value={field.value ?? ''} className="pl-8 bg-card"/></FormControl></div><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="unitPrice" render={({ field }) => ( 
+                <FormItem>
+                    <FormLabel>Costo (Taller)</FormLabel>
+                    <div className="relative">
+                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
+                        <FormControl>
+                            <Input type="number" placeholder="100.00" {...field} value={field.value ?? ''} className="pl-8 bg-card"/>
+                        </FormControl>
+                    </div>
+                    <FormMessage />
+                </FormItem> 
+            )}/>
+            <FormField control={form.control} name="sellingPrice" render={({ field }) => ( 
+                <FormItem>
+                    <FormLabel>Precio (Público)</FormLabel>
+                    <div className="relative">
+                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
+                        <FormControl>
+                            <Input type="number" placeholder="150.00" {...field} value={field.value ?? ''} className="pl-8 bg-card"/>
+                        </FormControl>
+                    </div>
+                    <FormMessage />
+                </FormItem> 
+            )}/>
         </div>
         {!isService && (
           <div className="space-y-4 pt-4 border-t">
