@@ -71,12 +71,13 @@ export function ServiceItemCard({
     const price = toNumber(sellingPrice);
     const supplies = Array.isArray(suppliesUsed) ? suppliesUsed : [];
     const suppliesCost = supplies.reduce((sum, s) => {
-      const unit = toNumber((s as any)?.unitPrice); // Ajuste aquí, el costo del insumo ya está en `unitPrice`
+      const unit = toNumber((s as any)?.unitPrice);
       const qty = toNumber((s as any)?.quantity);
       return sum + unit * qty;
     }, 0);
     const sub = price / (1 + IVA_RATE);
     const iva = price - sub;
+    // La ganancia es el precio de venta final menos el costo de los insumos.
     const prf = price - suppliesCost;
     return { subTotal: sub, tax: iva, totalCostOfSupplies: suppliesCost, profit: prf };
   }, [sellingPrice, suppliesUsed]);

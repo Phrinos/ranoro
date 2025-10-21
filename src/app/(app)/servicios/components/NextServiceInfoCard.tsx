@@ -42,17 +42,24 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
   const handleSetReminder = (months: number) => {
     const newDate = addMonths(new Date(), months);
     setDate(newDate);
+    // Automatically trigger update when a button is clicked
+    onUpdate({ date: newDate.toISOString(), mileage: Number(mileage) || null });
   };
   
   const handleSetMileageReminder = (km: number) => {
     const current = Number(currentMileage || 0);
-    setMileage(current + km);
+    const newMileage = current + km;
+    setMileage(newMileage);
+    // Automatically trigger update when a button is clicked
+    onUpdate({ date: date ? date.toISOString() : null, mileage: newMileage });
   };
   
   const onCalendarChange = (newDate: any) => {
     if (newDate && !Array.isArray(newDate)) {
       setDate(newDate);
       setIsCalendarOpen(false);
+      // Automatically trigger update when a date is picked
+      onUpdate({ date: newDate.toISOString(), mileage: Number(mileage) || null });
     }
   };
 
@@ -67,6 +74,7 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
+                  type="button"
                   variant={"outline"}
                   className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
                 >
@@ -84,9 +92,9 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
               </PopoverContent>
             </Popover>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => handleSetReminder(3)}>+3m</Button>
-              <Button size="sm" variant="outline" onClick={() => handleSetReminder(6)}>+6m</Button>
-              <Button size="sm" variant="outline" onClick={() => handleSetReminder(12)}>+12m</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => handleSetReminder(3)}>+3m</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => handleSetReminder(6)}>+6m</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => handleSetReminder(12)}>+12m</Button>
             </div>
           </div>
           <div className="space-y-2">
@@ -94,18 +102,20 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
               type="number"
               placeholder="Kilometraje"
               value={mileage}
-              onChange={(e) => setMileage(Number(e.target.value))}
+              onChange={(e) => {
+                const newMileage = Number(e.target.value);
+                setMileage(newMileage);
+                onUpdate({ date: date ? date.toISOString() : null, mileage: newMileage || null });
+              }}
             />
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => handleSetMileageReminder(5000)}>+5k</Button>
-              <Button size="sm" variant="outline" onClick={() => handleSetMileageReminder(7500)}>+7.5k</Button>
-              <Button size="sm" variant="outline" onClick={() => handleSetMileageReminder(10000)}>+10k</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => handleSetMileageReminder(5000)}>+5k</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => handleSetMileageReminder(7500)}>+7.5k</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => handleSetMileageReminder(10000)}>+10k</Button>
             </div>
           </div>
         </div>
-        <Button onClick={handleUpdate} disabled={isSubmitting} className="w-full">
-          {isSubmitting ? 'Guardando...' : 'Guardar Próximo Servicio'}
-        </Button>
+        {/* El botón de guardar ya no es necesario, los cambios se aplican al interactuar */}
       </CardContent>
     </Card>
   );
