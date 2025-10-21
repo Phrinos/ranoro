@@ -170,7 +170,26 @@ export function ServiceForm({
                 />
             </TabsContent>
 
-            {/* ... (otros TabsContent sin cambios) */}
+            <TabsContent value="reception-delivery" className="mt-4">
+              <ReceptionAndDelivery 
+                part="reception"
+                isReadOnly={isReadOnly}
+                isEnhancingText={null}
+                handleEnhanceText={() => {}}
+                onOpenSignature={handleOpenSignatureDialog}
+              />
+            </TabsContent>
+            
+            <TabsContent value="photo-report" className="mt-4">
+              <PhotoReportTab />
+            </TabsContent>
+            
+            <TabsContent value="safety-checklist" className="mt-4">
+                <SafetyChecklist 
+                    isWizardOpen={isChecklistWizardOpen}
+                    setIsWizardOpen={setIsChecklistWizardOpen}
+                />
+            </TabsContent>
           </Tabs>
         </div>
 
