@@ -198,7 +198,7 @@ function PageInner() {
                             <div className="mt-6 p-6 bg-green-50 border-2 border-dashed border-green-200 rounded-lg text-center">
                                 <h3 className="text-lg font-semibold text-green-800">Estimación de Costo</h3>
                                 <p className="text-4xl font-bold text-green-600 my-2">{formatCurrency(result.price)}</p>
-                                <Button asChild className="mt-4"><Link href="https://wa.me/524491425323?text=Hola%2C%20me%20gustar%C3%ADa%20agendar%20una%20cita%20con%20la%20cotizaci%C3%B3n%20que%20obtuve.">Agendar por WhatsApp</Link></Button>
+                                <Button asChild className="mt-4"><Link href="https://wa.me/524491425323?text=Vengo%20de%20su%20sitio%20web" target="_blank" rel="noopener noreferrer">Agendar por WhatsApp</Link></Button>
                             </div>
                          </AnimatedDiv>
                        )}

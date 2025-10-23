@@ -36,8 +36,8 @@ export function HeroSection() {
                     </p>
                     <div className="mt-6 space-y-3">
                        <Button size="lg" asChild className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-lg w-full">
-                        <Link href="/cotizar">
-                          Cotizar mi Vehículo
+                        <Link href="#promotions">
+                          Ver Promociones
                         </Link>
                       </Button>
                       <Button size="lg" asChild className="bg-primary hover:bg-primary/90 text-lg w-full">

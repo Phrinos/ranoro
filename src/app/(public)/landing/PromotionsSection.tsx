@@ -10,6 +10,8 @@ import { capitalizeWords } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Icon } from '@iconify/react';
 
+const whatsappUrl = "https://wa.me/524491425323?text=Vengo%20de%20su%20sitio%20web";
+
 export function PromotionsSection() {
     const currentMonthAndYear = capitalizeWords(format(new Date(), "MMMM yyyy", { locale: es }));
 
@@ -61,7 +63,7 @@ export function PromotionsSection() {
                             </CardContent>
                             <div className="p-6 pt-0">
                                 <Button asChild className="w-full">
-                                    <Link href="/cotizar?service=Cambio de Aceite">Cotizar mi Vehículo</Link>
+                                    <Link href={whatsappUrl} target="_blank" rel="noopener noreferrer">Cotizar mi Vehículo</Link>
                                 </Button>
                             </div>
                         </Card>
@@ -99,7 +101,7 @@ export function PromotionsSection() {
                             </CardContent>
                              <div className="p-6 pt-0">
                                 <Button asChild className="w-full">
-                                    <Link href="/cotizar?service=Afinacion Integral">Cotizar mi Vehículo</Link>
+                                    <Link href={whatsappUrl} target="_blank" rel="noopener noreferrer">Cotizar mi Vehículo</Link>
                                 </Button>
                             </div>
                         </Card>
