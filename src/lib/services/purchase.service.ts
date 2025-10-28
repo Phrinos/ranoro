@@ -6,11 +6,11 @@ import {
   writeBatch,
   Timestamp,
   getDoc,
-  updateDoc,
   onSnapshot,
   query,
   orderBy,
-  runTransaction, // Importar runTransaction
+  runTransaction,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
@@ -20,154 +20,231 @@ import { adminService } from './admin.service';
 import { cleanObjectForFirestore } from '../forms';
 import { formatCurrency } from '../utils';
 
-// --- Accounts Payable ---
+// --- Accounts Payable (listener) ---
 const onPayableAccountsUpdate = (callback: (accounts: PayableAccount[]) => void): (() => void) => {
-    if (!db) return () => {};
-    const q = query(collection(db, "payableAccounts"), orderBy("dueDate", "asc"));
-    return onSnapshot(q, (snapshot) => {
-        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PayableAccount)));
-    });
+  if (!db) return () => {};
+  const q = query(collection(db, 'payableAccounts'), orderBy('dueDate', 'asc'));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PayableAccount)));
+  });
 };
 
-
+/**
+ * Registra una compra:
+ * - Actualiza inventario (batch).
+ * - Crea documento de compra en 'purchases'.
+ * - Si es Crédito: crea cuenta por pagar y aumenta deuda del proveedor.
+ * - Si es pago inmediato: registra salida en caja SOLO si paymentMethod === 'Efectivo'.
+ * - Log de auditoría.
+ */
 const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
-  if (!db) throw new Error("Database not initialized.");
+  if (!db) throw new Error('Database not initialized.');
 
   const batch = writeBatch(db);
-  const userString = localStorage.getItem('authUser');
+  const userString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
   const user: User | null = userString ? JSON.parse(userString) : null;
 
-  // 1. Update inventory quantities and unit prices for each item
-  const inventoryUpdateItems = data.items.map(item => ({
+  // 0) Sanitizar y validar mínimos
+  if (!data.items || data.items.length === 0) {
+    throw new Error('La compra debe incluir al menos un artículo.');
+  }
+  if (!data.supplierId) {
+    throw new Error('Falta el proveedor en la compra.');
+  }
+
+  // 1) Actualización de inventario (sumar existencias y actualizar costo unitario)
+  const inventoryUpdateItems = data.items.map((item) => ({
     id: item.inventoryItemId,
     quantity: item.quantity,
     unitPrice: item.purchasePrice,
   }));
+  await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'add');
 
-  if (inventoryUpdateItems.length > 0) {
-    await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'add');
-  }
-
-  // 2. Handle payment and accounting
+  // 2) Datos del proveedor
   const supplierDoc = await inventoryService.getDocById('suppliers', data.supplierId);
-  
+  const supplierName = (supplierDoc as any)?.name || 'N/A';
+  const supplierRef = doc(db, 'suppliers', data.supplierId);
+
+  // 3) Crear documento de compra (para tener ID y referenciar en caja/cxp)
+  const purchaseRef = doc(collection(db, 'purchases'));
+  const purchaseId = purchaseRef.id;
+
+  const purchaseDoc = cleanObjectForFirestore({
+    supplierId: data.supplierId,
+    supplierName,
+    invoiceId: data.invoiceId || `COMPRA-${Date.now()}`,
+    invoiceDate: data.invoiceDate
+      ? Timestamp.fromDate(new Date(data.invoiceDate))
+      : serverTimestamp(),
+    dueDate:
+      data.paymentMethod === 'Crédito' && data.dueDate
+        ? Timestamp.fromDate(new Date(data.dueDate))
+        : null,
+    items: data.items.map((it:any) => ({
+      inventoryItemId: it.inventoryItemId,
+      name: it.itemName,
+      quantity: it.quantity,
+      purchasePrice: it.purchasePrice,
+      unit: it.unit,
+      subtotal: (it.quantity ?? 0) * (it.purchasePrice ?? 0),
+    })),
+    invoiceTotal: data.invoiceTotal,
+    paymentMethod: data.paymentMethod, // 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Crédito' ...
+    status: 'Registrada',
+    paymentStatus: data.paymentMethod === 'Crédito' ? 'Pendiente' : 'Pagado',
+    createdAt: serverTimestamp(),
+    createdBy: {
+      userId: user?.id || 'system',
+      userName: user?.name || 'Sistema',
+    },
+  });
+
+  batch.set(purchaseRef, purchaseDoc);
+
+  // 4) Cuentas por pagar vs pago inmediato
   if (data.paymentMethod === 'Crédito') {
-    // If it's a credit purchase, create a payable account and update supplier debt
+    // 4a) Crea cuenta por pagar y aumenta deuda del proveedor
+    const payableRef = doc(collection(db, 'payableAccounts'));
     const newPayableAccount: Omit<PayableAccount, 'id'> = {
       supplierId: data.supplierId,
-      supplierName: supplierDoc?.name || 'N/A',
-      invoiceId: data.invoiceId || `COMPRA-${Date.now()}`,
-      invoiceDate: new Date().toISOString(),
-      dueDate: data.dueDate!.toISOString(),
+      supplierName,
+      invoiceId: purchaseDoc.invoiceId,
+      invoiceDate: purchaseDoc.invoiceDate ?? serverTimestamp(),
+      dueDate: purchaseDoc.dueDate ?? serverTimestamp(),
       totalAmount: data.invoiceTotal,
       paidAmount: 0,
       status: 'Pendiente',
-    };
-    const payableAccountRef = doc(collection(db, 'payableAccounts'));
-    batch.set(payableAccountRef, cleanObjectForFirestore(newPayableAccount));
-    
-    // Update the supplier's debt amount
-    const supplierRef = doc(db, 'suppliers', data.supplierId);
-    if(supplierDoc){
-        const currentDebt = (supplierDoc as any).debtAmount || 0;
-        batch.update(supplierRef, { debtAmount: currentDebt + data.invoiceTotal });
-    }
+      // Opcional: referencia a la compra
+      purchaseId,
+      createdAt: serverTimestamp(),
+    } as any;
+
+    batch.set(payableRef, cleanObjectForFirestore(newPayableAccount));
+
+    // Actualiza deuda del proveedor
+    const currentDebt = (supplierDoc as any)?.debtAmount || 0;
+    batch.update(supplierRef, { debtAmount: currentDebt + data.invoiceTotal });
   } else {
-    // If it's paid immediately (cash, card, transfer), create a cash drawer expense
-    const transactionConcept = `Compra a ${ supplierDoc?.name || 'Proveedor' } (Factura: ${data.invoiceId || 'N/A'})`;
-    const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
-    batch.set(cashTransactionRef, {
-        date: new Date().toISOString(),
-        type: 'Salida',
-        amount: data.invoiceTotal,
-        concept: transactionConcept,
-        paymentMethod: data.paymentMethod, // Store payment method
-        userId: user?.id || 'system',
-        userName: user?.name || 'Sistema',
-        relatedType: 'Compra',
-        relatedId: data.supplierId
-    });
+    // 4b) Pago inmediato:
+    // Registrar salida de caja SOLO si es efectivo.
+    if (data.paymentMethod === 'Efectivo') {
+      const cashTxRef = doc(collection(db, 'cashDrawerTransactions'));
+      batch.set(
+        cashTxRef,
+        cleanObjectForFirestore({
+          date: serverTimestamp(),
+          type: 'Salida',
+          amount: data.invoiceTotal,
+          concept: `Compra a ${supplierName} (Factura: ${purchaseDoc.invoiceId})`,
+          paymentMethod: data.paymentMethod, // 'Efectivo'
+          userId: user?.id || 'system',
+          userName: user?.name || 'Sistema',
+          relatedType: 'Compra',
+          relatedId: purchaseId, // ahora enlazamos a la compra
+        })
+      );
+    }
+    // NOTA: Si quieres registrar movimientos bancarios para Tarjeta/Transferencia,
+    // crea aquí un documento en 'bankTransactions' o 'payments' según tu modelo.
   }
-  
-  // 3. Log the audit event
-  const description = `Registró compra a ${supplierDoc?.name || 'proveedor'} con factura #${data.invoiceId || 'N/A'} por un total de ${formatCurrency(data.invoiceTotal)}. Método: ${data.paymentMethod}.`;
+
+  // 5) Commit de todo el batch
+  await batch.commit();
+
+  // 6) Auditoría (fuera del batch)
+  const description = `Registró compra a ${supplierName} con factura #${
+    purchaseDoc.invoiceId
+  } por un total de ${formatCurrency(data.invoiceTotal)}. Método: ${data.paymentMethod}.`;
   await adminService.logAudit('Registrar', description, {
     entityType: 'Compra',
-    entityId: data.supplierId,
+    entityId: purchaseId,
     userId: user?.id || 'system',
     userName: user?.name || 'Sistema',
   });
-  
-  // 4. Commit all changes
-  await batch.commit();
 };
 
-
+/**
+ * Paga una cuenta por pagar con atomicidad:
+ * - Actualiza paidAmount/status de la CxP.
+ * - Reduce deuda del proveedor.
+ * - Registra salida en caja SOLO si paymentMethod === 'Efectivo'.
+ * - Log de auditoría (fuera de la transacción).
+ */
 const registerPayableAccountPayment = async (
-    accountId: string, 
-    amount: number, 
-    paymentMethod: PaymentMethod | string, 
-    note: string | undefined, 
-    user: User | null
+  accountId: string,
+  amount: number,
+  paymentMethod: PaymentMethod | string,
+  note: string | undefined,
+  user: User | null
 ): Promise<void> => {
-    if (!db) throw new Error("Database not initialized.");
+  if (!db) throw new Error('Database not initialized.');
 
-    const accountRef = doc(db, 'payableAccounts', accountId);
+  const accountRef = doc(db, 'payableAccounts', accountId);
 
-    // Usamos una transacción para asegurar la atomicidad de las operaciones
-    await runTransaction(db, async (transaction) => {
-        // --- 1. ALL READS FIRST ---
-        const accountSnap = await transaction.get(accountRef);
-        if (!accountSnap.exists()) {
-            throw new Error("La cuenta por pagar no fue encontrada.");
-        }
-        const accountData = accountSnap.data() as PayableAccount;
-        
-        const supplierRef = doc(db, 'suppliers', accountData.supplierId);
-        const supplierSnap = await transaction.get(supplierRef);
-        
-        // --- 2. ALL WRITES AFTER ---
-        const newPaidAmount = (accountData.paidAmount || 0) + amount;
-        const newStatus = (accountData.totalAmount - newPaidAmount) <= 0.01 ? 'Pagado' : 'Pagado Parcialmente';
+  await runTransaction(db, async (transaction) => {
+    // --- 1) LECTURAS ---
+    const accountSnap = await transaction.get(accountRef);
+    if (!accountSnap.exists()) {
+      throw new Error('La cuenta por pagar no fue encontrada.');
+    }
+    const accountData = accountSnap.data() as PayableAccount;
 
-        // Update payable account
-        transaction.update(accountRef, {
-            paidAmount: newPaidAmount,
-            status: newStatus,
-        });
+    const supplierRef = doc(db, 'suppliers', accountData.supplierId);
+    const supplierSnap = await transaction.get(supplierRef);
 
-        // Update supplier's debt
-        if (supplierSnap.exists()) {
-            const currentDebt = (supplierSnap.data() as any).debtAmount || 0;
-            transaction.update(supplierRef, { debtAmount: currentDebt - amount });
-        }
+    // --- 2) ESCRITURAS ---
+    const prevPaid = accountData.paidAmount || 0;
+    const newPaidAmount = prevPaid + amount;
+    const remaining = (accountData.totalAmount || 0) - newPaidAmount;
+    const newStatus = remaining <= 0.01 ? 'Pagado' : 'Pagado Parcialmente';
 
-        // Register cash out if applicable
-        if (paymentMethod === 'Efectivo') {
-            const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
-            transaction.set(cashTransactionRef, {
-                date: new Date().toISOString(),
-                type: 'Salida',
-                amount,
-                concept: `Pago a proveedor: ${accountData.supplierName} (Factura: ${accountData.invoiceId})`,
-                userId: user?.id || 'system',
-                userName: user?.name || 'Sistema',
-                relatedType: 'Compra',
-                relatedId: accountId,
-            });
-        }
+    // Actualiza cuenta por pagar
+    transaction.update(accountRef, {
+      paidAmount: newPaidAmount,
+      status: newStatus,
+      updatedAt: serverTimestamp(),
+      lastPaymentNote: note || null,
+      lastPaymentMethod: paymentMethod,
     });
 
-    // 4. Log de auditoría (fuera de la transacción)
-    const accountData = (await getDoc(accountRef)).data() as PayableAccount;
-    await adminService.logAudit('Pagar', `Registró pago de ${formatCurrency(amount)} a la cuenta de ${accountData.supplierName}.`, { 
-        entityType: 'Cuentas Por Pagar', 
-        entityId: accountId, 
-        userId: user?.id || 'system', 
-        userName: user?.name || 'Sistema' 
-    });
+    // Reduce deuda del proveedor
+    if (supplierSnap.exists()) {
+      const currentDebt = (supplierSnap.data() as any).debtAmount || 0;
+      transaction.update(supplierRef, { debtAmount: currentDebt - amount });
+    }
+
+    // Registra salida en caja si el pago fue en efectivo
+    if (paymentMethod === 'Efectivo') {
+      const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
+      transaction.set(
+        cashTransactionRef,
+        cleanObjectForFirestore({
+          date: serverTimestamp(),
+          type: 'Salida',
+          amount,
+          concept: `Pago a proveedor: ${accountData.supplierName} (Factura: ${accountData.invoiceId})`,
+          userId: user?.id || 'system',
+          userName: user?.name || 'Sistema',
+          relatedType: 'CuentaPorPagar',
+          relatedId: accountId,
+        })
+      );
+    }
+  });
+
+  // Auditoría (fuera de la transacción)
+  const accountData = (await getDoc(accountRef)).data() as PayableAccount;
+  await adminService.logAudit(
+    'Pagar',
+    `Registró pago de ${formatCurrency(amount)} a la cuenta de ${accountData.supplierName}.`,
+    {
+      entityType: 'Cuentas Por Pagar',
+      entityId: accountId,
+      userId: user?.id || 'system',
+      userName: user?.name || 'Sistema',
+    }
+  );
 };
-
 
 export const purchaseService = {
   onPayableAccountsUpdate,
