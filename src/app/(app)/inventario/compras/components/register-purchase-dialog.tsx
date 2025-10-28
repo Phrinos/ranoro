@@ -1,4 +1,4 @@
-
+// src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -44,6 +44,9 @@ const purchaseFormSchema = z
     paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia", "Crédito"]),
     dueDate: z.date().optional(),
     invoiceTotal: z.coerce.number().min(0.01, "El total debe ser mayor a cero."),
+    subtotal: z.coerce.number().optional(),
+    taxes: z.coerce.number().optional(),
+    discounts: z.coerce.number().optional(),
   })
   .refine((data) => (data.paymentMethod === "Crédito" ? !!data.dueDate : true), {
     message: "La fecha de vencimiento es obligatoria para compras a crédito.",
@@ -91,14 +94,20 @@ export function RegisterPurchaseDialog({
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
 
-  // recalcula total
   useEffect(() => {
-    const total = watchedItems.reduce(
-      (sum, i) => sum + Number(i.quantity || 0) * Number(i.purchasePrice || 0),
-      0
-    );
-    setValue("invoiceTotal", total, { shouldValidate: true });
-  }, [watchedItems, setValue]);
+    const subscription = watch((value, { name, type }) => {
+      if (type === 'change' && name && name.startsWith('items')) {
+        const items = value.items || [];
+        const total = items.reduce(
+          (sum: number, i: any) => sum + Number(i.quantity || 0) * Number(i.purchasePrice || 0),
+          0
+        );
+        setValue("invoiceTotal", total, { shouldValidate: true });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, setValue]);
+
 
   const handleAddItem = (item: InventoryItem) => {
     append({

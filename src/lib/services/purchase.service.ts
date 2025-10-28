@@ -73,21 +73,22 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     supplierId: data.supplierId,
     supplierName,
     invoiceId: data.invoiceId || `COMPRA-${Date.now()}`,
-    invoiceDate: data.invoiceDate
-      ? Timestamp.fromDate(new Date(data.invoiceDate))
-      : serverTimestamp(),
+    date: new Date().toISOString(), // Use current date for purchase
     dueDate:
       data.paymentMethod === 'Crédito' && data.dueDate
-        ? Timestamp.fromDate(new Date(data.dueDate))
+        ? data.dueDate.toISOString()
         : null,
     items: data.items.map((it:any) => ({
       inventoryItemId: it.inventoryItemId,
-      name: it.itemName,
+      itemName: it.itemName,
       quantity: it.quantity,
       purchasePrice: it.purchasePrice,
       unit: it.unit,
       subtotal: (it.quantity ?? 0) * (it.purchasePrice ?? 0),
     })),
+    subtotal: data.subtotal,
+    taxes: data.taxes,
+    discounts: data.discounts,
     invoiceTotal: data.invoiceTotal,
     paymentMethod: data.paymentMethod, // 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Crédito' ...
     status: 'Registrada',
@@ -109,8 +110,8 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
       supplierId: data.supplierId,
       supplierName,
       invoiceId: purchaseDoc.invoiceId,
-      invoiceDate: purchaseDoc.invoiceDate ?? serverTimestamp(),
-      dueDate: purchaseDoc.dueDate ?? serverTimestamp(),
+      invoiceDate: purchaseDoc.date,
+      dueDate: purchaseDoc.dueDate ?? purchaseDoc.date,
       totalAmount: data.invoiceTotal,
       paidAmount: 0,
       status: 'Pendiente',
@@ -126,8 +127,9 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     batch.update(supplierRef, { debtAmount: currentDebt + data.invoiceTotal });
   } else {
     // 4b) Pago inmediato:
-    // Registrar salida de caja SOLO si es efectivo.
-    if (data.paymentMethod === 'Efectivo') {
+    // Registrar salida de caja para métodos de pago que representan egreso de efectivo/banco
+    const paymentMethodsForCashOut = ['Efectivo', 'Transferencia', 'Tarjeta'];
+    if (paymentMethodsForCashOut.includes(data.paymentMethod)) {
       const cashTxRef = doc(collection(db, 'cashDrawerTransactions'));
       batch.set(
         cashTxRef,
@@ -136,16 +138,14 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
           type: 'Salida',
           amount: data.invoiceTotal,
           concept: `Compra a ${supplierName} (Factura: ${purchaseDoc.invoiceId})`,
-          paymentMethod: data.paymentMethod, // 'Efectivo'
+          paymentMethod: data.paymentMethod,
           userId: user?.id || 'system',
           userName: user?.name || 'Sistema',
           relatedType: 'Compra',
-          relatedId: purchaseId, // ahora enlazamos a la compra
+          relatedId: purchaseId,
         })
       );
     }
-    // NOTA: Si quieres registrar movimientos bancarios para Tarjeta/Transferencia,
-    // crea aquí un documento en 'bankTransactions' o 'payments' según tu modelo.
   }
 
   // 5) Commit de todo el batch
