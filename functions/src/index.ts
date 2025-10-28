@@ -1,51 +1,88 @@
 // functions/src/index.ts
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
-import { onSchedule } from "firebase-functions/v2/scheduler";
-import * as logger from "firebase-functions/logger";
-import * as admin from "firebase-admin";
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import * as logger from 'firebase-functions/logger';
+import * as admin from 'firebase-admin';
+import { startOfDay, endOfDay } from 'date-fns';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { onStockExit, onPurchaseCreated, onPurchaseUpdated, adjustStock } from './inventory';
 
 // Initialize Firebase Admin SDK - THIS SHOULD BE DONE ONLY ONCE
 if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 
-// Import custom functions and scripts
-// import { runDataUnification } from "./migration";
-// export { runDataUnification };
+const db = admin.firestore();
+const TZ = 'America/Mexico_City';
 
-// This is a sample function from the Firebase Quickstart
-//
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// --- Daily Rental Charges Generation (fixed) ---
+export const generateDailyRentalCharges = onSchedule(
+  {
+    schedule: '0 15 * * *', // Runs at 15:00 (3:00 PM) Mexico City time
+    timeZone: TZ,
+  },
+  async () => {
+    logger.info('Starting daily rental charge generation...');
 
-// Scheduled function to clean up old data, for example
-export const scheduledCleanup = onSchedule("every 24 hours", async (event) => {
-  logger.info("Running scheduled cleanup job");
-  // Add your cleanup logic here, e.g., deleting old records
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 30); // 30 days ago
+    const nowUtc = new Date();
+    const nowZoned = toZonedTime(nowUtc, TZ);
+    const dayStartUtc = startOfDay(nowZoned);
+    const dayEndUtc = endOfDay(nowZoned);
+    const dateKey = formatInTimeZone(nowZoned, TZ, 'yyyy-MM-dd');
 
-  const oldRecords = await admin
-    .firestore()
-    .collection("someCollection")
-    .where("timestamp", "<", cutoff)
-    .get();
+    const activeDriversSnap = await db
+      .collection('drivers')
+      .where('isArchived', '==', false)
+      .where('assignedVehicleId', '!=', null)
+      .get();
 
-  const batch = admin.firestore().batch();
-  oldRecords.forEach((doc) => {
-    batch.delete(doc.ref);
-  });
-  await batch.commit();
+    if (activeDriversSnap.empty) {
+      logger.info('No active drivers with assigned vehicles found.');
+      return;
+    }
 
-  logger.log("Cleanup finished.");
-});
+    const ops = activeDriversSnap.docs.map(async (driverDoc) => {
+      const driver = driverDoc.data() as any;
+      const vehicleId = driver.assignedVehicleId as string | undefined;
+      if (!vehicleId) return;
+
+      const vehicleDoc = await db.collection('vehicles').doc(vehicleId).get();
+      const vehicle = vehicleDoc.data() as any;
+
+      const dailyRentalCost = vehicle?.dailyRentalCost;
+      if (!vehicleDoc.exists || !dailyRentalCost) {
+        logger.warn(`Vehicle ${vehicleId} for driver ${driver.name} not found or has no daily rental cost.`);
+        return;
+      }
+
+      const chargeId = `${driverDoc.id}_${dateKey}`;
+      const chargeRef = db.collection('dailyRentalCharges').doc(chargeId);
+
+      try {
+        await chargeRef.create({
+          driverId: driverDoc.id,
+          vehicleId,
+          amount: dailyRentalCost,
+          vehicleLicensePlate: vehicle?.licensePlate || '',
+          date: Timestamp.fromDate(nowUtc),
+          dateKey,
+          dayStartUtc: Timestamp.fromDate(dayStartUtc),
+          dayEndUtc: Timestamp.fromDate(dayEndUtc),
+        });
+        logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
+      } catch (err: any) {
+        if (err?.code === 6 || err?.code === 'ALREADY_EXISTS') {
+          logger.info(`Charge already exists for ${driver.name} (${dateKey}).`);
+        } else {
+          logger.error(`Failed to create charge for ${driver.name}:`, err);
+        }
+      }
+    });
+
+    await Promise.all(ops);
+    logger.info('Daily rental charge generation finished successfully.');
+  }
+);
+
+
+// --- Inventory Functions ---
+export { onStockExit, onPurchaseCreated, onPurchaseUpdated, adjustStock };
