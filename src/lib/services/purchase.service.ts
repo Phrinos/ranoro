@@ -48,9 +48,11 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'add');
   }
 
-  // 2. If it's a credit purchase, create or update a payable account
+  // 2. Handle payment and accounting
+  const supplierDoc = await inventoryService.getDocById('suppliers', data.supplierId);
+  
   if (data.paymentMethod === 'Crédito') {
-    const supplierDoc = await inventoryService.getDocById('suppliers', data.supplierId);
+    // If it's a credit purchase, create a payable account and update supplier debt
     const newPayableAccount: Omit<PayableAccount, 'id'> = {
       supplierId: data.supplierId,
       supplierName: supplierDoc?.name || 'N/A',
@@ -64,16 +66,14 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     const payableAccountRef = doc(collection(db, 'payableAccounts'));
     batch.set(payableAccountRef, cleanObjectForFirestore(newPayableAccount));
     
-     // 3. Update the supplier's debt amount
+    // Update the supplier's debt amount
     const supplierRef = doc(db, 'suppliers', data.supplierId);
     if(supplierDoc){
         const currentDebt = (supplierDoc as any).debtAmount || 0;
         batch.update(supplierRef, { debtAmount: currentDebt + data.invoiceTotal });
     }
-
   } else {
-    // If it's a cash/card/transfer purchase, it's considered an expense from cash drawer
-    const supplierDoc = await inventoryService.getDocById('suppliers', data.supplierId);
+    // If it's paid immediately (cash, card, transfer), create a cash drawer expense
     const transactionConcept = `Compra a ${ supplierDoc?.name || 'Proveedor' } (Factura: ${data.invoiceId || 'N/A'})`;
     const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
     batch.set(cashTransactionRef, {
@@ -81,6 +81,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
         type: 'Salida',
         amount: data.invoiceTotal,
         concept: transactionConcept,
+        paymentMethod: data.paymentMethod, // Store payment method
         userId: user?.id || 'system',
         userName: user?.name || 'Sistema',
         relatedType: 'Compra',
@@ -88,8 +89,8 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     });
   }
   
-  // Log the audit event
-  const description = `Registró compra al proveedor con factura #${data.invoiceId || 'N/A'} por un total de ${formatCurrency(data.invoiceTotal)}.`;
+  // 3. Log the audit event
+  const description = `Registró compra a ${supplierDoc?.name || 'proveedor'} con factura #${data.invoiceId || 'N/A'} por un total de ${formatCurrency(data.invoiceTotal)}. Método: ${data.paymentMethod}.`;
   await adminService.logAudit('Registrar', description, {
     entityType: 'Compra',
     entityId: data.supplierId,
@@ -97,6 +98,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     userName: user?.name || 'Sistema',
   });
   
+  // 4. Commit all changes
   await batch.commit();
 };
 
