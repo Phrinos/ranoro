@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -43,7 +44,7 @@ const purchaseFormSchema = z
     items: z.array(purchaseItemSchema).min(1, "Debe añadir al menos un artículo a la compra."),
     paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia", "Crédito"]),
     dueDate: z.date().optional(),
-    invoiceTotal: z.coerce.number().min(0.01, "El total debe ser mayor a cero."),
+    invoiceTotal: z.coerce.number().min(0.01, "El total debe ser mayor a cero.").optional(),
     subtotal: z.coerce.number().optional(),
     taxes: z.coerce.number().optional(),
     discounts: z.coerce.number().optional(),

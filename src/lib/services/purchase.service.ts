@@ -43,7 +43,7 @@ const isCredit = (m: string | PaymentMethod) => String(m).toLowerCase() === 'cr�
  * - Actualiza inventario (batch).
  * - Crea documento de compra en 'purchases'.
  * - Si es Crédito: crea cuenta por pagar (vinculada) y aumenta deuda del proveedor.
- * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo' (vinculada).
+ * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo'.
  * - Log de auditoría.
  */
 const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
@@ -98,22 +98,21 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     supplierId: data.supplierId,
     supplierName,
     invoiceId: data.invoiceId || `COMPRA-${Date.now()}`,
-    invoiceDate: data.invoiceDate ? Timestamp.fromDate(new Date(data.invoiceDate)) : serverTimestamp(),
+    date: serverTimestamp(),
     dueDate: isCredit(data.paymentMethod) && data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
     items: data.items.map((it:any) => ({
       inventoryItemId: it.inventoryItemId,
       itemName: it.itemName,
       quantity: it.quantity,
       purchasePrice: asMoney(it.purchasePrice),
-      unit: it.unit,
       subtotal: asMoney((it.quantity ?? 0) * (asMoney(it.purchasePrice) ?? 0)),
     })),
     subtotal,
     taxes,
     discounts,
-    invoiceTotal,
+    totalAmount: invoiceTotal,
     paymentMethod: data.paymentMethod, // 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Crédito' ...
-    status: 'Registrada',
+    status: 'completado', // Las compras siempre entran como completado a nivel de stock
     paymentStatus: isCredit(data.paymentMethod) ? 'Pendiente' : 'Pagado',
     // vínculos
     payableAccountId,
@@ -133,7 +132,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
       supplierId: data.supplierId,
       supplierName,
       invoiceId: purchaseDoc.invoiceId,
-      invoiceDate: purchaseDoc.invoiceDate ?? serverTimestamp(),
+      invoiceDate: (purchaseDoc as any).date ?? serverTimestamp(),
       dueDate: purchaseDoc.dueDate ?? serverTimestamp(),
       totalAmount: invoiceTotal,
       paidAmount: 0,
