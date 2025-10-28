@@ -29,12 +29,21 @@ const onPayableAccountsUpdate = (callback: (accounts: PayableAccount[]) => void)
   });
 };
 
+// Helpers
+const asMoney = (v: unknown): number => {
+  const n = typeof v === 'string' ? parseFloat(v) : (typeof v === 'number' ? v : 0);
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+};
+
+const isCash = (m: string | PaymentMethod) => String(m).toLowerCase() === 'efectivo';
+const isCredit = (m: string | PaymentMethod) => String(m).toLowerCase() === 'crédito' || String(m).toLowerCase() === 'credito';
+
 /**
  * Registra una compra:
  * - Actualiza inventario (batch).
  * - Crea documento de compra en 'purchases'.
- * - Si es Crédito: crea cuenta por pagar y aumenta deuda del proveedor.
- * - Si es pago inmediato: registra salida en caja SOLO si paymentMethod === 'Efectivo'.
+ * - Si es Crédito: crea cuenta por pagar (vinculada) y aumenta deuda del proveedor.
+ * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo' (vinculada).
  * - Log de auditoría.
  */
 const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
@@ -44,117 +53,124 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   const userString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
   const user: User | null = userString ? JSON.parse(userString) : null;
 
-  // 0) Sanitizar y validar mínimos
+  // --- Validaciones mínimas
   if (!data.items || data.items.length === 0) {
     throw new Error('La compra debe incluir al menos un artículo.');
   }
   if (!data.supplierId) {
     throw new Error('Falta el proveedor en la compra.');
   }
+  if (isCredit(data.paymentMethod) && !data.dueDate) {
+    throw new Error('Para compras a crédito, debes indicar la fecha de vencimiento (dueDate).');
+  }
 
-  // 1) Actualización de inventario (sumar existencias y actualizar costo unitario)
+  // Normalización de importes
+  const invoiceTotal = asMoney(data.invoiceTotal);
+  const subtotal = data.subtotal != null ? asMoney(data.subtotal) : undefined;
+  const taxes = data.taxes != null ? asMoney(data.taxes) : undefined;
+  const discounts = data.discounts != null ? asMoney(data.discounts) : undefined;
+
+  // --- 1) Actualización de inventario (sumar existencias y actualizar costo unitario)
   const inventoryUpdateItems = data.items.map((item) => ({
     id: item.inventoryItemId,
     quantity: item.quantity,
-    unitPrice: item.purchasePrice,
+    unitPrice: asMoney(item.purchasePrice),
   }));
   await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'add');
 
-  // 2) Datos del proveedor
+  // --- 2) Datos del proveedor
   const supplierDoc = await inventoryService.getDocById('suppliers', data.supplierId);
   const supplierName = (supplierDoc as any)?.name || 'N/A';
   const supplierRef = doc(db, 'suppliers', data.supplierId);
 
-  // 3) Crear documento de compra (para tener ID y referenciar en caja/cxp)
+  // --- 3) IDs relacionados que usaremos en ambos sentidos
   const purchaseRef = doc(collection(db, 'purchases'));
   const purchaseId = purchaseRef.id;
 
+  const payableRef = isCredit(data.paymentMethod) ? doc(collection(db, 'payableAccounts')) : null;
+  const payableAccountId = payableRef?.id ?? null;
+
+  const cashTxRef = isCash(data.paymentMethod) ? doc(collection(db, 'cashDrawerTransactions')) : null;
+  const cashTransactionId = cashTxRef?.id ?? null;
+
+  // --- 4) Documento de compra
   const purchaseDoc = cleanObjectForFirestore({
     supplierId: data.supplierId,
     supplierName,
     invoiceId: data.invoiceId || `COMPRA-${Date.now()}`,
-    date: new Date().toISOString(), // Use current date for purchase
-    dueDate:
-      data.paymentMethod === 'Crédito' && data.dueDate
-        ? data.dueDate.toISOString()
-        : null,
+    invoiceDate: data.invoiceDate ? Timestamp.fromDate(new Date(data.invoiceDate)) : serverTimestamp(),
+    dueDate: isCredit(data.paymentMethod) && data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
     items: data.items.map((it:any) => ({
       inventoryItemId: it.inventoryItemId,
       itemName: it.itemName,
       quantity: it.quantity,
-      purchasePrice: it.purchasePrice,
+      purchasePrice: asMoney(it.purchasePrice),
       unit: it.unit,
-      subtotal: (it.quantity ?? 0) * (it.purchasePrice ?? 0),
+      subtotal: asMoney((it.quantity ?? 0) * (asMoney(it.purchasePrice) ?? 0)),
     })),
-    subtotal: data.subtotal,
-    taxes: data.taxes,
-    discounts: data.discounts,
-    invoiceTotal: data.invoiceTotal,
+    subtotal,
+    taxes,
+    discounts,
+    invoiceTotal,
     paymentMethod: data.paymentMethod, // 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Crédito' ...
     status: 'Registrada',
-    paymentStatus: data.paymentMethod === 'Crédito' ? 'Pendiente' : 'Pagado',
+    paymentStatus: isCredit(data.paymentMethod) ? 'Pendiente' : 'Pagado',
+    // vínculos
+    payableAccountId,
+    cashTransactionId,
     createdAt: serverTimestamp(),
     createdBy: {
       userId: user?.id || 'system',
       userName: user?.name || 'Sistema',
     },
   });
-
   batch.set(purchaseRef, purchaseDoc);
 
-  // 4) Cuentas por pagar vs pago inmediato
-  if (data.paymentMethod === 'Crédito') {
-    // 4a) Crea cuenta por pagar y aumenta deuda del proveedor
-    const payableRef = doc(collection(db, 'payableAccounts'));
+  // --- 5) Cuentas por pagar vs pago inmediato
+  if (isCredit(data.paymentMethod) && payableRef) {
+    // 5a) Crea cuenta por pagar y aumenta deuda del proveedor (merge para no fallar si no existe)
     const newPayableAccount: Omit<PayableAccount, 'id'> = {
       supplierId: data.supplierId,
       supplierName,
       invoiceId: purchaseDoc.invoiceId,
-      invoiceDate: purchaseDoc.date,
-      dueDate: purchaseDoc.dueDate ?? purchaseDoc.date,
-      totalAmount: data.invoiceTotal,
+      invoiceDate: purchaseDoc.invoiceDate ?? serverTimestamp(),
+      dueDate: purchaseDoc.dueDate ?? serverTimestamp(),
+      totalAmount: invoiceTotal,
       paidAmount: 0,
       status: 'Pendiente',
-      // Opcional: referencia a la compra
       purchaseId,
       createdAt: serverTimestamp(),
     } as any;
 
     batch.set(payableRef, cleanObjectForFirestore(newPayableAccount));
-
-    // Actualiza deuda del proveedor
     const currentDebt = (supplierDoc as any)?.debtAmount || 0;
-    batch.update(supplierRef, { debtAmount: currentDebt + data.invoiceTotal });
-  } else {
-    // 4b) Pago inmediato:
-    // Registrar salida de caja para métodos de pago que representan egreso de efectivo/banco
-    const paymentMethodsForCashOut = ['Efectivo', 'Transferencia', 'Tarjeta'];
-    if (paymentMethodsForCashOut.includes(data.paymentMethod)) {
-      const cashTxRef = doc(collection(db, 'cashDrawerTransactions'));
-      batch.set(
-        cashTxRef,
-        cleanObjectForFirestore({
-          date: serverTimestamp(),
-          type: 'Salida',
-          amount: data.invoiceTotal,
-          concept: `Compra a ${supplierName} (Factura: ${purchaseDoc.invoiceId})`,
-          paymentMethod: data.paymentMethod,
-          userId: user?.id || 'system',
-          userName: user?.name || 'Sistema',
-          relatedType: 'Compra',
-          relatedId: purchaseId,
-        })
-      );
-    }
+    batch.set(supplierRef, { debtAmount: asMoney(currentDebt + invoiceTotal) }, { merge: true });
+  } else if (isCash(data.paymentMethod) && cashTxRef) {
+    // 5b) Pago inmediato en efectivo: salida en caja
+    batch.set(
+      cashTxRef,
+      cleanObjectForFirestore({
+        date: serverTimestamp(),
+        type: 'Salida',
+        amount: invoiceTotal,
+        concept: `Compra a ${supplierName} (Factura: ${purchaseDoc.invoiceId})`,
+        paymentMethod: 'Efectivo',
+        userId: user?.id || 'system',
+        userName: user?.name || 'Sistema',
+        relatedType: 'Compra',
+        relatedId: purchaseId,
+      })
+    );
   }
+  // Si quieres registrar tarjeta/transferencia en banco, crea aquí el doc en 'bankTransactions'.
 
-  // 5) Commit de todo el batch
+  // --- 6) Commit de todo el batch
   await batch.commit();
 
-  // 6) Auditoría (fuera del batch)
-  const description = `Registró compra a ${supplierName} con factura #${
-    purchaseDoc.invoiceId
-  } por un total de ${formatCurrency(data.invoiceTotal)}. Método: ${data.paymentMethod}.`;
+  // --- 7) Auditoría (fuera del batch)
+  const description = `Registró compra a ${supplierName} con factura #${purchaseDoc.invoiceId} por un total de ${formatCurrency(
+    invoiceTotal
+  )}. Método: ${data.paymentMethod}.`;
   await adminService.logAudit('Registrar', description, {
     entityType: 'Compra',
     entityId: purchaseId,
@@ -193,9 +209,10 @@ const registerPayableAccountPayment = async (
     const supplierSnap = await transaction.get(supplierRef);
 
     // --- 2) ESCRITURAS ---
+    const payAmount = asMoney(amount);
     const prevPaid = accountData.paidAmount || 0;
-    const newPaidAmount = prevPaid + amount;
-    const remaining = (accountData.totalAmount || 0) - newPaidAmount;
+    const newPaidAmount = asMoney(prevPaid + payAmount);
+    const remaining = asMoney((accountData.totalAmount || 0) - newPaidAmount);
     const newStatus = remaining <= 0.01 ? 'Pagado' : 'Pagado Parcialmente';
 
     // Actualiza cuenta por pagar
@@ -207,21 +224,21 @@ const registerPayableAccountPayment = async (
       lastPaymentMethod: paymentMethod,
     });
 
-    // Reduce deuda del proveedor
+    // Reduce deuda del proveedor (merge implícito por update)
     if (supplierSnap.exists()) {
-      const currentDebt = (supplierSnap.data() as any).debtAmount || 0;
-      transaction.update(supplierRef, { debtAmount: currentDebt - amount });
+      const currentDebt = asMoney((supplierSnap.data() as any).debtAmount || 0);
+      transaction.update(supplierRef, { debtAmount: asMoney(currentDebt - payAmount) });
     }
 
     // Registra salida en caja si el pago fue en efectivo
-    if (paymentMethod === 'Efectivo') {
+    if (isCash(paymentMethod)) {
       const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
       transaction.set(
         cashTransactionRef,
         cleanObjectForFirestore({
           date: serverTimestamp(),
           type: 'Salida',
-          amount,
+          amount: payAmount,
           concept: `Pago a proveedor: ${accountData.supplierName} (Factura: ${accountData.invoiceId})`,
           userId: user?.id || 'system',
           userName: user?.name || 'Sistema',
@@ -236,7 +253,7 @@ const registerPayableAccountPayment = async (
   const accountData = (await getDoc(accountRef)).data() as PayableAccount;
   await adminService.logAudit(
     'Pagar',
-    `Registró pago de ${formatCurrency(amount)} a la cuenta de ${accountData.supplierName}.`,
+    `Registró pago de ${formatCurrency(asMoney(amount))} a la cuenta de ${accountData.supplierName}.`,
     {
       entityType: 'Cuentas Por Pagar',
       entityId: accountId,
