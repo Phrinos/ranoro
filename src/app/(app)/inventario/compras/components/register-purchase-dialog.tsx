@@ -1,8 +1,9 @@
+
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { useForm, FormProvider, useFieldArray, type Resolver } from "react-hook-form";
+import { useForm, FormProvider, useFieldArray, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -44,7 +45,7 @@ const purchaseFormSchema = z
     items: z.array(purchaseItemSchema).min(1, "Debe añadir al menos un artículo a la compra."),
     paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia", "Crédito"]),
     dueDate: z.date().optional(),
-    invoiceTotal: z.coerce.number().min(0.01, "El total debe ser mayor a cero.").optional(),
+    invoiceTotal: z.coerce.number().nonnegative("El total no puede ser negativo.").optional(),
     subtotal: z.coerce.number().optional(),
     taxes: z.coerce.number().optional(),
     discounts: z.coerce.number().optional(),
@@ -81,34 +82,31 @@ export function RegisterPurchaseDialog({
       supplierId: "",
       items: [],
       paymentMethod: "Efectivo",
-      invoiceTotal: 0,
     },
-    mode: "onChange",
+    mode: "onBlur",
   });
 
   const { control, handleSubmit, watch, setValue, getValues } = form;
   const { fields, append, remove } = useFieldArray({ control, name: "items" as const });
   const paymentMethod = watch("paymentMethod");
+  const itemsWatch = useWatch({ control, name: "items" });
 
   const [isItemSearchOpen, setIsItemSearchOpen] = useState(false);
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
 
-  // Recalcular total al cambiar items
   useEffect(() => {
-    const subscription = watch((value, { name, type }) => {
-      if (type === "change" && name && name.startsWith("items")) {
-        const items = value.items || [];
-        const total = items.reduce(
-          (sum: number, i: any) =>
-            sum + (Number(i.quantity || 0) * Number(i.purchasePrice || 0)),
-          0
-        );
-        setValue("invoiceTotal", Number.isFinite(total) ? total : 0, { shouldValidate: true });
-      }
+    const total = (itemsWatch ?? []).reduce((sum, i) => {
+      const qty = Number(i?.quantity) || 0;
+      const unit = Number(i?.purchasePrice) || 0;
+      return sum + qty * unit;
+    }, 0);
+  
+    setValue("invoiceTotal", Number.isFinite(total) ? total : 0, {
+      shouldDirty: true,
+      shouldValidate: false,
     });
-    return () => subscription.unsubscribe();
-  }, [watch, setValue]);
+  }, [itemsWatch, setValue]);
 
   const handleAddItem = (item: InventoryItem) => {
     const price = Number(item.unitPrice || 0);
@@ -146,7 +144,7 @@ export function RegisterPurchaseDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl p-0">
+        <DialogContent className="max-w-3xl p-0">
           <DialogHeader className="border-b p-6 pb-4 bg-white">
             <DialogTitle>Registrar Nueva Compra</DialogTitle>
             <DialogDescription>
@@ -203,10 +201,11 @@ export function RegisterPurchaseDialog({
                     <FormLabel>Artículos Comprados</FormLabel>
                     <div className="mt-2 space-y-2 rounded-md border bg-card p-4">
                       {fields.length > 0 && (
-                        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground pr-10">
-                          <span className="flex-1">Artículo</span>
-                          <span className="w-24 text-center">Cantidad</span>
-                          <span className="w-28 text-right">Costo Unitario</span>
+                        <div className="hidden sm:grid sm:grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground pr-10">
+                          <span className="sm:col-span-5">Artículo</span>
+                          <span className="sm:col-span-3 text-center">Cantidad</span>
+                          <span className="sm:col-span-2 text-right">Costo Unitario</span>
+                          <span className="sm:col-span-2 text-right">Costo Total</span>
                         </div>
                       )}
                       <ScrollArea className="max-h-48 pr-3">
@@ -214,16 +213,18 @@ export function RegisterPurchaseDialog({
                           {fields.map((field, index) => {
                              const itemValues = watch(`items.${index}`);
                              const qty = Number(itemValues?.quantity || 1);
+                             const unitPrice = Number(itemValues?.purchasePrice || 0);
+                             const lineTotal = qty * unitPrice;
                             return (
-                            <div key={field.id} className="flex items-center gap-2">
+                            <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
                               <span
-                                className="flex-1 truncate text-sm font-medium"
+                                className="col-span-12 sm:col-span-5 truncate text-sm font-medium"
                                 title={(field as any).itemName}
                               >
                                 {(field as any).itemName}
                               </span>
 
-                              <div className="flex items-center gap-1">
+                              <div className="col-span-6 sm:col-span-3 flex items-center gap-1">
                                 <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(index, qty - 1)} disabled={qty <= 1}>
                                     <Minus className="h-4 w-4"/>
                                 </Button>
@@ -249,34 +250,43 @@ export function RegisterPurchaseDialog({
                                 </Button>
                               </div>
 
-                              <FormField
-                                control={control}
-                                name={`items.${index}.purchasePrice`}
-                                render={({ field }) => (
-                                  <div className="relative">
-                                    <DollarSign className="text-muted-foreground absolute left-2.5 top-1.5 h-4 w-4" />
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      inputMode="decimal"
-                                      className="h-8 w-28 pl-8 text-right bg-white"
-                                      {...field}
-                                      value={field.value ?? ""}
-                                      onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
-                                    />
-                                  </div>
-                                )}
-                              />
+                              <div className="col-span-3 sm:col-span-2">
+                                <FormField
+                                  control={control}
+                                  name={`items.${index}.purchasePrice`}
+                                  render={({ field }) => (
+                                    <div className="relative">
+                                      <DollarSign className="text-muted-foreground absolute left-2.5 top-1.5 h-4 w-4" />
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        inputMode="decimal"
+                                        className="h-8 pl-8 text-right bg-white"
+                                        {...field}
+                                        value={field.value ?? ""}
+                                        onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
+                                      />
+                                    </div>
+                                  )}
+                                />
+                              </div>
 
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => remove(index)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                              <div className="col-span-2 sm:col-span-2 text-right font-semibold">
+                                  {formatCurrency(lineTotal)}
+                              </div>
+                              
+                              <div className="col-span-1 text-right">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => remove(index)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                              </div>
+
                             </div>
                           )})}
                         </div>
@@ -493,3 +503,4 @@ function SearchItemDialog({
     </Dialog>
   );
 }
+
