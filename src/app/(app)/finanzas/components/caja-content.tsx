@@ -131,58 +131,8 @@ export default function CajaContent() {
     const inRange = (d: Date | null) => d && isValid(d) && isWithinInterval(d, { start: range.from, end: range.to });
 
     const allRows: FlowRow[] = [];
-
-    // Pagos de servicios (solo efectivo)
-    allServices.forEach(s => {
-      if ((s as any).status === 'Cancelado' || (s as any).status === 'Cotizacion') return;
-      const pays = (s as any).payments as Payment[] | undefined;
-      if (!Array.isArray(pays)) return;
-      
-      pays.forEach((p, idx) => {
-        if (p?.method !== 'Efectivo' || typeof p.amount !== 'number') return;
-        const d = getPaymentDate(p) || toJsDate((s as any).deliveryDateTime) || toJsDate((s as any).serviceDate);
-        if (!inRange(d)) return;
-        
-        allRows.push({
-          id: `${s.id}-svc-cash-${idx}`,
-          date: d,
-          type: 'Entrada',
-          source: 'Servicio',
-          refId: s.id,
-          user: getAdvisorForService(s),
-          description: `Pago efectivo (Servicio #${(s.folio || s.id).slice(-6)})`,
-          amount: Math.abs(p.amount),
-          method: p.method,
-        });
-      });
-    });
-
-    // Pagos de ventas (solo efectivo)
-    allSales.forEach(s => {
-      if ((s as any).status === 'Cancelado') return;
-      const pays = (s as any).payments as Payment[] | undefined;
-      if (!Array.isArray(pays)) return;
-      
-      pays.forEach((p, idx) => {
-        if (p?.method !== 'Efectivo' || typeof p.amount !== 'number') return;
-        const d = getPaymentDate(p) || toJsDate((s as any).saleDate);
-        if (!inRange(d)) return;
-        
-        allRows.push({
-          id: `${s.id}-sale-cash-${idx}`,
-          date: d,
-          type: 'Entrada',
-          source: 'Venta',
-          refId: s.id,
-          user: s.customerName || 'Cliente Mostrador',
-          description: `Pago efectivo (Venta #${s.id.slice(-6)})`,
-          amount: Math.abs(p.amount),
-          method: p.method,
-        });
-      });
-    });
     
-    // Todos los movimientos del libro de caja
+    // Todos los movimientos del libro de caja (efectivo y otros)
     cashTransactions.forEach(t => {
       const d = toJsDate((t as any).date);
       if (!inRange(d)) return;
@@ -197,7 +147,7 @@ export default function CajaContent() {
         user: t.userName || (t as any).user || 'Sistema',
         description: t.concept || (t as any).description || '',
         amount: Math.abs(t.amount || 0),
-        method: (t as any).paymentMethod,
+        method: t.paymentMethod,
       });
     });
 
@@ -219,17 +169,11 @@ export default function CajaContent() {
       const cmp = String(valA).localeCompare(String(valB), 'es', { numeric: true });
       return direction === 'asc' ? cmp : -cmp;
     });
-  }, [allSales, allServices, cashTransactions, range, sortOption]);
+  }, [cashTransactions, range, sortOption]);
 
   const { periodKPIs, currentBalance } = useMemo(() => {
-    // Calculos del periodo seleccionado
     const incomeInPeriod = flowRows.filter(r => r.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
     const outcomeInPeriod = flowRows.filter(r => r.type === 'Salida').reduce((s, r) => s + r.amount, 0);
-
-    // Balance global actual (incluye todos los movimientos en efectivo)
-    const allCashIncome = [...allServices, ...allSales].flatMap((op: any) => op.payments ?? [])
-        .filter((p: any) => p?.method === 'Efectivo' && p.amount > 0)
-        .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
 
     const allManualCashFlow = cashTransactions
         .filter(t => t.paymentMethod === 'Efectivo');
@@ -242,7 +186,7 @@ export default function CajaContent() {
         .filter(t => t.type === 'Salida')
         .reduce((s, r) => s + (r as any).amount, 0);
         
-    const currentTotalBalance = (allCashIncome + allManualCashIncome) - allManualCashOutcome;
+    const currentTotalBalance = allManualCashIncome - allManualCashOutcome;
 
     return {
       periodKPIs: {
@@ -252,14 +196,17 @@ export default function CajaContent() {
       },
       currentBalance: currentTotalBalance,
     };
-  }, [flowRows, allServices, allSales, cashTransactions]);
+  }, [flowRows, cashTransactions]);
 
 
   // abrir ref
   const openRef = (row: FlowRow) => {
-    if (row.source === 'Venta' && row.refId) window.open(`/pos?saleId=${row.refId}`, '_blank');
-    if (row.source === 'Servicio' && row.refId) window.open(`/servicios/${row.refId}`, '_blank');
-    // Para compras (Libro -> relatedType: 'Compra') no hay navegación aún
+    if ((row.relatedType === 'Venta' || row.source === 'Venta') && row.refId) {
+      window.open(`/pos?saleId=${row.refId}`, '_blank');
+    }
+    if ((row.relatedType === 'Servicio' || row.source === 'Servicio') && row.refId) {
+      window.open(`/servicios/${row.refId}`, '_blank');
+    }
   };
 
   // presets
@@ -393,7 +340,7 @@ export default function CajaContent() {
                 {flowRows.length > 0 ? (
                   flowRows.map((r) => {
                     const Icon = r.method ? methodIcon[r.method] : undefined;
-                    const clickable = (r.source === 'Venta' || r.source === 'Servicio') && r.refId;
+                    const clickable = (r.relatedType === 'Venta' || r.relatedType === 'Servicio') && r.refId;
                     return (
                       <TableRow key={r.id} onClick={() => clickable && openRef(r)} className={clickable ? "cursor-pointer hover:bg-muted/50" : ""}>
                         <TableCell>{r.date && isValid(r.date) ? format(r.date, "dd MMM, HH:mm", { locale: es }) : 'N/A'}</TableCell>
@@ -403,8 +350,8 @@ export default function CajaContent() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={r.source === 'Venta' ? 'secondary' : r.source === 'Servicio' ? 'outline' : 'default'}>
-                            {r.source === 'Libro' ? (r.relatedType || 'Libro') : r.source}
+                          <Badge variant={r.relatedType === 'Venta' ? 'secondary' : r.relatedType === 'Servicio' ? 'outline' : 'default'}>
+                            {r.relatedType || r.source}
                           </Badge>
                         </TableCell>
                         <TableCell className="font-mono text-xs">{r.refId ? String(r.refId).slice(-6) : '—'}</TableCell>
