@@ -1,3 +1,4 @@
+
 // src/lib/services/purchase.service.ts
 
 import {
@@ -14,11 +15,22 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
-import type { User, PayableAccount, PaymentMethod } from '@/types';
+import type { User, PayableAccount, PaymentMethod, SaleReceipt } from '@/types';
 import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
 import { cleanObjectForFirestore } from '../forms';
 import { formatCurrency } from '../utils';
+
+// --- Listener para compras ---
+const onPurchasesUpdate = (callback: (purchases: SaleReceipt[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, 'purchases'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as SaleReceipt)));
+    }, (error) => {
+        console.error("Error listening to purchases:", error);
+    });
+};
 
 // --- Accounts Payable (listener) ---
 const onPayableAccountsUpdate = (callback: (accounts: PayableAccount[]) => void): (() => void) => {
@@ -43,7 +55,7 @@ const isCredit = (m: string | PaymentMethod) => String(m).toLowerCase() === 'cr�
  * - Actualiza inventario (batch).
  * - Crea documento de compra en 'purchases'.
  * - Si es Crédito: crea cuenta por pagar (vinculada) y aumenta deuda del proveedor.
- * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo' (vinculada).
+ * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo'.
  * - Log de auditoría.
  */
 const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
@@ -111,10 +123,9 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     taxes,
     discounts,
     invoiceTotal,
-    paymentMethod: data.paymentMethod, // 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Crédito' ...
-    status: 'completado', // <--- Se guarda como 'completado'
+    paymentMethod: data.paymentMethod, 
+    status: 'Completado', // Estado corregido
     paymentStatus: isCredit(data.paymentMethod) ? 'Pendiente' : 'Pagado',
-    // vínculos
     payableAccountId,
     cashTransactionId,
     createdAt: serverTimestamp(),
@@ -127,7 +138,6 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
 
   // --- 5) Cuentas por pagar vs pago inmediato
   if (isCredit(data.paymentMethod) && payableRef) {
-    // 5a) Crea cuenta por pagar y aumenta deuda del proveedor (merge para no fallar si no existe)
     const newPayableAccount: Omit<PayableAccount, 'id'> = {
       supplierId: data.supplierId,
       supplierName,
@@ -145,7 +155,6 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     const currentDebt = (supplierDoc as any)?.debtAmount || 0;
     batch.set(supplierRef, { debtAmount: asMoney(currentDebt + invoiceTotal) }, { merge: true });
   } else if (isCash(data.paymentMethod) && cashTxRef) {
-    // 5b) Pago inmediato en efectivo: salida en caja
     batch.set(
       cashTxRef,
       cleanObjectForFirestore({
@@ -161,12 +170,9 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
       })
     );
   }
-  // Si quieres registrar tarjeta/transferencia en banco, crea aquí el doc en 'bankTransactions'.
 
-  // --- 6) Commit de todo el batch
   await batch.commit();
 
-  // --- 7) Auditoría (fuera del batch)
   const description = `Registró compra a ${supplierName} con factura #${purchaseDoc.invoiceId} por un total de ${formatCurrency(
     invoiceTotal
   )}. Método: ${data.paymentMethod}.`;
@@ -178,13 +184,6 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   });
 };
 
-/**
- * Paga una cuenta por pagar con atomicidad:
- * - Actualiza paidAmount/status de la CxP.
- * - Reduce deuda del proveedor.
- * - Registra salida en caja SOLO si paymentMethod === 'Efectivo'.
- * - Log de auditoría (fuera de la transacción).
- */
 const registerPayableAccountPayment = async (
   accountId: string,
   amount: number,
@@ -197,7 +196,6 @@ const registerPayableAccountPayment = async (
   const accountRef = doc(db, 'payableAccounts', accountId);
 
   await runTransaction(db, async (transaction) => {
-    // --- 1) LECTURAS ---
     const accountSnap = await transaction.get(accountRef);
     if (!accountSnap.exists()) {
       throw new Error('La cuenta por pagar no fue encontrada.');
@@ -207,14 +205,12 @@ const registerPayableAccountPayment = async (
     const supplierRef = doc(db, 'suppliers', accountData.supplierId);
     const supplierSnap = await transaction.get(supplierRef);
 
-    // --- 2) ESCRITURAS ---
     const payAmount = asMoney(amount);
     const prevPaid = accountData.paidAmount || 0;
     const newPaidAmount = asMoney(prevPaid + payAmount);
     const remaining = asMoney((accountData.totalAmount || 0) - newPaidAmount);
     const newStatus = remaining <= 0.01 ? 'Pagado' : 'Pagado Parcialmente';
 
-    // Actualiza cuenta por pagar
     transaction.update(accountRef, {
       paidAmount: newPaidAmount,
       status: newStatus,
@@ -223,13 +219,11 @@ const registerPayableAccountPayment = async (
       lastPaymentMethod: paymentMethod,
     });
 
-    // Reduce deuda del proveedor (merge implícito por update)
     if (supplierSnap.exists()) {
       const currentDebt = asMoney((supplierSnap.data() as any).debtAmount || 0);
       transaction.update(supplierRef, { debtAmount: asMoney(currentDebt - payAmount) });
     }
 
-    // Registra salida en caja si el pago fue en efectivo
     if (isCash(paymentMethod)) {
       const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
       transaction.set(
@@ -248,7 +242,6 @@ const registerPayableAccountPayment = async (
     }
   });
 
-  // Auditoría (fuera de la transacción)
   const accountData = (await getDoc(accountRef)).data() as PayableAccount;
   await adminService.logAudit(
     'Pagar',
@@ -264,6 +257,7 @@ const registerPayableAccountPayment = async (
 
 export const purchaseService = {
   onPayableAccountsUpdate,
+  onPurchasesUpdate, // <-- Exportar nueva función
   registerPurchase,
   registerPayableAccountPayment,
 };

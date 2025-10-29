@@ -3,12 +3,17 @@
 
 import React from 'react';
 import { PurchasesTable } from "./purchases-table";
+import type { SaleReceipt } from '@/types'; // Use SaleReceipt for type consistency
 
-const ComprasContent = () => {
+interface ComprasContentProps {
+  purchases: SaleReceipt[]; // Accept purchases as a prop
+}
+
+const ComprasContent = ({ purchases }: ComprasContentProps) => {
   return (
     <section className="mt-8">
       <h2 className="text-lg font-semibold mb-4">Historial de Compras</h2>
-      <PurchasesTable />
+      <PurchasesTable purchases={purchases} />
     </section>
   );
 };

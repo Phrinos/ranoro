@@ -1,9 +1,8 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { collection, onSnapshot, orderBy, query, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebaseClient";
+import { useState, useMemo } from "react";
+import { Timestamp } from "firebase/firestore";
 import {
   Table,
   TableBody,
@@ -19,43 +18,40 @@ import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { formatCurrency } from "@/lib/utils";
 import { TableHead } from "@/components/ui/table";
 
-// Definimos la estructura de un documento de compra
+// La estructura de la compra ahora puede variar
 interface Purchase {
   id: string;
   supplierName: string;
-  date: Timestamp;
+  date: Timestamp | string; // Can be Timestamp or ISO string
   totalAmount: number;
+  invoiceTotal?: number;
   status: "completado" | "pendiente" | "Registrada";
 }
 
-export function PurchasesTable() {
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface PurchasesTableProps {
+  purchases: Purchase[];
+  isLoading?: boolean;
+}
+
+export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
   const [sortOption, setSortOption] = useState('date_desc');
 
-  useEffect(() => {
-    // Creamos una consulta a la colección 'purchases', ordenando por fecha descendente
-    const q = query(collection(db, "purchases"), orderBy("date", "desc"));
-
-    // onSnapshot establece un listener en tiempo real
-    const unsubscribe = onSnapshot(q, 
-      (querySnapshot) => {
-        const purchasesData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        } as Purchase));
-        setPurchases(purchasesData);
-        setIsLoading(false);
-      },
-      (error) => {
-        console.error("Error al obtener las compras: ", error);
-        setIsLoading(false);
-      }
-    );
-
-    // Devolvemos la función de limpieza para cancelar el listener cuando el componente se desmonte
-    return () => unsubscribe();
-  }, []);
+  const sortedPurchases = useMemo(() => {
+    return [...purchases].sort((a, b) => {
+        const [key, direction] = sortOption.split('_');
+        let valA, valB;
+        if (key === 'date') {
+            valA = a.date instanceof Timestamp ? a.date.toDate() : new Date(a.date);
+            valB = b.date instanceof Timestamp ? b.date.toDate() : new Date(b.date);
+        } else {
+            valA = (a as any)[key] ?? '';
+            valB = (b as any)[key] ?? '';
+        }
+        
+        const comparison = String(valA).localeCompare(String(valB), 'es', { numeric: true });
+        return direction === 'asc' ? comparison : -comparison;
+    });
+  }, [purchases, sortOption]);
   
   const handleSort = (key: string) => {
     const isAsc = sortOption === `${key}_asc`;
@@ -75,7 +71,6 @@ export function PurchasesTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* Esqueleto de carga para simular la espera de datos */}
             {[...Array(3)].map((_, i) => (
               <TableRow key={i}>
                 <TableCell><Skeleton className="h-4 w-32" /></TableCell>
@@ -102,12 +97,12 @@ export function PurchasesTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {purchases.length > 0 ? (
-            purchases.map((purchase) => (
+          {sortedPurchases.length > 0 ? (
+            sortedPurchases.map((purchase) => (
               <TableRow key={purchase.id}>
                 <TableCell className="font-medium">{purchase.supplierName}</TableCell>
                 <TableCell>
-                  {purchase.date ? format(purchase.date.toDate(), "d 'de' MMMM, yyyy", { locale: es }) : 'N/A'}
+                  {purchase.date ? format(purchase.date instanceof Timestamp ? purchase.date.toDate() : new Date(purchase.date), "d 'de' MMMM, yyyy", { locale: es }) : 'N/A'}
                 </TableCell>
                 <TableCell>
                   <Badge variant={purchase.status === "completado" || purchase.status === "Registrada" ? "default" : "secondary"}>
@@ -115,7 +110,7 @@ export function PurchasesTable() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  {formatCurrency(purchase.totalAmount)}
+                  {formatCurrency(purchase.invoiceTotal ?? purchase.totalAmount)}
                 </TableCell>
               </TableRow>
             ))

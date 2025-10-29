@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/compras/page.tsx
 "use client";
 
@@ -12,6 +13,7 @@ import type {
   PayableAccount,
   InventoryItem,
   InventoryCategory,
+  SaleReceipt,
 } from "@/types";
 import { inventoryService, purchaseService } from "@/lib/services";
 import { TabbedPageLayout } from "@/components/layout/tabbed-page-layout";
@@ -158,6 +160,7 @@ export default function ComprasUnificadasPage() {
   const [payableAccounts, setPayableAccounts] = useState<PayableAccount[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
+  const [purchases, setPurchases] = useState<SaleReceipt[]>([]); // To store purchases
   const [isLoading, setIsLoading] = useState(true);
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -177,7 +180,6 @@ export default function ComprasUnificadasPage() {
     const u1 = inventoryService.onSuppliersUpdate((d) => {
       if (!alive) return;
       setSuppliers(d);
-      setIsLoading(false);
     });
     const u2 = purchaseService.onPayableAccountsUpdate((d) => {
       if (!alive) return;
@@ -191,10 +193,16 @@ export default function ComprasUnificadasPage() {
       if (!alive) return;
       setCategories(d);
     });
+    // Add listener for purchases
+    const u5 = purchaseService.onPurchasesUpdate((d) => {
+        if (!alive) return;
+        setPurchases(d);
+        setIsLoading(false);
+    })
 
     return () => {
       alive = false;
-      [u1, u2, u3, u4].forEach((u) => u && u());
+      [u1, u2, u3, u4, u5].forEach((u) => u && u());
     };
   }, []);
 
@@ -259,7 +267,7 @@ export default function ComprasUnificadasPage() {
   }
 
   const tabs = [
-    { value: "compras", label: "Compras", content: <ComprasContent /> },
+    { value: "compras", label: "Compras", content: <ComprasContent purchases={purchases} /> },
     {
       value: "proveedores",
       label: "Proveedores",
@@ -296,7 +304,7 @@ export default function ComprasUnificadasPage() {
         tabs={tabs}
         actions={pageActions}
       />
-
+      
       {selectedAccount && (
         <PayableAccountDialog
           open={isPaymentDialogOpen}
