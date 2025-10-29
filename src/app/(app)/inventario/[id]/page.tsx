@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-import { collection, getDocs, onSnapshot, query, where } from "firebase/firestore";
+import { collection, getDocs, onSnapshot, query, where, doc } from "firebase/firestore";
 import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
