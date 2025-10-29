@@ -1,4 +1,3 @@
-
 // src/lib/services/purchase.service.ts
 
 import {
@@ -15,22 +14,11 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
-import type { User, PayableAccount, PaymentMethod, SaleReceipt } from '@/types';
+import type { User, PayableAccount, PaymentMethod } from '@/types';
 import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
 import { cleanObjectForFirestore } from '../forms';
 import { formatCurrency } from '../utils';
-
-// --- Listener para compras ---
-const onPurchasesUpdate = (callback: (purchases: SaleReceipt[]) => void): (() => void) => {
-    if (!db) return () => {};
-    const q = query(collection(db, 'purchases'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snapshot) => {
-        callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as SaleReceipt)));
-    }, (error) => {
-        console.error("Error listening to purchases:", error);
-    });
-};
 
 // --- Accounts Payable (listener) ---
 const onPayableAccountsUpdate = (callback: (accounts: PayableAccount[]) => void): (() => void) => {
@@ -39,6 +27,17 @@ const onPayableAccountsUpdate = (callback: (accounts: PayableAccount[]) => void)
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PayableAccount)));
   });
+};
+
+// --- Listener para compras ---
+const onPurchasesUpdate = (callback: (purchases: any[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, 'purchases'), orderBy('invoiceDate', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (error) => {
+        console.error("Error listening to purchases:", error);
+    });
 };
 
 // Helpers
@@ -55,7 +54,7 @@ const isCredit = (m: string | PaymentMethod) => String(m).toLowerCase() === 'cr�
  * - Actualiza inventario (batch).
  * - Crea documento de compra en 'purchases'.
  * - Si es Crédito: crea cuenta por pagar (vinculada) y aumenta deuda del proveedor.
- * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo'.
+ * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo' (vinculada).
  * - Log de auditoría.
  */
 const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
@@ -110,7 +109,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     supplierId: data.supplierId,
     supplierName,
     invoiceId: data.invoiceId || `COMPRA-${Date.now()}`,
-    invoiceDate: data.invoiceDate ? Timestamp.fromDate(new Date(data.invoiceDate)) : serverTimestamp(),
+    invoiceDate: new Date().toISOString(), // Fecha y hora actual siempre
     dueDate: isCredit(data.paymentMethod) && data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
     items: data.items.map((it:any) => ({
       inventoryItemId: it.inventoryItemId,
@@ -123,8 +122,8 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     taxes,
     discounts,
     invoiceTotal,
-    paymentMethod: data.paymentMethod, 
-    status: 'Completado', // Estado corregido
+    paymentMethod: data.paymentMethod,
+    status: 'Completado',
     paymentStatus: isCredit(data.paymentMethod) ? 'Pendiente' : 'Pagado',
     payableAccountId,
     cashTransactionId,
@@ -142,8 +141,8 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
       supplierId: data.supplierId,
       supplierName,
       invoiceId: purchaseDoc.invoiceId,
-      invoiceDate: purchaseDoc.invoiceDate ?? serverTimestamp(),
-      dueDate: purchaseDoc.dueDate ?? serverTimestamp(),
+      invoiceDate: purchaseDoc.invoiceDate,
+      dueDate: purchaseDoc.dueDate,
       totalAmount: invoiceTotal,
       paidAmount: 0,
       status: 'Pendiente',
@@ -170,7 +169,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
       })
     );
   }
-
+  
   await batch.commit();
 
   const description = `Registró compra a ${supplierName} con factura #${purchaseDoc.invoiceId} por un total de ${formatCurrency(
@@ -257,7 +256,7 @@ const registerPayableAccountPayment = async (
 
 export const purchaseService = {
   onPayableAccountsUpdate,
-  onPurchasesUpdate, // <-- Exportar nueva función
+  onPurchasesUpdate,
   registerPurchase,
   registerPayableAccountPayment,
 };
