@@ -13,7 +13,6 @@ import type {
   PayableAccount,
   InventoryItem,
   InventoryCategory,
-  SaleReceipt,
 } from "@/types";
 import { inventoryService, purchaseService } from "@/lib/services";
 import { TabbedPageLayout } from "@/components/layout/tabbed-page-layout";
@@ -160,7 +159,7 @@ export default function ComprasUnificadasPage() {
   const [payableAccounts, setPayableAccounts] = useState<PayableAccount[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
-  const [purchases, setPurchases] = useState<SaleReceipt[]>([]); // To store purchases
+  const [purchases, setPurchases] = useState<any[]>([]); // To store purchases
   const [isLoading, setIsLoading] = useState(true);
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);

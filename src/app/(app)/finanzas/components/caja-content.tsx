@@ -289,7 +289,7 @@ export default function CajaContent() {
         userId: currentUser?.id || 'system',
         userName: currentUser?.name || 'Sistema',
         relatedType: 'Manual',
-        paymentMethod: dialogType === 'Entrada' ? 'Efectivo' : 'Efectivo', // marca para icono
+        paymentMethod: 'Efectivo', // marca para icono
       });
       show({ title: `Se registró una ${dialogType.toLowerCase()} de caja.` });
       setIsDialogOpen(false);

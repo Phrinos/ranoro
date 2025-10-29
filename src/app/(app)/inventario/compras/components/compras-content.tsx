@@ -1,12 +1,12 @@
 
+// src/app/(app)/inventario/compras/components/compras-content.tsx
 "use client";
 
 import React from 'react';
-import { PurchasesTable } from "./purchases-table";
-import type { SaleReceipt } from '@/types'; // Use SaleReceipt for type consistency
+import { PurchasesTable, type Purchase } from "./purchases-table";
 
 interface ComprasContentProps {
-  purchases: SaleReceipt[]; // Accept purchases as a prop
+  purchases: Purchase[]; // Accept purchases as a prop
 }
 
 const ComprasContent = ({ purchases }: ComprasContentProps) => {

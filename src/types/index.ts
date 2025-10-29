@@ -237,9 +237,10 @@ export type CashDrawerTransaction = {
   description?: string;
   userId: string;
   userName: string;
-  relatedType?: 'Venta' | 'Servicio' | 'Manual' | 'Flotilla';
+  relatedType?: 'Venta' | 'Servicio' | 'Manual' | 'Flotilla' | 'Compra' | 'Gasto Flotilla' | 'CuentaPorPagar';
   relatedId?: string;
-  date: string;       // ISO
+  date: string; // ISO
+  paymentMethod?: PaymentMethod;
 };
 
 export type AuditLogAction = 'Crear' | 'Editar' | 'Eliminar' | 'Archivar' | 'Restaurar' | 'Registrar' | 'Pagar' | 'Cancelar';
