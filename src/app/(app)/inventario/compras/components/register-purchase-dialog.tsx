@@ -1,4 +1,5 @@
 
+// src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -34,6 +35,7 @@ const purchaseItemSchema = z.object({
   itemName: z.string(),
   quantity: z.coerce.number().min(0.01, "La cantidad debe ser mayor a 0."),
   purchasePrice: z.coerce.number().min(0, "El costo debe ser un número positivo."),
+  totalPrice: z.coerce.number().optional(), // Añadido para consistencia
 });
 
 const purchaseFormSchema = z
@@ -74,8 +76,8 @@ export function RegisterPurchaseDialog({
   onSave,
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
-  const form = useForm<PurchaseFormValues, any, PurchaseFormValues>({
-    resolver: zodResolver(purchaseFormSchema) as Resolver<PurchaseFormValues, any, PurchaseFormValues>,
+  const form = useForm<PurchaseFormValues>({
+    resolver: zodResolver(purchaseFormSchema) as unknown as Resolver<PurchaseFormValues>,
     defaultValues: {
       supplierId: "",
       items: [],
@@ -110,12 +112,14 @@ export function RegisterPurchaseDialog({
   }, [watch, setValue]);
 
   const handleAddItem = (item: InventoryItem) => {
+    const price = Number(item.unitPrice || 0);
     append({
       inventoryItemId: item.id,
       itemName: item.name,
       quantity: 1,
-      purchasePrice: Number(item.unitPrice || 0),
-    } as any);
+      purchasePrice: price,
+      totalPrice: price, // Set initial total price
+    });
     setIsItemSearchOpen(false);
   };
 
@@ -127,12 +131,7 @@ export function RegisterPurchaseDialog({
 
   const handleNewItemSaved = async (formData: InventoryItemFormValues) => {
     const newItem = await onInventoryItemCreated(formData);
-    append({
-      inventoryItemId: newItem.id,
-      itemName: newItem.name,
-      quantity: 1,
-      purchasePrice: Number(newItem.unitPrice || 0),
-    } as any);
+    handleAddItem(newItem); // Re-use handleAddItem to ensure totalPrice is set
     setIsNewItemDialogOpen(false);
   };
 
