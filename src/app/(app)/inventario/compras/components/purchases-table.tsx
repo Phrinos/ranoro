@@ -107,7 +107,7 @@ export function PurchasesTable() {
               <TableRow key={purchase.id}>
                 <TableCell className="font-medium">{purchase.supplierName}</TableCell>
                 <TableCell>
-                  {format(purchase.date.toDate(), "d 'de' MMMM, yyyy", { locale: es })}
+                  {purchase.date ? format(purchase.date.toDate(), "d 'de' MMMM, yyyy", { locale: es }) : 'N/A'}
                 </TableCell>
                 <TableCell>
                   <Badge variant={purchase.status === "completado" || purchase.status === "Registrada" ? "default" : "secondary"}>
