@@ -125,6 +125,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     paymentMethod: data.paymentMethod,
     status: 'Completado',
     paymentStatus: isCredit(data.paymentMethod) ? 'Pendiente' : 'Pagado',
+    // vínculos
     payableAccountId,
     cashTransactionId,
     createdAt: serverTimestamp(),
@@ -154,10 +155,12 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     const currentDebt = (supplierDoc as any)?.debtAmount || 0;
     batch.set(supplierRef, { debtAmount: asMoney(currentDebt + invoiceTotal) }, { merge: true });
   } else if (isCash(data.paymentMethod) && cashTxRef) {
+    // 5b) Pago inmediato en efectivo: salida en caja
     batch.set(
       cashTxRef,
       cleanObjectForFirestore({
         date: serverTimestamp(),
+        createdAt: serverTimestamp(),
         type: 'Salida',
         amount: invoiceTotal,
         concept: `Compra a ${supplierName} (Factura: ${purchaseDoc.invoiceId})`,

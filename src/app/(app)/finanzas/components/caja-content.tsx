@@ -1,4 +1,3 @@
-// src/app/(app)/finanzas/components/caja-content.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, cn } from "@/lib/utils";
-import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, compareAsc } from 'date-fns';
+import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DollarSign, ArrowDown, ArrowUp, Loader2, Wallet, CreditCard, Landmark, ArrowLeft, ArrowRight } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
@@ -26,11 +25,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
-
-interface DateRange {
-  from: Date | undefined;
-  to?: Date | undefined;
-}
+interface DateRange { from: Date | undefined; to?: Date | undefined; }
 
 const cashTransactionSchema = z.object({
   description: z.string().min(3, "La descripción debe tener al menos 3 caracteres."),
@@ -38,9 +33,7 @@ const cashTransactionSchema = z.object({
 });
 type CashTransactionFormValues = z.infer<typeof cashTransactionSchema>;
 
-type EnhancedCashDrawerTransaction = CashDrawerTransaction & {
-  fullDescription?: string;
-};
+type EnhancedCashDrawerTransaction = CashDrawerTransaction & { fullDescription?: string; };
 
 const methodIcon: Record<PaymentMethod, React.ElementType> = {
   Efectivo: Wallet,
@@ -51,9 +44,21 @@ const methodIcon: Record<PaymentMethod, React.ElementType> = {
   "Tarjeta+Transferencia": CreditCard,
 };
 
-// helpers
+// ---------- helpers ----------
 const getPaymentDate = (p: Payment) =>
   parseDate((p as any).date || (p as any).paidAt || (p as any).createdAt);
+
+// Convierte robustamente: Firestore Timestamp, Date o string
+const toJsDate = (v: any): Date | null => {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  if (typeof v?.toDate === 'function') return v.toDate();
+  if (typeof v === 'string') {
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+};
 
 const getAdvisorForService = (s: ServiceRecord): string => {
   const anyS = s as any;
@@ -74,11 +79,11 @@ type FlowRow = {
   type: 'Entrada' | 'Salida';
   source: 'Venta' | 'Servicio' | 'Libro';
   relatedType?: 'Venta' | 'Servicio' | 'Manual' | 'Compra' | 'Gasto Flotilla';
-  refId?: string;         // para navegar si aplica
-  user: string;           // asesor/cliente/usuario
+  refId?: string;
+  user: string;
   description: string;
-  amount: number;         // siempre en positivo para UI
-  method?: Payment['method']; // solo pagos
+  amount: number;
+  method?: Payment['method'];
 };
 
 export default function CajaContent() {
@@ -123,50 +128,50 @@ export default function CajaContent() {
   const cashPayments = useMemo(() => {
     const rows: FlowRow[] = [];
 
-    // Servicios
+    // Servicios -> entradas efectivo
     for (const s of allServices) {
-      if (s.status === 'Cancelado' || s.status === 'Cotizacion') continue;
+      if ((s as any).status === 'Cancelado' || (s as any).status === 'Cotizacion') continue;
       const pays = (s as any).payments as Payment[] | undefined;
       if (!Array.isArray(pays)) continue;
       const advisor = getAdvisorForService(s);
       pays.forEach((p, idx) => {
         if (p?.method !== 'Efectivo' || typeof p.amount !== 'number') return;
-        const d = getPaymentDate(p) || parseDate(s.deliveryDateTime) || parseDate(s.serviceDate);
+        const d = getPaymentDate(p) || toJsDate((s as any).deliveryDateTime) || toJsDate((s as any).serviceDate);
         const amt = Number(p.amount) || 0;
         rows.push({
-          id: `${s.id}-svc-cash-${idx}`,
+          id: `${(s as any).id}-svc-cash-${idx}`,
           date: d || null,
           type: amt >= 0 ? 'Entrada' : 'Salida',
           source: 'Servicio',
           relatedType: 'Servicio',
-          refId: s.id,
+          refId: (s as any).id,
           user: advisor,
-          description: amt >= 0 ? `Pago efectivo (Servicio #${(s.folio || s.id).slice(-6)})` : `Reembolso efectivo (Servicio #${(s.folio || s.id).slice(-6)})`,
+          description: amt >= 0 ? `Pago efectivo (Servicio #${((s as any).folio || (s as any).id || '').slice(-6)})` : `Reembolso efectivo (Servicio #${((s as any).folio || (s as any).id || '').slice(-6)})`,
           amount: Math.abs(amt),
           method: p.method,
         });
       });
     }
 
-    // Ventas
+    // Ventas -> entradas efectivo
     for (const s of allSales) {
-      if (s.status === 'Cancelado') continue;
+      if ((s as any).status === 'Cancelado') continue;
       const pays = (s as any).payments as Payment[] | undefined;
       if (!Array.isArray(pays)) continue;
-      const client = s.customerName || 'Cliente Mostrador';
+      const client = (s as any).customerName || 'Cliente Mostrador';
       pays.forEach((p, idx) => {
         if (p?.method !== 'Efectivo' || typeof p.amount !== 'number') return;
-        const d = getPaymentDate(p) || parseDate(s.saleDate as any);
+        const d = getPaymentDate(p) || toJsDate((s as any).saleDate);
         const amt = Number(p.amount) || 0;
         rows.push({
-          id: `${s.id}-sale-cash-${idx}`,
+          id: `${(s as any).id}-sale-cash-${idx}`,
           date: d || null,
           type: amt >= 0 ? 'Entrada' : 'Salida',
           source: 'Venta',
           relatedType: 'Venta',
-          refId: s.id,
+          refId: (s as any).id,
           user: client,
-          description: amt >= 0 ? `Pago efectivo (Venta #${s.id.slice(-6)})` : `Reembolso efectivo (Venta #${s.id.slice(-6)})`,
+          description: amt >= 0 ? `Pago efectivo (Venta #${String((s as any).id).slice(-6)})` : `Reembolso efectivo (Venta #${String((s as any).id).slice(-6)})`,
           amount: Math.abs(amt),
           method: p.method,
         });
@@ -179,54 +184,62 @@ export default function CajaContent() {
   const flowRows = useMemo(() => {
     if (!range) return [];
     const inRange = (d: Date | null) => d && isValid(d) && isWithinInterval(d, { start: range.from, end: range.to });
-    
-    // Procesa todos los movimientos de caja (entradas y salidas)
+
+    // Movimientos del "libro" (incluye Compras en efectivo como Salida)
     const ledgerRows: FlowRow[] = cashTransactions
       .filter(t => {
-        // Excluye entradas de efectivo de ventas/servicios para evitar duplicarlas,
-        // ya que `cashPayments` ya las maneja.
-        return !(t.type === 'Entrada' && (t.relatedType === 'Venta' || t.relatedType === 'Servicio'));
+        // Sólo quitamos las ENTRADAS de ventas/servicios (para no duplicar).
+        return !(t.type === 'Entrada' && ((t as any).relatedType === 'Venta' || (t as any).relatedType === 'Servicio'));
       })
       .map((t) => {
-        const d = parseDate((t as any).date || (t as any).createdAt) || null;
+        // FECHA: soporta Timestamp/Date/string
+        const raw = (t as any).date ?? (t as any).createdAt;
+        const d = toJsDate(raw) || parseDate(raw) || null;
+
         const user = (t as any).userName || (t as any).user || 'Sistema';
         const desc = (t as any).concept || (t as any).description || '';
-        return {
-          id: t.id, date: d, type: t.type, source: 'Libro',
-          relatedType: (t as any).relatedType || 'Manual', refId: (t as any).relatedId,
-          user, description: desc, amount: Math.abs(Number(t.amount) || 0),
-        };
-    });
+        const method = (t as any).paymentMethod as PaymentMethod | undefined;
 
-    const rows = [...cashPayments, ...ledgerRows].filter(r => inRange(r.date || null));
+        return {
+          id: (t as any).id ?? `${(t as any).relatedType || 'Libro'}-${(t as any).relatedId || Math.random()}`,
+          date: d,
+          type: (t as any).type,
+          source: 'Libro',
+          relatedType: (t as any).relatedType || 'Manual',
+          refId: (t as any).relatedId,
+          user,
+          description: desc,
+          amount: Math.abs(Number((t as any).amount) || 0),
+          method,
+        };
+      });
+
+    const rows = [...cashPayments, ...ledgerRows].filter(r => inRange(r.date));
 
     const [key, direction] = sortOption.split('_');
     return rows.sort((a: any, b: any) => {
       const valA = a[key] ?? '';
       const valB = b[key] ?? '';
-
       if (key === 'date') {
         const dateA = valA instanceof Date ? valA.getTime() : 0;
         const dateB = valB instanceof Date ? valB.getTime() : 0;
         return direction === 'asc' ? dateA - dateB : dateB - dateA;
       }
-      
       const cmp = String(valA).localeCompare(String(valB), 'es', { numeric: true });
       return direction === 'asc' ? cmp : -cmp;
     });
   }, [cashPayments, cashTransactions, range, sortOption]);
-  
+
   const { periodKPIs, currentBalance } = useMemo(() => {
-    // Cálculo para el período seleccionado
     const incomeInPeriod = flowRows.filter(r => r.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
     const outcomeInPeriod = flowRows.filter(r => r.type === 'Salida').reduce((s, r) => s + r.amount, 0);
-    
-    // Cálculo para el balance total actual
+
+    // Balance global actual (incluye Compras en efectivo como Salidas del libro)
     const allCashIncome = cashPayments.filter(r => r.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
     const allManualEntries = cashTransactions
-      .filter(t => t.relatedType !== 'Venta' && t.relatedType !== 'Servicio');
-    const allManualIncome = allManualEntries.filter(t => t.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
-    const allManualOutcome = allManualEntries.filter(t => t.type === 'Salida').reduce((s, r) => s + r.amount, 0);
+      .filter(t => (t as any).relatedType !== 'Venta' && (t as any).relatedType !== 'Servicio');
+    const allManualIncome = allManualEntries.filter(t => t.type === 'Entrada').reduce((s, r) => s + (r as any).amount, 0);
+    const allManualOutcome = allManualEntries.filter(t => t.type === 'Salida').reduce((s, r) => s + (r as any).amount, 0);
     const currentTotalBalance = (allCashIncome + allManualIncome) - allManualOutcome;
 
     return {
@@ -239,14 +252,14 @@ export default function CajaContent() {
     };
   }, [flowRows, cashPayments, cashTransactions]);
 
-
   // abrir ref
   const openRef = (row: FlowRow) => {
     if (row.source === 'Venta' && row.refId) window.open(`/pos?saleId=${row.refId}`, '_blank');
     if (row.source === 'Servicio' && row.refId) window.open(`/servicios/${row.refId}`, '_blank');
+    // Para compras (Libro -> relatedType: 'Compra') no hay navegación aún
   };
 
-  // acciones rápidas rango
+  // presets
   const setPresetRange = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
     const now = new Date();
     if (preset === 'today') return setDateRange({ from: startOfDay(now), to: endOfDay(now) });
@@ -273,6 +286,7 @@ export default function CajaContent() {
         userId: currentUser?.id || 'system',
         userName: currentUser?.name || 'Sistema',
         relatedType: 'Manual',
+        paymentMethod: dialogType === 'Entrada' ? 'Efectivo' : 'Efectivo', // marca para icono
       });
       show({ title: `Se registró una ${dialogType.toLowerCase()} de caja.` });
       setIsDialogOpen(false);
@@ -304,7 +318,7 @@ export default function CajaContent() {
         </div>
       </div>
 
-      {/* KPI superiores */}
+      {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -327,28 +341,27 @@ export default function CajaContent() {
           </CardHeader>
           <CardContent><div className="text-2xl font-bold">{formatCurrency(periodKPIs.net)}</div></CardContent>
         </Card>
-         <Card className="shadow-lg">
+        <Card className="shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Balance de Caja (Actual)</CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground"/>
           </CardHeader>
           <CardContent>
-              <div className={cn("text-2xl font-bold", currentBalance >= 0 ? 'text-blue-600' : 'text-destructive')}>
-                  {formatCurrency(currentBalance)}
-              </div>
+            <div className={cn("text-2xl font-bold", periodKPIs.net >= 0 ? 'text-blue-600' : 'text-destructive')}>
+              {formatCurrency(currentBalance)}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabla ÚNICA: Flujo de Caja */}
+      {/* Tabla flujo */}
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <CardTitle>Flujo de Caja (Efectivo)</CardTitle>
-              <CardDescription>Pagos en efectivo de Ventas/Servicios y movimientos del Libro del periodo.</CardDescription>
+              <CardDescription>Pagos en efectivo de Ventas/Servicios y movimientos del Libro (incluye Compras en efectivo).</CardDescription>
             </div>
-            {/* Acciones rápidas */}
             <div className="flex w-full sm:w-auto justify-end gap-2">
               <Button onClick={() => handleOpenDialog('Entrada')} variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700 bg-card">
                 <ArrowUp className="mr-2 h-4 w-4" /> Registrar Entrada
