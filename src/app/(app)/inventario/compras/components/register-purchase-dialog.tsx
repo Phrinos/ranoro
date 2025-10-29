@@ -1,4 +1,4 @@
-// src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -87,27 +87,27 @@ export function RegisterPurchaseDialog({
 
   const { control, handleSubmit, watch, setValue } = form;
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
-  const watchedItems = watch("items");
   const paymentMethod = watch("paymentMethod");
 
   const [isItemSearchOpen, setIsItemSearchOpen] = useState(false);
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
 
+  // Recalcular total al cambiar items
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
-      if (type === 'change' && name && name.startsWith('items')) {
+      if (type === "change" && name && name.startsWith("items")) {
         const items = value.items || [];
         const total = items.reduce(
-          (sum: number, i: any) => sum + Number(i.quantity || 0) * Number(i.purchasePrice || 0),
+          (sum: number, i: any) =>
+            sum + (Number(i.quantity || 0) * Number(i.purchasePrice || 0)),
           0
         );
-        setValue("invoiceTotal", total, { shouldValidate: true });
+        setValue("invoiceTotal", Number.isFinite(total) ? total : 0, { shouldValidate: true });
       }
     });
     return () => subscription.unsubscribe();
   }, [watch, setValue]);
-
 
   const handleAddItem = (item: InventoryItem) => {
     append({
@@ -115,7 +115,7 @@ export function RegisterPurchaseDialog({
       itemName: item.name,
       quantity: 1,
       purchasePrice: Number(item.unitPrice || 0),
-    });
+    } as any);
     setIsItemSearchOpen(false);
   };
 
@@ -132,7 +132,7 @@ export function RegisterPurchaseDialog({
       itemName: newItem.name,
       quantity: 1,
       purchasePrice: Number(newItem.unitPrice || 0),
-    });
+    } as any);
     setIsNewItemDialogOpen(false);
   };
 
@@ -198,7 +198,7 @@ export function RegisterPurchaseDialog({
                       {fields.length > 0 && (
                         <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground pr-10">
                           <span className="flex-1">Artículo</span>
-                          <span className="w-20 text-right">Cantidad</span>
+                          <span className="w-24 text-right">Cantidad</span>
                           <span className="w-28 text-right">Costo Unitario</span>
                         </div>
                       )}
@@ -208,25 +208,30 @@ export function RegisterPurchaseDialog({
                             <div key={field.id} className="flex items-center gap-2">
                               <span
                                 className="flex-1 truncate text-sm font-medium"
-                                title={field.itemName}
+                                title={(field as any).itemName}
                               >
-                                {field.itemName}
+                                {(field as any).itemName}
                               </span>
 
+                              {/* Cantidad: permitir decimales a centésimas para evitar step mismatch */}
                               <FormField
                                 control={control}
                                 name={`items.${index}.quantity`}
                                 render={({ field }) => (
                                   <Input
                                     type="number"
-                                    step="1"
+                                    step="0.01"
                                     min="0.01"
-                                    className="h-8 w-20 text-right bg-white"
+                                    inputMode="decimal"
+                                    className="h-8 w-24 text-right bg-white"
                                     {...field}
-                                    value={field.value || ''}
+                                    value={field.value ?? ""}
+                                    onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
                                   />
                                 )}
                               />
+
+                              {/* Costo unitario */}
                               <FormField
                                 control={control}
                                 name={`items.${index}.purchasePrice`}
@@ -237,13 +242,16 @@ export function RegisterPurchaseDialog({
                                       type="number"
                                       step="0.01"
                                       min="0"
+                                      inputMode="decimal"
                                       className="h-8 w-28 pl-8 text-right bg-white"
                                       {...field}
-                                      value={field.value || ''}
+                                      value={field.value ?? ""}
+                                      onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
                                     />
                                   </div>
                                 )}
                               />
+
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -270,9 +278,9 @@ export function RegisterPurchaseDialog({
                         </Button>
                       </div>
                     </div>
-                    {!!form.formState.errors.items && (
+                    {!!(form.formState.errors as any).items && (
                       <p className="mt-2 text-sm text-destructive">
-                        {(form.formState.errors.items?.message as any)}
+                        {((form.formState.errors as any).items?.message as any)}
                       </p>
                     )}
                   </div>
@@ -330,9 +338,9 @@ export function RegisterPurchaseDialog({
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-0" align="start">
                                 <NewCalendar
-                                   onChange={field.onChange as CalendarProps['onChange']}
-                                   value={field.value}
-                                   locale={"es"}
+                                  onChange={field.onChange as CalendarProps["onChange"]}
+                                  value={field.value}
+                                  locale={"es"}
                                 />
                               </PopoverContent>
                             </Popover>
@@ -345,17 +353,17 @@ export function RegisterPurchaseDialog({
                 </div>
 
                 <DialogFooter className="flex w-full flex-col-reverse items-center border-t bg-white p-6 pt-4 sm:flex-row sm:justify-between">
-                    <div className="text-right text-lg font-bold">
-                        Total: {formatCurrency(watch("invoiceTotal") || 0)}
-                    </div>
-                    <div className="flex gap-2">
-                        <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                        </Button>
-                        <Button type="submit" form="purchase-form" disabled={fields.length === 0}>
-                        Registrar Compra
-                        </Button>
-                    </div>
+                  <div className="text-right text-lg font-bold">
+                    Total: {formatCurrency(watch("invoiceTotal") || 0)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" form="purchase-form" disabled={fields.length === 0}>
+                      Registrar Compra
+                    </Button>
+                  </div>
                 </DialogFooter>
               </form>
             </Form>
