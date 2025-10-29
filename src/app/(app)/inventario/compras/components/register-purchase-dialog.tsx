@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -196,6 +195,13 @@ export function RegisterPurchaseDialog({
                   <div>
                     <FormLabel>Artículos Comprados</FormLabel>
                     <div className="mt-2 space-y-2 rounded-md border bg-card p-4">
+                      {fields.length > 0 && (
+                        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground pr-10">
+                          <span className="flex-1">Artículo</span>
+                          <span className="w-20 text-right">Cantidad</span>
+                          <span className="w-28 text-right">Costo Unitario</span>
+                        </div>
+                      )}
                       <ScrollArea className="max-h-48 pr-3">
                         <div className="space-y-3">
                           {fields.map((field, index) => (
