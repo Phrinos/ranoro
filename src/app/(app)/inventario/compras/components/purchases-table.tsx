@@ -25,7 +25,7 @@ interface Purchase {
   supplierName: string;
   date: Timestamp;
   totalAmount: number;
-  status: "completado" | "pendiente";
+  status: "completado" | "pendiente" | "Registrada";
 }
 
 export function PurchasesTable() {
@@ -110,7 +110,7 @@ export function PurchasesTable() {
                   {format(purchase.date.toDate(), "d 'de' MMMM, yyyy", { locale: es })}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={purchase.status === "completado" ? "default" : "secondary"}>
+                  <Badge variant={purchase.status === "completado" || purchase.status === "Registrada" ? "default" : "secondary"}>
                     {purchase.status}
                   </Badge>
                 </TableCell>

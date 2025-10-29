@@ -43,7 +43,7 @@ const isCredit = (m: string | PaymentMethod) => String(m).toLowerCase() === 'cr�
  * - Actualiza inventario (batch).
  * - Crea documento de compra en 'purchases'.
  * - Si es Crédito: crea cuenta por pagar (vinculada) y aumenta deuda del proveedor.
- * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo'.
+ * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo' (vinculada).
  * - Log de auditoría.
  */
 const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
@@ -112,7 +112,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     discounts,
     totalAmount: invoiceTotal,
     paymentMethod: data.paymentMethod, // 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Crédito' ...
-    status: 'completado', // Las compras siempre entran como completado a nivel de stock
+    status: 'completado',
     paymentStatus: isCredit(data.paymentMethod) ? 'Pendiente' : 'Pagado',
     // vínculos
     payableAccountId,
