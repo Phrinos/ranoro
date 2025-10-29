@@ -180,13 +180,17 @@ export default function CajaContent() {
     if (!range) return [];
     const inRange = (d: Date | null) => d && isValid(d) && isWithinInterval(d, { start: range.from, end: range.to });
     
-    const filteredCashTransactions = cashTransactions.filter(t => t.relatedType !== 'Venta' && t.relatedType !== 'Servicio');
-
-    const ledgerRows: FlowRow[] = filteredCashTransactions
+    // Procesa todos los movimientos de caja (entradas y salidas)
+    const ledgerRows: FlowRow[] = cashTransactions
+      .filter(t => {
+        // Excluye entradas de efectivo de ventas/servicios para evitar duplicarlas,
+        // ya que `cashPayments` ya las maneja.
+        return !(t.type === 'Entrada' && (t.relatedType === 'Venta' || t.relatedType === 'Servicio'));
+      })
       .map((t) => {
         const d = parseDate((t as any).date || (t as any).createdAt) || null;
         const user = (t as any).userName || (t as any).user || 'Sistema';
-        const desc = (t as any).description || t.concept || (t as any).description || '';
+        const desc = (t as any).concept || (t as any).description || '';
         return {
           id: t.id, date: d, type: t.type, source: 'Libro',
           relatedType: (t as any).relatedType || 'Manual', refId: (t as any).relatedId,
