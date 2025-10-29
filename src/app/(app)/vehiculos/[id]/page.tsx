@@ -1,4 +1,5 @@
 
+// src/app/(app)/vehiculos/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -26,7 +27,7 @@ import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 import { useTableManager } from '@/hooks/useTableManager';
 import { MaintenanceCard } from '../../vehiculos/components/MaintenanceCard';
-import { VehiclePricingCard } from '../components/VehiclePricingCard';
+import { VehiclePricingCard } from '../../precios/components/VehiclePricingCard';
 import type { EngineData } from '@/lib/data/vehicle-database-types';
 import { EditEngineDataDialog } from '@/app/(app)/precios/components/EditEngineDataDialog';
 import { doc, setDoc } from 'firebase/firestore';
