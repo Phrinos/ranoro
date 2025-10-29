@@ -12,11 +12,12 @@ import {
   TableHead,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { format, isValid } from "date-fns";
+import { es } from 'date-fns/locale';
 import { Skeleton } from "@/components/ui/skeleton";
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { formatCurrency } from "@/lib/utils";
+import { parseDate } from "@/lib/forms"; // Importar el helper robusto
 
 interface Purchase {
   id: string;
@@ -42,13 +43,19 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
         const [key, direction] = sortOption.split('_');
         let valA, valB;
         if (key === 'invoiceDate') {
-            valA = a.invoiceDate instanceof Timestamp ? a.invoiceDate.toDate() : new Date(a.invoiceDate);
-            valB = b.invoiceDate instanceof Timestamp ? b.invoiceDate.toDate() : new Date(b.invoiceDate);
+            valA = parseDate(a.invoiceDate);
+            valB = parseDate(b.invoiceDate);
+            if (!valA) return 1;
+            if (!valB) return -1;
         } else {
             valA = (a as any)[key] ?? '';
             valB = (b as any)[key] ?? '';
         }
         
+        if (valA instanceof Date && valB instanceof Date) {
+            return direction === 'asc' ? valA.getTime() - valB.getTime() : valB.getTime() - valA.getTime();
+        }
+
         const comparison = String(valA).localeCompare(String(valB), 'es', { numeric: true });
         return direction === 'asc' ? comparison : -comparison;
     });
@@ -109,14 +116,14 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
         <TableBody>
           {sortedPurchases.length > 0 ? (
             sortedPurchases.map((purchase) => {
-              const purchaseDate = purchase.invoiceDate instanceof Timestamp ? purchase.invoiceDate.toDate() : new Date(purchase.invoiceDate);
+              const purchaseDate = parseDate(purchase.invoiceDate); // Usar el helper robusto
               const productNames = purchase.items.map(i => i.itemName).join(', ');
               const totalItems = purchase.items.reduce((sum, i) => sum + i.quantity, 0);
 
               return (
               <TableRow key={purchase.id}>
                 <TableCell>
-                  {purchaseDate ? format(purchaseDate, "dd/MM/yy, HH:mm", { locale: es }) : 'N/A'}
+                  {purchaseDate && isValid(purchaseDate) ? format(purchaseDate, "dd/MM/yy, HH:mm", { locale: es }) : 'N/A'}
                 </TableCell>
                 <TableCell className="font-medium">{purchase.supplierName}</TableCell>
                 <TableCell className="truncate max-w-xs" title={productNames}>{productNames}</TableCell>
