@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, onSnapshot, query, where } from "firebase/firestore";
 import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
@@ -81,8 +81,6 @@ export default function InventoryItemDetailPage() {
   const router = useRouter();
 
   const [item, setItem] = useState<InventoryItem | null | undefined>(undefined);
-  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  const [allSales, setAllSales] = useState<any[]>([]); // ventas pueden variar de forma
   const [inventoryMovements, setInventoryMovements] = useState<any[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -95,53 +93,38 @@ export default function InventoryItemDetailPage() {
       return;
     }
 
-    const fetchItemAndRelatedData = async () => {
+    // Subscribe to the item document itself
+    const unsubItem = onSnapshot(doc(db, "inventory", itemId), (doc) => {
+      setItem(doc.exists() ? ({ id: doc.id, ...doc.data() } as InventoryItem) : null);
+    }, (error) => {
+      console.error("Error fetching item details:", error);
+      setItem(null);
+    });
+
+    const fetchRelatedData = async () => {
       try {
-        const fetchedItem = await inventoryService.getDocById(
-          "inventory",
-          itemId
-        );
-        setItem(fetchedItem);
-
-        if (!fetchedItem) return;
-
-        const [servicesData, salesData, categoriesData, suppliersData] =
-          await Promise.all([
-            serviceService.onServicesUpdatePromise(),
-            getDocs(collection(db, "sales")).then((snap) =>
-              snap.docs.map((d) => ({ ...d.data(), id: d.id }))
-            ),
+        const [categoriesData, suppliersData] = await Promise.all([
             inventoryService.onCategoriesUpdatePromise(),
             inventoryService.onSuppliersUpdatePromise(),
-          ]);
-
-        setAllServices(servicesData);
-        setAllSales(salesData);
+        ]);
         setCategories(categoriesData);
         setSuppliers(suppliersData);
-      } catch (error) {
-        console.error("Error fetching item details:", error);
-        setItem(null);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los datos del ítem.",
-          variant: "destructive",
-        });
+      } catch(e) {
+         toast({ title: "Error", description: "No se pudieron cargar datos relacionados.", variant: "destructive" });
       }
     };
 
-    fetchItemAndRelatedData();
+    fetchRelatedData();
     
     // Subscribe to inventory movements for this specific item
-    const q = collection(db, 'inventoryMovements');
+    const q = query(collection(db, 'inventoryMovements'), where("itemId", "==", itemId));
     const unsubscribeMovements = onSnapshot(q, (snapshot) => {
-        const movements = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(mov => mov.itemId === itemId);
+        const movements = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setInventoryMovements(movements);
     });
 
     return () => {
+      unsubItem();
       unsubscribeMovements();
     };
 
@@ -149,44 +132,11 @@ export default function InventoryItemDetailPage() {
 
   // ===== Derived data =====
   const history = useMemo<InventoryMovement[]>(() => {
-    if (!item) return [];
-
-    const movementsFromEvents: InventoryMovement[] = [];
-
-    // Derive movements from sales and services if they are not in inventoryMovements
-    allServices.forEach((svc) =>
-      (svc.serviceItems ?? []).forEach((svcItem: any) =>
-        (svcItem.suppliesUsed ?? []).forEach((sup: any) => {
-          if (sup.supplyId === item.id) {
-            movementsFromEvents.push({
-              date: svc.deliveryDateTime ?? svc.serviceDate ?? svc.receptionDateTime ?? "",
-              type: "Salida por Servicio",
-              quantity: -safeNumber(sup.quantity),
-              relatedId: svc.id,
-              unitType: item.unitType as any,
-            });
-          }
-        })
-      )
-    );
-
-    allSales.forEach((sale) =>
-      (sale.items ?? []).forEach((si: any) => {
-        if (si.inventoryItemId === item.id) {
-          movementsFromEvents.push({
-            date: sale.saleDate ?? (sale as any)?.createdAt ?? "",
-            type: "Salida por Venta",
-            quantity: -safeNumber(si.quantity),
-            relatedId: sale.id,
-            unitType: item.unitType as any,
-          });
-        }
-      })
-    );
+    if (!item || !inventoryMovements) return [];
 
     const movementsFromCollection: InventoryMovement[] = inventoryMovements.map(mov => {
         let type: InventoryMovement['type'] = 'Ajuste';
-        if (mov.type === 'sale') type = 'Salida por Venta';
+        if (mov.type === 'sale') type = 'Salida por Servicio'; // Ajustado, asumiendo que service y venta usan 'sale'
         if (mov.type === 'purchase') type = 'Entrada por Compra';
 
         return {
@@ -209,7 +159,7 @@ export default function InventoryItemDetailPage() {
     allMovements.sort((a, b) => b._parsed.getTime() - a._parsed.getTime());
 
     return allMovements.map(({ _parsed, ...rest }) => rest);
-  }, [item, allServices, allSales, inventoryMovements]);
+  }, [item, inventoryMovements]);
 
   const kpis = useMemo(() => {
     const salidaServicio = history
@@ -231,8 +181,6 @@ export default function InventoryItemDetailPage() {
     console.log('Saving edited item with data:', formData);
     try {
       await inventoryService.saveItem(formData, item.id);
-      const updatedItem = await inventoryService.getDocById("inventory", item.id);
-      setItem(updatedItem);
       setIsEditDialogOpen(false);
       toast({
         title: "Ítem Actualizado",
@@ -327,7 +275,6 @@ export default function InventoryItemDetailPage() {
       />
 
       <Tabs defaultValue="details" className="w-full">
-        {/* TabsList optimizado para móvil: scroll horizontal y no se rompe */}
         <TabsList className="w-full overflow-x-auto scrollbar-hide flex gap-2 md:gap-4 rounded-lg p-1 bg-muted/60">
           <TabsTrigger
             value="details"
@@ -345,7 +292,6 @@ export default function InventoryItemDetailPage() {
 
         <TabsContent value="details">
           <div className="space-y-6">
-            {/* PRIMERA FILA */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="md:col-span-2">
                 <CardHeader className="flex flex-row items-start justify-between">
@@ -401,7 +347,6 @@ export default function InventoryItemDetailPage() {
                     </div>
                   )}
 
-                  {/* Chips informativas compactas para móvil */}
                   <div className="flex flex-wrap gap-2 pt-1">
                     {!item.isService && (
                       <Badge variant={lowStock ? "destructive" : "secondary"}>
@@ -414,7 +359,6 @@ export default function InventoryItemDetailPage() {
               </Card>
             </div>
 
-            {/* SEGUNDA FILA */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -485,7 +429,6 @@ export default function InventoryItemDetailPage() {
                       </div>
                     </div>
 
-                    {/* Barra visual de referencia al umbral */}
                     <div className="mt-2">
                       <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border">
                         <div
@@ -551,7 +494,6 @@ export default function InventoryItemDetailPage() {
             </CardHeader>
             <CardContent>
               {history.length > 0 ? (
-                // Tabla con scroll horizontal en móvil
                 <div className="w-full overflow-x-auto rounded-md border">
                   <Table className="min-w-[700px]">
                     <TableHeader>
@@ -592,7 +534,7 @@ export default function InventoryItemDetailPage() {
                                         move.type === "Salida por Venta"
                                             ? `/pos?saleId=${move.relatedId}`
                                             : move.type === "Entrada por Compra"
-                                            ? `/inventario/compras` // Link to purchases page
+                                            ? `/inventario/compras`
                                             : `/servicios/${move.relatedId}`
                                         }
                                         className="text-primary hover:underline inline-flex items-center gap-1"
@@ -620,7 +562,6 @@ export default function InventoryItemDetailPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Dialogo de Edición */}
       {item && (
         <InventoryItemDialog
           open={isEditDialogOpen}
