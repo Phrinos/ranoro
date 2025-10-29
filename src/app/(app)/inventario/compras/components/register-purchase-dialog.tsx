@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, PackagePlus, DollarSign, PlusCircle, Trash2, CalendarIcon } from "lucide-react";
+import { Search, PackagePlus, DollarSign, PlusCircle, Trash2, CalendarIcon, Minus, Plus } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn } from "@/lib/utils";
 import { InventoryItemDialog } from "../../components/inventory-item-dialog";
@@ -86,8 +86,8 @@ export function RegisterPurchaseDialog({
     mode: "onChange",
   });
 
-  const { control, handleSubmit, watch, setValue } = form;
-  const { fields, append, remove } = useFieldArray({ control, name: "items" });
+  const { control, handleSubmit, watch, setValue, getValues } = form;
+  const { fields, append, remove } = useFieldArray({ control, name: "items" as const });
   const paymentMethod = watch("paymentMethod");
 
   const [isItemSearchOpen, setIsItemSearchOpen] = useState(false);
@@ -117,10 +117,19 @@ export function RegisterPurchaseDialog({
       itemName: item.name,
       quantity: 1,
       purchasePrice: price,
-      totalPrice: price, // Set initial total price
+      totalPrice: price,
     });
     setIsItemSearchOpen(false);
   };
+  
+  const updateQty = (index: number, nextQty: number) => {
+    const items = getValues('items');
+    const safeQty = Math.max(0.01, Number(nextQty) || 0.01);
+    const unit = Number(items[index]?.purchasePrice || 0);
+    setValue(`items.${index}.quantity`, safeQty, { shouldDirty: true, shouldTouch: true });
+    setValue(`items.${index}.totalPrice`, unit * safeQty, { shouldDirty: true, shouldTouch: true });
+  };
+
 
   const handleNewItemRequest = (searchTerm: string) => {
     setNewItemSearchTerm(searchTerm);
@@ -130,7 +139,7 @@ export function RegisterPurchaseDialog({
 
   const handleNewItemSaved = async (formData: InventoryItemFormValues) => {
     const newItem = await onInventoryItemCreated(formData);
-    handleAddItem(newItem); // Re-use handleAddItem to ensure totalPrice is set
+    handleAddItem(newItem);
     setIsNewItemDialogOpen(false);
   };
 
@@ -196,13 +205,16 @@ export function RegisterPurchaseDialog({
                       {fields.length > 0 && (
                         <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground pr-10">
                           <span className="flex-1">Artículo</span>
-                          <span className="w-24 text-right">Cantidad</span>
+                          <span className="w-24 text-center">Cantidad</span>
                           <span className="w-28 text-right">Costo Unitario</span>
                         </div>
                       )}
                       <ScrollArea className="max-h-48 pr-3">
                         <div className="space-y-3">
-                          {fields.map((field, index) => (
+                          {fields.map((field, index) => {
+                             const itemValues = watch(`items.${index}`);
+                             const qty = Number(itemValues?.quantity || 1);
+                            return (
                             <div key={field.id} className="flex items-center gap-2">
                               <span
                                 className="flex-1 truncate text-sm font-medium"
@@ -211,25 +223,32 @@ export function RegisterPurchaseDialog({
                                 {(field as any).itemName}
                               </span>
 
-                              {/* Cantidad: permitir decimales a centésimas para evitar step mismatch */}
-                              <FormField
-                                control={control}
-                                name={`items.${index}.quantity`}
-                                render={({ field }) => (
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="0.01"
-                                    inputMode="decimal"
-                                    className="h-8 w-24 text-right bg-white"
-                                    {...field}
-                                    value={field.value ?? ""}
-                                    onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
-                                  />
-                                )}
-                              />
+                              <div className="flex items-center gap-1">
+                                <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(index, qty - 1)} disabled={qty <= 1}>
+                                    <Minus className="h-4 w-4"/>
+                                </Button>
+                                <FormField
+                                    control={control}
+                                    name={`items.${index}.quantity`}
+                                    render={({ field }) => (
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            min="0.01"
+                                            inputMode="decimal"
+                                            className="h-8 w-16 text-center bg-white"
+                                            {...field}
+                                            value={field.value ?? ""}
+                                            onChange={(e) => updateQty(index, parseFloat(e.target.value))}
+                                            onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
+                                        />
+                                    )}
+                                />
+                                <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(index, qty + 1)}>
+                                    <Plus className="h-4 w-4"/>
+                                </Button>
+                              </div>
 
-                              {/* Costo unitario */}
                               <FormField
                                 control={control}
                                 name={`items.${index}.purchasePrice`}
@@ -259,7 +278,7 @@ export function RegisterPurchaseDialog({
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             </div>
-                          ))}
+                          )})}
                         </div>
                       </ScrollArea>
 
