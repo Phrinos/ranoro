@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
@@ -66,11 +66,13 @@ const safeNumber = (v: unknown) =>
 
 interface InventoryMovement {
   date: string;
-  type: "Salida por Servicio" | "Salida por Venta" | "Entrada por Compra";
+  type: "Salida por Servicio" | "Salida por Venta" | "Entrada por Compra" | "Ajuste";
   quantity: number;
-  relatedId: string;
-  unitType?: "units" | "ml" | "liters";
+  relatedId?: string;
+  unitType?: "units" | "ml" | "liters" | "kg" | "service";
+  notes?: string;
 }
+
 
 export default function InventoryItemDetailPage() {
   const params = useParams();
@@ -81,6 +83,7 @@ export default function InventoryItemDetailPage() {
   const [item, setItem] = useState<InventoryItem | null | undefined>(undefined);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [allSales, setAllSales] = useState<any[]>([]); // ventas pueden variar de forma
+  const [inventoryMovements, setInventoryMovements] = useState<any[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -128,58 +131,93 @@ export default function InventoryItemDetailPage() {
     };
 
     fetchItemAndRelatedData();
+    
+    // Subscribe to inventory movements for this specific item
+    const q = collection(db, 'inventoryMovements');
+    const unsubscribeMovements = onSnapshot(q, (snapshot) => {
+        const movements = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(mov => mov.itemId === itemId);
+        setInventoryMovements(movements);
+    });
+
+    return () => {
+      unsubscribeMovements();
+    };
+
   }, [itemId, toast]);
 
   // ===== Derived data =====
   const history = useMemo<InventoryMovement[]>(() => {
     if (!item) return [];
-    const currentItemId = item.id;
 
-    const serviceExits: InventoryMovement[] = allServices.flatMap((svc) =>
-      (svc.serviceItems ?? [])
-        .flatMap((svcItem: any) => svcItem.suppliesUsed ?? [])
-        .filter((sup: any) => sup.supplyId === currentItemId)
-        .map((sup: any) => ({
-          date:
-            svc.deliveryDateTime ?? svc.serviceDate ?? svc.receptionDateTime ?? "",
-          type: "Salida por Servicio" as const,
-          quantity: safeNumber(sup.quantity),
-          relatedId: svc.id,
-          unitType: item.unitType as any,
-        }))
+    const movementsFromEvents: InventoryMovement[] = [];
+
+    // Derive movements from sales and services if they are not in inventoryMovements
+    allServices.forEach((svc) =>
+      (svc.serviceItems ?? []).forEach((svcItem: any) =>
+        (svcItem.suppliesUsed ?? []).forEach((sup: any) => {
+          if (sup.supplyId === item.id) {
+            movementsFromEvents.push({
+              date: svc.deliveryDateTime ?? svc.serviceDate ?? svc.receptionDateTime ?? "",
+              type: "Salida por Servicio",
+              quantity: -safeNumber(sup.quantity),
+              relatedId: svc.id,
+              unitType: item.unitType as any,
+            });
+          }
+        })
+      )
     );
 
-    const saleExits: InventoryMovement[] = allSales.flatMap((sale) =>
-      (sale.items ?? [])
-        .filter((si: any) => si.inventoryItemId === currentItemId)
-        .map((si: any) => ({
-          date: sale.saleDate ?? (sale as any)?.createdAt ?? "",
-          type: "Salida por Venta" as const,
-          quantity: safeNumber(si.quantity),
-          relatedId: sale.id,
-          unitType: item.unitType as any,
-        }))
+    allSales.forEach((sale) =>
+      (sale.items ?? []).forEach((si: any) => {
+        if (si.inventoryItemId === item.id) {
+          movementsFromEvents.push({
+            date: sale.saleDate ?? (sale as any)?.createdAt ?? "",
+            type: "Salida por Venta",
+            quantity: -safeNumber(si.quantity),
+            relatedId: sale.id,
+            unitType: item.unitType as any,
+          });
+        }
+      })
     );
 
-    const movements = [...serviceExits, ...saleExits]
+    const movementsFromCollection: InventoryMovement[] = inventoryMovements.map(mov => {
+        let type: InventoryMovement['type'] = 'Ajuste';
+        if (mov.type === 'sale') type = 'Salida por Venta';
+        if (mov.type === 'purchase') type = 'Entrada por Compra';
+
+        return {
+            date: mov.date,
+            type: type,
+            quantity: mov.quantityChanged,
+            relatedId: mov.serviceId || mov.purchaseId || mov.relatedId,
+            notes: mov.reason,
+            unitType: item.unitType as any,
+        };
+    });
+
+    const allMovements = [...movementsFromCollection]
       .map((m) => {
         const d = parseDate(m.date);
         return d && isValid(d) ? { ...m, _parsed: d } : null;
       })
       .filter(Boolean) as (InventoryMovement & { _parsed: Date })[];
 
-    movements.sort((a, b) => b._parsed.getTime() - a._parsed.getTime());
+    allMovements.sort((a, b) => b._parsed.getTime() - a._parsed.getTime());
 
-    return movements.map(({ _parsed, ...rest }) => rest);
-  }, [item, allServices, allSales]);
+    return allMovements.map(({ _parsed, ...rest }) => rest);
+  }, [item, allServices, allSales, inventoryMovements]);
 
   const kpis = useMemo(() => {
     const salidaServicio = history
       .filter((m) => m.type === "Salida por Servicio")
-      .reduce((a, b) => a + b.quantity, 0);
+      .reduce((a, b) => a + Math.abs(b.quantity), 0);
     const salidaVenta = history
       .filter((m) => m.type === "Salida por Venta")
-      .reduce((a, b) => a + b.quantity, 0);
+      .reduce((a, b) => a + Math.abs(b.quantity), 0);
     return {
       salidaServicio,
       salidaVenta,
@@ -508,8 +546,7 @@ export default function InventoryItemDetailPage() {
             <CardHeader>
               <CardTitle>Historial de Movimientos</CardTitle>
               <CardDescription>
-                Entradas y salidas del producto. Las entradas se registran desde
-                la pantalla principal de inventario.
+                Entradas y salidas del producto.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -522,13 +559,14 @@ export default function InventoryItemDetailPage() {
                         <TableHead>Fecha</TableHead>
                         <TableHead>Tipo de Movimiento</TableHead>
                         <TableHead className="text-right">Cantidad</TableHead>
-                        <TableHead>ID Relacionado</TableHead>
+                        <TableHead>ID Relacionado / Notas</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {history.map((move, index) => {
                         const date = parseDate(move.date);
-                        const qtyPrefix = move.type.startsWith("Salida") ? "-" : "+";
+                        const isExit = move.quantity < 0;
+                        const qtyPrefix = isExit ? '' : '+';
                         return (
                           <TableRow key={`${move.relatedId}-${index}`}>
                             <TableCell>
@@ -538,11 +576,7 @@ export default function InventoryItemDetailPage() {
                             </TableCell>
                             <TableCell>
                               <Badge
-                                variant={
-                                  move.type === "Salida por Venta"
-                                    ? "destructive"
-                                    : "secondary"
-                                }
+                                variant={isExit ? "destructive" : "success"}
                               >
                                 {move.type}
                               </Badge>
@@ -552,17 +586,23 @@ export default function InventoryItemDetailPage() {
                               {move.quantity} {unitLabel(move.unitType as any)}
                             </TableCell>
                             <TableCell>
-                              <Link
-                                href={
-                                  move.type === "Salida por Venta"
-                                    ? `/pos?id=${move.relatedId}`
-                                    : `/servicios/${move.relatedId}`
-                                }
-                                className="text-primary hover:underline inline-flex items-center gap-1"
-                              >
-                                {move.relatedId}
-                                <ArrowRight className="h-3 w-3" />
-                              </Link>
+                                {move.relatedId ? (
+                                    <Link
+                                        href={
+                                        move.type === "Salida por Venta"
+                                            ? `/pos?saleId=${move.relatedId}`
+                                            : move.type === "Entrada por Compra"
+                                            ? `/inventario/compras` // Link to purchases page
+                                            : `/servicios/${move.relatedId}`
+                                        }
+                                        className="text-primary hover:underline inline-flex items-center gap-1"
+                                    >
+                                        {move.relatedId.slice(-8)}
+                                        <ArrowRight className="h-3 w-3" />
+                                    </Link>
+                                ) : (
+                                    <span className="text-muted-foreground text-xs">{move.notes || 'N/A'}</span>
+                                )}
                             </TableCell>
                           </TableRow>
                         );
