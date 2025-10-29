@@ -21,6 +21,7 @@ import { parseDate } from "@/lib/forms"; // Importar el helper robusto
 
 interface Purchase {
   id: string;
+  invoiceId?: string;
   supplierName: string;
   invoiceDate: Timestamp | string; // Campo principal de fecha
   totalAmount?: number;
@@ -73,6 +74,7 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Fecha</TableHead>
+              <TableHead>Folio/Factura</TableHead>
               <TableHead>Proveedor</TableHead>
               <TableHead>Productos</TableHead>
               <TableHead>Cantidad</TableHead>
@@ -85,6 +87,7 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
             {[...Array(3)].map((_, i) => (
               <TableRow key={i}>
                 <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-40" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-12" /></TableCell>
@@ -105,6 +108,7 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
         <TableHeader className="bg-black">
           <TableRow className="hover:bg-transparent">
             <SortableTableHeader sortKey="invoiceDate" label="Fecha" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+            <SortableTableHeader sortKey="invoiceId" label="Folio/Factura" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
             <SortableTableHeader sortKey="supplierName" label="Proveedor" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
             <TableHead className="text-white">Productos</TableHead>
             <TableHead className="text-white">Artículos</TableHead>
@@ -125,6 +129,7 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
                 <TableCell>
                   {purchaseDate && isValid(purchaseDate) ? format(purchaseDate, "dd/MM/yy, HH:mm", { locale: es }) : 'N/A'}
                 </TableCell>
+                <TableCell>{purchase.invoiceId}</TableCell>
                 <TableCell className="font-medium">{purchase.supplierName}</TableCell>
                 <TableCell className="truncate max-w-xs" title={productNames}>{productNames}</TableCell>
                 <TableCell>{totalItems}</TableCell>
@@ -141,7 +146,7 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
             )})
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center">
+              <TableCell colSpan={8} className="h-24 text-center">
                 No hay compras registradas.
               </TableCell>
             </TableRow>
