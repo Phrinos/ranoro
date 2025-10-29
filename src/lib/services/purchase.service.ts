@@ -98,7 +98,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     supplierId: data.supplierId,
     supplierName,
     invoiceId: data.invoiceId || `COMPRA-${Date.now()}`,
-    date: serverTimestamp(),
+    invoiceDate: data.invoiceDate ? Timestamp.fromDate(new Date(data.invoiceDate)) : serverTimestamp(),
     dueDate: isCredit(data.paymentMethod) && data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
     items: data.items.map((it:any) => ({
       inventoryItemId: it.inventoryItemId,
@@ -110,9 +110,9 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     subtotal,
     taxes,
     discounts,
-    totalAmount: invoiceTotal,
+    invoiceTotal,
     paymentMethod: data.paymentMethod, // 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Crédito' ...
-    status: 'completado',
+    status: 'completado', // <--- Se guarda como 'completado'
     paymentStatus: isCredit(data.paymentMethod) ? 'Pendiente' : 'Pagado',
     // vínculos
     payableAccountId,
@@ -132,7 +132,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
       supplierId: data.supplierId,
       supplierName,
       invoiceId: purchaseDoc.invoiceId,
-      invoiceDate: (purchaseDoc as any).date ?? serverTimestamp(),
+      invoiceDate: purchaseDoc.invoiceDate ?? serverTimestamp(),
       dueDate: purchaseDoc.dueDate ?? serverTimestamp(),
       totalAmount: invoiceTotal,
       paidAmount: 0,
