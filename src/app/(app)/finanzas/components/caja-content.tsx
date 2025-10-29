@@ -130,89 +130,92 @@ export default function CajaContent() {
     
     const inRange = (d: Date | null) => d && isValid(d) && isWithinInterval(d, { start: range.from, end: range.to });
 
-    const cashPayments: FlowRow[] = [];
+    const allRows: FlowRow[] = [];
 
-    // Servicios -> entradas efectivo
-    for (const s of allServices) {
-      if ((s as any).status === 'Cancelado' || (s as any).status === 'Cotizacion') continue;
+    // Pagos de servicios (solo efectivo)
+    allServices.forEach(s => {
+      if ((s as any).status === 'Cancelado' || (s as any).status === 'Cotizacion') return;
       const pays = (s as any).payments as Payment[] | undefined;
-      if (!Array.isArray(pays)) continue;
-      const advisor = getAdvisorForService(s);
+      if (!Array.isArray(pays)) return;
+      
       pays.forEach((p, idx) => {
         if (p?.method !== 'Efectivo' || typeof p.amount !== 'number') return;
         const d = getPaymentDate(p) || toJsDate((s as any).deliveryDateTime) || toJsDate((s as any).serviceDate);
-        const amt = Number(p.amount) || 0;
-        cashPayments.push({
-          id: `${(s as any).id}-svc-cash-${idx}`,
+        if (!inRange(d)) return;
+        
+        allRows.push({
+          id: `${s.id}-svc-cash-${idx}`,
           date: d,
-          type: amt >= 0 ? 'Entrada' : 'Salida',
+          type: 'Entrada',
           source: 'Servicio',
-          relatedType: 'Servicio',
-          refId: (s as any).id,
-          user: advisor,
-          description: amt >= 0 ? `Pago efectivo (Servicio #${((s as any).folio || (s as any).id || '').slice(-6)})` : `Reembolso efectivo (Servicio #${((s as any).folio || (s as any).id || '').slice(-6)})`,
-          amount: Math.abs(amt),
+          refId: s.id,
+          user: getAdvisorForService(s),
+          description: `Pago efectivo (Servicio #${(s.folio || s.id).slice(-6)})`,
+          amount: Math.abs(p.amount),
           method: p.method,
         });
       });
-    }
+    });
 
-    // Ventas -> entradas efectivo
-    for (const s of allSales) {
-      if ((s as any).status === 'Cancelado') continue;
+    // Pagos de ventas (solo efectivo)
+    allSales.forEach(s => {
+      if ((s as any).status === 'Cancelado') return;
       const pays = (s as any).payments as Payment[] | undefined;
-      if (!Array.isArray(pays)) continue;
-      const client = (s as any).customerName || 'Cliente Mostrador';
+      if (!Array.isArray(pays)) return;
+      
       pays.forEach((p, idx) => {
         if (p?.method !== 'Efectivo' || typeof p.amount !== 'number') return;
         const d = getPaymentDate(p) || toJsDate((s as any).saleDate);
-        const amt = Number(p.amount) || 0;
-        cashPayments.push({
-          id: `${(s as any).id}-sale-cash-${idx}`,
+        if (!inRange(d)) return;
+        
+        allRows.push({
+          id: `${s.id}-sale-cash-${idx}`,
           date: d,
-          type: amt >= 0 ? 'Entrada' : 'Salida',
+          type: 'Entrada',
           source: 'Venta',
-          relatedType: 'Venta',
-          refId: (s as any).id,
-          user: client,
-          description: amt >= 0 ? `Pago efectivo (Venta #${String((s as any).id).slice(-6)})` : `Reembolso efectivo (Venta #${String((s as any).id).slice(-6)})`,
-          amount: Math.abs(amt),
+          refId: s.id,
+          user: s.customerName || 'Cliente Mostrador',
+          description: `Pago efectivo (Venta #${s.id.slice(-6)})`,
+          amount: Math.abs(p.amount),
           method: p.method,
         });
       });
-    }
+    });
     
-    // Movimientos del "libro" (incluye Compras en efectivo como Salida)
-    const ledgerRows: FlowRow[] = cashTransactions.map((t) => {
-        const d = toJsDate(t.date) || parseDate(t.date) || null;
-        const user = (t as any).userName || (t as any).user || 'Sistema';
-        const desc = (t as any).concept || (t as any).description || '';
-        const method = (t as any).paymentMethod as PaymentMethod | undefined;
-        return {
-          id: (t as any).id,
-          date: d,
-          type: (t as any).type,
-          source: 'Libro',
-          relatedType: (t as any).relatedType || 'Manual',
-          refId: (t as any).relatedId,
-          user,
-          description: desc,
-          amount: Math.abs(Number((t as any).amount) || 0),
-          method,
-        };
+    // Todos los movimientos del libro de caja
+    cashTransactions.forEach(t => {
+      const d = toJsDate((t as any).date);
+      if (!inRange(d)) return;
+
+      allRows.push({
+        id: t.id,
+        date: d,
+        type: t.type,
+        source: 'Libro',
+        relatedType: (t as any).relatedType || 'Manual',
+        refId: (t as any).relatedId,
+        user: t.userName || (t as any).user || 'Sistema',
+        description: t.concept || (t as any).description || '',
+        amount: Math.abs(t.amount || 0),
+        method: (t as any).paymentMethod,
+      });
     });
 
-    const rows = [...cashPayments, ...ledgerRows].filter(r => inRange(r.date));
-
     const [key, direction] = sortOption.split('_');
-    return rows.sort((a: any, b: any) => {
-      const valA = a[key] ?? '';
-      const valB = b[key] ?? '';
+    return allRows.sort((a, b) => {
+      const valA = a[key as keyof FlowRow] ?? '';
+      const valB = b[key as keyof FlowRow] ?? '';
+
       if (key === 'date') {
         const dateA = valA instanceof Date ? valA.getTime() : 0;
         const dateB = valB instanceof Date ? valB.getTime() : 0;
         return direction === 'asc' ? dateA - dateB : dateB - dateA;
       }
+      
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return direction === 'asc' ? valA - valB : valB - valA;
+      }
+
       const cmp = String(valA).localeCompare(String(valB), 'es', { numeric: true });
       return direction === 'asc' ? cmp : -cmp;
     });

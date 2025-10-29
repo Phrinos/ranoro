@@ -159,7 +159,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     batch.set(
       cashTxRef,
       cleanObjectForFirestore({
-        date: serverTimestamp(),
+        date: new Date().toISOString(),
         createdAt: serverTimestamp(),
         type: 'Salida',
         amount: invoiceTotal,
