@@ -125,8 +125,12 @@ export default function CajaContent() {
     return { from, to };
   }, [dateRange]);
 
-  const cashPayments = useMemo(() => {
-    const rows: FlowRow[] = [];
+  const flowRows = useMemo(() => {
+    if (!range) return [];
+    
+    const inRange = (d: Date | null) => d && isValid(d) && isWithinInterval(d, { start: range.from, end: range.to });
+
+    const cashPayments: FlowRow[] = [];
 
     // Servicios -> entradas efectivo
     for (const s of allServices) {
@@ -138,9 +142,9 @@ export default function CajaContent() {
         if (p?.method !== 'Efectivo' || typeof p.amount !== 'number') return;
         const d = getPaymentDate(p) || toJsDate((s as any).deliveryDateTime) || toJsDate((s as any).serviceDate);
         const amt = Number(p.amount) || 0;
-        rows.push({
+        cashPayments.push({
           id: `${(s as any).id}-svc-cash-${idx}`,
-          date: d || null,
+          date: d,
           type: amt >= 0 ? 'Entrada' : 'Salida',
           source: 'Servicio',
           relatedType: 'Servicio',
@@ -163,9 +167,9 @@ export default function CajaContent() {
         if (p?.method !== 'Efectivo' || typeof p.amount !== 'number') return;
         const d = getPaymentDate(p) || toJsDate((s as any).saleDate);
         const amt = Number(p.amount) || 0;
-        rows.push({
+        cashPayments.push({
           id: `${(s as any).id}-sale-cash-${idx}`,
-          date: d || null,
+          date: d,
           type: amt >= 0 ? 'Entrada' : 'Salida',
           source: 'Venta',
           relatedType: 'Venta',
@@ -177,31 +181,15 @@ export default function CajaContent() {
         });
       });
     }
-
-    return rows;
-  }, [allSales, allServices]);
-
-  const flowRows = useMemo(() => {
-    if (!range) return [];
-    const inRange = (d: Date | null) => d && isValid(d) && isWithinInterval(d, { start: range.from, end: range.to });
-
+    
     // Movimientos del "libro" (incluye Compras en efectivo como Salida)
-    const ledgerRows: FlowRow[] = cashTransactions
-      .filter(t => {
-        // Sólo quitamos las ENTRADAS de ventas/servicios (para no duplicar).
-        return !(t.type === 'Entrada' && ((t as any).relatedType === 'Venta' || (t as any).relatedType === 'Servicio'));
-      })
-      .map((t) => {
-        // FECHA: soporta Timestamp/Date/string
-        const raw = (t as any).date ?? (t as any).createdAt;
-        const d = toJsDate(raw) || parseDate(raw) || null;
-
+    const ledgerRows: FlowRow[] = cashTransactions.map((t) => {
+        const d = toJsDate(t.date) || parseDate(t.date) || null;
         const user = (t as any).userName || (t as any).user || 'Sistema';
         const desc = (t as any).concept || (t as any).description || '';
         const method = (t as any).paymentMethod as PaymentMethod | undefined;
-
         return {
-          id: (t as any).id ?? `${(t as any).relatedType || 'Libro'}-${(t as any).relatedId || Math.random()}`,
+          id: (t as any).id,
           date: d,
           type: (t as any).type,
           source: 'Libro',
@@ -212,7 +200,7 @@ export default function CajaContent() {
           amount: Math.abs(Number((t as any).amount) || 0),
           method,
         };
-      });
+    });
 
     const rows = [...cashPayments, ...ledgerRows].filter(r => inRange(r.date));
 
@@ -228,19 +216,30 @@ export default function CajaContent() {
       const cmp = String(valA).localeCompare(String(valB), 'es', { numeric: true });
       return direction === 'asc' ? cmp : -cmp;
     });
-  }, [cashPayments, cashTransactions, range, sortOption]);
+  }, [allSales, allServices, cashTransactions, range, sortOption]);
 
   const { periodKPIs, currentBalance } = useMemo(() => {
+    // Calculos del periodo seleccionado
     const incomeInPeriod = flowRows.filter(r => r.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
     const outcomeInPeriod = flowRows.filter(r => r.type === 'Salida').reduce((s, r) => s + r.amount, 0);
 
-    // Balance global actual (incluye Compras en efectivo como Salidas del libro)
-    const allCashIncome = cashPayments.filter(r => r.type === 'Entrada').reduce((s, r) => s + r.amount, 0);
-    const allManualEntries = cashTransactions
-      .filter(t => (t as any).relatedType !== 'Venta' && (t as any).relatedType !== 'Servicio');
-    const allManualIncome = allManualEntries.filter(t => t.type === 'Entrada').reduce((s, r) => s + (r as any).amount, 0);
-    const allManualOutcome = allManualEntries.filter(t => t.type === 'Salida').reduce((s, r) => s + (r as any).amount, 0);
-    const currentTotalBalance = (allCashIncome + allManualIncome) - allManualOutcome;
+    // Balance global actual (incluye todos los movimientos en efectivo)
+    const allCashIncome = [...allServices, ...allSales].flatMap((op: any) => op.payments ?? [])
+        .filter((p: any) => p?.method === 'Efectivo' && p.amount > 0)
+        .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+
+    const allManualCashFlow = cashTransactions
+        .filter(t => t.paymentMethod === 'Efectivo');
+        
+    const allManualCashIncome = allManualCashFlow
+        .filter(t => t.type === 'Entrada')
+        .reduce((s, r) => s + (r as any).amount, 0);
+
+    const allManualCashOutcome = allManualCashFlow
+        .filter(t => t.type === 'Salida')
+        .reduce((s, r) => s + (r as any).amount, 0);
+        
+    const currentTotalBalance = (allCashIncome + allManualCashIncome) - allManualCashOutcome;
 
     return {
       periodKPIs: {
@@ -250,7 +249,8 @@ export default function CajaContent() {
       },
       currentBalance: currentTotalBalance,
     };
-  }, [flowRows, cashPayments, cashTransactions]);
+  }, [flowRows, allServices, allSales, cashTransactions]);
+
 
   // abrir ref
   const openRef = (row: FlowRow) => {
@@ -347,7 +347,7 @@ export default function CajaContent() {
             <Wallet className="h-4 w-4 text-muted-foreground"/>
           </CardHeader>
           <CardContent>
-            <div className={cn("text-2xl font-bold", periodKPIs.net >= 0 ? 'text-blue-600' : 'text-destructive')}>
+            <div className={cn("text-2xl font-bold", currentBalance >= 0 ? 'text-blue-600' : 'text-destructive')}>
               {formatCurrency(currentBalance)}
             </div>
           </CardContent>
