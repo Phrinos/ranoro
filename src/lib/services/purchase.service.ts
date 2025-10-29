@@ -109,7 +109,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     supplierId: data.supplierId,
     supplierName,
     invoiceId: data.invoiceId || `COMPRA-${Date.now()}`,
-    invoiceDate: new Date().toISOString(), // Fecha y hora actual siempre
+    invoiceDate: new Date().toISOString(),
     dueDate: isCredit(data.paymentMethod) && data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
     items: data.items.map((it:any) => ({
       inventoryItemId: it.inventoryItemId,
