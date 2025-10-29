@@ -19,11 +19,12 @@ import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { formatCurrency } from "@/lib/utils";
 import { parseDate } from "@/lib/forms"; // Importar el helper robusto
 
-interface Purchase {
+export interface Purchase {
   id: string;
   invoiceId?: string;
   supplierName: string;
   invoiceDate: Timestamp | string; // Campo principal de fecha
+  createdAt?: Timestamp | string; // Fallback date
   totalAmount?: number;
   invoiceTotal?: number;
   status: "Completado" | "Registrada" | "Pendiente";
@@ -43,9 +44,11 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
     return [...purchases].sort((a, b) => {
         const [key, direction] = sortOption.split('_');
         let valA, valB;
+        
+        // Use invoiceDate primarily, but fallback to createdAt for sorting if needed
         if (key === 'invoiceDate') {
-            valA = parseDate(a.invoiceDate);
-            valB = parseDate(b.invoiceDate);
+            valA = parseDate(a.invoiceDate) || parseDate(a.createdAt);
+            valB = parseDate(b.invoiceDate) || parseDate(b.createdAt);
             if (!valA) return 1;
             if (!valB) return -1;
         } else {
@@ -120,7 +123,8 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
         <TableBody>
           {sortedPurchases.length > 0 ? (
             sortedPurchases.map((purchase) => {
-              const purchaseDate = parseDate(purchase.invoiceDate); // Usar el helper robusto
+              // Use invoiceDate first, but fallback to createdAt if it's missing
+              const purchaseDate = parseDate(purchase.invoiceDate) || parseDate(purchase.createdAt);
               const productNames = purchase.items.map(i => i.itemName).join(', ');
               const totalItems = purchase.items.reduce((sum, i) => sum + i.quantity, 0);
 
