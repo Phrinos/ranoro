@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -96,10 +97,13 @@ export function InventorySearchDialog({
     onOpenChange(false);
   };
 
-  const handleOpenChange = (next: boolean) => {
-    if (!next) setSearchTerm("");
-    onOpenChange(next);
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setSearchTerm("");
+    }
+    onOpenChange(isOpen);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
