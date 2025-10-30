@@ -1,4 +1,3 @@
-
 // src/components/shared/PaymentSection.tsx
 "use client";
 
@@ -45,10 +44,11 @@ export function PaymentSection({
   validatedFolios = {},
   totalAmount: totalAmountProp = 0,
 }: PaymentSectionProps) {
-  const { control, watch, setValue } = useFormContext();
+  const { control, setValue } = useFormContext();
   const { fields, append, remove } = useFieldArray({ control, name: "payments" });
 
   const items = useWatch({ control, name: "serviceItems" }) as any[] | undefined;
+  const watchedPayments = useWatch({ control, name: "payments" }) as Payment[] | undefined;
 
   const totalAmountLive = useMemo(
     () => (items ?? []).reduce((s, i) => s + toNumber(i?.sellingPrice), 0),
@@ -57,12 +57,11 @@ export function PaymentSection({
 
   const totalAmount = totalAmountLive > 0 ? totalAmountLive : toNumber(totalAmountProp);
 
-  const watchedPayments = watch("payments") as Payment[] | undefined;
-
   const totalPaid = useMemo(
     () => (watchedPayments ?? []).reduce((acc, p) => acc + toNumber(p?.amount), 0),
     [watchedPayments]
   );
+  
   const remaining = Math.max(0, totalAmount - totalPaid);
 
   const availablePaymentMethods = paymentMethods.filter(
@@ -70,7 +69,6 @@ export function PaymentSection({
   );
 
   const handleAddPayment = () => {
-    const remainingAmount = Math.max(0, totalAmount - totalPaid);
     append({
       method: availablePaymentMethods[0] ?? "Efectivo",
       amount: undefined,
