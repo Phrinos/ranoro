@@ -65,18 +65,6 @@ export function PaymentSection({
   );
   const remaining = Math.max(0, totalAmount - totalPaid);
 
-  useEffect(() => {
-    if (!watchedPayments || watchedPayments.length === 0) return;
-    if (totalAmount <= 0) return;
-
-    const v = watchedPayments[0]?.amount;
-    const isEmpty = v === undefined || v === null || (typeof v === "string" && v === "") || toNumber(v as any) === 0;
-
-    if (watchedPayments.length === 1 && isEmpty) {
-      setValue(`payments.0.amount`, totalAmount, { shouldValidate: true, shouldDirty: true });
-    }
-  }, [totalAmount, watchedPayments, setValue]);
-
   const availablePaymentMethods = paymentMethods.filter(
     (method) => !(watchedPayments ?? []).some((p) => p?.method === method)
   );
@@ -85,7 +73,7 @@ export function PaymentSection({
     const remainingAmount = Math.max(0, totalAmount - totalPaid);
     append({
       method: availablePaymentMethods[0] ?? "Efectivo",
-      amount: remainingAmount > 0.01 ? remainingAmount : undefined,
+      amount: undefined,
       folio: "",
     } as any);
   };
@@ -117,6 +105,7 @@ export function PaymentSection({
                           <Input
                             type="number"
                             step="0.01"
+                            placeholder="0.00"
                             {...formField}
                             value={formField.value ?? ""}
                             className="pl-8 bg-card"
