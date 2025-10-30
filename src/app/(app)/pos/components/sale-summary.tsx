@@ -1,7 +1,5 @@
 // src/app/(app)/pos/components/sale-summary.tsx
 
-"use client";
-
 import React, { useMemo, useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,18 +20,18 @@ interface SaleSummaryProps {
 }
 
 export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSummaryProps) {
-  const { control, watch, formState, setValue } = useFormContext();
+  const { control, formState, setValue } = useFormContext();
   
-  const watchedItems = watch("items");
-  const watchedPayments = watch("payments");
+  const watchedItems = useWatch({ control, name: "items" });
+  const watchedPayments = useWatch({ control, name: "payments" });
 
   useEffect(() => {
     const items = (watchedItems || []) as any[];
     const baseItems = items.filter(i => i.inventoryItemId !== COMMISSION_ITEM_ID);
     const baseTotal = baseItems.reduce((sum, i) => sum + (Number(i.totalPrice ?? i.unitPrice * i.quantity) || 0), 0);
     
-    const hasCard = (watchedPayments ?? []).some((p: any) => p.method === 'Tarjeta');
-    const hasMSI = (watchedPayments ?? []).some((p: any) => p.method === 'Tarjeta MSI');
+    const hasCard = (watchedPayments || []).some((p: any) => p.method === 'Tarjeta');
+    const hasMSI = (watchedPayments || []).some((p: any) => p.method === 'Tarjeta MSI');
 
     let commission = 0;
     if (hasCard) commission += baseTotal * 0.041;
