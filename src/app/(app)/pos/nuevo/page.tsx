@@ -127,9 +127,16 @@ function QuickAddItemDialog({
       return haystack.includes(n);
     });
   }, [q, inventoryItems]);
+  
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setQ('');
+    }
+    onOpenChange(isOpen);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Buscar y añadir artículo</DialogTitle>

@@ -93,8 +93,7 @@ export function InventorySearchDialog({
 
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item, 1);
-    setSearchTerm("");
-    onOpenChange(false);
+    handleOpenChange(false);
   };
 
   const handleOpenChange = (isOpen: boolean) => {
